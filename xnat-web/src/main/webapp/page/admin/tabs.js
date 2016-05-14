@@ -19,7 +19,7 @@
     // get the JSON and do the setup
     var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.yaml');
     //var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.json');
-    // var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteAdmin');
+    // var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/adminPage');
 
     // get the siteConfig object first
     // doing this in JSP for better(?) performance

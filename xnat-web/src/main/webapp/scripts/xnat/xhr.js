@@ -167,7 +167,7 @@ var XNAT = getObject(XNAT||{}),
     // (url, data, opts, success) // url string, data object, config object, success callback
     xhr.request = xhr.req = xhr.ajax = function( /* url/opts, data/opts/callback, opts/callback, callback */ ){
 
-        var opts = {};
+        var opts = {}, $ajax;
 
         if (arguments[0] instanceof RequestOfType){
             opts = arguments[0];
@@ -234,10 +234,23 @@ var XNAT = getObject(XNAT||{}),
         // just do jQuery $.ajax() call
         if (!opts.yui || opts.jquery){
 
+            $ajax = $.ajax(opts);
+            
+            // save jQuery's fail method
+            $ajax.$fail = $ajax.fail;
+            
+            // remap the arguments for consistency with .done()
+            $ajax.fail = function(callback){
+                return $ajax.$fail(function(jqXHR, textStatus, errorThrown) {
+                    callback(errorThrown, textStatus, jqXHR);
+                    return $ajax;
+                });
+            };
+
             // reset XNAT.xhr.cache to false
             xhr.cache = false;
 
-            return $.ajax(opts);
+            return $ajax;
 
         }
 

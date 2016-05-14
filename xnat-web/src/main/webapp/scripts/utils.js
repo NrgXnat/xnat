@@ -401,7 +401,7 @@ function chosenInit(select, opts, width){
             placeholder_text_multiple: 'Select...',
             search_contains: true
         };
-    if (width) { defaults.width = (width + 'px').replace(/pxpx$/,'px') }
+    if (width) { defaults.width = (width + 'px').replace(/(px)*$/,'px') }
     $select.each(function(){
         var $this = $(this),
             dataChosenOpts = {};

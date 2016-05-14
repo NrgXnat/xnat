@@ -16,6 +16,7 @@ siteId:
     label: Site ID
     validation: required id onblur
     description: "The id used to refer to this site (also used to generate database ids). The Site ID must start with a letter and contain only letters, numbers and underscores. It should be a short, one-word name or acronym which describes your site. No spaces or non-alphanumeric characters."
+
 siteDescriptionType:
     kind: panel.display  # make this a radio button group
     id: siteDescriptionType
@@ -23,46 +24,59 @@ siteDescriptionType:
     label: Site Description
     value: Select a site description option below
     # onchange: # some javascript that toggles display of the elements below appropriately
+
 siteDescriptionOptionText:
     kind: panel.input.checkbox  # make this a radio button group
     id: siteDescriptionOptionText
     label: "Text (Markdown)"
+
 siteDescriptionOptionPage:
     kind: panel.input.checkbox  # make this a radio button group
     id: siteDescriptionOptionPage
     label: "Page"
+
 siteDescriptionPage:
     kind: panel.input.text
     id: siteDescriptionPage
     name: siteDescriptionPage
     label: " "
     description: "Specify a velocity template file to display on the login page"
+
 siteDescriptionText:
     kind: panel.textarea
     id: siteDescriptionText
     name: siteDescriptionText
     label: " "
     description: "Specify a simple text description of this site"
+    element:
+        style:
+            width: 300px
+            height: 150px
+
 siteLoginLanding:
     kind: panel.input.text
     id: siteLoginLanding
     name: siteLoginLanding
     label: Site Login Landing
+
 siteLandingLayout:
     kind: panel.input.text
     id: siteLandingLayout
     name: siteLandingLayout
     label: Site Landing Layout
+
 siteHome:
     kind: panel.input.text
     id: siteHome
     name: siteHome
     label: Site Home
+
 siteHomeLayout:
     kind: panel.input.text
     id: siteHomeLayout
     name: siteHomeLayout
     label: Site Home Layout
+
 siteUrl:
     kind: panel.input.text
     id: siteUrl
@@ -70,21 +84,24 @@ siteUrl:
     label: Site Url
     validation: required id
     description: ""
+
 adminEmail:
     kind: panel.input.email
     id: adminEmail
     name: adminEmail
     label: Site Administrator Email Address
-    url: /xapi/siteConfig/adminEmail
-    value: ''
+    value: ?? XNAT.data.siteConfig.adminEmail
 
 fileSystemSettingsWarning:
     someInfo:
         tag: div.message
         element:
-            html: "These settings must be defined during initial application configuration, and are seldom - if ever - changed."
+            html: >
+                These settings must be defined during initial application configuration,
+                and are seldom, if ever, changed.
             style:
                 fontWeight: bold
+
 archiveRootPath:
     kind: panel.input.text
     id: archiveRootPath
@@ -92,7 +109,8 @@ archiveRootPath:
     label: Archive Root Path
     validation: required path
     description: ""
-    value: ??XNAT.data.siteConfig.archiveRootPath
+    value: ?? XNAT.data.siteConfig.archiveRootPath
+
 cachePath:
     kind: panel.input.text
     id: cachePath
@@ -100,7 +118,8 @@ cachePath:
     label: Cache Path
     validation: required path
     description: ""
-    value: ??XNAT.data.siteConfig.cachePath
+    value: ?? XNAT.data.siteConfig.cachePath
+
 prearchivePath:
     kind: panel.input.text
     id: prearchivePath
@@ -108,7 +127,8 @@ prearchivePath:
     label: Prearchive Path
     validation: required path
     description: ""
-    value: ??XNAT.data.siteConfig.prearchivePath
+    value: ?? XNAT.data.siteConfig.prearchivePath
+
 ftpPath:
     kind: panel.input.text
     id: ftpPath
@@ -210,41 +230,49 @@ userLoginsSessionControls:
         lookup: XNAT.data.siteConfig
         refresh: /xapi/siteConfig
     contents:
+
         sessionTimeout:
             kind: panel.input.number
             id: sessionTimeout
             name: aliasTokenTimeout
             label: Session Timeout
-            value: 15
-            description: "Interval for timing out alias tokens. Uses PostgreSQL interval notation: http://www.postgresql.org/docs/9.0/static/functions-datetime.html"
+            value: ?? XNAT.data.siteConfig.sessionTimeout || 15
+            description: >
+                Interval for timing out alias tokens. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+
         sessionTimeoutMessage:
             kind: panel.input.text
             id: sessionTimeoutMessage
             name: sessionTimeoutMessage
             label: Session Timeout Message
-            value: "Your session has timed out."
+            value: ?? XNAT.data.siteConfig.sessionTimeoutMessage || "Your session has timed out."
             description: Alert message provided to users after a session timeout and logout.
+
         allowResumeOnNextLogin:
             kind: panel.input.checkbox
-            id: allowResumeOnNextLogin
+            id: allow-resume-on-next-login
             name: allowResumeOnNextLogin
             label: Allow Resume On Next Login?
-            value: true
+            value: ?? XNAT.data.siteConfig.allowResumeOnNextLogin
             description: Allow user to resume where they left off, if logging back in after a session timeout?
+
         maximumConcurrentSessions:
             kind: panel.input.number
             id: maximumConcurrentSessions
             name: security.sessions.concurrent_max
             label: Maximum Concurrent Sessions
-            value: 5
+            value: ?? XNAT.data.siteConfig.maximumConcurrentSessions || 5
             description: The maximum number of permitted sessions a user can have open simultaneously
+
         loginFailureMessage:
             kind: panel.input.text
             id: loginFailureMessage
             name: UI.login_failure_message
             label: Login Failure Message
-            value: Login failed
+            value: || Login failed
             description: Text to show when a user fails to login
+
         maximumFailedLogins:
             kind: panel.input.number
             id: maximumFailedLogins
@@ -252,6 +280,7 @@ userLoginsSessionControls:
             label: Maximum Failed Logins
             value: -1
             description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
+
         failedLoginLockoutDuration:
             kind: panel.input.number
             id: failedLoginLockoutDuration
@@ -259,6 +288,7 @@ userLoginsSessionControls:
             label: Failed Login Lockout Duration
             value: 0
             description: Number of milliseconds to lock user accounts that have exceeded the max_failed_logins count. Select (3600000 for 1 hour, 86400000 for 24 hours)
+
         userInactivityLockout:
             kind: panel.input.number
             id: userInactivityLockout
@@ -1011,9 +1041,9 @@ misc:
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
 #################################################
-siteAdmin:
+adminPage:
     kind: tabs
-    name: siteAdmin
+    name: adminPage
     label: Administer XNAT
     meta:
         ${tabGroups}

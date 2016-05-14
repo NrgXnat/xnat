@@ -32,9 +32,6 @@
 
                 </div>
 
-                <%--<script src="${sessionScope.siteRoot}/scripts/lib/jquery-plugins/jquery.form.js"></script>--%>
-                <%--<script src="${sessionScope.siteRoot}/scripts/lib/yamljs/dist/yaml.js"></script>--%>
-
                 <c:import url="/xapi/siteConfig" var="siteConfig"/>
 
                 <script>
@@ -47,8 +44,8 @@
                         delete XNAT.data.siteConfig.targetSource;
 
 
-                        var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.yaml');
-                        // var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteAdmin');
+                        // var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.yaml');
+                        var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/adminPage');
 
                         $.get({
                             url: jsonUrl,

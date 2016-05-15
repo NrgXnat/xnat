@@ -270,7 +270,7 @@ userLoginsSessionControls:
             id: loginFailureMessage
             name: UI.login_failure_message
             label: Login Failure Message
-            value: || Login failed
+            value: ?? this.value || "Login failed"
             description: Text to show when a user fails to login
 
         maximumFailedLogins:
@@ -300,7 +300,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             id: inactivityBeforeLockoutSchedule
             name: inactivityBeforeLockoutSchedule
-            label: "User Inactivity Before Lockout Schedule"
+            label: User Inactivity Before Lockout Schedule
 
 passwords:
     kind: panel.form
@@ -447,7 +447,6 @@ emailServerSettings:
     action: /xapi/notifications/all
     load: # load data
         url: /xapi/siteConfig
-#        method: GET      # defaults to GET if not set
         prop: smtpServer # which root property? gets the root object if not set
 #        lookup: XNAT.data.siteConfig.smtpServer
     contentType: json
@@ -542,13 +541,13 @@ notifications:
             label: "Email Message: User Registration"
             description: "Text of message emailed to users upon registration. Link for email validation is auto-populated."
         emailMessageForgotUsernameRequest:
-            kind: panel.input.text                     # textarea
+            kind: panel.textarea                     # textarea
             id: emailMessageForgotUsernameRequest
             name: emailMessageForgotUsernameRequest
             label: "Email Message: Forgot Username Request"
             description: "Text of message emailed to users upon lost username request."
         emailMessageForgotPasswordReset:
-            kind: panel.input.text                     # textarea
+            kind: panel.textarea                     # textarea
             id: emailMessageForgotPasswordReset
             name: emailMessageForgotPasswordReset
             label: "Email Message: Password Reset"
@@ -558,7 +557,7 @@ notifications:
             id: notifyAdminUserRegistration
             name: notifyAdminUserRegistration
             label: "Notify Admin on User Registration"
-            value: true
+            value: ?? XNAT.data.siteConfig.notifyAdminUserRegistration
             description: "Whether to cc admin user on new user emails. Requires valid admin email address."
         notifyAdminPipelineEmails:
             kind: panel.input.checkbox

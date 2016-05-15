@@ -1,6 +1,7 @@
 package org.nrg.xnat.initialization;
 
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.utilities.Beans;
@@ -23,11 +24,14 @@ import java.util.Properties;
 @Configuration
 public class DatabaseConfig {
 
-    public static final String DEFAULT_DATASOURCE_URL      = "jdbc:postgresql://localhost/xnat";
-    public static final String DEFAULT_DATASOURCE_USERNAME = "xnat";
-    public static final String DEFAULT_DATASOURCE_PASSWORD = "xnat";
-    public static final String DEFAULT_DATASOURCE_CLASS    = BasicDataSource.class.getName();
-    public static final String DEFAULT_DATASOURCE_DRIVER   = Driver.class.getName();
+    public static final String DEFAULT_DATASOURCE_URL          = "jdbc:postgresql://localhost/xnat";
+    public static final String DEFAULT_DATASOURCE_USERNAME     = "xnat";
+    public static final String DEFAULT_DATASOURCE_PASSWORD     = "xnat";
+    public static final String DEFAULT_DATASOURCE_CLASS        = BasicDataSource.class.getName();
+    public static final String DEFAULT_DATASOURCE_DRIVER       = Driver.class.getName();
+    public static final String DEFAULT_DATASOURCE_INITIAL_SIZE = "20";
+    public static final String DEFAULT_DATASOURCE_MAX_TOTAL    = "40";
+    public static final String DEFAULT_DATASOURCE_MAX_IDLE     = "10";
 
     @Bean
     public DataSource dataSource() throws NrgServiceException {
@@ -64,6 +68,27 @@ public class DatabaseConfig {
                 _log.warn("No value set for the XNAT datasource class, using the default value of " + DEFAULT_DATASOURCE_CLASS);
             }
             properties.setProperty("class", DEFAULT_DATASOURCE_CLASS);
+        }
+        // If the BasicDataSource class is specified, then set some default database connection pooling parameters.
+        if (StringUtils.equals(properties.getProperty("class"), DEFAULT_DATASOURCE_CLASS)) {
+            if (!properties.containsKey("initialSize")) {
+                if (_log.isWarnEnabled()) {
+                    _log.warn("No value set for the XNAT datasource initial connection pool size, using the default value of " + DEFAULT_DATASOURCE_INITIAL_SIZE);
+                }
+                properties.setProperty("initialSize", DEFAULT_DATASOURCE_INITIAL_SIZE);
+            }
+            if (!properties.containsKey("maxTotal")) {
+                if (_log.isWarnEnabled()) {
+                    _log.warn("No value set for the XNAT datasource maximum connection pool size, using the default value of " + DEFAULT_DATASOURCE_MAX_TOTAL);
+                }
+                properties.setProperty("maxTotal", DEFAULT_DATASOURCE_MAX_TOTAL);
+            }
+            if (!properties.containsKey("maxIdle")) {
+                if (_log.isWarnEnabled()) {
+                    _log.warn("No value set for the XNAT datasource connection pool idle size, using the default value of " + DEFAULT_DATASOURCE_MAX_IDLE);
+                }
+                properties.setProperty("maxIdle", DEFAULT_DATASOURCE_MAX_IDLE);
+            }
         }
         if (!properties.containsKey("driver")) {
             if (_log.isWarnEnabled()) {

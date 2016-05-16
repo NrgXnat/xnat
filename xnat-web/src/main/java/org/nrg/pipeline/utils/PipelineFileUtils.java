@@ -92,7 +92,7 @@ public class PipelineFileUtils {
 
 	public static String getBuildDir(String project,  boolean postfixTimestamp) {
 		ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(project);
-		String buildPath = XDAT.getSiteConfigPreferences().getAdminEmail()  ;
+		String buildPath = XDAT.getSiteConfigPreferences().getBuildPath()  ;
 		if (arcProject != null) {
 			buildPath = arcProject.getPaths().getBuildpath();
 		}

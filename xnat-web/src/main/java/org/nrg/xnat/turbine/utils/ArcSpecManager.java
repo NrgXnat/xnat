@@ -239,7 +239,8 @@ public class ArcSpecManager {
         arcSpec.setEnableNewRegistrations(preferences.getUserRegistration());
 
         arcSpec.setRequireLogin(preferences.getRequireLogin());
-        if (StringUtils.isNotBlank(preferences.getAdminEmail())) {
+
+        if (StringUtils.isNotBlank(preferences.getPipelinePath())) {
             arcSpec.setProperty("globalPaths/pipelinePath", preferences.getPipelinePath());
         }
 

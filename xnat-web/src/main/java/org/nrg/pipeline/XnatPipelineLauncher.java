@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -190,7 +191,7 @@ public class XnatPipelineLauncher {
      */
 
     public boolean launch() {
-        return launch(XDAT.getSiteConfigPreferences().getPipelinePath() + "bin" + File.separator + SCHEDULE);
+        return launch(Paths.get(XDAT.getSiteConfigPreferences().getPipelinePath(), "bin", SCHEDULE).toString());
     }
 
     /*
@@ -303,7 +304,7 @@ public class XnatPipelineLauncher {
             command = "";
         }
 
-        command += XDAT.getSiteConfigPreferences().getAdminEmail() + "bin" + File.separator + "XnatPipelineLauncher";
+        command += Paths.get(XDAT.getSiteConfigPreferences().getPipelinePath(), "bin", "XnatPipelineLauncher").toString();
 
         if (System.getProperty("os.name").toUpperCase().startsWith("WINDOWS")) {
             command += ".bat";
@@ -330,7 +331,7 @@ public class XnatPipelineLauncher {
     private List<String> getPipelineConfigurationArguments() {
         List<String> arguments = new ArrayList<>();
         try {
-            String pipelinePath = new File(XDAT.getSiteConfigPreferences().getAdminEmail()).getCanonicalPath();
+            String pipelinePath = new File(XDAT.getSiteConfigPreferences().getPipelinePath()).getCanonicalPath();
             boolean requiresQuotes = pipelinePath.contains(" ");
             arguments.add("-config");
             String configPath = pipelinePath + File.separator + "pipeline.config";

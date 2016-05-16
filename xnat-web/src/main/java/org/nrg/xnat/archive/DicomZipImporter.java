@@ -32,7 +32,7 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-@ImporterHandler(handler = "DICOM-zip", allowCallsWithoutFiles = false)
+@ImporterHandler(handler = ImporterHandlerA.DICOM_ZIP_IMPORTER)
 public final class DicomZipImporter extends ImporterHandlerA {
     private final InputStream in;
     private final Object listenerControl;

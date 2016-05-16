@@ -47,18 +47,18 @@ public abstract class ImporterHandlerA  extends StatusProducer implements Callab
 
     public abstract List<String> call() throws ClientException, ServerException;
 
-    static Logger logger = Logger.getLogger(ImporterHandlerA.class);
+    private static final Logger logger = Logger.getLogger(ImporterHandlerA.class);
 
     public static final String IMPORT_HANDLER_ATTR = "import-handler";
 
-    public static String SESSION_IMPORTER="SI";
-    public static String XAR_IMPORTER="XAR";
-    public static String GRADUAL_DICOM_IMPORTER="gradual-DICOM";
-    public static String DICOM_ZIP_IMPORTER="DICOM-zip";
-    public static String BLANK_PREARCHIVE_ENTRY="blank";
+    public static final String SESSION_IMPORTER="SI";
+    public static final String XAR_IMPORTER="XAR";
+    public static final String GRADUAL_DICOM_IMPORTER="gradual-DICOM";
+    public static final String DICOM_ZIP_IMPORTER="DICOM-zip";
+    public static final String BLANK_PREARCHIVE_ENTRY="blank";
 
     static String DEFAULT_HANDLER=SESSION_IMPORTER;
-    final static Map<String,Class<? extends ImporterHandlerA>> IMPORTERS=new HashMap<String,Class<? extends ImporterHandlerA>>();
+    final static Map<String,Class<? extends ImporterHandlerA>> IMPORTERS= new HashMap<>();
 
     private static final String PROP_OBJECT_IDENTIFIER = "org.nrg.import.handler.impl";
     private static final String IMPORTER_PROPERTIES = "importer.properties";

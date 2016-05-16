@@ -27,7 +27,6 @@ import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
@@ -135,6 +134,5 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
     private static final Map<String, Integer> checked = Maps.newHashMap();
 
     @Inject
-    @Named("customAuthenticationManager")
     private XnatProviderManager _providerManager;
 }

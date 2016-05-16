@@ -18,7 +18,6 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.AuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +28,9 @@ import java.util.GregorianCalendar;
 
 public class DisableInactiveUsers implements Runnable {
 
-    public DisableInactiveUsers(final int inactivityBeforeLockout) {
+    public DisableInactiveUsers(final int inactivityBeforeLockout, final int lockoutDuration) {
         _inactivityBeforeLockout = inactivityBeforeLockout;
+        _lockoutDuration = lockoutDuration;
     }
 
     /**
@@ -62,7 +62,7 @@ public class DisableInactiveUsers implements Runnable {
                         u.setVerified("0");
                         Users.save(u, u, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.PROCESS, "Disabled due to inactivity"));
 
-                        String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), -(AuthUtils.LOCKOUT_DURATION)));
+                        String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), _lockoutDuration));
                         System.out.println("Locked out " + u.getLogin() + " user account until " + expiration);
                         AdminUtils.sendAdminEmail(u.getLogin() + " account disabled due to inactivity.", "User " + u.getLogin() + " has been automatically disabled due to inactivity.");
                     }
@@ -98,6 +98,7 @@ public class DisableInactiveUsers implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(DisableInactiveUsers.class);
 
-    private int _inactivityBeforeLockout;
+    private final int _inactivityBeforeLockout;
+    private final int _lockoutDuration;
 }
 

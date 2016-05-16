@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.Map;
 
 public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenticationProviderConfigurator {
+    public DatabaseAuthenticationProviderConfigurator() {
+        setConfiguratorId("db");
+    }
+
     @Override
     public List<AuthenticationProvider> getAuthenticationProviders(String id, String name) {
         List<AuthenticationProvider> providers = new ArrayList<>();

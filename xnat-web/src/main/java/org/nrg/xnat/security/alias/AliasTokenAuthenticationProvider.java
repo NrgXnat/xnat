@@ -33,6 +33,14 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider implements XnatAuthenticationProvider {
 
+    public AliasTokenAuthenticationProvider() {
+        this("token");
+    }
+
+    public AliasTokenAuthenticationProvider(final String name) {
+        _name = name;
+    }
+
     /**
      * Performs authentication with the same contract as {@link
      * org.springframework.security.authentication.AuthenticationManager#authenticate(org.springframework.security.core.Authentication)}.
@@ -92,10 +100,6 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
     @Override
     public String getName() {
         return StringUtils.isBlank(_name) ? getClass().toString() : _name;
-    }
-
-    public void setName(final String name) {
-        _name = name;
     }
 
     @Override
@@ -202,6 +206,6 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
 
     private XdatUserAuthService _userAuthService;
 
-    private String _name;
+    private final String _name;
     private String _providerId;
 }

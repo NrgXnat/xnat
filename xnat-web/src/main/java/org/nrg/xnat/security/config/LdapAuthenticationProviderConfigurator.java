@@ -30,6 +30,10 @@ import java.util.List;
 import java.util.Map;
 
 public class LdapAuthenticationProviderConfigurator extends AbstractAuthenticationProviderConfigurator {
+    public LdapAuthenticationProviderConfigurator() {
+        setConfiguratorId("ldap");
+    }
+
     @Override
     public List<AuthenticationProvider> getAuthenticationProviders(String id, String name) {
         throw new NotImplementedException("You must provide LDAP properties in order to configure an LDAP connection.");

@@ -1,8 +1,11 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.config.exceptions.SiteConfigurationException;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
 import org.nrg.xnat.security.DisableInactiveUsers;
 import org.nrg.xnat.security.ResetEmailRequests;
@@ -24,6 +27,7 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
 import javax.inject.Inject;
+import java.sql.SQLException;
 import java.util.List;
 
 @Configuration
@@ -31,7 +35,13 @@ import java.util.List;
 public class SchedulerConfig implements SchedulingConfigurer {
     @Bean
     public TriggerTask disableInactiveUsers() throws SiteConfigurationException {
-        return new TriggerTask(new DisableInactiveUsers(_preferences.getInactivityBeforeLockout()), new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule()));
+        try {
+            final DisableInactiveUsers task = new DisableInactiveUsers(_preferences.getInactivityBeforeLockout(), (int) SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration()));
+            return new TriggerTask(task, new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule()));
+        } catch (SQLException e) {
+            // This isn't a real thing: PGInterval doesn't actually access the database. But just to make everyone happy...
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "This really shouldn't happen.", e);
+        }
     }
 
     @Bean

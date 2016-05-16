@@ -160,7 +160,7 @@ public class PropertiesConfig {
                 // Then cool, just return that.
                 return candidate;
             } else {
-                // If it's a file, then the parent is probably a config folder, so if this is services.properties (the default) or the specific file identified by xnat.config...
+                // If it's a file, then the parent is probably a config folder, so if this is xnat-conf.properties (the default) or the specific file identified by xnat.config...
                 if (file.getName().equals(XNAT_CONF_FILE) || StringUtils.equals(candidate.toString(), environment.getProperty(JAVA_XNAT_CONFIG))) {
                     // So its parent is a config folder, QED.
                     return candidate.getParent();

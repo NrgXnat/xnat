@@ -20,7 +20,6 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.ImportResource;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
@@ -29,10 +28,8 @@ import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import javax.servlet.ServletContext;
 import javax.xml.bind.Marshaller;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.jar.Manifest;
 
 /**
  * Configuration for the XNAT root application context. This contains all of the basic infrastructure for initializing
@@ -43,8 +40,7 @@ import java.util.jar.Manifest;
  * for standard XNAT components should be added in the {@link ApplicationConfig application configuration class}.
  */
 @Configuration
-@Import({PropertiesConfig.class, DatabaseConfig.class})
-@ImportResource("WEB-INF/conf/xnat-security.xml")
+@Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class})
 public class RootConfig {
     @Bean
     public XnatAppInfo appInfo(final ServletContext context) throws IOException {

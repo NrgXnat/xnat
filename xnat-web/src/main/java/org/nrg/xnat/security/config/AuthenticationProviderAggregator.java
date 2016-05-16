@@ -4,80 +4,48 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.core.io.Resource;
 
 import java.util.*;
 
 public class AuthenticationProviderAggregator extends ArrayList<AuthenticationProvider> {
 
-    public AuthenticationProviderAggregator(List<AuthenticationProvider> standaloneProviders, Map<String, AuthenticationProviderConfigurator> configurators, Properties properties) {
-        if (properties == null) {
-            throw new IllegalArgumentException("The list of authentication providers cannot be set to null.");
-        }
-
-//        String commaDelineatedProviders = properties.getProperty("provider.providers.enabled");
-//        assert !StringUtils.isBlank(commaDelineatedProviders) : "You must specify at least one authentication provider configuration.";
-//        ArrayList<String> providerArray=new ArrayList<String>(Arrays.asList(commaDelineatedProviders.split("[\\s,]+")));
-//        HashMap<String, HashMap<String, String>> providerMap = new HashMap<>();
-//        for(String prov : providerArray){
-//            providerMap.put(prov, new HashMap<String, String>());
-//        }
-
-        ArrayList<String> providerArray=new ArrayList<String>();
-        String dbName = "Database";
-        String dbId = "localdb";
-        String dbType = "db";
+    public AuthenticationProviderAggregator(List<AuthenticationProvider> standaloneProviders, Map<String, AuthenticationProviderConfigurator> configurators) {
+        ArrayList<String> providerArray = new ArrayList<>();
+        String            dbName        = "Database";
+        String            dbId          = "localdb";
+        String            dbType        = "db";
         providerArray.add(dbType);
         HashMap<String, HashMap<String, String>> providerMap = new HashMap<>();
         providerMap.put(dbType, new HashMap<String, String>());
-        providerMap.get(dbType).put("name",dbName);
-        providerMap.get(dbType).put("id",dbId);
-        providerMap.get(dbType).put("type",dbType);
+        providerMap.get(dbType).put("name", dbName);
+        providerMap.get(dbType).put("id", dbId);
+        providerMap.get(dbType).put("type", dbType);
 
         // Populate map of properties
         try {
-            String filnameEnd = "-provider.properties";
-            final List<Resource> resources = BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/auth/**/*" + filnameEnd);
+            String               filenameEnd = "-provider.properties";
+            final List<Resource> resources   = BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/auth/**/*" + filenameEnd);
             for (final Resource resource : resources) {
                 String filename = resource.getFilename();
-                String id = filename.substring(0, (filename.length() - filnameEnd.length()));
+                String id       = filename.substring(0, (filename.length() - filenameEnd.length()));
                 providerMap.put(id, new HashMap<String, String>());
                 providerArray.add(id);
                 final Properties provider = PropertiesLoaderUtils.loadProperties(resource);
                 for (Map.Entry<Object, Object> providerProperty : provider.entrySet()) {
                     providerMap.get(id).put(providerProperty.getKey().toString(), providerProperty.getValue().toString());
                 }
-
             }
-        }catch(Exception e){
-            _log.error("",e);
+        } catch (Exception e) {
+            _log.error("", e);
         }
-//
-//        for(Map.Entry<Object, Object> entry : properties.entrySet()) {
-//            String key = (String) entry.getKey();
-//            StringTokenizer st = new StringTokenizer(key, ".");
-//            String provider = st.nextToken();
-//            if (provider.equals("provider")) {
-//                String name = st.nextToken();
-//                if(providerMap.containsKey(name)) {
-//                    StringBuilder providerProperty = new StringBuilder();
-//                    while (st.hasMoreTokens()) {
-//                        if (providerProperty.length() > 0) {
-//                            providerProperty.append(".");
-//                        }
-//                        providerProperty.append(st.nextToken());
-//                    }
-//                    providerMap.get(name).put(providerProperty.toString(), (String) entry.getValue());
-//                }
-//            }
-//        }
 
         // Create providers
-        for(String prov: providerArray){
+        for (String prov : providerArray) {
             String name = providerMap.get(prov).get("name");
-            String id = providerMap.get(prov).get("id");
+            String id   = providerMap.get(prov).get("id");
             String type = providerMap.get(prov).get("type");
 
             assert !StringUtils.isBlank(name) : "You must provide a name for all authentication provider configurations";

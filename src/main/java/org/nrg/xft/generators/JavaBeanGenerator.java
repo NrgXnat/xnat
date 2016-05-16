@@ -1476,8 +1476,8 @@ public class JavaBeanGenerator {
         return XftStringUtils.FormatStringToClassName(e.getFormattedName()) + "I";
     }
     /**
-     * @param e
-     * @return
+     * @param s    The file name.
+     * @return The formatted field name.
      */
     private String formatFieldName(String s)
     {
@@ -1551,7 +1551,7 @@ public class JavaBeanGenerator {
         generator.generateJavaFiles(al, name, javalocation, packag, propsLocation);
     }
     
-    public void generateJavaFiles(List<String> elementList, String name, String javalocation, String packag, String propsLocation) throws Exception
+    public void generateJavaFiles(List<String> elementList, String name, String javalocation, String rootPackage, String propsLocation) throws Exception
     {
         Hashtable<String,String> elements =new Hashtable<String,String>();
     	for (String s: elementList)
@@ -1559,21 +1559,20 @@ public class JavaBeanGenerator {
             GenericWrapperElement e = GenericWrapperElement.GetElement(s);
             if (e.getAddin().equalsIgnoreCase(""))
             {
-                elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getLocalXMLName(), packag + ".bean." +this.getFormattedBean(e));
+                elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getLocalXMLName(), rootPackage + ".bean." + this.getFormattedBean(e));
                 if (!e.getProperName().equals(e.getFullXMLName()))
                 {
-                    elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getProperName(), packag + ".bean." +this.getFormattedBean(e));
+                    elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getProperName(), rootPackage + ".bean." + this.getFormattedBean(e));
                 }
                 this.generateJavaBeanFile(e,javalocation);
                 this.generateJavaInterface(e,javalocation);
             }
         }
                 
-        StringBuffer sb = new StringBuffer();
-        String packageName = packag + ".bean";
-        for (Map.Entry<String, String> entry : elements.entrySet())
-        {
-            sb.append("" + entry.getKey() + "=" + entry.getValue()).append("\n");
+        StringBuilder sb          = new StringBuilder();
+        String        packageName = rootPackage + ".bean";
+        for (Map.Entry<String, String> entry : elements.entrySet()) {
+            sb.append("").append(entry.getKey().replace(":", "\\:")).append("=").append(entry.getValue()).append("\n");
         }
           
         outputToFile(propsLocation,sb.toString(),name+"-bean-definition.properties",packageName);

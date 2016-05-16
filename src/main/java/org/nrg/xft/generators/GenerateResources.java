@@ -195,7 +195,7 @@ public class GenerateResources {
 					}
 					
 
-					beanGenerator.generateJavaFiles(model.getSchema().getSortedElementNames(),name, beanDir, PACKAGE, beanPropsDir);
+					beanGenerator.generateJavaFiles(model.getSchema().getSortedElementNames(), name + "-" + model.getSchemaAbbr(), beanDir, PACKAGE, beanPropsDir);
 				}
 			}
 

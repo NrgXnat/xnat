@@ -52,12 +52,12 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
 
-@ImporterHandler(handler = "XAR", allowCallsWithoutFiles = false)
+@ImporterHandler(handler = ImporterHandlerA.XAR_IMPORTER)
 public class XarImporter extends ImporterHandlerA implements Callable<List<String>> {
 
-	static final String[] zipExtensions={".zip",".jar",".rar",".ear",".gar",".xar"};
+	private static final String[] zipExtensions={".zip",".jar",".rar",".ear",".gar",".xar"};
 
-	static Logger logger = Logger.getLogger(XarImporter.class);
+	private static final Logger logger = Logger.getLogger(XarImporter.class);
 
 	private final FileWriterWrapperI fw;
 	private final UserI user;
@@ -66,19 +66,19 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 	
 	/**
 	 * 
-	 * @param listenerControl
-	 * @param u
-	 * @param session
-	 * @param overwrite:   'append' means overwrite, but preserve un-modified content (don't delete anything)
-	 *                      'delete' means delete the pre-existing content.
-	 * @param additionalValues: should include project, subject_ID and label (if session is null)
+	 * @param listenerControl     The listener.
+	 * @param u                   The user.
+     * @param fw                  The file writer wrapper.
+     * @param params              Parameters to the operation, including overwrite, 'append' means overwrite, but
+     *                            preserve un-modified content (don't delete anything), 'delete' means delete the
+     *                            pre-existing content. Should include project, subject_ID and label if session is null.
 	 */
 	public XarImporter(final Object listenerControl, final UserI u, final FileWriterWrapperI fw, final Map<String,Object> params) {
 		super(listenerControl, u, fw, params);
 		this.user=u;
 		this.fw=fw;
 		this.params=params;
-		this.urlList=new ArrayList<String>();
+		this.urlList= new ArrayList<>();
 	}
 	
 	//@SuppressWarnings("serial")

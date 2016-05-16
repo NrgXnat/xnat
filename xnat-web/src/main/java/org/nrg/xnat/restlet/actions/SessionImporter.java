@@ -46,7 +46,7 @@ import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.restlet.data.Status;
 import org.xml.sax.SAXException;
 
-@ImporterHandler(handler = "SI", allowCallsWithoutFiles = false)
+@ImporterHandler(handler = ImporterHandlerA.SESSION_IMPORTER)
 public class SessionImporter extends ImporterHandlerA implements Callable<List<String>> {
 
 	static Logger logger = Logger.getLogger(SessionImporter.class);

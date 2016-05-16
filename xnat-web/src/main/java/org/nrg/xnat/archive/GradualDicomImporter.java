@@ -64,7 +64,7 @@ import java.util.concurrent.Callable;
 
 @SuppressWarnings("ThrowFromFinallyBlock")
 @Service
-@ImporterHandler(handler = "DICOM-zip", allowCallsWithoutFiles = false)
+@ImporterHandler(handler = ImporterHandlerA.GRADUAL_DICOM_IMPORTER)
 public class GradualDicomImporter extends ImporterHandlerA {
     public static final String SENDER_AE_TITLE_PARAM = "Sender-AE-Title";
     public static final String SENDER_ID_PARAM = "Sender-ID";

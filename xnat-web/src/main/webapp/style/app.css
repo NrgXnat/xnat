@@ -988,6 +988,7 @@ body input[type="reset"] {
 }
 
 /* style for button hover */
+.btn,
 .btn1:hover,
 .btn2:hover,
 body button:hover,
@@ -1001,6 +1002,7 @@ body input[type="reset"]:hover {
 .btn1,
 .btn.primary,
 .btn.submit,
+.btn.save,
 body input.btn1,
 body input.btn1[type="button"],
 body input.btn1[type="submit"] {
@@ -1012,9 +1014,10 @@ body input.btn1[type="submit"] {
 .btn1:hover,
 .btn.primary:hover,
 .btn.submit:hover,
+.btn.save:hover,
 body input.btn1:hover,
 body input.btn1[type="button"]:hover,
-body input.btn1[type="submit"]:hover {
+body [type="submit"]:hover {
     background: #096BB7;
 }
 

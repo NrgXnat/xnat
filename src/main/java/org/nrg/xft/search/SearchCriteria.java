@@ -286,7 +286,7 @@ public class SearchCriteria implements SQLClause {
         String                rootElement = XftStringUtils.GetRootElementName(field);
         GenericWrapperElement root        = GenericWrapperElement.GetElement(rootElement);
         this.setElementName(root.getFullXMLName());
-        field = root.getFullXMLName() + xmlPath.substring(xmlPath.indexOf(XFT.PATH_SEPERATOR));
+        field = root.getFullXMLName() + xmlPath.substring(xmlPath.indexOf(XFT.PATH_SEPARATOR));
         GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(field);
 
         String temp = ViewManager.GetViewColumnName(root, field);
@@ -308,7 +308,7 @@ public class SearchCriteria implements SQLClause {
 
     public String getXMLPath() {
         if (xmlPath.equalsIgnoreCase("")) {
-            xmlPath = getElementName() + XFT.PATH_SEPERATOR + getField_name();
+            xmlPath = getElementName() + XFT.PATH_SEPARATOR + getField_name();
         }
         return xmlPath;
     }

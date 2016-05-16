@@ -304,7 +304,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     logger.info("JOINING: " + localSyntax + " to " + xmlPath);
                     SchemaFieldI gwf;
                     SchemaElementI extension;
-                    if (localSyntax.indexOf(XFT.PATH_SEPERATOR)==-1)
+                    if (localSyntax.indexOf(XFT.PATH_SEPARATOR) == -1)
                     {
                         extension = rootElement;
 

@@ -71,7 +71,7 @@ public class GetIdentifiers {
 			String svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 			if (!svalidElementName.equals(sfieldElementName))
 			{
-			    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
+			    sfield = svalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(sfield);
 			}
 			String comparison = "=";
 			if (_comparison!=null)
@@ -99,7 +99,7 @@ public class GetIdentifiers {
 				svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 				if (!svalidElementName.equals(sfieldElementName))
 				{
-				    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
+				    sfield = svalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(sfield);
 				}
 			al =  FieldValues.GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,null);
 			}
@@ -155,7 +155,7 @@ public class GetIdentifiers {
 			String svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 			if (!svalidElementName.equals(sfieldElementName))
 			{
-			    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
+			    sfield = svalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(sfield);
 			}
 			String comparison = "=";
 			if (_comparison!=null)
@@ -181,7 +181,7 @@ public class GetIdentifiers {
 				svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 				if (!svalidElementName.equals(sfieldElementName))
 				{
-				    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
+				    sfield = svalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(sfield);
 				}
 			al =  FieldValues.GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,null);
 			}

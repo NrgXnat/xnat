@@ -140,7 +140,7 @@ public class ViewManager {
 				if (level.equalsIgnoreCase(ViewManager.ALL))
 				{
 					GenericWrapperElement foreign = GenericWrapperElement.GetElement(e.getFullXMLName() + "_history");
-					Iterator refFields = ViewManager.GetDirectFields(foreign,foreign.getSQLName(),xmlPath + XFT.PATH_SEPERATOR+"history",false,allowMultiples).iterator();
+					Iterator refFields = ViewManager.GetDirectFields(foreign, foreign.getSQLName(), xmlPath + XFT.PATH_SEPARATOR + "history", false, allowMultiples).iterator();
 					while (refFields.hasNext())
 					{
 						String[] refField = (String[])refFields.next();
@@ -211,7 +211,7 @@ public class ViewManager {
 						}else{
 							array[3]= e.getSQLName();
 						}
-						array[5] = xmlPath + XFT.PATH_SEPERATOR + (String) ref.get(0);
+						array[5] = xmlPath + XFT.PATH_SEPARATOR + (String) ref.get(0);
 						
 						if (e.getAddin().equalsIgnoreCase("meta") && !isRoot)
 						{
@@ -402,7 +402,7 @@ public class ViewManager {
 										ArrayList ref = (ArrayList) refIter.next();
 										GenericWrapperField foreignKey =
 											(GenericWrapperField) ref.get(1);
-										String temp = ViewManager.GetViewColumnName(foreign,foreign.getFullXMLName() + XFT.PATH_SEPERATOR + (String)ref.get(0));
+										String temp = ViewManager.GetViewColumnName(foreign, foreign.getFullXMLName() + XFT.PATH_SEPARATOR + (String)ref.get(0));
 										
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(ViewManager.GetViewName(foreign,level,allowMultiples,false));
@@ -587,7 +587,7 @@ public class ViewManager {
 									    if (refField[0].equalsIgnoreCase(e.getSQLName()))
 									    {
 									        duplicatedField = true;
-									        circularRefs.add(refXMLPath.substring(0,refXMLPath.lastIndexOf(XFT.PATH_SEPERATOR)));
+									        circularRefs.add(refXMLPath.substring(0,refXMLPath.lastIndexOf(XFT.PATH_SEPARATOR)));
 									    }
 									}
 									

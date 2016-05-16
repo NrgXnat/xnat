@@ -27,7 +27,6 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.AuthUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -282,7 +281,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     }
 
     private Integer getMaxLoginAttemptsForQuery() {
-        Integer maxFailedLoginAttempts = AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS;
+        Integer maxFailedLoginAttempts = _preferences.getMaxFailedLogins();
         if (maxFailedLoginAttempts <= -1) {
             maxFailedLoginAttempts = Integer.MAX_VALUE;
         }

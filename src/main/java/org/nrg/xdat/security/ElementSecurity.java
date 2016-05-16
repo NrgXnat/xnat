@@ -848,7 +848,7 @@ public class ElementSecurity extends ItemWrapper {
 
         for (String fieldName : getPrimarySecurityFields()) {
             if (!fieldName.startsWith(this.getElementName())) {
-                fieldName = this.getElementName() + XFT.PATH_SEPERATOR + fieldName;
+                fieldName = this.getElementName() + XFT.PATH_SEPARATOR + fieldName;
             }
 
             PermissionItem pi = new PermissionItem();
@@ -874,7 +874,7 @@ public class ElementSecurity extends ItemWrapper {
 
             for (String fieldName : getPrimarySecurityFields()) {
                 if (!fieldName.startsWith(this.getElementName())) {
-                    fieldName = this.getElementName() + XFT.PATH_SEPERATOR + fieldName;
+                    fieldName = this.getElementName() + XFT.PATH_SEPARATOR + fieldName;
                 }
                 final GenericWrapperField field = GenericWrapperElement.GetFieldForXMLPath(fieldName);
 
@@ -1105,7 +1105,7 @@ public class ElementSecurity extends ItemWrapper {
                                         Iterator             iter = sup.getKeyRelations().iterator();
                                         while (iter.hasNext()) {
                                             XFTRelationSpecification spec       = (XFTRelationSpecification) iter.next();
-                                            String                   newXMLPath = s.substring(0, s.lastIndexOf(XFT.PATH_SEPERATOR) + 1) + spec.getLocalCol();
+                                            String                   newXMLPath = s.substring(0, s.lastIndexOf(XFT.PATH_SEPARATOR) + 1) + spec.getLocalCol();
                                             temp = item.getProperty(newXMLPath);
                                             if (temp != null) {
                                                 break;
@@ -1295,7 +1295,7 @@ public class ElementSecurity extends ItemWrapper {
                         Iterator             iter = sup.getKeyRelations().iterator();
                         while (iter.hasNext()) {
                             XFTRelationSpecification spec = (XFTRelationSpecification) iter.next();
-                            s = s.substring(0, s.lastIndexOf(XFT.PATH_SEPERATOR) + 1) + spec.getLocalCol();
+                            s = s.substring(0, s.lastIndexOf(XFT.PATH_SEPARATOR) + 1) + spec.getLocalCol();
                             break;
                         }
                     }

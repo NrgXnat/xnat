@@ -229,7 +229,7 @@ public class XftStringUtils {
 		sb.append(name);
 
 
-		name = sb.toString().replace(XFT.PATH_SEPERATOR,'_');
+		name = sb.toString().replace(XFT.PATH_SEPARATOR, '_');
 		return name;
 	}
 
@@ -630,17 +630,17 @@ public class XftStringUtils {
 
 	public static String StandardizeXMLPath(String fullString)
 	{
-	    if (XFT.PATH_SEPERATOR=='.')
+	    if (XFT.PATH_SEPARATOR == '.')
 	    {
-	        fullString = StringUtils.replaceChars(fullString, '/', XFT.PATH_SEPERATOR);
+	        fullString = StringUtils.replaceChars(fullString, '/', XFT.PATH_SEPARATOR);
 	    }else{
-	        fullString = StringUtils.replaceChars(fullString, '.', XFT.PATH_SEPERATOR);
+	        fullString = StringUtils.replaceChars(fullString, '.', XFT.PATH_SEPARATOR);
 	    }
         fullString = StringUtils.replace(fullString, "[@", "[*");
-        fullString = StringUtils.replaceChars(fullString, '@', XFT.PATH_SEPERATOR);
+        fullString = StringUtils.replaceChars(fullString, '@', XFT.PATH_SEPARATOR);
         fullString = StringUtils.replace(fullString, "[*", "[@");
 
-        while (fullString.startsWith(String.valueOf(XFT.PATH_SEPERATOR)))
+        while (fullString.startsWith(String.valueOf(XFT.PATH_SEPARATOR)))
         {
             fullString = fullString.substring(1);
         }

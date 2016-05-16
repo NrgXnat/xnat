@@ -1837,9 +1837,9 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 				if (f.isReference())
 				{
 					GenericWrapperElement ref = (GenericWrapperElement)f.getReferenceElement().getGenericXFTElement();
-					al.addAll(ref.getAllFieldsWXMLPath(header +XFT.PATH_SEPERATOR + f.getName()));
+					al.addAll(ref.getAllFieldsWXMLPath(header + XFT.PATH_SEPARATOR + f.getName()));
 				}else{
-					al.addAll(f.getAllFieldsWXMLPath(header + XFT.PATH_SEPERATOR + f.getName()));
+					al.addAll(f.getAllFieldsWXMLPath(header + XFT.PATH_SEPARATOR + f.getName()));
 				}
 			}
 		}
@@ -1958,13 +1958,13 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 //			return getName();
 //		}else{
 //			GenericWrapperField f = (GenericWrapperField)GenericWrapperFactory.GetInstance().wrapField((XFTField)p);
-//			return f.getDotSyntaxName() + XFT.PATH_SEPERATOR + getName();
+//			return f.getDotSyntaxName() + XFT.PATH_SEPARATOR + getName();
 //		}
 //	}
 		
 	public String getXMLPathString(String elementName)
 	{
-	    return elementName + XFT.PATH_SEPERATOR + getXPATH();
+	    return elementName + XFT.PATH_SEPARATOR + getXPATH();
 	}
 	
 	public String getXMLPathString()

@@ -39,8 +39,8 @@ public class ItemPKEquality extends ItemEqualityA implements ItemEqualityI{
 			boolean match = true;
 			for(Map.Entry<String,Object> entry:pks.entrySet()){
 				final String key = entry.getKey();
-				final Object newItemKey = newI.getProperty(newI.getXSIType() + XFT.PATH_SEPERATOR + key);
-				final Object oldItemKey = oldI.getProperty(oldI.getXSIType() + XFT.PATH_SEPERATOR + key);
+				final Object newItemKey = newI.getProperty(newI.getXSIType() + XFT.PATH_SEPARATOR + key);
+				final Object oldItemKey = oldI.getProperty(oldI.getXSIType() + XFT.PATH_SEPARATOR + key);
 				if (oldItemKey == null)
 				{
 				    throw new NullPointerException("NULL PRIMARY KEY");

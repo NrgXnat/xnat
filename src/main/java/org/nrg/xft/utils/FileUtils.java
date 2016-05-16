@@ -1043,7 +1043,7 @@ public  class FileUtils
     	try {
     		rootU=new URI(root);
 		} catch (URISyntaxException e) {
-			logger.error("Archive Root Path is not a valid URI",e);
+			logger.error("The archive path is not a valid URI: " + root, e);
 			return;
 		}
 		
@@ -1076,7 +1076,7 @@ public  class FileUtils
 			}
 			
 			final URI rootU=root.normalize();
-			if(u!=null && rootU.relativize(u).equals(u)){
+			if(rootU.relativize(u).equals(u)){
 				throw new InvalidValueException(message);
 			}
 		}
@@ -1088,7 +1088,7 @@ public  class FileUtils
 		if(s.exists())
 			try {
 				org.apache.commons.io.FileUtils.deleteDirectory(s);
-			} catch (IOException e) {
+			} catch (IOException ignored) {
 			}
 	}
 

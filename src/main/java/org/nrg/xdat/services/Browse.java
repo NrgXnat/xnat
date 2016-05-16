@@ -76,8 +76,8 @@ public class Browse {
                 qo.addField(pk);
             }
             
-            String insert_date = elementName + XFT.PATH_SEPERATOR + "meta" + XFT.PATH_SEPERATOR + "insert_date";
-            String mod_date = elementName + XFT.PATH_SEPERATOR + "meta" + XFT.PATH_SEPERATOR + "last_modified";
+            String insert_date = elementName + XFT.PATH_SEPARATOR + "meta" + XFT.PATH_SEPARATOR + "insert_date";
+            String mod_date = elementName + XFT.PATH_SEPARATOR + "meta" + XFT.PATH_SEPARATOR + "last_modified";
             qo.addField(insert_date);
             qo.addField(mod_date); 
 			
@@ -167,8 +167,8 @@ public class Browse {
                 qo.addField(pk);
             }
             
-            String insert_date = elementName + XFT.PATH_SEPERATOR + "meta" + XFT.PATH_SEPERATOR + "insert_date";
-            String mod_date = elementName + XFT.PATH_SEPERATOR + "meta" + XFT.PATH_SEPERATOR + "last_modified";
+            String insert_date = elementName + XFT.PATH_SEPARATOR + "meta" + XFT.PATH_SEPARATOR + "insert_date";
+            String mod_date = elementName + XFT.PATH_SEPARATOR + "meta" + XFT.PATH_SEPARATOR + "last_modified";
             qo.addField(insert_date);
             qo.addField(mod_date); 
 			

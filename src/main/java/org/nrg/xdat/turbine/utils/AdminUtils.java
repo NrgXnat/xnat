@@ -28,7 +28,6 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.AuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +62,8 @@ public class AdminUtils {
 			try {
 				login_failure_message=XDAT.getSiteConfigurationProperty("UI.login_failure_message", "Login attempt failed. Please try again.");
                 if (!StringUtils.isBlank(login_failure_message) && login_failure_message.contains("%d")) {
-                    if (AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS > 0) {
-                        login_failure_message = String.format(login_failure_message, AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS);
+                    if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
+                        login_failure_message = String.format(login_failure_message, XDAT.getSiteConfigPreferences().getMaxFailedLogins());
                     } else {
                         logger.warn("Found login error message that contained a %d format placeholder, but the max failed login attempts is zero or less. Using the default login failure message instead.");
                         login_failure_message = "Login attempt failed. Please try again.";

@@ -251,7 +251,7 @@ public class SchemaElement implements SchemaElementI {
 				df.generatedFor=s;
 				DisplayFieldElement dfe = new DisplayFieldElement();
 				dfe.setName("Field1");
-				dfe.setSchemaElementName(s + XFT.PATH_SEPERATOR+ pk.getName());
+				dfe.setSchemaElementName(s + XFT.PATH_SEPARATOR + pk.getName());
 				df.addDisplayFieldElement(dfe);
 				try {
 					ed.addDisplayFieldWException(df);
@@ -305,7 +305,7 @@ public class SchemaElement implements SchemaElementI {
 		 	{
 		 		GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
 		 		GenericWrapperField pk = foreign.getAllPrimaryKeys().get(0);
-		 		xmlPath += XFT.PATH_SEPERATOR+ pk.getName();
+		 		xmlPath += XFT.PATH_SEPARATOR + pk.getName();
 		 	}
 		}
 		String localName=f.getXMLPathString(f.getParentElement().getFullXMLName());
@@ -400,7 +400,7 @@ public class SchemaElement implements SchemaElementI {
 	    {
 			for (final Object anAl : al) {
 				String s     = (String) anAl;
-				int    count = XftStringUtils.CountStringOccurrences(s, String.valueOf(XFT.PATH_SEPERATOR));
+				int    count = XftStringUtils.CountStringOccurrences(s, String.valueOf(XFT.PATH_SEPARATOR));
 				if (count == 0) {
 					return this.getFullXMLName() + "/" + s;
 				} else {
@@ -478,9 +478,9 @@ public class SchemaElement implements SchemaElementI {
                 s = XftStringUtils.StandardizeXMLPath(s);
                 int dotCounter = 0;
                 int lastIndex = 0;
-                while (s.indexOf(XFT.PATH_SEPERATOR,lastIndex + 1)!=-1)
+                while (s.indexOf(XFT.PATH_SEPARATOR, lastIndex + 1) != -1)
                 {
-                    lastIndex = s.indexOf(XFT.PATH_SEPERATOR,lastIndex + 1);
+                    lastIndex = s.indexOf(XFT.PATH_SEPARATOR, lastIndex + 1);
                     if (dotCounter != 0)
                     {
 	                    String xmlPath = s.substring(0,lastIndex);
@@ -543,7 +543,7 @@ public class SchemaElement implements SchemaElementI {
 
                 if (!ignoreBool)
                 {
-                    if (! s.endsWith(XFT.PATH_SEPERATOR +"extension") && ! s.endsWith("_info"))
+                    if (! s.endsWith(XFT.PATH_SEPARATOR + "extension") && ! s.endsWith("_info"))
                     {
                         String compact = GenericWrapperElement.GetCompactXMLPath(s);
                         if (compact!=null && !contains.contains(compact.toLowerCase()))

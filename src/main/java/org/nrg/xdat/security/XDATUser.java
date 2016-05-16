@@ -12,7 +12,6 @@ package org.nrg.xdat.security;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -89,7 +88,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 			SchemaElementI e = SchemaElement.GetElement(USER_ELEMENT);
 
 			ItemSearch search = new ItemSearch(null, e.getGenericXFTElement());
-			search.addCriteria(USER_ELEMENT + XFT.PATH_SEPERATOR + "login", login);
+			search.addCriteria(USER_ELEMENT + XFT.PATH_SEPARATOR + "login", login);
 			search.setLevel(ViewManager.ACTIVE);
 			ArrayList found = search.exec(true).items();
 

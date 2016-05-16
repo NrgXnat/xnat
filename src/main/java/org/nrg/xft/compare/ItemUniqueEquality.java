@@ -84,11 +84,11 @@ public class ItemUniqueEquality extends ItemEqualityA implements ItemEqualityI {
                         for (final List<Object> field:fields)
                         {
                             try {
-                            	final Object o = newI.getProperty(newI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPERATOR + (String)field.get(0));
+                            	final Object o = newI.getProperty(newI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + (String)field.get(0));
 
                                 if (o!= null)
                                 {
-                                	final Object o2 = oldI.getProperty(oldI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPERATOR + (String)field.get(0));
+                                	final Object o2 = oldI.getProperty(oldI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + (String)field.get(0));
                                     if (o2!= null)
                                     {
                                     	final Object format1 = DBAction.ValueParser(o,((GenericWrapperField)field.get(1)).getXMLType().getLocalType(),true);

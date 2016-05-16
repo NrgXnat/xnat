@@ -281,7 +281,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                     GenericWrapperElement e = currentItem.getGenericSchemaElement();
                     GenericWrapperField f=null;
                     try {
-                        f = GenericWrapperElement.GetFieldForXMLPath(e.getXSIType() + XFT.PATH_SEPERATOR + current_header);
+                        f = GenericWrapperElement.GetFieldForXMLPath(e.getXSIType() + XFT.PATH_SEPARATOR + current_header);
                     } catch (FieldNotFoundException e3) {
                         logger.error("",e3);
 //                      NOT A REFERENCE
@@ -295,7 +295,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                                 if (! value.equalsIgnoreCase(""))
                                 {
                                     try {
-                                        currentItem.setProperty(current_header + XFT.PATH_SEPERATOR + local,value,false);
+                                        currentItem.setProperty(current_header + XFT.PATH_SEPARATOR + local, value, false);
                                     } catch (FieldNotFoundException e1) {
                                         throw new SAXException("Invalid attribute '" + local +"' of '" + currentItem.getXSIType() + "/" + current_header + "'");
                                     } catch (InvalidValueException e1) {
@@ -318,7 +318,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                                 if (! value.equalsIgnoreCase(""))
                                 {
                                     try {
-                                        currentItem.setProperty(current_header + XFT.PATH_SEPERATOR + local,value,false);
+                                        currentItem.setProperty(current_header + XFT.PATH_SEPARATOR + local, value, false);
                                     } catch (FieldNotFoundException e1) {
                                         throw new SAXException("Invalid attribute '" + local +"' of '" + currentItem.getXSIType() + "/" + current_header + "'");
                                     } catch (InvalidValueException e1) {
@@ -430,7 +430,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                                 if (! value.equalsIgnoreCase(""))
                                 {
                                     try {
-                                        currentItem.setProperty(current_header + XFT.PATH_SEPERATOR + local,value,false);
+                                        currentItem.setProperty(current_header + XFT.PATH_SEPARATOR + local, value, false);
                                     } catch (FieldNotFoundException e1) {
                                         throw new SAXException("Invalid attribute '" + local +"' of '" + currentItem.getXSIType() + "/" + current_header + "'");
                                     } catch (InvalidValueException e1) {
@@ -573,14 +573,14 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
             {
                 header += s;
             }else{
-                header += org.nrg.xft.XFT.PATH_SEPERATOR + s;
+                header += org.nrg.xft.XFT.PATH_SEPARATOR + s;
             }
         }
         
         public void removeHeader()
         {
-            if(header.indexOf(org.nrg.xft.XFT.PATH_SEPERATOR )!=-1){
-                header = header.substring(0,header.lastIndexOf(org.nrg.xft.XFT.PATH_SEPERATOR ));
+            if(header.indexOf(org.nrg.xft.XFT.PATH_SEPARATOR) != -1){
+                header = header.substring(0,header.lastIndexOf(org.nrg.xft.XFT.PATH_SEPARATOR));
             }else{
                 header ="";
             }
@@ -595,7 +595,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
         }
         
         public String toString(){
-            return this.getItem().getXSIType() + org.nrg.xft.XFT.PATH_SEPERATOR + header + " (" + item.getXSIType() + ")";
+            return this.getItem().getXSIType() + org.nrg.xft.XFT.PATH_SEPARATOR + header + " (" + item.getXSIType() + ")";
         }
         
         public boolean getIsInlineRepeater()

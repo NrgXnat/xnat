@@ -176,7 +176,7 @@ public class XFTItemDBLoader {
 					nullKey = true;
 					break;
 				} else {
-					search.addCriteria(foreign.getFullXMLName() + XFT.PATH_SEPERATOR + foreignPath, localValue);
+					search.addCriteria(foreign.getFullXMLName() + XFT.PATH_SEPARATOR + foreignPath, localValue);
 				}
 			}
 

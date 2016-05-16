@@ -66,7 +66,7 @@ public class FieldValues {
 			String rvalidElementName = XFTTool.GetValidElementName(rfieldElementName);
 			if (!rvalidElementName.equals(rfieldElementName))
 			{
-			    rfield = rvalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(rfield);
+			    rfield = rvalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(rfield);
 			}
 			String sfield = (String)_field;
 			sfield = XftStringUtils.StandardizeXMLPath(sfield);
@@ -74,7 +74,7 @@ public class FieldValues {
 			String svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 			if (!svalidElementName.equals(sfieldElementName))
 			{
-			    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
+			    sfield = svalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(sfield);
 			}
 			
 			String comparison = "=";
@@ -101,7 +101,7 @@ public class FieldValues {
 				svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 				if (!svalidElementName.equals(sfieldElementName))
 				{
-				    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
+				    sfield = svalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(sfield);
 				}
 			al =  GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,_order);
 			}
@@ -167,7 +167,7 @@ public class FieldValues {
 			String rvalidElementName = XFTTool.GetValidElementName(rfieldElementName);
 			if (!rvalidElementName.equals(rfieldElementName))
 			{
-			    rfield = rvalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(rfield);
+			    rfield = rvalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(rfield);
 			}
 			String sfield = (String)_field;
 			sfield = XftStringUtils.StandardizeXMLPath(sfield);
@@ -175,7 +175,7 @@ public class FieldValues {
 			String svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 			if (!svalidElementName.equals(sfieldElementName))
 			{
-			    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
+			    sfield = svalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(sfield);
 			}
 			
 			String comparison = "=";
@@ -201,7 +201,7 @@ public class FieldValues {
 				svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 				if (!svalidElementName.equals(sfieldElementName))
 				{
-				    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
+				    sfield = svalidElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(sfield);
 				}
 			al =  GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,_order);
 			}

@@ -1,5 +1,6 @@
 package org.nrg.xdat.preferences;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
@@ -9,14 +10,17 @@ import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
 import org.nrg.xdat.security.services.RoleServiceI;
+import org.postgresql.util.PGInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 @XmlRootElement
 @NrgPreferenceBean(toolId = SiteConfigPreferences.SITE_CONFIG_TOOL_ID,
                    toolName = "XNAT Site Preferences",
@@ -568,6 +572,32 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @NrgPreference(defaultValue = "any", property = "security.channel")
+    public String getSecurityChannel() {
+        return getValue("security.channel");
+    }
+
+    public void setSecurityChannel(final String channel) {
+        try {
+            set(channel, "security.channel");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'security.channel': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "1000", property = "sessions.concurrent_max")
+    public int getConcurrentMaxSessions() {
+        return getIntegerValue("sessions.concurrent_max");
+    }
+
+    public void setConcurrentMaxSessions(final int concurrentMaxSessions) {
+        try {
+            setIntegerValue(concurrentMaxSessions, "sessions.concurrent_max");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'sessions.concurrent_max': something is very wrong here.", e);
+        }
+    }
+    
     @NrgPreference(defaultValue = "/Index.vm")
     public String getSiteHomeLayout() {
         return getValue("siteHomeLayout");
@@ -578,6 +608,45 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
             set(siteHomeLayout, "siteHomeLayout");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'siteHomeLayout': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "0")
+    public int getSiteWideAlertStatus() {
+        return getIntegerValue("siteWideAlertStatus");
+    }
+
+    public void setSiteWideAlertStatus(final int siteWideAlertStatus) {
+        try {
+            setIntegerValue(siteWideAlertStatus, "siteWideAlertStatus");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'siteWideAlertStatus': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "message")
+    public String getSiteWideAlertType() {
+        return getValue("siteWideAlertType");
+    }
+
+    public void setSiteWideAlertType(final String siteWideAlertType) {
+        try {
+            set(siteWideAlertType, "siteWideAlertType");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'siteWideAlertType': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference
+    public String getSiteWideAlertMessage() {
+        return getValue("siteWideAlertMessage");
+    }
+
+    public void setSiteWideAlertMessage(final String siteWideAlertMessage) {
+        try {
+            set(siteWideAlertMessage, "siteWideAlertMessage");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'siteWideAlertMessage': something is very wrong here.", e);
         }
     }
 
@@ -599,7 +668,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         return getBooleanValue("UI.allow-advanced-search");
     }
 
-    public void setuiAllowAdvancedSearch(final boolean uiAllowAdvancedSearch) {
+    public void setUiAllowAdvancedSearch(final boolean uiAllowAdvancedSearch) {
         try {
             setBooleanValue(uiAllowAdvancedSearch, "UI.allow-advanced-search");
         } catch (InvalidPreferenceName e) {
@@ -725,7 +794,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "Your login attempt failed because the username and password combination you provided was invalid. After %d failed login attempts, your user account will be locked. If you believe your account is currently locked, you can:<ul><li>Unlock it by resetting your password</li><li>Wait one hour for it to unlock automatically</li></ul>", property = "UI.login_failure_message")
-    public String getUiLogin_failure_message() {
+    public String getUiLoginFailureMessage() {
         return getValue("UI.login_failure_message");
     }
 
@@ -841,6 +910,19 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @NrgPreference(defaultValue = "5")
+    public int getMaxFailedLogins() {
+        return getIntegerValue("maxFailedLogins");
+    }
+
+    public void setMaxFailedLogins(final int maxFailedLogins) {
+        try {
+            setIntegerValue(maxFailedLogins, "maxFailedLogins");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'maxFailedLogins': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "1 day")
     public String getMaxFailedLoginsLockoutDuration() {
         return getValue("maxFailedLoginsLockoutDuration");
@@ -853,8 +935,6 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
             _log.error("Invalid preference name 'maxFailedLoginsLockoutDuration': something is very wrong here.", e);
         }
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(SiteConfigPreferences.class);
 
     @NrgPreference(defaultValue = "31556926")
     public int getInactivityBeforeLockout() {
@@ -920,9 +1000,6 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
             _log.error("Invalid preference name 'aliasTokenTimeout': something is very wrong here.", e);
         }
     }
-    private static final String STR_REQUIRE_EVENT_NAME = "audit.require_event_name";
-    private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";
-    private static final String SHOW_CHANGE_JUSTIFICATION = "audit.show_change_justification";
 
     @NrgPreference(defaultValue = "false", property = "audit.show_change_justification")
     public boolean getShowChangeJustification(){
@@ -963,6 +1040,17 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @JsonIgnore
+    public static long convertPGIntervalToSeconds(final String expression) throws SQLException {
+        final PGInterval interval = new PGInterval(expression);
+        return ((long) interval.getYears()) * 31536000L +
+               ((long) interval.getMonths()) * 2592000L +
+               ((long) interval.getDays()) * 86400L +
+               ((long) interval.getHours()) * 3600L +
+               ((long) interval.getMinutes()) * 60L +
+               ((long) interval.getSeconds());
+    }
+
     public boolean isComplete() {
         return !StringUtils.isBlank(getSiteId()) &&
                !StringUtils.isBlank(getAdminEmail()) &&
@@ -972,4 +1060,10 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
                !StringUtils.isBlank(getBuildPath()) &&
                !StringUtils.isBlank(getFtpPath());
     }
+
+    private static final String STR_REQUIRE_EVENT_NAME = "audit.require_event_name";
+    private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";
+    private static final String SHOW_CHANGE_JUSTIFICATION = "audit.show_change_justification";
+
+    private static final Logger _log = LoggerFactory.getLogger(SiteConfigPreferences.class);
 }

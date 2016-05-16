@@ -328,7 +328,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                                 String xmlPath = connection[1];
                                 SchemaFieldI gwf = null;
                                 SchemaElementI extension=null;
-                                if (localSyntax.indexOf(XFT.PATH_SEPERATOR)==-1)
+                                if (localSyntax.indexOf(XFT.PATH_SEPARATOR) == -1)
                                 {
                                     extension = rootElement;
                                 }else{
@@ -507,7 +507,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     logger.info("JOINING: " + localSyntax + " to " + xmlPath);
                     SchemaFieldI gwf = null;
                     SchemaElementI extension=null;
-                    if (localSyntax.indexOf(XFT.PATH_SEPERATOR)==-1)
+                    if (localSyntax.indexOf(XFT.PATH_SEPARATOR) == -1)
                     {
                         extension = rootElement;
 

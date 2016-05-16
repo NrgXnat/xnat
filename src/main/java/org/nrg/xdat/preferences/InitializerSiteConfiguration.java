@@ -14,6 +14,8 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.HibernateUtils;
 import org.nrg.framework.services.SerializerService;
+import org.nrg.prefs.annotations.NrgPreference;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.PreferenceBeanHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +94,10 @@ public class InitializerSiteConfiguration extends PropertiesBasedSiteConfigurati
         return getSiteConfigurationProperty("inactivityBeforeLockoutSchedule");
     }
 
+    public int getMaxFailedLogins() throws SiteConfigurationException {
+        return getIntegerSiteConfigurationProperty("maxFailedLogins");
+    }
+
     public String getMaxFailedLoginsLockoutDuration() throws SiteConfigurationException {
         return getSiteConfigurationProperty("maxFailedLoginsLockoutDuration");
     }
@@ -118,6 +124,14 @@ public class InitializerSiteConfiguration extends PropertiesBasedSiteConfigurati
 
     public String getAdminEmail() throws SiteConfigurationException {
         return getSiteConfigurationProperty("adminEmail");
+    }
+
+    public String getSecurityChannel() throws SiteConfigurationException {
+        return getSiteConfigurationProperty("security.channel");
+    }
+
+    public int getConcurrentMaxSessions() throws SiteConfigurationException {
+        return getIntegerSiteConfigurationProperty("sessions.concurrent_max");
     }
 
     public String getEmailPrefix() throws SiteConfigurationException {

@@ -82,7 +82,7 @@ public class SearchService {
             String validElementName = XFTTool.GetValidElementName(fieldElementName);
             if (!validElementName.equals(fieldElementName))
             {
-                field = validElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(field);
+                field = validElementName + XFT.PATH_SEPARATOR + XftStringUtils.GetFieldText(field);
             }
             
             Object o = getValue();

@@ -8,14 +8,10 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.db.DBAction;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperElement;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperFactory;
 
 public class ItemComparator implements Comparator<XFTItem> {
 	static org.apache.log4j.Logger logger = Logger.getLogger(ItemComparator.class);
@@ -65,11 +61,11 @@ public class ItemComparator implements Comparator<XFTItem> {
 	                        for (final List<Object> field:fields)
 	                        {
 	                            try {
-	                            	final Comparable o = (Comparable) newI.getProperty(newI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPERATOR + (String)field.get(0));
+	                            	final Comparable o = (Comparable) newI.getProperty(newI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + (String)field.get(0));
 	
 	                                if (o!= null)
 	                                {
-	                                	final Comparable o2 = (Comparable) oldI.getProperty(oldI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPERATOR + (String)field.get(0));
+	                                	final Comparable o2 = (Comparable) oldI.getProperty(oldI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + (String)field.get(0));
 	                                    if (o2!= null)
 	                                    {
 	                                        int compare=o.compareTo(o2);

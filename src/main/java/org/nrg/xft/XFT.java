@@ -13,11 +13,7 @@
 package org.nrg.xft;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Appender;
-import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.spi.LoggerRepository;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -33,33 +29,16 @@ import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Random;
 
 public class XFT {
-    private static String ADMIN_EMAIL = "nrgtech@nrg.wustl.edu";
-    private static String ADMIN_EMAIL_HOST = "";
-
     private static String CONF_DIR=null;
 
-    private static String SITE_URL = "";
-    private static String ARCHIVE_ROOT_PATH = "";
-    private static String PREARCHIVE_PATH = "";
-    private static String CACHE_PATH = "";
-    private static final Logger logger = Logger.getLogger(XFT.class);
-    public static final String PREFIX = "xdat";
-    public static final char PATH_SEPERATOR = '/';
-    private static String WEBAPP_NAME = null;
+    private static final Logger logger         = Logger.getLogger(XFT.class);
+    public static final String  PREFIX         = "xdat";
+    public static final char    PATH_SEPARATOR = '/';
 
     public static boolean VERBOSE = false;
-    private static Boolean REQUIRE_REASON = null;
-    private static Boolean SHOW_REASON = null;
-    
-
-    private static Boolean REQUIRE_EVENT_NAME = false;//used to configure whether event names are required on modifications
-//	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
-//	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
     /**
      * This method must be run before any XFT task is performed.
@@ -149,66 +128,8 @@ public class XFT {
         }
     }
 
-    public static boolean IsInitialized()
-    {
-        try {
-            XFTManager.GetInstance();
-            return true;
-        } catch (XFTInitException e) {
-            return false;
-        }
-    }
-
-    public static Character CreateRandomCharacter(Random randGen){
-        int i = 111;
-        while (i==111)
-        {
-            i= randGen.nextInt(25) + 97;
-        }
-        return new Character((char)i);
-    }
-
-    public static Integer CreateRandomNumber(Random randGen){
-        return randGen.nextInt(8)+1;
-    }
-
-    public static String CreateRandomAlphaNumeric(int length){
-        Random randGen= new Random();
-        String temp ="";
-        boolean b=true;
-        for(int i=0;i<length;i++){
-            if(b){
-                b=false;
-                temp +=CreateRandomCharacter(randGen);
-            }else{
-                b=true;
-                temp +=CreateRandomNumber(randGen);
-            }
-        }
-        return temp;
-    }
-
-    private static String SITE_ID ="";
-
-    public static String GetSiteID(){
-        return SITE_ID;
-    }
-
-    public static void SetSiteID(String s){
-        SITE_ID=s;
-    }
-
-    /**
-     * Returns ID as SITE ID + incremented number.
-     * @return
-     * @throws Exception
-     */
-    public static String CreateId(int digits, String column, String tableName, String dbname, String login) throws Exception{
-        return CreateIDFromBase(GetSiteID(), digits, column, tableName,dbname,login);
-    }
-
     public static String CreateIDFromBase(String base, int digits, String column, String tableName, String dbname, String login) throws Exception{
-        String identifier = "";
+        String identifier;
 
         if (base!=null)
         {
@@ -227,7 +148,7 @@ public class XFT {
     }
 
     private static String IncrementID(String s,int digits, String column, String tableName, String dbname, String login) throws Exception{
-        String temp_id = null;
+        String temp_id;
 
         if(s == null)
         {
@@ -262,9 +183,9 @@ public class XFT {
 
     public static String GetAllSchemaLocations(String location)
     {
-        StringBuffer sb = new StringBuffer();
-        Iterator schemas = XFTManager.GetSchemas().iterator();
-        int counter = 0;
+        StringBuilder sb      = new StringBuilder();
+        Iterator      schemas = XFTManager.GetSchemas().iterator();
+        int           counter = 0;
         while (schemas.hasNext())
         {
             try {

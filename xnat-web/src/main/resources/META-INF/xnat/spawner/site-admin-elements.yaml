@@ -270,7 +270,7 @@ userLoginsSessionControls:
             id: loginFailureMessage
             name: UI.login_failure_message
             label: Login Failure Message
-            value: ?? this.value || "Login failed"
+            value: Login failed
             description: Text to show when a user fails to login
 
         maximumFailedLogins:

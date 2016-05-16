@@ -21,7 +21,7 @@
 
     ${headTop}
 
-    <title>${title}</title>
+    <title>${empty title ? 'XNAT' : title}</title>
 
     <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
     <%--<c:set var="_scripts" value="${SITE_ROOT}/scripts"/>--%>

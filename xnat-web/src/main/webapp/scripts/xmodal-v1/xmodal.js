@@ -684,6 +684,8 @@ if (typeof jQuery == 'undefined') {
             // we can use 'className', 'classNames' or 'classes'
             this.classNames = this.className = this.classes = _opts.classNames ;
 
+            this.top = firstDefined(_opts.top||undefined, '22px');
+
             this.width = 600;
             this.minWidth = 'inherit';
             this.maxWidth = 'inherit';

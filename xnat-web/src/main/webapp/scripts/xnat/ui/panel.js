@@ -112,7 +112,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     // creates a panel that's a form that can be submitted
-    panel.form = function panelForm(opts){
+    panel.form = function panelForm(opts, callback){
 
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -127,7 +127,7 @@ var XNAT = getObject(XNAT || {});
                 ['button.btn.btn-sm.btn-primary.save.pull-right|type=submit', 'Submit'],
                 ['span.pull-right', '&nbsp;&nbsp;&nbsp;'],
                 _resetBtn,
-                ['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
+                //['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
                 ['div.clear']
             ],
 
@@ -259,6 +259,8 @@ var XNAT = getObject(XNAT || {});
             $formPanel.dataAttr('status', 'dirty');
         });
 
+        opts.onload = opts.onload || callback;
+
         $formPanel.on('reload-data', function(){
             xmodal.loading.open();
             opts.load.url = opts.load.url || opts.load.refresh;
@@ -269,6 +271,8 @@ var XNAT = getObject(XNAT || {});
         _resetBtn.onclick = function(){
             $formPanel.triggerHandler('reload-data');
         };
+
+        opts.callback = opts.callback || callback || diddly;
 
         // intercept the form submit to do it via REST instead
         $formPanel.on('submit', function(e){
@@ -360,6 +364,9 @@ var XNAT = getObject(XNAT || {});
                         xmodal.message('Data saved successfully.', {
                             action: function(){
                                 loadData(obj);
+                                if (callback && isFunction(callback)) {
+
+                                }
                             }
                         });
                     }
@@ -394,7 +401,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     // creates a panel that submits all forms contained within
-    panel.multiForm = function(opts){
+    panel.multiForm = function(opts, callback){
 
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -405,7 +412,7 @@ var XNAT = getObject(XNAT || {});
 
             submitBtn = spawn('button', {
                 type: 'submit',
-                classes: 'btn btn-sm btn-primary save pull-right',
+                classes: 'btn submit save pull-right',
                 html: 'Save All'
             }),
 
@@ -466,15 +473,20 @@ var XNAT = getObject(XNAT || {});
                         return false;
                     }
 
-                    multiform.errors = 0;
-                    multiform.count = 0;
+                    // multiform.errors = 0;
+                    // multiform.count = 0;
 
                     xmodal.loading.close(loader.$modal);
+
+                    // fire the callback function after all forms are submitted error-free
+
+
                     xmodal.message({
                         title: 'Setup Complete',
                         content: 'Your XNAT site is ready to use. Click "OK" to continue to the home page.',
                         action: function(){
-                            window.location.href = XNAT.url.rootUrl('/');
+                            window.location.href = XNAT.url.rootUrl('/setup?init=true');
+                            //window.location.href = XNAT.url.rootUrl('/');
                             //$forms.each.triggerHandler('reload-data');
                         }
                     });
@@ -684,7 +696,12 @@ var XNAT = getObject(XNAT || {});
         var textarea = spawn('textarea', opts.element);
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
     };
+    panel.input.textares = panel.textarea;
 
+    //////////////////////////////////////////////////
+    // SELECT MENU PANEL ELEMENTS
+    //////////////////////////////////////////////////
+    
     panel.select = {};
 
     panel.select.menu = function panelSelectSingle(opts, multi){
@@ -792,7 +809,7 @@ var XNAT = getObject(XNAT || {});
             opts.body = opts.body.concat(setupElements(opts.elements))
         }
 
-        saveBtn = footerButton('Save', 'submit', true, 'save pull-right');
+        saveBtn   = footerButton('Save', 'submit', true, 'save pull-right');
         revertBtn = footerButton('Discard Changes', 'button', true, 'revert pull-right');
 
         opts.footer = [

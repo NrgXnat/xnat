@@ -241,7 +241,7 @@ public class XnatProviderManager extends ProviderManager {
         if (provider instanceof XnatLdapAuthenticationProvider) {
             return new XnatLdapUsernamePasswordAuthenticationToken(username, password, provider.getProviderId());
         } else if (provider instanceof AliasTokenAuthenticationProvider) {
-            return new AliasTokenAuthenticationToken(username, Long.parseLong(password));
+            return new AliasTokenAuthenticationToken(username, password);
         } else {
             return new XnatDatabaseUsernamePasswordAuthenticationToken(username, password);
         }

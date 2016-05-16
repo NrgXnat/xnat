@@ -12,6 +12,7 @@ package org.nrg.xnat.security;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.SiteConfigurationException;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserRole;
@@ -23,7 +24,10 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -48,12 +52,12 @@ import java.util.Date;
 import java.util.List;
 
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-public class XnatExpiredPasswordFilter extends GenericFilterBean {
-    private String changePasswordPath = "";
+public class XnatExpiredPasswordFilter extends GenericFilterBean implements ApplicationContextAware {
+    private String changePasswordPath        = "";
     private String changePasswordDestination = "";
-    private String logoutDestination = "";
-    private String loginPath = "";
-    private String loginDestination = "";
+    private String logoutDestination         = "";
+    private String loginPath                 = "";
+    private String loginDestination          = "";
     private String inactiveAccountPath;
     private String inactiveAccountDestination;
     private String emailVerificationDestination;
@@ -61,21 +65,21 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
     private boolean passwordExpirationDirtied = true;
     private boolean passwordExpirationDisabled;
     private boolean passwordExpirationInterval;
-    private String passwordExpirationSetting;
+    private String  passwordExpirationSetting;
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-        final HttpServletRequest request = (HttpServletRequest) req;
-        final HttpServletResponse response = (HttpServletResponse) res;
-        UserI user = XDAT.getUserDetails();
-        Object passwordExpired = request.getSession().getAttribute("expired");
+        final HttpServletRequest  request         = (HttpServletRequest) req;
+        final HttpServletResponse response        = (HttpServletResponse) res;
+        UserI                     user            = XDAT.getUserDetails();
+        Object                    passwordExpired = request.getSession().getAttribute("expired");
         // MIGRATION: Need to remove arcspec.
         ArcArchivespecification _arcSpec = ArcSpecManager.GetInstance();
-        final String referer = request.getHeader("Referer");
+        final String            referer  = request.getHeader("Referer");
         if (request.getSession() != null && request.getSession().getAttribute("forcePasswordChange") != null && (Boolean) request.getSession().getAttribute("forcePasswordChange")) {
             try {
                 String refererPath = null;
-                String uri = new URI(request.getRequestURI()).getPath();
+                String uri         = new URI(request.getRequestURI()).getPath();
                 if (!StringUtils.isBlank(referer)) {
                     refererPath = new URI(referer).getPath();
                 }
@@ -105,14 +109,14 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 if (header != null && header.startsWith("Basic ")) {
                     //For users that authenticated using basic authentication, check whether their password is expired, and if so give them a 403 and a message that they need to change their password.
 
-                    String token = new String(Base64.decode(header.substring(6).getBytes("UTF-8")), "UTF-8");
+                    String token    = new String(Base64.decode(header.substring(6).getBytes("UTF-8")), "UTF-8");
                     String username = "";
-                    int delim = token.indexOf(":");
+                    int    delim    = token.indexOf(":");
                     if (delim != -1) {
                         username = token.substring(0, delim);
                     }
                     if (AliasToken.isAliasFormat(username)) {
-                        AliasToken alias = _aliasTokenService.locateToken(username);
+                        AliasToken alias = getAliasTokenService().locateToken(username);
                         if (alias == null) {
                             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Your security token has expired. Please try again after updating your session.");
                             return;
@@ -121,7 +125,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                     }
                     // Check whether the user is connected to an active role for non_expiring.
                     try {
-                        List<Integer> roles = (new JdbcTemplate(_dataSource)).query("SELECT COUNT(*) FROM xhbm_user_role where username = ? and role = ? and enabled = 't'", new String[]{username, UserRole.ROLE_NON_EXPIRING}, new RowMapper<Integer>() {
+                        List<Integer> roles = (new JdbcTemplate(_dataSource)).query("SELECT COUNT(*) FROM xhbm_user_role where username = ? and role = ? and enabled = 't'", new String[] {username, UserRole.ROLE_NON_EXPIRING}, new RowMapper<Integer>() {
                             public Integer mapRow(ResultSet rs, int rowNum) throws SQLException {
                                 return rs.getInt(1);
                             }
@@ -162,17 +166,17 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                     checkUserChangePassword(request, response);
                 }
                 if (user.isGuest() ||
-                        //If you're logging in or out, or going to the login page itself
-                        (uri.endsWith(logoutDestination) || uri.endsWith(loginPath) || uri.endsWith(loginDestination)) ||
-                        //If you're already on the change password page, continue on without redirect.
-                        (user.isEnabled() && (uri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination))) ||
-                        //If you're already on the inactive account page or reactivating an account, continue on without redirect.
-                        (!user.isEnabled() && (uri.endsWith(inactiveAccountPath) || uri.endsWith(inactiveAccountDestination) ||
-                                uri.endsWith(emailVerificationPath) || uri.endsWith(emailVerificationDestination) ||
-                                (referer != null && (referer.endsWith(inactiveAccountPath) || referer.endsWith(inactiveAccountDestination))))) ||
-                        //If you're on a request within the change password page, continue on without redirect.
-                        (referer != null && (referer.endsWith(changePasswordPath) || referer.endsWith(changePasswordDestination) ||
-                                referer.endsWith(logoutDestination)))) {
+                    //If you're logging in or out, or going to the login page itself
+                    (uri.endsWith(logoutDestination) || uri.endsWith(loginPath) || uri.endsWith(loginDestination)) ||
+                    //If you're already on the change password page, continue on without redirect.
+                    (user.isEnabled() && (uri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination))) ||
+                    //If you're already on the inactive account page or reactivating an account, continue on without redirect.
+                    (!user.isEnabled() && (uri.endsWith(inactiveAccountPath) || uri.endsWith(inactiveAccountDestination) ||
+                                           uri.endsWith(emailVerificationPath) || uri.endsWith(emailVerificationDestination) ||
+                                           (referer != null && (referer.endsWith(inactiveAccountPath) || referer.endsWith(inactiveAccountDestination))))) ||
+                    //If you're on a request within the change password page, continue on without redirect.
+                    (referer != null && (referer.endsWith(changePasswordPath) || referer.endsWith(changePasswordDestination) ||
+                                         referer.endsWith(logoutDestination)))) {
                     chain.doFilter(req, res);
                 } else {
                     if (
@@ -253,6 +257,14 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         this.passwordExpirationDirtied = passwordExpirationDirtied;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setApplicationContext(final ApplicationContext context) throws BeansException {
+        _context = context;
+    }
+
     private boolean checkForExpiredPassword(final UserI user) {
         return checkForExpiredPassword(user.getUsername());
     }
@@ -263,14 +275,14 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 return false;
             }
             if (isPasswordExpirationInterval()) {
-                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT ((now()-password_updated)> (Interval '" + passwordExpirationSetting + " days')) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[]{username}, new RowMapper<Boolean>() {
+                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT ((now()-password_updated)> (Interval '" + passwordExpirationSetting + " days')) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[] {username}, new RowMapper<Boolean>() {
                     public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                         return rs.getBoolean(1);
                     }
                 });
                 return expired.get(0);
             } else {
-                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT (to_date('" + new SimpleDateFormat("MM/dd/yyyy").format(new Date(Long.parseLong(passwordExpirationSetting))) + "', 'MM/DD/YYYY') BETWEEN password_updated AND now()) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[]{username}, new RowMapper<Boolean>() {
+                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT (to_date('" + new SimpleDateFormat("MM/dd/yyyy").format(new Date(Long.parseLong(passwordExpirationSetting))) + "', 'MM/DD/YYYY') BETWEEN password_updated AND now()) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[] {username}, new RowMapper<Boolean>() {
                     public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                         return rs.getBoolean(1);
                     }
@@ -327,14 +339,26 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         }
     }
 
+    // We have to do this because the filter must be created in the root context, but the token service must be created
+    // in the application context. We use the context service to cheat across these boundaries.
+    private AliasTokenService getAliasTokenService() {
+        if (_aliasTokenService == null) {
+            _aliasTokenService = _contextService.getBean(AliasTokenService.class);
+        }
+        return _aliasTokenService;
+    }
+
     @Autowired
     @Lazy
     private InitializerSiteConfiguration _preferences;
 
     @Autowired
     @Lazy
-    private AliasTokenService _aliasTokenService;
+    private ContextService _contextService;
 
     @Inject
     private DataSource _dataSource;
+
+    private ApplicationContext _context;
+    private AliasTokenService  _aliasTokenService;
 }

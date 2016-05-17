@@ -66,7 +66,7 @@
                                 <h2 class="pull-left">XNAT Site Setup</h2>
                                 <div class="hidden message pull-left">
                                     The settings below need to be configured before this XNAT system
-                                    can be used. Please set the properties below and submit the form continue.
+                                    can be used. Please set the properties below and submit the form to continue.
                                 </div>
                                 <div class="clearfix"></div>
                             </header>

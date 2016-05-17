@@ -20,7 +20,7 @@ initialSetup:
                     marginBottom: 24px
                 html: >
                     The settings below need to be configured before this XNAT system
-                    can be used. Please set the properties below and submit the form continue.
+                    can be used. Please set the properties below and submit the form to continue.
 
         # ====================
         # PANEL

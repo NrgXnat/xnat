@@ -122,6 +122,14 @@
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
         </dependency>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-bus</artifactId>
+           </dependency>
+           <dependency>
+               <groupId>io.projectreactor</groupId>
+               <artifactId>reactor-core</artifactId>
+           </dependency>
         <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>

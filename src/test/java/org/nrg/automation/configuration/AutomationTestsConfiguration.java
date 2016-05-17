@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Import;
 import java.util.Collections;
 
 @Configuration
-@ComponentScan({"org.nrg.automation.services.impl.hibernate", "org.nrg.automation.repositories"})
+@ComponentScan({"org.nrg.automation.services.impl.hibernate", "org.nrg.automation.repositories", "org.nrg.automation.daos"})
 @Import(OrmTestConfiguration.class)
 public class AutomationTestsConfiguration {
     @Bean

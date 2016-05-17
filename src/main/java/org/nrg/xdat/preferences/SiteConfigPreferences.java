@@ -212,7 +212,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "false")
+    @NrgPreference(defaultValue = "true")
     public boolean getUserRegistration() {
         return getBooleanValue("userRegistration");
     }
@@ -1039,6 +1039,164 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
             _log.error("Invalid preference name 'audit.require_event_name': something is very wrong here.", e);
         }
     }
+
+    @NrgPreference(defaultValue = "", property = "notifications.helpContactInfo")
+    public String getHelpContactInfo(){
+        return getValue("notifications.helpContactInfo");
+    }
+
+    public void setHelpContactInfo(final String helpContactInfo) {
+        try {
+            set(helpContactInfo, "notifications.helpContactInfo");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.helpContactInfo': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "notifications.emailMessageUserRegistration")
+    public String getEmailMessageUserRegistration(){
+        return getValue("notifications.emailMessageUserRegistration");
+    }
+
+    public void setEmailMessageUserRegistration(final String emailMessageUserRegistration) {
+        try {
+            set(emailMessageUserRegistration, "notifications.emailMessageUserRegistration");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.emailMessageUserRegistration': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "notifications.emailMessageForgotUsernameRequest")
+    public String getEmailMessageForgotUsernameRequest(){
+        return getValue("notifications.emailMessageForgotUsernameRequest");
+    }
+
+    public void setEmailMessageForgotUsernameRequest(final String emailMessageForgotUsernameRequest) {
+        try {
+            set(emailMessageForgotUsernameRequest, "notifications.emailMessageForgotUsernameRequest");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.emailMessageForgotUsernameRequest': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "notifications.emailMessageForgotPasswordReset")
+    public String getEmailMessageForgotPasswordReset(){
+        return getValue("notifications.emailMessageForgotPasswordReset");
+    }
+
+    public void setEmailMessageForgotPasswordReset(final String emailMessageForgotPasswordReset) {
+        try {
+            set(emailMessageForgotPasswordReset, "notifications.emailMessageForgotPasswordReset");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.emailMessageForgotPasswordReset': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminUserRegistration")
+    public boolean getNotifyAdminUserRegistration(){
+        return getBooleanValue("notifications.notifyAdminUserRegistration");
+    }
+
+    public void setNotifyAdminUserRegistration(final boolean notifyAdminUserRegistration) {
+        try {
+            setBooleanValue(notifyAdminUserRegistration, "notifications.notifyAdminUserRegistration");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.notifyAdminUserRegistration': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminPipelineEmails")
+    public boolean getNotifyAdminPipelineEmails(){
+        return getBooleanValue("notifications.notifyAdminPipelineEmails");
+    }
+
+    public void setNotifyAdminPipelineEmails(final boolean notifyAdminPipelineEmails) {
+        try {
+            setBooleanValue(notifyAdminPipelineEmails, "notifications.notifyAdminPipelineEmails");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.notifyAdminPipelineEmails': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminProjectAccessRequest")
+    public boolean getNotifyAdminProjectAccessRequest(){
+        return getBooleanValue("notifications.notifyAdminProjectAccessRequest");
+    }
+
+    public void setNotifyAdminProjectAccessRequest(final boolean notifyAdminProjectAccessRequest) {
+        try {
+            setBooleanValue(notifyAdminProjectAccessRequest, "notifications.notifyAdminProjectAccessRequest");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.notifyAdminProjectAccessRequest': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminProjectOnSessionTransfer")
+    public boolean getNotifyAdminSessionTransfer(){
+        return getBooleanValue("notifications.notifyAdminProjectOnSessionTransfer");
+    }
+
+    public void setNotifyAdminSessionTransfer(final boolean notifyAdminProjectOnSessionTransfer) {
+        try {
+            setBooleanValue(notifyAdminProjectOnSessionTransfer, "notifications.notifyAdminProjectOnSessionTransfer");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.notifyAdminProjectOnSessionTransfer': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "notifications.emailRecipientErrorMessages")
+    public String getEmailRecipientErrorMessages(){
+        return getValue("notifications.emailRecipientErrorMessages");
+    }
+
+    public void setEmailRecipientErrorMessages(final String emailRecipientErrorMessages) {
+        try {
+            set(emailRecipientErrorMessages, "notifications.emailRecipientErrorMessages");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.emailRecipientErrorMessages': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "notifications.emailRecipientIssueReports")
+    public String getEmailRecipientIssueReports(){
+        return getValue("notifications.emailRecipientIssueReports");
+    }
+
+    public void setEmailRecipientIssueReports(final String emailRecipientIssueReports) {
+        try {
+            set(emailRecipientIssueReports, "notifications.emailRecipientIssueReports");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.emailRecipientIssueReports': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "notifications.emailRecipientNewUserAlert")
+    public String getEmailRecipientNewUserAlert(){
+        return getValue("notifications.emailRecipientNewUserAlert");
+    }
+
+    public void setEmailRecipientNewUserAlert(final String emailRecipientNewUserAlert) {
+        try {
+            set(emailRecipientNewUserAlert, "notifications.emailRecipientNewUserAlert");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.emailRecipientNewUserAlert': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "notifications.emailRecipientUpdate")
+    public String getEmailRecipientUpdate(){
+        return getValue("notifications.emailRecipientUpdate");
+    }
+
+    public void setEmailRecipientUpdate(final String emailRecipientUpdate) {
+        try {
+            set(emailRecipientUpdate, "notifications.emailRecipientUpdate");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'notifications.emailRecipientUpdate': something is very wrong here.", e);
+        }
+    }
+
+
 
     @JsonIgnore
     public static long convertPGIntervalToSeconds(final String expression) throws SQLException {

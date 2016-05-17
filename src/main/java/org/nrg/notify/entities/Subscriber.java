@@ -54,6 +54,10 @@ public class Subscriber extends AbstractHibernateEntity {
         _subscriptions = subscriptions;
     }
 
+    public void removeSubscription(Subscription subscription) {
+        _subscriptions.remove(subscription);
+    }
+
     @Transient
     public List<String> getEmailList() {
         if (StringUtils.isBlank(_emails)) {

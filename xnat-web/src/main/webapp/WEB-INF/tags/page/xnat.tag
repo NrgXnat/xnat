@@ -336,7 +336,7 @@ ${bodyTop}
                         <!-- Sequence: 10 -->
                         <!-- Home/Default -->
                         <li><a href="${SITE_ROOT}/app/template/ReportIssue.vm">Report a Problem</a></li>
-                        <li><a href="http://wiki.xnat.org/display/XNAT16/Home" target="_blank">Documentation</a></li>
+                        <li><a href="http://wiki.xnat.org" target="_blank">Documentation</a></li>
                     </ul>
                 </li>
             </ul>

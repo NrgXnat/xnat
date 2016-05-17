@@ -55,28 +55,21 @@ var XNAT = getObject(XNAT);
         el.value = val;
         return val;
     }
+    
 
-    // another way to do this without using eval()
-    // is to loop over object string using dot notation:
-    // var myVal = lookupObjectValue(XNAT, 'data.siteConfig.siteId');
-    // --> myVal == 'myXnatSiteId'
-    function lookupObjectValue(root, objStr){
-        var val = '';
-        if (!objStr) {
-            objStr = root;
-            root = window;
-        }
-        root = root || window;
-        objStr.toString().trim().split('.').forEach(function(part, i){
-            // start at the root object
-            if (i === 0) {
-                val = root[part] || {};
+    // retrieve value via REST and put it in the element
+    function ajaxValue(el, url, prop){
+        var opts = {
+            url: XNAT.url.rootUrl(url),
+            success: function(data){
+                if (prop && isPlainObject(data)) {
+                    data = lookupObjectValue(data, prop.trim());
+                }
+                el.value = data;
+                // $$(el).val(data);
             }
-            else {
-                val = val[part];
-            }
-        });
-        return val;
+        };
+        return $.get(opts);
     }
 
 
@@ -198,53 +191,97 @@ var XNAT = getObject(XNAT);
         // or spawn a new one
         element = element || spawn('input', opts.element);
 
+        // cache a jQuery object
+        var $element = $(element);
+
         // set the value of individual form elements
         
         // look up a namespaced object value if the value starts with '??'
         var doLookup = '??';
         if (opts.value && opts.value.toString().indexOf(doLookup) === 0) {
-            element.value = lookupValue(opts.value.split(doLookup)[1]);
+            element.value = lookupValue(opts.value.split(doLookup)[1].trim());
         }
         
-        if (opts.load) {
-            if (opts.load.lookup) {
-                lookupValue(element, opts.load.lookup);
-            }
-            else if (opts.load.url){
-                $.ajax({
-                    method: opts.load.method || 'GET',
-                    url: XNAT.url.restUrl(opts.load.url),
-                    success: function(data){
-                        // get value from specific object path
-                        if (opts.load.prop) {
-                            opts.load.prop.split('.').forEach(function(part){
-                                data = data[part] || {};
-                            });
-                            // data = lookupObjectValue(opts.load.prop);
-                        }
-                        $(element).changeVal(data).dataAttr('value', data);
-                    }
-                })
-            }
+        // get value via REST/ajax if value starts with ?:
+        // value: ?$ /path/to/data | obj.prop.name
+        var ajaxPrefix = '?$';
+        var ajaxUrl = '';
+        var ajaxProp = '';
+        if (opts.value && opts.value.toString().indexOf(ajaxPrefix) === 0) {
+            ajaxUrl = (opts.value.split(ajaxPrefix)[1]||'').split('|')[0];
+            ajaxProp = opts.value.split('|')[1] || '';
+            ajaxValue(element, ajaxUrl.trim(), ajaxProp.trim());
         }
+
+        // if (opts.load) {
+        //     if (opts.load.lookup) {
+        //         lookupValue(element, opts.load.lookup.trim());
+        //     }
+        //     else if (opts.load.url){
+        //         $.ajax({
+        //             method: opts.load.method || 'GET',
+        //             url: XNAT.url.restUrl(opts.load.url),
+        //             success: function(data){
+        //                 // get value from specific object path
+        //                 if (isPlainObject(data) && opts.load.prop) {
+        //                     data = lookupObjectValue(data, opts.load.prop);
+        //                     // opts.load.prop.split('.').forEach(function(part){
+        //                     //     data = data[part] || {};
+        //                     // });
+        //                     // data = lookupObjectValue(opts.load.prop);
+        //                 }
+        //                 $(element).changeVal(data);
+        //                 $(element).not('textarea').dataAttr('value', data);
+        //             }
+        //         })
+        //     }
+        // }
+
+        // trigger an 'onchange' event
+        $element.trigger('change');
+
+        // add value to [data-value] attribute
+        // (except for textareas - that could get ugly
+        $element.not('textarea').dataAttr('value', element.value);
+
+        var inner = [element];
+
+        var hiddenInput;
 
         // check buttons if value is true
         if (/checkbox|radio/i.test(opts.type||'')) {
+
+            // add a hidden input to capture the checkbox/radio value
+            hiddenInput = spawn('input', {
+                type: 'hidden',
+                name: element.name,
+                value: element.checked
+            });
+
             element.checked = /true|checked/i.test((opts.checked || element.value).toString());
+
+            // change the value of the hidden input onclick
             element.onclick = function(){
-                this.value = this.checked.toString();
-                console.log('clicked');
-            }
+                hiddenInput.value = this.checked.toString();
+            };
+            
+            // change name of checkbox/radio to avoid conflicts
+            element.name = element.name + '-controller';
+
+            // and add a class for easy selection
+            addClassName(element, 'controller');
+
+            // and add the hidden input
+            inner.push(hiddenInput);
+
         }
+
+        // add the description after the input
+        inner.push(['div.description', opts.description||opts.body||opts.html]);
 
         return template.panelElement(opts, [
             ['label.element-label|for='+element.id||opts.id, opts.label],
-            ['div.element-wrapper', [
-
-                element,
-
-                ['div.description', opts.description||opts.body||opts.html]
-            ]]
+            ['div.element-wrapper', inner]
         ]);
     };
     // ========================================

@@ -45,26 +45,6 @@ var XNAT = getObject(XNAT);
         return val;
     }
 
-    function lookupObjectValue(root, objStr){
-        var val = '';
-        if (!objStr) {
-            objStr = root;
-            root = window;
-        }
-        root = root || window;
-        objStr.toString().trim().split('.').forEach(function(part, i){
-            part = part.trim();
-            // start at the root object
-            if (i === 0) {
-                val = root[part] || {};
-            }
-            else {
-                val = val[part];
-            }
-        });
-        return val;
-    }
-
 
     // ========================================
     // MAIN FUNCTION

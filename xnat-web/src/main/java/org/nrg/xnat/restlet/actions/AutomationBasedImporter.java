@@ -46,9 +46,13 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
+import org.nrg.automation.event.AutomationEventImplementerI;
+import org.nrg.automation.event.entities.AutomationCompletionEvent;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.event.Filterable;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -62,14 +66,10 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 import java.util.zip.ZipOutputStream;
 
-import org.nrg.xft.event.AutomationEventImplementerI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.EventUtils.CATEGORY;
 import org.nrg.xft.event.EventUtils.TYPE;
-import org.nrg.xft.event.XftEventService;
-import org.nrg.xft.event.Filterable;
-import org.nrg.xft.event.entities.AutomationCompletionEvent;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -644,7 +644,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			automationCompletionEvent.addNotificationEmailAddr(user.getEmail());
 		}
 		automationEvent.setAutomationCompletionEvent(automationCompletionEvent);
-		XftEventService eventService = XftEventService.getService();
+		final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
 		if (eventService == null) {
 			returnList.add("ERROR: Could retrieve event service");
 			return;

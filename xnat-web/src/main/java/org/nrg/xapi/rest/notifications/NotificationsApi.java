@@ -13,6 +13,7 @@ import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
 import org.slf4j.Logger;
@@ -558,20 +559,26 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     private void setSubscribersForNotificationType(NotificationType notificationType, final String subscribersString){
         List<String> subscribers = Arrays.asList(subscribersString.split("\\s*,\\s*"));
-        Category category = _notificationService.getCategoryService().newEntity();
-        category.setScope(CategoryScope.Site);
-        category.setEvent(notificationType.id());
+        Category category = _notificationService.getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, notificationType.id());
+        if(category==null) {
+            category = _notificationService.getCategoryService().newEntity();
+            category.setScope(CategoryScope.Site);
+            category.setEvent(notificationType.id());
+            XDAT.getNotificationService().getCategoryService().create(category);
+        }
         for(String subscriber : subscribers){
             try {
                 Subscriber subscriberObject = _notificationService.getSubscriberService().getSubscriberByName(subscriber);
 
                 if(subscriberObject==null){
                     subscriberObject = _notificationService.getSubscriberService().createSubscriber(subscriber, subscriber);
+                    XDAT.getNotificationService().getSubscriberService().create(subscriberObject);
                 }
 
                 Definition definition1 = _notificationService.getDefinitionService().getDefinitionForCategoryAndEntity(category,1L);
                 if(definition1==null) {
                     definition1 = _notificationService.createDefinition(CategoryScope.Site, notificationType.id(), 1L);
+                    XDAT.getNotificationService().getDefinitionService().create(definition1);
                 }
 
                 Channel channel1 = _notificationService.getChannelService().getChannel("htmlMail");

@@ -84,7 +84,7 @@ public class XnatAppInfo {
      * @return The primary system properties.
      */
     public Properties getSystemProperties() {
-        return new Properties(_properties);
+        return (Properties)_properties.clone();
     }
 
     /**

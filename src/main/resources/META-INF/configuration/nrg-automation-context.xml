@@ -20,6 +20,7 @@
 
     <context:component-scan base-package="org.nrg.automation.services.impl.hibernate"/>
     <context:component-scan base-package="org.nrg.automation.repositories"/>
+    <context:component-scan base-package="org.nrg.automation.daos"/>
 
     <bean id="scriptRunnerService" class="org.nrg.automation.services.impl.DefaultScriptRunnerService">
         <property name="runnerPackages">

@@ -14,38 +14,39 @@ import org.nrg.framework.utilities.Reflection;
 import com.google.common.collect.Maps;
 
 public class ClassMapping implements ClassMappingI {
-    private static final Logger logger = Logger.getLogger(ClassMapping.class);
-    private static final String   DEFINITION_PACKAGE    = "org.nrg.xdat.bean";
-    private static final Pattern  DEFINITION_PROPERTIES = Pattern.compile(".*-bean-definition\\.properties");
-    
-	private final Map<String,String> elements;
-    
-	public ClassMapping(){
-		elements=Maps.newHashMap();
-		final Set<String> propFiles = Reflection.findResources(DEFINITION_PACKAGE, DEFINITION_PROPERTIES);
+    private static final Logger  logger                = Logger.getLogger(ClassMapping.class);
+    private static final String  DEFINITION_PACKAGE    = "org.nrg.xdat.bean";
+    private static final Pattern DEFINITION_PROPERTIES = Pattern.compile(".*-bean-definition\\.properties");
+
+    private final Map<String, String> elements;
+
+    public ClassMapping() {
+        elements = Maps.newHashMap();
+        final Set<String> propFiles = Reflection.findResources(DEFINITION_PACKAGE, DEFINITION_PROPERTIES);
         if (propFiles.size() > 0) {
             for (final String props : propFiles) {
-            	try {
-					final Configuration config = new PropertiesConfiguration(props);
-					@SuppressWarnings("unchecked")
-					Iterator<Object> keys=config.getKeys();
-					while(keys.hasNext()){
-						String key=(String)keys.next();
-						String value=config.getString(key);
-						elements.put(key,value);
-					}
-				} catch (ConfigurationException e) {
-					logger.error("",e);
-				}
+                try {
+                    final Configuration config = new PropertiesConfiguration(props);
+                    @SuppressWarnings("unchecked")
+                    final Iterator<Object> keys = config.getKeys();
+                    while (keys.hasNext()) {
+                        // Sometimes the keys are loaded with the backslash, sometimes they're not...
+                        final String key = ((String) keys.next()).replace("\\", "");
+                        final String value = config.getString(key);
+                        elements.put(key, value);
+                    }
+                } catch (ConfigurationException e) {
+                    logger.error("", e);
+                }
             }
         }
-	}
-	
-	/* (non-Javadoc)
-	 * @see org.nrg.xdat.bean.ClassMappingI#getElements()
-	 */
-	@Override
-	public Map<String,String> getElements(){
-		return elements;
-	}
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, String> getElements() {
+        return elements;
+    }
 }

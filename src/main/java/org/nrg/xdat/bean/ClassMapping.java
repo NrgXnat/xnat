@@ -30,10 +30,10 @@ public class ClassMapping implements ClassMappingI {
                     @SuppressWarnings("unchecked")
                     final Iterator<Object> keys = config.getKeys();
                     while (keys.hasNext()) {
-                        // Sometimes the keys are loaded with the backslash, sometimes they're not...
-                        final String key = ((String) keys.next()).replace("\\", "");
+                        final String key = (String) keys.next();
                         final String value = config.getString(key);
-                        elements.put(key, value);
+                        // Sometimes the keys are loaded with the backslash, sometimes they're not...
+                        elements.put(key.replace("\\", ""), value);
                     }
                 } catch (ConfigurationException e) {
                     logger.error("", e);

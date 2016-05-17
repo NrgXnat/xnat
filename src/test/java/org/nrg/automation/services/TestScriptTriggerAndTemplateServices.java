@@ -48,7 +48,7 @@ public class TestScriptTriggerAndTemplateServices {
 
     public static final String EVENT_ID_1 = "Something happened!";
     public static final String EVENT_ID_2 = "Something else happened!";
-    public static final String EVENT_CLASS = "org.nrg.xnat.event.entities.WorkflowStatusEvent";
+    public static final String EVENT_CLASS = "org.nrg.xft.event.entities.WorkflowStatusEvent";
 	public static final Map<String,List<String>> EVENT_FILTERS;
 	public static final Map<String,String> EVENT_FILTER;
 	public static final String STATUS_COMPLETE = "Complete";

@@ -59,7 +59,7 @@ public class TestScriptRunnerService {
     public static final String SCRIPT_LABEL_2 = "label two";
     public static final String SCRIPT_ID_3 = "three";
     public static final String SCRIPT_LABEL_3 = "label three";
-    public static final String EVENT_CLASS = "org.nrg.xnat.event.entities.WorkflowStatusEvent";
+    public static final String EVENT_CLASS = "org.nrg.xft.event.entities.WorkflowStatusEvent";
 	public static final Map<String,List<String>> EVENT_FILTERS;
 	public static final Map<String,String> EVENT_FILTER;
 	public static final String STATUS_COMPLETE = "Complete";

@@ -38,7 +38,7 @@ import javax.persistence.*;
 public class ScriptTrigger extends AbstractHibernateEntity implements Comparable<ScriptTrigger> {
 
 	/** The Constant DEFAULT_CLASS. */
-	public static final String DEFAULT_CLASS = "org.nrg.xnat.event.entities.WorkflowStatusEvent";
+	public static final String DEFAULT_CLASS = "org.nrg.xft.event.entities.WorkflowStatusEvent";
 	
 	/** The Constant DEFAULT_EVENT. */
 	public static final String DEFAULT_EVENT = "Manual";

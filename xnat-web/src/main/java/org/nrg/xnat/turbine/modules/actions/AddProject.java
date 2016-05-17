@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.ScreenLoader;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -31,7 +32,6 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -167,7 +167,8 @@ public class AddProject extends SecureAction {
                     WorkflowUtils.complete(wrk, c);
 
                     UserHelper.setUserHelper(data.getRequest(),user);
-                    XftEventService.getService().triggerEvent(new XftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, postSave.getId(), XftItemEvent.UPDATE));
+            		final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
+                    eventService.triggerEvent(new XftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, postSave.getId(), XftItemEvent.UPDATE));
                 } catch (Exception e) {
                     WorkflowUtils.fail(wrk, c);
                     throw e;

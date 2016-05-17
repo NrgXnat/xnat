@@ -6,7 +6,7 @@ import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-import org.nrg.xft.event.EventClass;
+import org.nrg.framework.event.EventClass;
 import org.python.google.common.collect.Maps;
 import org.springframework.core.annotation.AnnotationUtils;
 

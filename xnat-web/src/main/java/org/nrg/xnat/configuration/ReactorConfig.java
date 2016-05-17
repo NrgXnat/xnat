@@ -1,6 +1,6 @@
 package org.nrg.xnat.configuration;
 
-import org.nrg.xft.event.XftEventService;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.xft.event.listeners.XftItemEventListener;
 import org.nrg.xnat.event.conf.EventPackages;
 import org.springframework.context.annotation.Bean;
@@ -17,8 +17,8 @@ import java.util.HashSet;
 @Configuration
 public class ReactorConfig {
     @Bean
-    public XftEventService xftEventService() {
-        return new XftEventService();
+    public NrgEventService xftEventService() {
+        return new NrgEventService();
     }
 
     @Bean

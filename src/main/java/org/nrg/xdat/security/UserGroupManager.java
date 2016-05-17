@@ -18,6 +18,8 @@ import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
+import org.nrg.framework.services.NrgEventService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
@@ -33,7 +35,6 @@ import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -205,7 +206,8 @@ public class UserGroupManager implements UserGroupServiceI{
     			}
     	        
     	        try {
-    	        	XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),existing.getId(),XftItemEvent.UPDATE));
+    	        	final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
+    	        	eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),existing.getId(),XftItemEvent.UPDATE));
     			} catch (Exception e1) {
     	            logger.error("",e1);
     			}
@@ -285,7 +287,8 @@ public class UserGroupManager implements UserGroupServiceI{
 				PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
     	        
     	        try {
-    	        	XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),group.getId(),XftItemEvent.UPDATE));
+    	        	final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
+    	        	eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),group.getId(),XftItemEvent.UPDATE));
     			} catch (Exception e1) {
     	            logger.error("",e1);
     			}
@@ -522,7 +525,8 @@ public class UserGroupManager implements UserGroupServiceI{
 
 
         try {
-        	XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.DELETE));
+ 	       	final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
+        	eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.DELETE));
 		} catch (Exception e1) {
             logger.error("",e1);
 		}
@@ -629,7 +633,8 @@ public class UserGroupManager implements UserGroupServiceI{
 		((UserGroup)group).xdatGroup=null;
 		
 		try {
-			XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME,group.getId(),XftItemEvent.UPDATE));
+ 	       	final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
+			eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME,group.getId(),XftItemEvent.UPDATE));
 			Groups.reloadGroupsForUser(user);
 		} catch (Exception e1) {
 			logger.error("", e1);

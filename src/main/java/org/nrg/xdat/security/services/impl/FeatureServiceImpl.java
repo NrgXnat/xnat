@@ -3,6 +3,7 @@ package org.nrg.xdat.security.services.impl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.UserGroup;
@@ -11,7 +12,6 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.services.GroupFeatureService;
-import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +25,12 @@ import java.util.Map;
 
 @Service
 public class FeatureServiceImpl implements FeatureServiceI {
+	
+    /**
+     * The _eventService.
+     */
+    @Autowired
+ 	private NrgEventService _eventService;
 
     @Override
     public Collection<String> getFeaturesForGroup(UserGroupI group) {
@@ -50,7 +56,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	_eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }
@@ -67,7 +73,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	_eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }
@@ -83,7 +89,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
         try {
             //group objects are cached by an old caching implementation which listened for events
-        	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+        	_eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
         } catch (Exception e1) {
             logger.error("", e1);
         }
@@ -206,7 +212,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	_eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }
@@ -227,7 +233,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	_eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }
@@ -251,7 +257,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	_eventService.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }

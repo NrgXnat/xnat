@@ -15,6 +15,8 @@ package org.nrg.xdat.security;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.framework.services.NrgEventService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.om.*;
@@ -32,7 +34,6 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.*;
 import org.nrg.xft.references.XFTReferenceI;
@@ -1391,7 +1392,8 @@ public class ElementSecurity extends ItemWrapper {
         }
 
         try {
-            XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
+    		final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
+            eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
         } catch (Exception e1) {
             logger.error("", e1);
         }

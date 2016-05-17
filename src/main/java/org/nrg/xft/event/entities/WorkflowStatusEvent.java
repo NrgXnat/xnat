@@ -2,13 +2,14 @@ package org.nrg.xft.event.entities;
 
 import java.util.Map;
 
+import org.nrg.automation.event.AutomationEventImplementerI;
+import org.nrg.automation.event.entities.AutomationCompletionEvent;
+import org.nrg.framework.event.EventClass;
+import org.nrg.framework.event.Filterable;
+import org.nrg.framework.event.StructuredEvent;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xft.event.AutomationEventImplementerI;
-import org.nrg.xft.event.Filterable;
-import org.nrg.xft.event.StructuredEvent;
-import org.nrg.xft.event.EventClass;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 import org.python.google.common.collect.Maps;

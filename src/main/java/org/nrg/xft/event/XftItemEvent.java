@@ -1,6 +1,8 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xft.event;
 
+import org.nrg.framework.event.EventI;
+
 /**
  * The Class XftItemEvent.
  */

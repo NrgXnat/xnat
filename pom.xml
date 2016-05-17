@@ -327,12 +327,32 @@
             <!-- XNAT/XDAT dependency definitions -->
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
-                <artifactId>builder</artifactId>
+                <artifactId>xnat-data-publisher</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>web</artifactId>
                 <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>xnat-builder</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>spawner</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>xnat-data-models</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>xdat-data-publisher</artifactId>
                 <version>${xnat.version}</version>
             </dependency>
             <dependency>

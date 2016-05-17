@@ -43,7 +43,7 @@ var XNAT = getObject(XNAT);
 
         forOwn(obj, function(item, prop){
 
-            var kind, method, spawnedElement, $spawnedElement;
+            var kind, methodName, method, spawnedElement, $spawnedElement;
             
             // save the config properties in a new object
             prop = getObject(prop);
@@ -78,26 +78,29 @@ var XNAT = getObject(XNAT);
                 }
             }
             else {
+
                 // check for a matching XNAT.ui method to call:
                 method =
-                    // XNAT.ui.kind.init()
-                    eval(NAMESPACE + '.' + kind + '.init') ||
-
-                    // XNAT.ui.kind()
-                    eval(NAMESPACE + '.' + kind) ||
 
                     // XNAT.kind.init()
-                    eval('XNAT.' + kind + '.init') ||
+                    lookupObjectValue(XNAT, kind + '.init') ||
 
                     // XNAT.kind()
-                    eval('XNAT.' + kind) ||
+                    lookupObjectValue(XNAT, kind) ||
+
+                    // XNAT.ui.kind.init()
+                    lookupObjectValue(NAMESPACE + '.' + kind + '.init') ||
+
+                    // XNAT.ui.kind()
+                    lookupObjectValue(NAMESPACE + '.' + kind) ||
 
                     // kind.init()
-                    eval(kind + '.init') ||
+                    lookupObjectValue(kind + '.init') ||
 
                     // kind()
-                    eval(kind);
+                    lookupObjectValue(kind) ||
 
+                    null;
 
                 // only spawn elements with defined methods
                 if (isFunction(method)) {
@@ -199,3 +202,4 @@ var XNAT = getObject(XNAT);
     return XNAT.spawner = spawner;
 
 }));
+

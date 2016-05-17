@@ -5,7 +5,10 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
 
 // wrap it in an IIFE and pass the 'XNAT.app.timeout' object as the argument.
 // Is this the best way to do this? I don't know.
-(function(timeout){
+$(function(){
+
+    var timeout = XNAT.app.timeout;
+
     /*
      * The SESSION_EXPIRATION_TIME cookie returned from the server is double quoted for some reason
      * so unquote it before parsing it out.
@@ -20,6 +23,58 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
             ret.maxIdleTime = parseInt(values[1]);
         }
         return ret;
+    };
+
+
+
+    timeout.warningDialog = (function() {
+
+        // var timeLeft = timeout.settings.expirationTime.timeLeft;
+
+        // dialog.find('.body.content > .inner').html("Your "+XNAT.app.siteId+" session will expire in:</br></br>&nbsp;&nbsp;&nbsp; " + timeLeft.hoursPart + " hours "
+        //     + timeout.zeroPad(timeLeft.minutesPart) + " minutes " + +timeout.zeroPad(timeLeft.secondsPart) + ' seconds.' +
+        //     '</br></br>Click "Renew" to reset session timer.');
+
+        var z = 99999;
+
+        var dialog = xmodal.open({
+            id: 'session-timeout-warning',
+            classes: 'keep static',
+            width: 320,
+            height: 200,
+            title: false,
+            content: 'Your ' + XNAT.app.siteId + ' session will expire in: <br><br>' +
+            '<span class="mono timeout-hours"></span> hours ' +
+            '<span class="mono timeout-minutes"></span> minutes ' +
+            '<span class="mono timeout-seconds"></span> seconds.' +
+            '</br></br>Click "Renew" to reset session timer.',
+            okLabel: 'Renew',
+            okAction: function(obj){
+                timeout.handleOk();
+                obj.$modal.hide();
+            },
+            okClose: false
+        });
+
+        dialog.$mask.hide().css('z-index', z-1);
+        dialog.$modal.hide().css('z-index', z);
+
+        dialog.hours   = dialog.$modal.find('span.timeout-hours');
+        dialog.minutes = dialog.$modal.find('span.timeout-minutes');
+        dialog.seconds = dialog.$modal.find('span.timeout-seconds');
+
+        return dialog;
+
+    })();
+
+    timeout.warningDialog.show = function(){
+        timeout.warningDialog.$mask.show();
+        timeout.warningDialog.$modal.show();
+    };
+
+    timeout.warningDialog.hide = function(){
+        timeout.warningDialog.$mask.hide();
+        timeout.warningDialog.$modal.hide();
     };
 
     /**
@@ -142,19 +197,19 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
         timeout.synchronizingCookies.hasRedirected.clear();
     };
 
-    timeout.disableButtons = function(dialog) {
-        var buttons = dialog.getButtons();
-        for (var i = 0; i < buttons.length; i++) {
-            buttons[i].set('disabled', true);
-        }
-    };
-
-    timeout.enableButtons = function(dialog) {
-        var buttons = dialog.getButtons();
-        for (var i = 0; i < buttons.length; i++) {
-            buttons[i].set('disabled', false);
-        }
-    };
+    // timeout.disableButtons = function(dialog) {
+    //     var buttons = dialog.getButtons();
+    //     for (var i = 0; i < buttons.length; i++) {
+    //         buttons[i].set('disabled', true);
+    //     }
+    // };
+    //
+    // timeout.enableButtons = function(dialog) {
+    //     var buttons = dialog.getButtons();
+    //     for (var i = 0; i < buttons.length; i++) {
+    //         buttons[i].set('disabled', false);
+    //     }
+    // };
 
     /**
      * If a user double-clicks a button in YUI's SimpleDialog
@@ -162,23 +217,23 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
      * So we have to disable the buttons after each click and
      * enable them again when the dialog is shown.
      */
-    timeout.hideWarningDialog = function(dialog) {
-        timeout.disableButtons(dialog);
+    timeout.hideWarningDialog = function() {
+        // timeout.disableButtons(dialog);
         timeout.synchronizingCookies.dialogDisplay.set("false");
-        dialog.hide();
+        timeout.warningDialog.hide();
     };
 
-    timeout.showWarningDialog = function(dialog) {
-        timeout.enableButtons(dialog);
+    timeout.showWarningDialog = function() {
+        // timeout.enableButtons();
         timeout.synchronizingCookies.dialogDisplay.set("true");
-        dialog.show();
+        timeout.warningDialog.show();
     };
 
     /**
      * If the user wants to extend the session, hide the dialog and "touch" the server
      */
     timeout.handleOk = function () {
-        timeout.hideWarningDialog(timeout.warningDialog);
+        // timeout.hideWarningDialog();
         timeout.touchCallback.startTime = new Date().getTime();
         XNAT.xhr.get(XNAT.url.restUrl('/xapi/siteConfig/buildInfo'), timeout.touchCallback);
         $('applet').css('visibility', 'visible');
@@ -189,8 +244,8 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
      * to all tabs and ensure that they all close their dialogs.
      */
     timeout.handleCancel = function () {
-        timeout.hideWarningDialog(timeout.warningDialog);
-        timeout.settings.warningDisplayedOnce = true;
+        timeout.hideWarningDialog();
+        // timeout.settings.warningDisplayedOnce = true;
         // don't make it any more complicated than necessary - just show the thing
         $('applet').css('visibility', 'visible');
     };
@@ -206,7 +261,7 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
             }
             else {
                 timeout.refreshSynchronizingCookies();
-                timeout.settings.warningDisplayedOnce = false;
+                // timeout.settings.warningDisplayedOnce = false;
             }
         },
         failure: function () {
@@ -221,35 +276,35 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
         return (y < 10) ? '0'+y : ''+y ;
     };
 
-    /**
-     * The warning dialog
-     */
-    timeout.warningDialog = new YAHOO.widget.SimpleDialog("session_timeout_dialog", {
-        width: "300px",
-        close: true,
-        fixedcenter: true,
-        // z-index is manhandled in xnat.css
-        // but we need to set it here as a base z-index for the other YUI dialogs
-        zIndex: 5001,
-        constraintoviewport: true,
-        modal: true,
-        icon: YAHOO.widget.SimpleDialog.ICON_WARN,
-        visible: true,
-        draggable: true,
-        hideAfterSubmit: true,
-        buttons: [
-            { text: 'Renew', handler: timeout.handleOk, isDefault: true },
-            { text: 'Close', handler: timeout.handleCancel }
-        ]
-    });
+    // /**
+    //  * The warning dialog
+    //  */
+    // timeout.warningDialog = new YAHOO.widget.SimpleDialog("session_timeout_dialog", {
+    //     width: "300px",
+    //     close: true,
+    //     fixedcenter: true,
+    //     // z-index is manhandled in xnat.css
+    //     // but we need to set it here as a base z-index for the other YUI dialogs
+    //     zIndex: 5001,
+    //     constraintoviewport: true,
+    //     modal: true,
+    //     icon: YAHOO.widget.SimpleDialog.ICON_WARN,
+    //     visible: true,
+    //     draggable: true,
+    //     hideAfterSubmit: true,
+    //     buttons: [
+    //         { text: 'Renew', handler: timeout.handleOk, isDefault: true },
+    //         { text: 'Close', handler: timeout.handleCancel }
+    //     ]
+    // });
 
     timeout.initWarningDialog = function(dialog) {
-        dialog.manager = this;
-        dialog.render(document.body);
-        dialog.setHeader("Session Timeout Warning");
-        dialog.setBody("");
-        dialog.bringToTop();
-        dialog.hide();
+        // dialog.manager = this;
+        // dialog.render(document.body);
+        // dialog.setHeader("Session Timeout Warning");
+        // dialog.setBody("");
+        // dialog.bringToTop();
+        // dialog.hide();
     };
 
     /**
@@ -318,23 +373,23 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
      * 4. The dialog should not be displayed and is not displayed. Hide the dialog anyway
      * in case another tab as been opened while the popup was open in this one.
      */
-    timeout.updateMessageOrHide = function(dialog) {
-        if (timeout.synchronizingCookies.dialogDisplay.get() === "true" && timeout.settings.warningDisplayedOnce) {
-            var timeLeft = timeout.settings.expirationTime.timeLeft;
-            dialog.setBody("Your "+XNAT.app.siteId+" session will expire in:</br></br>&nbsp;&nbsp;&nbsp; " + timeLeft.hoursPart + " hours "
-                + timeout.zeroPad(timeLeft.minutesPart) + " minutes " + +timeout.zeroPad(timeLeft.secondsPart) + ' seconds.' +
-                '</br></br>Click "Renew" to reset session timer.');
+    timeout.updateMessageOrHide = function() {
+        if (timeout.synchronizingCookies.dialogDisplay.get() === "true") {
+            // var timeLeft = timeout.settings.expirationTime.timeLeft;
+            // dialog.hours = timeLeft.hours
+            timeout.showWarningDialog();
+            // timeout.updateMessageOrHide();
+        // }
+        // else if (timeout.synchronizingCookies.dialogDisplay.get() === "true" && !timeout.settings.warningDisplayedOnce) {
+            // timeout.settings.warningDisplayedOnce = true;
+            // timeout.showWarningDialog();
+            // timeout.updateMessageOrHide();
         }
-        else if (timeout.synchronizingCookies.dialogDisplay.get() === "true" && !timeout.settings.warningDisplayedOnce) {
-            timeout.settings.warningDisplayedOnce = true;
-            timeout.showWarningDialog(dialog);
-            timeout.updateMessageOrHide(dialog);
-        }
-        else if (timeout.synchronizingCookies.dialogDisplay.get() === "false" && timeout.settings.warningDisplayedOnce) {
-            timeout.hideWarningDialog(dialog);
-        }
-        else if (timeout.synchronizingCookies.dialogDisplay.get() === "false" && !timeout.settings.warningDisplayedOnce) {
-            timeout.hideWarningDialog(dialog);
+        // else if (timeout.synchronizingCookies.dialogDisplay.get() === "false" && timeout.settings.warningDisplayedOnce) {
+        //     timeout.hideWarningDialog();
+        // }
+        else if (timeout.synchronizingCookies.dialogDisplay.get() === "false") {
+            timeout.hideWarningDialog();
         }
     };
 
@@ -374,12 +429,23 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
      */
     timeout.sessionCountdown = function() {
 
+        var dialog = timeout.warningDialog;
         var timeLeft = timeout.settings.expirationTime.timeLeft;
         var $timeLeft = $('#timeLeft');
 
-        $timeLeft.text(timeLeft.hoursPart + ":" + timeout.zeroPad(timeLeft.minutesPart) + ":" + timeout.zeroPad(timeLeft.secondsPart));
+        var hours = timeLeft.hoursPart;
+        var mins  = timeout.zeroPad(timeLeft.minutesPart);
+        var secs  = timeout.zeroPad(timeLeft.secondsPart);
 
-        if ((timeLeft.secondsLeft < timeout.settings.popupTime) && (!timeout.settings.warningDisplayedOnce)) {
+        $timeLeft.text(hours + ":" + mins + ":" + secs);
+
+        // Update the text in the dialog too so it's always in synch
+        dialog.hours.text(hours);
+        dialog.minutes.text(mins);
+        dialog.seconds.text(secs);
+
+        if ((timeLeft.secondsLeft < timeout.settings.popupTime)) {
+            timeout.warningDialog.show();
             timeout.synchronizingCookies.dialogDisplay.set("true");
         }
 
@@ -395,40 +461,46 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
         }
     };
 
-})(XNAT.app.timeout);
 
-/**
- * Initialize the synchronizing cookies and warning dialog and kick off the
- * counter.
- */
-XNAT.app.timeout.refreshSynchronizingCookies();
-XNAT.app.timeout.initWarningDialog(XNAT.app.timeout.warningDialog);
-// only run the timer if *not* a guest user (if an authenticated user)
-if ((!!Cookies.get('guest')) && (Cookies.get('guest') === 'false')) {
-    setInterval(
-        function(){
-            XNAT.app.timeout.syncSessionExpirationCookieWithLocal();
-            XNAT.app.timeout.updateMessageOrHide(XNAT.app.timeout.warningDialog);
-            XNAT.app.timeout.sessionCountdown();
-        },
-        XNAT.app.timeout.settings.timerInterval
-    );
-}
-
-(function(){
-
-    var hash = window.location.hash.toLowerCase();
-
-    // force debug mode to 'stick' if set explicitly 'on' or 'off'
-    var debugOn = /(debug=on|debug=true)/.test(hash.toLowerCase());
-    var debugOff = /(debug=off|debug=false)/.test(hash.toLowerCase());
-
-    if (debugOn) { Cookies.set('debug','on') }
-    else if (debugOff) { Cookies.remove('debug') }
-
-    // if debugging, reset the timer every minute
-    if (debugOn || window.debug || isFalse(getQueryStringValue('timeout')) || /(on|true)/.test(Cookies.get('debug'))) {
-        setInterval(XNAT.app.timeout.handleOk, 60*1000);
+    /**
+     * Initialize the synchronizing cookies and warning dialog and kick off the
+     * counter.
+     */
+    XNAT.app.timeout.refreshSynchronizingCookies();
+    // XNAT.app.timeout.initWarningDialog();
+    // only run the timer if *not* a guest user (if an authenticated user)
+    if ((!!Cookies.get('guest')) && (Cookies.get('guest') === 'false')) {
+        setInterval(
+            function(){
+                XNAT.app.timeout.syncSessionExpirationCookieWithLocal();
+                XNAT.app.timeout.updateMessageOrHide();
+                XNAT.app.timeout.sessionCountdown();
+            },
+            XNAT.app.timeout.settings.timerInterval
+        );
     }
 
-})();
+    // attach event handler to elements with 'renew-session' class
+    $('body').on('click', '#timeLeftRenew, .renew-session', function(){
+        timeout.handleOk();
+    });
+
+    // (function(){
+    //
+    //     var hash = window.location.hash.toLowerCase();
+    //
+    //     // force debug mode to 'stick' if set explicitly 'on' or 'off'
+    //     var debugOn = /(debug=on|debug=true)/.test(hash.toLowerCase());
+    //     var debugOff = /(debug=off|debug=false)/.test(hash.toLowerCase());
+    //
+    //     if (debugOn) { Cookies.set('debug','on') }
+    //     else if (debugOff) { Cookies.remove('debug') }
+    //
+    //     // if debugging, reset the timer every 2 minutes
+    //     if (debugOn || window.debug || isFalse(getQueryStringValue('timeout')) || /(on|true)/.test(Cookies.get('debug'))) {
+    //         setInterval(XNAT.app.timeout.handleOk, 120*1000);
+    //     }
+    //
+    // })();
+
+});

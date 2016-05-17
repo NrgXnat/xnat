@@ -2,7 +2,11 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<pg:xnat page="setup" title="XNAT Setup">
+<c:set var="HEADBOTTOM">
+    <script src="<c:url value="/scripts/xnat/app/siteSetup.js"/>"></script>
+</c:set>
+
+<pg:xnat page="setup" title="XNAT Setup" headBottom="${HEADBOTTOM}">
 
     <div id="page-body">
         <div class="pad">
@@ -83,13 +87,14 @@
                             </div>
                             <!-- /#site-setup-panels -->
 
+                            <script src="<c:url value="/scripts/xnat/app/siteSetup.js"/>"></script>
 
                             <script>
 
-                                XNAT.app.setupComplete = function(){
-                                    XNAT.xhr.form('#site-setup', {});
-                                };
-
+//                                XNAT.app.setupComplete = function(){
+//                                    XNAT.xhr.form('#site-setup', {});
+//                                };
+//
                                 XNAT.xhr.get({
                                     url: XNAT.url.rootUrl('/page/admin/data/config/site-setup.yaml'),
                                     //url: XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteSetup'),

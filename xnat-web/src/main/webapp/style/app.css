@@ -1017,7 +1017,7 @@ body input.btn1[type="submit"] {
 .btn.save:hover,
 body input.btn1:hover,
 body input.btn1[type="button"]:hover,
-body [type="submit"]:hover {
+body input[type="submit"]:hover {
     background: #096BB7;
 }
 
@@ -1026,7 +1026,6 @@ body [type="submit"]:hover {
 .btn2,
 body button,
 body input[type="button"],
-body input[type="submit"],
 body input[type="reset"] {
     background: #f0f0f0 linear-gradient( #ffffff, #f0f0f0 );
     border: 1px solid #c0c0c0;
@@ -1036,7 +1035,6 @@ body input[type="reset"] {
 .btn2:hover,
 body button:hover,
 body input[type="button"]:hover,
-body input[type="submit"]:hover,
 body input[type="reset"]:hover {
    background: #f0f0f0;
 }
@@ -2035,7 +2033,7 @@ input.invalid {
 #actionsMenu > .bd > .first-of-type a {
     padding: 6px 8px;
     font-weight: bold;
-    background: #04519b;
+    background: #1A75BB;
     color: #fff;
 }
 
@@ -2890,7 +2888,7 @@ table.file-details td.scan-image-buttons {
 
 #admin-nav .active {
     color: #fff;
-    background: #04519b;
+    background: #1A75BB;
     border: 1px solid #293D66;
 }
 

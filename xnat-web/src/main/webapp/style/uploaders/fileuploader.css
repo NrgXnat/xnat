@@ -19,7 +19,7 @@ div.abu-xnat-interactivity-area-sub {
 .abu-done-button {
     display:block; /* or inline-block */
     width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
-    background:#084FAB; border-bottom:1px solid #ddd;color:#fff; 
+    background:#1A75BB; border-bottom:1px solid #ddd;color:#fff;
 }
 .abu-done-button-hover {background:#0B6BE8;}
 .abu-done-button-focus {outline:1px dotted black;}
@@ -27,7 +27,7 @@ div.abu-xnat-interactivity-area-sub {
 .abu-process-button {
     display:block; /* or inline-block */
     width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
-    background:#084FAB; border-bottom:1px solid #ddd;color:#fff; 
+    background:#1A75BB; border-bottom:1px solid #ddd;color:#fff;
 }
 .abu-process-button-hover {background:#0B6BE8;}
 .abu-process-button-focus {outline:1px dotted black;}
@@ -35,7 +35,7 @@ div.abu-xnat-interactivity-area-sub {
 .abu-upload-button {
     display:block; /* or inline-block */
     width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
-    background:#084FAB; border-bottom:1px solid #ddd;color:#fff;
+    background:#1A75BB; border-bottom:1px solid #ddd;color:#fff;
 }
 .abu-upload-button-hover {background:#0B6BE8;}
 .abu-upload-button-focus {outline:1px dotted black;}
@@ -47,7 +47,7 @@ div.abu-xnat-interactivity-area-sub {
 .abu-upload-drop-area span {
     display:block; position:absolute; top: 50%; width:100%; margin-top:-8px; font-size:16px;
 }
-.abu-upload-drop-area-active {background:#084FAB; color#FFFFFF; display:inline-block; }
+.abu-upload-drop-area-active {background:#1A75BB; color#FFFFFF; display:inline-block; }
 
 .abu-files-processing {
 	background:#FFF url('../../images/loading.gif') 50% center no-repeat; opacity: 0.8; 
@@ -86,7 +86,7 @@ ad
 .abu-upload-duplicate {display:inline;color:#008800}
 .abu-upload-duplicate.abu-upload-duplicate-text {display:inline;color:#008800}
 
-.abu-uploader-instructions-sel {margin-bottom:0px; margin-right:10px; display:inline: width:100%; float:right; background-color:#CCCCCC; border-color:#084FAB; color:#084FAB; border-style:solid; border-width:1px; border-color:#084FAB; font-size:14px; font-weight: bold; padding:2px; }
+.abu-uploader-instructions-sel {margin-bottom:0px; margin-right:10px; display:inline: width:100%; float:right; background-color:#CCCCCC; border-color:#1A75BB; color:#1A75BB; border-style:solid; border-width:1px; border-color:#1A75BB; font-size:14px; font-weight: bold; padding:2px; }
 .abu-uploader-instructions {margin-bottom:10px; display:inline}
 
 .abu-return-floatmessage {position:absolute;z-index:10001;width:auto;cursor:pointer;background-color:#FFFFCC; }

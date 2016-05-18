@@ -186,6 +186,11 @@ function isNumeric( num ) {
     return !isArray( num ) && (num - parseFloat( num ) + 1) >= 0;
 }
 
+// can the value be reasonably used as a string?
+function stringable(val){
+    return /string|number|boolean/.test(typeof val);
+}
+
 // copy of jQuery's $.extend() method
 function extend(){
     var src, copyIsArray, copy, name, options, clone,

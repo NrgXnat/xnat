@@ -19,7 +19,7 @@ function XNATLoadingGIF(div_id){
 	this.msg=this.div.innerHTML;
 	
 	this.img = document.createElement("img");
-	this.img.src=serverRoot+"/scripts/yui/build/assets/skins/xnat/wait.gif";
+	this.img.src=serverRoot+"/scripts/yui/build/assets/skins/images/wait.gif";
 	this.div.appendChild(this.img);
 	
 	this.render=function(){

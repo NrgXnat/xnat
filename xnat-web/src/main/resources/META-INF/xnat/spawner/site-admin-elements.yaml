@@ -220,26 +220,31 @@ userLoginsSessionControls:
     load:
         lookup: XNAT.data.siteConfig
         refresh: /xapi/siteConfig
+    contentType: json
     contents:
-
         sessionTimeout:
             kind: panel.input.number
             id: sessionTimeout
-            name: aliasTokenTimeout
+            name: sessionTimeout
             label: Session Timeout
             value: ?? XNAT.data.siteConfig.sessionTimeout || 15
+            description: "Interval for timing out alias tokens"
+        aliasTokenTimeout:
+            kind: panel.input.text
+            id: aliasTokenTimeout
+            name: aliasTokenTimeout
+            label: Alias Token Timeout
+            value: ?? XNAT.data.siteConfig.aliasTokenTimeout || 2 days
             description: >
                 Interval for timing out alias tokens. Uses
                 <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
-
         sessionTimeoutMessage:
-            kind: panel.input.text
+            kind: panel.textarea
             id: sessionTimeoutMessage
             name: sessionTimeoutMessage
             label: Session Timeout Message
             value: ?? XNAT.data.siteConfig.sessionTimeoutMessage || "Your session has timed out."
             description: Alert message provided to users after a session timeout and logout.
-
         allowResumeOnNextLogin:
             kind: panel.input.checkbox
             id: allow-resume-on-next-login
@@ -247,31 +252,27 @@ userLoginsSessionControls:
             label: Allow Resume On Next Login?
             value: ?? XNAT.data.siteConfig.allowResumeOnNextLogin
             description: Allow user to resume where they left off, if logging back in after a session timeout?
-
         maximumConcurrentSessions:
             kind: panel.input.number
             id: maximumConcurrentSessions
-            name: security.sessions.concurrent_max
+            name: sessions.concurrent_max
             label: Maximum Concurrent Sessions
-            value: ?? XNAT.data.siteConfig.maximumConcurrentSessions || 5
+            value: ?? XNAT.data.siteConfig.sessions.concurrent_max || 100
             description: The maximum number of permitted sessions a user can have open simultaneously
-
         loginFailureMessage:
-            kind: panel.input.text
+            kind: panel.textarea
             id: loginFailureMessage
             name: UI.login_failure_message
             label: Login Failure Message
             value: Login failed
             description: Text to show when a user fails to login
-
         maximumFailedLogins:
             kind: panel.input.number
             id: maximumFailedLogins
-            name: security.max_failed_logins
+            name: maxFailedLogins
             label: Maximum Failed Logins
             value: -1
             description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
-
         failedLoginLockoutDuration:
             kind: panel.input.number
             id: failedLoginLockoutDuration
@@ -279,7 +280,6 @@ userLoginsSessionControls:
             label: Failed Login Lockout Duration
             value: 0
             description: Number of milliseconds to lock user accounts that have exceeded the max_failed_logins count. Select (3600000 for 1 hour, 86400000 for 24 hours)
-
         userInactivityLockout:
             kind: panel.input.number
             id: userInactivityLockout
@@ -664,12 +664,12 @@ authenticationMethods:
             name: provider.providers.ldap
             label: LDAP
             value: false
-        oauthProvider:
-            kind: panel.input.checkbox
-            id: oauthProvider
-            name: provider.providers.oauth
-            label: OAuth
-            value: false
+#        oauthProvider:
+#            kind: panel.input.checkbox
+#            id: oauthProvider
+#            name: provider.providers.oauth
+#            label: OAuth
+#            value: false
 genericAuthenticationProvider:
     kind: panel.form
     name: genericAuthenticationProvider
@@ -1110,14 +1110,14 @@ adminPage:
                 ${authenticationMethods}
                 ${genericAuthenticationProvider}
                 ${ldapAuthentication}
-#        users:            # enable when users table can be re-implmented in spawner, until then use old users config?
+#        users:            # enable when users table can be re-implemented in spawner, until then use old users config?
 #            kind: tab
 #            name: users
 #            label: Users
 #            group: manageAccess
 #            contents:
 #                ${users}
-#        userRoles:        # enable when user roles table can be re-implmented in spawner, until then use old user roles config?
+#        userRoles:        # enable when user roles table can be re-implemented in spawner, until then use old user roles config?
 #            kind: tab
 #            name: userRoles
 #            label: User Roles
@@ -1174,7 +1174,7 @@ adminPage:
             label: Miscellaneous
             contents:
                 ${misc}
-                ${development}
+#                ${development}
 
 
 ###########################################

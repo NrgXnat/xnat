@@ -7,7 +7,7 @@
     "userHelper").getBrowseableElementDisplay($key).getSchemaElement().getPluralDescription()</DIV>
 #end
 
-#if($data.getSession().getAttribute("userHelper").canCreate($project))
+#if($data.getSession().getAttribute("userHelper").isOwner($project.getId()))
 <BR><A ID="button5" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","protocols").addPathInfo(
     "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
     "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Manage Custom Variables</A>

@@ -600,7 +600,7 @@ notifications:
             id: emailAllowNonuserSubscribers
             name: emailAllowNonuserSubscribers
             label: "Allow Nonuser Subscribers"
-            value: true
+            value: ?? XNAT.data.siteConfig.emailAllowNonuserSubscribers
 
 themeManagement:
     kind: panel.form
@@ -1030,6 +1030,23 @@ misc:
             name: scanTypeMapping
             label: Scan Type Mapping?
             value: true
+
+development:
+    kind: panel
+    name: development
+    label: Development Utilities
+    contents:
+        manageSpawner:
+            kind: panel.element
+            name: manageSpawner
+            label: Manage Spawner Elements
+            element:
+                html: >
+                    <a href="/page/admin/spawner">Manage Spawner Elements</a>
+
+
+
+
             
 
 #################################################
@@ -1049,8 +1066,7 @@ adminPage:
             label: Site Setup
             group: xnatSetup
             active: true
-            contains: panels # the value for 'contains' can be a custom name for 'contents'
-            panels:
+            contents:
                 ${siteInfo}
                 ${adminInfo}
         security:
@@ -1156,9 +1172,9 @@ adminPage:
             kind: tab
             name: misc
             label: Miscellaneous
-#            group: misc           # should show up under Other
             contents:
                 ${misc}
+                ${development}
 
 
 ###########################################

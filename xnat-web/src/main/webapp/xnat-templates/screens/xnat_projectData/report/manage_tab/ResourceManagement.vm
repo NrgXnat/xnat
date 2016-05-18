@@ -180,8 +180,8 @@
                 width: 200px;
                 margin-left: 2px;
             }
-            ##pResource_form button.default 	{display: inline-block ; height: 24px ; margin: 12px 0 0 6px ; padding: 1px 15px !important ; line-height: 24px ; vertical-align: middle ; font-size: 13px ; font-weight: normal ; text-decoration: none !important ; color: #333 ; background: #e0e0e0 url('images/btn2_30px.png') center center repeat-x ; border: 1px solid #808080 ; border-radius: 3px ; outline:none !important;font-weight: bold ; color: #fff ; background: /* #084FAB */ /* #206bc4 */ #07428d url('images/btn1_30px.png') center top repeat-x ; border-color: /* #206bc4 */ /* #243356 */ #293d66 ; 	}
-            ##pResource_form button.default:active { background: /* #206bc4 */ /* #4482cd */ #084FAB ; border-color: /* #084FAB */ #243356 ; }
+            ##pResource_form button.default 	{display: inline-block ; height: 24px ; margin: 12px 0 0 6px ; padding: 1px 15px !important ; line-height: 24px ; vertical-align: middle ; font-size: 13px ; font-weight: normal ; text-decoration: none !important ; color: #333 ; background: #e0e0e0 url('images/btn2_30px.png') center center repeat-x ; border: 1px solid #808080 ; border-radius: 3px ; outline:none !important;font-weight: bold ; color: #fff ; background: /* #1A75BB */ /* #206bc4 */ #07428d url('images/btn1_30px.png') center top repeat-x ; border-color: /* #206bc4 */ /* #243356 */ #293d66 ; 	}
+            ##pResource_form button.default:active { background: /* #206bc4 */ /* #4482cd */ #1A75BB ; border-color: /* #1A75BB */ #243356 ; }
 
         </style>
 </div>

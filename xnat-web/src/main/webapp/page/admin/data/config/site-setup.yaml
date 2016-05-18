@@ -1,16 +1,17 @@
-initialSetup:
-    kind: panel.multiForm
-    name: initialSetup
+siteSetup:
+    kind: app.siteSetup.form
+#    kind: panel.multiForm
+    name: siteSetup
     label: XNAT Initial Setup
-    method: GET
-    action: /setup?init=true
-    callback: XNAT.app.setupComplete
-    contentType: json
-    element:
-        id: site-setup
-    load:
-        lookup: XNAT.data.siteConfig
-        refresh: /xapi/siteConfig
+#    method: GET
+#    action: /setup?init=true
+#    callback: XNAT.app.setupComplete
+#    contentType: json
+#    element:
+#        id: site-setup
+#    load:
+#        lookup: XNAT.data.siteConfig
+#        refresh: /xapi/siteConfig
     contents:
 
         setupMessage:

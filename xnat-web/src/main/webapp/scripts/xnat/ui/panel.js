@@ -162,7 +162,10 @@ var XNAT = getObject(XNAT || {});
             xmodal.loading.open('#load-data');
 
             // need a form to put the data into!
-            if (!form) return;
+            if (!form) {
+                xmodal.loading.close('#load-data');
+                return;
+            }
 
             // if 'load' starts with ??, do lookup
             var doLookup = '??';
@@ -171,7 +174,7 @@ var XNAT = getObject(XNAT || {});
                 obj.load = (obj.load.split(doLookup)[1]||'').trim().split('|')[0];
                 obj.prop = obj.prop || obj.load.split('|')[1] || '';
                 setValues(form, lookupObjectValue(window, obj.load, obj.prop));
-
+                xmodal.loading.close('#load-data');
                 return form;
 
             }
@@ -181,7 +184,7 @@ var XNAT = getObject(XNAT || {});
             if (obj.load && obj.load.toString().indexOf(doEval) === 0) {
                 obj.load = (obj.load.split(doEval)[1]||'').trim();
                 setValues(form, eval(obj.load));
-
+                xmodal.loading.close('#load-data');
                 return form;
 
             }
@@ -209,9 +212,8 @@ var XNAT = getObject(XNAT || {});
 
             // need a url to get the data
             if (!ajaxUrl || !stringable(ajaxUrl)) {
-
+                xmodal.loading.close('#load-data');
                 return form;
-
             }
 
             // force GET method
@@ -254,7 +256,6 @@ var XNAT = getObject(XNAT || {});
         opts.onload = opts.onload || callback;
 
         $formPanel.on('reload-data', function(){
-            xmodal.loading.open('#load-data');
             loadData(this, {
                 refresh: opts.refresh || opts.load || opts.url
             });

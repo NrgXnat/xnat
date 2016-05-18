@@ -285,7 +285,16 @@ ${bodyTop}
                     <ul>
                         <!-- Sequence: 10 -->
                         <!-- Upload/Default -->
-                        <li><a href="${SITE_ROOT}/app/template/LaunchUploadApplet.vm">Images</a></li>
+                        <li><a href="${SITE_ROOT}/app/template/UploadOptions.vm">Images</a>
+                            <ul>
+                                <!-- Sequence: 10 -->
+                                <!-- Images -->
+                                <li><a href="${SITE_ROOT}/app/template/LaunchUploadApplet.vm">Upload Applet</a></li>
+                                <li><a href="${SITE_ROOT}/app/template/UploadAssistantPage.vm">Upload Assistant</a></li>
+                                <li><a href="${SITE_ROOT}/app/template/CompressedUploaderPage.vm">Compressed Uploader</a></li>
+                                <li><a href="${SITE_ROOT}/app/template/DICOMSCPPage.vm">DICOM SCP</a></li>
+                            </ul>
+                        </li>
                         <li><a href="${SITE_ROOT}/app/template/XMLUpload.vm">XML</a></li>
                         <li><a href="${SITE_ROOT}/app/template/XDATScreen_uploadCSV.vm">Spreadsheet</a></li>
                         <li><a href="${SITE_ROOT}/app/template/XDATScreen_prearchives.vm">Go to prearchive</a></li>
@@ -507,7 +516,7 @@ ${bodyTop}
                                 li$.find('ul.subnav').each(function(){
                                     var sub$ = $(this);
                                     var offsetL = sub$.closest('ul').outerWidth();
-                                    sub$.css({ 'left': offsetL + -25 })
+                                    sub$.css({ 'left': offsetL + -37 })
                                 });
                                 if (body$.hasClass('applet')) {
                                     coverApplet(li$.find('> ul'));

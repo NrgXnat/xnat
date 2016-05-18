@@ -1,0 +1,12 @@
+<table>
+        <tr>
+            <td>
+                <h4>Download Upload Assistant application</h4>
+            </td>
+        </tr>
+        <tr>
+            <td valign="top" align="left">
+                <div style="width:500px">You can download the XNAT Upload Assistant application and use it to upload your session. If the Upload Applet does not work for you, you might want to try this. <a href="https://bitbucket.org/xnatdev/upload-assistant/downloads">Click here</a> to find the appropriate version of the XNAT Upload Assistant application for your operating system.
+                </div>
+        </tr>
+</table>

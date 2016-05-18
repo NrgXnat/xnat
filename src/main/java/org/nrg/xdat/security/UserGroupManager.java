@@ -542,7 +542,7 @@ public class UserGroupManager implements UserGroupServiceI{
 	@Override
 	public UserGroupI getGroupByPK(Object gID) {
 		try {
-			String id=(String)PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xdat_usergroup WHERE xdat_userGroup_id=%1s;", "id", null, null);
+			String id=(String)PoolDBUtils.ReturnStatisticQuery(String.format("SELECT id FROM xdat_usergroup WHERE xdat_userGroup_id=%1$s;",gID), "id", null, null);
 			if(id!=null){
 				return getGroup(id);
 			}
@@ -590,7 +590,7 @@ public class UserGroupManager implements UserGroupServiceI{
 	@Override
 	public UserGroupI getGroupByTagAndName(String pID, String gID) {
 		try {
-			String id=(String)PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xdat_usergroup WHERE tag='%1s' AND displayname='%2s';", "id", null, null);
+			String id=(String)PoolDBUtils.ReturnStatisticQuery(String.format("SELECT id FROM xdat_usergroup WHERE tag='%1$s' AND displayname='%2$s';",pID,gID), "id", null, null);
 			if(id!=null){
 				return getGroup(id);
 			}

@@ -150,57 +150,6 @@ $(function(){
             populateEventsMenu();
         }
 
-/*
-            url: XNAT.url.restUrl('/data/automation/events'),
-            success: function( response ){
-
-                var _events = (response.ResultSet) ? response.ResultSet.Result || [] : [],
-                    availableEvents = [],
-                    $eventsMenu = $('#select_event'),
-                    options = '<option></option>';
-
-                if (!_events.length){
-                    options += '<option value="!" disabled>(no events defined)</option>';
-                    //$eventsMenu.prop('disabled',true);
-                    hasEvents = false;
-                }
-                else {
-                    forEach(_events, function(event){
-
-                        var _id = event['event_id'],
-                            _label = event['event_label'];
-
-                        if (eventsManager.handlers.indexOf(_id) === -1){
-                            // only add unused events to the menu
-                            options += '<option value="' + _id + '">' + _label +'</option>';
-                            // store available (unused) events
-                            availableEvents.push(_id);
-                        }
-                        // store list of all events
-                        eventsManager.events.push(_id);
-                    });
-
-                    if (!availableEvents.length){
-                        options = '<option value="!" disabled>(no available events)</option>';
-                    }
-                    hasEvents = true;
-                }
-
-                $eventsMenu.html(options);
-
-            },
-            error: function( request, status, error ){
-                xmodal.message('Error', 'An error occurred retrieving system events: [' + status + '] ' + error);
-            },
-            complete: function(){
-                // render the events table stuff after the
-                // request to get the events
-                if (!handlersRendered){
-                    initEventsTable(false);
-                }
-            }
-        });
-*/
     }
 
     function getEventClassDisplayValueFromHandlers(_handlers, eventHandler){
@@ -308,11 +257,6 @@ $(function(){
                 break;
             }
         }
-/*
-        $(".customButton").click(function(event){
-            customInputToggle(event.target);
-        });
-*/
         $(".customButton").each(function(){
             var eventObject = $._data(this, 'events');
             if (typeof eventObject == 'undefined' || typeof eventObject.click == 'undefined') {
@@ -432,35 +376,6 @@ $(function(){
                     }
                 });
 	});
-
-        /*
-        xhr.put({
-            url: '/data/projects/' + window.projectScope + '/automation/handlers?XNAT_CSRF=' + window.csrfToken,
-            data: data,
-            dataType: "json",
-            success: function(){
-                xmodal.message('Success', 'Your event handler was successfully added.', 'OK', { 
-                        action: function(){
-                            initEventsTable(false);
-                            if ($("#events_manage_table").length>0) {
-                                initEventsTable(true);
-                            }
-                            xmodal.closeAll($(xmodal.dialog.open),$('#xmodal-manage-events'));
-                            // Trigger automation uploader to reload handlers
-                            XNAT.app.abu.getAutomationHandlers();
-                        }  
-                    }
-                );
-            },
-            error: function( request, status, error ){
-                xmodal.message('Error', 'An error occurred: [' + status + '] ' + error, 'Close', {
-                    action: function(){
-                        xmodal.closeAll($(xmodal.dialog.open),$('#xmodal-manage-events'));
-                    }
-                });
-            }
-        });
-        */
     }
 
  
@@ -500,19 +415,6 @@ $(function(){
                          '</dl>' +
                     '</dl>' +
                 '</div>' 
-		/*
-                '<table id="events_manage_table" class="xnat-table" style="display:table;width:100%">' +
-                    '<thead>' +
-                    '<th>Event</th>' +
-                    '<th>Script</th>' +
-                    '<th>Description</th>' +
-                    '<th></th>' +
-                    '<th></th>' +
-                    '</thead>' +
-                    '<tbody>' +
-                    '</tbody>' +
-                '</table>' 
-		*/
            ); 
            initEventsTable(true);
            $("#events_manage_table").on('click', 'button.delete-handler', function(){
@@ -528,37 +430,7 @@ $(function(){
     function addEventHandler(){
 
         initEventsMenu();
-/*
-        //var getEvents = initEventsMenu();
 
-        //getEvents.done(function(){
-            xmodal.open({
-                title: 'Add Event Handler',
-                template: $('#addEventHandler'),
-                width: 500,
-                height: 300,
-                overflow: true,
-                beforeShow: function(obj){
-                    //chosenInit(obj.$modal.find('select.event, select.scriptId'), null, 300);
-                    //obj.$modal.find('select.event, select.scriptId').chosen({
-                    //    width: '300px',
-                    //    disable_search_threshold: 6
-                    //});
-                },
-                buttons: {
-                    save: {
-                        label: 'Save',
-                        isDefault: true,
-                        close: false,
-                        action: doAddEventHandler
-                    },
-                    close: {
-                        label: 'Cancel'
-                    }
-                }
-            });
-        //});
-*/
     }
 
     function doDeleteTrigger(triggerId){
@@ -571,19 +443,19 @@ $(function(){
             success: function(){
                 var configScope;
                 if (typeof XNAT.app.abu.uploaderConfig !== 'undefined') {
-                    for (var i=0; i<XNAT.app.abu.uploaderConfig.length; i++) {
+                    for (var i=XNAT.app.abu.uploaderConfig.length -1; i >= 0; i--) {
                         var thisConfig = XNAT.app.abu.uploaderConfig[i];
                         if (typeof thisConfig == 'undefined') {
                             continue;
                         }
                         if (thisConfig.eventTriggerId == triggerId) {
                             configScope = thisConfig.eventScope;
-                            XNAT.app.abu.uploaderConfig.splice(0,1);
+                            XNAT.app.abu.uploaderConfig.splice(i,1);
                         }
                     }
-                }
-                if (typeof configScope !== 'undefined') {
-                    XNAT.app.abu.putUploaderConfiguration(configScope,false);
+                    if (typeof configScope !== 'undefined') {
+                        XNAT.app.abu.putUploaderConfiguration(configScope,false);
+                    }
                 }
                 xmodal.message('Success', 'The event handler was successfully deleted.', 'OK', {
                     action: function(){

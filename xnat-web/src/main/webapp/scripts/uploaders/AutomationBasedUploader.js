@@ -300,33 +300,40 @@ XNAT.app.abu.initUploaderConfig = function(){
 		} else {
 			XNAT.app.abu.uploaderConfig = [];
 		}
-		var uploaderSiteConfigAjax = $.ajax({
-			type : "GET",
-	 		url:serverRoot+'/data/config/automation_uploader/configuration?contents=true',
-			cache: false,
-			async: false,
-			context: this,
-			dataType: 'json'
-		 });
-		uploaderSiteConfigAjax.done( function( data, textStatus, jqXHR ) {
-			if (typeof data !== 'undefined' && $.isArray(data) && data.length>0) {
-				// Configurations must have trigger IDs (remove old-style (pre XNAT 1.7) configurations)
-				for (var i = data.length -1; i >= 0 ; i--) {
-					var triggerId = data[i].eventTriggerId;
-					if (typeof triggerId == 'undefined' || triggerId.length<1) {
-						data.splice(i,1);
-					}
-				}
-				Array.prototype.push.apply(XNAT.app.abu.uploaderConfig,data);
-			}
-		});
-		uploaderConfigAjax.fail( function( data, textStatus, error ) {
-			// Do nothing, for now
-		});
+                XNAT.app.abu.initUploaderSiteConfig();
 	});
 
 	uploaderConfigAjax.fail( function( data, textStatus, error ) {
 		XNAT.app.abu.uploaderConfig = [];
+                XNAT.app.abu.initUploaderSiteConfig();
+	});
+
+}
+
+XNAT.app.abu.initUploaderSiteConfig = function(){
+
+	var uploaderSiteConfigAjax = $.ajax({
+		type : "GET",
+ 		url:serverRoot+'/data/config/automation_uploader/configuration?contents=true',
+		cache: false,
+		async: false,
+		context: this,
+		dataType: 'json'
+	 });
+	uploaderSiteConfigAjax.done( function( data, textStatus, jqXHR ) {
+		if (typeof data !== 'undefined' && $.isArray(data) && data.length>0) {
+			// Configurations must have trigger IDs (remove old-style (pre XNAT 1.7) configurations)
+			for (var i = data.length -1; i >= 0 ; i--) {
+				var triggerId = data[i].eventTriggerId;
+				if (typeof triggerId == 'undefined' || triggerId.length<1) {
+					data.splice(i,1);
+				}
+			}
+			Array.prototype.push.apply(XNAT.app.abu.uploaderConfig,data);
+		}
+	});
+	uploaderSiteConfigAjax.fail( function( data, textStatus, error ) {
+		console.log("Get site uploader configuration result - ", error); 
 	});
 
 }
@@ -1075,7 +1082,7 @@ XNAT.app.abu.saveUploaderConfiguration=function(configTriggerId, configEvent, sc
 	var isFound = false;
 	for (var i=0; i<XNAT.app.abu.uploaderConfig.length; i++) {
 		var config = XNAT.app.abu.uploaderConfig[i];
-		if (config.event == newConfigObj.event && config.eventScope == newConfigObj.eventScope) {
+		if (config.eventTriggerId == newConfigObj.eventTriggerId && config.eventScope == newConfigObj.eventScope) {
 			isFound = true;
 			if (!(JSON.stringify(XNAT.app.abu.uploaderConfig[i]) == JSON.stringify(newConfigObj))) {;
 				XNAT.app.abu.uploaderConfig[i] = newConfigObj;

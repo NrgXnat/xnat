@@ -33,7 +33,6 @@ import org.nrg.xdat.bean.XnatPetsessiondataBean;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatPetscandataI;
 import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
@@ -44,8 +43,6 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.restlet.XNATApplication;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.services.Archiver;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
-
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
@@ -540,7 +537,7 @@ public final class PrearcDatabase {
 
                             PrearcDatabase.addSession(sessionData);
 
-                            PrearcUtils.log(sessionData, new Exception(String.format("Moved from %1s to %2s", proj, destination)));
+                            PrearcUtils.log(sessionData, new Exception(String.format("Moved from %1$s to %2$s", proj, destination)));
                         } catch (SyncFailedException e) {
                             logger.error("Session sync operation failed", e);
                             throw new IllegalStateException(e.getMessage());

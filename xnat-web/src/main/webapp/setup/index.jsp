@@ -2,11 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<c:set var="HEADBOTTOM">
-    <script src="<c:url value="/scripts/xnat/app/siteSetup.js"/>"></script>
-</c:set>
-
-<pg:xnat page="setup" title="XNAT Setup" headBottom="${HEADBOTTOM}">
+<pg:xnat page="setup" title="XNAT Setup">
 
     <div id="page-body">
         <div class="pad">

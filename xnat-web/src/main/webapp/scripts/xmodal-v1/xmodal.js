@@ -1352,6 +1352,11 @@ if (typeof jQuery == 'undefined') {
                 opts.id = arg3.id || arg2;
             }
 
+            // don't open a second loader with the same id
+            if (xmodal.modals._ids.indexOf(opts.id) > 0) {
+                return false;
+            }
+
             return xmodal.open(opts);
 
         };

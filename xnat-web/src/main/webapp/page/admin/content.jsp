@@ -44,8 +44,9 @@
                         delete XNAT.data.siteConfig.targetSource;
 
 
-                        // var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.yaml');
+//                      var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.yaml');
                         var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/adminPage');
+//                        var jsonUrl = XNAT.url.rootUrl('/page/admin/data/site-admin-page.json');
 
                         $.get({
                             url: jsonUrl,

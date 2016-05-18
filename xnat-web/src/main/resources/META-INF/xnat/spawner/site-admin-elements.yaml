@@ -606,7 +606,6 @@ themeManagement:
     kind: panel.form
     name: themeManagement
     label: Theme Management
-    method: PUT
     action: /xapi/theme
     contents:
         themeScript:
@@ -1001,7 +1000,6 @@ fileSystem:
         ${ftpPath}
         ${buildPath}
         ${pipelinePath}
-        ${dataFolders}
         ${zipExtensions}
 
 misc:
@@ -1154,7 +1152,6 @@ adminPage:
             group: advanced
             contents:
                 ${fileSystem}
-                ${siteIdMain}
         misc:
             kind: tab
             name: misc

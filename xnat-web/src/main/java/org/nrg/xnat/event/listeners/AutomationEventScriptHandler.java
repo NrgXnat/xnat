@@ -329,14 +329,18 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
                 logger.error("Script launch exception", e1);
             }
         }
-        if (automationCompletionEvent != null && automationCompletionEvent.getScriptOutputs().size() > 0) {
+        if (automationCompletionEvent != null) { 
             if (_eventService != null) {
                 automationCompletionEvent.setEventCompletionTime(System.currentTimeMillis());
                 _eventService.triggerEvent(automationCompletionEvent);
                 List<String> notifyList = automationCompletionEvent.getNotificationList();
                 if (notifyList != null && !notifyList.isEmpty()) {
+                	final String scriptOut = 
+                	(automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
+                			scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
+                				"<h3>No output was returned from the script run</h3>";	
                     final String EMAIL_SUBJECT = "Automation Results";
-                    AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()), false, notifyList.toArray(new String[0]));
+                    AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOut, false, notifyList.toArray(new String[0]));
                 }
             }
         }

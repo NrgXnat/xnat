@@ -603,9 +603,11 @@ notifications:
             value: true
 
 themeManagement:
-    kind: panel
+    kind: panel.form
     name: themeManagement
     label: Theme Management
+    method: PUT
+    action: /xapi/theme
     contents:
         themeScript:
             tag: script|type=text/javascript;src=../../scripts/xnat/admin/themeManagement.js
@@ -625,6 +627,7 @@ themeManagement:
         existingTheme:
             kind: panel.select.single
             id: themeSelection
+            name: themeSelection
             label: Select an existing theme
             description: Selected a new global theme from those available on the system.
             value: None
@@ -633,7 +636,10 @@ themeManagement:
                     label: None
                     value: None
             after:
-                - "<span style=\"position: relative; top: -49px;left: 270px;\">&nbsp;<button id=\"submitThemeButton\" onclick=\"setTheme();\">Set Theme</button>&nbsp;&nbsp;<button id=\"removeThemeButton\" onclick=\"removeTheme();\">Remove Theme</button></span>"
+                - "<span style=\"position: relative; top: -49px;left: 270px;\"> <!-- &nbsp;<button id=\"submitThemeButton\" onclick=\"setTheme();\">Set Theme</button>&nbsp;&nbsp; --> <button id=\"removeThemeButton\" onclick=\"removeTheme();\">Remove Theme</button></span>"
+            element:
+                style:
+                    min-width: 250px
         uploadTheme:
             kind: panel.input.upload
             id: themeFileUpload

@@ -410,7 +410,7 @@ function DataTableSearch(_div_table_id,obj,_config,_options){
     dt.innerHTML=obj.responseText;
     //alert(dt.innerHTML);
     var tbl=dt.getElementsByTagName("TABLE")[0];
-    var sprite=serverRoot+"/scripts/yui/build/assets/skins/xnat/xnat-sprite.png";
+    var sprite=serverRoot+"/scripts/yui/build/assets/skins/images/xnat-sprite.png";
     var thead=tbl.getElementsByTagName("THEAD")[0];
     var tr=thead.getElementsByTagName("TR")[0];
 

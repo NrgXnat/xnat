@@ -102,7 +102,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	// results";
 
 	/** The Constant TIMEOUT_SECONDS. */
-	private static final int TIMEOUT_SECONDS = 900;
+	private static final int TIMEOUT_SECONDS = 600;
 
 	/** The logger. */
 	static Logger logger = Logger.getLogger(AutomationBasedImporter.class);
@@ -703,8 +703,10 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 					}
 				}
 			}
-			returnList.add("<br><b>FINISHED PROCESSING");
+		} else {
+			returnList.add("<br><b>No output was returned from the script</b>");
 		}
+		returnList.add("<br><b>FINISHED PROCESSING");
 	}
 	
 

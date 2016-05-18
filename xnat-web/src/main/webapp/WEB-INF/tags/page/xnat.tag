@@ -67,6 +67,7 @@
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.min.css?${versionString}">
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.maskedinput.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.hasClasses.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.js"></script>
 
@@ -209,7 +210,7 @@
 
     <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>
 
-    <%--<script src="${SITE_ROOT}/scripts/timeLeft.js"></script>--%>
+    <script src="${SITE_ROOT}/scripts/timeLeft.js"></script>
 
     ${headBottom}
 
@@ -335,7 +336,7 @@ ${bodyTop}
                         <!-- Sequence: 10 -->
                         <!-- Home/Default -->
                         <li><a href="${SITE_ROOT}/app/template/ReportIssue.vm">Report a Problem</a></li>
-                        <li><a href="http://wiki.xnat.org/display/XNAT16/Home" target="_blank">Documentation</a></li>
+                        <li><a href="http://wiki.xnat.org" target="_blank">Documentation</a></li>
                     </ul>
                 </li>
             </ul>

@@ -35,30 +35,7 @@ var XNAT = getObject(XNAT || {});
         });
         return obj.data;
     }
-
-    // another way to do this without using eval()
-    // is to loop over object string using dot notation:
-    // var myVal = lookupObjectValue(XNAT, 'data.siteConfig.siteId');
-    // --> myVal == 'myXnatSiteId'
-    function lookupObjectValue(root, objStr){
-        var val = '';
-        if (!objStr) {
-            objStr = root;
-            root = window;
-        }
-        root = root || window;
-        objStr.toString().trim().split('.').forEach(function(part, i){
-            // start at the root object
-            if (i === 0) {
-                val = root[part] || {};
-            }
-            else {
-                val = val[part];
-            }
-        });
-        return val;
-    }
-
+    
     // string that indicates to look for a namespaced object value
     var doLookupString = '??';
 
@@ -274,14 +251,25 @@ var XNAT = getObject(XNAT || {});
 
         opts.callback = opts.callback || callback || diddly;
 
+        // is this form part of a multiForm?
+        multiform.parent = $formPanel.closest('form.multi-form');
+
+        if (multiform.parent) {
+            multiform.count = $(multiform.parent).find('form').length
+        }
+
+        multiform.errors = 0;
+
         // intercept the form submit to do it via REST instead
         $formPanel.on('submit', function(e){
 
             e.preventDefault();
 
-            var $form = $(this),
+            var $form = $(this).removeClass('error'),
                 errors = 0,
-                valid = true;
+                valid = true,
+                silent = $form.hasClass('silent'),
+                multiform = {};
 
             $form.dataAttr('errors', 0);
 
@@ -298,7 +286,8 @@ var XNAT = getObject(XNAT || {});
             $form.dataAttr('errors', errors);
 
             if (!valid) {
-                if (!multiform.count) {
+                $form.addClass('error');
+                if (!silent) {
                     xmodal.message('Error','Please enter values for the required items and re-submit the form.');
                 }
                 multiform.errors++; // keep track of errors for multi-form submission
@@ -359,7 +348,7 @@ var XNAT = getObject(XNAT || {});
                     }
 
                     // don't mess with modals for multiforms
-                    if (!multiform.count){
+                    if (!silent){
                         xmodal.loading.close('#form-save');
                         xmodal.message('Data saved successfully.', {
                             action: function(){
@@ -399,6 +388,7 @@ var XNAT = getObject(XNAT || {});
             }
         }
     };
+    panel.form.init = panel.form;
 
     // creates a panel that submits all forms contained within
     panel.multiForm = function(opts, callback){
@@ -462,9 +452,7 @@ var XNAT = getObject(XNAT || {});
 
                     // submit ALL enclosed forms
                     $forms.each(function(){
-                        //if (!multiform.errors) {
-                            $(this).trigger('submit');
-                        //}
+                        $(this).addClass('silent').trigger('submit');
                     });
 
                     if (multiform.errors) {
@@ -561,7 +549,8 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
-
+    panel.element.init = panel.element;
+    
     panel.subhead = function(opts){
         opts = cloneObject(opts);
         opts.html = opts.html || opts.text || opts.label;
@@ -736,6 +725,7 @@ var XNAT = getObject(XNAT || {});
     panel.select.multi = function panelSelectMulti(opts){
         return panel.select.menu(opts, true)
     };
+    panel.select.multi.init = panel.select.multi;
 
     panel.selectMenu = function panelSelectMenu(opts){
         opts = cloneObject(opts);

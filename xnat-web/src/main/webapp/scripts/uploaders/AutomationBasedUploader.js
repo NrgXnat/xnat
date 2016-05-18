@@ -233,14 +233,14 @@ XNAT.app.abu.getAutomationHandlers = function(){
 			XNAT.app.abu.showScanLinks();
 		});
 		sitewideHandlerAjax.fail( function( data, textStatus, jqXHR ) {
-			console.log("GetAutomationHandlers error -" + error); 
 			XNAT.app.abu.abuConfigs.hideLinks();	
+			console.log("GetAutomationHandlers result - ", jqXHR); 
 		});
 
 	});
 	initializeBuildAjax.fail( function( data, textStatus, jqXHR ) {
-		console.log("GetAutomationHandlers error -" + error); 
 		XNAT.app.abu.abuConfigs.hideLinks();	
+		console.log("GetAutomationHandlers result - ", jqXHR); 
 	});
 }
 

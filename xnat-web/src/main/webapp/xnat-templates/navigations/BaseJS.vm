@@ -36,6 +36,7 @@
     <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/lib/jquery-plugins/chosen/chosen.min.css?v=1.7.0a1')">
     <script src="$content.getURI('scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js')"></script>
     <script src="$content.getURI('scripts/lib/jquery-plugins/jquery.maskedinput.min.js')"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.hasClasses.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.js"></script>
 

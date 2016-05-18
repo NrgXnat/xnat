@@ -1004,14 +1004,18 @@ if (typeof jQuery == 'undefined') {
 
             // fade out then remove the modal
             $modal.fadeOut(fade, function(){
-                $(this).remove();
+                
                 // then if there's a mask that goes with it
                 // get rid of that too
                 if ($mask.length){
-                    $mask.fadeOut(fade/3, function(){
-                        $(this).remove();
-                    });
+                    $mask.hide();
                 }
+                // don't remove 'static' modals we want to 'keep'
+                if (!$modal.hasClasses('keep || static')) {
+                    $modal.remove();
+                    $mask.remove();
+                }
+
                 if (!$(xmodal.dialog.open).length) {
                     $body.removeClass('open');
                     $html.removeClass('noscroll');

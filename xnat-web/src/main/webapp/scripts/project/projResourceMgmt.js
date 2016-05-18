@@ -155,7 +155,7 @@ XNAT.app.pResources={
 				if (scriptToRun == XNAT.app.pResources.scripts[i]["Script ID"]) {
 					var eventData = { event: ("Uploaded " + props.name),
 					      			scriptId: scriptToRun,
-					      			eventClass: "org.nrg.xnat.event.entities.WorkflowStatusEvent",
+					      			eventClass: "org.nrg.xft.event.entities.WorkflowStatusEvent",
 					      			filters: { "status":["Complete"] },
 					      			description: "Run " + scriptToRun + " upon " + props.name + " upload." };
 					var eventHandlerAjax = $.ajax({

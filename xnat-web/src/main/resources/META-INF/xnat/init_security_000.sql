@@ -1098,8 +1098,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:55.993',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,36)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,36,'xnat:mrSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',36,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:55.998',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,37)
 
 INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('sometimes','XDATScreen_upload_scans_xnat_imageSessionData','Upload','edit','Up.gif',4,37,'xnat:mrSessionData',37,'Upload Scans')
@@ -1178,8 +1176,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.142',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,50)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,50,'xnat:ctSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',50,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.149',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,51)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,51,'xnat:ctSessionData',51,'Download XML')
@@ -1217,8 +1213,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,56,'xnat:usSessionData',56,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.203',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,57)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,57,'xnat:usSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',57,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.208',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,58)
 
@@ -1258,8 +1252,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.249',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,64)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,64,'xnat:crSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',64,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.253',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,65)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,65,'xnat:crSessionData',65,'Download XML')
@@ -1297,8 +1289,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,70,'xnat:epsSessionData',70,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.299',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,71)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,71,'xnat:epsSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',71,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.304',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,72)
 
@@ -1338,8 +1328,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.360',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,78)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,78,'xnat:hdSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',78,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.365',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,79)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,79,'xnat:hdSessionData',79,'Download XML')
@@ -1377,8 +1365,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,84,'xnat:ecgSessionData',84,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.425',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,85)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,85,'xnat:ecgSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',85,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.430',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,86)
 
@@ -1418,8 +1404,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.482',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,92)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,92,'xnat:ioSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',92,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.486',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,93)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,93,'xnat:ioSessionData',93,'Download XML')
@@ -1457,8 +1441,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,98,'xnat:mgSessionData',98,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.539',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,99)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,99,'xnat:mgSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',99,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.545',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,100)
 
@@ -1498,8 +1480,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.592',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,106)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,106,'xnat:dxSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',106,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.596',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,107)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,107,'xnat:dxSessionData',107,'Download XML')
@@ -1537,8 +1517,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,112,'xnat:nmSessionData',112,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.644',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,113)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,113,'xnat:nmSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',113,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.648',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,114)
 
@@ -1578,8 +1556,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.704',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,120)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,120,'xnat:srSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',120,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.710',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,121)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,121,'xnat:srSessionData',121,'Download XML')
@@ -1617,8 +1593,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,126,'xnat:gmvSessionData',126,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.767',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,127)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,127,'xnat:gmvSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',127,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.771',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,128)
 
@@ -1658,8 +1632,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.821',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,134)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,134,'xnat:gmSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',134,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.825',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,135)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,135,'xnat:gmSessionData',135,'Download XML')
@@ -1697,8 +1669,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,140,'xnat:esvSessionData',140,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.873',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,141)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,141,'xnat:esvSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',141,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.879',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,142)
 
@@ -1738,8 +1708,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.936',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,148)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,148,'xnat:esSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',148,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.940',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,149)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,149,'xnat:esSessionData',149,'Download XML')
@@ -1777,8 +1745,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,154,'xnat:dx3DCraniofacialSessionData',154,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.996',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,155)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,155,'xnat:dx3DCraniofacialSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',155,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.004',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,156)
 
@@ -1818,8 +1784,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.061',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,162)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,162,'xnat:xa3DSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',162,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.066',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,163)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,163,'xnat:xa3DSessionData',163,'Download XML')
@@ -1857,8 +1821,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,168,'xnat:rfSessionData',168,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.122',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,169)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,169,'xnat:rfSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',169,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.127',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,170)
 
@@ -1898,8 +1860,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.188',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,176)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,176,'xnat:xaSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',176,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.195',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,177)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,177,'xnat:xaSessionData',177,'Download XML')
@@ -1937,8 +1897,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,182,'xnat:smSessionData',182,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.268',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,183)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,183,'xnat:smSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',183,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.276',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,184)
 
@@ -1978,8 +1936,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.334',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,190)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,190,'xnat:xcSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',190,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.340',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,191)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,191,'xnat:xcSessionData',191,'Download XML')
@@ -2017,8 +1973,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,196,'xnat:xcvSessionData',196,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.406',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,197)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,197,'xnat:xcvSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',197,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.412',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,198)
 
@@ -2058,8 +2012,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.475',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,204)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,204,'xnat:opSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',204,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.481',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,205)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,205,'xnat:opSessionData',205,'Download XML')
@@ -2097,8 +2049,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,210,'xnat:optSessionData',210,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.546',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,211)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,211,'xnat:optSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',211,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.552',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,212)
 
@@ -2138,8 +2088,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.610',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,218)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,218,'xnat:rtSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',218,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.617',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,219)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,219,'xnat:rtSessionData',219,'Download XML')
@@ -2177,8 +2125,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,224,'xnat:megSessionData',224,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.676',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,225)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,225,'xnat:megSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',225,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.683',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,226)
 
@@ -2218,8 +2164,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.732',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,232)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,232,'xnat:eegSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',232,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.740',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,233)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,233,'xnat:eegSessionData',233,'Download XML')
@@ -2258,8 +2202,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.797',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,239)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,239,'xnat:otherDicomSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',239,'View Images')
-
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.802',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,240)
 
 INSERT INTO xdat_element_action_type (element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('xml_file','Download','save.gif',7,240,'xnat:otherDicomSessionData',240,'Download XML')
@@ -2297,8 +2239,6 @@ INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,
 INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,245,'xnat:petSessionData',245,'Edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.851',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,246)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,grouping,image,sequence,element_action_type_info,element_actions_element_action__element_name,parameterstring,xdat_element_action_type_id,display_name) VALUES ('always','Viewer','View','v.gif',3,246,'xnat:petSessionData','/popup_params/width=320,height=420,status=yes,resizable=yes,scrollbars=yes,toolbar=yes',246,'View Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.856',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,247)
 

@@ -21,6 +21,8 @@ import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.status.ListenerUtils;
 import org.nrg.status.StatusListenerI;
@@ -848,21 +850,33 @@ public final class PrearcDatabase {
     }
 
     private static Set<String> getPrearchiveFolderTimestamps() {
-        Set<String> timestamps = new HashSet<>();
+        final Set<String> timestamps = new HashSet<>();
         timestamps.add("0"); // there must be at least one element in the list
-        File baseDir = new File(prearcPath);
-        File[] dirs = baseDir.listFiles(FileSystemSessionTrawler.hiddenAndDatabaseFileFilter);
-        for (File dir : dirs) {
-            timestamps.add(dir.getName());
-            String[] prearchives = dir.list();
-            timestamps.addAll(Arrays.asList(prearchives));
+        final File baseDir = new File(prearcPath);
+        if (!baseDir.exists()) {
+            final boolean success = baseDir.mkdirs();
+            if (!success) {
+                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Couldn't create the base prearchive folder in " + baseDir.getPath());
+            }
+            // One thing we know: if we had to create this folder, there ain't anything in it.
+            return timestamps;
+        }
+        final File[] dirs = baseDir.listFiles(FileSystemSessionTrawler.hiddenAndDatabaseFileFilter);
+        if (dirs != null) {
+            for (final File dir : dirs) {
+                timestamps.add(dir.getName());
+                final String[] prearchives = dir.list();
+                if (prearchives != null) {
+                    timestamps.addAll(Arrays.asList(prearchives));
+                }
+            }
         }
         return timestamps;
     }
 
     private static void deleteUnusedPrearchiveEntries(Set<String> timestamps) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        for (String timestamp : timestamps) {
+        final StringBuilder sb = new StringBuilder();
+        for (final String timestamp : timestamps) {
             sb.append("'").append(timestamp.replaceAll("'", "''")).append("'").append(',');
         }
         final String usedSessionTimestamps = sb.deleteCharAt(sb.length() - 1).toString();

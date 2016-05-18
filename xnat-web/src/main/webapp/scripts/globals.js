@@ -186,6 +186,11 @@ function isNumeric( num ) {
     return !isArray( num ) && (num - parseFloat( num ) + 1) >= 0;
 }
 
+// can the value be reasonably used as a string?
+function stringable(val){
+    return /string|number|boolean/.test(typeof val);
+}
+
 // copy of jQuery's $.extend() method
 function extend(){
     var src, copyIsArray, copy, name, options, clone,
@@ -305,6 +310,29 @@ function setExtendedObject(obj, str, val){
     return newObj;
 }
 
+// loops over object string using dot notation:
+// var myVal = lookupObjectValue(XNAT, 'data.siteConfig.siteId');
+// --> myVal == 'myXnatSiteId'
+function lookupObjectValue(root, objStr){
+    var val = '';
+    if (!objStr) {
+        objStr = root;
+        root = window;
+    }
+    root = root || window;
+    objStr.toString().trim().split('.').forEach(function(part, i){
+        part = part.trim();
+        // start at the root object
+        if (i === 0) {
+            val = root[part] || '';
+        }
+        else {
+            if (!val) return false;
+            val = val[part];
+        }
+    });
+    return val;
+}
 
 // return the last item in an array-like object
 function getLast(arr){

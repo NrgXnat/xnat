@@ -26,6 +26,7 @@ import org.springframework.security.authentication.DisabledException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.*;
@@ -139,11 +140,11 @@ public class Users {
     /**
      * Return the path to the user's cache directory.
      *
-     * @param user
-     * @return
+     * @param user    The user.
+     * @return The cache path for the user.
      */
     public static String getUserCacheUploadsPath(final UserI user) {
-        return XDAT.getSiteConfigPreferences().getCachePath() + "USERS" + File.separator + user.getID();
+        return Paths.get(XDAT.getSiteConfigPreferences().getCachePath(), "USERS", user.getID().toString()).toString();
     }
 
     /**
@@ -151,14 +152,10 @@ public class Users {
      *
      * @param user The user.
      * @param dirs The directories.
-     * @return
+     * @return A file from the user cache.
      */
-    public static <T extends String> File getUserCacheFile(final UserI user, T... dirs) {
-        File out = new File(getUserCacheUploadsPath(user));
-        for (String s : dirs) {
-            out = new File(out, s);
-        }
-        return out;
+    public static File getUserCacheFile(final UserI user, String... dirs) {
+        return (dirs == null ? Paths.get(getUserCacheUploadsPath(user)) : Paths.get(getUserCacheUploadsPath(user), dirs)).toFile();
     }
 
     /**

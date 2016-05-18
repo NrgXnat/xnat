@@ -310,17 +310,27 @@ function setExtendedObject(obj, str, val){
     return newObj;
 }
 
-// loops over object string using dot notation:
-// var myVal = lookupObjectValue(XNAT, 'data.siteConfig.siteId');
+// loops over object string using quasi-dot notation (with colons):
+// we use colons because property names can contain periods (which is dumb)
+// var myVal = lookupObjectValue(XNAT, 'data:siteConfig:siteId');
 // --> myVal == 'myXnatSiteId'
-function lookupObjectValue(root, objStr){
-    var val = '';
+function lookupObjectValue(root, objStr, prop){
+    
+    var val = '', delim = '.';
+    
     if (!objStr) {
         objStr = root;
         root = window;
     }
+    
+    if (!objStr) return '';
+    
     root = root || window;
-    objStr.toString().trim().split('.').forEach(function(part, i){
+    
+    // if 'objStr' contains colons, use those as the path delimeter
+    if (/:/.test(objStr)) { delim = ':' }
+    
+    objStr.toString().trim().split(delim).forEach(function(part, i){
         part = part.trim();
         // start at the root object
         if (i === 0) {
@@ -331,7 +341,14 @@ function lookupObjectValue(root, objStr){
             val = val[part];
         }
     });
+    
+    // explicitly set a final property name to look for
+    if (prop) {
+        val = val[prop] || val;
+    }
+    
     return val;
+    
 }
 
 // return the last item in an array-like object

@@ -25,6 +25,21 @@ var XNAT = getObject(XNAT);
     // as methods and properties to the function
     select = getObject(XNAT.ui.select || {});
 
+    function addOption(el, opt){
+        el.appendChild(spawn('option', {
+            value: opt.value || '',
+            html: opt.html || opt.text || opt.value
+        }));
+    }
+    
+    // generate JUST the options
+    // opts is an array of option objects
+    select.options = function(opts){
+        return opts.map(function(opt){
+            return spawn('option', opt);    
+        });      
+    };
+    
     // ========================================
     // MAIN FUNCTION
     select.menu = function(config){
@@ -37,7 +52,7 @@ var XNAT = getObject(XNAT);
         // show the label on the left by default
         config.layout = config.layout || 'left';
 
-        config.id = config.id || randomID('menu-', false);
+        config.id = config.id || config.name || randomID('menu-', false);
 
         config.element = extend(true, {
             id: config.id,
@@ -45,16 +60,28 @@ var XNAT = getObject(XNAT);
         }, config.element);
 
         menu = spawn('select', config.element);
-        //menu = XNAT.element().select(config.element);
 
-        menu.appendChild(spawn('option|value=!', 'Select'));
-
+        addOption(menu, { html: 'Select' });
+        
         if (config.options){
-            forOwn(config.options, function(name, opt){
-                opt.value = opt.value || name;
-                opt.html  = opt.html  || opt.value;
-                menu.appendChild(spawn('option', opt));
-            });
+            if (Array.isArray(config.options)) {
+                forEach(config.options, function(opt){
+                    addOption(menu, opt);
+                })    
+            }
+            else {
+                forOwn(config.options, function(txt, val){
+                    var opt = {};
+                    if (stringable(val)) {
+                        opt.value = val;
+                        opt.html = txt;
+                    }
+                    else {
+                        opt = val;
+                    }
+                    addOption(menu, opt);
+                });
+            }
         }
         
         // if there's no label, wrap the 
@@ -81,7 +108,8 @@ var XNAT = getObject(XNAT);
         }
 
         return {
-            element: frag,
+            target: menu,
+            element: menu,
             spawned: frag,
             get: function(){
                 return frag;

@@ -14,6 +14,11 @@
     <c:set var="username" value="${pageContext.request.userPrincipal.name}" scope="session"/>
 </sec:authorize>
 
+<%-- REDIRECT IF NOT LOGGED IN (username will be '-') --%>
+<c:if test="${username == '-'}">
+    <c:redirect url="/?timeout=true"/>
+</c:if>
+
 <sec:authorize access="hasAnyRole('Administrator', 'administrator', 'Admin', 'admin', 'ADMIN')">
     <c:set var="isAdmin" value="true" scope="session"/>
 </sec:authorize>

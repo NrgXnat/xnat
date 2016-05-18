@@ -72,19 +72,36 @@ var XNAT = getObject(XNAT||{}),
     //extend(xhr, url);
 
     xhr.$ = getObject(xhr.$||{});
-
-    // Direct maps to jQuery's AJAX methods.
-    // Why use these instead of jQuery directly?
-    // For flexibility to allow XNAT's AJAX
-    // library to be changed in the future.
-    xhr.$.ajax      = xhr.ajax$      = $.ajax;
-    xhr.$.get       = xhr.get$       = $.get;
-    xhr.$.post      = xhr.post$      = $.post;
-    xhr.$.getJSON   = xhr.getJSON$   = $.getJSON;
-    xhr.$.getScript = xhr.getScript$ = $.getScript;
-
     xhr.$.load = xhr.load$ = function(selector, url, data, success){
         $$(selector).load(url, data, success);
+        // adding shortcut methods to put and delete AJAX calls for clarity
+        $.each(["put", "delete"], function(i, method) {
+            $[method] = function(url, data, callback, type) {
+                if ($.isFunction(data)) {
+                    type = type || callback;
+                    callback = data;
+                    data = undefined;
+                }
+                return $.ajax({
+                    url: url,
+                    type: method,
+                    dataType: type,
+                    data: data,
+                    success: callback
+                });
+            };
+        });
+        // Direct maps to jQuery's AJAX methods.
+        // Why use these instead of jQuery directly?
+        // For flexibility to allow XNAT's AJAX
+        // library to be changed in the future.
+        xhr.$.ajax      = xhr.ajax$      = $.ajax;
+        xhr.$.get       = xhr.get$       = $.get;
+        xhr.$.post      = xhr.post$      = $.post;
+        xhr.$.put       = xhr.put$       = $.put;
+        xhr.$.delete    = xhr.delete$    = $.delete;
+        xhr.$.getJSON   = xhr.getJSON$   = $.getJSON;
+        xhr.$.getScript = xhr.getScript$ = $.getScript;
     };
 
     // private config object constructor

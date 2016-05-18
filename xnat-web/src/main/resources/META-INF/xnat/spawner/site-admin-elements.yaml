@@ -18,22 +18,15 @@ siteId:
     description: "The id used to refer to this site (also used to generate database ids). The Site ID must start with a letter and contain only letters, numbers and underscores. It should be a short, one-word name or acronym which describes your site. No spaces or non-alphanumeric characters."
 
 siteDescriptionType:
-    kind: panel.display  # make this a radio button group
+    kind: panel.display
     id: siteDescriptionType
     name: siteDescriptionType
     label: Site Description
     value: Select a site description option below
-    # onchange: # some javascript that toggles display of the elements below appropriately
-
-siteDescriptionOptionText:
-    kind: panel.input.checkbox  # make this a radio button group
-    id: siteDescriptionOptionText
-    label: "Text (Markdown)"
-
-siteDescriptionOptionPage:
-    kind: panel.input.checkbox  # make this a radio button group
-    id: siteDescriptionOptionPage
-    label: "Page"
+    before:
+        - "<script type=\"text/javascript\" src=\"../../scripts/xnat/admin/siteInfo.js\"></script>"
+    after:
+        - "<span style=\"position: relative; top: -15px;left: 270px;\"><input type=\"radio\" name=\"siteDescriptionType\" id=\"siteDescriptionTypePage\" value=\"Page\">&nbsp;&nbsp;Page&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"radio\" name=\"siteDescriptionType\" id=\"siteDescriptionTypeText\" value=\"Text\">&nbsp;&nbsp;Text (Markdown)</span>"
 
 siteDescriptionPage:
     kind: panel.input.text
@@ -179,8 +172,6 @@ siteInfo:
         ${siteId}
         ${siteUrl}
         ${siteDescriptionType}
-        ${siteDescriptionOptionText}
-        ${siteDescriptionOptionPage}
         ${siteDescriptionPage}
         ${siteDescriptionText}
         ${siteLoginLanding}
@@ -535,19 +526,19 @@ notifications:
             name: helpContactInfo
             label: "Help Contact Info"
         emailMessageUserRegistration:
-            kind: panel.input.text                     # textarea
+            kind: panel.textarea
             id: emailMessageUserRegistration
             name: emailMessageUserRegistration
             label: "Email Message: User Registration"
             description: "Text of message emailed to users upon registration. Link for email validation is auto-populated."
         emailMessageForgotUsernameRequest:
-            kind: panel.textarea                     # textarea
+            kind: panel.textarea
             id: emailMessageForgotUsernameRequest
             name: emailMessageForgotUsernameRequest
             label: "Email Message: Forgot Username Request"
             description: "Text of message emailed to users upon lost username request."
         emailMessageForgotPasswordReset:
-            kind: panel.textarea                     # textarea
+            kind: panel.textarea
             id: emailMessageForgotPasswordReset
             name: emailMessageForgotPasswordReset
             label: "Email Message: Password Reset"
@@ -617,7 +608,7 @@ themeManagement:
     label: Theme Management
     contents:
         themeScript:
-            tag: script|type=text/javascript;src=../../scripts/themeManagement.js
+            tag: script|type=text/javascript;src=../../scripts/xnat/admin/themeManagement.js
         themeStyle:
             tag: style
             element:
@@ -772,7 +763,7 @@ registrationOptions:
             label: "Require Email Verification To Register?"
             value: true
         emailVerificationMessage:
-            kind: panel.input.text                        #textarea
+            kind: panel.textarea
             id: emailVerificationMessage
             name: emailVerificationMessage
             label: "Email Verification Message"
@@ -849,7 +840,7 @@ anonymization:
             label: "Enable Site-wide Anonymization Script"
             value: true
         editAnonymzationScript:
-            kind: panel.input.text                #textarea
+            kind: panel.textarea
             id: editAnonymzationScript
             name: editAnonymzationScript
             label: "Edit Anonymzation Script"
@@ -873,7 +864,7 @@ seriesImportFilter:
             label: Filter Mode
             value: false
         seriesImportFilter:
-            kind: panel.input.text                #textarea
+            kind: panel.textarea
             id: seriesImportFilter
             name: seriesImportFilter
             label: "Edit Series Import Filter"
@@ -908,7 +899,7 @@ sessionUploadMethod:
             label: Enable Project Applet Script
             value: false
         appletScript:
-            kind: panel.input.text                #textarea
+            kind: panel.textarea
             id: appletScript
             name: appletScript
             label: "Applet Script"
@@ -1068,7 +1059,6 @@ adminPage:
                 ${userLoginsSessionControls}
                 ${passwords}
                 ${csrf}
-                ${auditTrail}
                 ${securityServices}
         emailServer:
             kind: tab

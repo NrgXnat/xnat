@@ -548,24 +548,6 @@ $(function(){
 });
 
 jq(window).load(function(){
-    // adding shortcut methods to put and delete AJAX calls for clarity
-    jq.each(["put", "delete"], function(i, method) {
-        jq[method] = function(url, data, callback, type) {
-            if (jq.isFunction(data)) {
-                type = type || callback;
-                callback = data;
-                data = undefined;
-            }
-            return jq.ajax({
-                url: url,
-                type: method,
-                dataType: type,
-                data: data,
-                success: callback
-            });
-        };
-    });
-
     // trying to make the text readable
     jq('[style*="font-size:8px"]').addClass('smallest_text');
     jq('[style*="font-size: 8px"]').addClass('smallest_text');

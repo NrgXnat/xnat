@@ -185,7 +185,7 @@
         <maven-resources-plugin.version>2.7</maven-resources-plugin.version>
         <maven-source-plugin.version>2.4</maven-source-plugin.version>
         <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
-        <webstart-maven-plugin.version>1.0-beta-6</webstart-maven-plugin.version>
+        <webstart-maven-plugin.version>1.0-beta-7</webstart-maven-plugin.version>
         <maven-surefire-plugin.version>2.18.1</maven-surefire-plugin.version>
         <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
         <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>

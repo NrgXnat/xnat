@@ -33,6 +33,10 @@ var XNAT = getObject(XNAT);
     // keep track of items that didn't spawn
     spawner.notSpawned = [];
 
+    function setRoot(url){
+        url = url.replace(/^(\.\/+)/, '/');
+        return XNAT.url.rootUrl(url)
+    }
 
     // ==================================================
     // MAIN FUNCTION
@@ -59,6 +63,18 @@ var XNAT = getObject(XNAT);
             // but 'kind' will take priority
             // with a fallback to a generic div
             kind = prop.kind || prop.type || 'div.spawned';
+
+            // make 'href' 'src' and 'action' properties
+            // start at the site root if starting with './'
+            if (prop.config.href) {
+                prop.config.href = setRoot(prop.config.href)
+            }
+            if (prop.config.src) {
+                prop.config.src = setRoot(prop.config.src)
+            }
+            if (prop.config.action) {
+                prop.config.action = setRoot(prop.config.action)
+            }
 
             // do a raw spawn() if 'kind' is 'element'
             // or if there's a tag property

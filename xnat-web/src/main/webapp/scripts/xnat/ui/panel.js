@@ -41,8 +41,9 @@ var XNAT = getObject(XNAT || {});
 
     function doLookup(input){
         if (!input) return '';
-        if (input.toString().trim().indexOf(doLookupString) === 0){
-            return lookupObjectValue(window, input.split(doLookupString)[1]);
+        if (input.toString().indexOf(doLookupString) === 0){
+            input = input.split(doLookupString)[1].trim();
+            return lookupObjectValue(window, input);
         }
         return input;
     }
@@ -116,9 +117,11 @@ var XNAT = getObject(XNAT || {});
                     ['h3.panel-title', opts.title || opts.label]
                 ]],
 
-                // target is where the next spawned item will render
+                
+                // target is where this form's "contents" will be inserted
                 _target,
 
+                
                 (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer || _footer])
 
             ]);
@@ -128,96 +131,110 @@ var XNAT = getObject(XNAT || {});
             _formPanel.id = (opts.id || opts.element.id) + '-panel';
         }
 
+        // cache a jQuery-wrapped element
+        var $formPanel = $(_formPanel);
+
         // set form element values from an object map
         function setValues(form, dataObj){
-            // pass a single argument to work with this form
-            if (!dataObj) {
-                dataObj = form;
-                form = _formPanel;
-            }
             // find all form inputs with a name attribute
             $$(form).find(':input[name]').each(function(){
-                var val = '';
-                if (Array.isArray(dataObj)) {
-                    val = dataObj.join(', ');
+                var val = dataObj[this.name];
+                if (!val) return;
+                if (Array.isArray(val)) {
+                    val = val.join(', ');
                 }
                 else {
-                    val = /string|number/i.test(typeof dataObj) ? dataObj : dataObj[this.name] || '';
+                    val = stringable(val) ? val : JSON.stringify(val);
                 }
                 $(this).changeVal(val);
             });
-            if (xmodal && xmodal.loading && xmodal.loading.close){
-                xmodal.loading.close();
+            if (xmodal && xmodal.loading && xmodal.loading.closeAll){
+                xmodal.loading.closeAll();
             }
         }
 
         // populate the data fields if this panel is in the 'active' tab
         // (only getting values for the active tab should cut down on requests)
-        function loadData(obj){
-
-            if (!obj) {
-                obj = opts.load || {};
-            }
+        function loadData(form, obj){
 
             obj = cloneObject(obj);
 
-            obj.form = obj.form || obj.target || obj.element || _formPanel;
+            xmodal.loading.open('#load-data');
 
-            // need a form to put the data into
-            if (!obj.form) return;
+            // need a form to put the data into!
+            if (!form) return;
 
-            // // if there's a 'refresh' url, make that obj.url
-            // if (obj.refresh) obj.url = obj.refresh;
+            // if 'load' starts with ??, do lookup
+            var doLookup = '??';
 
-            // if we pass data in a 'lookup' property, just use that
-            // to avoid doing a server request
+            if (obj.load && obj.load.toString().indexOf(doLookup) === 0) {
+                obj.load = (obj.load.split(doLookup)[1]||'').trim().split('|')[0];
+                obj.prop = obj.prop || obj.load.split('|')[1] || '';
+                setValues(form, lookupObjectValue(window, obj.load, obj.prop));
 
-            if (obj.lookup && !obj.url) {
-                if (Array.isArray(obj.lookup)) {
-                    obj.lookup = obj.lookup[0];
-                }
-                else {
-                    try {
-                        obj.lookup = eval(obj.lookup);
-                    }
-                    catch (e) {
-                        if (console && console.log) console.log(e);
-                        obj.lookup = ''
-                    }
-                }
-                setValues(obj.form, obj.lookup);
-                return obj.form;
+                return form;
+
+            }
+            
+            // if 'load' starts with '!?' do an eval()
+            var doEval = '!?';
+            if (obj.load && obj.load.toString().indexOf(doEval) === 0) {
+                obj.load = (obj.load.split(doEval)[1]||'').trim();
+                setValues(form, eval(obj.load));
+
+                return form;
+
+            }
+            
+            //////////
+            // REST
+            //////////
+
+            // if 'load' starts with $?, do ajax request
+            var ajaxPrefix = '$?';
+            var ajaxUrl = '';
+            var ajaxProp = '';
+
+
+            if (obj.refresh) {
+                ajaxUrl = obj.refresh;
+            }
+            // value: $? /path/to/data | obj:prop:name
+            else if (obj.load && obj.load.toString().indexOf(ajaxPrefix) === 0) {
+                ajaxUrl = obj.load;
             }
 
-            // otherwise try to get the data values via ajax
+            ajaxUrl = (ajaxUrl.split(ajaxPrefix)[1]||'').trim().split('|')[0];
+            ajaxProp = ajaxUrl.split('|')[1] || '';
 
             // need a url to get the data
-            if (!obj.url) return obj.form;
+            if (!ajaxUrl || !stringable(ajaxUrl)) {
 
-            obj.method = obj.method || 'GET';
+                return form;
+
+            }
+
+            // force GET method
+            obj.method = 'GET';
 
             // setup the ajax request
             // override values with an
             // 'ajax' or 'xhr' property
             obj.ajax = extend(true, {
                 method: obj.method,
-                url: XNAT.url.restUrl(obj.url)
+                url: XNAT.url.rootUrl(ajaxUrl)
             }, obj.ajax || obj.xhr);
 
-            // allow use of 'prop' or 'root' for the root property name
-            obj.prop = obj.prop || obj.root;
-
             obj.ajax.success = function(data){
-                var prop = data;
-                // if there's a property to target,
-                // specify the 'prop' property
-                if (obj.prop){
-                    obj.prop.split('.').forEach(function(part){
-                        prop = prop[part];
-                    });
+                if (ajaxProp){
+                    data = data[ajaxProp];
                 }
-                $(obj.form).dataAttr('status', 'clean');
-                setValues(prop);
+                $(form).dataAttr('status', 'clean');
+                setValues(form, data);
+            };
+
+            obj.ajax.complete = function(){
+                xmodal.loading.closeAll();
             };
 
             // return the ajax thing for method chaining
@@ -225,11 +242,9 @@ var XNAT = getObject(XNAT || {});
 
         }
 
-        //if (opts.load){
-        //    loadData(opts.load);
-        //}
-
-        var $formPanel = $(_formPanel);
+        // if (opts.load) {
+        //     loadData(_formPanel, opts)
+        // }
 
         // keep an eye on the inputs
         $formPanel.find(':input').on('change', function(){
@@ -239,14 +254,17 @@ var XNAT = getObject(XNAT || {});
         opts.onload = opts.onload || callback;
 
         $formPanel.on('reload-data', function(){
-            xmodal.loading.open();
-            opts.load.url = opts.load.url || opts.load.refresh;
-            loadData(opts.load);
+            xmodal.loading.open('#load-data');
+            loadData(this, {
+                refresh: opts.refresh || opts.load || opts.url
+            });
         });
 
         // click 'Discard Changes' button to reload data
         _resetBtn.onclick = function(){
-            $formPanel.triggerHandler('reload-data');
+            if (!/^#/.test($formPanel.attr('action')||'#')){
+                $formPanel.triggerHandler('reload-data');
+            }
         };
 
         opts.callback = opts.callback || callback || diddly;
@@ -271,6 +289,11 @@ var XNAT = getObject(XNAT || {});
                 silent = $form.hasClass('silent'),
                 multiform = {};
 
+            // don't submit forms with 'action' starting with '#'
+            if (/^#/.test($form.attr('action')||'#')) {
+                return false;
+            }
+
             $form.dataAttr('errors', 0);
 
             // validate inputs before moving on
@@ -290,13 +313,12 @@ var XNAT = getObject(XNAT || {});
                 if (!silent) {
                     xmodal.message('Error','Please enter values for the required items and re-submit the form.');
                 }
-                multiform.errors++; // keep track of errors for multi-form submission
                 return false;
             }
 
-            // don't open loading dialog for multiform submit
+            // only open loading dialog for standard (non-multi) submit
             if (!multiform.count){
-                xmodal.loading.open('#form-save');
+                var saveLoader = xmodal.loading.open('#form-save');
             }
 
             // var ajaxSubmitOpts = {
@@ -333,29 +355,16 @@ var XNAT = getObject(XNAT || {});
             var ajaxConfig = {
                 method: opts.method,
                 url: this.action,
-                success: function(data){
+                success: function(){
                     var obj = {};
-                    // if a data object is returned,
-                    // just use that
-                    if (data) {
-                        // HACK!
-                        // wrap the returned data in an array so the
-                        // loadData() function handles it properly
-                        obj.lookup = [data];
-                    }
-                    else {
-                        obj.url = opts.refresh;
-                    }
-
-                    // don't mess with modals for multiforms
+                    // actually, NEVER use returned data...
+                    // ALWAYS reload from the server
+                    obj.refresh = opts.refresh || opts.reload || opts.url || opts.load;
                     if (!silent){
-                        xmodal.loading.close('#form-save');
+                        xmodal.loading.close(saveLoader.$modal);
                         xmodal.message('Data saved successfully.', {
                             action: function(){
-                                loadData(obj);
-                                if (callback && isFunction(callback)) {
-
-                                }
+                                loadData($form, obj);
                             }
                         });
                     }
@@ -378,8 +387,10 @@ var XNAT = getObject(XNAT || {});
 
         // this object is returned to the XNAT.spawner() method
         return {
-            load: loadData,
-            setValues: setValues,
+            load: function(){
+                loadData(_formPanel, opts)
+            },
+            // setValues: setValues,
             target: _target,
             element: _formPanel,
             spawned: _formPanel,
@@ -685,7 +696,7 @@ var XNAT = getObject(XNAT || {});
         var textarea = spawn('textarea', opts.element);
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
     };
-    panel.input.textares = panel.textarea;
+    panel.input.textarea = panel.textarea;
 
     //////////////////////////////////////////////////
     // SELECT MENU PANEL ELEMENTS

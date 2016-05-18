@@ -7,24 +7,25 @@
 
     loadjs(scriptUrl('xnat/event.js'), function(){
 
-        // shift-click the header or footer XNAT logo to ENABLE debug mode
-        // alt-shift-click to DISABLE debug mode
-        // ctrl-alt-click to open the Swagger page in a new window
-        XNAT.event.click('#header_logo, #xnat_power > a')
-            .shiftKey(function(e){
-                e.preventDefault();
-                window.location.hash = 'debug=on'
-                window.location.reload();
-            })
-            .altShift(function(e){
-                e.preventDefault();
-                window.location.hash = 'debug=off'
-                window.location.reload();
-            })
-            .ctrlAlt(function(e){
-                e.preventDefault();
-                XNAT.ui.popup('/xapi/swagger-ui.html');
-            });
+        var clicker = XNAT.event.click('#header_logo, #xnat_power > a');
+
+        // shift-click the header or footer XNAT logo to TOGGLE debug mode on/off
+        clicker.shiftKey(function(e){
+            e.preventDefault();
+            if (Cookies.get('debug') === 'on'){
+                window.location.hash = 'debug=off';
+            }
+            else {
+                window.location.hash = 'debug=on';
+            }
+            window.location.reload();
+        });
+
+        // alt-shift-click to open the Swagger page in a new window
+        clicker.altShift(function(e){
+            e.preventDefault();
+            XNAT.ui.popup(XNAT.url.rootUrl('/xapi/swagger-ui.html'));
+        });
 
     })
 

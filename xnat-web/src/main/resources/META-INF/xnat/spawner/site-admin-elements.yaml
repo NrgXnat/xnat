@@ -365,6 +365,11 @@ csrf:
     kind: panel.form
     name: csrf
     label: CSRF
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         enableCsrfToken:
             kind: panel.input.checkbox
@@ -384,6 +389,11 @@ auditTrail:
     kind: panel.form
     name: auditTrail
     label: Audit Trail Configuration
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         enableAuditTrail:
             kind: panel.input.checkbox
@@ -410,6 +420,11 @@ securityServices:
     kind: panel.form
     name: securityServices
     label: Security Services
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         securityServicesFeatureDefault:
             kind: panel.input.text
@@ -435,7 +450,7 @@ securityServices:
 emailServerSettings:
     kind: panel.form
     method: POST
-    action: /xapi/notifications/all
+    action: /xapi/siteConfig
     load: # load data
         url: /xapi/siteConfig
         prop: smtpServer # which root property? gets the root object if not set
@@ -519,6 +534,11 @@ notifications:
     kind: panel.form
     name: notifications
     label: Notifications
+    method: POST
+    action: /xapi/notifications/batch
+    load:
+        lookup: XNAT.data.notifications
+    contentType: json
     contents:
         helpContactInfo:
             kind: panel.input.email
@@ -651,6 +671,11 @@ authenticationMethods:
     kind: panel.form
     name: authenticationMethods
     label: User Authentication Methods
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         xnatInternal:
             kind: panel.input.checkbox
@@ -753,6 +778,11 @@ registrationOptions:
     kind: panel.form
     name: registrationOptions
     label: Registration Options
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         requireLogin:
             kind: panel.input.checkbox
@@ -778,7 +808,6 @@ registrationOptions:
             id: emailVerificationExpiration
             name: emailVerificationExpiration
             label: "Email Verification Expiration"
-            value: 60000
         autoEnableUserRegistration:
             kind: panel.input.checkbox
             id: autoEnableUserRegistration
@@ -798,17 +827,17 @@ registrationOptions:
             label: "Restrict User List Access To Admins?"
             value: true
 
-dataReporting:
-    kind: panel.form
-    name: dataReporting
-    label: Data Reporting
-    contents:
-        enableAdvancedSearch:
-            kind: panel.input.checkbox
-            id: enableAdvancedSearch
-            name: enableAdvancedSearch
-            label: "Enable Advanced Search"
-            value: true
+#dataReporting:
+#    kind: panel.form
+#    name: dataReporting
+#    label: Data Reporting
+#    contents:
+#        enableAdvancedSearch:
+#            kind: panel.input.checkbox
+#            id: enableAdvancedSearch
+#            name: enableAdvancedSearch
+#            label: "Enable Advanced Search"
+#            value: true
 
 manageDataTypes:
     kind: panel.form
@@ -837,6 +866,11 @@ anonymization:
     kind: panel.form
     name: Anonymization
     label: "Anonymization Script (Site Wide)"
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         enableSitewideAnonymizationScript:
             kind: panel.input.checkbox
@@ -849,12 +883,16 @@ anonymization:
             id: editAnonymzationScript
             name: editAnonymzationScript
             label: "Edit Anonymzation Script"
-            value: true
 
 seriesImportFilter:
     kind: panel.form
     name: seriesImportFilter
     label: "Series Import Filter"
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         enableSitewideSeriesImportFilter:
             kind: panel.input.checkbox
@@ -878,6 +916,11 @@ sessionUploadMethod:
     kind: panel.form
     name: sessionUploadMethod
     label: "Session Upload Method"
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         selectUploadMethod:
             kind: panel.select.single
@@ -913,13 +956,11 @@ sessionUploadMethod:
             id: sessionXmlRebuilderRepeat
             name: sessionXmlRebuilderRepeat
             label: Session Xml Rebuilder Repeat
-            value: 60000
         sessionXmlRebuilderInterval:
             kind: panel.input.number
             id: sessionXmlRebuilderInterval
             name: sessionXmlRebuilderInterval
             label: Session Xml Rebuilder Interval
-            value: 5
 
 
 dicomScpReceivers:
@@ -1131,13 +1172,13 @@ adminPage:
             group: manageAccess
             contents:
                 ${registrationOptions}
-        dataReporting:
-            kind: tab
-            name: dataReporting
-            label: Data Reporting
-            group: manageData
-            contents:
-                ${dataReporting}
+#        dataReporting:
+#            kind: tab
+#            name: dataReporting
+#            label: Data Reporting
+#            group: manageData
+#            contents:
+#                ${dataReporting}
         manageDataTypes:
             kind: tab
             name: manageDataTypes

@@ -13,12 +13,14 @@ package org.nrg.xnat.turbine.modules.actions;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
-import org.nrg.xnat.utils.UserUtils;
+import org.nrg.xft.security.UserI;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -66,9 +68,10 @@ public class DownloadSessionsAction2 extends SecureAction {
             server +="/";
         }
         
-        List<String> l=new ArrayList<String>();
+        List<String> l= new ArrayList<>();
         CatCatalogBean cat = new CatCatalogBean();
-        
+
+        final UserI userDetails = XDAT.getUserDetails();
         for(String session : session_ids){
             CatCatalogBean sessionCatalog = new CatCatalogBean();
             sessionCatalog.setId(session);
@@ -76,7 +79,7 @@ public class DownloadSessionsAction2 extends SecureAction {
             // narrow down the range of scan types to only the ones relevant to this session
             if (requestScanTypes != null && requestScanTypes.length > 0) {
                 String query = "SELECT id FROM xnat_imagescandata WHERE image_session_id = '" + session + "' AND " + getTypeClause(requestScanTypes);
-                XFTTable table = XFTTable.Execute(query, TurbineUtils.getUser(data).getDBName(), TurbineUtils.getUser(data).getLogin());
+                XFTTable table = XFTTable.Execute(query, userDetails.getDBName(), userDetails.getLogin());
                 List<String> sessionScans = table.convertColumnToArrayList("id");
                 if (sessionScans != null && sessionScans.size() > 0) {
                     CatCatalogBean scansCatalog = new CatCatalogBean();
@@ -150,7 +153,7 @@ public class DownloadSessionsAction2 extends SecureAction {
         }
         
         String id = Calendar.getInstance().getTimeInMillis() + "";
-        File f = org.nrg.xdat.security.helpers.Users.getUserCacheFile(TurbineUtils.getUser(data),"catalogs/" + id + ".xml");
+        File f = Users.getUserCacheFile(userDetails, "catalogs", id + ".xml");
 
         boolean mkdirs = f.getParentFile().mkdirs();
 

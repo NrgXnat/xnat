@@ -647,7 +647,7 @@ $.fn.superSimpleAccordion = function(){
         '#accordion .active { display: block; }' +
         '#accordion h3 { font-size: 13px; font-weight: bold; color: #222; padding: 5px 10px; border: 1px solid #d0d0d0; }' +
         '#accordion h3:hover { cursor: pointer; }' +
-        '#accordion h3.active { background: #04519b; color: #fff; } ' +
+        '#accordion h3.active { background: #1A75BB; color: #fff; } ' +
         '#accordion .content { padding: 1em; border: 1px solid #d0d0d0; }' +
         '</style>');
     

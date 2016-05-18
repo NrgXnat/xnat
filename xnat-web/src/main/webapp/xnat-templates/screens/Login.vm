@@ -88,7 +88,7 @@ $page.setTitle("$siteId - Please Login")
                         <span id="register_forgot">
                             <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
                         </span>
-                    <input id="loginButton" type="submit" name="login" value="Login">
+                    <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
                 </p>
 
                 #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
@@ -164,7 +164,7 @@ $page.setTitle("$siteId - Please Login")
                     <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
                     <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
                 </span>
-                <input id="loginButton" type="submit" name="login" value="Login">
+                <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
             </p>
 
             <input type="hidden" name="XNAT_CSRF" value="">

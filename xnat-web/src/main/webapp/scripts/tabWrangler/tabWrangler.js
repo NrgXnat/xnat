@@ -180,7 +180,7 @@ function wrangleTabs(_wrapper,_force){  // initialize the wrangler
     var $tabs_ul = $(tabs_ul);
 
     if (!$tabs_ul.parent('div.wrangler').length){
-        $tabs_ul.wrap('<div class="wrangler" style="width:100%;overflow:hidden;border-bottom:5px solid #084FAB"></div>');
+        $tabs_ul.wrap('<div class="wrangler" style="width:100%;overflow:hidden;border-bottom:5px solid #1A75BB"></div>');
     }
 
     $tabs_wrapper.addClass('wrangled');

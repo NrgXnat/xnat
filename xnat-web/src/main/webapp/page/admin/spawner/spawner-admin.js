@@ -113,6 +113,7 @@ XNAT.xhr.getJSON({
                                 //size: 'med',
                                 width: 700,
                                 height: 550,
+                                mask: false,
                                 maximize: true,
                                 enter: false,
                                 esc: false,

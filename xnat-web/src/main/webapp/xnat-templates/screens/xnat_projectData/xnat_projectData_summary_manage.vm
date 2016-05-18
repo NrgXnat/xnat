@@ -31,7 +31,7 @@
     }
 
     #accordion h3.active {
-        background: #04519b;
+        background: #1A75BB;
         color: #fff;
     }
 

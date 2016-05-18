@@ -974,9 +974,9 @@ input {
 .btn1,
 .btn2,
 body button,
-body input[type="button"],
-body input[type="submit"],
-body input[type="reset"] {
+body [type="button"],
+body [type="submit"],
+body [type="reset"] {
     display: inline-block;
     padding: 6px 12px;
     /*max-height: 28px;*/
@@ -992,9 +992,9 @@ body input[type="reset"] {
 .btn1:hover,
 .btn2:hover,
 body button:hover,
-body input[type="button"]:hover,
-body input[type="submit"]:hover,
-body input[type="reset"]:hover {
+body [type="button"]:hover,
+body [type="submit"]:hover,
+body [type="reset"]:hover {
     cursor: pointer;
 }
 
@@ -1004,8 +1004,8 @@ body input[type="reset"]:hover {
 .btn.submit,
 .btn.save,
 body input.btn1,
-body input.btn1[type="button"],
-body input.btn1[type="submit"] {
+body .btn1[type="button"],
+body [type="submit"] {
     color: #fff;
     background: #1A75BB;
     border: 1px solid #096BB7;
@@ -1016,7 +1016,7 @@ body input.btn1[type="submit"] {
 .btn.submit:hover,
 .btn.save:hover,
 body input.btn1:hover,
-body input.btn1[type="button"]:hover,
+body .btn1[type="button"]:hover,
 body [type="submit"]:hover {
     background: #096BB7;
 }
@@ -1025,9 +1025,8 @@ body [type="submit"]:hover {
 .btn,
 .btn2,
 body button,
-body input[type="button"],
-body input[type="submit"],
-body input[type="reset"] {
+body [type="button"],
+body [type="reset"] {
     background: #f0f0f0 linear-gradient( #ffffff, #f0f0f0 );
     border: 1px solid #c0c0c0;
 }
@@ -1035,9 +1034,8 @@ body input[type="reset"] {
 .btn:hover,
 .btn2:hover,
 body button:hover,
-body input[type="button"]:hover,
-body input[type="submit"]:hover,
-body input[type="reset"]:hover {
+body [type="button"]:hover,
+body [type="reset"]:hover {
    background: #f0f0f0;
 }
 
@@ -1063,9 +1061,9 @@ body input[type="reset"]:hover {
 .btn2.disabled,
 body button.disabled,
 body button:disabled,
-body input[type="button"]:disabled,
-body input[type="submit"]:disabled,
-body input[type="reset"]:disabled {
+body [type="button"]:disabled,
+body [type="submit"]:disabled,
+body [type="reset"]:disabled {
     opacity: 0.6;
     /*color: #a0a0a0;*/
     /*border-color: #c0c0c0;*/
@@ -2035,7 +2033,7 @@ input.invalid {
 #actionsMenu > .bd > .first-of-type a {
     padding: 6px 8px;
     font-weight: bold;
-    background: #04519b;
+    background: #1A75BB;
     color: #fff;
 }
 
@@ -2890,7 +2888,7 @@ table.file-details td.scan-image-buttons {
 
 #admin-nav .active {
     color: #fff;
-    background: #04519b;
+    background: #1A75BB;
     border: 1px solid #293D66;
 }
 

@@ -172,7 +172,7 @@
             #end
         #end
 
-    var removeInvestigatorIcon = 'url($content.getURI("scripts/yui/build/assets/skins/xnat/xnat-sprite.png"))';
+    var removeInvestigatorIcon = 'url($content.getURI("scripts/yui/build/assets/skins/images/xnat-sprite.png"))';
 
     window.refreshInvestigators = function () {
         var div = document.getElementById("investigatorBox");

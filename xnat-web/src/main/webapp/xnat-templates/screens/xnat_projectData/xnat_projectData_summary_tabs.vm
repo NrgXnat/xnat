@@ -5,7 +5,7 @@
             <li class="selected"><a href="#tab1"><em>Details</em></a></li>
             #set($canReadSubjects=$data.getSession().getAttribute("userHelper").canRead(
                 "xnat:subjectData/project","$project.getId()"))
-            #if($data.getSession().getAttribute("userHelper").isOwner($project.getId()))
+            #if($data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user))
                     <li><a href="#tab3"><em>Access</em></a></li>
                     <li><a href="#othermgmt"><em>Manage</em></a></li>
                     <li><a href="#tab4"><em>Pipelines</em></a></li>
@@ -21,7 +21,7 @@
                 <p>#parse($turbineUtils.getTemplateName("_summary_details","xnat:projectData",$project.getId()))</p>
             </div>
 
-            #if($data.getSession().getAttribute("userHelper").isOwner($project.getId()))
+            #if($data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user))
                     <div id="tab3">
                         <p>#parse($turbineUtils.getTemplateName(
                             "_summary_management","xnat:projectData",$project.getId()))</p>
@@ -56,7 +56,7 @@
         window.summaryTabView = new YAHOO.widget.TabView('projectSummary');
         var oButton1 = new YAHOO.widget.Button("button1");
         var oButton2 = new YAHOO.widget.Button("button2");
-        #if($data.getSession().getAttribute("userHelper").isOwner($project.getId()))
+        #if($data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user))
             var oButton3 = new YAHOO.widget.Button("button3");
             var oButton4 = new YAHOO.widget.Button("button4");
             var oButton5 = new YAHOO.widget.Button("button5");

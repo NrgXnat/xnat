@@ -200,7 +200,7 @@
                     li$.find('ul.subnav').each(function(){
                         var sub$ = $(this);
                         var offsetL = sub$.closest('ul').outerWidth();
-                        sub$.css({ 'left': offsetL + -25 })
+                        sub$.css({ 'left': offsetL + -37 })
                     });
                     if (body$.hasClass('applet')) {
                         coverApplet(li$.find('> ul'));

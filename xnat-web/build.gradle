@@ -18,11 +18,13 @@ def vGroovy = '2.4.6'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
+version = vXnat
 
 buildscript {
     repositories {
         mavenLocal()
         jcenter()
+        mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
@@ -38,7 +40,7 @@ buildscript {
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.2"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.2.4"
-        classpath "gradle.plugin.com.zoltu.gradle.plugin:git-versioning:2.0.19"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.5.1"
     }
 }
 
@@ -49,7 +51,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'com.bmuschko.tomcat'
 apply plugin: 'com.bmuschko.cargo'
-apply plugin: "com.zoltu.git-versioning"
+apply plugin: "com.palantir.git-version"
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
@@ -140,22 +142,27 @@ if (JavaVersion.current().isJava8Compatible()) {
 }
 
 // Pulls in the Jenkins BUILD_NUMBER environment variable if available.
-def buildNumber = hasProperty("BUILD_NUMBER") ? getProperty("BUILD_NUMBER") : "Manual"
 def buildDate = new Date()
+def buildNumber = hasProperty("BUILD_NUMBER") ? getProperty("BUILD_NUMBER") : "Manual"
+def revision = gitVersion().replace("${version}-", "")
 
 jar {
     manifest {
-        attributes 'Build-Number': buildNumber,
+        attributes 'Application-Name': 'XNAT',
                 'Build-Date': buildDate,
-                'Application-Name': 'XNAT'
+                'Build-Number': buildNumber,
+                'Implementation-Sha': revision,
+                'Implementation-Version': version
     }
 }
 
 war {
     manifest {
-        attributes 'Build-Number': buildNumber,
+        attributes 'Application-Name': 'XNAT',
                 'Build-Date': buildDate,
-                'Application-Name': 'XNAT'
+                'Build-Number': buildNumber,
+                'Implementation-Sha': revision,
+                'Implementation-Version': version
     }
 }
 
@@ -270,7 +277,7 @@ configurations {
 dependencies {
     // NRG dependencies first.
     compile "org.nrg.xnat:spawner:${vXnat}"
-    compile("org.nrg.xnat:xnat-data-models:${vXnat}"){
+    compile("org.nrg.xnat:xnat-data-models:${vXnat}") {
         transitive = false
     }
     compile "org.nrg.xdat:core:${vXnat}"
@@ -418,7 +425,7 @@ dependencies {
             "org.apache.tomcat.embed:tomcat-embed-jasper:${vTomcat}"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar:${vCargo}",
-          "org.codehaus.cargo:cargo-ant:${vCargo}"
+            "org.codehaus.cargo:cargo-ant:${vCargo}"
 
     testCompile "junit:junit:${vJunit}"
     testCompile "org.springframework:spring-test:${vSpring}"

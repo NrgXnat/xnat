@@ -191,7 +191,7 @@ a:active { outline: none !important ; }
 }
 
 .yui-skin-sam .yuimenu .topscrollbar, .yui-skin-sam .yuimenu .bottomscrollbar {
-  background: url(../images/"xnat-sprite.png") repeat-x scroll 0 0 #FFFFFF;
+  background: url(../images/xnat-sprite.png) repeat-x scroll 0 0 #FFFFFF;
   display: none;
 }
 

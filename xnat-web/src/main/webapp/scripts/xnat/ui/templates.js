@@ -55,7 +55,6 @@ var XNAT = getObject(XNAT);
         el.value = val;
         return val;
     }
-    
 
     // retrieve value via REST and put it in the element
     function ajaxValue(el, url, prop){
@@ -64,9 +63,9 @@ var XNAT = getObject(XNAT);
             success: function(data){
                 if (prop && isPlainObject(data)) {
                     data = lookupObjectValue(data, prop.trim());
+                    // data = lookupValue(prop.trim());
                 }
-                el.value = data;
-                // $$(el).val(data);
+                $$(el).val(data).change();
             }
         };
         return $.get(opts);
@@ -199,12 +198,24 @@ var XNAT = getObject(XNAT);
         // look up a namespaced object value if the value starts with '??'
         var doLookup = '??';
         if (opts.value && opts.value.toString().indexOf(doLookup) === 0) {
-            element.value = lookupValue(opts.value.split(doLookup)[1].trim());
+            // element.value = lookupValue(opts.value.split(doLookup)[1].trim());
+            $element.val(lookupObjectValue(opts.value.split(doLookup)[1].trim())).change();
         }
-        
-        // get value via REST/ajax if value starts with ?:
-        // value: ?$ /path/to/data | obj.prop.name
-        var ajaxPrefix = '?$';
+
+        var doEval = '!?';
+        if (opts.value && opts.value.toString().indexOf(doEval) === 0) {
+            opts.value = (opts.value.split(doEval)[1]||'').trim();
+            try {
+                $element.val(eval(opts.value)).change();
+            }
+            catch (e) {
+                $element.val('').change();
+            }
+        }
+
+        // get value via REST/ajax if value starts with $?
+        // value: $? /path/to/data | obj:prop:name
+        var ajaxPrefix = '$?';
         var ajaxUrl = '';
         var ajaxProp = '';
         if (opts.value && opts.value.toString().indexOf(ajaxPrefix) === 0) {
@@ -238,11 +249,13 @@ var XNAT = getObject(XNAT);
         // }
 
         // trigger an 'onchange' event
-        $element.trigger('change');
+        $element.change();
 
         // add value to [data-value] attribute
-        // (except for textareas - that could get ugly
-        $element.not('textarea').dataAttr('value', element.value);
+        // (except for textareas - that could get ugly)
+        if (isArray(element.value) || stringable(element.value)) {
+            $element.not('textarea').dataAttr('value', element.value);
+        }
 
         var inner = [element];
 
@@ -265,13 +278,13 @@ var XNAT = getObject(XNAT);
                 hiddenInput.value = this.checked.toString();
             };
             
-            // change name of checkbox/radio to avoid conflicts
-            element.name = element.name + '-controller';
+            // remove name of checkbox/radio to avoid conflicts
+            element.name = '';
 
-            // and add a class for easy selection
+            // add a class for easy selection
             addClassName(element, 'controller');
 
-            // and add the hidden input
+            // add the hidden input
             inner.push(hiddenInput);
 
         }

@@ -57,130 +57,6 @@ public class ArcSpecManager {
             logger.info("Initializing ArcSpec...");
             arcSpec = GetFreshInstance();
 
-//            if (arcSpec!=null){
-//
-//                if (arcSpec.getSiteAdminEmail()!=null && !arcSpec.getSiteAdminEmail().equals("")){
-//                    XFT.SetAdminEmail(arcSpec.getSiteAdminEmail());
-//                }else{
-//                    arcSpec.setSiteAdminEmail(XDAT.getSiteConfigPreferences().getAdminEmail());
-//                }
-//
-//                if (arcSpec.getSiteUrl()!=null && !arcSpec.getSiteUrl().equals("")){
-//                    XFT.SetSiteURL(arcSpec.getSiteUrl());
-//                }else{
-//                    arcSpec.setSiteUrl(XDAT.getSiteConfigPreferences().getSiteUrl());
-//                }
-//
-//                if (arcSpec.getSiteId()!=null && !arcSpec.getSiteId().equals("")){
-//                    XFT.SetSiteID(arcSpec.getSiteId());
-//                }else{
-//                    arcSpec.setSiteId("");
-//                }
-//
-//                if (arcSpec.getSmtpHost()!=null && !arcSpec.getSmtpHost().equals("")){
-//                    XFT.SetAdminEmailHost(arcSpec.getSmtpHost());
-//                }else{
-//                    arcSpec.setSmtpHost(XFT.GetAdminEmailHost());
-//                }
-//
-//                if (arcSpec.getEnableNewRegistrations()!=null){
-//                    XFT.SetUserRegistration(arcSpec.getEnableNewRegistrations().toString());
-//                }else{
-//                    arcSpec.setEnableNewRegistrations(XDAT.getSiteConfigPreferences().getUserRegistration());
-//                }
-//
-//                if (arcSpec.getRequireLogin()!=null){
-//                    XFT.SetRequireLogin(arcSpec.getRequireLogin().toString());
-//                }else{
-//                    arcSpec.setRequireLogin(XDAT.getSiteConfigPreferences().getRequireLogin());
-//                }
-//
-//                if (arcSpec.getGlobalpaths()!=null && arcSpec.getGlobalpaths().getPipelinepath()!=null){
-//                    XFT.SetPipelinePath(arcSpec.getGlobalpaths().getPipelinepath());
-//                }else{
-//                    if (arcSpec.getGlobalpaths()!=null){
-//                        arcSpec.getGlobalpaths().setPipelinepath(XDAT.getSiteConfigPreferences().getAdminEmail());
-//                    }
-//                }
-//
-//                if (arcSpec.getGlobalpaths()!=null && arcSpec.getGlobalpaths().getArchivepath()!=null){
-//                    XFT.SetArchiveRootPath(arcSpec.getGlobalpaths().getArchivepath());
-//                }else{
-//                    if (arcSpec.getGlobalpaths()!=null && XFT.GetArchiveRootPath()!=null){
-//                        arcSpec.getGlobalpaths().setArchivepath(XFT.GetArchiveRootPath());
-//                    }
-//                }
-//
-//                if (arcSpec.getGlobalpaths()!=null && arcSpec.getGlobalpaths().getCachepath()!=null){
-//                    XFT.SetCachePath(arcSpec.getGlobalpaths().getCachepath());
-//                }else{
-//                    if (arcSpec.getGlobalpaths()!=null && XDAT.getSiteConfigPreferences().getCachePath()!=null){
-//                        arcSpec.getGlobalpaths().setCachepath(XDAT.getSiteConfigPreferences().getCachePath());
-//                    }
-//                }
-//
-//                if (arcSpec.getGlobalpaths()!=null && arcSpec.getGlobalpaths().getFtppath()!=null){
-//                    XFT.setFtpPath(arcSpec.getGlobalpaths().getFtppath());
-//                }else{
-//                    if (arcSpec.getGlobalpaths()!=null && XFT.getFtpPath()!=null){
-//                        arcSpec.getGlobalpaths().setFtppath(XFT.getFtpPath());
-//                    }
-//                }
-//
-//                if (arcSpec.getGlobalpaths()!=null && arcSpec.getGlobalpaths().getBuildpath()!=null){
-//                    XFT.setFtpPath(arcSpec.getGlobalpaths().getBuildpath());
-//                }else{
-//                    if (arcSpec.getGlobalpaths()!=null && XFT.getBuildPath()!=null){
-//                        arcSpec.getGlobalpaths().setBuildpath(XFT.getBuildPath());
-//                    }
-//                }
-//
-//                if (arcSpec.getGlobalpaths()!=null && arcSpec.getGlobalpaths().getPrearchivepath()!=null){
-//                    XFT.SetPrearchivePath(arcSpec.getGlobalpaths().getPrearchivepath());
-//                }else{
-//                    if (arcSpec.getGlobalpaths()!=null && XFT.GetPrearchivePath()!=null){
-//                        arcSpec.getGlobalpaths().setPrearchivepath(XFT.GetPrearchivePath());
-//                    }
-//                }
-//
-//
-//                //set email defaults
-//                if (arcSpec.getEmailspecifications_newUserRegistration()==null){
-//                    arcSpec.setEmailspecifications_newUserRegistration(true);
-//                }
-//                if (arcSpec.getEmailspecifications_pageEmail()==null){
-//                    arcSpec.setEmailspecifications_pageEmail(true);
-//                }
-//                if (arcSpec.getEmailspecifications_pipeline()==null){
-//                    arcSpec.setEmailspecifications_pipeline(true);
-//                }
-//                if (arcSpec.getEmailspecifications_projectAccess()==null){
-//                    arcSpec.setEmailspecifications_projectAccess(true);
-//                }
-//                if (arcSpec.getEmailspecifications_transfer()==null){
-//                    arcSpec.setEmailspecifications_transfer(true);
-//                }
-//                //end email defaults
-//
-//                if (arcSpec.getEmailspecifications_newUserRegistration()!=null){
-//                    AdminUtils.SetNewUserRegistrationsEmail(arcSpec.getEmailspecifications_newUserRegistration());
-//                }
-//
-//                if (arcSpec.getEmailspecifications_pageEmail()!=null){
-//                    AdminUtils.SetPageEmail(arcSpec.getEmailspecifications_pageEmail());
-//                }
-//
-//                if (arcSpec.getDcm_appletLink()==null){
-//                    arcSpec.setDcm_appletLink(Boolean.TRUE);
-//                }
-//
-//                if (arcSpec.getEnableCsrfToken()!=null){
-//                    XFT.SetEnableCsrfToken(arcSpec.getEnableCsrfToken().toString());
-//                }else{
-//                    arcSpec.setEnableCsrfToken(XDAT.getSiteConfigPreferences().getEnableCsrfToken());
-//                }
-//            }
-
             try {
                 if (arcSpec!=null){
                     String cachePath = arcSpec.getGlobalCachePath();
@@ -220,55 +96,102 @@ public class ArcSpecManager {
         arcSpec = new ArcArchivespecification(user);
         final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
         if (StringUtils.isNotBlank(preferences.getAdminEmail())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting site admin email to: {}", preferences.getAdminEmail());
+            }
             arcSpec.setSiteAdminEmail(preferences.getAdminEmail());
         }
 
         if (StringUtils.isNotBlank(preferences.getSiteId())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting site ID to: {}", preferences.getSiteId());
+            }
             arcSpec.setSiteId(preferences.getSiteId());
         }
 
         if (StringUtils.isNotBlank(preferences.getSiteUrl())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting site URL to: {}", preferences.getSiteUrl());
+            }
             arcSpec.setSiteUrl(preferences.getSiteUrl());
         }
 
         final Map<String, String> smtpServer = preferences.getSmtpServer();
         if (smtpServer != null && smtpServer.containsKey("host")) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting SMTP host to: {}", smtpServer.get("host"));
+            }
             arcSpec.setSmtpHost(smtpServer.get("host"));
         }
 
+        if (logger.isInfoEnabled()) {
+            logger.info("Setting enable new registrations to: {}", preferences.getUserRegistration());
+        }
         arcSpec.setEnableNewRegistrations(preferences.getUserRegistration());
 
+        if (logger.isInfoEnabled()) {
+            logger.info("Setting reguire login to: {}", preferences.getRequireLogin());
+        }
         arcSpec.setRequireLogin(preferences.getRequireLogin());
 
         if (StringUtils.isNotBlank(preferences.getPipelinePath())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting pipeline path to: {}", preferences.getPipelinePath());
+            }
             arcSpec.setProperty("globalPaths/pipelinePath", preferences.getPipelinePath());
         }
 
         if (StringUtils.isNotBlank(preferences.getArchivePath())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting archive path to: {}", preferences.getArchivePath());
+            }
             arcSpec.setProperty("globalPaths/archivePath", preferences.getArchivePath());
         }
 
         if (StringUtils.isNotBlank(preferences.getPrearchivePath())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting prearchive path to: {}", preferences.getPrearchivePath());
+            }
             arcSpec.setProperty("globalPaths/prearchivePath", preferences.getPrearchivePath());
         }
 
         if (StringUtils.isNotBlank(preferences.getCachePath())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting cache path to: {}", preferences.getCachePath());
+            }
             arcSpec.setProperty("globalPaths/cachePath", preferences.getCachePath());
         }
 
         if (StringUtils.isNotBlank(preferences.getFtpPath())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting FTP path to: {}", preferences.getFtpPath());
+            }
             arcSpec.setProperty("globalPaths/ftpPath", preferences.getFtpPath());
         }
 
         if (StringUtils.isNotBlank(preferences.getBuildPath())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting build path to: {}", preferences.getBuildPath());
+            }
             arcSpec.setProperty("globalPaths/buildPath", preferences.getBuildPath());
         }
 
+        if (logger.isInfoEnabled()) {
+            logger.info("Setting enable CSRF token to: {}", preferences.getEnableCsrfToken());
+        }
         arcSpec.setEnableCsrfToken(preferences.getEnableCsrfToken());
 
+        if (logger.isInfoEnabled()) {
+            // logger.info("Saving arcspec: {}", displayArcSpec(arcSpec));
+            logger.info("Saving arcspec");
+        }
         save(arcSpec, user, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.PROCESS, "Initialized archive specifications."));
         return arcSpec;
     }
+
+//    private static String displayArcSpec(final ArcArchivespecification arcSpec) {
+//        return "TBD.";
+//    }
 
     public static boolean allowTransferEmail(){
         return GetInstance().getEmailspecifications_transfer();

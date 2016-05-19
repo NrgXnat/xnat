@@ -26,11 +26,25 @@ The repo properties are used when deploying build artifacts to the Maven reposit
 
 There are a lot of other useful properties you can set in **gradle.properties**, so it's worth spending a little time [reading about the various properties Gradle recognizes in this file](https://docs.gradle.org/current/userguide/build_environment.html).
 
-### XNAT ###
+### XNAT Configuration ###
 
-You also need to do a little configuring of the XNAT build. This is a temporary requirement until we've deprecated the **InstanceSettings.xml** configuration, but is required until we complete that task.
+You also need to add another initial configuration file in your home directory. Create a directory path **xnat/config** in your home directory and a file named **xnat-conf.properties** there. In this file, define the following properties:
 
-Before building the XNAT web application, whether via Gradle or the IDE, modify **InstanceSettings.xml** to set the database properties, site URL, archive, cache, and prearchive paths, etc. If you change anything, e.g. move to a different database for some reason, you'll need to modify **InstanceSettings.xml** again and rebuild.
+```
+datasource.driver=org.postgresql.Driver
+datasource.url=jdbc:postgresql://localhost/<XNAT Instance Name>
+datasource.username=<database username>
+datasource.password=<database password>
+
+hibernate.dialect=org.hibernate.dialect.PostgreSQL9Dialect
+hibernate.hbm2ddl.auto=update
+hibernate.show_sql=false
+hibernate.cache.use_second_level_cache=true
+hibernate.cache.use_query_cache=true
+```
+
+IMPORTANT NOTE: You'll definitely want to fill in the three <placeholders> above!
+                ...<XNAT Instance Name>, <database username> and <database password>
 
 ## Building ##
 

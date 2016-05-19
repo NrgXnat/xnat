@@ -210,7 +210,7 @@ public class DIRResource extends SecureResource {
 					           
 					            final String rel=(session_dir.toURI().relativize(f.toURI())).getPath();
 					            final String qs=(f.isDirectory())?qsParams:"";
-					            row[3]=String.format("/data/experiments/%1s/DIR/%2s%3s", new Object[]{expt.getId(),rel,qs});
+					            row[3]=String.format("/data/experiments/%1$s/DIR/%2$s%3$s",expt.getId(),rel,qs);
 					       				            
 					            table.rows().add(row);
 							}

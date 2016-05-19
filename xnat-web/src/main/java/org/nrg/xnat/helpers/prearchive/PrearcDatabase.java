@@ -21,6 +21,8 @@ import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.status.ListenerUtils;
 import org.nrg.status.StatusListenerI;
@@ -31,7 +33,6 @@ import org.nrg.xdat.bean.XnatPetsessiondataBean;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatPetscandataI;
 import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
@@ -42,8 +43,6 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.restlet.XNATApplication;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.services.Archiver;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
-
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
@@ -538,7 +537,7 @@ public final class PrearcDatabase {
 
                             PrearcDatabase.addSession(sessionData);
 
-                            PrearcUtils.log(sessionData, new Exception(String.format("Moved from %1s to %2s", proj, destination)));
+                            PrearcUtils.log(sessionData, new Exception(String.format("Moved from %1$s to %2$s", proj, destination)));
                         } catch (SyncFailedException e) {
                             logger.error("Session sync operation failed", e);
                             throw new IllegalStateException(e.getMessage());
@@ -848,21 +847,33 @@ public final class PrearcDatabase {
     }
 
     private static Set<String> getPrearchiveFolderTimestamps() {
-        Set<String> timestamps = new HashSet<>();
+        final Set<String> timestamps = new HashSet<>();
         timestamps.add("0"); // there must be at least one element in the list
-        File baseDir = new File(prearcPath);
-        File[] dirs = baseDir.listFiles(FileSystemSessionTrawler.hiddenAndDatabaseFileFilter);
-        for (File dir : dirs) {
-            timestamps.add(dir.getName());
-            String[] prearchives = dir.list();
-            timestamps.addAll(Arrays.asList(prearchives));
+        final File baseDir = new File(prearcPath);
+        if (!baseDir.exists()) {
+            final boolean success = baseDir.mkdirs();
+            if (!success) {
+                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Couldn't create the base prearchive folder in " + baseDir.getPath());
+            }
+            // One thing we know: if we had to create this folder, there ain't anything in it.
+            return timestamps;
+        }
+        final File[] dirs = baseDir.listFiles(FileSystemSessionTrawler.hiddenAndDatabaseFileFilter);
+        if (dirs != null) {
+            for (final File dir : dirs) {
+                timestamps.add(dir.getName());
+                final String[] prearchives = dir.list();
+                if (prearchives != null) {
+                    timestamps.addAll(Arrays.asList(prearchives));
+                }
+            }
         }
         return timestamps;
     }
 
     private static void deleteUnusedPrearchiveEntries(Set<String> timestamps) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        for (String timestamp : timestamps) {
+        final StringBuilder sb = new StringBuilder();
+        for (final String timestamp : timestamps) {
             sb.append("'").append(timestamp.replaceAll("'", "''")).append("'").append(',');
         }
         final String usedSessionTimestamps = sb.deleteCharAt(sb.length() - 1).toString();

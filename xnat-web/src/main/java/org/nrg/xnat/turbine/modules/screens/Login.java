@@ -17,7 +17,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.services.ThemeService;
 
 public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
-    public final static Logger logger = Logger.getLogger(XDATScreen_themes.class);
+    public final static Logger logger = Logger.getLogger(Login.class);
     @Override
     protected void doBuildTemplate(RunData data, Context c) throws Exception {
         ThemeService themeService = XDAT.getThemeService();

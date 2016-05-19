@@ -68,27 +68,47 @@ function submitQuickSearch(){
     <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
 #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-advanced-search","true")))
 
-	<script>
-		$('#searchValue').each(function(){
-			this.value = this.value || 'search';
-			$(this).focus(function(){
-				$(this).removeClass('clean');
-				if (!this.value || this.value === 'search'){
-					this.value = '';
-				}
-			})
-		});
-        $('#stored-searches').on('change', function(){
-            if (this.value){
-                window.location.href = this.value;
-            }
-        }).chosen({
-            width: '150px',
-            disable_search_threshold: 9,
-            inherit_select_classes: true,
-            placeholder_text_single: 'Stored Searches',
-            search_contains: true
-        });
+    <script>
+
+        (function(){
+
+            $('#searchValue').each(function(){
+                this.value = this.value || 'search';
+                $(this).focus(function(){
+                    $(this).removeClass('clean');
+                    if (!this.value || this.value === 'search'){
+                        this.value = '';
+                    }
+                })
+            });
+
+            var storedSearchMenu = $('#stored-searches');
+
+            XNAT.xhr.getJSON(XNAT.url.rootUrl('/data/search/saved'), function(data){
+
+                storedSearchMenu.find('optgroup.stored-search-list')
+                        .empty()
+                        .append(data.ResultSet.Result.map(function(opt){
+                            var val = serverRoot + '/app/template/Search.vm/node/ss.' + opt.id;
+                            return '<option value="' + val + '">' + opt.brief_description + '</option>'
+                        }).join(''));
+
+                storedSearchMenu.on('change', function(){
+                    window.location.href = this.value
+                });
+
+                storedSearchMenu.chosen({
+                    width: '150px',
+                    disable_search_threshold: 9,
+                    inherit_select_classes: true,
+                    placeholder_text_single: 'Stored Searches',
+                    search_contains: true
+                });
+
+            });
+
+        })();
+
     </script>
 ##    <button type="button" id="advanced_btn" class="btn2" onclick="advancedSearch();">Advanced</button>
 #end

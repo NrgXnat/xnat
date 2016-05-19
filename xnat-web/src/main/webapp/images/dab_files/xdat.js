@@ -70,18 +70,6 @@ function popup(mylink, windowname)
 }
 
 
-function popupViewer(mylink, windowname)
-{
-	if (! window.focus)return true;
-	var href;
-	if (typeof(mylink) == 'string')
-   		href=mylink;
-	else
-   		href=mylink.href;
-	window.open(href, '', 'width=320,height=420,status=yes,resizable=yes,scrollbars=no');
-	return false;
-}
-
 function IsNumeric(sText)
 {
    var ValidChars = "0123456789.";
@@ -165,37 +153,6 @@ function edit(exptId,displayElement,searchField)
 	link = link + "/search_value/" + exptId.toString() + "/search_element/" + displayElement.toString() + "/search_field/" + searchField;
 	window.open(link, '','width=600,height=800,status=yes,resizable=yes,scrollbars=yes,toolbar=yes');
 	return false;
-}
-
-//SHOW ITEM IMAGE VIEWER
-function viewer(sessionId)
-{
-	if (! window.focus)return true;
-	var link = serverRoot+ "/app/action/ShowViewerAction/popup/true";
-	link = link + "/search_element/xnat:mrSessionData/search_field/xnat:mrSessionData.ID/search_value/" + sessionId.toString();
-	window.open(link, '', 'width=320,height=420,status=yes,resizable=yes,scrollbars=no');
-	return false;
-}
-
-//SHOW ITEM IMAGE VIEWER WITH PRESET DEFUALT EXPERIMENT
-function view(sessionId,exptCode) {
-	if (exptCode==''){
-		viewer(sessionId);
-	}	
-	else {
-		var link = serverRoot+ "/app/action/ShowViewerAction/popup/true";
-		link = link + "/search_element/xnat:mrSessionData/search_field/xnat:mrSessionData.ID/search_value/" + sessionId.toString() + "/startDisplayWith/" + exptCode.toString();
-		window.open(link, '', 'width=320,height=420,status=yes,resizable=yes,scrollbars=no');
-	}
-	return false;	
-}
-
-//SHOW ITEM IMAGE VIEWER FOR SUBJECT
-function viewPart(part_id) {
-	var link = serverRoot+ "/app/action/ShowViewerAction/popup/true";
-	link = link + "/skipq/true/id/" + part_id.toString();
-	window.open(link, '', 'width=320,height=420,status=yes,resizable=yes,scrollbars=no');
-	return false;	
 }
 
 //SHOW EMAIL SCREEN

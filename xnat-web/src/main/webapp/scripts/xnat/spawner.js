@@ -69,6 +69,12 @@ var XNAT = getObject(XNAT);
             if (prop.config.href) {
                 prop.config.href = setRoot(prop.config.href)
             }
+            if (prop.config.src) {
+                prop.config.src = setRoot(prop.config.src)
+            }
+            if (prop.config.action) {
+                prop.config.action = setRoot(prop.config.action)
+            }
 
             // do a raw spawn() if 'kind' is 'element'
             // or if there's a tag property

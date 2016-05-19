@@ -6,11 +6,11 @@ import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Transient;
 
-import org.nrg.xft.event.AutomationEventImplementerI;
-import org.nrg.xft.event.EventClass;
-import org.nrg.xft.event.entities.AutomationCompletionEvent;
-import org.nrg.xft.event.entities.PersistentEvent;
-import org.nrg.xft.event.persist.PersistentEventImplementerI;
+import org.nrg.automation.event.AutomationEventImplementerI;
+import org.nrg.automation.event.entities.AutomationCompletionEvent;
+import org.nrg.automation.event.entities.PersistentEvent;
+import org.nrg.framework.event.EventClass;
+import org.nrg.framework.event.persist.PersistentEventImplementerI;
 
 /**
  * The Class AutomationLaunchRequestEvent.

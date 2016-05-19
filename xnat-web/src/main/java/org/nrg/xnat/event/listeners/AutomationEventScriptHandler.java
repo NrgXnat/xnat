@@ -7,27 +7,28 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
+import org.nrg.automation.event.AutomationEventImplementerI;
+import org.nrg.automation.event.entities.AutomationCompletionEvent;
+import org.nrg.automation.event.entities.AutomationEventIds;
+import org.nrg.automation.event.entities.AutomationFilters;
+import org.nrg.automation.event.entities.PersistentEvent;
+import org.nrg.automation.services.AutomationEventIdsService;
+import org.nrg.automation.services.AutomationFiltersService;
+import org.nrg.automation.services.PersistentEventService;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptTriggerService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.event.Filterable;
+import org.nrg.framework.event.persist.PersistentEventImplementerI;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.services.NrgEventService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.services.AutomationEventIdsService;
-import org.nrg.xdat.services.AutomationFiltersService;
-import org.nrg.xdat.services.PersistentEventService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xft.event.AutomationEventImplementerI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.Filterable;
-import org.nrg.xft.event.XftEventService;
-import org.nrg.xft.event.entities.AutomationCompletionEvent;
-import org.nrg.xft.event.entities.AutomationEventIds;
-import org.nrg.xft.event.entities.AutomationFilters;
-import org.nrg.xft.event.entities.PersistentEvent;
-import org.nrg.xft.event.persist.PersistentEventImplementerI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
@@ -75,6 +76,12 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
     @Autowired
     @Lazy
     private ScriptRunnerService _service;
+    
+    /**
+     * The _eventService.
+     */
+    @Autowired
+ 	private NrgEventService _eventService;
 
     /**
      * The _script trigger service.
@@ -322,15 +329,18 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
                 logger.error("Script launch exception", e1);
             }
         }
-        if (automationCompletionEvent != null && automationCompletionEvent.getScriptOutputs().size() > 0) {
-            XftEventService eventService = XftEventService.getService();
-            if (eventService != null) {
+        if (automationCompletionEvent != null) { 
+            if (_eventService != null) {
                 automationCompletionEvent.setEventCompletionTime(System.currentTimeMillis());
-                eventService.triggerEvent(automationCompletionEvent);
+                _eventService.triggerEvent(automationCompletionEvent);
                 List<String> notifyList = automationCompletionEvent.getNotificationList();
                 if (notifyList != null && !notifyList.isEmpty()) {
+                	final String scriptOut = 
+                	(automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
+                			scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
+                				"<h3>No output was returned from the script run</h3>";	
                     final String EMAIL_SUBJECT = "Automation Results";
-                    AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()), false, notifyList.toArray(new String[0]));
+                    AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOut, false, notifyList.toArray(new String[0]));
                 }
             }
         }

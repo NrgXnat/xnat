@@ -14,6 +14,7 @@ import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
+import org.nrg.xnat.servlet.ArchiveServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -60,6 +61,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         addServlet(XDATAjaxServlet.class, 3, "/ajax/*", "/servlet/XDATAjaxServlet", "/servlet/AjaxServlet");
         addServlet(AxisServlet.class, 4, "/servlet/AxisServlet", "*.jws", "/services/*");
         addServlet(AdminServlet.class, 5, "/servlet/AdminServlet");
+        addServlet(ArchiveServlet.class, 6, "/archive/*");
     }
 
     @Override

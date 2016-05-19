@@ -1,5 +1,6 @@
 package org.nrg.prefs.beans;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.nrg.framework.constants.Scope;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.PreferenceInfo;
@@ -32,9 +33,13 @@ public interface PreferenceBean {
 
     String getValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
 
-    Object getValueByReference(final String preference) throws UnknownToolId;
+    Object getProperty(final String preference) throws UnknownToolId;
 
-    Object getValueByReference(final Scope scope, final String entityId, final String preference) throws UnknownToolId;
+    Object getProperty(String preference, Object defaultValue) throws UnknownToolId;
+
+    Object getProperty(final Scope scope, final String entityId, final String preference) throws UnknownToolId;
+
+    Object getProperty(Scope scope, String entityId, String preference, Object defaultValue) throws UnknownToolId;
 
     Boolean getBooleanValue(final String key, final String... subkeys) throws UnknownToolId;
 

@@ -182,6 +182,17 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
     }
 
     /**
+     * Gets a set of all of the tools with preferences stored in the service.
+     *
+     * @param toolId The ID of the tool to retrieve.
+     * @return The requested tool if available, null otherwise.
+     */
+    @Override
+    public Tool getTool(final String toolId) {
+        return _toolService.getByToolId(toolId);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

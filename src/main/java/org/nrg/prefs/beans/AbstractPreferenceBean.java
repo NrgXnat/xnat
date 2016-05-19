@@ -24,6 +24,7 @@ import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.PreferenceInfo;
+import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
@@ -77,7 +78,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public Set<String> getPreferenceKeys() {
         final Set<String> primaryKeys = new TreeSet<>();
-        final Set<String> rawKeys = _service.getToolPropertyNames(getToolId());
+        final Set<String> rawKeys     = _service.getToolPropertyNames(getToolId());
         for (final String rawKey : rawKeys) {
             primaryKeys.add(getPreferencePrimaryKey(rawKey));
         }
@@ -99,8 +100,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public Map<String, Object> getPreferenceMap(final Set<String> preferenceNames) {
-        final boolean isFiltered = preferenceNames != null && preferenceNames.size() > 0;
-        final Set<String> allKeys = getPreferenceKeys();
+        final boolean             isFiltered  = preferenceNames != null && preferenceNames.size() > 0;
+        final Set<String>         allKeys     = getPreferenceKeys();
         final Map<String, Object> preferences = Maps.newHashMap();
         for (final String preferenceName : _preferences.keySet()) {
             if (!isFiltered || preferenceNames.contains(preferenceName)) {
@@ -171,20 +172,32 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     @JsonIgnore
     @Override
-    public Object getValueByReference(final String preference) throws UnknownToolId {
+    public Object getProperty(final String preference) throws UnknownToolId {
+        return getProperty(preference, null);
+    }
+
+    @JsonIgnore
+    @Override
+    public Object getProperty(final String preference, final Object defaultValue) throws UnknownToolId {
+        final Method method;
         if (_methods.containsKey(preference)) {
+            method = _methods.get(preference);
+        } else {
             try {
-                return _methods.get(preference).invoke(this);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
+                method = getClass().getMethod("get" + StringUtils.capitalize(preference));
+                _methods.put(preference, method);
+            } catch (NoSuchMethodException e) {
+                final Tool tool = _service.getTool(getToolId());
+                if (tool.isStrict()) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
+                }
+                final String returnValue = getValue(preference);
+                return StringUtils.defaultIfBlank(returnValue, StringUtils.defaultIfBlank(defaultValue.toString(), null));
             }
         }
         try {
-            final Method method = getClass().getMethod("get" + StringUtils.capitalize(preference));
-            _methods.put(preference, method);
-            return method.invoke(this);
-        } catch (NoSuchMethodException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
+            final Object returnValue = method.invoke(this);
+            return returnValue == null ? defaultValue : returnValue;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
         }
@@ -192,7 +205,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     @JsonIgnore
     @Override
-    public Object getValueByReference(final Scope scope, final String entityId, final String preference) throws UnknownToolId {
+    public Object getProperty(final Scope scope, final String entityId, final String preference) throws UnknownToolId {
+        throw new NotImplementedException("The entity-scoped value-by-reference method is not yet implemented.");
+    }
+
+    @JsonIgnore
+    @Override
+    public Object getProperty(final Scope scope, final String entityId, final String preference, final Object defaultValue) throws UnknownToolId {
         throw new NotImplementedException("The entity-scoped value-by-reference method is not yet implemented.");
     }
 
@@ -391,7 +410,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         final String namespacedPropertyId = getNamespacedPropertyId(key, subkeys);
         if (_preferences.containsKey(namespacedPropertyId)) {
             try {
-                final Properties existing = _service.getToolProperties(getToolId(), Collections.singletonList(namespacedPropertyId));
+                final Properties existing   = _service.getToolProperties(getToolId(), Collections.singletonList(namespacedPropertyId));
                 final Properties properties = convertValueForPreference(_preferences.get(namespacedPropertyId), value);
                 for (final String property : properties.stringPropertyNames()) {
                     _service.setPreferenceValue(getToolId(), property, scope, entityId, properties.getProperty(property));

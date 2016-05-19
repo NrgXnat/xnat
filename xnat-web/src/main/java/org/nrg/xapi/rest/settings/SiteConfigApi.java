@@ -84,7 +84,7 @@ public class SiteConfigApi extends AbstractXnatRestApi {
 
         final Map<String, Object> values = new HashMap<>();
         for (final String preference : preferences) {
-            final Object value = _preferences.getValueByReference(preference);
+            final Object value = _preferences.getProperty(preference);
             if (value != null) {
                 values.put(preference, value);
             }
@@ -100,7 +100,7 @@ public class SiteConfigApi extends AbstractXnatRestApi {
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-        final Object value = _preferences.getValueByReference(property);
+        final Object value = _preferences.getProperty(property);
         if (_log.isDebugEnabled()) {
             _log.debug("User " + getSessionUser().getUsername() + " requested the value for the site configuration property " + property + ", got value: " + value);
         }

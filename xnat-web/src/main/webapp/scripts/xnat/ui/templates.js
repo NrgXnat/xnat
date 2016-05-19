@@ -264,14 +264,14 @@ var XNAT = getObject(XNAT);
         // check buttons if value is true
         if (/checkbox|radio/i.test(opts.type||'')) {
 
+            element.checked = /true|checked/i.test((opts.checked || element.value).toString());
+
             // add a hidden input to capture the checkbox/radio value
             hiddenInput = spawn('input', {
                 type: 'hidden',
                 name: element.name,
                 value: element.checked
             });
-
-            element.checked = /true|checked/i.test((opts.checked || element.value).toString());
 
             // change the value of the hidden input onclick
             element.onclick = function(){

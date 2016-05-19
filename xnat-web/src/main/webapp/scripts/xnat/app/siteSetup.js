@@ -32,6 +32,18 @@ var XNAT = getObject(XNAT);
     
     // use app.siteSetup.form for Spawner 'kind'
 
+    // call 'test' until it returns true
+    function waitForIt(interval, test, callback){
+        var waiting = setInterval(function(){
+            if (test()) {
+                var called = callback();
+                clearInterval(waiting);
+                return called;
+            }
+        }, interval || 10);
+        return waiting;
+    }
+
     // creates a panel that submits all forms contained within
     siteSetup.form = function(opts, callback){
 
@@ -85,53 +97,118 @@ var XNAT = getObject(XNAT);
 
                     var loader = xmodal.loading.open('#multi-save');
 
-                    // reset error count on new submission
-                    multiform.errors = 0;
+                    // reset success count on new submission
+                    multiform.success = 0;
 
                     // how many child forms are there?
                     multiform.count = $forms.length;
 
+                    // set error count to form count and subtract
+                    // as submissions are successful
+                    multiform.errors = 0;
+
                     // submit ALL enclosed forms
                     $forms.each(function(){
-                        $(this).addClass('silent').trigger('submit');
+                        var $form = $(this).addClass('json silent');
+                        XNAT.xhr.form($form, {
+                            contentType: 'application/json',
+                            validate: function(){
+
+                                var $form = $(this);
+                                var errors = 0;
+                                var validation = true;
+
+                                $form.dataAttr('errors', 0);
+
+                                $form.find(':input.required').each(function(){
+                                    var $input = $(this);
+                                    $input.removeClass('invalid');
+                                    if ($input.val() === '') {
+                                        errors++;
+                                        validation = false;
+                                        $input.addClass('invalid');
+                                    }
+                                });
+
+                                $form.dataAttr('errors', errors);
+
+                                if (!validation) {
+                                    $form.dataAttr('status','error').addClass('error');
+                                    multiform.errors++;
+                                    //don't show a dialog for each individual form
+                                    //if (!$form.hasClass('silent')) {
+                                        xmodal.message('Error','Please enter values for the required items and re-submit the form.');
+                                    //}
+                                }
+
+                                return validation;
+
+                            },
+                            //contentType: 'json',
+                            success: function(){
+                                $form
+                                    .dataAttr('status', 'success')
+                                    .removeClass('error')
+                                    .addClass('success');
+                                multiform.success++
+                            },
+                            error: function(){
+                                $form
+                                    .dataAttr('status', 'error')
+                                    .removeClass('success')
+                                    .addClass('error');
+                                multiform.errors++
+                            }
+                        });
+                        // $(this).addClass('silent').trigger('submit');
                     });
 
-                    multiform.errors = $forms.filter('.error').length;
+                    // multiform.errors = $forms.filter('.error').length;
 
-                    if (multiform.errors) {
-                        xmodal.closeAll();
-                        xmodal.message('Error', 'Please correct the highlighted errors and re-submit the form.');
-                        return false;
+                    function initialize(a, b, c){
+
+                        XNAT.xhr.postJSON({
+                            url: XNAT.url.rootUrl('/xapi/siteConfig/batch'),
+                            data: JSON.stringify({initialized:true}),
+                            success: function(){
+                                xmodal.message({
+                                    title: false,
+                                    esc: false,
+                                    content: 'Your XNAT site is ready to use. Click "OK" to continue to the home page.',
+                                    action: function(){
+                                        // window.location.href = XNAT.url.rootUrl('/setup?init=true');
+                                        window.location.href = XNAT.url.rootUrl('/');
+                                        //$forms.each.triggerHandler('reload-data');
+                                    }
+                                });
+                            }
+                        }).fail(function(e, txt, jQxhr){
+                            xmodal.message({
+                                title: 'Error',
+                                content: [
+                                    'An error occurred during initialization',
+                                    e,
+                                    txt
+                                ].join(': <br>')
+                            })
+                        }).always(function(){
+                            xmodal.loading.close(loader.$modal);
+                        });
                     }
 
-                    XNAT.xhr.postJSON({
-                        url: XNAT.url.rootUrl('/xapi/siteConfig/batch'),
-                        data: JSON.stringify({initialized:true}),
-                        success: function(){
-                            xmodal.message({
-                                title: false,
-                                esc: false,
-                                content: 'Your XNAT site is ready to use. Click "OK" to continue to the home page.',
-                                action: function(){
-                                    // window.location.href = XNAT.url.rootUrl('/setup?init=true');
-                                    window.location.href = XNAT.url.rootUrl('/');
-                                    //$forms.each.triggerHandler('reload-data');
-                                }
-                            });
+                    function errorCheck(){
+                        return multiform.errors || multiform.success === multiform.count;
+                    }
+
+                    waitForIt(100, errorCheck, function(){
+                        if (multiform.errors) {
+                            xmodal.closeAll();
+                            xmodal.message('Error', 'Please correct the highlighted errors and re-submit the form.');
+                            return false;
                         }
-                    }).fail(function(e, txt, jQxhr){
-                        xmodal.loading.close(loader.$modal);
-                        xmodal.message({
-                            title: 'Error',
-                            content: [
-                                'An error occurred during initialization',
-                                e,
-                                txt
-                            ].join(': <br>')
-                        })
+                        initialize();
                     });
 
-                    xmodal.loading.close(loader.$modal);
                     return false;
 
                 }

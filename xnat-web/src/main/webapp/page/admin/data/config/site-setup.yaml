@@ -1,6 +1,5 @@
 siteSetup:
     kind: app.siteSetup.form
-#    kind: panel.multiForm
     name: siteSetup
     label: XNAT Initial Setup
 #    method: GET
@@ -21,7 +20,7 @@ siteSetup:
                     marginBottom: 24px
                 html: >
                     The settings below need to be configured before this XNAT system
-                    can be used. Please set the properties below and submit the form continue.
+                    can be used. Please set the properties below and submit the form to continue.
 
         # ====================
         # PANEL
@@ -33,9 +32,8 @@ siteSetup:
             method: POST
             action: /xapi/siteConfig/batch
             contentType: json
-            load:
-                lookup: XNAT.data.siteConfig
-                refresh: /xapi/siteConfig
+            load: ?? XNAT.data.siteConfig
+            refresh: /xapi/siteConfig
             contents:
 
                 siteId:
@@ -82,9 +80,8 @@ siteSetup:
             method: POST
             action: /xapi/siteConfig/batch
             contentType: json
-            load:
-                lookup: XNAT.data.siteConfig
-                refresh: /xapi/siteConfig
+            load: ?? XNAT.data.siteConfig
+            refresh: /xapi/siteConfig
             contents:
 
                 archivePath:
@@ -145,16 +142,16 @@ siteSetup:
             method: POST
             action: /xapi/siteConfig/smtpServer
             contentType: json
-            load:
-                #lookup: XNAT.data.siteConfig.smtpServer
-                refresh: /xapi/siteConfig/smtpServer
+#            load: ?? XNAT.data.siteConfig.smtpServer
+            refresh: /xapi/siteConfig/smtpServer
             contents:
 
                 host:
                     kind: panel.input.text
                     name: host
                     label: Host
-                    value: ?? XNAT.data.siteConfig.smtpServer.host
+                    value: ?? XNAT:data:siteConfig:smtpServer:host
+#                    value: ""
                     placeholder: localhost
                     validation: required
 
@@ -162,7 +159,8 @@ siteSetup:
                     kind: panel.input.number
                     name: port
                     label: Port
-                    value: ?? XNAT.data.siteConfig.smtpServer.port
+                    value: ?? XNAT:data:siteConfig:smtpServer:port
+#                    value: ""
                     placeholder: 25
                     validation: required number
 
@@ -170,19 +168,22 @@ siteSetup:
                     kind: panel.input.text
                     name: username
                     label: Username
-                    value: ?? XNAT.data.siteConfig.smtpServer.username
+                    value: ?? XNAT:data:siteConfig:smtpServer:username
+#                    value: ""
 
                 password:
                     kind: panel.input.password
                     name: password
                     label: Password
-                    value: ?? XNAT.data.siteConfig.smtpServer.password
+                    value: ?? XNAT:data:siteConfig:smtpServer:password
+#                    value: ""
 
                 protocol:
                     kind: panel.input.text
                     name: protocol
                     label: Protocol
-                    value: ?? XNAT.data.siteConfig.smtpServer.protocol
+                    value: ?? XNAT:data:siteConfig:smtpServer:protocol
+#                    value: ""
 
                 mailServerProperties:
                     kind: panel.subhead
@@ -192,16 +193,20 @@ siteSetup:
                     kind: panel.input.checkbox
                     name: mail.smtp.auth
                     label: SMTP Auth?
-                    value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.auth']
+                    value: ?? XNAT:data:siteConfig:smtpServer:mail.smtp.auth
+#                    value: ""
 
                 smtpStartTls:
                     kind: panel.input.checkbox
                     name: mail.smtp.starttls.enable
                     label: Smart TLS?
-                    value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.starttls.enable']
+                    value: ?? XNAT:data:siteConfig:smtpServer:mail.smtp.starttls.enable
+#                    value: ""
 
                 smtpSSLTrust:
                     kind: panel.input.text
                     name: mail.smtp.ssl.trust
                     label: SSL Trust
-                    value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.ssl.trust']
+                    value: ?? XNAT:data:siteConfig:smtpServer:mail.smtp.ssl.trust
+#                    value: ""
+

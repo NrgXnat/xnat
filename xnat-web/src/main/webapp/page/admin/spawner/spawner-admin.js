@@ -123,6 +123,7 @@ XNAT.xhr.getJSON({
                                     console.log(obj)
                                 },
                                 okLabel: 'Save Changes',
+                                okClose: false,
                                 okAction: function(obj){
                                     XNAT.xhr.put({
                                         url: elementUrl,

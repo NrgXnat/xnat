@@ -670,23 +670,27 @@ ${bodyTop}
 
     loadjs(scriptUrl('xnat/event.js'), function(){
 
+        var clicker = XNAT.event.click('#header_logo, #xnat_power > a');
+
         // shift-click the header or footer XNAT logo to TOGGLE debug mode on/off
+        clicker.shiftKey(function(e){
+            e.preventDefault();
+            if (Cookies.get('debug') === 'on'){
+                Cookies.set('debug', 'off');
+                window.location.hash = 'debug=off';
+            }
+            else {
+                Cookies.set('debug', 'on');
+                window.location.hash = 'debug=on';
+            }
+            window.location.reload();
+        });
+
         // alt-shift-click to open the Swagger page in a new window
-        XNAT.event.click('#header_logo, #xnat_power > a')
-            .shiftKey(function(e){
-                e.preventDefault();
-                if (Cookies.get('debug') === 'on'){
-                    window.location.hash = 'debug=off';
-                }
-                else {
-                    window.location.hash = 'debug=on';
-                }
-                window.location.reload();
-            })
-            .altShift(function(e){
-                e.preventDefault();
-                XNAT.ui.popup(XNAT.url.rootUrl('/xapi/swagger-ui.html'));
-            });
+        clicker.altShift(function(e){
+            e.preventDefault();
+            XNAT.ui.popup(XNAT.url.rootUrl('/xapi/swagger-ui.html'));
+        });
 
     })
 

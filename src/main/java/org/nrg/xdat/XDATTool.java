@@ -40,16 +40,16 @@ import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
+import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -110,7 +110,7 @@ public class XDATTool {
 	 */
 	public void generateSQL() throws Exception
 	{
-		SQLCreateGenerator.generateDoc(getWorkDirectory() + "xdat.sql");
+		SQLCreateGenerator.generateDoc(Paths.get(getWorkDirectory(), "xdat.sql").toString());
 	}
 
     /**
@@ -196,7 +196,8 @@ public class XDATTool {
 				}else{
 					wrk=PersistentWorkflowUtils.buildAdminWorkflow(user,item.getXSIType(),item.getPKValueString(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Stored XML", EventUtils.MODIFY_VIA_STORE_XML, null));
 				}
-				
+
+				assert wrk != null;
 				ci = wrk.buildEvent();
 			} catch (Throwable e) {
 				// THIS IS SO UGLY...  But it's a chicken and egg problem
@@ -238,16 +239,10 @@ public class XDATTool {
 			proper = se.getSQLName();
 		}
 
-	    int counter = 0;
-	    Iterator iter = pks.iterator();
-	    while (iter.hasNext())
-	    {
-	        SchemaField sf = (SchemaField)iter.next();
-	        if (counter==0)
-	            query += sf.getSQLName();
-	        else
-	            query += ", " + sf.getSQLName();
-	    }
+		for (final Object pk1 : pks) {
+			SchemaField sf = (SchemaField) pk1;
+			query += sf.getSQLName();
+		}
 
 	    query += " FROM " + se.getSQLName() + ";";
 
@@ -268,15 +263,13 @@ public class XDATTool {
 
 	        String fileName = proper;
 
-			    iter = pks.iterator();
-			    while (iter.hasNext())
-			    {
-			        SchemaField sf = (SchemaField)iter.next();
-			        Object pk = row.get(sf.getSQLName().toLowerCase());
-			        search.addCriteria(sf.getGenericXFTField().getXMLPathString(se.getFullXMLName()),pk);
+			for (final Object pk1 : pks) {
+				SchemaField sf = (SchemaField) pk1;
+				Object      pk = row.get(sf.getSQLName().toLowerCase());
+				search.addCriteria(sf.getGenericXFTField().getXMLPathString(se.getFullXMLName()), pk);
 
-			        fileName += "_" + pk;
-			    }
+				fileName += "_" + pk;
+			}
 
 			    fileName += ".xml";
 
@@ -409,51 +402,28 @@ public class XDATTool {
 
 	public String getWorkDirectory()
 	{
-	    File f = new File(location + "work");
-	    if (!f.exists())
-	    {
-	        f.mkdir();
-	    }
-	    return location +"work" + File.separator;
+		final Path directory = Paths.get(location, "work");
+		final File f         = directory.toFile();
+		if (!f.exists()) {
+			f.mkdir();
+		}
+		return directory.toString();
 	}
 
 	public String getSearchFileName(String extension)
 	{
 	    int counter =0;
 
-	    File f = new File(getWorkDirectory() + "search" +counter +"." + extension);
+	    File f = Paths.get(getWorkDirectory(), "search" + counter + "." + extension).toFile();
 
 	    while (f.exists())
 	    {
-	        f = new File(getWorkDirectory() + "search" + (++counter) +"." + extension);
+	        f = Paths.get(getWorkDirectory(), "search" + (++counter) + "." + extension).toFile();
 	    }
 	    return f.getAbsolutePath();
 	}
 
-	public URI getSettingsDirectory()
-	{
-        // MIGRATE: Again, just a bogus thing to preserve compilability.
-        try {
-            return new URI("http://www.yahoo.com");
-        } catch (URISyntaxException e) {
-            // Nothing here.
-        }
-        return null;
-    }
-
-    public static String GetSettingsDirectory()
-    {
-        // MIGRATE: Again, just a bogus thing to preserve compilability.
-        return location;
-//        try {
-//            return XFTManager.GetInstance().getSourceDir().getPath();
-//        } catch (XFTInitException e) {
-//            logger.error("",e);
-//            return "XDAT NOT INITIALIZED";
-//        }
-    }
-
-    /**
+	/**
      * @return Returns the user.
      */
     public UserI getUser() {

@@ -617,17 +617,7 @@ public abstract class CommandPromptTool {
     {
         return true;
     }
-    
-    public String getWorkingDirectory()
-    {
-        return tool.getWorkDirectory();
-    }
-    
-    public String getSettingsDirectory()
-    {
-        return tool.getSettingsDirectory().toString();
-    }
-    
+
     public UserI getUser()
     {
         return tool.getUser();

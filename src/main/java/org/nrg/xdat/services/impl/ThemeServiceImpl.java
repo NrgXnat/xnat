@@ -10,18 +10,21 @@
  */
 package org.nrg.xdat.services.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.services.ThemeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -29,27 +32,25 @@ import java.util.zip.ZipInputStream;
 
 @Service
 public class ThemeServiceImpl implements ThemeService {
-    private static String webRelativePath;
+    private static final Logger         _log = LoggerFactory.getLogger(ThemeServiceImpl.class);
+
     private static String webRelativeThemePath="themes";
-    private static String themesPath;
     private static ThemeConfig themeConfig = null;
+    private static Path themesPath;
     private static File themeFile = null;
+
     private static final int FILE_BUFFER_SIZE = 4096;
 
     @Autowired
     private SerializerService _serializer;
-
     @Autowired
     private ServletContext servletContext;
 
     @PostConstruct
     public void postServiceConstruction(){
-//        File catalinaBase = new File( System.getProperty( "catalina.base" ) ).getAbsoluteFile();
-//        themesPath = catalinaBase.getAbsolutePath() + File.separator + webRelativeThemePath;
-        webRelativePath = servletContext.getRealPath(File.separator);
-        themesPath = webRelativePath+webRelativeThemePath;
-        themeFile = new File(webRelativePath+"theme.json");
-        File checkThemesPath = new File(themesPath);
+        themesPath = Paths.get(servletContext.getRealPath("/"), webRelativeThemePath);
+        themeFile = themesPath.resolve("theme.json").toFile();
+        File checkThemesPath = themesPath.toFile();
         if (!checkThemesPath.exists()) {
             checkThemesPath.mkdir();
         }
@@ -57,7 +58,7 @@ public class ThemeServiceImpl implements ThemeService {
     }
 
     public String getThemesPath() {
-        return themesPath;
+        return themesPath.toString();
     }
 
     /**
@@ -135,8 +136,8 @@ public class ThemeServiceImpl implements ThemeService {
         return checkThemeFileExists(theme, pageName, null);
     }
 
-    private String checkThemeFileExists(ThemeConfig theme, String pageName, String type) {
-        String pagePath = null, typeSep = type + "s" + File.separator;
+    private String checkThemeFileExists(ThemeConfig theme, String pageName, final String type) {
+        String pagePath = null;
         String[] extensions = new String[]{};
         String[] pageExts = new String[]{"jsp", "vm", "htm", "html"};
         String[] scriptExts = new String[]{"js"};
@@ -150,19 +151,19 @@ public class ThemeServiceImpl implements ThemeService {
         if("style".equals(type)){
             extensions = (String[]) ArrayUtils.addAll(extensions, styleExts);
         }
+        final boolean useTypeSeparator;
         if(type == null){
-            typeSep = "";
+            useTypeSeparator = false;
             extensions = (String[]) ArrayUtils.addAll(extensions, pageExts);
             extensions = (String[]) ArrayUtils.addAll(extensions, scriptExts);
             extensions = (String[]) ArrayUtils.addAll(extensions, styleExts);
+        } else {
+            useTypeSeparator = true;
         }
         for (String ext : extensions) {
-            File themePageFile = new File(theme.getPath() + File.separator + typeSep + pageName + "." + ext);
+            File themePageFile = (useTypeSeparator ? Paths.get(theme.getPath(), type + "s", pageName + "." + ext) : Paths.get(theme.getPath(), pageName + "." + ext)).toFile();
             if(themePageFile.exists()) {
-                if(type != null){
-                    typeSep = type + "s/";  // This is awful and should be set once up above
-                }
-                pagePath = "/" + webRelativeThemePath + "/" + theme.getName() + "/" + typeSep + pageName + "." + ext;
+                pagePath = Paths.get("/" + webRelativeThemePath, theme.getName(), type + "s", pageName + "." + ext).toString();
                 break;
             }
         }
@@ -191,12 +192,9 @@ public class ThemeServiceImpl implements ThemeService {
             } else {
                 throw new ThemeNotFoundException(themeConfig.getName());
             }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            // TODO: rethrow this and respond as an internal server error
         } catch (IOException e) {
-            e.printStackTrace();
             // TODO: rethrow this and respond as an internal server error
+            _log.error("An error occurred retrieving a theme", e);
         }
         return themeConfig;
     }
@@ -236,7 +234,7 @@ public class ThemeServiceImpl implements ThemeService {
     public List<TypeOption> loadExistingThemes() {
         ArrayList<TypeOption> themeOptions = new ArrayList<>();
         themeOptions.add(new TypeOption(null, "None"));
-        File f = new File(themesPath); // current directory
+        File f = themesPath.toFile(); // current directory
         FileFilter directoryFilter = new FileFilter() {
             public boolean accept(File file) {
                 return file.isDirectory();

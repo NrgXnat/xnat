@@ -12,28 +12,28 @@
 
 package org.nrg.xft.utils.zip;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xnat.srb.XNATDirectory;
 
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author timo
- *
  */
-public interface ZipI {
-    public abstract void setOutputStream(OutputStream outStream) throws IOException;
-    public abstract void setOutputStream(OutputStream outStream,int compressionMethod) throws IOException;
-    public abstract void extract(File f, String dir,boolean deleteZip) throws IOException;
-    public ArrayList extract(InputStream is, String dir,boolean overwrite,EventMetaI ci) throws IOException;
-    public ArrayList extract(InputStream is, String dir) throws IOException;
-    public List<String> getDuplicates();
+public interface ZipI extends Closeable {
+    void setOutputStream(OutputStream outStream) throws IOException;
+
+    void setOutputStream(OutputStream outStream, int compressionMethod) throws IOException;
+
+    void extract(File f, String dir, boolean deleteZip) throws IOException;
+
+    ArrayList extract(InputStream is, String dir, boolean overwrite, EventMetaI ci) throws IOException;
+
+    ArrayList extract(InputStream is, String dir) throws IOException;
+
+    List<String> getDuplicates();
 
     /**
      * @param relativePath path name for zip file
@@ -41,21 +41,13 @@ public interface ZipI {
      * @throws FileNotFoundException
      * @throws IOException
      */
-    public abstract void write(String relativePath, String absolutePath) throws IOException;
-    /**
-     * @param dir    Directory to write into.
-     * @throws IOException
-     */
-    public abstract void write(XNATDirectory dir)
-            throws IOException;
+    void write(String relativePath, String absolutePath) throws IOException;
 
-    
     /**
-     * @param relativePath Path name for zip file
-     * @param f            File name for zip file
+     * @param dir Directory to write into.
      * @throws IOException
      */
-    public abstract void write(String relativePath, File f)
+    void write(XNATDirectory dir)
             throws IOException;
 
 
@@ -64,36 +56,48 @@ public interface ZipI {
      * @param f            File name for zip file
      * @throws IOException
      */
-    public abstract void write(String relativePath, InputStream f)
+    void write(String relativePath, File f)
             throws IOException;
-    
+
+
     /**
-     * @param dir    Path for directory.
+     * @param relativePath Path name for zip file
+     * @param f            File name for zip file
      * @throws IOException
      */
-    public abstract void writeDirectory(File dir)
+    void write(String relativePath, InputStream f)
+            throws IOException;
+
+    /**
+     * @param dir Path for directory.
+     * @throws IOException
+     */
+    void writeDirectory(File dir)
             throws IOException;
 
     /**
      * @throws IOException
      */
-    public abstract void close() throws IOException;
-    
+    @Override
+    void close() throws IOException;
+
     /**
      * @return Returns the _compressionMethod.
      */
-    public boolean getDecompressFilesBeforeZipping();
+    boolean getDecompressFilesBeforeZipping();
+
     /**
      * @param method The _compressionMethod to set.
      */
-    public void setDecompressFilesBeforeZipping(boolean method);
-    
+    void setDecompressFilesBeforeZipping(boolean method);
+
     /**
      * @return Returns the _compressionMethod.
      */
-    public int getCompressionMethod();
+    int getCompressionMethod();
+
     /**
      * @param method The _compressionMethod to set.
      */
-    public void setCompressionMethod(int method);
+    void setCompressionMethod(int method);
 }

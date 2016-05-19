@@ -235,8 +235,13 @@ var XNAT = getObject(XNAT || {});
                 setValues(form, data);
             };
 
+            obj.ajax.error = function(){
+                $(form).dataAttr('status', 'error');
+            };
+
+
             obj.ajax.complete = function(){
-                xmodal.loading.closeAll();
+                xmodal.loading.close('#load-data');
             };
 
             // return the ajax thing for method chaining
@@ -632,6 +637,13 @@ var XNAT = getObject(XNAT || {});
         opts = cloneObject(opts);
         opts.type = 'password';
         addClassName(opts, 'password');
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+
+    panel.input.date = function panelInputPassword(opts){
+        opts = cloneObject(opts);
+        opts.type = 'date';
+        addClassName(opts, 'date');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 

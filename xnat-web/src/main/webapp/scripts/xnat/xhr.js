@@ -398,9 +398,9 @@ var XNAT = getObject(XNAT||{}),
 
     function processJSON(data, stringify){
         var output = {};
-        $.each(data, function(prop, val){
-            prop = val.name || prop;
-            val  = (val.value || val) || '';
+        forEach(data, function(item){
+            var prop = item.name;
+            var val  = item.value;
             if (typeof output[prop] == 'undefined') {
                 output[prop] = val;
             }
@@ -437,12 +437,7 @@ var XNAT = getObject(XNAT||{}),
         }
         return $el;
     }
-
-    // can the value be reasonably used as a string?
-    function stringable(val){
-        return /string|number|boolean/.test(typeof val);
-    }
-
+    
     // set form element values from an object map
     function setValues(form, dataObj){
         // cache and check if form exists
@@ -472,11 +467,7 @@ var XNAT = getObject(XNAT||{}),
 
     // this could be a handy jQuery method
     $.fn.setValues = function(dataObj){
-        // only run on form or div elements
-        // (gotta draw the line somewhere)
-        if (/form|div/i.test(this.tagName||'')) {
-            setValues(this, dataObj);
-        }
+        setValues(this, dataObj);
         return this;
     };
 
@@ -484,12 +475,24 @@ var XNAT = getObject(XNAT||{}),
 
         var $form = $$(form),
             _form = $form[0], // raw DOM element
+            validation = true,
             callback = diddly;
 
         opts = cloneObject(opts);
-        opts.url = XNAT.url.restUrl(opts.url || _form.action);
+        opts.url = XNAT.url.rootUrl(opts.url || $form.attr('action'));
         opts.method = opts.method || _form.method || 'GET';
 
+        if ($.isFunction(opts.validate)) {
+            validation = opts.validate.apply(_form, opts);
+            if (!validation) {
+                $form.removeClass('valid').addClass('invalid');
+                return validation;
+            }    
+            else {
+                $form.removeClass('invalid').addClass('valid');
+            }
+        }
+        
         // set opts.callback:false to prevent the
         // 'standard' method callback from running
         if (opts.callback !== false) {
@@ -507,7 +510,8 @@ var XNAT = getObject(XNAT||{}),
             opts.success = function(data){
                 callback.apply($form, arguments);
                 // repopulate 'real' data after success
-                setValues($form, data);
+                // DON'T TRUST RETURNED DATA
+                //setValues($form, data);
             }
         }
         // populate form fields from returned
@@ -515,7 +519,8 @@ var XNAT = getObject(XNAT||{}),
         else if (/GET/i.test(opts.method)){
             opts.success = function(data){
                 callback.apply($form, arguments);
-                setValues($form, data);
+                // DON'T TRUST RETURNED DATA
+                //setValues($form, data);
             };
         }
 
@@ -524,11 +529,20 @@ var XNAT = getObject(XNAT||{}),
 
     };
 
+    // $('form.foo').submitJSON();
+    $.fn.submitJSON = function(opts){
+        $(this).addClass('json');
+        return xhr.form(this, extend(true, {
+            method: this.method || 'POST',
+            processData: false,
+            contentType: 'application/json'
+        }, opts))
+    };
+
     // intercept form submissions with 'ajax' or 'json' class
-    $('body').on('submit', 'form.ajax, form.json', function(e){
-        e.preventDefault();
-        xhr.form(this);
-        return false;
+    // using namespaced event handler submit.json
+    $('body').on('submit-json, submit-ajax', 'form.ajax, form.json', function(opts){
+        return xhr.form(this, opts);
     });
 
     // special case for YUI 'GET' request
@@ -625,3 +639,4 @@ var XNAT = getObject(XNAT||{}),
     xhr.loaded = true;
 
 })(XNAT, jQuery, YAHOO);
+

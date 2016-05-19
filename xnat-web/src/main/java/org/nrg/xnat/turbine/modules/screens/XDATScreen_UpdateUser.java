@@ -17,7 +17,6 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.generic.EscapeTool;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.helpers.Users;
@@ -26,7 +25,6 @@ import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
 
 import java.sql.SQLException;
@@ -54,10 +52,9 @@ public class XDATScreen_UpdateUser extends SecureScreen {
 
         c.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
         c.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
-        try{
-            c.put("siteConfig", XDAT.getSiteConfiguration());
-        }catch(ConfigServiceException ignored){
-        }
+
+        c.put("siteConfig", XDAT.getSiteConfigPreferences());
+
 
         doBuildTemplate(data, c);
     }

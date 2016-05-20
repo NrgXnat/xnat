@@ -783,11 +783,11 @@ anonymization:
             id: enableSitewideAnonymizationScript
             name: enableSitewideAnonymizationScript
             label: "Enable Site-wide Anonymization Script"
-        editAnonymzationScript:
+        editAnonymizationScript:
             kind: panel.textarea
-            id: editAnonymzationScript
-            name: editAnonymzationScript
-            label: "Edit Anonymzation Script"
+            id: editAnonymizationScript
+            name: editAnonymizationScript
+            label: "Edit Anonymization Script"
 
 seriesImportFilter:
     kind: panel.form

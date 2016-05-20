@@ -262,7 +262,9 @@ var XNAT = getObject(XNAT);
         var hiddenInput;
 
         // check buttons if value is true
-        if (/checkbox|radio/i.test(opts.type||'')) {
+        if (/checkbox|radio/i.test(element.type||'')) {
+
+            element.checked = /true|checked/i.test((opts.checked || element.value).toString());
 
             // add a hidden input to capture the checkbox/radio value
             hiddenInput = spawn('input', {
@@ -270,8 +272,6 @@ var XNAT = getObject(XNAT);
                 name: element.name,
                 value: element.checked
             });
-
-            element.checked = /true|checked/i.test((opts.checked || element.value).toString());
 
             // change the value of the hidden input onclick
             element.onclick = function(){
@@ -320,7 +320,7 @@ var XNAT = getObject(XNAT);
         // add the options
         $.each(opts.options||{}, function(name, prop){
             var _option = spawn('option', extend(true, {
-                html: prop.label || prop.value || prop,
+                html: prop.html || prop.text || prop.label || prop.value || prop,
                 value: prop.value || name
             }, prop.element));
             // select the option if it's the select element's value

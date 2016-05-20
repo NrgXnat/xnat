@@ -137,16 +137,25 @@ var XNAT = getObject(XNAT || {});
         // set form element values from an object map
         function setValues(form, dataObj){
             // find all form inputs with a name attribute
-            $$(form).find(':input[name]').each(function(){
-                var val = dataObj[this.name];
+            $$(form).find(':input').each(function(){
+
+                var val = dataObj[this.name||this.title];
+
                 if (!val) return;
+
                 if (Array.isArray(val)) {
                     val = val.join(', ');
                 }
                 else {
                     val = stringable(val) ? val : JSON.stringify(val);
                 }
-                $(this).changeVal(val);
+
+                $(this).val(val);
+
+                if (/checkbox|radio/i.test(this.type)) {
+                    this.checked = !!this.value;
+                }
+
             });
             if (xmodal && xmodal.loading && xmodal.loading.closeAll){
                 xmodal.loading.closeAll();
@@ -181,6 +190,7 @@ var XNAT = getObject(XNAT || {});
             
             // if 'load' starts with '!?' do an eval()
             var doEval = '!?';
+
             if (obj.load && obj.load.toString().indexOf(doEval) === 0) {
                 obj.load = (obj.load.split(doEval)[1]||'').trim();
                 setValues(form, eval(obj.load));
@@ -193,22 +203,17 @@ var XNAT = getObject(XNAT || {});
             // REST
             //////////
 
+            var ajaxUrl = obj.refresh || '';
+
             // if 'load' starts with $?, do ajax request
             var ajaxPrefix = '$?';
-            var ajaxUrl = '';
             var ajaxProp = '';
 
-
-            if (obj.refresh) {
-                ajaxUrl = obj.refresh;
-            }
             // value: $? /path/to/data | obj:prop:name
-            else if (obj.load && obj.load.toString().indexOf(ajaxPrefix) === 0) {
-                ajaxUrl = obj.load;
+            if (obj.load && obj.load.toString().indexOf(ajaxPrefix) === 0) {
+                ajaxUrl = (obj.load.split(ajaxPrefix)[1]||'').trim().split('|')[0];
+                ajaxProp = ajaxUrl.split('|')[1] || '';
             }
-
-            ajaxUrl = (ajaxUrl.split(ajaxPrefix)[1]||'').trim().split('|')[0];
-            ajaxProp = ajaxUrl.split('|')[1] || '';
 
             // need a url to get the data
             if (!ajaxUrl || !stringable(ajaxUrl)) {
@@ -268,7 +273,7 @@ var XNAT = getObject(XNAT || {});
 
         // click 'Discard Changes' button to reload data
         _resetBtn.onclick = function(){
-            if (!/^#/.test($formPanel.attr('action')||'#')){
+            if (!/^#/.test($formPanel.attr('action'))){
                 $formPanel.triggerHandler('reload-data');
             }
         };
@@ -296,7 +301,7 @@ var XNAT = getObject(XNAT || {});
                 multiform = {};
 
             // don't submit forms with 'action' starting with '#'
-            if (/^#/.test($form.attr('action')||'#')) {
+            if (/^#/.test($form.attr('action'))) {
                 return false;
             }
 

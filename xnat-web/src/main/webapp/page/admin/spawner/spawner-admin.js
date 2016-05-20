@@ -1,26 +1,26 @@
 (function(){
 
-    function showJSON(json){
-        return xmodal.message({
-            title: 'Site Admin JSON',
-            maximize: true,
-            width: '90%',
-            height: '90%',
-            content: spawn('pre.json', JSON.stringify(json, null, 2)).outerHTML
-        })
-    }
-
-    spawn('button|type=button', {
-        html: 'View JSON',
-        onclick: function(){
-            XNAT.xhr.get(XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/adminPage'), function(data){
-                showJSON(data);
-            });
-        },
-        $: {
-            appendTo: '#view-json'
-        }
-    });
+    // function showJSON(json){
+    //     return xmodal.message({
+    //         title: 'Site Admin JSON',
+    //         maximize: true,
+    //         width: '90%',
+    //         height: '90%',
+    //         content: spawn('pre.json', JSON.stringify(json, null, 2)).outerHTML
+    //     })
+    // }
+    //
+    // spawn('button|type=button', {
+    //     html: 'View JSON',
+    //     onclick: function(){
+    //         XNAT.xhr.get(XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/adminPage'), function(data){
+    //             showJSON(data);
+    //         });
+    //     },
+    //     $: {
+    //         appendTo: '#view-json'
+    //     }
+    // });
 
     //$('#view-json').click(function(){});
 
@@ -72,7 +72,7 @@ XNAT.xhr.getJSON({
                 }]
             ]]);
 
-            var idsMenu = spawn('select#spawner-ns-ids', [['option|value=!', 'Select an Element']]);
+            var idsMenu = spawn('select.spawner-ns-ids', [['option|value=!', 'Select an Element']]);
             
             tds.push(['td', [
 
@@ -84,7 +84,7 @@ XNAT.xhr.getJSON({
                     type: 'button',
                     html: 'View Selected Element',
                     onclick: function(){
-                        var getId = $('#spawner-ns-ids').val();
+                        var getId = $(idsMenu).val();
                         if (!getId || getId === '!') {
                             xmodal.message('Select an Element ID');
                             return false;

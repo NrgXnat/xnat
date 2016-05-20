@@ -411,7 +411,7 @@ public class Users {
         if (!u.isEnabled()) {
             throw new DisabledException("Attempted login to disabled account: " + u.getUsername());
         }
-        if ((XDAT.verificationOn() && !u.isVerified()) || !u.isAccountNonLocked()) {
+        if ((XDAT.getSiteConfigPreferences().getEmailVerification() && !u.isVerified()) || !u.isAccountNonLocked()) {
             throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + u.getUsername());
         }
     }

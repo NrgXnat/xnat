@@ -96,7 +96,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                boolean autoApproval = autoApproval(data, context);
 		                
 		                if (autoApproval) {
-		                	if (XDAT.verificationOn() && !hasPAR(data)) {
+		                	if (XDAT.getSiteConfigPreferences().getEmailVerification() && !hasPAR(data)) {
 		                		found.setEnabled(Boolean.FALSE);
 		                	} else {
 		                		found.setEnabled(Boolean.TRUE);
@@ -124,7 +124,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         final String lab = TurbineUtils.HasPassedParameter("lab", data) ? (String) TurbineUtils.GetPassedParameter("lab", data) : "";
 
                         if (autoApproval) {
-                            if (!hasPAR(data) && XDAT.verificationOn()) {
+                            if (!hasPAR(data) && XDAT.getSiteConfigPreferences().getEmailVerification()) {
                             	try {
                                     AdminUtils.sendNewUserVerificationEmail(found);
             				        context.put("emailTo", found.getEmail());
@@ -180,7 +180,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                	
 		                    try {
                                 cacheRegistrationData(found, comments, phone, lab);
-                                if (XDAT.verificationOn()) {
+                                if (XDAT.getSiteConfigPreferences().getEmailVerification()) {
                                     // If verification is on, the user must verify their email before the admin gets emailed.
                                     AdminUtils.sendNewUserVerificationEmail(found);
             				        context.put("emailTo", found.getEmail());
@@ -282,7 +282,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
         data.setScreenTemplate("Index.vm");
         
-        if (XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.verificationOn()){
+        if (XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.getSiteConfigPreferences().getEmailVerification()){
          if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
             VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);

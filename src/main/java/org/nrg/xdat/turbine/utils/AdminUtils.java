@@ -228,7 +228,7 @@ public class AdminUtils {
         if(!XDAT.getSiteConfigPreferences().getUserRegistration()){
             // Send admin email
             AdminUtils.sendNewUserRequestNotification(username, firstName, lastName, email, comments, phone, organization, context);
-        } else if((!XDAT.verificationOn()) || user.isVerified()) {
+        } else if((!XDAT.getSiteConfigPreferences().getEmailVerification()) || user.isVerified()) {
             AdminUtils.sendNewUserCreationNotification(username, firstName, lastName, email, comments, phone, organization, context);
             AdminUtils.sendNewUserEmailMessage(username, email, context);
         }

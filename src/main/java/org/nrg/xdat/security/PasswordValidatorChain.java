@@ -10,9 +10,9 @@
  */
 package org.nrg.xdat.security;
 
-import java.util.List;
-
 import org.nrg.xft.security.UserI;
+
+import java.util.List;
 
 public class PasswordValidatorChain implements PasswordValidator {
     public PasswordValidatorChain(final List<PasswordValidator> validators) {
@@ -21,7 +21,7 @@ public class PasswordValidatorChain implements PasswordValidator {
 
     @Override
     public boolean isValid(String password, UserI user) {
-        boolean ret = true;
+        boolean             ret    = true;
         final StringBuilder buffer = new StringBuilder();
         if (_validators != null) {
             for (final PasswordValidator validator : _validators) {
@@ -33,7 +33,6 @@ public class PasswordValidatorChain implements PasswordValidator {
         }
         message = buffer.toString();
         return ret;
-
     }
 
     public String getMessage() {
@@ -45,5 +44,5 @@ public class PasswordValidatorChain implements PasswordValidator {
     }
 
     private final List<PasswordValidator> _validators;
-    private String message;
+    private       String                  message;
 }

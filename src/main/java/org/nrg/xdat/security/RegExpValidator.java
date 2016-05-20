@@ -10,46 +10,29 @@
  */
 package org.nrg.xdat.security;
 
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import java.util.regex.Pattern;
 
-public class RegExpValidator implements PasswordValidator{
+@Component
+public class RegExpValidator implements PasswordValidator {
+    @Override
+    public boolean isValid(String password, UserI user) {
+        final String regexp = _preferences.getPasswordComplexity();
+        return StringUtils.isBlank(regexp) || Pattern.matches(regexp, password);
+    }
 
-	String regexp="";
-	String message="Password is not sufficiently complex.";
-	
-	public RegExpValidator(){
+    @Override
+    public String getMessage() {
+        return StringUtils.defaultIfBlank(_preferences.getPasswordComplexityMessage(), "Password is not sufficiently complex.");
+    }
 
-	}
-
-	public RegExpValidator(final String regexp, final String message){
-		setRegexp(regexp);
-		setMessage(message);
-	}
-	
-	@Override
-	public boolean isValid(String password, UserI user) {
-		return (regexp.equals("")) || Pattern.matches(regexp, password);
-	}
-
-	public String getRegexp() {
-		return regexp;
-	}
-
-	public void setRegexp(String regexp) {
-		if(regexp!=null && !(regexp.equals(""))){
-			this.regexp = regexp;
-		}
-	}
-	
-	public String getMessage() {
-		return message;
-	}
-
-	public void setMessage(String message) {
-		if(message!=null && !(message.equals(""))){
-			this.message = message;
-		}
-	}
+    @Autowired
+    @Lazy
+    private SiteConfigPreferences _preferences;
 }

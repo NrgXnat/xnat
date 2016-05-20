@@ -10,32 +10,27 @@
  */
 package org.nrg.xdat.security;
 
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
+import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Hashtable;
 
+@Component
 public class HistoricPasswordValidator implements PasswordValidator {
-
-    public static final int DEFAULT_DURATION_IN_DAYS = 365;
-
-    public HistoricPasswordValidator() {
-        this(DEFAULT_DURATION_IN_DAYS);
-    }
-
-    public HistoricPasswordValidator(final int durationInDays) {
-        setDurationInDays(durationInDays);
-    }
-
     @Override
     public boolean isValid(String password, UserI user) {
         //if there's no user, they're probably new so there's nothing to do here.
         if (user != null) {
             try {
+                int durationInDays = _preferences.getPasswordHistoryDuration();
                 String userId = user.getUsername();
                 String dbName = user.getDBName();
                 Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
@@ -49,12 +44,12 @@ public class HistoricPasswordValidator implements PasswordValidator {
                     String salt = (String) row.get("salt");
                     String encrypted = new ShaPasswordEncoder(256).encodePassword(password, salt);
                     if (encrypted.equals(hashedPassword)) {
-                        message = "Password has been used in the previous " + durationInDays + " days.";
+                        _message = getDefaultMessage();
                         return false;
                     }
                 }
             } catch (Exception e) {
-                message = e.getMessage();
+                _message = e.getMessage();
                 return false;
             }
         }
@@ -62,17 +57,16 @@ public class HistoricPasswordValidator implements PasswordValidator {
     }
 
     public String getMessage() {
-        return message;
+        return _message;
     }
 
-    public int getDurationInDays() {
-        return durationInDays;
+    private String getDefaultMessage() {
+        return String.format("Password has been used in the previous %d days.", _preferences.getPasswordHistoryDuration());
     }
 
-    public void setDurationInDays(int durationInDays) {
-        this.durationInDays = durationInDays;
-    }
+    @Autowired
+    @Lazy
+    private SiteConfigPreferences _preferences;
 
-    private String message = "Password has been used previously.";
-    private int durationInDays = 365;
+    private String _message;
 }

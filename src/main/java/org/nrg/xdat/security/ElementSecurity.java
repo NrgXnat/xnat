@@ -52,6 +52,7 @@ import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -1394,6 +1395,8 @@ public class ElementSecurity extends ItemWrapper {
         try {
     		final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
             eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
+        } catch (NoSuchBeanDefinitionException e) {
+            logger.info("Didn't find the NrgEventService instance, it probably hasn't been initialized yet.");
         } catch (Exception e1) {
             logger.error("", e1);
         }

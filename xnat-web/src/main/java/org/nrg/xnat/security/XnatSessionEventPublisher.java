@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.security;
 
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,7 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         }
 
         session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-
+        session.setMaxInactiveInterval(XDAT.getSiteConfigPreferences().getSessionTimeout()*60);//Preference is in minutes and setMaxInactiveInterval wants seconds.
         getContext(session.getServletContext()).publishEvent(e);
     }
 

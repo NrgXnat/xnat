@@ -451,7 +451,7 @@
                             "attr": {
                                 "size": "3"
                             },
-                            "description": "Interval for timing out alias tokens. Uses PostgreSQL interval notation: http://www.postgresql.org/docs/9.0/static/functions-datetime.html"
+                            "description": "Number of minutes of inactivity before users are locked out of the site. This will not affect users that are currently logged in."
                         },
                         {
                             "kind": "textarea",

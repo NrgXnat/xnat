@@ -199,7 +199,7 @@
                                     <label class="element-label" for="session-timeout-input">Session Timeout</label>
                                     <div class="element-wrapper">
                                         <input name="sessionTimeout" id="session-timeout-input" type="text" size="3" title="Session Timeout">
-                                        <div class="description">Interval for timing out alias tokens. Uses PostgreSQL interval notation: http://www.postgresql.org/docs/9.0/static/functions-datetime.html</div>
+                                        <div class="description">Number of minutes of inactivity before users are locked out of the site. This will not affect users that are currently logged in.</div>
                                     </div>
                                 </div>
                                 <div class="panel-element" data-name="sessionTimeoutMessage">

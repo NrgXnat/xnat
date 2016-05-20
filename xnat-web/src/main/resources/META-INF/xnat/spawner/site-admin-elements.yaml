@@ -221,7 +221,7 @@ userLoginsSessionControls:
             id: sessionTimeout
             name: sessionTimeout
             label: Session Timeout
-            description: "Interval for timing out alias tokens"
+            description: "Number of minutes of inactivity before users are locked out of the site. This will not affect users that are currently logged in."
         aliasTokenTimeout:
             kind: panel.input.text
             id: aliasTokenTimeout

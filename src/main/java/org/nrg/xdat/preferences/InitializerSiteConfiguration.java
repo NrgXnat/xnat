@@ -110,8 +110,8 @@ public class InitializerSiteConfiguration extends PropertiesBasedSiteConfigurati
         return getLongSiteConfigurationProperty("sessionXmlRebuilderRepeat");
     }
 
-    public String getAliasTokenTimeout() throws SiteConfigurationException {
-        return getSiteConfigurationProperty("aliasTokenTimeout");
+    public long getAliasTokenTimeout() throws SiteConfigurationException {
+        return getLongSiteConfigurationProperty("aliasTokenTimeout");
     }
 
     public Map<String, String> getSmtpServer() throws SiteConfigurationException, IOException {

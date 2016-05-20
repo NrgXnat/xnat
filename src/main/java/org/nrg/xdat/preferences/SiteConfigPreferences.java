@@ -10,7 +10,7 @@ import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
 import org.nrg.xdat.security.services.RoleServiceI;
-import org.postgresql.util.PGInterval;
+import org.nrg.xnat.configuration.SchedulerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1001,14 +1001,15 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "2 days")
-    public String getAliasTokenTimeout() {
-        return getValue("aliasTokenTimeout");
+    @NrgPreference(defaultValue = "2880")//2880 minutes = 2 days
+    public long getAliasTokenTimeout() {
+        return getLongValue("aliasTokenTimeout");
     }
 
-    public void setAliasTokenTimeout(final String aliasTokenTimeout) {
+    public void setAliasTokenTimeout(final long aliasTokenTimeout) {
         try {
-            set(aliasTokenTimeout, "aliasTokenTimeout");
+            setLongValue(aliasTokenTimeout, "aliasTokenTimeout");
+
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'aliasTokenTimeout': something is very wrong here.", e);
         }

@@ -1008,7 +1008,7 @@ body .btn1[type="button"],
 body [type="submit"] {
     color: #fff;
     background: #1A75BB;
-    border: 1px solid #096BB7;
+    border: 1px solid #102040;
 }
 
 .btn1:hover,
@@ -1028,7 +1028,7 @@ body button,
 body [type="button"],
 body [type="reset"] {
     background: #f0f0f0 linear-gradient( #ffffff, #f0f0f0 );
-    border: 1px solid #c0c0c0;
+    border: 1px solid #848484;
 }
 
 .btn:hover,
@@ -1789,7 +1789,9 @@ div.containerTitle.withColor {
     margin-top: 0;
     padding: 1px;
     background: #fff;
-    border: 1px solid #c0c0c0;
+    border: solid #848484;
+    border-width: 0 1px 1px;
+    border-top: 1px solid #102040;
 }
 
 /* make sure all sub-nav menus are wide enough */

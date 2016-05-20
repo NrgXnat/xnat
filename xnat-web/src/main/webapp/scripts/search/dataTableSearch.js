@@ -676,7 +676,7 @@ function DataTableSearch(_div_table_id,obj,_config,_options){
   //insert option menu
   this.renderOptions=function(obj1,obj2){
     this.optionMenu=null;
-    this.optionMenu=new YAHOO.widget.MenuBar(this.div_table_id +"_options",{hidedelay:750});
+    this.optionMenu=new YAHOO.widget.MenuBar(this.div_table_id +"_options",{hidedelay:300, maxheight:200, submenualignment: ["tr","br"]});
     this.optionMenu.search=this;
     this.optionMenu.en=this.initResults.ResultSet.rootElementName;
 

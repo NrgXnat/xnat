@@ -22,7 +22,8 @@
             autosubmenudisplay: true,
             scrollincrement: 5,
             position: "static",
-            maxheight: 150
+            maxheight: 150,
+            submenualignment: ["tr","br"] // aligns top-right (tr) corner of submenu to bottom-right (br) corner of parent item
         });
         // Render the MenuBar instance
         actionsMenu.getItem(0).cfg.setProperty("disabled", true);

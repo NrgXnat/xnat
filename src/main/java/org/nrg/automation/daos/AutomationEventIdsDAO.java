@@ -16,7 +16,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class AutomationEventIdsDAO extends AbstractHibernateDAO<AutomationEventIds> {
-	
+
 	/**
 	 * Gets the event ids.
 	 *
@@ -80,6 +80,8 @@ public class AutomationEventIdsDAO extends AbstractHibernateDAO<AutomationEventI
 		} catch (NonUniqueObjectException e) {
 			// TODO:  There's got to be a good way to check for the need to do a merge or to prevent this exception
 			// for object being updated.
+			// Update:  I believe this issue has mostly been resolved by making the method that primarily reads from and
+			// updates this object type a synchronized method
 			this.getSession().merge(eventIds);
 		}
 	}

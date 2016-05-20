@@ -17,7 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -179,12 +178,7 @@ public final class PrearcDatabase {
         if (preferences != null) {
             return preferences.getPrearchivePath();
         }
-        try {
-            final Properties properties = XDAT.getSiteConfiguration();
-            return properties.getProperty("prearchivePath");
-        } catch (ConfigServiceException e) {
-            return null;
-        }
+        return XDAT.getSiteConfigPreferences().getPrearchivePath();
     }
 
     private static boolean tableExists() throws Exception {

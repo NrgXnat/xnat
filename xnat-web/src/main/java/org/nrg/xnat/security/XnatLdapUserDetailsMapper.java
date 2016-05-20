@@ -77,7 +77,7 @@ public class XnatLdapUserDetailsMapper extends LdapUserDetailsMapper {
 
         try {
             final UserI xdatUser = Users.getUser(userDetails.getUsername());
-            if ((!XDAT.verificationOn() || xdatUser.isVerified()) && userDetails.getAuthorization().isEnabled()) {
+            if ((!XDAT.getSiteConfigPreferences().getEmailVerification() || xdatUser.isVerified()) && userDetails.getAuthorization().isEnabled()) {
                 return userDetails;
             } else {
                 throw new NewLdapAccountNotAutoEnabledException(

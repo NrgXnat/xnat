@@ -50,7 +50,7 @@ public abstract class UploadAppletScreen extends SecureScreen {
             scope = Scope.Site;
         }
 
-        boolean enableProjectAppletScript = XDAT.getBoolSiteConfigurationProperty("enableProjectAppletScript", false);
+        boolean enableProjectAppletScript = XDAT.getSiteConfigPreferences().getEnableProjectAppletScript();
         org.nrg.config.entities.Configuration config = enableProjectAppletScript ? configService.getConfig(AppletConfig.toolName, AppletConfig.path, scope, projectId) : null;
 
         if (config == null || org.nrg.config.entities.Configuration.DISABLED_STRING.equalsIgnoreCase(config.getStatus())) {

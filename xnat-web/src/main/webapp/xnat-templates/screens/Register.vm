@@ -1,5 +1,5 @@
 <!-- BEGIN xnat-templates/screens/Register.vm -->
-#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
 #* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#

@@ -1,5 +1,5 @@
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
-#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatCtsessiondata" *#

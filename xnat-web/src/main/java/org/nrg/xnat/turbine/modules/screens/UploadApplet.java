@@ -12,8 +12,8 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.AppletConfig;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
@@ -57,9 +57,8 @@ public class UploadApplet extends UploadAppletScreen {
         } else if (TurbineUtils.HasPassedParameter("no_session_date", data)) {
             context.put("session_date", "no_session_date");
         }
-		context.put("arc", ArcSpecManager.GetInstance());
-		
-        org.nrg.config.entities.Configuration config = getAppletConfiguration(TurbineUtils.getUser(data), (String)context.get("project"));
+
+        org.nrg.config.entities.Configuration config = getAppletConfiguration(XDAT.getUserDetails(), (String)context.get("project"));
 		
 		if(config != null) {
 			String json = config.getContents();

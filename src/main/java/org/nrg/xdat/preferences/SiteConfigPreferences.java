@@ -988,6 +988,19 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @NrgPreference(defaultValue = "15")
+    public int getSessionTimeout() {
+        return getIntegerValue("sessionTimeout");
+    }
+
+    public void setSessionTimeout(final int sessionTimeout) {
+        try {
+            setIntegerValue(sessionTimeout, "sessionTimeout");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'sessionTimeout': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "2 days")
     public String getAliasTokenTimeout() {
         return getValue("aliasTokenTimeout");

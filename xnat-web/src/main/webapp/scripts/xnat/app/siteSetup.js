@@ -87,7 +87,7 @@ var XNAT = getObject(XNAT);
 
             multiForm = spawn('form', {
                 name: opts.name,
-                classes: 'xnat-form-panel multi-form panel panel-default',
+                classes: 'xnat-form-panel multi-form',
                 method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
                 onsubmit: function(e){
@@ -213,10 +213,7 @@ var XNAT = getObject(XNAT);
 
                 }
             }, [
-                ['div.panel-heading', [
-                    ['h3.panel-title', opts.title || opts.label]
-                ]],
-
+                
                 // 'inner' is where the NEXT spawned item will render
                 inner,
 

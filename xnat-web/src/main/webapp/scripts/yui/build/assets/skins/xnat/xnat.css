@@ -2124,7 +2124,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-navset .yui-nav a em,
 .yui-skin-sam .yui-navset .yui-navset-top .yui-nav a em {
-    border: 1px solid #e0e0e0;
+    border: 1px solid #aaa;
     border-bottom: none;
     padding: 8px 16px;
     cursor: hand;

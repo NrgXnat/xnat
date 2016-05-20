@@ -207,6 +207,6 @@ siteSetup:
                     kind: panel.input.text
                     name: mail.smtp.ssl.trust
                     label: SSL Trust
-                    value: ?? XNAT:data:siteConfig:smtpServer:mail.smtp.ssl.trust
-#                    value: ""
+#                    value: ?? XNAT:data:siteConfig:smtpServer:mail.smtp.ssl.trust
+                    value: ""
 

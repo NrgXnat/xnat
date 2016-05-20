@@ -2,11 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<c:set var="HEADBOTTOM">
-    <script src="<c:url value="/scripts/xnat/app/siteSetup.js"/>"></script>
-</c:set>
-
-<pg:xnat page="setup" title="XNAT Setup" headBottom="${HEADBOTTOM}">
+<pg:xnat page="setup" title="XNAT Setup">
 
     <div id="page-body">
         <div class="pad">
@@ -70,7 +66,7 @@
                                 <h2 class="pull-left">XNAT Site Setup</h2>
                                 <div class="hidden message pull-left">
                                     The settings below need to be configured before this XNAT system
-                                    can be used. Please set the properties below and submit the form continue.
+                                    can be used. Please set the properties below and submit the form to continue.
                                 </div>
                                 <div class="clearfix"></div>
                             </header>

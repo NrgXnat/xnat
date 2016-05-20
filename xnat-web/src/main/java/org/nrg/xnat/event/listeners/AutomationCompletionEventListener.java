@@ -4,8 +4,9 @@ import com.google.common.collect.Lists;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
+
+import org.nrg.automation.event.entities.AutomationCompletionEvent;
 import org.nrg.xdat.XDAT;
-import org.nrg.xft.event.entities.AutomationCompletionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

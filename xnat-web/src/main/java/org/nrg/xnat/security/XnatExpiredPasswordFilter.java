@@ -24,10 +24,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -52,7 +49,7 @@ import java.util.Date;
 import java.util.List;
 
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-public class XnatExpiredPasswordFilter extends GenericFilterBean implements ApplicationContextAware {
+public class XnatExpiredPasswordFilter extends GenericFilterBean {
     private String changePasswordPath        = "";
     private String changePasswordDestination = "";
     private String logoutDestination         = "";
@@ -257,14 +254,6 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean implements Appl
         this.passwordExpirationDirtied = passwordExpirationDirtied;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setApplicationContext(final ApplicationContext context) throws BeansException {
-        _context = context;
-    }
-
     private boolean checkForExpiredPassword(final UserI user) {
         return checkForExpiredPassword(user.getUsername());
     }
@@ -359,6 +348,5 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean implements Appl
     @Inject
     private DataSource _dataSource;
 
-    private ApplicationContext _context;
     private AliasTokenService  _aliasTokenService;
 }

@@ -94,8 +94,9 @@ var XNAT = getObject(XNAT);
 
                     e.preventDefault();
                     var $forms = $(this).find('form');
+                    $forms.addClass('json silent');
 
-                    var loader = xmodal.loading.open('#multi-save');
+                    xmodal.loading.open('#multi-save');
 
                     // reset success count on new submission
                     multiform.success = 0;
@@ -109,7 +110,7 @@ var XNAT = getObject(XNAT);
 
                     // submit ALL enclosed forms
                     $forms.each(function(){
-                        var $form = $(this).addClass('json silent');
+                        var $form = $(this);
                         XNAT.xhr.form($form, {
                             contentType: 'application/json',
                             validate: function(){
@@ -137,7 +138,7 @@ var XNAT = getObject(XNAT);
                                     multiform.errors++;
                                     //don't show a dialog for each individual form
                                     //if (!$form.hasClass('silent')) {
-                                        xmodal.message('Error','Please enter values for the required items and re-submit the form.');
+                                    //    xmodal.message('Error','Please enter values for the required items and re-submit the form.');
                                     //}
                                 }
 
@@ -165,12 +166,12 @@ var XNAT = getObject(XNAT);
 
                     // multiform.errors = $forms.filter('.error').length;
 
-                    function initialize(a, b, c){
-
+                    function initialize(){
                         XNAT.xhr.postJSON({
                             url: XNAT.url.rootUrl('/xapi/siteConfig/batch'),
                             data: JSON.stringify({initialized:true}),
                             success: function(){
+                                xmodal.loading.close('#multi-save');
                                 xmodal.message({
                                     title: false,
                                     esc: false,
@@ -183,6 +184,7 @@ var XNAT = getObject(XNAT);
                                 });
                             }
                         }).fail(function(e, txt, jQxhr){
+                            xmodal.loading.close('#multi-save');
                             xmodal.message({
                                 title: 'Error',
                                 content: [
@@ -191,8 +193,6 @@ var XNAT = getObject(XNAT);
                                     txt
                                 ].join(': <br>')
                             })
-                        }).always(function(){
-                            xmodal.loading.close(loader.$modal);
                         });
                     }
 

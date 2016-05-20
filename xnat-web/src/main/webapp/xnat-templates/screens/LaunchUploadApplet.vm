@@ -125,8 +125,6 @@
  </div> <!-- end of hideIfProtocol -->
 <div id="forProtocolContent" style="display:none"></div>
 
-    <p style="width:500px;margin:20px 0;">Looking for other ways to upload images? <a href="$link.setPage("AlternateImageUpload.vm")">Click here.</a></p>
-
 </form>
 
 <script type="text/javascript">

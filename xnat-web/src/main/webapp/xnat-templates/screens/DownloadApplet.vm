@@ -1,9 +1,13 @@
+#* @vtlvariable name="appletPath" type="java.lang.String" *#
+#* @vtlvariable name="catalogXML" type="java.lang.String" *#
+#* @vtlvariable name="jsessionid" type="java.lang.String" *#
 <!-- BEGIN: plugin-resources/webapp/xnat-templates/screens/DownloadApplet.vm -->
 <h2>Download Images</h2>
 <table border="0" >
     <tr  bgcolor="white">
         <td style="border-style:none;"  valign="top" align="left" colspan="2">
-		    <applet code="org.nrg.xnat.fileManager.DownloaderApplet" codebase="$appletPath" archive="file-downloader-1.6.5.jar, xdat-beans-1.6.5.jar, nrgutil-2.0.0.jar, commons-lang-2.6.jar, log4j-1.2.17.jar" width="500" height="500">
+		    <applet code="org.nrg.xnat.fileManager.DownloaderApplet" codebase="$appletPath" width="500" height="500"
+                    archive="file-downloader__V1.7.0-SNAPSHOT.jar, commons-configuration__V1.5.jar, commons-collections__V3.2.1.jar, commons-logging__V1.1.1.jar, commons-lang__V2.6.jar, commons-lang3__V3.4.jar, core__V1.7.0-SNAPSHOT.jar, framework__V1.7.0-SNAPSHOT.jar, log4j__V1.2.17.jar, slf4j-api__V1.7.7.jar, slf4j-log4j12__V1.7.7.jar, guava__V19.0.jar, reflections__V0.9.10.jar, xnat-data-models__V1.7.0-SNAPSHOT.jar">
 			    <param name="session0" value="$catalogXML">
 			    <param name="jsessionid" value="$jsessionid">
             </applet>

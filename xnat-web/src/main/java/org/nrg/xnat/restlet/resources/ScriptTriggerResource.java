@@ -86,16 +86,16 @@ public class ScriptTriggerResource extends AutomationResource {
             }
         }
 
+        final Method method = request.getMethod();
+
         if (StringUtils.isNotBlank(projectId)) {
             validateProjectAccess(projectId);
             setProjectId(projectId);
-        } else if (!Roles.isSiteAdmin(user)) {
+        } else if (!Roles.isSiteAdmin(user) && !method.equals(Method.GET)) {
             final String message = "User " + user.getLogin() + " attempted to access forbidden script trigger resource at the site level.";
             _log.warn(message);
             throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);
         }
-
-        final Method method = request.getMethod();
 
         // You can't delete a trigger that you can't find.
         if (method.equals(Method.DELETE) && _trigger == null) {

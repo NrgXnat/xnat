@@ -62,25 +62,6 @@ $(function(){
                     forEach(_handlers, function(eventHandler){
                         var _event_id = eventHandler['event'];
                         siteEventsManager.handlers.push(_event_id);
-			/*
-                        eventRows += '<tr class="highlight">' +
-                            '<td class="event-id">' + _event_id + '</td>' +
-                            '<td class="script-id">' + eventHandler.scriptId + '</td>' +
-                            '<td class="description">' + eventHandler.description + '</td>' +
-                            ((doEdit) ?
-                            '<td style="text-align: center;">' +
-                            '<a href="javascript:" class="delete-handler" ' +
-                            'data-event="' + _event_id + '" ' +
-                            'data-handler="' + eventHandler.triggerId + '" title="Delete handler for event ' + _event_id + '">delete</a>' +
-                            '</td>' + 
-                            '<td style="text-align: center;">' +
-                            '<a href="javascript:" class="configure-uploader-handler" ' +
-                            'data-event="' + _event_id + '" ' +
-                            'data-handler="' + eventHandler.event + '" title="Configure uploader for event handler ' + _event_id + '">configure uploader</a>' +
-                            '</td>' 
-                             : '' ) +
-                            '</tr>';
-			*/
                         eventRows += '<dl class="item">' +
                             '<dd class="col1">' + _event_id + '</dd>' +
                             '<dd class="col2">' + eventHandler.scriptId + '</dd>' +
@@ -105,12 +86,6 @@ $(function(){
                     //$((doEdit) ? events_manage_table : $events_table).find('tbody').html(eventRows);
                     $((doEdit) ? events_manage_table : $events_table).html(eventRows);
                     $((doEdit) ? events_manage_table : $events_table).show();
-                    $("#events_table").on('click', 'button.delete-handler', function(){
-                        deleteEventHandler($(this).data('handler'), $(this).data('event'))
-                    });
-                    $("#events_table").on('click', 'button.configure-uploader-handler', function(){
-                        XNAT.app.abu.configureUploaderForEventHandler($(this).data('handler'), $(this).data('event'), 'site')
-                    });
                 }
                 else {
                     $no_event_handlers.show();
@@ -163,19 +138,7 @@ $(function(){
                          '</dl>' +
                     '</dl>' +
                 '</div>' 
-                /*
-                '<table id="events_manage_table" class="xnat-table" style="display:table;width:100%">' +
-                    '<thead>' +
-                    '<th>Event</th>' +
-                    '<th>Script</th>' +
-                    '<th>Description</th>' +
-                    '<th></th>' +
-                    '<th></th>' +
-                    '</thead>' +
-                    '<tbody>' +
-                    '</tbody>' +
-                '</table>' 
-                */
+
            ); 
            initHandlersTable(true);
            $("#events_manage_table").on('click', 'button.delete-handler', function(){
@@ -213,58 +176,6 @@ $(function(){
             populateEventsMenu();
         }
 
-    /*
-        return xhr.getJSON({
-            url: XNAT.url.restUrl('/data/automation/events'),
-            success: function( response ){
-
-                var _events = (response.ResultSet) ? response.ResultSet.Result || [] : [],
-                    availableEvents = [],
-                    $eventsMenu = $('#select_event'),
-                    options = '<option></option>';
-
-                if (!_events.length){
-                    options += '<option value="!" disabled>(no events defined)</option>';
-                    //$eventsMenu.prop('disabled',true);
-                    hasEvents = false;
-                }
-                else {
-                    forEach(_events, function(event){
-
-                        var _id = event['event_id'],
-                            _label = event['event_label'];
-
-                        if (siteEventsManager.handlers.indexOf(_id) === -1){
-                            // only add unused events to the menu
-                            options += '<option value="' + _id + '">' + _label +'</option>';
-                            // store available (unused) events
-                            availableEvents.push(_id);
-                        }
-                        // store list of all events
-                        siteEventsManager.events.push(_id);
-                    });
-
-                    if (!availableEvents.length){
-                        options = '<option value="!" disabled>(no available events)</option>';
-                    }
-                    hasEvents = true;
-                }
-
-                $eventsMenu.html(options);
-
-            },
-            error: function( request, status, error ){
-                xmodal.message('Error', 'An error occurred retrieving system events: [' + status + '] ' + error);
-            },
-            complete: function(){
-                // render the events table stuff after the
-                // request to get the events
-                //if (!handlersRendered){
-                //    initHandlersTable();
-                //}
-            }
-        });
-    */
     }
 
 
@@ -373,11 +284,6 @@ $(function(){
                 break;
             }
         }
-/*
-        $(".customButton").click(function(event){
-            customInputToggle(event.target);
-        });
-*/
         $(".customButton").each(function(){
             var eventObject = $._data(this, 'events');
             if (typeof eventObject == 'undefined' || typeof eventObject.click == 'undefined') {
@@ -502,127 +408,37 @@ $(function(){
                 });
 	});
 
-	/*
-        xhr.put({
-            url: XNAT.url.restUrl('/data/automation/handlers?XNAT_CSRF=' + window.csrfToken, null, false),
-            data: data,
-            dataType: "json",
-            success: function(e){
-                initHandlersTable(false);
-                if ($("#events_manage_table").length>0) {
-                    initHandlersTable(true);
-                }
-                xmodal.message('Success', 'The event handler was successfully added.', 'OK', {
-                    action: function(){
-                        xmodal.closeAll($(xmodal.dialog.open),$('#xmodal-manage-events'));
-                    }
-                });
-                // Trigger automation uploader to reload handlers
-                if (typeof(XNAT.app.abu.uploaderConfig)==='undefined') {
-			XNAT.app.abu.initUploaderConfig();
-		}
-		XNAT.app.abu.removeUploaderConfiguration(this.event,'site');
-		XNAT.app.abu.getAutomationHandlers();
-            },
-            error: function( request, status, error ){
-                xmodal.message('Error', 'An error occurred: [' + status + '] ' + error, 'Close', {
-                    action: function(){
-                        xmodal.closeAll($(xmodal.dialog.open),$('#xmodal-manage-events'));
-                    }
-                });
-            }
-        });
-	*/
     }
 
     function addEventHandler(){
          initEventsMenu();
-/*
-        xmodal.loading.open();
-        initScriptsMenu().
-            //done(initEventsMenu().
-                done(function(){
-                    initEventsMenu();
-                    xmodal.loading.close();
-                    xmodal.open({
-                        title: 'Add Event Handler',
-                        template: $('#addEventHandler'),
-                        width: 500,
-                        height: 300,
-                        overflow: true,
-                        esc: false,
-                        enter: false,
-                        beforeShow: function(obj){
-                            var $menus = obj.$modal.find('select.event, select.scriptId');
-                            $menus.trigger('chosen:updated');
-                            //chosenInit($menus, null, 300);
-                            $menus.chosen({
-                                width: '300px',
-                                disable_search_threshold: 6
-                            });
-                        },
-                        buttons: {
-                            save: {
-                                label: 'Save',
-                                isDefault: true,
-                                close: false,
-                                action: doAddEventHandler
-                            },
-                            close: {
-                                label: 'Cancel'
-                            }
-                        }
-                    });
-                }
-            )
-*/
-	    /*	
-            done(initEventsMenu().
-                done(function(){
-                    xmodal.loading.close();
-                    xmodal.open({
-                        title: 'Add Event Handler',
-                        template: $('#addEventHandler'),
-                        width: 500,
-                        height: 300,
-                        overflow: true,
-                        esc: false,
-                        enter: false,
-                        beforeShow: function(obj){
-                            var $menus = obj.$modal.find('select.event, select.scriptId');
-                            $menus.trigger('chosen:updated');
-                            //chosenInit($menus, null, 300);
-                            $menus.chosen({
-                                width: '300px',
-                                disable_search_threshold: 6
-                            });
-                        },
-                        buttons: {
-                            save: {
-                                label: 'Save',
-                                isDefault: true,
-                                close: false,
-                                action: doAddEventHandler
-                            },
-                            close: {
-                                label: 'Cancel'
-                            }
-                        }
-                    });
-                }
-            )
-        );
-	    */	
     }
 
-    function doDeleteHandler( handlerId ){
-        var url = serverRoot+'/data/automation/triggers/' + handlerId + "?XNAT_CSRF=" + window.csrfToken;
+    function doDeleteHandler( triggerId ){
+        var url = serverRoot+'/data/automation/triggers/' + triggerId + "?XNAT_CSRF=" + window.csrfToken;
         if (window.jsdebug) console.log(url);
-        xhr.delete({
-            //type: 'DELETE',
+        //xhr.delete({
+        jQuery.ajax({
+            type: 'DELETE',
             url: url,
-            //cache: false,
+            cache: false,
             success: function(){
+               var configScope;
+                if (typeof XNAT.app.abu.uploaderConfig !== 'undefined') {
+                    for (var i=XNAT.app.abu.uploaderConfig.length -1; i >= 0; i--) {
+                        var thisConfig = XNAT.app.abu.uploaderConfig[i];
+                        if (typeof thisConfig == 'undefined') {
+                            continue;
+                        }
+                        if (thisConfig.eventTriggerId == triggerId) {
+                            configScope = thisConfig.eventScope;
+                            XNAT.app.abu.uploaderConfig.splice(i,1);
+                        }
+                    }
+                    if (typeof configScope !== 'undefined') {
+                        XNAT.app.abu.putUploaderConfiguration(configScope,false);
+                    }
+                }
                 xmodal.message('Success', 'The event handler was successfully deleted.', 'OK', {
                     action: function(){
                         initHandlersTable();
@@ -640,17 +456,17 @@ $(function(){
         });
     }
 
-    function deleteEventHandler( handlerId, event ){
+    function deleteEventHandler( triggerId, event ){
         xmodal.confirm({
             title: 'Delete Event Handler?',
-            content: 'Are you sure you want to delete the handler: <br><br><b>' + handlerId + '</b>?<br><br>Only the Event Handler will be deleted. The associated Script will still be available for use.',
+            content: 'Are you sure you want to delete the handler: <br><br><b>' + triggerId + '</b>?<br><br>Only the Event Handler will be deleted. The associated Script will still be available for use.',
             width: 560,
             height: 220,
             okLabel: 'Delete',
             okClose: false, // don't close yet
             cancelLabel: 'Cancel',
             okAction: function(){
-                doDeleteHandler(handlerId);
+                doDeleteHandler(triggerId);
             },
             cancelAction: function(){
                 xmodal.message('Delete event handler cancelled', 'The event handler was not deleted.', 'Close');
@@ -661,6 +477,9 @@ $(function(){
     // removed inline onclick attributes:
     $events_table.on('click', 'button.delete-handler', function(){
         deleteEventHandler($(this).data('handler'), $(this).data('event'));
+    });
+    $events_table.on('click', 'button.configure-uploader-handler', function(){
+        XNAT.app.abu.configureUploaderForEventHandler($(this).data('handler'), $(this).data('event'), 'site')
     });
 
     // *javascript* event handler for adding an XNAT event handler (got it?)

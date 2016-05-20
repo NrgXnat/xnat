@@ -4,7 +4,16 @@ import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.mail.api.NotificationType;
+import org.nrg.notify.api.CategoryScope;
+import org.nrg.notify.api.SubscriberType;
+import org.nrg.notify.entities.*;
+import org.nrg.notify.exceptions.DuplicateDefinitionException;
+import org.nrg.notify.exceptions.DuplicateSubscriberException;
+import org.nrg.notify.services.NotificationService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
 import org.slf4j.Logger;
@@ -19,9 +28,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 @Api(description = "XNAT Notifications management API")
 @XapiRestController
@@ -251,6 +258,205 @@ public class NotificationsApi extends AbstractXnatRestApi {
         return getSmtpServerProperties();
     }
 
+    @ApiOperation(value = "Sets the email message for contacting help.", notes = "Sets the email message that people should receive when contacting help.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Help email message successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the help email message."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"messages/help"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Void> setHelpContactInfo(@ApiParam(value = "The email message for contacting help.", required = true) @RequestParam final String message) {
+        _siteConfigPrefs.setHelpContactInfo(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message for user registration.", notes = "Sets the email message that people should receive when they register. Link for email validation is auto-populated.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "User registration email message successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the user registration email message."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"messages/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setEmailMessageUserRegistration(@ApiParam(value = "The email message for user registration.", required = true) @RequestParam final String message) {
+        _siteConfigPrefs.setEmailMessageUserRegistration(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message for forgot username.", notes = "Sets the email message that people should receive when they click that they forgot their username.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Forgot username email message successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the forgot username email message."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"messages/forgotusername"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setEmailMessageForgotUsernameRequest(@ApiParam(value = "The email message for forgot username.", required = true) @RequestParam final String message) {
+        _siteConfigPrefs.setEmailMessageForgotUsernameRequest(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message for password reset.", notes = "Sets the email message that people should receive when they click to reset their password.  Link for password reset is auto-populated.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Password reset message successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the password reset message."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"messages/passwordreset"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setEmailMessageForgotPasswordReset(@ApiParam(value = "The email message for password reset.", required = true) @RequestParam final String message) {
+        _siteConfigPrefs.setEmailMessageForgotPasswordReset(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for contacting help.", notes = "This returns the email message that people should receive when contacting help.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for contacting help successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get email message for contacting help."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"messages/help"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getHelpContactInfo() {
+        return new ResponseEntity<>(_siteConfigPrefs.getHelpContactInfo(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for user registration.", notes = "This returns the email message that people should receive when they register. Link for email validation is auto-populated.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for user registration successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get email message for user registration."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"messages/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getEmailMessageUserRegistration() {
+        return new ResponseEntity<>(_siteConfigPrefs.getEmailMessageUserRegistration(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for forgot username.", notes = "This returns the email message that people should receive when they click that they forgot their username.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for forgot username successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get email message for forgot username."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"messages/forgotusername"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getEmailMessageForgotUsernameRequest() {
+        return new ResponseEntity<>(_siteConfigPrefs.getEmailMessageForgotUsernameRequest(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for password reset.", notes = "This returns the email message that people should receive when they click to reset their password.  Link for password reset is auto-populated.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for password reset successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get email message for password reset."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"messages/passwordreset"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getEmailMessageForgotPasswordReset() {
+        return new ResponseEntity<>(_siteConfigPrefs.getEmailMessageForgotPasswordReset(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets whether admins should be notified of user registration.", notes = "Sets whether admins should be notified of user registration.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of user registration successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of user registration."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"notify/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Void> setNotifyAdminUserRegistration(@ApiParam(value = "Whether admins should be notified of user registration successfully set.", required = true) @RequestParam final boolean notify) {
+        _siteConfigPrefs.setNotifyAdminUserRegistration(notify);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets whether admins should be notified of pipeline processing submit.", notes = "Sets whether admins should be notified of pipeline processing submit.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of pipeline processing submit successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of pipeline processing submit."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"notify/pipeline"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setNotifyAdminPipelineEmails(@ApiParam(value = "Whether admins should be notified of pipeline processing submit successfully set.", required = true) @RequestParam final boolean notify) {
+        _siteConfigPrefs.setNotifyAdminPipelineEmails(notify);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets whether admins should be notified of project access requests.", notes = "Sets whether admins should be notified of project access requests.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of project access requests successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of project access requests."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"notify/par"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setNotifyAdminProjectAccessRequest(@ApiParam(value = "Whether admins should be notified of project access requests successfully set.", required = true) @RequestParam final boolean notify) {
+        _siteConfigPrefs.setNotifyAdminProjectAccessRequest(notify);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets whether admins should be notified of session transfer.", notes = "Sets whether admins should be notified of session transfer by user.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of session transfer successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of session transfer."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"notify/transfer"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setNotifyAdminSessionTransfer(@ApiParam(value = "Whether admins should be notified of session transfer successfully set.", required = true) @RequestParam final boolean notify) {
+        _siteConfigPrefs.setNotifyAdminSessionTransfer(notify);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns whether admins should be notified of user registration.", notes = "This returns whether admins should be notified of user registration.", response = Boolean.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for contacting help successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get email message for contacting help."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"notify/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Boolean> getNotifyAdminUserRegistration() {
+        return new ResponseEntity<>(_siteConfigPrefs.getNotifyAdminUserRegistration(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns whether admins should be notified of pipeline processing submit.", notes = "This returns whether admins should be notified of pipeline processing submit.", response = Boolean.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for user registration successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get email message for user registration."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"notify/pipeline"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Boolean> getNotifyAdminPipelineEmails() {
+        return new ResponseEntity<>(_siteConfigPrefs.getNotifyAdminPipelineEmails(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns whether admins should be notified of project access requests.", notes = "This returns whether admins should be notified of project access requests.", response = Boolean.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for forgot username successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get email message for forgot username."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"notify/par"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Boolean> getNotifyAdminProjectAccessRequest() {
+        return new ResponseEntity<>(_siteConfigPrefs.getNotifyAdminProjectAccessRequest(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns whether admins should be notified of session transfer.", notes = "This returns whether admins should be notified of session transfer.", response = Boolean.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for password reset successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get email message for password reset."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"notify/transfer"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Boolean> getNotifyAdminSessionTransfer() {
+        return new ResponseEntity<>(_siteConfigPrefs.getNotifyAdminSessionTransfer(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets whether non-users should be able to subscribe to notifications.", notes = "Sets whether non-users should be able to subscribe to notifications.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Whether non-users should be able to subscribe to notifications."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set whether non-users should be able to subscribe to notifications."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"allow/nonusersubscribers/{setting}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setEmailAllowNonuserSubscribers(@ApiParam(value = "Whether non-users should be able to subscribe to notifications.", required = true) @PathVariable final boolean setting) {
+        _siteConfigPrefs.setEmailAllowNonuserSubscribers(setting);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns whether non-users should be able to subscribe to notifications.", notes = "This returns whether non-users should be able to subscribe to notifications.", response = Boolean.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Whether non-users should be able to subscribe to notifications successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get whether non-users should be able to subscribe to notifications."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"allow/nonusersubscribers"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Boolean> getEmailAllowNonuserSubscribers() {
+        return new ResponseEntity<>(_siteConfigPrefs.getEmailAllowNonuserSubscribers(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email addresses for error notifications.", notes = "Sets the email addresses that should be subscribed to error notifications.", response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Error subscribers successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the error subscribers."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"subscribers/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Void> setErrorSubscribers(@ApiParam(value = "The values to set for email addresses for error notifications.", required = true) @RequestParam final String subscribers) {
+        setSubscribersForNotificationType(NotificationType.Error, subscribers);
+        _siteConfigPrefs.setEmailRecipientErrorMessages(subscribers);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email addresses for issue notifications.", notes = "Sets the email addresses that should be subscribed to issue notifications.", response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Issue subscribers successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the issue subscribers."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"subscribers/issue"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setIssueSubscribers(@ApiParam(value = "The values to set for email addresses for issue notifications.", required = true) @RequestParam final String subscribers) {
+        setSubscribersForNotificationType(NotificationType.Issue, subscribers);
+        _siteConfigPrefs.setEmailRecipientIssueReports(subscribers);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email addresses for new user notifications.", notes = "Sets the email addresses that should be subscribed to new user notifications.", response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "New user subscribers successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the new user subscribers."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"subscribers/newuser"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setNewUserSubscribers(@ApiParam(value = "The values to set for email addresses for new user notifications.", required = true) @RequestParam final String subscribers) {
+        setSubscribersForNotificationType(NotificationType.NewUser, subscribers);
+        _siteConfigPrefs.setEmailRecipientNewUserAlert(subscribers);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email addresses for update notifications.", notes = "Sets the email addresses that should be subscribed to update notifications.", response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Update subscribers successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the update subscribers."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"subscribers/update"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Properties> setUpdateSubscribers(@ApiParam(value = "The values to set for email addresses for update notifications.", required = true) @RequestParam final String subscribers) {
+        setSubscribersForNotificationType(NotificationType.Update, subscribers);
+        _siteConfigPrefs.setEmailRecipientUpdate(subscribers);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns list of email addresses subscribed to error notifications.", notes = "This returns a list of all the email addresses that are subscribed to receive error notifications.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Error notification subscribers successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"subscribers/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getErrorSubscribers() {
+        return new ResponseEntity<>(_siteConfigPrefs.getEmailRecipientErrorMessages(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns list of email addresses subscribed to issue notifications.", notes = "This returns a list of all the email addresses that are subscribed to receive issue notifications.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Issue notification subscribers successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"subscribers/issue"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getIssueSubscribers() {
+        return new ResponseEntity<>(_siteConfigPrefs.getEmailRecipientIssueReports(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns list of email addresses subscribed to new user notifications.", notes = "This returns a list of all the email addresses that are subscribed to receive new user notifications.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "New user notification subscribers successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"subscribers/newuser"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getNewUserSubscribers() {
+        return new ResponseEntity<>(_siteConfigPrefs.getEmailRecipientNewUserAlert(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns list of email addresses subscribed to update notifications.", notes = "This returns a list of all the email addresses that are subscribed to receive update notifications.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Update notification subscribers successfully returned."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"subscribers/update"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getUpdateSubscribers() {
+        return new ResponseEntity<>(_siteConfigPrefs.getEmailRecipientUpdate(), HttpStatus.OK);
+    }
+
     private void setSmtp() {
         Map<String, String> smtp = new HashMap<>();
         smtp.put("host", StringUtils.defaultIfBlank(_javaMailSender.getHost(), "localhost"));
@@ -351,6 +557,74 @@ public class NotificationsApi extends AbstractXnatRestApi {
         }
     }
 
+    private void setSubscribersForNotificationType(NotificationType notificationType, final String subscribersString){
+        List<String> subscribers = Arrays.asList(subscribersString.split("\\s*,\\s*"));
+        Category category = _notificationService.getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, notificationType.id());
+        if(category==null) {
+            category = _notificationService.getCategoryService().newEntity();
+            category.setScope(CategoryScope.Site);
+            category.setEvent(notificationType.id());
+            XDAT.getNotificationService().getCategoryService().create(category);
+        }
+        for(String subscriber : subscribers){
+            try {
+                Subscriber subscriberObject = _notificationService.getSubscriberService().getSubscriberByName(subscriber);
+
+                if(subscriberObject==null){
+                    subscriberObject = _notificationService.getSubscriberService().createSubscriber(subscriber, subscriber);
+                    XDAT.getNotificationService().getSubscriberService().create(subscriberObject);
+                }
+
+                Definition definition1 = _notificationService.getDefinitionService().getDefinitionForCategoryAndEntity(category,1L);
+                if(definition1==null) {
+                    definition1 = _notificationService.createDefinition(CategoryScope.Site, notificationType.id(), 1L);
+                    XDAT.getNotificationService().getDefinitionService().create(definition1);
+                }
+
+                Channel channel1 = _notificationService.getChannelService().getChannel("htmlMail");
+                if(channel1==null) {
+                    _notificationService.getChannelService().createChannel("htmlMail", "text/html");
+                }
+
+                Map<Subscriber, Subscription> subscriberMapOfSubscriptions = _notificationService.getSubscriptionService().getSubscriberMapOfSubscriptionsForDefinition(definition1);
+                for (Map.Entry<Subscriber, Subscription> entry : subscriberMapOfSubscriptions.entrySet()) {
+                    //Remove all existing subscriptions that match this definition since we are replacing the old list with the new one.
+                    Subscriber tempSubscriber = entry.getKey();
+                    Subscription tempSubscription = entry.getValue();
+                    tempSubscriber.removeSubscription(tempSubscription);
+                }
+                Subscription subscription = _notificationService.subscribe(subscriberObject, SubscriberType.User, definition1, channel1);
+
+            } catch (DuplicateSubscriberException e) {
+                _log.error("You tried to subscribe someone who was already subscribed",e);
+            } catch (DuplicateDefinitionException e) {
+                _log.error("Multiple definitions for this scope, event, and entity exist.",e);
+            } catch (NrgServiceException e) {
+                _log.error("Error setting email addresses for error notifications.",e);
+            }
+        }
+    }
+
+//    private List<String> getSubscribersForNotificationType(NotificationType notificationType){
+//        List<String> subscriberEmails = new ArrayList<String>();
+//        Category category = _notificationService.getCategoryService().newEntity();
+//        category.setScope(CategoryScope.Site);
+//        category.setEvent(notificationType.id());
+//        Definition definition1 = null;
+//        try {
+//            definition1 = _notificationService.getDefinitionService().getDefinitionForCategoryAndEntity(category,1L);
+//            List<Subscription> subscriptions = definition1.getSubscriptions();
+//            for(Subscription subscription : subscriptions){
+//                for(String email : subscription.getSubscriber().getEmailList()){
+//                    subscriberEmails.add(email);
+//                }
+//            }
+//        } catch (DuplicateDefinitionException e) {
+//            _log.error("Multiple definitions for this scope, event, and entity exist.",e);
+//        }
+//        return subscriberEmails;
+//    }
+
     private static final Logger _log    = LoggerFactory.getLogger(NotificationsApi.class);
     private static final String NOT_SET = "NotSet";
 
@@ -359,4 +633,7 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     @Inject
     private JavaMailSenderImpl _javaMailSender;
+
+    @Inject
+    private NotificationService _notificationService;
 }

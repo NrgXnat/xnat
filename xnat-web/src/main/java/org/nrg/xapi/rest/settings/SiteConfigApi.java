@@ -116,17 +116,20 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             return new ResponseEntity<>(status);
         }
 
-        if (_log.isDebugEnabled()) {
+        if (_log.isInfoEnabled()) {
             final StringBuilder message = new StringBuilder("User ").append(getSessionUser().getUsername()).append(" is setting the values for the following properties:\n");
             for (final String name : properties.keySet()) {
                 message.append(" * ").append(name).append(": ").append(properties.get(name)).append("\n");
             }
-            _log.debug(message.toString());
+            _log.info(message.toString());
         }
 
         for (final String name : properties.keySet()) {
             try {
                 _preferences.set(properties.get(name), name);
+                if (_log.isInfoEnabled()) {
+                    _log.info("Set property {} to value: {}", name, properties.get(name));
+                }
             } catch (InvalidPreferenceName invalidPreferenceName) {
                 _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
             }
@@ -148,8 +151,8 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             return new ResponseEntity<>(status);
         }
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("User {} is setting the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
+        if (_log.isInfoEnabled()) {
+            _log.info("User {} is setting the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
         }
 
         try {

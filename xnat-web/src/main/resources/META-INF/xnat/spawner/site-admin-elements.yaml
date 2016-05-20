@@ -227,9 +227,7 @@ userLoginsSessionControls:
             id: aliasTokenTimeout
             name: aliasTokenTimeout
             label: Alias Token Timeout
-            description: >
-                Interval for timing out alias tokens. Uses
-                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+            description: Number of minutes before alias tokens expire.
         sessionTimeoutMessage:
             kind: panel.textarea
             id: sessionTimeoutMessage

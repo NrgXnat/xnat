@@ -192,7 +192,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
                 }
                 final String returnValue = getValue(preference);
-                return StringUtils.defaultIfBlank(returnValue, StringUtils.defaultIfBlank(defaultValue.toString(), null));
+                return StringUtils.defaultIfBlank(returnValue, defaultValue == null ? null : defaultValue.toString());
             }
         }
         try {

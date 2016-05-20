@@ -89,9 +89,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                if (validator.isValid(tempPass, null)) {
 	                
 		                // NEW USER
-                        String salt = Users.createNewSalt();
-                        found.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
-                        found.setSalt(salt);
+                        found.setPassword(tempPass);
 
 		                boolean autoApproval = autoApproval(data, context);
 		                

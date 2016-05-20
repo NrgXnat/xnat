@@ -80,7 +80,7 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
             throw new AuthenticationServiceException("User details class is not of a type I know how to handle: " + userDetails.getClass());
         }
         final UserI xdatUserDetails = (UserI) userDetails;
-        if ((XDAT.verificationOn() && !xdatUserDetails.isVerified() && xdatUserDetails.isEnabled()) || !xdatUserDetails.isAccountNonLocked()) {
+        if ((XDAT.getSiteConfigPreferences().getEmailVerification() && !xdatUserDetails.isVerified() && xdatUserDetails.isEnabled()) || !xdatUserDetails.isAccountNonLocked()) {
             throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + xdatUserDetails.getUsername());
         }
         super.additionalAuthenticationChecks(userDetails, authentication);

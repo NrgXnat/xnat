@@ -129,7 +129,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                     if(!user.isEnabled()) {
                         throw new Exception("User is not enabled: " + user.getUsername());
                     }
-                    if (XDAT.verificationOn() && !user.isVerified()) {
+                    if (XDAT.getSiteConfigPreferences().getEmailVerification() && !user.isVerified()) {
                         throw new Exception("User is not verified: " + user.getUsername());
                     }
                 }

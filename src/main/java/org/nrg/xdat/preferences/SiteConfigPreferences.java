@@ -10,7 +10,7 @@ import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
 import org.nrg.xdat.security.services.RoleServiceI;
-import org.nrg.xnat.configuration.SchedulerConfig;
+import org.postgresql.util.PGInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

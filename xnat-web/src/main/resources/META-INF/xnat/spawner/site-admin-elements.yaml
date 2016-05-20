@@ -146,9 +146,10 @@ siteInfo:
     name: siteInfo
     label: Site Information
     method: POST
+    contentType: json
     action: /xapi/siteConfig/batch
     load: ?? XNAT.data.siteConfig
-    contentType: json
+    refresh: /xapi/siteConfig
     contents:
         ${siteId}
         ${siteUrl}
@@ -165,9 +166,10 @@ adminInfo:
     name: adminInfo
     label: Admin Information
     method: POST
+    contentType: json
     action: /xapi/siteConfig/batch
     load: ?? XNAT.data.siteConfig
-    contentType: json
+    refresh: /xapi/siteConfig
     contents:
         ${adminEmail}
 
@@ -175,17 +177,25 @@ generalSecuritySettings:
     kind: panel.form
     name: generalSecuritySettings
     label: General Site Security Settings
+    method: POST
+    contentType: json
+    action: /xapi/siteConfig/batch
+    load: ?? XNAT.data.siteConfig
+    refresh: /xapi/siteConfig
     contents:
         securityChannel:
             kind: panel.select.single
             id: securityChannel
             name: securityChannel
             label: Security Channel
-            value: https
+            value: ""
             options:
-                # value: label # <- simplest setup
-                http: http
-                https: https
+                http:
+                    label: http
+                    value: http
+                https:
+                    label: https
+                    value: https
             element:
                 id: security-channel
                 title: Security Channel
@@ -300,7 +310,7 @@ passwords:
             id: passwordExpirationType
             name: passwordExpirationType
             label: passwordExpirationType
-            value: Interval
+            value: ""
             options:
                 Interval:
                     label: Interval
@@ -409,15 +419,12 @@ emailServerSettings:
             kind: panel.input.number
             name: port
             label: Port
-            element:
-                placeholder: 587
+            placeholder: 587
         username:
             kind: panel.input.text
             name: username
             label: Username
-            url: /xapi/notifications/username
-            element:
-                placeholder: name@host.org
+            placeholder: name@host.org
         password:
             kind: panel.input.password
             name: password
@@ -427,9 +434,6 @@ emailServerSettings:
             name: protocol
             label: Protocol
             placeholder: smtp
-            #data:
-                #get: GET|/xapi/siteConfig|smtpServer.protocol
-                #set: POST|/xapi/notifications/protocol
         # subhead breaks up panel items
         mailServerProperties:
             kind: panel.subhead
@@ -447,8 +451,7 @@ emailServerSettings:
             kind: panel.input.text
             name: mail.smtp.ssl.trust
             label: SSL Trust
-            element:
-                placeholder: localhost
+            placeholder: localhost
         emailPrefix:
             kind: panel.input.text
             name: emailPrefix
@@ -465,82 +468,113 @@ notifications:
     load: ?? XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
+
         helpContactInfo:
             kind: panel.input.email
             id: helpContactInfo
             name: notifications.helpContactInfo
             label: "Help Contact Info"
+#            value: "!? XNAT.data.siteConfig['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
+
+        emailMessageSubhead:
+            kind: panel.subhead
+            label: Email Messages
+
         emailMessageUserRegistration:
             kind: panel.textarea
             id: emailMessageUserRegistration
             name: notifications.emailMessageUserRegistration
-            label: "Email Message: User Registration"
+            label: "User Registration"
             description: "Text of message emailed to users upon registration. Link for email validation is auto-populated."
         emailMessageForgotUsernameRequest:
             kind: panel.textarea
             id: emailMessageForgotUsernameRequest
             name: notifications.emailMessageForgotUsernameRequest
-            label: "Email Message: Forgot Username Request"
+            label: "Forgot Username Request"
             description: "Text of message emailed to users upon lost username request."
         emailMessageForgotPasswordReset:
             kind: panel.textarea
             id: emailMessageForgotPasswordReset
             name: notifications.emailMessageForgotPasswordReset
-            label: "Email Message: Password Reset"
+            label: "Password Reset"
             description: "Text of message emailed to users upon lost password reset. Link for password reset is auto-populated"
+
+        notifyAdminSubhead:
+            kind: panel.subhead
+            label: "Notify Administrator on..."
+
         notifyAdminUserRegistration:
             kind: panel.input.checkbox
             id: notifyAdminUserRegistration
             name: notifications.notifyAdminUserRegistration
-            label: "Notify Admin on User Registration"
+#            value: "?? XNAT:data:siteConfig:notifications.notifyAdminUserRegistration"
+            label: "User Registration"
             description: "Whether to cc admin user on new user emails. Requires valid admin email address."
         notifyAdminPipelineEmails:
             kind: panel.input.checkbox
             id: notifyAdminPipelineEmails
             name: notifications.notifyAdminPipelineEmails
-            label: "Notify Admin on Pipeline Emails"
+#            value: "?? XNAT:data:siteConfig:notifications.notifyAdminPipelineEmails"
+            label: "Pipeline Emails"
             description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
         notifyAdminProjectAccessRequest:
             kind: panel.input.checkbox
             id: notifyAdminProjectAccessRequest
             name: notifications.notifyAdminProjectAccessRequest
-            label: "Notify Admin on Project Access Request"
+#            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectAccessRequest"
+            label: "Project Access Request"
             description: "Whether to cc admin user on user project access request. Requires valid admin email address."
         notifyAdminSessionTransfer:
             kind: panel.input.checkbox
             id: notifyAdminSessionTransfer
             name: notifications.notifyAdminProjectOnSessionTransfer
-            label: "Notify Admin on Session Transfer"
+#            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectOnSessionTransfer"
+            label: "Session Transfer"
             description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
+
+        emailRecipientSubhead:
+            kind: panel.subhead
+            label: "Email Recipient(s) for..."
+
         emailRecipientErrorMessages:
             kind: panel.input.email
             id: emailRecipientErrorMessages
             name: notifications.emailRecipientErrorMessages
-            label: "Email Recipient: Error Messages"
+            label: "Error Messages"
             description: "What email address should receive error emails"
+            #value: "!? XNAT.data.siteConfig['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             id: emailRecipientIssueReports
             name: notifications.emailRecipientIssueReports
-            label: "Email Recipient: Issue Reports"
+            label: "Issue Reports"
             description: "What email address should receive issue reports"
+            #value: "!? XNAT.data.siteConfig['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             id: emailRecipientNewUserAlert
             name: notifications.emailRecipientNewUserAlert
-            label: "Email Recipient: New User Alert"
+            label: "New User Alert"
             description: "What email address should receive New User Registration emails"
+            #value: "!? XNAT.data.siteConfig['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             id: emailRecipientUpdate
             name: notifications.emailRecipientUpdate
-            label: "Email Recipient: Updates"
+            label: "Updates"
             description: "What email address should receive update emails"
+            #value: "!? XNAT.data.siteConfig['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
+
+        otherSubhead:
+            kind: panel.subhead
+            label: "Other"
+
         emailAllowNonuserSubscribers:
             kind: panel.input.checkbox
             id: emailAllowNonuserSubscribers
             name: emailAllowNonuserSubscribers
             label: "Allow Nonuser Subscribers"
+#            value: "?? XNAT.data.siteConfig.emailAllowNonuserSubscribers"
 
 themeManagement:
     kind: panel.form
@@ -559,7 +593,7 @@ themeManagement:
             id: currentTheme
             label: Current Theme
             description: The currently selected global theme.
-            value: None
+            value: ""
             element:
                 style:
                     color: 'red'
@@ -569,7 +603,7 @@ themeManagement:
             name: themeSelection
             label: Select an existing theme
             description: Selected a new global theme from those available on the system.
-            value: None
+            value: ""
             options:
                 default:
                     label: None
@@ -637,6 +671,7 @@ genericAuthenticationProvider:
             id: providerDbType
             name: providerDbType
             label: "Provider DB Type"
+
 ldapAuthentication:
     kind: panel.form
     name: ldapAuthenticationProvider
@@ -715,7 +750,7 @@ registrationOptions:
             id: requireLogin
             name: requireLogin
             label: "Require User?"
-            disabled: true
+            value: ""
         requireEmailVerificationToRegister:
             kind: panel.input.checkbox
             id: requireEmailVerificationToRegister
@@ -982,7 +1017,7 @@ misc:
                 link:
                     tag: a.link
                     element:
-                        href: ./xapi/swagger-ui.html/
+                        href: ./xapi/swagger-ui.html
                         target: _blank
                         html: Swagger
 development:

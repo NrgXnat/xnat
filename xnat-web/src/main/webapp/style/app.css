@@ -1009,9 +1009,10 @@ body input.btn1,
 body .btn1[type="button"],
 body [type="submit"] {
     color: #fff;
-    background: #1A75BB;
-    border: 1px solid #102040;
-    box-shadow: 0px 1px 1px #848484;
+    background: #1A75BB linear-gradient( #3C8BC7, #1A75BB );
+    /*border: 1px solid #102040;*/
+    border: 1px solid #033E77;
+    box-shadow: 0 1px 1px #848484;
 }
 
 .btn1:hover,
@@ -1021,7 +1022,8 @@ body [type="submit"] {
 body input.btn1:hover,
 body .btn1[type="button"]:hover,
 body [type="submit"]:hover {
-    background: #096BB7;
+    /*background: #096BB7;*/
+    background: #1A75BB;
     box-shadow: none;
 }
 

@@ -1015,6 +1015,19 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @NrgPreference(defaultValue = "Session timed out at TIMEOUT_TIME.")
+    public String getSessionTimeoutMessage() {
+        return getValue("sessionTimeoutMessage");
+    }
+
+    public void setSessionTimeoutMessage(final String sessionTimeoutMessage) {
+        try {
+            set(sessionTimeoutMessage, "sessionTimeoutMessage");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'sessionTimeoutMessage': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "false", property = "audit.show_change_justification")
     public boolean getShowChangeJustification(){
         return getBooleanValue("audit.show_change_justification");

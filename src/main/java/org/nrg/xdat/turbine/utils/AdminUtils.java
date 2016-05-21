@@ -17,7 +17,6 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.api.NotificationSubscriberProvider;
 import org.nrg.mail.api.NotificationType;
@@ -60,7 +59,7 @@ public class AdminUtils {
 	public static String GetLoginFailureMessage(){
 		if(login_failure_message==null){
 			try {
-				login_failure_message=XDAT.getSiteConfigurationProperty("UI.login_failure_message", "Login attempt failed. Please try again.");
+				login_failure_message=XDAT.getSiteConfigPreferences().getUiLoginFailureMessage();
                 if (!StringUtils.isBlank(login_failure_message) && login_failure_message.contains("%d")) {
                     if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
                         login_failure_message = String.format(login_failure_message, XDAT.getSiteConfigPreferences().getMaxFailedLogins());
@@ -69,7 +68,7 @@ public class AdminUtils {
                         login_failure_message = "Login attempt failed. Please try again.";
                     }
                 }
-			} catch (ConfigServiceException e) {
+			} catch (Exception e) {
 				logger.error("",e);
 				login_failure_message="Login attempt failed. Please try again.";
 			}

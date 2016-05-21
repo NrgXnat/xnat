@@ -6,30 +6,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.CookieParser;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import java.lang.Long;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.Cookie;
-import java.util.Date;
-import java.lang.String;
-import org.nrg.xdat.XDAT;
-import org.nrg.xft.XFT;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpSession;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class Login extends VelocitySecureScreen {
 	@Override
@@ -62,9 +56,10 @@ public class Login extends VelocitySecureScreen {
                 	if(val!=null && (!val.equals("")) && (cookie.getValue()!=null)){
                 		Date logoutTime = (new Date(Long.parseLong(cookie.getValue())));
                 		Date currTime = new Date();
+						String messageTemplate = XDAT.getSiteConfigPreferences().getSessionTimeoutMessage();
                 		//If their session timed out within the last 5 seconds, display a message to the user telling them that their session timed out.
                 		if((currTime.getTime()-logoutTime.getTime())<5000){
-                			data.setMessage("Session timed out at "+logoutTime.toString()+".");
+							data.setMessage(messageTemplate.replaceAll("TIMEOUT_TIME",logoutTime.toString()));
                 		}
                 		else {
                 			if (!StringUtils.isBlank(message) && message.startsWith("Session timed out at")) {

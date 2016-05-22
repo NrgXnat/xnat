@@ -5,7 +5,7 @@
 #* @vtlvariable name="phone" type="java.lang.String" *#
 #* @vtlvariable name="lab" type="java.lang.String" *#
 #* @vtlvariable name="comments" type="java.lang.String" *#
-#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#

@@ -483,7 +483,7 @@ var XNAT = getObject(XNAT||{}),
         opts.method = opts.method || _form.method || 'GET';
 
         if ($.isFunction(opts.validate)) {
-            validation = opts.validate.apply(_form, opts);
+            validation = opts.validate.call(_form, opts);
             if (!validation) {
                 $form.removeClass('valid').addClass('invalid');
                 return validation;
@@ -541,8 +541,8 @@ var XNAT = getObject(XNAT||{}),
 
     // intercept form submissions with 'ajax' or 'json' class
     // using namespaced event handler submit.json
-    $('body').on('submit-json, submit-ajax', 'form.ajax, form.json', function(opts){
-        return xhr.form(this, opts);
+    $('body').on('submit.json, submit.ajax', 'form.ajax, form.json', function(){
+        return xhr.form(this);
     });
 
     // special case for YUI 'GET' request

@@ -1,6 +1,6 @@
 #* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
 #* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
-#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
 #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#

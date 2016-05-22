@@ -24,7 +24,7 @@
             <%--<label class="element-label" for="!?"></label>--%>
             <%--<div class="element-wrapper">--%>
 
-            <table id="spawner-element-list" class="xnat-table alt1 clean" style="width:100%">
+            <table id="spawner-element-list" class="xnat-table alt1 clean" style="width:100%;border:none;">
             <!-- list of available namespaces will show here -->
             </table>
 

@@ -10,12 +10,6 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -25,11 +19,16 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATRegisterUser {
 
@@ -94,13 +93,13 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
             context.put("user", user);
             action.doPerform(data, context);
         } else if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
-            if (XDAT.getSiteConfigPreferences().getUserRegistration() & !XDAT.verificationOn()) {
+            if (XDAT.getSiteConfigPreferences().getUserRegistration() & !XDAT.getSiteConfigPreferences().getEmailVerification()) {
                 data.setAction(nextAction);
                 VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
                 action.doPerform(data, context);
             }
         } else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(Turbine.getConfiguration().getString("template.home"))) {
-            if (XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.verificationOn()) {
+            if (XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.getSiteConfigPreferences().getEmailVerification()) {
                 data.setScreenTemplate(nextPage);
             }
         }

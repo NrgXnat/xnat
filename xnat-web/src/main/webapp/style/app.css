@@ -985,6 +985,7 @@ body [type="reset"] {
     font-size: 13px;
     letter-spacing: 0.02em;
     text-decoration: none;
+    box-shadow: 0px 1px 1px #ccc;
 }
 
 /* style for button hover */
@@ -995,6 +996,7 @@ body button:hover,
 body [type="button"]:hover,
 body [type="submit"]:hover,
 body [type="reset"]:hover {
+    box-shadow: none;
     cursor: pointer;
 }
 
@@ -1007,8 +1009,10 @@ body input.btn1,
 body .btn1[type="button"],
 body [type="submit"] {
     color: #fff;
-    background: #1A75BB;
-    border: 1px solid #096BB7;
+    background: #1A75BB linear-gradient( #3C8BC7, #1A75BB );
+    /*border: 1px solid #102040;*/
+    border: 1px solid #033E77;
+    box-shadow: 0 1px 1px #848484;
 }
 
 .btn1:hover,
@@ -1018,7 +1022,9 @@ body [type="submit"] {
 body input.btn1:hover,
 body .btn1[type="button"]:hover,
 body [type="submit"]:hover {
-    background: #096BB7;
+    /*background: #096BB7;*/
+    background: #1A75BB;
+    box-shadow: none;
 }
 
 /* btn2 gets gray background */
@@ -1028,7 +1034,7 @@ body button,
 body [type="button"],
 body [type="reset"] {
     background: #f0f0f0 linear-gradient( #ffffff, #f0f0f0 );
-    border: 1px solid #c0c0c0;
+    border: 1px solid #848484;
 }
 
 .btn:hover,
@@ -1511,6 +1517,8 @@ body.modal-popup #xnat_power {
 .yui-skin-sam .yui-button button,
 .yui-skin-sam .yui-button a,
 .yui-skin-sam .yui-button a:visited {
+    border: none;
+    box-shadow: none;
     color: #000000;
     font-size: 12px;
     height: 26px;
@@ -1610,7 +1618,7 @@ div.edit_title {
 
 .yui-skin-sam .yuimenu .bd {
     background-color: #fff;
-    border: 1px solid #ccc;
+    border: 1px solid #aaa;
 }
 
 td.highlighted {
@@ -1789,7 +1797,9 @@ div.containerTitle.withColor {
     margin-top: 0;
     padding: 1px;
     background: #fff;
-    border: 1px solid #c0c0c0;
+    border: solid #aaa;
+    border-width: 0 1px 1px;
+    border-top: 1px solid #102040;
 }
 
 /* make sure all sub-nav menus are wide enough */
@@ -1825,14 +1835,14 @@ div.containerTitle.withColor {
     display: none;
     top: 0;
     margin-left: -2px;
-    border: 1px solid #c0c0c0;
+    border: 1px solid #aaa;
 }
 
 #main_nav ul.nav ul,
 .shadowed {
-    -moz-box-shadow: 0 2px 12px rgba(96, 96, 96, 0.8);
-    -webkit-box-shadow: 0 2px 12px rgba(96, 96, 96, 0.8);
-    box-shadow: 0 2px 12px rgba(96, 96, 96, 0.8);
+    -moz-box-shadow: 0 1px 4px rgba(132, 132, 132, 0.8);
+    -webkit-box-shadow: 0 1px 4px rgba(132, 132, 132, 0.8);
+    box-shadow: 0 1px 4px rgba(132, 132, 132, 0.8);
     /* border: 2px solid rgba(204,204,204,0.5) ;	*/
 }
 

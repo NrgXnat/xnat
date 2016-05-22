@@ -81,6 +81,6 @@ public class UserListResource extends SecureResource {
      * @return <b>true</b> if only site administrators can access the list of users, <b>false</b> otherwise.
      */
     private boolean restrictUserListAccessToAdmins() {
-        return XDAT.getBoolSiteConfigurationProperty("restrictUserListAccessToAdmins", true);
+        return XDAT.getSiteConfigPreferences().getRestrictUserListAccessToAdmins();
         }
         }

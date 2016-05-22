@@ -68,15 +68,12 @@ public class ApplicationConfig {
 
     @Bean
     public RegExpValidator regexValidator() throws SiteConfigurationException {
-        final String complexityExpression = _preferences.getPasswordComplexity();
-        final String complexityMessage = _preferences.getPasswordComplexityMessage();
-        return new RegExpValidator(complexityExpression, complexityMessage);
+        return new RegExpValidator();
     }
 
     @Bean
     public HistoricPasswordValidator historicPasswordValidator() throws SiteConfigurationException {
-        final int durationInDays = _preferences.getPasswordHistoryDuration();
-        return new HistoricPasswordValidator(durationInDays);
+        return new HistoricPasswordValidator();
     }
 
     @Bean

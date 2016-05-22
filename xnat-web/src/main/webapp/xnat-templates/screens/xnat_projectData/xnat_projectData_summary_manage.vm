@@ -1,5 +1,5 @@
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
-#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#

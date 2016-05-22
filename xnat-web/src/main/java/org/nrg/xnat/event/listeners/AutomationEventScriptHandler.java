@@ -177,7 +177,8 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
      *
      * @param event the event
      */
-    private void updateAutomationTables(Event<AutomationEventImplementerI> event) {
+    // Made this method synchronized to avoid some constraint violation exceptions that were occasionally being thrown.
+    private synchronized void updateAutomationTables(Event<AutomationEventImplementerI> event) {
         final AutomationEventImplementerI eventData = event.getData();
         if (eventData.getEventId() == null || eventData.getClass() == null) {
             return;

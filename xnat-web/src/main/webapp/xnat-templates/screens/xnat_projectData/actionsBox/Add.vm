@@ -7,7 +7,7 @@
             <a class="yuimenuitemlabel" href="#insertbox">Add</a>
             <DIV ID="insertbox" class="yuimenu">
              <DIV class="bd">
-              <ul class="first-of-type" style="width: 500px;">
+              <ul class="first-of-type" style="width: 170px;">
               <li class="yuimenuitem">
                 <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_xnat_subjectData.vm").addPathInfo('project',$project.getId())">$displayManager.getSingularDisplayNameForSubject()</A>
               </li>

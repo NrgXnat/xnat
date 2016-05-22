@@ -17,7 +17,7 @@ function validateForm(){
       }
    }
    if (!typeSelected){
-       xModalMessage('Dicom DIR Download', 'Please select at least one scan.');
+       xmodal.message('Dicom DIR Download', 'Please select at least one scan.');
       return false;
    }
    return true;

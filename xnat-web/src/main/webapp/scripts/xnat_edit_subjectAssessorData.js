@@ -15,7 +15,7 @@ function validateSubjectAssessorForm()
    if (subject=="")
    {
      window.manager.showOption1();
-     xModalMessage('Subject Assessor Validation', "Please select a " + XNAT.app.displayNames.singular.subject.toLowerCase() + " before proceeding.");
+     xmodal.message('Subject Assessor Validation', "Please select a " + XNAT.app.displayNames.singular.subject.toLowerCase() + " before proceeding.");
      return false;
    }
    return validateExperimentForm();
@@ -26,14 +26,14 @@ function submitParentForm(){
    {
       var matchAlert = "The specified data label is in use by multiple stored experiments.  Please use a unique label for this item.";
       matchAlert+="";
-      xModalMessage('Subject Assessor Validation', matchAlert);
+      xmodal.message('Subject Assessor Validation', matchAlert);
       submitHistory=false;
       return false;
    }else if(matchedExpts.length>0){
       var matchedExpt=matchedExpts[0];
       if (matchedExpt.xsiType!=elementName)
       {
-        xModalMessage('Subject Assessor Validation', 'ERROR:  This ID is already in use for a different experiment.  Please use a different ID.');
+        xmodal.message('Subject Assessor Validation', 'ERROR:  This ID is already in use for a different experiment.  Please use a different ID.');
         submitHistory=false;
         return false;
       }else{

@@ -88,11 +88,11 @@
         var project = document.getElementById("$!item.getXSIType()/project").value;
 
         if ((project == "") && ($data.getSession().getAttribute("userHelper").canRead($item)) && ($data.getSession().getAttribute("userHelper").canEdit($item)) && ($data.getSession().getAttribute("userHelper").canCreate($item)) && ($data.getSession().getAttribute("userHelper").canActivate($item)) && ($data.getSession().getAttribute("userHelper").canDelete($item))) {
-            xModalMessage('Create Subject', 'Please Add Yourself as a "Member" of the $displayManager.getSingularDisplayNameForProject().');
+            xmodal.message('Create Subject', 'Please Add Yourself as a "Member" of the $displayManager.getSingularDisplayNameForProject().');
             return;
         }
         if (project == "") {
-            xModalMessage('Create Subject', 'Please Select a $displayManager.getSingularDisplayNameForProject() first.');
+            xmodal.message('Create Subject', 'Please Select a $displayManager.getSingularDisplayNameForProject() first.');
             return;
         }
 

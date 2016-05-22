@@ -43,7 +43,7 @@ function validateForm(){
   if (document.getElementById("value1").checked || document.getElementById("value2").checked){
     return true;
   }else{
-    xModalMessage('Validation Error', 'Please select a status.');
+    xmodal.message('Validation Error', 'Please select a status.');
     return false;
   }
 }

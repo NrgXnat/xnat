@@ -8,7 +8,7 @@ var elementName="$!item.getXSIType()";
 		   var projects = document.getElementById('projects');
 		   if (projects.selectedIndex==0)
 		   {
-               xModalMessage('Project Validation', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+               xmodal.message('Project Validation', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
 		       return false;
 		   }
 		    
@@ -21,7 +21,7 @@ var elementName="$!item.getXSIType()";
 		         
 		         if(thisInput.value==proj)
 		         {
-                   xModalMessage('Project Validation', '$displayManager.getSingularDisplayNameForProject() already exists');
+                   xmodal.message('Project Validation', '$displayManager.getSingularDisplayNameForProject() already exists');
 		           return false;
 		         }
 			       }
@@ -182,7 +182,7 @@ function fixSpaces(val)
         newVal = newVal.replace(/[(]/,"_");
         newVal = newVal.replace(/[)]/,"_");
         if(newVal!=val){
-          xModalMessage('Project Validation', 'Spaces and special characters are not allowed in identifier fields.');
+          xmodal.message('Project Validation', 'Spaces and special characters are not allowed in identifier fields.');
         }
         return newVal;
 }

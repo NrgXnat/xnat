@@ -20,18 +20,18 @@ $page.setBgColor($ui.bgcolor)
         msgOptions.action = function(){ window.location = serverRoot + "/app/template/Login.vm"; };
 
         this.success = function(){
-            xModalLoadingClose();
-            xModalMessage('Email Sent','A verification email has been sent to ' + email,'OK', msgOptions);
+            xmodal.loading.close();
+            xmodal.message('Email Sent','A verification email has been sent to ' + email,'OK', msgOptions);
         }
 
         this.failed = function(o){
-            xModalLoadingClose();
+            xmodal.loading.close();
             if(o.status === 503){
-                xModalMessage('Error','You have exceeded the allowed number of email requests. Please try again later.','OK', msgOptions);
+                xmodal.message('Error','You have exceeded the allowed number of email requests. Please try again later.','OK', msgOptions);
             }else if(o.status === 400){
-                xModalMessage('Error','Unknown email address.','OK', msgOptions);
+                xmodal.message('Error','Unknown email address.','OK', msgOptions);
             }else{
-                xModalMessage('Error','An unexpected error has occurred. Please contact your administrator.','OK', msgOptions);
+                xmodal.message('Error','An unexpected error has occurred. Please contact your administrator.','OK', msgOptions);
             }
         }
 
@@ -44,7 +44,7 @@ $page.setBgColor($ui.bgcolor)
         this.logoutCallback = {/* No callback actually needed from the logout call. */};
 
         if(email && requestURL){
-            xModalLoadingOpen({title:'Please wait...'});
+            xmodal.loading.open({title:'Please wait...'});
             YAHOO.util.Connect.asyncRequest('POST', requestURL + '?email=' + encodeURIComponent(email), this.insertCallback, null, this);
             YAHOO.util.Connect.asyncRequest('GET', logoutURL, this.logoutCallback, null, this);
         }

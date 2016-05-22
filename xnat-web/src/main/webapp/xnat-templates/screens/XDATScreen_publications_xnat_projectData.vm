@@ -73,89 +73,89 @@ function addPublication()
   var publicationTYPE = document.getElementById("publicationTYPE").options[typeIndex].value;
   
   if (typeIndex==0){
-     xModalMessage('Add Publication', 'Please select a type.');
+     xmodal.message('Add Publication', 'Please select a type.');
      document.getElementById("publicationTYPE").focus();
      return false;
   }
   
   if (publicationTITLE=="" && publicationDOI=="" && publicationPUBMED=="" && publicationMEDLINE=="" && publicationURI=="" && publicationOTHER==""){
-     xModalMessage('Add Publication', 'Please specify a TITLE, DOI, PUBMED, MEDLINE, URI, or OTHER.');
+     xmodal.message('Add Publication', 'Please specify a TITLE, DOI, PUBMED, MEDLINE, URI, or OTHER.');
      return false;
   }
   
   if (publicationTITLE=="")
   {
-     xModalMessage('Add Publication', 'Please specify a Title.");
+     xmodal.message('Add Publication', 'Please specify a Title.");
      document.getElementById("publicationTITLE").focus();
      return false;
   }
   
   if(publicationDOI.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationDOI").focus();
      return false;     
   }
   
   if(publicationPUBMED.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationPUBMED").focus();
      return false;     
   }
   
   if(publicationMEDLINE.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationMEDLINE").focus();
      return false;     
   }
   
   if(publicationURI.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationURI").focus();
      return false;     
   }
   
   if(publicationOTHER.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationOTHER").focus();
      return false;     
   }
   
   if(publicationTYPE.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationTYPE").focus();
      return false;     
   }
   
   if(publicationTITLE.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationTITLE").focus();
      return false;     
   }
   
   if(publicationCITATION.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationCITATION").focus();
      return false;     
   }
   
   if(publicationABSTRACT.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationABSTRACT").focus();
      return false;     
   }
   
   if(publicationCOMMENTARY.indexOf("\"")!=-1)
   {
-     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     xmodal.message('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
      document.getElementById("publicationCOMMENTARY").focus();
      return false;     
   }

@@ -33,7 +33,7 @@
         }
 
         if (!sessionsSelected) {
-            xModalMessage('Download Sessions', 'Please select at least one imaging $displayManager.getSingularDisplayNameForImageSession().toLowerCase() from section 1.');
+            xmodal.message('Download Sessions', 'Please select at least one imaging $displayManager.getSingularDisplayNameForImageSession().toLowerCase() from section 1.');
             return false;
         }
 
@@ -82,7 +82,7 @@
             return true;
         }
         else {
-            xModalMessage('Download Sessions', 'Please select at least one format of imaging data to download from section 2.');
+            xmodal.message('Download Sessions', 'Please select at least one format of imaging data to download from section 2.');
             return false;
         }
     }

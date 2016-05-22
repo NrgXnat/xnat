@@ -206,18 +206,18 @@ function ScanEditor(_sessionID,_scanID,_options){
 			if (handler.root){
 				this.scan=handler.root;
 			}else{
-                xModalMessage('Scan Data Error', 'ERROR: Unable to retrieve scan data.');
+                xmodal.message('Scan Data Error', 'ERROR: Unable to retrieve scan data.');
 			}
 			if(this.options.button)this.options.button.disabled=false;
 		}catch(e){
-            xModalMessage('Scan Data Error', 'ERROR '+o.status+': Failed to parse scan.');
+            xmodal.message('Scan Data Error', 'ERROR '+o.status+': Failed to parse scan.');
 		}
 		this.render();
 
 	};
 
 	this.displayError=function(errorMsg){
-        xModalMessage('Scan Data Error', errorMsg);
+        xmodal.message('Scan Data Error', errorMsg);
 	};
 	
 	this.render=function(){
@@ -388,7 +388,7 @@ function ScanEditor(_sessionID,_scanID,_options){
                         failure: function () {
                             if (!window.leaving) {
                                 closeModalPanel("save_scan");
-                                xModalMessage('Scan Data', 'Save failed!');
+                                xmodal.message('Scan Data', 'Save failed!');
                             }
                             this.cancel();
                         },
@@ -545,7 +545,7 @@ function scanDeleteDialog(_options){
 		var buttons=[{text:"Delete",handler:{fn:function(){
 				this.selector.delete_files = this.form.delete_files.checked;
 				if(showReason && this.selector.event_reason==""){
-                    xModalMessage('Delete Scan', 'Please enter a justification!');
+                    xmodal.message('Delete Scan', 'Please enter a justification!');
 					return;
 				}
                 else if (showReason) {
@@ -727,7 +727,7 @@ function ScanSet(_options,_scans){
 
 	this.options=_options;
 	if(this.options.session_id==undefined){
-        xModalMessage('Scan Data Validation', 'Missing session_id');
+        xmodal.message('Scan Data Validation', 'Missing session_id');
 	}
 
     this.onLoad=new YAHOO.util.CustomEvent("load",this);

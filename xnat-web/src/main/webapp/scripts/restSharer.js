@@ -174,7 +174,7 @@ RestSharer = function(_array,_config) {
 						if(o.status!=409){
 						  this.stopped=true;
 						  this.dt.updateCell(o.argument.oRecord,"processed",3);
-                          xModalMessage('Error' + o.status, "ERROR : Failed to share " + oRecord.getData("label"));
+                          xmodal.message('Error' + o.status, "ERROR : Failed to share " + oRecord.getData("label"));
 						}else{
 							this.dt.updateCell(o.argument.oRecord,"processed",3);
 						  	//alert("Failed to share " + oRecord.getData("label") + ".  \r\n\r\nThis item has either already been shared into this " + XNAT.app.displayNames.singular.project.toLowerCase() + ", or there is already an item in this " + XNAT.app.displayNames.singular.project.toLowerCase() + " with the requested label.");

@@ -360,11 +360,11 @@ jq(function () {
                 jq('#form1').submit();
             }
             else {
-                xModalMessage('Add Experiment Validation', 'Please select a $displayManager.getSingularDisplayNameForSubject().toLowerCase().');
+                xmodal.message('Add Experiment Validation', 'Please select a $displayManager.getSingularDisplayNameForSubject().toLowerCase().');
             }
         }
         else {
-            xModalMessage('Add Experiment Validation', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+            xmodal.message('Add Experiment Validation', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
         }
 
     });

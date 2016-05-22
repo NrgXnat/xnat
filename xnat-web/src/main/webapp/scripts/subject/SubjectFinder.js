@@ -210,7 +210,7 @@ this.getFormManager=function(){
    	  }
 	 
    	  if(window.create_subject_link==undefined){
-          xModalMessage('Error', 'Unable to load create ' + XNAT.app.displayNames.singular.subject.toLowerCase() + ' form.');
+          xmodal.message('Error', 'Unable to load create ' + XNAT.app.displayNames.singular.subject.toLowerCase() + ' form.');
    	  	return;
    	  }
    	  this.subjectForm=window.open(window.create_subject_link, '','width=500,height=550,status=yes,resizable=yes,scrollbars=yes,toolbar=no');

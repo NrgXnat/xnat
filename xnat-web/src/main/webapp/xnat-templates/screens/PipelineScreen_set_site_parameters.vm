@@ -73,14 +73,14 @@ function validateForm()
      if(document.getElementById("pipe:pipelineDetails.path") == "")
       {
         document.getElementById("pipe:pipelineDetails.path").focus();
-        xModalMessage('Pipeline Validation', 'Please set a valid path for the pipeline descriptor.');
+        xmodal.message('Pipeline Validation', 'Please set a valid path for the pipeline descriptor.');
         return false;
       }
    	  
      if(document.getElementById("pipe:pipelineDetails.appliesTo").selectedIndex==0)
      {
        document.getElementById("pipe:pipelineDetails.appliesTo").focus();
-       xModalMessage('Pipeline Validation', 'Please select a data-type on which the pipeline executes.');
+       xmodal.message('Pipeline Validation', 'Please select a data-type on which the pipeline executes.');
        return false;
      }
 

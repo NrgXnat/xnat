@@ -19,7 +19,7 @@ function configurationIndexChanged() {
 
 function fullConfigHandler() {
     if (!document.getElementById('siteId').value) {
-        xModalMessage('Site ID Required','You must specify a value for the site ID!','OK');
+        xmodal.message('Site ID Required','You must specify a value for the site ID!','OK');
         return;
     }
 
@@ -37,8 +37,8 @@ function fullConfigHandler() {
             document.getElementById('seriesImportFilter_save_button').onclick = saveSettings;
             document.getElementById('dicomReceiver_save_button').onclick = saveSettings;
 
-            xModalLoadingClose();
-            xModalMessage('Welcome!','Your settings were saved. You will now be redirected to the main XNAT page.','OK');
+            xmodal.loading.close();
+            xmodal.message('Welcome!','Your settings were saved. You will now be redirected to the main XNAT page.','OK');
 
             var destination;
             if (serverRoot) {
@@ -49,7 +49,7 @@ function fullConfigHandler() {
             window.location.replace(destination);
         },
         failure : function(o) {
-            xModalMessage(
+            xmodal.message(
                 'Error',
                 'Your settings were not successfully saved: ' + o.responseText,
                 'OK'
@@ -70,7 +70,7 @@ function fullConfigHandler() {
         , 'dcmPort', 'dcmAe', 'enableDicomReceiver'
     ]);
 
-    xModalLoadingOpen({title:'Please wait...'});
+    xmodal.loading.open({title:'Please wait...'});
     var putUrl = serverRoot + '/data/services/settings/initialize?XNAT_CSRF=' + window.csrfToken + '&stamp=' + (new Date()).getTime();
     YAHOO.util.Connect.asyncRequest('PUT', putUrl, this.fullConfigCallback, data, this);
 }
@@ -160,7 +160,7 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
         if (window.configurationData) {
             this.processData();
         } else {
-            xModalLoadingOpen({title:'Loading site information...'});
+            xmodal.loading.open({title:'Loading site information...'});
 
             // load from settings data from server
             this.initCallback = {
@@ -181,9 +181,9 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
         } catch (e) {
             this.displayError("[ERROR " + o.status + "] Failed to parse site information: [" + e.name + "] " + e.message);
         }
-        xModalLoadingClose();
+        xmodal.loading.close();
         if (window.initializing) {
-            xModalMessage('Welcome', 'Your XNAT installation has not yet been initialized. Please review each panel on this configuration screen before saving the system settings.', 'OK');
+            xmodal.message('Welcome', 'Your XNAT installation has not yet been initialized. Please review each panel on this configuration screen before saving the system settings.', 'OK');
         }
     };
 
@@ -229,7 +229,7 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
     this.initFailure = function(o) {
         this.displayError("ERROR " + o.status + ": Failed to load site information.");
         if (o.status == 401) {
-            xModalMessage('Session Expired', sessExpMsgT);
+            xmodal.message('Session Expired', sessExpMsgT);
             window.location = serverRoot + "/app/template/Login.vm";
         }
     };
@@ -296,14 +296,14 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
                     cache : false, // Turn off caching for IE
                     scope : this
                 };
-                xModalLoadingOpen({title:'Please wait...'});
+                xmodal.loading.open({title:'Please wait...'});
                 var data = buildSettingsUpdateRequestBody(this.controls);
                 YAHOO.util.Connect.asyncRequest('POST', this.settings_svc_url + '?XNAT_CSRF=' + window.csrfToken, this.updateCallback, data, this);
             } else {
-                xModalMessage('Message','None of the site information appears to have changed.','OK');
+                xmodal.message('Message','None of the site information appears to have changed.','OK');
             }
         } else {
-            xModalMessage('Note','You need to enter a value into all of the site information settings boxes to save the site settings.','OK');
+            xmodal.message('Note','You need to enter a value into all of the site information settings boxes to save the site settings.','OK');
         }
     };
 
@@ -361,23 +361,23 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
 
     this.completeSave = function(o) {
         this.processData(o.responseText);
-        xModalLoadingClose();
-        xModalMessage('Success','Your settings have been successfully updated.','OK');
+        xmodal.loading.close();
+        xmodal.message('Success','Your settings have been successfully updated.','OK');
         this.setFormDisabled(false);
     };
 
     this.saveFailure = function(o) {
         if (o.status == 401) {
-            xModalMessage('Session Expired', sessExpMsgT);
+            xmodal.message('Session Expired', sessExpMsgT);
             window.location.reload();
         }
-        xModalLoadingClose();
+        xmodal.loading.close();
         this.displayError('There was an error saving your notification settings. Please check that all of the configured usernames and addresses map to valid enabled users on your XNAT system.</p><p><b>Error code:</b> ' + o.status + ' ' + o.statusText);
         this.setFormDisabled(false);
     };
 
     this.displayError = function(errorMsg) {
-        xModalMessage(
+        xmodal.message(
             'Error',
             errorMsg,
             'OK'

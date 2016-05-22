@@ -134,7 +134,7 @@ XNAT.app.archiveValidator={
 	        	form1.submit();
 	    	}
     	}catch(e){
-            xModalMessage('Validation Error', 'Error performing validation.');
+            xmodal.message('Validation Error', 'Error performing validation.');
     	}
 	},
 	requiresOverwrite:false

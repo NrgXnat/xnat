@@ -66,7 +66,7 @@ function confirmValues(_focus){
   
 	  return valid;
   }catch(e){
-  	  xModalMessage('Error',"An exception has occurred. Please contact technical support for assistance.");
+  	  xmodal.message('Error',"An exception has occurred. Please contact technical support for assistance.");
   	  return false;
   }
 }
@@ -122,7 +122,7 @@ function fixSessionID(val)
         newVal = newVal.replace(/[{]/,"_");
         newVal = newVal.replace(/[}]/,"_");
         if(newVal!=temp){
-            xModalMessage('Image Session Validation', 'Removing invalid characters in ' + XNAT.app.displayNames.singular.imageSession.toLowerCase() + '.');
+            xmodal.message('Image Session Validation', 'Removing invalid characters in ' + XNAT.app.displayNames.singular.imageSession.toLowerCase() + '.');
         }
         return newVal;
 }

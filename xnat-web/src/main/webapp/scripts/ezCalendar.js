@@ -32,7 +32,7 @@ XNAT.app.datePicker.selected = XNAT.data.selectedDate = {};
 
 function closeModal_pickDate(_this,$input){
     var modal_id = $(_this).closest('.xmodal').attr('id');
-    xModalCloseNew(modal_id);
+    xmodal.close(modal_id);
     XNAT.app.datePicker.reveal($input.closest('.ez_cal_wrapper'));
 }
 
@@ -180,7 +180,7 @@ XNAT.app.checkDateInput = function(_$input,_format,_value) {
     message_opts.okClose = false ;
     message_opts.action = function(){
         var modal_id = $(this).closest('.xmodal').attr('id');
-        xModalCloseNew(modal_id);
+        xmodal.close(modal_id);
         XNAT.app.datePicker.focusInput($focus);
     };
 
@@ -200,8 +200,8 @@ XNAT.app.checkDateInput = function(_$input,_format,_value) {
     });
 
     if (hasNumber(date.arr) && !valid_format.test(date.val)) {
-        if ($.isFunction(xModalMessage)) {
-            xModalMessage(
+        if ($.isFunction(xmodal.message)) {
+            xmodal.message(
                 'Invalid Date Format',
                 'Please enter the date in the format: ' + example + useDatePicker() + '.',
                 'OK',
@@ -214,8 +214,8 @@ XNAT.app.checkDateInput = function(_$input,_format,_value) {
         return_val = false;
     }
     else if (future === false && date.date_num > max_date_num && date.date_num < date.max_future){
-        if ($.isFunction(xModalMessage)) {
-            xModalMessage(
+        if ($.isFunction(xmodal.message)) {
+            xmodal.message(
                 'Invalid Date',
                 'You may not select a date in the future. Please correct' + useDatePicker() + ' and continue.',
                 'OK',
@@ -229,8 +229,8 @@ XNAT.app.checkDateInput = function(_$input,_format,_value) {
     }
     // check for sane date ranges - between 120 years ago and 100 years from now
     else if (date.date_num < date.min_past || date.date_num > date.max_future || date.val === '0000-00-00') {
-        if ($.isFunction(xModalMessage)) {
-            xModalMessage(
+        if ($.isFunction(xmodal.message)) {
+            xmodal.message(
                 'Invalid Date',
                 'Invalid Day, Month, or Year range detected. Please correct'  + useDatePicker() +  ' and continue.',
                 'OK',

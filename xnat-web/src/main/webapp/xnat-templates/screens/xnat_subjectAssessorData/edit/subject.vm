@@ -40,7 +40,7 @@
     }
     window.subjectEditor.panel.show();
    }else{
-     xModalMessage('Modify Subject', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase() before selecting a $displayManager.getSingularDisplayNameForSubject().toLowerCase().');
+     xmodal.message('Modify Subject', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase() before selecting a $displayManager.getSingularDisplayNameForSubject().toLowerCase().');
      modifyProject();
    }
   }

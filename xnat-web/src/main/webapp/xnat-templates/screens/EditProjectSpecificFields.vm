@@ -63,7 +63,7 @@
           for(var i=0; i<errors.length; i++){
             fields += '&nbsp;&nbsp;&nbsp;<span class="noteRequired">'+errors[i]+'</span><br/>';
           }
-          xModalMessage('Required variables', 'Missing required variable values:<br/><br/>'+fields);          
+          xmodal.message('Required variables', 'Missing required variable values:<br/><br/>'+fields);
         }
       });
     });

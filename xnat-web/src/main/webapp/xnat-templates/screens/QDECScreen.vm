@@ -35,12 +35,12 @@ function checkform() {
   if (msg == "") {
     var analysis_name_isAplhaNumeric = isAlphaNumeric(analysis_name.value);
     if (!analysis_name_isAplhaNumeric) {
-      xModalMessage('QDEC Group Analysis', 'Please enter an alpha numeric value for analysis name');
+      xmodal.message('QDEC Group Analysis', 'Please enter an alpha numeric value for analysis name');
     }else {
 	    rtn = true;
     }
   }else {
-    xModalMessage('QDEC Group Analysis', 'Please '+ msg);
+    xmodal.message('QDEC Group Analysis', 'Please '+ msg);
   }
   return rtn;
 }

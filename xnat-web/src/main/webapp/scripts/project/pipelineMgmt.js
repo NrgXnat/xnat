@@ -92,7 +92,7 @@ function PipelineManager(pipeline_mgmt_div_id, pID){
 				      failure: function (o) {
 //					window.waitPanel.hide();      
 					initLoader.close();
-                          xModalMessage('Pipeline Validation', 'Could not delete pipeline.');
+                          xmodal.message('Pipeline Validation', 'Could not delete pipeline.');
 				      },
                       cache:false, // Turn off caching for IE
 				      scope:this
@@ -161,7 +161,7 @@ function PipelineManager(pipeline_mgmt_div_id, pID){
 	this.initFailure=function(o){
         if (!window.leaving) {
             this.initLoader.close();
-            xModalMessage('Pipeline Validation', 'Failed to load pipeline list for ' + XNAT.app.displayNames.singular.project.toLowerCase() + ' ' + pID + '.');
+            xmodal.message('Pipeline Validation', 'Failed to load pipeline list for ' + XNAT.app.displayNames.singular.project.toLowerCase() + ' ' + pID + '.');
         }
 	};
 	
@@ -172,7 +172,7 @@ function PipelineManager(pipeline_mgmt_div_id, pID){
             this.pipelineResultSet= eval("(" + oResponse.responseText +")");
             this.render();
         }catch(e){
-            xModalMessage('Pipeline Validation', 'Invalid pipeline list.<br/><br/>' + e.toString());
+            xmodal.message('Pipeline Validation', 'Invalid pipeline list.<br/><br/>' + e.toString());
         }
 	};
 	
@@ -183,7 +183,7 @@ function PipelineManager(pipeline_mgmt_div_id, pID){
             this.pipelineResultSet= eval("(" + oResponse.responseText +")");
             this.renderAdditional();
         }catch(e){
-            xModalMessage('Pipeline Validation', 'Invalid pipeline list.<br/><br/>' + e.toString());
+            xmodal.message('Pipeline Validation', 'Invalid pipeline list.<br/><br/>' + e.toString());
         }
 	};
 

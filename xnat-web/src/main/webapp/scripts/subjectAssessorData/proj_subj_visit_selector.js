@@ -65,7 +65,7 @@ function ProjectSubjectVisitSelector(_defaultProject, _defaultSubject) {
     };
 
 	this.displayError=function(errorMsg){
-        xModalMessage('Error', errorMsg);
+        xmodal.message('Error', errorMsg);
 	};
 	
     this.renderProjects = function () {
@@ -173,7 +173,7 @@ function ProjectSubjectVisitSelector(_defaultProject, _defaultSubject) {
                 },
                 failure:function () {
                     if (!window.leaving) {
-                        xModalMessage('Error', 'Failed to load ' + XNAT.app.displayNames.plural.subject.toLowerCase() + '.');
+                        xmodal.message('Error', 'Failed to load ' + XNAT.app.displayNames.plural.subject.toLowerCase() + '.');
                     }
                 },
                 cache:false, // Turn off caching for IE
@@ -191,7 +191,7 @@ function ProjectSubjectVisitSelector(_defaultProject, _defaultSubject) {
             //noinspection JSUnresolvedVariable
             YAHOO.util.Connect.asyncRequest('GET', serverRoot + '/data/projects/' + this.projectID + '/subjects?format=json&timestamp=' + (new Date()).getTime(), subjCallback);
         } catch (e) {
-            xModalMessage('Error', 'Failed to load ' + XNAT.app.displayNames.plural.subject.toLowerCase() + '.');
+            xmodal.message('Error', 'Failed to load ' + XNAT.app.displayNames.plural.subject.toLowerCase() + '.');
         }
     };
 

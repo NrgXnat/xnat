@@ -69,7 +69,7 @@ RestDeleter = function(_array,_config) {
 	
 	this.handleDelete=function(){
 		if(showReason && document.getElementById("del_event_reason").value==""){
-            xModalMessage('Delete Action', 'Please specify a justification for this operation.');
+            xmodal.message('Delete Action', 'Please specify a justification for this operation.');
 			return;
 		}
 		
@@ -106,7 +106,7 @@ RestDeleter = function(_array,_config) {
     		}
     	}else if(this.manager.processing){
     		this.manager.stopped=true;
-            xModalMessage('Cancel Action', 'Please wait for current process to complete.<br/><br/>Further actions are cancelled.');
+            xmodal.message('Cancel Action', 'Please wait for current process to complete.<br/><br/>Further actions are cancelled.');
     	}else{
     		// If the cancel action has been configured, use the callback
     		// otherwise reload the page. Added for XNAT-2408.
@@ -159,7 +159,7 @@ RestDeleter = function(_array,_config) {
 							this.currentTR.pDivColor.style.backgroundColor="red";
 				  	   	  	this.currentTR.pDivColor.style.color="black";
 				  	   	  	this.currentTR.pDivColor.innerHTML="&nbsp;error&nbsp;";
-                            xModalMessage('ERROR ' + o.status, 'Failed to delete ' + this.currentTR.entry.label + '.');
+                            xmodal.message('ERROR ' + o.status, 'Failed to delete ' + this.currentTR.entry.label + '.');
 						},
                         cache:false, // Turn off caching for IE
 						scope:this
@@ -181,7 +181,7 @@ RestDeleter = function(_array,_config) {
 	    		}else{
 	    			msg_op.action = function(){ window.location.reload(); }
 	    		}
-                xModalMessage('Delete Action','All items were successfully deleted.','OK',msg_op);
+                xmodal.message('Delete Action','All items were successfully deleted.','OK',msg_op);
     		}
     	}else{
     		closeModalPanel("stopAction");

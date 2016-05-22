@@ -47,13 +47,13 @@ function validateForm()
      if(document.getElementById("pipe:pipelineDetails.path").value == "")
       {
         document.getElementById("pipe:pipelineDetails.path").focus();
-        xModalMessage('Add Pipeline Validation', 'Please set a valid path for the pipeline descriptor.');
+        xmodal.message('Add Pipeline Validation', 'Please set a valid path for the pipeline descriptor.');
         return false;
       }
      if(document.getElementById("pipe:pipelineDetails.path").value.lastIndexOf("\\") != -1)
       {
         document.getElementById("pipe:pipelineDetails.path").focus();
-        xModalMessage('Add Pipeline Validation', "Please enter the path using forward slashes '/' rather than backslashes '\\'.");
+        xmodal.message('Add Pipeline Validation', "Please enter the path using forward slashes '/' rather than backslashes '\\'.");
         return false;
       }
      return true;	

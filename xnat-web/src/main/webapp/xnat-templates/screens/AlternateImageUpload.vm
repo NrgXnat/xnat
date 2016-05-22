@@ -149,15 +149,15 @@ var checkProgressFinal = 0;
 function prog(theform) {
     var imageArchive = document.getElementById("image_archive");
     if (!imageArchive.value) {
-        xModalMessage('Upload Action', 'Please select an archive to upload.');
+        xmodal.message('Upload Action', 'Please select an archive to upload.');
         return false;
     }
     if (!(imageArchive.value.endsWith(".gz") || imageArchive.value.endsWith(".tgz") || imageArchive.value.endsWith(".zip"))) {
-        xModalMessage('Upload Action', 'Please select a tar or zip archive to upload.');
+        xmodal.message('Upload Action', 'Please select a tar or zip archive to upload.');
         return false;
     }
     if (document.getElementById("project").selectedIndex == 0) {
-        xModalMessage('Upload Action', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+        xmodal.message('Upload Action', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
         return false;
     }
     disableForm(theform);

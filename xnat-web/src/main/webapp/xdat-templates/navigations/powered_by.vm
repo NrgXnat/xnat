@@ -13,9 +13,11 @@
         clicker.shiftKey(function(e){
             e.preventDefault();
             if (Cookies.get('debug') === 'on'){
+                Cookies.set('debug', 'off');
                 window.location.hash = 'debug=off';
             }
             else {
+                Cookies.set('debug', 'on');
                 window.location.hash = 'debug=on';
             }
             window.location.reload();

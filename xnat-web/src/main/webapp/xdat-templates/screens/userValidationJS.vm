@@ -83,7 +83,7 @@
             if(obj.value.match(/^[a-zA-Z0-9-' ]+$/)) {
                 valid = true;
             }else{
-                xModalMessage('User Validation', which+' name cannot contain special characters.  Please modify.');
+                xmodal.message('User Validation', which+' name cannot contain special characters.  Please modify.');
                 obj.focus();
             }
         }
@@ -97,7 +97,7 @@
             if(XNAT.app.register.validators.isEmail()(obj)){
                 valid = true;
             }else{
-                xModalMessage('User Validation', 'Invalid email address.  Please modify.');
+                xmodal.message('User Validation', 'Invalid email address.  Please modify.');
                 obj.focus();
             }
         }

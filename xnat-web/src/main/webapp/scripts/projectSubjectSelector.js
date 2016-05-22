@@ -145,7 +145,7 @@ XNAT.app.projectSubjectSelector = function( proj_menu, subj_menu, submit_button,
         });
 
         getProjects.fail(function(jqXHR, textStatus, errorThrown){
-            xModalMessage('Error', "ERROR " + textStatus + ": Failed to load " + XNAT.app.displayNames.singular.project.toLowerCase() + " list.");
+            xmodal.message('Error', "ERROR " + textStatus + ": Failed to load " + XNAT.app.displayNames.singular.project.toLowerCase() + " list.");
         });
     
     };
@@ -225,7 +225,7 @@ XNAT.app.projectSubjectSelector = function( proj_menu, subj_menu, submit_button,
         });
 
         getSubjects.fail(function(jqXHR, textStatus, errorThrown){
-            xModalMessage('Error', "ERROR " + textStatus + ": Failed to load " + XNAT.app.displayNames.singular.subject.toLowerCase() + " list.");
+            xmodal.message('Error', "ERROR " + textStatus + ": Failed to load " + XNAT.app.displayNames.singular.subject.toLowerCase() + " list.");
         });
 
     };
@@ -287,7 +287,7 @@ XNAT.app.projectSubjectSelector = function( proj_menu, subj_menu, submit_button,
         });
 
         getExptTypes.fail(function(jqXHR, textStatus, errorThrown){
-            xModalMessage('Error', "ERROR " + textStatus + ": Failed to load experiment list.");
+            xmodal.message('Error', "ERROR " + textStatus + ": Failed to load experiment list.");
         });
 
     };

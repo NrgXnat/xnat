@@ -98,7 +98,7 @@ function blocking(i)
 {
 	if (!supported)
 	{
-        xModalMessage('Unsupported browser link', 'This link does not work in your browser.');
+        xmodal.message('Unsupported browser link', 'This link does not work in your browser.');
 		return;
 	}
 	var plusLocation = serverRoot+ "/images/plus.jpg";
@@ -295,27 +295,27 @@ function isDate(dtStr){
 	year=parseInt(strYr);
 	
 	if (pos1==-1 || pos2==-1){
-		xModalMessage('Date Validation', 'The date format should be : mm/dd/yyyy');
+		xmodal.message('Date Validation', 'The date format should be : mm/dd/yyyy');
 		return false
 	}
 	
 	if (strMonth.length<1 || month<1 || month>12){
-		xModalMessage('Date Validation', 'Please enter a valid month');
+		xmodal.message('Date Validation', 'Please enter a valid month');
 		return false
 	}
 	
 	if (strDay.length<1 || day<1 || day>31 || (month==2 && day>daysInFebruary(year)) || day > daysInMonth[month]){
-		xModalMessage('Date Validation', 'Please enter a valid day');
+		xmodal.message('Date Validation', 'Please enter a valid day');
 		return false
 	}
 	
 	if (strYear.length != 4 || year==0 || year<minYear || year>maxYear){
-		xModalMessage('Date Validation', 'Please enter a valid 4 digit year between '+minYear+' and '+maxYear);
+		xmodal.message('Date Validation', 'Please enter a valid 4 digit year between '+minYear+' and '+maxYear);
 		return false
 	}
 	
 	if (dtStr.indexOf(dtCh,pos2+1)!=-1 || isInteger(stripCharsInBag(dtStr, dtCh))==false){
-		xModalMessage('Date Validation', 'Please enter a valid date');
+		xmodal.message('Date Validation', 'Please enter a valid date');
 		return false
 	}
 	
@@ -846,7 +846,7 @@ function closeModalPanel(id){
 }
 
 function displayError(msg){
-    xModalMessage("Exception",msg,'OK');
+    xmodal.message("Exception",msg,'OK');
 }
 
 var msgC=0;

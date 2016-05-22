@@ -39,10 +39,10 @@
             data: data,
             dataType: "json",
             success: function() {
-                xModalMessage('Success', 'Your script was successfully saved.');
+                xmodal.message('Success', 'Your script was successfully saved.');
             },
             error: function(request, status, error) {
-                xModalMessage('Error', 'An error occurred: [' + status + '] ' + error);
+                xmodal.message('Error', 'An error occurred: [' + status + '] ' + error);
             }
         });
     }

@@ -116,7 +116,7 @@ function prog(theform)
     checkProgress();
     return true;
   }else{
-    xModalMessage('Upload Action', 'Please select a file.');
+    xmodal.message('Upload Action', 'Please select a file.');
     return false;
   }
 }

@@ -63,7 +63,7 @@ function reconEditor(_sessionID,_reconID,_options){
 			if (handler.root){
 				this.recon=handler.root;				
 			}else{
-                xModalMessage('Reconstructed Image Error', "ERROR: Unable to retrieve recon data.");
+                xmodal.message('Reconstructed Image Error', "ERROR: Unable to retrieve recon data.");
 			}
 			
 			if(this.options.button)this.options.button.disabled=false;
@@ -76,7 +76,7 @@ function reconEditor(_sessionID,_reconID,_options){
 	};
 	
 	this.displayError=function(errorMsg){
-		xModalMessage('Error', errorMsg);
+		xmodal.message('Error', errorMsg);
 	};
 	
 	this.render=function(){
@@ -183,7 +183,7 @@ function reconEditor(_sessionID,_reconID,_options){
 				},failure:function(){
                     if (!window.leaving) {
                         closeModalPanel("save_recon");
-                        xModalMessage('Reconstructed Image Error', "Save reconstructed image data failed.");
+                        xmodal.message('Reconstructed Image Error', "Save reconstructed image data failed.");
                     }
 					this.cancel();
 				}, cache:false, scope:this},params);

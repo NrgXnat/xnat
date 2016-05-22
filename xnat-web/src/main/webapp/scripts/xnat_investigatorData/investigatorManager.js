@@ -24,7 +24,7 @@ function InvestigatorManager(){
 	
 	this.initFailure=function(o){
         if (!window.leaving) {
-            xModalMessage('ERROR (' + o.status + '): Failed to load investigator list.');
+            xmodal.message('ERROR (' + o.status + '): Failed to load investigator list.');
         }
 	};
 	
@@ -34,7 +34,7 @@ function InvestigatorManager(){
 		    this.investigators=this.investigatorResultSet.ResultSet.Result;
 		    this.investigatorsLoaded.fire();
 		}catch(e){
-            xModalMessage('ERROR (' + o.status + '): Failed to parse investigator list.');
+            xmodal.message('ERROR (' + o.status + '): Failed to parse investigator list.');
 		}
 	}
 	

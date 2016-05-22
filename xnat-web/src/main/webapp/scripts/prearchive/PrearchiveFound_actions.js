@@ -10,7 +10,7 @@
  */
 XNAT.app.prearchiveActions={
 	requestDelete:function(){
-        xModalConfirm({
+        xmodal.confirm({
           content: "Are you sure you want to permanently delete this session?",
           okAction: function(){
         	  XNAT.app.prearchiveActions.doDelete();

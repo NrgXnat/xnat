@@ -38,13 +38,13 @@ function stringTrim(str)
 function verifyExptId(obj){
    if (elementName==null || elementName=="")
    {
-     xModalMessage('Error', "ERROR: Unknown 'elementName'");
+     xmodal.message('Error', "ERROR: Unknown 'elementName'");
      return false;
    }
    
    if (serverRoot==null)
    {
-     xModalMessage('Error', "ERROR: Unknown 'serverRoot'");
+     xmodal.message('Error', "ERROR: Unknown 'serverRoot'");
      return false;
    }
    var server=serverRoot+"/servlet/AjaxServlet";
@@ -59,7 +59,7 @@ function verifyExptId(obj){
     
    if (rootProjectName==null){
       document.getElementById(elementName+"/project").focus();
-      xModalMessage('Validation Error', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+      xmodal.message('Validation Error', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
       return false;
    }
         
@@ -129,7 +129,7 @@ function verifyExptId(obj){
             // handle response 
             var xmlText = req.responseText;
             if (xmlText.startsWith("<html>")){
-                xModalMessage('Error', "An exception has occurred.<br/><br/>Server:" + server + "<br/><br/>url:"+ verifyExptURL);
+                xmodal.message('Error', "An exception has occurred.<br/><br/>Server:" + server + "<br/><br/>url:"+ verifyExptURL);
             	return;
             }
             exptChecked=true;
@@ -152,7 +152,7 @@ function verifyExptId(obj){
 			            }
             processResult();
        }else{
-           xModalMessage('Error', "An exception has occurred.<br/><br/>Server:" + server + "<br/><br/>url:"+ verifyExptURL);
+           xmodal.message('Error', "An exception has occurred.<br/><br/>Server:" + server + "<br/><br/>url:"+ verifyExptURL);
        }
     }   
 }
@@ -162,14 +162,14 @@ function processResult(){
    {
       var matchAlert = "The specified data label is in use by multiple stored experiments. Please use a unique label for this item.";
       matchAlert+="";
-      xModalMessage('Error', matchAlert);
+      xmodal.message('Error', matchAlert);
       document.getElementById(elementName+"/label").focus();
          document.getElementById(elementName+"/label").verified=false;
    }else if(matchedExpts.length>0){
       var matchedExpt=matchedExpts[0];
       if (matchedExpt.xsiType!=elementName)
       {
-        xModalMessage('Error', 'ERROR:  This ID is already in use for a different experiment.  Please use a different ID.');
+        xmodal.message('Error', 'ERROR:  This ID is already in use for a different experiment.  Please use a different ID.');
         document.getElementById(elementName+"/label").focus();
          document.getElementById(elementName+"/label").verified=false;
       }else{
@@ -180,7 +180,7 @@ function processResult(){
          primaryProject=matchedExpt.getProperty("ID");
        }
 
-       xModalConfirm({
+       xmodal.confirm({
           content: 'WARNING: ' + primaryProject + ' already exists. Using this ID may result in modifications to that entry.<br/><br/>Do you want to proceed?',
           okAction: function(){
               document.getElementById(elementName+"/ID").value=matchedExpt.getProperty("ID");

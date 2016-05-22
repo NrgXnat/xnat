@@ -30,7 +30,7 @@ function restLister(_info) {
     this.handleFailure = function (error) {
         // If we're leaving, then this is a complete red herring.
         if (!window.leaving) {
-            xModalMessage('Error', "Error loading resources: [" + error.status + "] " + error.statusText);
+            xmodal.message('Error', "Error loading resources: [" + error.status + "] " + error.statusText);
             this.loading = 0;
         }
     }
@@ -85,7 +85,7 @@ function restLister(_info) {
                 scan.files.push(allFiles[q]);
             }
         } else {
-            xModalMessage('Error', 'Null ' + cid);
+            xmodal.message('Error', 'Null ' + cid);
         }
     }
 }

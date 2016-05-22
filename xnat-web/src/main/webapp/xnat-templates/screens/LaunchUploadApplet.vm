@@ -211,7 +211,7 @@
         window.create_subject_link ="$link.setPage('XDATScreen_edit_xnat_subjectData.vm').addPathInfo('popup','true')";
         var project = document.getElementById("project").value;
         if (project == ""){
-            xModalMessage('Upload Validation', 'Please select a $displayManager.getSingularDisplayNameForProject() first.');
+            xmodal.message('Upload Validation', 'Please select a $displayManager.getSingularDisplayNameForProject() first.');
             return;
         }
         window.create_subject_link+="/project/" + project + "/destination/JS_Parent_Return.vm";

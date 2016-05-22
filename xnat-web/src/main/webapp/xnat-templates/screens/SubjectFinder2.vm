@@ -745,84 +745,84 @@ function submitSubjectStore()
   {
     if(byear=="bad")
     {
-      xModalMessage(title, 'Please select a birth year.');
+      xmodal.message(title, 'Please select a birth year.');
       return;
     }
   }else{
     if(bday=="bad")
     {
-      xModalMessage(title, 'Please select a birth day.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
+      xmodal.message(title, 'Please select a birth day.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
       return;
     }
     if(bmonth=="bad")
     {
-      xModalMessage(title, 'Please select a birth month.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
+      xmodal.message(title, 'Please select a birth month.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
       return;
     }
     if(byear=="bad")
     {
-      xModalMessage(title, 'Please select a birth year.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
+      xmodal.message(title, 'Please select a birth year.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
       return;
     }
   }
   
   if(gender=="bad")
     {
-      xModalMessage(title, 'Please select a gender.');
+      xmodal.message(title, 'Please select a gender.');
       return;
     }
   
   if(handed=="bad")
     {
-      xModalMessage(title, 'Please select a handedness.');
+      xmodal.message(title, 'Please select a handedness.');
       return;
     }
   
     if(education!="" && !IsNumeric(education))
     {
-      xModalMessage(title, 'Please enter a valid integer for education.');
+      xmodal.message(title, 'Please enter a valid integer for education.');
       return;
     }
     
     if(ses!="" && !IsNumeric(ses))
     {
-      xModalMessage(title, 'Please enter a valid integer for ses.');
+      xmodal.message(title, 'Please enter a valid integer for ses.');
       return;
     }
     
     if(height!="" && !IsNumeric(height))
     {
-      xModalMessage(title, 'Please enter a valid integer for height.');
+      xmodal.message(title, 'Please enter a valid integer for height.');
       return;
     }
     
     if(weight!="" && !IsNumeric(weight))
     {
-      xModalMessage(title, 'Please enter a valid integer for weight.');
+      xmodal.message(title, 'Please enter a valid integer for weight.');
       return;
     }
     
     if(gestational_age!="" && !IsNumeric(gestational_age))
     {
-      xModalMessage(title, 'Please enter a valid number for gestational age.');
+      xmodal.message(title, 'Please enter a valid number for gestational age.');
       return;
     }
     
     if(post_menstrual_age!="" && !IsNumeric(post_menstrual_age))
     {
-      xModalMessage(title, 'Please enter a valid number for post menstrual age.');
+      xmodal.message(title, 'Please enter a valid number for post menstrual age.');
       return;
     }
 
     if(birth_weight!="" && !IsNumeric(birth_weight))
 	{
-      xModalMessage(title, 'Please enter a valid number for birth weight.');
+      xmodal.message(title, 'Please enter a valid number for birth weight.');
       return;
 	}
     
     if(identifier=="")
 	{
-      xModalMessage(title, 'Please enter a valid identifier.');
+      xmodal.message(title, 'Please enter a valid identifier.');
       return;
     }
 	   
@@ -834,7 +834,7 @@ function submitSubjectStore()
 	   
     if(project=="" || project==null)
     {
-      xModalMessage(title, 'Please select a valid $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+      xmodal.message(title, 'Please select a valid $displayManager.getSingularDisplayNameForProject().toLowerCase().');
       return;
     }
 	  #end

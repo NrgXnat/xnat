@@ -98,16 +98,16 @@ $om.getAssessmentCount($pp.getProperty("project"))
       var oRecord = this.getRecord(oArgs.target);
 
       if(oRecord.getData("id")==window.primary_project){
-          xModalMessage("Error", "Unable to remove $displayManager.getSingularDisplayNameForProject().toLowerCase() owner.  Contact a system administrator.");
+          xmodal.message("Error", "Unable to remove $displayManager.getSingularDisplayNameForProject().toLowerCase() owner.  Contact a system administrator.");
          return;
       }
 
       if(oRecord.getData("expts")>0){
-          xModalMessage("Error", "This $displayManager.getSingularDisplayNameForProject().toLowerCase() has created experiments which would be deleted by this action.  Please either modify the ownership of this experiment to match that $displayManager.getSingularDisplayNameForProject().toLowerCase(), or separately delete the created experiments.");
+          xmodal.message("Error", "This $displayManager.getSingularDisplayNameForProject().toLowerCase() has created experiments which would be deleted by this action.  Please either modify the ownership of this experiment to match that $displayManager.getSingularDisplayNameForProject().toLowerCase(), or separately delete the created experiments.");
          return;
       }
 
-      xModalConfirm({
+      xmodal.confirm({
       title: 'Remove Share?',
       content: 'Are you sure you want to remove this experiment from the '+oRecord.getData("name")+' $displayManager.getSingularDisplayNameForProject().toLowerCase()?<br/><br/>Any assessors for this experiment will also be removed from the $displayManager.getSingularDisplayNameForProject().toLowerCase().',
       okLabel: 'Yes',
@@ -127,7 +127,7 @@ $om.getAssessmentCount($pp.getProperty("project"))
           },
           failure:function(o){
              closeModalPanel("share");
-              xModalMessage("Error", "Unable to remove experiment from "+o.argument.oRecord.getData("name") + "<br/><br/>" + o.statusText);
+              xmodal.message("Error", "Unable to remove experiment from "+o.argument.oRecord.getData("name") + "<br/><br/>" + o.statusText);
           },
           cache:false, // Turn off caching for IE
           scope:this,
@@ -175,6 +175,6 @@ $om.getAssessmentCount($pp.getProperty("project"))
 
          },this,this); /* End window.Sharer.oncomplete.subscribe */
 
-      } else { xModalMessage("No $displayManager.getSingularDisplayNameForProject().toLowerCase() specified", "Please specify a $displayManager.getSingularDisplayNameForProject().toLowerCase()."); }
+      } else { xmodal.message("No $displayManager.getSingularDisplayNameForProject().toLowerCase() specified", "Please specify a $displayManager.getSingularDisplayNameForProject().toLowerCase()."); }
    }
 </script>

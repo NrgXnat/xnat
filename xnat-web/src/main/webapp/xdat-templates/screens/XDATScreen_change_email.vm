@@ -11,11 +11,11 @@ $page.setVlinkColor($ui.vlink)
 			if(YUIDOM.get('new_email')!="" && YUIDOM.get('new_email').value.indexOf('@')>-1 && YUIDOM.get('new_email').value.indexOf(' ')==-1 && YUIDOM.get('new_email').value.length < 255){
 				return true;
 			}else{
-                xModalMessage('Email Validation', 'Please enter a valid email address.');
+                xmodal.message('Email Validation', 'Please enter a valid email address.');
 				return false;
 			}
 		}else{
-            xModalMessage('Email Validation', 'Values do not match.');
+            xmodal.message('Email Validation', 'Values do not match.');
 			YUIDOM.get('new_email').value='';
 			YUIDOM.get('confirm_email').value='';
 			return false;

@@ -58,16 +58,16 @@ function validateUsername(obj,button_id){
 	   var valid = false;
 	   if (obj.value!=""){
 	   	   if(isNumeric(obj.value.charAt(0))){
-              xModalMessage('User Validation', 'Username cannot begin with a number.  Please modify.');
+              xmodal.message('User Validation', 'Username cannot begin with a number.  Please modify.');
 	   	      obj.focus();
 	   	   }else{
 	   	   	   if(obj.value.length>40){
-                   xModalMessage('User Validation', 'Username cannot exceed 40 characters');
+                   xmodal.message('User Validation', 'Username cannot exceed 40 characters');
 	   	   		   obj.focus();
 	   	   	   }else if(isAlphaNumeric(obj.value)){
 	   	   	      valid= true;
 	   	   	   }else{
-                   xModalMessage('User Validation', 'Username cannot contain special characters.  Please modify.');
+                   xmodal.message('User Validation', 'Username cannot contain special characters.  Please modify.');
 	     	       obj.focus();
 	   	   	   }
 	   	   }

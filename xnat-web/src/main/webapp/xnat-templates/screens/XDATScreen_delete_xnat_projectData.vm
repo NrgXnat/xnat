@@ -45,11 +45,11 @@
     function deleteEntries() {
         var _a = window.pdTree.getCheckedNodes();
         if (_a.length == 0) {
-            xModalMessage('Delete Action', 'Please select at least one item to delete.');
+            xmodal.message('Delete Action', 'Please select at least one item to delete.');
         } else {
             var removeFiles = document.getElementById("removeFiles");
             if (removeFiles.checked) {
-                xModalConfirm({
+                xmodal.confirm({
                     content: "Submission will cause the permanent deletion of all meta-data and physical files for the selected items.",
                     okAction: function() {
                         doDelete(_a);
@@ -57,7 +57,7 @@
                     cancelAction: confirmCancel
                 });
             } else {
-                xModalConfirm({
+                xmodal.confirm({
                     content: "If you don't delete the project's associated files from the file system, the files may later be accessible if someone creates a project with the same ID as the project you're deleting. Please confirm that you want to leave the files on the physical file system after deleting the project meta-data.",
                     okAction: function() {
                         doDelete(_a);
@@ -69,7 +69,7 @@
     }
 
     function confirmCancel() {
-        xModalMessage('Operation cancelled', 'The selected items will not be deleted.');
+        xmodal.message('Operation cancelled', 'The selected items will not be deleted.');
     }
 
     function doDelete(raw) {

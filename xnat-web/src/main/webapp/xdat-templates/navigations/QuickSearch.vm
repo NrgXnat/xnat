@@ -17,7 +17,7 @@ return false;
 
 function frmsearchForm_Validate() {
 	if (!document.searchForm.searchOn.value) {
-        xModalMessage('Search Validation', 'Enter $displayManager.getSingularDisplayNameForSubject() or $displayManager.getSingularDisplayNameForImageSession() Id to search.');
+        xmodal.message('Search Validation', 'Enter $displayManager.getSingularDisplayNameForSubject() or $displayManager.getSingularDisplayNameForImageSession() Id to search.');
 		return false;
 	}
 	return true;

@@ -92,7 +92,7 @@ function fixSpaces(val)
         newVal = newVal.replace(/[(]/,"_");
         newVal = newVal.replace(/[)]/,"_");
         if (newVal!=val){
-          xModalMessage('Project Selector', 'Spaces and special characters are not allowed in identifier fields.');
+          xmodal.message('Project Selector', 'Spaces and special characters are not allowed in identifier fields.');
         }
         return newVal;
 }

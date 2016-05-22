@@ -164,7 +164,7 @@ function SearchFieldManager(div_id){
 		         	 var but = oArgs.target;   
 		             var oRecord = this.getRecord(but); 
 		             if(oRecord.getData("REQUIRES_VALUE")=="true"){
-                         xModalMessage('Search Validation', "This property requires a value to determine the proper result.<br/><br/>Support for this has not been added yet.<br/>Please check back at a later date.");
+                         xmodal.message('Search Validation', "This property requires a value to determine the proper result.<br/><br/>Support for this has not been added yet.<br/>Please check back at a later date.");
 		             }else{
 			             var xsf=new xdat_search_field();
 			             xsf.ElementName=element_name;

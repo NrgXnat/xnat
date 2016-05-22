@@ -328,7 +328,7 @@ function addMember(email){
      email = document.getElementById("member_email").value;
    if (!containsEmail(email))
    {
-      xModalMessage('Project Validation', "'" + email + "' does not match an existing user");
+      xmodal.message('Project Validation', "'" + email + "' does not match an existing user");
       return false;
    }else{
       if (!containsMember(email)){
@@ -348,7 +348,7 @@ function addCollaborator(email){
       email = document.getElementById("collaborator_email").value;
    if (!containsEmail(email))
    {
-      xModalMessage('Project Validation', "'" + email + "' does not match an existing user");
+      xmodal.message('Project Validation', "'" + email + "' does not match an existing user");
       return false;
    }else{
       if (!containsCollaborator(email)){
@@ -368,7 +368,7 @@ function addOwner(email){
       email = document.getElementById("owner_email").value;
    if (!containsEmail(email))
    {
-      xModalMessage('Project Validation', "'" + email + "' does not match an existing user");
+      xmodal.message('Project Validation', "'" + email + "' does not match an existing user");
       return false;
    }else{
       if (!containsOwner(email)){
@@ -522,7 +522,7 @@ function selectUser(){
       }
     }
   }else{
-    xModalMessage('Project Validation', 'Select the level of access.');
+    xmodal.message('Project Validation', 'Select the level of access.');
     level_select.focus();
   }
 }

@@ -12,7 +12,7 @@ XNAT.app.scanDeleter={
 	requestDelete:function(scan_id){
 		this.lastScan=scan_id;
 		
-		xModalConfirm({
+		xmodal.confirm({
           content: "Are you sure you want to delete scan "+scan_id+ "?",
           okAction: function(){
               XNAT.app.scanDeleter.doDelete();

@@ -269,7 +269,7 @@ abu.FileUploader = function(o){
 
 	this.showReturnedText = function(ele) {
 		var eleData = $('#' + ele).data('rtn');
-		xModalMessage("Server Response",((typeof eleData.status !=='undefined') ? "<h3>RETURN CODE: " + eleData.status + " (" + eleData.statusText + ")</h3><br>" +
+		xmodal.message("Server Response",((typeof eleData.status !=='undefined') ? "<h3>RETURN CODE: " + eleData.status + " (" + eleData.statusText + ")</h3><br>" +
 				 eleData.responseText : eleData), undefined, {height:"400px",width:"800px"});
 	}
 
@@ -302,7 +302,7 @@ abu.FileUploader = function(o){
 			'<li>When finished uploading, press <b>Process Files</b> to process the uploaded files</li>' + 
 			'</ul>' + 
 			'</div>';
-		xModalMessage("Uploader Instructions",templateV, undefined, {height:"400px",width:"800px"});
+		xmodal.message("Uploader Instructions",templateV, undefined, {height:"400px",width:"800px"});
 	}.bind(this)
 
 }

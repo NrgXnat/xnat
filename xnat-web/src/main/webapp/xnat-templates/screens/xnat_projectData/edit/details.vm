@@ -332,12 +332,12 @@
             window.investigatorForm.close();
             window.investigatorForm = null;
         }
-        xModalMessage('Saved Investigator', 'The investigator you entered was stored.');
+        xmodal.message('Saved Investigator', 'The investigator you entered was stored.');
         document.getElementById("investigatorBox").innerHTML = "Loading...";
         window.invest_manager.init();
     }
     window.failure = function (msg) {
-        xModalMessage('Save Failed', msg);
+        xmodal.message('Save Failed', msg);
         if (window.investigatorForm != undefined) {
             window.investigatorForm.close();
             window.investigatorForm = null;
@@ -361,7 +361,7 @@
         var temp = val;
         var regex = /^[0-9A-Za-z_-]+$/g;
         if (!(regex.test(temp))) {
-            xModalMessage('Validation Error', 'No special characters allowed in $displayManager.getSingularDisplayNameForProject().toLowerCase() abbreviation.');
+            xmodal.message('Validation Error', 'No special characters allowed in $displayManager.getSingularDisplayNameForProject().toLowerCase() abbreviation.');
             return "";
         }
         var newVal = '';

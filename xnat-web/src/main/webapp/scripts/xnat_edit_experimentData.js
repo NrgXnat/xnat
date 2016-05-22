@@ -44,7 +44,7 @@ function verifyExptId(expt_id,server){
             // handle response 
             var xmlText = req.responseText;
             if (xmlText.startsWith("<html>")){
-                xModalMessage('Error', "An exception has occurred.<br/><br/>server:" + server + "<br/>url:"+ verifyExptURL);
+                xmodal.message('Error', "An exception has occurred.<br/><br/>server:" + server + "<br/>url:"+ verifyExptURL);
             	return;
             }
             exptChecked=true;
@@ -67,7 +67,7 @@ function verifyExptId(expt_id,server){
 			}
             submitParentForm();
        }else{
-            xModalMessage('Error', "An exception has occurred.<br/><br/>server:" + server + "<br/>url:"+ verifyExptURL);
+            xmodal.message('Error', "An exception has occurred.<br/><br/>server:" + server + "<br/>url:"+ verifyExptURL);
        }
     }   
 }
@@ -99,19 +99,19 @@ function validateExperimentForm()
 {   
    if(submitHistory==true)
    {
-      xModalMessage('Experiment Validation', "Submit already in progress.  Please wait for process to complete.");
+      xmodal.message('Experiment Validation', "Submit already in progress.  Please wait for process to complete.");
       return false;
    }
    
    if (elementName==null || elementName=="")
    {
-     xModalMessage('Error', "ERROR: Unknown 'elementName'");
+     xmodal.message('Error', "ERROR: Unknown 'elementName'");
      return false;
    }
    
    if (serverRoot==null)
    {
-     xModalMessage('Error', "ERROR: Unknown 'serverRoot'");
+     xmodal.message('Error', "ERROR: Unknown 'serverRoot'");
      return false;
    }
       
@@ -125,7 +125,7 @@ function validateExperimentForm()
     
     if (rootProjectName==null){
       document.getElementById(elementName+"/project").focus();
-      xModalMessage('Experiment Validation', "Please select a " + XNAT.app.displayNames.singular.project.toLowerCase() + ".");
+      xmodal.message('Experiment Validation', "Please select a " + XNAT.app.displayNames.singular.project.toLowerCase() + ".");
       return false;
     }
         
@@ -166,7 +166,7 @@ function validateExperimentForm()
 	
 	// Fixes XNAT-2830: Must specify either an ID or a Label
 	if(critset.Criteria.length==0 && critset.ChildSet.length == 0){
-		xModalMessage("Error", "The Experiment ID cannot be blank.");
+		xmodal.message("Error", "The Experiment ID cannot be blank.");
 		return false;
 	 }
 	
@@ -204,14 +204,14 @@ function submitParentForm(){
    {
       var matchAlert = "The specified data label is in use by multiple stored experiments.  Please use a unique label for this item.";
       matchAlert+="";
-      xModalMessage('Experiment Validation', matchAlert);
+      xmodal.message('Experiment Validation', matchAlert);
       submitHistory=false;
       return false;
    }else if(matchedExpts.length>0){
       var matchedExpt=matchedExpts[0];
       if (matchedExpt.xsiType!=elementName)
       {
-        xModalMessage('Experiment Validation', 'ERROR:  This ID is already in use for a different experiment.  Please use a different ID.');
+        xmodal.message('Experiment Validation', 'ERROR:  This ID is already in use for a different experiment.  Please use a different ID.');
         submitHistory=false;
         return false;
       }else{

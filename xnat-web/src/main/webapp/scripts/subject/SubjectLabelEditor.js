@@ -71,16 +71,16 @@ XNAT.app.SubjectLabelEditor = function(project) {"use strict";
 				var label = this.form.new_label;
 				that.modifiedLabel = label.value.trim();
 				if (that.modifiedLabel === "") {
-                    xModalMessage('Subject Label Validation', 'Please specify a new ID.');
+                    xmodal.message('Subject Label Validation', 'Please specify a new ID.');
 					label.focus();
 				} else if (that.modifiedLabel === that.startingLabel) {
-                    xModalMessage('Subject Label Validation', 'No modification found.');
+                    xmodal.message('Subject Label Validation', 'No modification found.');
 					label.focus();
 				} else {
 					var validatedLabel = that.cleanLabel(that.modifiedLabel);
 					if (validatedLabel !== that.modifiedLabel) {
 						label.value = validatedLabel;
-                        xModalMessage('Subject Label Validation', 'Invalid characters in new ID.  Review modified value and resubmit.');
+                        xmodal.message('Subject Label Validation', 'Invalid characters in new ID.  Review modified value and resubmit.');
 						label.focus();
 						return;
 					}
@@ -88,7 +88,7 @@ XNAT.app.SubjectLabelEditor = function(project) {"use strict";
 					var lC;
 					for (lC = 0; lC < that.existingSubjectList.length; lC = lC + 1) {
 						if (that.modifiedLabel === that.existingSubjectList[lC].label) {
-                            xModalMessage('Subject Label Validation', 'This ID is already in use by a ' + that.header + ' in this ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.<br/><br/>Please modify and resubmit.');
+                            xmodal.message('Subject Label Validation', 'This ID is already in use by a ' + that.header + ' in this ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.<br/><br/>Please modify and resubmit.');
 							label.focus();
 							return;
 						}
@@ -148,7 +148,7 @@ XNAT.app.SubjectLabelEditor = function(project) {"use strict";
 	this.loadSubjects = function() {
 
 		function displayError(errorMsg) {
-			xModalMessage('Error', errorMsg);
+			xmodal.message('Error', errorMsg);
 		}
 
 		function initFailure(o) {
@@ -231,7 +231,7 @@ XNAT.app.SubjectLabelEditor = function(project) {"use strict";
 			},
 			failure : function(o) {
 				if (!window.leaving) {
-                    xModalMessage('ERROR (' + o.status + '): Failed to modify ' + that.header + ' ID', o.responseText);
+                    xmodal.message('ERROR (' + o.status + '): Failed to modify ' + that.header + ' ID', o.responseText);
 					closeModalPanel("modify_new_label");
 				}
 			},

@@ -112,7 +112,7 @@ function ProtocolManager(_id,_titleID,_bodyID,_opts){
     this.handleFailedGet=function(o){
         if (!window.leaving) {
             closeModalPanel("load_prot");
-            xModalMessage('Protocol Validation', "Failed to load protocol.");
+            xmodal.message('Protocol Validation', "Failed to load protocol.");
         }
     }
 
@@ -166,7 +166,7 @@ function ProtocolManager(_id,_titleID,_bodyID,_opts){
 
     this.handleFailedSave=function(o){
         closeModalPanel("prot_save");
-        xModalMessage('Protocol Validation', "Failed to save modifications.");
+        xmodal.message('Protocol Validation', "Failed to save modifications.");
     }
 
     this.save=function(){
@@ -247,7 +247,7 @@ function ProtocolManager(_id,_titleID,_bodyID,_opts){
             this.clearProtocolBox();
             this.drawProtocolBox();
         }else if (this.protocol.xsiType=='xnat:abstractProtocol'){
-            xModalMessage('Protocol Validation', "WARNING: This " + XNAT.app.displayNames.singular.project.toLowerCase() + " is using a deprecated protocol.")
+            xmodal.message('Protocol Validation', "WARNING: This " + XNAT.app.displayNames.singular.project.toLowerCase() + " is using a deprecated protocol.")
         }else{
 
         }
@@ -685,7 +685,7 @@ window.addGroup=function(o){
             var errorAttributes = error.attributes;
             if (errorAttributes)
             {
-                xModalMessage('Protocol Validation', "ERROR: " + errorAttributes.getNamedItem("msg").value);
+                xmodal.message('Protocol Validation', "ERROR: " + errorAttributes.getNamedItem("msg").value);
             }
         }
     }else{
@@ -704,7 +704,7 @@ window.addGroup=function(o){
             var temp = window.protocolsManagers[addGroupCount];
             if (temp.opts.dataType==newGroup.getDataType()){
                 if(temp.protocol==null){
-                    xModalMessage('Protocol Validation', temp.opts.dataType + " Protocol is null.");
+                    xmodal.message('Protocol Validation', temp.opts.dataType + " Protocol is null.");
                 }
                 var found = false;
                 for(var defAddCount=0;defAddCount<temp.protocol.Definitions_definition.length;defAddCount++){

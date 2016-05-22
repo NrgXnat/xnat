@@ -1167,6 +1167,6 @@ function emailSearch(_div){
     selectedSearch.email(toAddresses,subject,from,message,_div);
     //document.getElementById('emailTab').style.display='none';
   }else{
-    xModalMessage('Email Validation', "Please select a listing.");
+    xmodal.message('Email Validation', "Please select a listing.");
   }
 }

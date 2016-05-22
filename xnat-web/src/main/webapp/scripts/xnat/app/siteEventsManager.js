@@ -123,7 +123,7 @@ $(function(){
                     }
                 }
 			};
-			xModalOpenNew(manageModalOpts);
+			xmodal.open(manageModalOpts);
 			$('#manageModalDiv').html(
                '<p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>' +
                 '<p id="no_event_handlers" style="display:none;padding:20px;">There are no event handlers currently configured for this project.</p>' +

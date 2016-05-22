@@ -636,13 +636,13 @@ function FileViewer(_obj){
             cache: false
         };
         YAHOO.util.Connect.asyncRequest('POST', this.obj.refresh + '&timestamp=' + (new Date()).getTime(), catalogRefreshCallback, null);
-        //xModalCloseNew();
+        //xmodal.close();
         xmodal.loading.open('Please wait...');
     };
 
     this.catalogRefreshCancel = function () {
         window.viewer.loading = 0;
-        //xModalCloseNew();
+        //xmodal.close();
     };
 }
 

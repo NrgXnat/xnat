@@ -553,7 +553,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 	scriptDiv+=whatToDoSelect;
 	scriptDiv+='</div>';
 	try {
-		xModalOpenNew(XNAT.app.abu.abuConfigs.modalOpts);
+		xmodal.open(XNAT.app.abu.abuConfigs.modalOpts);
 		abu.initializeUploader({
 			element:document.getElementById('modalUploadDiv'),
 			action:'TBD',
@@ -567,7 +567,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 							XNAT.app.abu.sendWorkflowWhenDone();
 						}
 					}
-					xModalCloseNew(XNAT.app.abu.abuConfigs.modalOpts.id);
+					xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
 					//if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
 					//	window.location.reload(true);
 					//}
@@ -645,7 +645,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 		}
 	} catch(e) {
 		console.log(e.stack);
-		xModalMessage('Error','ERROR:  Could not parse event handlers');
+		xmodal.message('Error','ERROR:  Could not parse event handlers');
 	}
 
 }
@@ -890,10 +890,10 @@ XNAT.app.abu.processFiles=function() {
 				okClose: false,
 				cancel: 'Cancel',
 				cancelLabel: 'Cancel',
-				cancelAction: function(){ xModalCloseNew(XNAT.app.abu.abuConfigs.modalOpts.id); },
+				cancelAction: function(){ xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id); },
 				closeBtn: 'hide'
 			};
-			xModalOpenNew(pModalOpts);
+			xmodal.open(pModalOpts);
 			paramText='';
 			for (var i=0;i<this.paramsToPass.length;i++) {
 				paramText+='<tr><td style="padding-bottom:5px"><span id="passParamText' + i + '" class="passParamText" style="font-weight:bold">' + this.paramsToPass[i].name + 
@@ -1006,8 +1006,8 @@ XNAT.app.abu.continueProcessing=function() {
 		$("#abu-done-button").removeClass("abu-button-disabled");
 		setTimeout(function(){
 			if (document.getElementById("closeBox")!=null && document.getElementById("closeBox").checked) {
-				xModalMessage('Notice',"You will be sent an e-mail upon completion");
-				xModalCloseNew(XNAT.app.abu.abuConfigs.modalOpts.id);
+				xmodal.message('Notice',"You will be sent an e-mail upon completion");
+				xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
 			}
 		},500);
 
@@ -1094,7 +1094,7 @@ XNAT.app.abu.saveUploaderConfiguration=function(configTriggerId, configEvent, sc
 		XNAT.app.abu.uploaderConfig.push(newConfigObj);
 	}
 	if (isFound && !isUpdated) { 
-		xModalMessage('Nothing done',"The configuration has not changed.  Nothing done.");
+		xmodal.message('Nothing done',"The configuration has not changed.  Nothing done.");
 	} else {
 		XNAT.app.abu.putUploaderConfiguration(scope,true);
 	}
@@ -1119,12 +1119,12 @@ XNAT.app.abu.putUploaderConfiguration=function(scope, notify) {
 	 });
 	uploaderConfigAjax.done( function( data, textStatus, jqXHR ) {
 		if (notify) {
-			xModalMessage('Saved','The uploader configuration has been saved');
+			xmodal.message('Saved','The uploader configuration has been saved');
 		}
 	});
 	uploaderConfigAjax.fail( function( data, textStatus, error ) {
 		if (notify) {
-			xModalMessage('Error','ERROR:  Configuration was not successfully saved (' + textStatus + ')');
+			xmodal.message('Error','ERROR:  Configuration was not successfully saved (' + textStatus + ')');
 		}
 	});
 }
@@ -1152,7 +1152,7 @@ XNAT.app.abu.validateUploaderConfiguration=function() {
 		}
 	}
 	if (errorList.length>0) {
-		xModalMessage('Error',"<h3>ERROR:  Invalid configuration</h3>" + errorList);
+		xmodal.message('Error',"<h3>ERROR:  Invalid configuration</h3>" + errorList);
 		return false;
 	}
 	return true;
@@ -1162,7 +1162,7 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 
 	var uploaderConfig = XNAT.app.abu.uploaderConfig;
 	if (typeof(uploaderConfig) === 'undefined' || uploaderConfig == null) {
-		xModalMessage("Couldn't retrieve uploader configuration");
+		xmodal.message("Couldn't retrieve uploader configuration");
 		return;
 	}
 	var configObj;
@@ -1207,7 +1207,7 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 			}
 		}
 	};
-	xModalOpenNew(manageModalOpts);
+	xmodal.open(manageModalOpts);
 	var configHtml = '<h3>Event Handler:  ' + configEvent + '</h3>';
 	configHtml+='<p>';
 	/** NOTE:  These radio buttons were originally coded as checkboxes, assuming the same scripts might be triggered from different upload/launch contexts. **

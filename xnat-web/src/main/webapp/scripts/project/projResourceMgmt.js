@@ -110,9 +110,9 @@ XNAT.app.pResources={
 			if($(this).attr('required')=='required' && tmpValue==""){
 				if($(this).attr('data-required-msg'))
 				{
-					xModalMessage("Required field",$(this).attr('data-required-msg'));
+					xmodal.message("Required field",$(this).attr('data-required-msg'));
 				}else{
-					xModalMessage("Required field", "<b>" + $(this).attr('data-prop-name') + "</b> is required.");
+					xmodal.message("Required field", "<b>" + $(this).attr('data-prop-name') + "</b> is required.");
 				}
 				valid=false;
 			}
@@ -122,21 +122,21 @@ XNAT.app.pResources={
 				if(! (new RegExp($(this).attr('data-regex'))).test(tmpValue)){
 					if($(this).attr('data-regex-msg'))
 					{
-						xModalMessage("Invalid value",$(this).attr('data-regex-msg'));
+						xmodal.message("Invalid value",$(this).attr('data-regex-msg'));
 					}else{
-						xModalMessage("Invalid value", "<b>" + $(this).attr('data-prop-name') + "</b> has an invalid character.");
+						xmodal.message("Invalid value", "<b>" + $(this).attr('data-prop-name') + "</b> has an invalid character.");
 					}
 					valid=false;
 				}
 			}
 			
 			if(tmpValue!="" && (tmpValue.indexOf("'")>-1 || tmpValue.indexOf("\"")>-1)){
-				xModalMessage("Invalid value", "<b>" + $(this).attr('data-prop-name') + "</b> has an invalid character (quote).");
+				xmodal.message("Invalid value", "<b>" + $(this).attr('data-prop-name') + "</b> has an invalid character (quote).");
 				valid=false;
 			}
 			
 			if(tmpValue!="" && (tmpValue.length>255)){
-				xModalMessage("Invalid value", "<b>" + $(this).attr('data-prop-name') + "</b> exceeds size limits.");
+				xmodal.message("Invalid value", "<b>" + $(this).attr('data-prop-name') + "</b> exceeds size limits.");
 				valid=false;
 			}
 			
@@ -238,7 +238,7 @@ XNAT.app.pResources={
 									// Do nothing for now.
 								});
 								putUploadConfigAjax.fail( function( data, textStatus, jqXHR ) {
-        	 							xModalMessage("ERROR","The event handler to launch the automation script for this resource configuration " + 
+        	 							xmodal.message("ERROR","The event handler to launch the automation script for this resource configuration " + 
 											"could not be added.  It must be added manually.");
 								});
 							}
@@ -265,7 +265,7 @@ XNAT.app.pResources={
         	},
         	 failure: function(){
         	 	closeModalPanel('saveResource');
-        	 	xModalMessage("Exception","Failed to store configuration.");
+        	 	xmodal.message("Exception","Failed to store configuration.");
         	 },
              cache:false, // Turn off caching for IE
         	 scope: this

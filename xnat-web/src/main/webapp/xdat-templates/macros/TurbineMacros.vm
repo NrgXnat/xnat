@@ -1859,7 +1859,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
 
         this.notifs=concatEmailLists();
         if(this.notifs.indexOf("'")>-1 || this.notifs.indexOf("\"")>-1){
-            xModalMessage('Email Entry Error', 'Notification email addresses cannot contain quotes.');
+            xmodal.message('Email Entry Error', 'Notification email addresses cannot contain quotes.');
             return false;
         }
         openModalPanel('notifs','Saving Emails');
@@ -1869,7 +1869,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
                         success : function()
                         {
                             closeModalPanel('notifs');
-                            xModalMessage('Email Notification', 'Emails updated for the pipeline.');
+                            xmodal.message('Email Notification', 'Emails updated for the pipeline.');
                         },
                         failure: function(o){
                             closeModalPanel('notifs');
@@ -1885,7 +1885,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
                                     reasons = "";
                                 }
                             }
-                            xModalMessage('Email Error', message + reasons, "OK", options);
+                            xmodal.message('Email Error', message + reasons, "OK", options);
                         },
                         cache:false, // Turn off caching for IE
                         scope: this
@@ -1897,11 +1897,11 @@ then adds any subsequent strings to a block of text to use as a pop-over.
                         success : function()
                         {
                             closeModalPanel('notifs');
-                            xModalMessage('Email Notification', 'Email list removed for the pipeline.');
+                            xmodal.message('Email Notification', 'Email list removed for the pipeline.');
                         },
                         failure: function(){
                             closeModalPanel('notifs');
-                            xModalMessage('Email Error', 'Failed to remove email list for the pipeline.');
+                            xmodal.message('Email Error', 'Failed to remove email list for the pipeline.');
                         },
                         cache:false, // Turn off caching for IE
                         scope: this
@@ -1984,7 +1984,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
                                 reasons = "";
                             }
                         }
-                        xModalMessage('Config error', message + reasons, "OK", options);
+                        xmodal.message('Config error', message + reasons, "OK", options);
                     },
                     cache:false, // Turn off caching for IE
                     scope: this

@@ -28,7 +28,7 @@
         XNAT.app.notifUpdate = function(){
             this.notifs = YUIDOM.get("notif_list").value;
             if (this.notifs.indexOf("'") > -1 || this.notifs.indexOf("\"") > -1) {
-                xModalMessage('Email Notification', 'Notification emails cannot contain quotes.');
+                xmodal.message('Email Notification', 'Notification emails cannot contain quotes.');
                 return false;
             }
             openModalPanel('notifs', 'Saving Emails');
@@ -37,7 +37,7 @@
                         {
                             success: function(){
                                 closeModalPanel('notifs');
-                                xModalMessage('Email Notification', 'Emails updated.');
+                                xmodal.message('Email Notification', 'Emails updated.');
                             },
                             failure: function(o){
                                 closeModalPanel('notifs');
@@ -54,7 +54,7 @@
                                         reasons = "";
                                     }
                                 }
-                                xModalMessage('Email Error', message + reasons, "OK", options);
+                                xmodal.message('Email Error', message + reasons, "OK", options);
                             },
                             cache: false, // Turn off caching for IE
                             scope: this
@@ -66,11 +66,11 @@
                         {
                             success: function(){
                                 closeModalPanel('notifs');
-                                xModalMessage('Email Notification', 'Emails updated.');
+                                xmodal.message('Email Notification', 'Emails updated.');
                             },
                             failure: function(){
                                 closeModalPanel('notifs');
-                                xModalMessage('Email Error', 'Failed to store emails');
+                                xmodal.message('Email Error', 'Failed to store emails');
                             },
                             cache: false, // Turn off caching for IE
                             scope: this

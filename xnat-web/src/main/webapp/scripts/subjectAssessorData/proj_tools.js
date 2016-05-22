@@ -81,7 +81,7 @@ function ProjectLoader(_options) {
     };
 
     this.displayError = function (errorMsg) {
-        xModalMessage('Error', errorMsg);
+        xmodal.message('Error', errorMsg);
     }
 }
 
@@ -153,7 +153,7 @@ function SubjectLoader(_options) {
     };
 
     this.displayError = function (errorMsg) {
-        xModalMessage('Error', errorMsg);
+        xmodal.message('Error', errorMsg);
     };
 }
 
@@ -189,7 +189,7 @@ function ExptLoader() {
     };
 
     this.displayError = function (errorMsg) {
-        xModalMessage('Error', errorMsg);
+        xmodal.message('Error', errorMsg);
     };
 }
 
@@ -377,7 +377,7 @@ function ProjectEditor(_config) {
                                         }
                                         else {
                                             // some systemic error occurred
-                                            xModalMessage('Modify Project Error', 'ERROR (' + o.status + '): Failed to modify ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.');
+                                            xmodal.message('Modify Project Error', 'ERROR (' + o.status + '): Failed to modify ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.');
                                             closeModalPanel("modify_project");
                                         }
                                     }
@@ -421,7 +421,7 @@ function ProjectEditor(_config) {
                                 },
                                 failure:function (o) {
                                     if (!window.leaving) {
-                                        xModalMessage('Modify Project Error', 'ERROR (' + o.status + '): Failed to modify ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.');
+                                        xmodal.message('Modify Project Error', 'ERROR (' + o.status + '): Failed to modify ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.');
                                         closeModalPanel("modify_project");
                                     }
                                 },
@@ -470,10 +470,10 @@ function ProjectEditor(_config) {
                     this.selector.new_project_name = this.form.new_project.options[this.form.new_project.selectedIndex].text;
 
                     if (this.selector.new_project == window.currentProject) {
-                        xModalMessage('Modify Project', 'No ' + XNAT.app.displayNames.singular.project.toLowerCase() + ' modification found.');
+                        xmodal.message('Modify Project', 'No ' + XNAT.app.displayNames.singular.project.toLowerCase() + ' modification found.');
                         this.cancel();
                     } else if (this.form.new_project.selectedIndex == 0) {
-                        xModalMessage('Modify Project', 'Please select a ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.');
+                        xmodal.message('Modify Project', 'Please select a ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.');
                     } else {
                         if (this.selector.config.uri == undefined) {
                             window.currentProject = this.selector.new_project;
@@ -568,7 +568,7 @@ function SubjectEditor(_config) {
                         if (window.subjectForm.opener == null) window.subjectForm.opener = self;
                         return window.subjectForm;
                     } else {
-                        xModalMessage('Modify Subject', 'Please select a ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.');
+                        xmodal.message('Modify Subject', 'Please select a ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.');
                     }
                 }
                 td3.appendChild(this.chs);
@@ -588,10 +588,10 @@ function SubjectEditor(_config) {
                     this.selector.new_subject_name = this.form.new_subject.options[this.form.new_subject.selectedIndex].text;
 
                     if (this.selector.new_subject == window.currentSubject) {
-                        xModalMessage('Modify Subject', 'No ' + XNAT.app.displayNames.singular.subject.toLowerCase() + ' modification found.');
+                        xmodal.message('Modify Subject', 'No ' + XNAT.app.displayNames.singular.subject.toLowerCase() + ' modification found.');
                         this.cancel();
                     } else if (this.form.new_subject.selectedValue == 0) {
-                        xModalMessage('Modify Subject', 'Please select a ' + XNAT.app.displayNames.singular.subject.toLowerCase());
+                        xmodal.message('Modify Subject', 'Please select a ' + XNAT.app.displayNames.singular.subject.toLowerCase());
                     } else {
                         if (this.selector.config.uri == undefined) {
                             window.currentSubject = this.selector.new_subject;
@@ -657,7 +657,7 @@ XNAT.app._modifySubject=function(arg1,arg2,container){
         },
         failure:function (o) {
             if (!window.leaving) {
-                xModalMessage('Modify Subject Error', 'ERROR (' + o.status + '): Failed to modify ' + XNAT.app.displayNames.singular.subject.toLowerCase() + '.');
+                xmodal.message('Modify Subject Error', 'ERROR (' + o.status + '): Failed to modify ' + XNAT.app.displayNames.singular.subject.toLowerCase() + '.');
                 closeModalPanel("modify_subject");
             }
         },
@@ -728,14 +728,14 @@ function LabelEditor(_config) {
                 var label = this.form.new_label;
                 window.selectedLabel = label.value.trim();
                 if (window.selectedLabel == "") {
-                    xModalMessage('Label Validation', 'Please specify a new ' + this.selector.config.header + '.');
+                    xmodal.message('Label Validation', 'Please specify a new ' + this.selector.config.header + '.');
                 } else if (window.selectedLabel == window.currentLabel) {
-                    xModalMessage('Label Validation', 'No modification found.');
+                    xmodal.message('Label Validation', 'No modification found.');
                 } else {
                     var validatedLabel = cleanLabel(window.selectedLabel);
                     if (validatedLabel != window.selectedLabel) {
                         label.value = validatedLabel;
-                        xModalMessage('Label Validation', 'Invalid characters in new ' + this.selector.config.header + '.  Review modified value and resubmit.');
+                        xmodal.message('Label Validation', 'Invalid characters in new ' + this.selector.config.header + '.  Review modified value and resubmit.');
                         label.focus();
                         return;
                     }
@@ -749,7 +749,7 @@ function LabelEditor(_config) {
                     }
 
                     if (matchedExisting) {
-                        xModalMessage('Label Validation', 'This ' + this.selector.config.header + ' is already in use in this ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.<br/><br/>Please modify and resubmit.');
+                        xmodal.message('Label Validation', 'This ' + this.selector.config.header + ' is already in use in this ' + XNAT.app.displayNames.singular.project.toLowerCase() + '.<br/><br/>Please modify and resubmit.');
                         label.focus();
                         return;
                     }
@@ -817,7 +817,7 @@ XNAT.app._modifyLabel=function(arg1,arg2,container){
          },
          failure:function (o) {
              if (!window.leaving) {
-                 xModalMessage('ERROR (' + o.status + '): Failed to modify ' + XNAT.app.displayNames.singular.imageSession.toLowerCase() + ' ID', o.responseText);
+                 xmodal.message('ERROR (' + o.status + '): Failed to modify ' + XNAT.app.displayNames.singular.imageSession.toLowerCase() + ' ID', o.responseText);
                  closeModalPanel("modify_new_label");
              }
          }, scope:this

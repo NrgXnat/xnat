@@ -26,6 +26,7 @@ import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -197,7 +198,13 @@ public class XFT {
 
                 if (location==null)
                 {
-				    sb.append(s.getTargetNamespaceURI()).append(" ").append(s.getDataModel().getResource().getFile().getPath());
+                    sb.append(s.getTargetNamespaceURI()).append(" ");
+                    try {
+                        final String path = s.getDataModel().getResource().getFile().getPath();
+                        sb.append(path);
+                    } catch (FileNotFoundException e) {
+                        sb.append(s.getDataModel().getResource().getURI().toString());
+                    }
                 }else{
 				    sb.append(s.getTargetNamespaceURI()).append(" ").append(XDAT.getSiteConfigPreferences().getSiteUrl()).append("/schemas/").append(s.getDataModel().getFileName());
                 }

@@ -1067,7 +1067,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "notifications.helpContactInfo")
+    @NrgPreference(property = "notifications.helpContactInfo")
     public String getHelpContactInfo(){
         return getValue("notifications.helpContactInfo");
     }
@@ -1080,7 +1080,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "notifications.emailMessageUserRegistration")
+    @NrgPreference(property = "notifications.emailMessageUserRegistration")
     public String getEmailMessageUserRegistration(){
         return getValue("notifications.emailMessageUserRegistration");
     }
@@ -1093,7 +1093,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "notifications.emailMessageForgotUsernameRequest")
+    @NrgPreference(property = "notifications.emailMessageForgotUsernameRequest")
     public String getEmailMessageForgotUsernameRequest(){
         return getValue("notifications.emailMessageForgotUsernameRequest");
     }
@@ -1106,7 +1106,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "notifications.emailMessageForgotPasswordReset")
+    @NrgPreference(property = "notifications.emailMessageForgotPasswordReset")
     public String getEmailMessageForgotPasswordReset(){
         return getValue("notifications.emailMessageForgotPasswordReset");
     }
@@ -1171,7 +1171,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "notifications.emailRecipientErrorMessages")
+    @NrgPreference(property = "notifications.emailRecipientErrorMessages")
     public String getEmailRecipientErrorMessages(){
         return getValue("notifications.emailRecipientErrorMessages");
     }
@@ -1184,7 +1184,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "notifications.emailRecipientIssueReports")
+    @NrgPreference(property = "notifications.emailRecipientIssueReports")
     public String getEmailRecipientIssueReports(){
         return getValue("notifications.emailRecipientIssueReports");
     }
@@ -1197,7 +1197,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "notifications.emailRecipientNewUserAlert")
+    @NrgPreference(property = "notifications.emailRecipientNewUserAlert")
     public String getEmailRecipientNewUserAlert(){
         return getValue("notifications.emailRecipientNewUserAlert");
     }
@@ -1210,7 +1210,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "notifications.emailRecipientUpdate")
+    @NrgPreference(property = "notifications.emailRecipientUpdate")
     public String getEmailRecipientUpdate(){
         return getValue("notifications.emailRecipientUpdate");
     }
@@ -1222,8 +1222,6 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
             _log.error("Invalid preference name 'notifications.emailRecipientUpdate': something is very wrong here.", e);
         }
     }
-
-
 
     @JsonIgnore
     public static long convertPGIntervalToSeconds(final String expression) throws SQLException {

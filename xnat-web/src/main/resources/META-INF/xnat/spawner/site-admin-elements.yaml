@@ -186,10 +186,12 @@ generalSecuritySettings:
         securityChannel:
             kind: panel.select.single
             id: securityChannel
-            name: securityChannel
+            name: security.channel
             label: Security Channel
-            value: ""
             options:
+                any: 
+                    label: Any
+                    value: any
                 http:
                     label: http
                     value: http
@@ -216,12 +218,12 @@ userLoginsSessionControls:
     refresh: /xapi/siteConfig
     contentType: json
     contents:
-        sessionTimeout:
-            kind: panel.input.number
-            id: sessionTimeout
-            name: sessionTimeout
-            label: Session Timeout
-            description: "Number of minutes of inactivity before users are locked out of the site. This will not affect users that are currently logged in."
+#        sessionTimeout:
+#            kind: panel.input.number
+#            id: sessionTimeout
+#            name: sessionTimeout
+#            label: Session Timeout
+#            description: "Interval for timing out alias tokens"
         aliasTokenTimeout:
             kind: panel.input.text
             id: aliasTokenTimeout
@@ -233,13 +235,13 @@ userLoginsSessionControls:
             id: sessionTimeoutMessage
             name: sessionTimeoutMessage
             label: Session Timeout Message
-            description: Alert message provided to users after a session timeout. TIMEOUT_TIME will be replaced by the timeout time.
-        allowResumeOnNextLogin:
-            kind: panel.input.checkbox
-            id: allow-resume-on-next-login
-            name: allowResumeOnNextLogin
-            label: Allow Resume On Next Login?
-            description: Allow user to resume where they left off, if logging back in after a session timeout?
+            description: Alert message provided to users after a session timeout and logout. TIMEOUT_TIME will be replaced by the timeout time.
+#        allowResumeOnNextLogin:
+#            kind: panel.input.checkbox
+#            id: allow-resume-on-next-login
+#            name: allowResumeOnNextLogin
+#            label: Allow Resume On Next Login?
+#            description: Allow user to resume where they left off, if logging back in after a session timeout?
         maximumConcurrentSessions:
             kind: panel.input.number
             id: maximumConcurrentSessions
@@ -262,7 +264,7 @@ userLoginsSessionControls:
             kind: panel.input.number
             id: failedLoginLockoutDuration
             name: maxFailedLoginsLockoutDuration
-            label: Failed Login Lockout Duration
+            label: Failed Logins Lockout Duration
             description: Number of milliseconds to lock user accounts that have exceeded the max_failed_logins count. Select (3600000 for 1 hour, 86400000 for 24 hours)
         userInactivityLockout:
             kind: panel.input.number
@@ -308,7 +310,7 @@ passwords:
             id: passwordExpirationType
             name: passwordExpirationType
             label: passwordExpirationType
-            value: ""
+            value: Interval
             options:
                 Interval:
                     label: Interval
@@ -333,6 +335,13 @@ passwords:
             id: passwordReuseRestriction
             name: passwordReuseRestriction
             label: Password Reuse Restriction
+            options:
+                None:
+                    label: None
+                    value: None
+                Historical:
+                    label: Historical
+                    value: Historical
         requireSaltedPasswords:
             kind: panel.input.checkbox
             id: requireSaltedPasswords
@@ -358,7 +367,7 @@ csrf:
         csrfEmailAlert:
             kind: panel.input.checkbox
             id: csrfEmailAlert
-            name: enable_csrf_email_alert
+            name: csrfEmailAlert
             label: CSRF Email Alert
             description: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
 
@@ -466,7 +475,6 @@ notifications:
     load: ?? XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
-
         helpContactInfo:
             kind: panel.input.email
             id: helpContactInfo
@@ -747,8 +755,8 @@ registrationOptions:
             kind: panel.input.checkbox
             id: requireLogin
             name: requireLogin
-            label: "Require User?"
-            value: ""
+            label: "Require User Login?"
+            disabled: true
         requireEmailVerificationToRegister:
             kind: panel.input.checkbox
             id: requireEmailVerificationToRegister
@@ -816,10 +824,10 @@ anonymization:
             id: enableSitewideAnonymizationScript
             name: enableSitewideAnonymizationScript
             label: "Enable Site-wide Anonymization Script"
-        editAnonymizationScript:
+        sitewideAnonymizationScript:
             kind: panel.textarea
-            id: editAnonymizationScript
-            name: editAnonymizationScript
+            id: sitewideAnonymizationScript
+            name: sitewideAnonymizationScript
             label: "Edit Anonymization Script"
 
 seriesImportFilter:
@@ -837,15 +845,22 @@ seriesImportFilter:
             id: enableSitewideSeriesImportFilter
             name: enableSitewideSeriesImportFilter
             label: "Enable Site-wide Series Import Filter"
-        filterMode:
-            kind: panel.input.checkbox
-            id: filterMode
-            name: filterMode
+        sitewideSeriesImportFilterMode:
+            kind: panel.select.single
+            id: sitewideSeriesImportFilterMode
+            name: sitewideSeriesImportFilterMode
             label: Filter Mode
-        seriesImportFilter:
+            options:
+                whitelist:
+                    label: Whitelist
+                    value: whitelist
+                blacklist:
+                    label: Blacklist
+                    value: blacklist
+        sitewideSeriesImportFilter:
             kind: panel.textarea
-            id: seriesImportFilter
-            name: seriesImportFilter
+            id: sitewideSeriesImportFilter
+            name: sitewideSeriesImportFilter
             label: "Edit Series Import Filter"
 
 sessionUploadMethod:

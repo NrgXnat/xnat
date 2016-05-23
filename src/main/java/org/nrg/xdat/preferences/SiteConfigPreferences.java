@@ -213,6 +213,45 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "true")
+    public boolean getEmailVerification() {
+        return getBooleanValue("emailVerification");
+    }
+
+    public void setEmailVerification(final boolean emailVerification) {
+        try {
+            setBooleanValue(emailVerification, "emailVerification");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'emailVerification': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "")
+    public String getEmailVerificationMessage() {
+        return getValue("emailVerificationMessage");
+    }
+
+    public void setEmailVerificationMessage(final String emailVerificationMessage) {
+        try {
+            set(emailVerificationMessage, "emailVerificationMessage");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'emailVerificationMessage': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "365")
+    public int getEmailVerificationExpiration() {
+        return getIntegerValue("emailVerificationExpiration");
+    }
+
+    public void setEmailVerificationExpiration(final int emailVerificationExpiration) {
+        try {
+            setIntegerValue(emailVerificationExpiration, "emailVerificationExpiration");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'emailVerificationExpiration': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true")
     public boolean getUserRegistration() {
         return getBooleanValue("userRegistration");
     }
@@ -226,15 +265,28 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "true")
-    public boolean getEmailVerification() {
-        return getBooleanValue("emailVerification");
+    public boolean getAllowUserCommentsOnRegistration() {
+        return getBooleanValue("allowUserCommentsOnRegistration");
     }
 
-    public void setEmailVerification(final boolean emailVerification) {
+    public void setAllowUserCommentsOnRegistration(final boolean allowUserCommentsOnRegistration) {
         try {
-            setBooleanValue(emailVerification, "emailVerification");
+            setBooleanValue(allowUserCommentsOnRegistration, "allowUserCommentsOnRegistration");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'emailVerification': something is very wrong here.", e);
+            _log.error("Invalid preference name 'allowUserCommentsOnRegistration': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getRestrictUserListAccessToAdmins() {
+        return getBooleanValue("restrictUserListAccessToAdmins");
+    }
+
+    public void setRestrictUserListAccessToAdmins(final boolean restrictUserListAccessToAdmins) {
+        try {
+            setBooleanValue(restrictUserListAccessToAdmins, "restrictUserListAccessToAdmins");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'restrictUserListAccessToAdmins': something is very wrong here.", e);
         }
     }
 
@@ -252,15 +304,28 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "false")
-    public boolean getRestrictUserListAccessToAdmins() {
-        return getBooleanValue("restrictUserListAccessToAdmins");
+    public boolean getCsrfEmailAlert() {
+        return getBooleanValue("csrfEmailAlert");
     }
 
-    public void setRestrictUserListAccessToAdmins(final boolean restrictUserListAccessToAdmins) {
+    public void setCsrfEmailAlert(final boolean csrfEmailAlert) {
         try {
-            setBooleanValue(restrictUserListAccessToAdmins, "restrictUserListAccessToAdmins");
+            setBooleanValue(csrfEmailAlert, "csrfEmailAlert");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'restrictUserListAccessToAdmins': something is very wrong here.", e);
+            _log.error("Invalid preference name 'csrfEmailAlert': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "None")
+    public String getPasswordReuseRestriction() {
+        return getValue("passwordReuseRestriction");
+    }
+
+    public void setPasswordReuseRestriction(final String passwordReuseRestriction) {
+        try {
+            set(passwordReuseRestriction, "passwordReuseRestriction");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'passwordReuseRestriction': something is very wrong here.", e);
         }
     }
 
@@ -326,6 +391,84 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
             setDateValue(passwordExpirationDate, "passwordExpirationDate");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'passwordExpirationDate': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true")
+    public boolean getEnableSitewideAnonymizationScript() {
+        return getBooleanValue("enableSitewideAnonymizationScript");
+    }
+
+    public void setEnableSitewideAnonymizationScript(final boolean enableSitewideAnonymizationScript) {
+        try {
+            setBooleanValue(enableSitewideAnonymizationScript, "enableSitewideAnonymizationScript");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'enableSitewideAnonymizationScript': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "sitewideAnonymizationScript")
+    public String getSitewideAnonymizationScript() {
+        return getValue("sitewideAnonymizationScript");
+    }
+
+    public void setSitewideAnonymizationScript(final String sitewideAnonymizationScript) {
+        try {
+            set(sitewideAnonymizationScript, "sitewideAnonymizationScript");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'sitewideAnonymizationScript': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getEnableSitewideSeriesImportFilter() {
+        return getBooleanValue("enableSitewideSeriesImportFilter");
+    }
+
+    public void setEnableSitewideSeriesImportFilter(final boolean enableSitewideSeriesImportFilter) {
+        try {
+            setBooleanValue(enableSitewideSeriesImportFilter, "enableSitewideSeriesImportFilter");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'enableSitewideSeriesImportFilter': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "blacklist", property = "sitewideSeriesImportFilterMode")
+    public String getSitewideSeriesImportFilterMode() {
+        return getValue("sitewideSeriesImportFilterMode");
+    }
+
+    public void setSitewideSeriesImportFilterMode(final String sitewideSeriesImportFilterMode) {
+        try {
+            set(sitewideSeriesImportFilterMode, "sitewideSeriesImportFilterMode");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'sitewideSeriesImportFilterMode': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "sitewideSeriesImportFilter")
+    public String getSitewideSeriesImportFilter() {
+        return getValue("sitewideSeriesImportFilter");
+    }
+
+    public void setSitewideSeriesImportFilter(final String sitewideSeriesImportFilter) {
+        try {
+            set(sitewideSeriesImportFilter, "sitewideSeriesImportFilter");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'sitewideSeriesImportFilter': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "", property = "selectUploadMethod")
+    public String getSelectUploadMethod() {
+        return getValue("selectUploadMethod");
+    }
+
+    public void setSelectUploadMethod(final String selectUploadMethod) {
+        try {
+            set(selectUploadMethod, "selectUploadMethod");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'selectUploadMethod': something is very wrong here.", e);
         }
     }
 
@@ -923,14 +1066,14 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "1 day")
-    public String getMaxFailedLoginsLockoutDuration() {
-        return getValue("maxFailedLoginsLockoutDuration");
+    @NrgPreference(defaultValue = "86400000")
+    public int getMaxFailedLoginsLockoutDuration() {
+        return getIntegerValue("maxFailedLoginsLockoutDuration");
     }
 
-    public void setMaxFailedLoginsLockoutDuration(final String maxFailedLoginsLockoutDuration) {
+    public void setMaxFailedLoginsLockoutDuration(final int maxFailedLoginsLockoutDuration) {
         try {
-            set(maxFailedLoginsLockoutDuration, "maxFailedLoginsLockoutDuration");
+            setIntegerValue(maxFailedLoginsLockoutDuration, "maxFailedLoginsLockoutDuration");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'maxFailedLoginsLockoutDuration': something is very wrong here.", e);
         }

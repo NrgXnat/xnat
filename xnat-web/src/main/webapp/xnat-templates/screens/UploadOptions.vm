@@ -367,7 +367,7 @@
         </tr>
         <tr>
             <td valign="top" align="left">
-                <div style="width:500px">DICOM and ECAT files can be uploaded via the Upload Applet. <a href="$link.setPage("LaunchUploadApplet.vm")">Click here</a> to upload using the Upload Applet.
+                <div style="width:500px">DICOM and ECAT files can be uploaded via the Upload Applet. Due to changes in browser support for applets, the Upload Applet currently only works when using the Firefox browser. <a href="$link.setPage("LaunchUploadApplet.vm")">Click here</a> to upload using the Upload Applet.
                 </div>
         </tr>
 

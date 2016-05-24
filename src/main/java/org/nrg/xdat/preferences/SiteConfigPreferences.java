@@ -1090,14 +1090,27 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "31556926")
-    public int getInactivityBeforeLockout() {
-        return getIntegerValue("inactivityBeforeLockout");
+    @NrgPreference(defaultValue = "0 0 * * * *") // 0 0 * * * * means it runs every hour
+    public String getResetFailedLoginsSchedule() {
+        return getValue("resetFailedLoginsSchedule");
     }
 
-    public void setInactivityBeforeLockout(final int inactivityBeforeLockout) {
+    public void setResetFailedLoginsSchedule(final String resetFailedLoginsSchedule) {
         try {
-            setIntegerValue(inactivityBeforeLockout, "inactivityBeforeLockout");
+            set(resetFailedLoginsSchedule, "resetFailedLoginsSchedule");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'resetFailedLoginsSchedule': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "1 year")
+    public String getInactivityBeforeLockout() {
+        return getValue("inactivityBeforeLockout");
+    }
+
+    public void setInactivityBeforeLockout(final String inactivityBeforeLockout) {
+        try {
+            set(inactivityBeforeLockout, "inactivityBeforeLockout");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'inactivityBeforeLockout': something is very wrong here.", e);
         }
@@ -1142,14 +1155,14 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "15")
-    public int getSessionTimeout() {
-        return getIntegerValue("sessionTimeout");
+    @NrgPreference(defaultValue = "15 minutes")
+    public String getSessionTimeout() {
+        return getValue("sessionTimeout");
     }
 
-    public void setSessionTimeout(final int sessionTimeout) {
+    public void setSessionTimeout(final String sessionTimeout) {
         try {
-            setIntegerValue(sessionTimeout, "sessionTimeout");
+            set(sessionTimeout, "sessionTimeout");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'sessionTimeout': something is very wrong here.", e);
         }

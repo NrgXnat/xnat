@@ -1390,116 +1390,136 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
+    private void triggerEventIfChanging(final String namespacedPropertyId, final String oldValue, final String newValue){
+        if(!StringUtils.equals(oldValue,newValue)) { //Check if value is being changed.
+            XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, newValue));
+        }
+    }
+
     @JsonIgnore
     @Override
     public void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.set(scope, entityId, value, key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value));
+        String oldValue = getValue(namespacedPropertyId);
+        super.set(scope, entityId, value, key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value);
     }
 
     @JsonIgnore
     @Override
     public void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.set(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value));
+        String oldValue = getValue(namespacedPropertyId);
+        super.set(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value);
     }
 
     @JsonIgnore
     @Override
     public void setBooleanValue(final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.setBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getBooleanValue(namespacedPropertyId).toString();
+        super.setBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setBooleanValue(final Scope scope, final String entityId, final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.set(scope, entityId, value.toString(), key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getBooleanValue(namespacedPropertyId).toString();
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setIntegerValue(final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.setIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getIntegerValue(namespacedPropertyId).toString();
+        super.setIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setIntegerValue(final Scope scope, final String entityId, final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.set(scope, entityId, value.toString(), key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getIntegerValue(namespacedPropertyId).toString();
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setLongValue(final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.setLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getLongValue(namespacedPropertyId).toString();
+        super.setLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setLongValue(final Scope scope, final String entityId, final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.set(scope, entityId, value.toString(), key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getLongValue(namespacedPropertyId).toString();
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setFloatValue(final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.setFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getFloatValue(namespacedPropertyId).toString();
+        super.setFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setFloatValue(final Scope scope, final String entityId, final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.set(scope, entityId, value.toString(), key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getFloatValue(namespacedPropertyId).toString();
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setDoubleValue(final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.setDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getDoubleValue(namespacedPropertyId).toString();
+        super.setDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setDoubleValue(final Scope scope, final String entityId, final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.set(scope, entityId, value.toString(), key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getDoubleValue(namespacedPropertyId).toString();
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.setDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getDateValue(namespacedPropertyId).toString();
+        super.setDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore
     @Override
     public void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        super.set(scope, entityId, Long.toString(value.getTime()), key, subkeys);
         final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+        String oldValue = getDateValue(namespacedPropertyId).toString();
+        super.set(scope, entityId, Long.toString(value.getTime()), key, subkeys);
+        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
     }
 
     @JsonIgnore

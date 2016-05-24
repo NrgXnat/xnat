@@ -10,21 +10,24 @@
  */
 package org.nrg.xdat.security;
 
+import org.apache.commons.lang.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PasswordValidatorChain implements PasswordValidator {
-    public PasswordValidatorChain(final List<PasswordValidator> validators) {
-        _validators = validators;
+    public PasswordValidatorChain() {
     }
 
     @Override
     public boolean isValid(String password, UserI user) {
         boolean             ret    = true;
         final StringBuilder buffer = new StringBuilder();
-        if (_validators != null) {
-            for (final PasswordValidator validator : _validators) {
+        List<PasswordValidator> validators = getValidators();
+        if (validators != null) {
+            for (final PasswordValidator validator : validators) {
                 if (!validator.isValid(password, user)) {
                     buffer.append(validator.getMessage()).append(" \n");
                     ret = false;
@@ -40,9 +43,13 @@ public class PasswordValidatorChain implements PasswordValidator {
     }
 
     public List<PasswordValidator> getValidators() {
-        return _validators;
+        ArrayList<PasswordValidator> validators = new ArrayList<PasswordValidator>();
+        validators.add(XDAT.getContextService().getBean("regexValidator", RegExpValidator.class));
+        if(StringUtils.equals(XDAT.getSiteConfigPreferences().getPasswordReuseRestriction(),"Historical")){
+            validators.add(XDAT.getContextService().getBean("historicPasswordValidator", HistoricPasswordValidator.class));
+        }
+        return validators;
     }
 
-    private final List<PasswordValidator> _validators;
     private       String                  message;
 }

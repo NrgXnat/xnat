@@ -1,13 +1,12 @@
 package org.nrg.xnat.configuration;
 
+import org.apache.commons.lang.StringUtils;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.services.ContextService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.HistoricPasswordValidator;
-import org.nrg.xdat.security.PasswordValidatorChain;
-import org.nrg.xdat.security.RegExpValidator;
-import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
+import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
@@ -19,10 +18,7 @@ import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.annotation.*;
 
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 @Configuration
 @ComponentScan({"org.nrg.automation.repositories", "org.nrg.config.daos", "org.nrg.dcm.xnat", "org.nrg.dicomtools.filters",
@@ -78,7 +74,8 @@ public class ApplicationConfig {
 
     @Bean
     public PasswordValidatorChain validator(final RegExpValidator regExpValidator, final HistoricPasswordValidator historicPasswordValidator) {
-        return new PasswordValidatorChain(Arrays.asList(regExpValidator, historicPasswordValidator));
+        return new PasswordValidatorChain();
+
     }
 
     // MIGRATION: I'm not even sure this is used, but we need to do away with it in favor of prefs.

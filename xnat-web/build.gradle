@@ -265,6 +265,9 @@ configurations {
     all*.exclude group: 'jms', module: 'jms'
     all*.exclude group: 'jython', module: 'jython'
     all*.exclude group: 'org.nrg', module: 'nrg'
+    all*.exclude group: 'org.nrg', module: 'plexiviewer'
+    all*.exclude group: 'org.nrg.xdat', module: 'beans'
+    all*.exclude group: 'org.nrg.xnat', module: 'web'
     all*.exclude group: 'net.sf.saxon', module: 'saxon'
     all*.exclude group: 'stax', module: 'stax-api'
     all*.exclude group: 'xml-apis', module: 'xml-apis'
@@ -311,7 +314,9 @@ dependencies {
     compile "org.nrg.xnat.pipeline:xnat_pipeline:${vXnatPipeline}"
     compile "org.nrg.xnat.pipeline:xnat_tools:${vXnatPipeline}"
 
-    compile "org.nrg:plexiviewer:${vXnat}"
+    compile("org.nrg.xnat:plexiviewer:${vXnat}") {
+        transitive = false
+    }
 
     compile "dcm4che:dcm4che-core:2.0.25"
     compile "dcm4che:dcm4che-image:2.0.25"

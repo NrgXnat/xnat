@@ -2,10 +2,17 @@ package org.nrg.xdat.preferences;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.scope.EntityId;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.exceptions.UnknownToolId;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
@@ -13,10 +20,19 @@ import org.nrg.xdat.security.services.RoleServiceI;
 import org.postgresql.util.PGInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.nrg.framework.constants.Scope;
+import org.nrg.prefs.exceptions.UnknownToolId;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.framework.services.NrgEventService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -1367,6 +1383,173 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     }
 
     @JsonIgnore
+    @Override
+    public void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.set(scope, entityId, value, key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value));
+    }
+
+    @JsonIgnore
+    @Override
+    public void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.set(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setBooleanValue(final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.setBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setBooleanValue(final Scope scope, final String entityId, final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setIntegerValue(final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.setIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setIntegerValue(final Scope scope, final String entityId, final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setLongValue(final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.setLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setLongValue(final Scope scope, final String entityId, final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setFloatValue(final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.setFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setFloatValue(final Scope scope, final String entityId, final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setDoubleValue(final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.setDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setDoubleValue(final Scope scope, final String entityId, final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.set(scope, entityId, value.toString(), key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.setDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        super.set(scope, entityId, Long.toString(value.getTime()), key, subkeys);
+        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, value.toString()));
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
+        this.setMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, map);
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
+        Iterator var5 = map.keySet().iterator();
+
+        while(var5.hasNext()) {
+            String key = (String)var5.next();
+            String id = this.getNamespacedPropertyId(preferenceName, new String[]{key});
+
+            try {
+                this.set(scope, entityId, this.serialize(map.get(key)), id, new String[0]);
+            } catch (IOException var9) {
+                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", var9);
+            }
+        }
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
+        this.setListValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, list);
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> void setListValue(final Scope scope, final String entityId, final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
+        try {
+            this.set(scope, entityId, preferenceName, this.serialize(list), new String[0]);
+        } catch (IOException var6) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", var6);
+        }
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
+        this.setArrayValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, array);
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
+        try {
+            this.set(scope, entityId, preferenceName, this.serialize(array), new String[0]);
+        } catch (IOException var6) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", var6);
+        }
+    }
+
+    @JsonIgnore
     public static long convertPGIntervalToSeconds(final String expression) throws SQLException {
         final PGInterval interval = new PGInterval(expression);
         return ((long) interval.getYears()) * 31536000L +
@@ -1386,6 +1569,10 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
                !StringUtils.isBlank(getBuildPath()) &&
                !StringUtils.isBlank(getFtpPath());
     }
+
+    @Lazy
+    @Autowired
+    private NrgEventService _eventService;
 
     private static final String STR_REQUIRE_EVENT_NAME = "audit.require_event_name";
     private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";

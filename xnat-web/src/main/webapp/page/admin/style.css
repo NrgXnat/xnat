@@ -65,7 +65,7 @@
     width: 100%; position: absolute; bottom: 0; padding: 10px 15px; overflow: auto;
     background: #f0f0f0; border-top: 1px solid #c8c8c8; }
 .xnat-tab-content .tab-pane.active { display: block; }
-.xnat-tab-content.side { width: 75%; }
+.xnat-tab-content.side { width: 75%; min-height: 800px; }
 
 /* PANELS */
 body.xnat .panel { margin-bottom: 30px; background: /* #f8f8f8 */ inherit; border-radius: 0; }

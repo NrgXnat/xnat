@@ -3,9 +3,11 @@ package org.nrg.xnat.configuration;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.SiteConfigPreferenceEvent;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
 import org.nrg.xnat.security.DisableInactiveUsers;
@@ -59,28 +61,28 @@ public class SchedulerConfig implements SchedulingConfigurer {
     public TriggerTask resetEmailRequests() {
         return new TriggerTask(new ResetEmailRequests(_emailRequestLogService), new PeriodicTrigger(900000));
     }
-
-    @Bean
-    public TriggerTask clearExpiredAliasTokens() throws SiteConfigurationException {
-        return new TriggerTask(new ClearExpiredAliasTokens(_template), new Trigger() {
-            @Override public Date nextExecutionTime(TriggerContext triggerContext) {
-                Calendar nextExecutionTime =  new GregorianCalendar();
-                Date lastActualExecutionTime = triggerContext.lastActualExecutionTime();
-                nextExecutionTime.setTime(lastActualExecutionTime != null ? lastActualExecutionTime : new Date());
-                long expirationInterval = XDAT.getSiteConfigPreferences().getAliasTokenTimeout();
-                if(expirationInterval<120){//Check every minute if interval is 2 hours or less
-                    nextExecutionTime.add(Calendar.MINUTE, 1);
-                }
-                else if(expirationInterval<2880){//Check every hour if interval is 2 days or less
-                    nextExecutionTime.add(Calendar.HOUR, 1);
-                }
-                else{//Check every day
-                    nextExecutionTime.add(Calendar.DAY_OF_MONTH, 1);
-                }
-                return nextExecutionTime.getTime();
-            }
-        });
-    }
+//
+//    @Bean
+//    public TriggerTask clearExpiredAliasTokens() throws SiteConfigurationException {
+//        return new TriggerTask(new ClearExpiredAliasTokens(_template), new Trigger() {
+//            @Override public Date nextExecutionTime(TriggerContext triggerContext) {
+//                Calendar nextExecutionTime =  new GregorianCalendar();
+//                Date lastActualExecutionTime = triggerContext.lastActualExecutionTime();
+//                nextExecutionTime.setTime(lastActualExecutionTime != null ? lastActualExecutionTime : new Date());
+//                long expirationInterval = XDAT.getSiteConfigPreferences().getAliasTokenTimeout();
+//                if(expirationInterval<120){//Check every minute if interval is 2 hours or less
+//                    nextExecutionTime.add(Calendar.MINUTE, 1);
+//                }
+//                else if(expirationInterval<2880){//Check every hour if interval is 2 days or less
+//                    nextExecutionTime.add(Calendar.HOUR, 1);
+//                }
+//                else{//Check every day
+//                    nextExecutionTime.add(Calendar.DAY_OF_MONTH, 1);
+//                }
+//                return nextExecutionTime.getTime();
+//            }
+//        });
+//    }
 
     @Bean
     public TriggerTask rebuildSessionXmls() throws SiteConfigurationException {
@@ -102,6 +104,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
 //        taskRegistrar.addTriggerTask(resetEmailRequests());
 //        taskRegistrar.addTriggerTask(clearExpiredAliasTokens());
 //        taskRegistrar.addTriggerTask(rebuildSessionXmls());
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
         for (final TriggerTask triggerTask : _triggerTasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }

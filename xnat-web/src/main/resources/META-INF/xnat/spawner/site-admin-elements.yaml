@@ -229,13 +229,15 @@ userLoginsSessionControls:
             id: aliasTokenTimeout
             name: aliasTokenTimeout
             label: Alias Token Timeout
-            description: Number of minutes before alias tokens expire.
+            description: Interval for timing out alias tokens. Uses
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         aliasTokenTimeoutSchedule:
             kind: panel.input.text
             id: aliasTokenTimeoutSchedule
             name: aliasTokenTimeoutSchedule
             label: Alias Token Timeout Schedule
-            description: Cron schedule for checking the alias token.
+            description: How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses
+              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
         sessionTimeoutMessage:
             kind: panel.textarea
             id: sessionTimeoutMessage
@@ -282,7 +284,10 @@ userLoginsSessionControls:
             kind: panel.input.text
             id: inactivityBeforeLockoutSchedule
             name: inactivityBeforeLockoutSchedule
-            label: User Inactivity Before Lockout Schedule
+            label: Inactivity Lockout Schedule
+            description: How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses
+              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
+
 
 passwords:
     kind: panel.form

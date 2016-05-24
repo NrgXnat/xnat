@@ -44,8 +44,8 @@ public class ClearExpiredAliasTokens implements Runnable {
     }
 
     private static final Logger       _log                            = LoggerFactory.getLogger(ClearExpiredAliasTokens.class);
-    private static final String       QUERY_DELETE_TOKEN_IP_ADDRESSES = "DELETE FROM xhbm_alias_token_validipaddresses WHERE alias_token in (SELECT id FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s minutes')";
-    private static final String       QUERY_DELETE_ALIAS_TOKENS       = "DELETE FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s minutes'";
+    private static final String       QUERY_DELETE_TOKEN_IP_ADDRESSES = "DELETE FROM xhbm_alias_token_validipaddresses WHERE alias_token in (SELECT id FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s')";
+    private static final String       QUERY_DELETE_ALIAS_TOKENS       = "DELETE FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s'";
     private static final List<String> ALIAS_TOKEN_QUERIES             = Arrays.asList(QUERY_DELETE_TOKEN_IP_ADDRESSES, QUERY_DELETE_ALIAS_TOKENS);
 
     private final JdbcTemplate _template;

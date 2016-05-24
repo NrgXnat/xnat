@@ -41,16 +41,16 @@ import java.util.List;
 @Configuration
 @EnableScheduling
 public class SchedulerConfig implements SchedulingConfigurer {
-    @Bean
-    public TriggerTask disableInactiveUsers() throws SiteConfigurationException {
-        try {
-            final DisableInactiveUsers task = new DisableInactiveUsers(_preferences.getInactivityBeforeLockout(), (int) SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration()));
-            return new TriggerTask(task, new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule()));
-        } catch (SQLException e) {
-            // This isn't a real thing: PGInterval doesn't actually access the database. But just to make everyone happy...
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "This really shouldn't happen.", e);
-        }
-    }
+//    @Bean
+//    public TriggerTask disableInactiveUsers() throws SiteConfigurationException {
+//        try {
+//            final DisableInactiveUsers task = new DisableInactiveUsers(_preferences.getInactivityBeforeLockout(), (int) SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration()));
+//            return new TriggerTask(task, new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule()));
+//        } catch (SQLException e) {
+//            // This isn't a real thing: PGInterval doesn't actually access the database. But just to make everyone happy...
+//            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "This really shouldn't happen.", e);
+//        }
+//    }
 
     @Bean
     public TriggerTask resetFailedLogins() throws SiteConfigurationException {
@@ -105,6 +105,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
 //        taskRegistrar.addTriggerTask(clearExpiredAliasTokens());
 //        taskRegistrar.addTriggerTask(rebuildSessionXmls());
         XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
         for (final TriggerTask triggerTask : _triggerTasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }

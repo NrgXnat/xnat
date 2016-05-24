@@ -486,7 +486,7 @@ notifications:
             id: helpContactInfo
             name: notifications.helpContactInfo
             label: "Help Contact Info"
-#            value: "!? XNAT.data.siteConfig['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.siteConfig['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
 
         emailMessageSubhead:
             kind: panel.subhead
@@ -554,28 +554,28 @@ notifications:
             name: notifications.emailRecipientErrorMessages
             label: "Error Messages"
             description: "What email address should receive error emails"
-            #value: "!? XNAT.data.siteConfig['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.siteConfig['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             id: emailRecipientIssueReports
             name: notifications.emailRecipientIssueReports
             label: "Issue Reports"
             description: "What email address should receive issue reports"
-            #value: "!? XNAT.data.siteConfig['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.siteConfig['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             id: emailRecipientNewUserAlert
             name: notifications.emailRecipientNewUserAlert
             label: "New User Alert"
             description: "What email address should receive New User Registration emails"
-            #value: "!? XNAT.data.siteConfig['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.siteConfig['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             id: emailRecipientUpdate
             name: notifications.emailRecipientUpdate
             label: "Updates"
             description: "What email address should receive update emails"
-            #value: "!? XNAT.data.siteConfig['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.siteConfig['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
 
         otherSubhead:
             kind: panel.subhead

@@ -708,9 +708,11 @@ var XNAT = getObject(XNAT || {});
             opts.value ||
             opts.text ||
             opts.html || '';
-
+    
         opts.element.html = doLookup(opts.element.html);
 
+        opts.element.rows = 6;
+        
         var textarea = spawn('textarea', opts.element);
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
     };

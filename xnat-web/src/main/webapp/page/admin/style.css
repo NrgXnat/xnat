@@ -65,7 +65,7 @@
     width: 100%; position: absolute; bottom: 0; padding: 10px 15px; overflow: auto;
     background: #f0f0f0; border-top: 1px solid #c8c8c8; }
 .xnat-tab-content .tab-pane.active { display: block; }
-.xnat-tab-content.side { width: 75%; }
+.xnat-tab-content.side { width: 75%; min-height: 800px; }
 
 /* PANELS */
 body.xnat .panel { margin-bottom: 30px; background: /* #f8f8f8 */ inherit; border-radius: 0; }
@@ -98,6 +98,8 @@ body.xnat .panel-default { border: 1px solid #c8c8c8; }
     border-bottom: 1px solid #c8c8c8;
 }
 
+.panel .panel-element textarea { width: 80%; font-family: Courier, monospace; font-weight: normal; }
+
 /* ELEMENT GROUP ITEMS */
 .panel .panel-element-group .group-item .element-label { width: auto; }
 
@@ -112,6 +114,7 @@ body.xnat .panel-default { border: 1px solid #c8c8c8; }
 
 /* FORM CONTROLS */
 body.xnat textarea.form-control { font-family: Courier, monospace; font-weight: normal; }
+
 
 /* ==========================================================
      UI WIDGETS

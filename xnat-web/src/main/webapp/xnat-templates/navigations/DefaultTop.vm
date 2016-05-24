@@ -47,7 +47,7 @@
     </div>
 </div><!-- /user_bar -->
 
-<script src="$content.getURI("scripts/timeLeft.js")"></script>
+<script src="$content.getURI("scripts/xnat/app/timeout.js")"></script>
 
 #if ($sessionCount > 1 || $sessionIpCount > 1 )
 ##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.

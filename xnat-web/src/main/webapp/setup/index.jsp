@@ -92,7 +92,7 @@
 //                                };
 //
                                 XNAT.xhr.get({
-                                    url: XNAT.url.rootUrl('/page/admin/data/config/site-setup.yaml'),
+                                    url: XNAT.url.rootUrl('/setup/site-setup.yaml'),
                                     //url: XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteSetup'),
                                     success: function(data){
                                         if (typeof data === 'string') {

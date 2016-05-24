@@ -210,8 +210,6 @@
 
     <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>
 
-    <script src="${SITE_ROOT}/scripts/timeLeft.js"></script>
-
     ${headBottom}
 
 </head>
@@ -238,10 +236,10 @@ ${bodyTop}
                 <b>|</b>
                 <a id="logout_user" href="${SITE_ROOT}/app/action/LogoutUser">Logout</a>
             </span>
-            <%--<script type="text/javascript">--%>
-            <%--$('#timeLeftRenew').click(XNAT.app.timeout.handleOk);--%>
-            <%--Cookies.set('guest', 'false', {path: '/'});--%>
-            <%--</script>--%>
+            <script type="text/javascript">
+                Cookies.set('guest', 'false', {path: '/'});
+            </script>
+            <script src="${SITE_ROOT}/scripts/xnat/app/timeout.js"></script>
 
         </c:if>
 
@@ -301,8 +299,8 @@ ${bodyTop}
                     </ul>
                 </li>
 
+                <pg:restricted msg="<!-- non-admin -->">
 
-                <c:if test="${isAdmin == true}">
                     <!-- Sequence: 40 -->
                     <li class="more"><a href="#adminbox">Administer</a>
                         <ul>
@@ -317,8 +315,8 @@ ${bodyTop}
                             <li><a href="${SITE_ROOT}/app/template/XDATScreen_admin_options.vm">More...</a></li>
                         </ul>
                     </li>
-                </c:if>
 
+                </pg:restricted>
 
                 <!-- Title: Tools -->
                 <!-- Sequence: 50 -->
@@ -652,13 +650,29 @@ ${bodyTop}
         <script src="${SITE_ROOT}/scripts/xnat/app/customPage.js"></script>
 
         <div id="view-page">
+
+
+
+
+
             <!--   BODY START   -->
+
+
+
 
 
             <jsp:doBody/>
 
 
+
+
+
             <!--  BODY END  -->
+
+
+
+
+
         </div>
 
         <!-- end xnat-templates/screens/Page.vm -->
@@ -706,9 +720,9 @@ ${bodyTop}
 </script>
 <%--<script src="${SITE_ROOT}/scripts/footer.js"></script>--%>
 
-<div id="xmodal-loading" style="position:fixed;left:-9999px;top:-9999px;">
-    <img src="${SITE_ROOT}/scripts/xmodal-v1/loading_bar.gif" alt="loading">
-</div>
+<%--<div id="xmodal-loading" style="position:fixed;left:-9999px;top:-9999px;">--%>
+    <%--<img src="${SITE_ROOT}/scripts/xmodal/loading_bar.gif" alt="loading">--%>
+<%--</div>--%>
 
 ${bodyBottom}
 

@@ -12,8 +12,8 @@
 package org.nrg.viewer;
 
 import org.nrg.pipeline.XnatPipelineLauncher;
-import org.nrg.plexiViewer.lite.xml.PlexiViewerSpecForSession;
-import org.nrg.plexiViewer.manager.PlexiSpecDocReader;
+import org.nrg.xnat.plexiviewer.lite.xml.PlexiViewerSpecForSession;
+import org.nrg.xnat.plexiviewer.manager.PlexiSpecDocReader;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatMrsessiondata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;

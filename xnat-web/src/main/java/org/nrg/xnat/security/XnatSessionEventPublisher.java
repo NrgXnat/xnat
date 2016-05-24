@@ -11,6 +11,7 @@
 package org.nrg.xnat.security;
 
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
@@ -53,7 +55,11 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         }
 
         session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-        session.setMaxInactiveInterval(XDAT.getSiteConfigPreferences().getSessionTimeout()*60);//Preference is in minutes and setMaxInactiveInterval wants seconds.
+        try {
+            session.setMaxInactiveInterval((new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getSessionTimeout()))).intValue());//Preference is in PG Interval and setMaxInactiveInterval wants seconds.
+        } catch (SQLException e1) {
+            _log.error("" + e);
+        }
         getContext(session.getServletContext()).publishEvent(e);
     }
 

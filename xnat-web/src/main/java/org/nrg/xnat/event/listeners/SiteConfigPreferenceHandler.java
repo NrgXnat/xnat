@@ -8,6 +8,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferenceEvent;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.DisableInactiveUsers;
+import org.nrg.xnat.security.ResetFailedLogins;
 import org.nrg.xnat.security.alias.ClearExpiredAliasTokens;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -56,6 +57,12 @@ public class SiteConfigPreferenceHandler implements Consumer<Event<SiteConfigPre
 				else if (StringUtils.equals(field.getFieldName(), "inactivityBeforeLockoutSchedule")) {
 					updateInactivityBeforeLockout(e);
 				}
+				else if (StringUtils.equals(field.getFieldName(), "maxFailedLoginsLockoutDuration")) {
+					updateResetFailedLogins(e);
+				}
+				else if (StringUtils.equals(field.getFieldName(), "resetFailedLoginsSchedule")) {
+					updateResetFailedLogins(e);
+				}
 			}
 		}
     }
@@ -85,7 +92,23 @@ public class SiteConfigPreferenceHandler implements Consumer<Event<SiteConfigPre
 				temp.cancel(false);
 			}
 
-			scheduledInactivityBeforeLockout.add(XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").schedule(new DisableInactiveUsers(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout(),(int) SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())),new CronTrigger(XDAT.getSiteConfigPreferences().getInactivityBeforeLockoutSchedule())));
+			scheduledInactivityBeforeLockout.add(XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").schedule(new DisableInactiveUsers((new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout()))).intValue(),(new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration()))).intValue()),new CronTrigger(XDAT.getSiteConfigPreferences().getInactivityBeforeLockoutSchedule())));
+
+		} catch (Exception e1) {
+			_log.error("", e1);
+		}
+	}
+
+	private void updateResetFailedLogins(SiteConfigPreferenceEvent e){
+		try {
+			XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
+			Iterator<Runnable> iter = XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").getScheduledThreadPoolExecutor().getQueue().iterator();
+
+			for(ScheduledFuture temp: scheduledResetFailedLogins){
+				temp.cancel(false);
+			}
+
+			scheduledResetFailedLogins.add(XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").schedule(new ResetFailedLogins(_template,XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration()),new CronTrigger(XDAT.getSiteConfigPreferences().getResetFailedLoginsSchedule())));
 
 		} catch (Exception e1) {
 			_log.error("", e1);
@@ -100,4 +123,5 @@ public class SiteConfigPreferenceHandler implements Consumer<Event<SiteConfigPre
 
 	private ArrayList<ScheduledFuture> scheduledAliasTokenTimeouts = new ArrayList<ScheduledFuture>();
 	private ArrayList<ScheduledFuture> scheduledInactivityBeforeLockout = new ArrayList<ScheduledFuture>();
+	private ArrayList<ScheduledFuture> scheduledResetFailedLogins = new ArrayList<ScheduledFuture>();
 }

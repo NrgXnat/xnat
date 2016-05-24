@@ -219,24 +219,28 @@ userLoginsSessionControls:
     contentType: json
     contents:
         sessionTimeout:
-            kind: panel.input.number
+            kind: panel.input.text
             id: sessionTimeout
             name: sessionTimeout
             label: Session Timeout
-            description: "Interval for timing out alias tokens"
+            description: >
+              Interval for timing out user sessions. Uses
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         aliasTokenTimeout:
             kind: panel.input.text
             id: aliasTokenTimeout
             name: aliasTokenTimeout
             label: Alias Token Timeout
-            description: Interval for timing out alias tokens. Uses
+            description: >
+              Interval for timing out alias tokens. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         aliasTokenTimeoutSchedule:
             kind: panel.input.text
             id: aliasTokenTimeoutSchedule
             name: aliasTokenTimeoutSchedule
             label: Alias Token Timeout Schedule
-            description: How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses
+            description: >
+              How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
         sessionTimeoutMessage:
             kind: panel.textarea
@@ -269,23 +273,36 @@ userLoginsSessionControls:
             label: Maximum Failed Logins
             description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
         failedLoginLockoutDuration:
-            kind: panel.input.number
+            kind: panel.input.text
             id: failedLoginLockoutDuration
             name: maxFailedLoginsLockoutDuration
             label: Failed Logins Lockout Duration
-            description: Number of milliseconds to lock user accounts that have exceeded the max_failed_logins count. Select (3600000 for 1 hour, 86400000 for 24 hours)
+            description: >
+              Interval of time to lock user accounts that have exceeded the max_failed_logins count. Uses
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+        resetFailedLoginsSchedule:
+            kind: panel.input.text
+            id: resetFailedLoginsSchedule
+            name: resetFailedLoginsSchedule
+            label: Reset Failed Logins Schedule
+            description: >
+              How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses
+              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
         userInactivityLockout:
-            kind: panel.input.number
+            kind: panel.input.text
             id: userInactivityLockout
             name: inactivityBeforeLockout
             label: User Inactivity Lockout
-            description: Number of seconds of inactivity before an account is disabled (31556926 for 1 year)
+            description: >
+              Interval of inactivity before a user account is disabled. Uses
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         inactivityBeforeLockoutSchedule:
             kind: panel.input.text
             id: inactivityBeforeLockoutSchedule
             name: inactivityBeforeLockoutSchedule
             label: Inactivity Lockout Schedule
-            description: How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses
+            description: >
+              How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
 
 

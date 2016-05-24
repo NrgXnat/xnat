@@ -52,10 +52,10 @@ public class SchedulerConfig implements SchedulingConfigurer {
 //        }
 //    }
 
-    @Bean
-    public TriggerTask resetFailedLogins() throws SiteConfigurationException {
-        return new TriggerTask(new ResetFailedLogins(_template, _preferences.getMaxFailedLoginsLockoutDuration()), new PeriodicTrigger(900000));
-    }
+//    @Bean
+//    public TriggerTask resetFailedLogins() throws SiteConfigurationException {
+//        return new TriggerTask(new ResetFailedLogins(_template, _preferences.getMaxFailedLoginsLockoutDuration()), new PeriodicTrigger(900000));
+//    }
 
     @Bean
     public TriggerTask resetEmailRequests() {
@@ -106,6 +106,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
 //        taskRegistrar.addTriggerTask(rebuildSessionXmls());
         XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
         XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
         for (final TriggerTask triggerTask : _triggerTasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }

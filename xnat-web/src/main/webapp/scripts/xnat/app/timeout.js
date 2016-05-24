@@ -104,6 +104,9 @@ var XNAT = getObject(XNAT);
     cookie.SESSION_DIALOG_CANCELLED = timeoutCookie('SESSION_DIALOG_CANCELLED').set('false');
 
     // has the session timed out?
+    cookie.SESSION_ACTIVE = timeoutCookie('SESSION_ACTIVE').get();
+
+    // has the session timed out?
     cookie.SESSION_TIMED_OUT = timeoutCookie('SESSION_TIMED_OUT').get();
 
     // the time, in ms, that the session will end
@@ -118,16 +121,19 @@ var XNAT = getObject(XNAT);
     // what was the last page visited?
     cookie.SESSION_LAST_PAGE = timeoutCookie('SESSION_LAST_PAGE').set(window.location.href);
 
-    timeout.expTime = '';
+    timeout.expCookie = '';
+
+    timeout.startTime = Date.now();
 
     // parse the timeout values
     timeout.getValues = function(){
-        var expTime = cookie.SESSION_EXPIRATION_TIME.get().value;
-        if (timeout.expTime && timeout.expTime === expTime) return;
-        timeout.expTime = expTime; // save it for next time
-        expTime = expTime.replace(/"/g, '').split(',');
-        timeout.startTime = (expTime[0].trim()*1 + 12000);
-        timeout.duration = expTime[1].trim()*1;
+        var expCookie = cookie.SESSION_EXPIRATION_TIME.get().value;
+        if (timeout.expCookie && timeout.expCookie === expCookie) return;
+        timeout.expCookie = expCookie; // save it for next time
+        expCookie = expCookie.replace(/"/g, '').split(',');
+        //timeout.startTime = +expCookie[0].trim() + 100;
+        timeout.startTime = Date.now();
+        timeout.duration = +expCookie[1].trim();
         timeout.endTime = timeout.startTime + timeout.duration;
         return {
             startTime: timeout.startTime,
@@ -251,6 +257,10 @@ var XNAT = getObject(XNAT);
 
 
         function renewSession(){
+            // redirect if trying to renew an inactive session
+            if (cookie.SESSION_ACTIVE.is('false')) {
+                redirectToLogin();
+            }
             timeout.dialog.hide();
             cookie.SESSION_EXPIRATION_TIME.get();
             timeout.getValues();
@@ -306,6 +316,8 @@ var XNAT = getObject(XNAT);
 
             timeout.getValues();
 
+            var NOW = Date.now();
+
             // redirect if TIMED_OUT cookie is true
             if (!timeout.redirecting && cookie.SESSION_TIMED_OUT.is('true')) {
                 redirectToLogin();
@@ -313,8 +325,15 @@ var XNAT = getObject(XNAT);
             }
 
             // redirect if time has run out
-            if (timeout.endTime <= Date.now()) {
+            if (timeout.endTime <= NOW) {
                 cookie.SESSION_TIMED_OUT.set('true');
+                //redirectToLogin();
+                return false;
+            }
+
+            // redirect if the logged out from another window
+            if (cookie.SESSION_ACTIVE.is('false')) {
+                redirectToLogin();
                 return false;
             }
 
@@ -324,7 +343,7 @@ var XNAT = getObject(XNAT);
             }
 
             // if endTime minus showTime is less than now
-            if (timeout.endTime - (timeout.showTime*1000) <= Date.now()) {
+            if (timeout.endTime - (timeout.showTime*1000) <= NOW) {
                 //don't do anything if the dialog has already been cancelled
                 if (cookie.SESSION_DIALOG_CANCELLED.is('true')) {
                     //timeout.handleCancel();
@@ -394,8 +413,10 @@ var XNAT = getObject(XNAT);
 
     });
 
+
     // this script has loaded
     timeout.loaded = true;
+
 
     return XNAT.app.timeout = timeout;
 

@@ -10,5 +10,6 @@ public class SiteConfigPreferenceEvent extends StructuredEvent {
         Set<EventSpecificFields> eventSpecificFields = new HashSet<EventSpecificFields>();
         EventSpecificFields field = new EventSpecificFields(preferenceName, value);
         eventSpecificFields.add(field);
+        this.setEventSpecificFields(eventSpecificFields);
     }
 }

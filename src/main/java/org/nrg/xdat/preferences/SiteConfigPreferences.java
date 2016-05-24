@@ -20,11 +20,6 @@ import org.nrg.xdat.security.services.RoleServiceI;
 import org.postgresql.util.PGInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.nrg.framework.constants.Scope;
-import org.nrg.prefs.exceptions.UnknownToolId;
-import org.nrg.prefs.services.NrgPreferenceService;
-import org.nrg.framework.services.NrgEventService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 
@@ -1082,14 +1077,14 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "86400000")
-    public int getMaxFailedLoginsLockoutDuration() {
-        return getIntegerValue("maxFailedLoginsLockoutDuration");
+    @NrgPreference(defaultValue = "1 day")
+    public String getMaxFailedLoginsLockoutDuration() {
+        return getValue("maxFailedLoginsLockoutDuration");
     }
 
-    public void setMaxFailedLoginsLockoutDuration(final int maxFailedLoginsLockoutDuration) {
+    public void setMaxFailedLoginsLockoutDuration(final String maxFailedLoginsLockoutDuration) {
         try {
-            setIntegerValue(maxFailedLoginsLockoutDuration, "maxFailedLoginsLockoutDuration");
+            set(maxFailedLoginsLockoutDuration, "maxFailedLoginsLockoutDuration");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'maxFailedLoginsLockoutDuration': something is very wrong here.", e);
         }
@@ -1108,7 +1103,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "0 0 1 * * ?")
+    @NrgPreference(defaultValue = "0 0 1 * * ?") // 0 0 1 * * ? means it runs at 1AM every day
     public String getInactivityBeforeLockoutSchedule() {
         return getValue("inactivityBeforeLockoutSchedule");
     }
@@ -1160,17 +1155,30 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "2880")//2880 minutes = 2 days
-    public long getAliasTokenTimeout() {
-        return getLongValue("aliasTokenTimeout");
+    @NrgPreference(defaultValue = "2 days")
+    public String getAliasTokenTimeout() {
+        return getValue("aliasTokenTimeout");
     }
 
-    public void setAliasTokenTimeout(final long aliasTokenTimeout) {
+    public void setAliasTokenTimeout(final String aliasTokenTimeout) {
         try {
-            setLongValue(aliasTokenTimeout, "aliasTokenTimeout");
+            set(aliasTokenTimeout, "aliasTokenTimeout");
 
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'aliasTokenTimeout': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "0 0 * * * *") // 0 0 * * * * means it runs every hour
+    public String getAliasTokenTimeoutSchedule() {
+        return getValue("aliasTokenTimeoutSchedule");
+    }
+
+    public void setAliasTokenTimeoutSchedule(final String aliasTokenTimeoutSchedule) {
+        try {
+            set(aliasTokenTimeoutSchedule, "aliasTokenTimeoutSchedule");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'aliasTokenTimeoutSchedule': something is very wrong here.", e);
         }
     }
 

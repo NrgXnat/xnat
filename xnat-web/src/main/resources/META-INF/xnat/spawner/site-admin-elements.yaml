@@ -218,18 +218,24 @@ userLoginsSessionControls:
     refresh: /xapi/siteConfig
     contentType: json
     contents:
-#        sessionTimeout:
-#            kind: panel.input.number
-#            id: sessionTimeout
-#            name: sessionTimeout
-#            label: Session Timeout
-#            description: "Interval for timing out alias tokens"
+        sessionTimeout:
+            kind: panel.input.number
+            id: sessionTimeout
+            name: sessionTimeout
+            label: Session Timeout
+            description: "Interval for timing out alias tokens"
         aliasTokenTimeout:
             kind: panel.input.text
             id: aliasTokenTimeout
             name: aliasTokenTimeout
             label: Alias Token Timeout
             description: Number of minutes before alias tokens expire.
+        aliasTokenTimeoutSchedule:
+            kind: panel.input.text
+            id: aliasTokenTimeoutSchedule
+            name: aliasTokenTimeoutSchedule
+            label: Alias Token Timeout Schedule
+            description: Cron schedule for checking the alias token.
         sessionTimeoutMessage:
             kind: panel.textarea
             id: sessionTimeoutMessage

@@ -241,7 +241,12 @@ if (typeof jQuery == 'undefined') {
             var $top_modal = $(xmodal.dialog.top).last();
             if (keyCode === 27) {  // key 27 = 'esc'
                 if ($top_modal.hasClass('esc')) {
-                    xmodal.close($top_modal);
+                    if ($top_modal.find('.buttons .cancel').length) {
+                        $top_modal.find('.buttons .cancel').not('.disabled').trigger('click');
+                    }
+                    else {
+                        xmodal.close($top_modal);
+                    }
                     //$top_modal.find('.title .close').trigger('click');
                 }
             }

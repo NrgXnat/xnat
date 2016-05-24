@@ -266,8 +266,6 @@ var XNAT = getObject(XNAT);
 
             element.checked = /true|checked/i.test((opts.checked || element.value).toString());
 
-            element.checked = /true|checked/i.test((opts.checked || element.value).toString());
-
             // add a hidden input to capture the checkbox/radio value
             hiddenInput = spawn('input', {
                 type: 'hidden',

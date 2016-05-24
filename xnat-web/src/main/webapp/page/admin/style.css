@@ -98,6 +98,8 @@ body.xnat .panel-default { border: 1px solid #c8c8c8; }
     border-bottom: 1px solid #c8c8c8;
 }
 
+.panel .panel-element textarea { width: 80%; font-family: Courier, monospace; font-weight: normal; }
+
 /* ELEMENT GROUP ITEMS */
 .panel .panel-element-group .group-item .element-label { width: auto; }
 
@@ -112,6 +114,7 @@ body.xnat .panel-default { border: 1px solid #c8c8c8; }
 
 /* FORM CONTROLS */
 body.xnat textarea.form-control { font-family: Courier, monospace; font-weight: normal; }
+
 
 /* ==========================================================
      UI WIDGETS

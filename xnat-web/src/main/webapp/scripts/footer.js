@@ -530,9 +530,9 @@ $(function(){
         e.stopImmediatePropagation();
         return false;
     });
-    
+
     // add version to title attribute of XNAT logos
-    if (typeof logged_in != 'undefined' && logged_in == true){
+    if (typeof window.top.logged_in != 'undefined' && window.top.logged_in == true){
         Cookies.set('SESSION_ACTIVE', 'true');
         $.get(serverRoot+'/xapi/siteConfig/buildInfo',function(data){
             XNAT_version = data.version + " build: " + data.buildNumber;

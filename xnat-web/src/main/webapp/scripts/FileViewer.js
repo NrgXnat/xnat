@@ -637,7 +637,7 @@ function FileViewer(_obj){
         };
         YAHOO.util.Connect.asyncRequest('POST', this.obj.refresh + '&timestamp=' + (new Date()).getTime(), catalogRefreshCallback, null);
         //xmodal.close();
-        xmodal.loading.open('Please wait...');
+        xmodal.loading.open('#wait');
     };
 
     this.catalogRefreshCancel = function () {

@@ -2,7 +2,12 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<pg:restricted>
+<c:set var="redirect">
+    <p>Not authorized. Redirecting...</p>
+    <script> window.location.href = XNAT.url.rootUrl('/') </script>
+</c:set>
+
+<pg:restricted msg="${redirect}">
 
     <link rel="stylesheet" type="text/css" href="${sessionScope.siteRoot}/page/admin/style.css">
 
@@ -43,28 +48,14 @@
                         // get rid of the 'targetSource' property
                         delete XNAT.data.siteConfig.targetSource;
 
-
-//                      var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.yaml');
                         var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/adminPage');
-//                        var jsonUrl = XNAT.url.rootUrl('/page/admin/data/site-admin-page.json');
 
                         $.get({
                             url: jsonUrl,
-                            // dataType: 'text',
                             success: function(data){
-
-                                if (typeof data === 'string') {
-                                    data = YAML.parse(data);
-                                }
-
-                                // console.log(JSON.stringify(data, ' ', 1));
-
                                 var adminTabs = XNAT.spawner.spawn(data);
                                 adminTabs.render('#admin-config-tabs > .xnat-tab-content');
                                 XNAT.app.adminTabs = adminTabs;
-
-                                // xmodal.loading.closeAll();
-
                             }
                         });
 

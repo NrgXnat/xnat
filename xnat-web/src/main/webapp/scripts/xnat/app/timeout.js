@@ -103,7 +103,7 @@ var XNAT = getObject(XNAT);
     // has it been cancelled?
     cookie.SESSION_DIALOG_CANCELLED = timeoutCookie('SESSION_DIALOG_CANCELLED').set('false');
 
-    // has the session timed out?
+    // is the session still active? (could have been logged out in another window)
     cookie.SESSION_ACTIVE = timeoutCookie('SESSION_ACTIVE').get();
 
     // has the session timed out?
@@ -119,7 +119,7 @@ var XNAT = getObject(XNAT);
     cookie.SESSION_LAST_LOGIN = timeoutCookie('SESSION_LAST_LOGIN');
 
     // what was the last page visited?
-    cookie.SESSION_LAST_PAGE = timeoutCookie('SESSION_LAST_PAGE').set(window.location.href);
+    cookie.SESSION_LAST_PAGE = timeoutCookie('SESSION_LAST_PAGE').get();
 
     timeout.expCookie = '';
 
@@ -247,6 +247,7 @@ var XNAT = getObject(XNAT);
             cookie.SESSION_DIALOG_CANCELLED.set('false');
             cookie.SESSION_TIMED_OUT.set('true');
             cookie.SESSION_LOGOUT_REDIRECT.set('true');
+            cookie.SESSION_LAST_PAGE.set(window.location.href);
             timeoutCookie('WARNING_BAR').set('OPEN');
             timeoutCookie('guest').set('true');
             // need to wait a little longer before reloading
@@ -331,7 +332,7 @@ var XNAT = getObject(XNAT);
                 return false;
             }
 
-            // redirect if the logged out from another window
+            // redirect if logged out from another window
             if (cookie.SESSION_ACTIVE.is('false')) {
                 redirectToLogin();
                 return false;

@@ -74,7 +74,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                 title: ' ',
 //                titleStyle: 'visibility:hidden;opacity:0;',
 //                onClose: function(){
-//                    xmodal.loading.open('Please wait...');
+//                    xmodal.loading.open('#wait');
 //                    window.top.location.reload(true);
 //                },
                 footer: false

@@ -3,7 +3,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <pg:wrapper>
-    <pg:xnat>
+    <pg:xnat title="Info.">
 
         <jsp:include page="content.jsp"/>
 

@@ -78,7 +78,7 @@
 	
 		function workflowUpdate(){
 
-            xmodal.loading.open('Please wait...');
+            xmodal.loading.open('#wait');
 
             function workflowUpdateOK(data, status, o){
                 xmodal.loading.close();

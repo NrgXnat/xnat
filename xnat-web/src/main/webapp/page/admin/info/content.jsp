@@ -10,8 +10,6 @@
     </pg:init>
 </c:if>
 
-<c:set var="pageName" value="info" scope="request"/>
-
 <c:set var="_msg">
     Nope.
 </c:set>

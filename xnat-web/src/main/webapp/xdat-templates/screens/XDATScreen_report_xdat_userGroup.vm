@@ -135,7 +135,7 @@ $page.setVlinkColor($ui.vlink)
 			</TABLE>
             <script type="text/javascript">
                 function goToGroupsPage(){
-                    xmodal.loading.open('Please wait...');
+                    xmodal.loading.open('#wait');
                     window.top.location.href = serverRoot + '/app/template/XDATScreen_groups.vm';
                 }
             </script>

@@ -48,7 +48,7 @@ $page.setVlinkColor($ui.vlink)
 <script type="text/javascript">
 
     function goToUsersPage(){
-        xmodal.loading.open('Please wait...');
+        xmodal.loading.open('#wait');
         window.top.location.href = serverRoot + '/app/template/XDATScreen_admin.vm';
     }
 

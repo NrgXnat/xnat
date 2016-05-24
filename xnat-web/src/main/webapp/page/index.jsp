@@ -5,13 +5,13 @@
 <pg:wrapper>
     <pg:xnat>
 
-        <c:set var="view" value="${param.view}"/>
+        <c:set var="incl" value="content.jsp"/>
 
-        <c:if test="${empty view}">
-            <c:set var="view" value="content"/>
+        <c:if test="${not empty param.view}">
+            <c:set var="incl" value="/page/${param.view}/content.jsp"/>
         </c:if>
 
-        <jsp:include page="${view}.jsp"/>
+        <jsp:include page="${incl}"/>
 
     </pg:xnat>
 </pg:wrapper>

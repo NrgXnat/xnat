@@ -128,16 +128,17 @@
             url = url.replace(/\/\/popup/,'/popup/'); // watch out for '//popup'
             xmodal.iframe({
                 src: url,
-                width: '60%',
+                width: '80%',
                 height: '80%',
                 minHeight: 540,
-                minWidth: 720,
-                maxWidth: 960,
+                minWidth: 840,
+//                maxWidth: 960,
+                padding: '20px',
                 title: url,
                 titleStyle: 'visibility:hidden;opacity:0;',
                 footer: false,
                 onClose: function(){
-                    xmodal.loading.open('Please wait...');
+                    xmodal.loading.open('#wait');
                     window.top.location.reload(true);
                 }
             });

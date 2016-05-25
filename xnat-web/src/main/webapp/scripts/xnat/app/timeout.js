@@ -255,7 +255,7 @@ var XNAT = getObject(XNAT);
             // need to wait a little longer before reloading
             setTimeout(function(){
                 window.location.reload();
-            }, 60000);
+            }, 2000);
         }
 
 

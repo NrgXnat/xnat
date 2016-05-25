@@ -95,6 +95,8 @@ var XNAT = getObject(XNAT || {});
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
 
+        opts.name = opts.name || opts.element.name || opts.id || opts.element.id || randomID('form-', false)
+
         var _target = spawn('div.panel-body', opts.element),
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
@@ -109,7 +111,8 @@ var XNAT = getObject(XNAT || {});
                 ['div.clear']
             ],
 
-            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
+            _formPanel = spawn('form.validate.xnat-form-panel.panel.panel-default', {
+                name: opts.name,
                 method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!'
             }, [
@@ -790,6 +793,7 @@ var XNAT = getObject(XNAT || {});
     return XNAT.ui.panel = panel;
 
 
+    
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // STOP EVERYTHING!!!!!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

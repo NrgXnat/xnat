@@ -136,10 +136,21 @@ $page.setTitle("$siteId - Please Login")
     </div>
 
     <div id="login_box">
+
         #if($data.getMessage())
-            <div class="message" style="border-bottom: 0">
-                <p><strong>Note: </strong><br />$data.getMessage()</p>
+
+            <div id="login-note" class="message" style="display:none;border-bottom:0">
+                <p><strong>Note: </strong><br>$data.getMessage()</p>
             </div>
+
+            <script>
+                (function(){
+                    if ((Cookies.get('SESSION_TIMED_OUT')||'').toString() === 'true') {
+                        $('#login-note').show();
+                    }
+                })()
+            </script>
+
         #end
 
         <form name="form1" method="post" action="$content.getURI("/login")" class="friendlyForm" id="login_form">

@@ -34,7 +34,7 @@ var XNAT = getObject(XNAT);
     spawner.notSpawned = [];
 
     function setRoot(url){
-        url = url.replace(/^(\.\/+)/, '/');
+        url = url.replace(/^([*.]\/+)/, '/');
         return XNAT.url.rootUrl(url)
     }
 
@@ -65,7 +65,7 @@ var XNAT = getObject(XNAT);
             kind = prop.kind || prop.type || 'div.spawned';
 
             // make 'href' 'src' and 'action' properties
-            // start at the site root if starting with './'
+            // start at the site root if starting with '*/'
             if (prop.config.href) {
                 prop.config.href = setRoot(prop.config.href)
             }
@@ -78,7 +78,7 @@ var XNAT = getObject(XNAT);
 
             // do a raw spawn() if 'kind' is 'element'
             // or if there's a tag property
-            if (kind === 'element' || prop.tag) {
+            if (kind === 'element' || prop.tag || prop.config.tag) {
                 try {
                     spawnedElement =
                         spawn(prop.tag || prop.config.tag || 'div', prop.config);
@@ -144,8 +144,8 @@ var XNAT = getObject(XNAT);
             if (prop.contains || prop.contents || prop.content || prop.children || prop[prop.kind]) {
                 prop.contents = prop[prop.contains] || prop.contents || prop.content || prop.children || prop[prop.kind];
                 // if there's a 'target' property, put contents in there
-                if (spawnedElement.target) {
-                    $spawnedElement = $(spawnedElement.target);
+                if (spawnedElement.target || spawnedElement.inner) {
+                    $spawnedElement = $(spawnedElement.target || spawnedElement.inner);
                 }
                 else {
                     $spawnedElement = $(spawnedElement.element);

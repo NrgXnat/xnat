@@ -24,6 +24,14 @@ var XNAT = getObject(XNAT);
     XNAT.app.timeout = timeout =
         getObject(XNAT.app.timeout || {});
 
+    function dateString(ms, strip){
+        var str = (new Date(ms)).toString();
+        if (strip !== false) {
+            str = str.replace(/\s+/g,'-');
+        }
+        return str;
+    }
+
     // timeout polling interval
     timeout.interval = 1000;
 
@@ -45,19 +53,21 @@ var XNAT = getObject(XNAT);
 
         var fn = CookieFn.prototype;
 
+        fn.exists = function(name){
+            this.name = name !== undefined ? name : this.name;
+            this.cookieExists = Cookies.get()[this.name] !== undefined;
+            return this.cookieExists;
+        };
+        // go ahead and check if this cookie exists
+        fn.exists();
+
         // reset values after each call
         fn.reset = function(){
-            this.cookieExists = false;
+            //this.cookieExists = false;
             this.name = name !== undefined ? name : this.name;
             this.value = '';
             this.opts = { path: '/' };
             return this;
-        };
-
-        fn.exists = function(name){
-            this.name = name;
-            this.cookieExists = !!Cookies.get(this.name);
-            return this.cookieExists;
         };
 
         fn.set = function(name, value){
@@ -73,8 +83,9 @@ var XNAT = getObject(XNAT);
         };
 
         // 'value' is a default value to set if the cookie doesn't exist
-        fn.get = function(){
-            this.value = Cookies.get()[this.name];
+        fn.get = function(value){
+            value = value !== undefined ? value : '';
+            this.value = this.exists() ? Cookies.get()[this.name] : value;
             return this;
         };
 
@@ -109,8 +120,11 @@ var XNAT = getObject(XNAT);
     // has the session timed out?
     cookie.SESSION_TIMED_OUT = timeoutCookie('SESSION_TIMED_OUT').get();
 
-    // the time, in ms, that the session will end
+    // the time, in ms, that the session will end or has ended
     cookie.SESSION_TIMEOUT_TIME = timeoutCookie('SESSION_TIMEOUT_TIME');
+
+    // the date and time, as a string, that the session will end or has ended
+    // cookie.SESSION_TIMEOUT_STRING = timeoutCookie('SESSION_TIMEOUT_STRING');
 
     // has the user been redirected after timout?
     cookie.SESSION_LOGOUT_REDIRECT = timeoutCookie('SESSION_LOGOUT_REDIRECT').get();
@@ -130,10 +144,10 @@ var XNAT = getObject(XNAT);
         var expCookie = cookie.SESSION_EXPIRATION_TIME.get().value;
         if (timeout.expCookie && timeout.expCookie === expCookie) return;
         timeout.expCookie = expCookie; // save it for next time
-        expCookie = expCookie.replace(/"/g, '').split(',');
+        expCookie = (expCookie||'').replace(/"/g, '').split(',');
         //timeout.startTime = +expCookie[0].trim() + 100;
         timeout.startTime = Date.now();
-        timeout.duration = +expCookie[1].trim();
+        timeout.duration = +(expCookie[1]||'').trim();
         timeout.endTime = timeout.startTime + timeout.duration;
         return {
             startTime: timeout.startTime,
@@ -143,8 +157,9 @@ var XNAT = getObject(XNAT);
     };
 
 
-    // set SESSION_TIMEOUT_TIME cookie
+    // set SESSION_TIMEOUT_* cookies on load
     cookie.SESSION_TIMEOUT_TIME.set(timeout.endTime);
+    // cookie.SESSION_TIMEOUT_STRING.set(dateString(timeout.endTime));
 
 
     function parseTimestamp(time) {
@@ -239,15 +254,17 @@ var XNAT = getObject(XNAT);
 
 
         function redirectToLogin() {
+            var NOW = Date.now();
             timeout.redirecting = true;
             if (!window.top.debug) {
                 xmodal.loading.open('#redirecting');
             }
             timeout.dialog.hide();
-            cookie.SESSION_TIMEOUT_TIME.set(Date.now());
             cookie.SESSION_DIALOG_OPEN.set('false');
             cookie.SESSION_DIALOG_CANCELLED.set('false');
             cookie.SESSION_TIMED_OUT.set('true');
+            cookie.SESSION_TIMEOUT_TIME.set(NOW);
+            // cookie.SESSION_TIMEOUT_STRING.set(dateString(NOW));
             cookie.SESSION_LOGOUT_REDIRECT.set('true');
             cookie.SESSION_LAST_PAGE.set(window.location.href);
             timeoutCookie('WARNING_BAR').set('OPEN');
@@ -271,6 +288,10 @@ var XNAT = getObject(XNAT);
             cookie.SESSION_DIALOG_CANCELLED.set('false');
             cookie.SESSION_TIMED_OUT.set('false');
             cookie.SESSION_TIMEOUT_TIME.set(timeout.endTime);
+            // cookie.SESSION_TIMEOUT_STRING.set(dateString(timeout.endTime));
+            if (console && console.log) {
+                console.log('Session ends: ' + dateString(timeout.endTime, false));
+            }
             cookie.SESSION_LOGOUT_REDIRECT.set('false');
             timeout.cancelled = false;
         }

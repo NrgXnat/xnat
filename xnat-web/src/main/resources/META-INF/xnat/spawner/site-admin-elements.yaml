@@ -814,7 +814,14 @@ registrationOptions:
             kind: panel.input.checkbox
             id: restrictUserListAccessToAdmins
             name: restrictUserListAccessToAdmins
-            label: "Restrict User List Access To Admins?"
+            label: "Restrict user list access to site administrators?"
+            description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
+        uiAllowNonAdminProjectCreation:
+            kind: panel.input.checkbox
+            id: uiAllowNonAdminProjectCreation
+            name: UI.allow-non-admin-project-creation
+            label: "Allow non-administrators to create projects?"
+            description: "Should this site allow non-administrator users to create new projects? If turned on, the site is more secure, but this can make it more difficult for regular users to create new projects for their research efforts."
 
 manageDataTypes:
     kind: panel.form

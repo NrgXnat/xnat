@@ -64,7 +64,7 @@ function fullConfigHandler() {
         , 'enableCsrfToken', 'enableCsrfEmail', 'restrictUserListAccessToAdmins', 'UI.allow-non-admin-project-creation', 'requireSaltedPasswords', 'passwordExpirationType', 'passwordExpirationInterval', 'passwordExpirationDate'
         , 'archivePath', 'checksums', 'prearchivePath', 'cachePath', 'ftpPath', 'buildPath', 'pipelinePath'
         , 'requireLogin', 'enableNewRegistrations', 'emailVerification'
-        , 'error', 'issue', 'newUser', 'update', 'emailAllowNonuserSubscribers', 'smtp.enabled'
+        , 'error', 'issue', 'newUser', 'update', 'emailAllowNonuserSubscribers', 'smt.enabled'
         , 'anonScript', 'anonEnabled'
         , 'applet'
         , 'dcmPort', 'dcmAe', 'enableDicomReceiver'

@@ -13,6 +13,7 @@ package org.nrg.xnat.turbine.utils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcArchivespecification;
+import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
@@ -94,29 +95,30 @@ public class ArcSpecManager {
 
     public synchronized static ArcArchivespecification initialize(final UserI user) throws Exception {
         arcSpec = new ArcArchivespecification(user);
-        final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
-        if (StringUtils.isNotBlank(preferences.getAdminEmail())) {
+        final SiteConfigPreferences siteConfigPreferences = XDAT.getSiteConfigPreferences();
+        final NotificationsPreferences notificationsPreferences = XDAT.getNotificationsPreferences();
+        if (StringUtils.isNotBlank(siteConfigPreferences.getAdminEmail())) {
             if (logger.isInfoEnabled()) {
-                logger.info("Setting site admin email to: {}", preferences.getAdminEmail());
+                logger.info("Setting site admin email to: {}", siteConfigPreferences.getAdminEmail());
             }
-            arcSpec.setSiteAdminEmail(preferences.getAdminEmail());
+            arcSpec.setSiteAdminEmail(siteConfigPreferences.getAdminEmail());
         }
 
-        if (StringUtils.isNotBlank(preferences.getSiteId())) {
+        if (StringUtils.isNotBlank(siteConfigPreferences.getSiteId())) {
             if (logger.isInfoEnabled()) {
-                logger.info("Setting site ID to: {}", preferences.getSiteId());
+                logger.info("Setting site ID to: {}", siteConfigPreferences.getSiteId());
             }
-            arcSpec.setSiteId(preferences.getSiteId());
+            arcSpec.setSiteId(siteConfigPreferences.getSiteId());
         }
 
-        if (StringUtils.isNotBlank(preferences.getSiteUrl())) {
+        if (StringUtils.isNotBlank(siteConfigPreferences.getSiteUrl())) {
             if (logger.isInfoEnabled()) {
-                logger.info("Setting site URL to: {}", preferences.getSiteUrl());
+                logger.info("Setting site URL to: {}", siteConfigPreferences.getSiteUrl());
             }
-            arcSpec.setSiteUrl(preferences.getSiteUrl());
+            arcSpec.setSiteUrl(siteConfigPreferences.getSiteUrl());
         }
 
-        final Map<String, String> smtpServer = preferences.getSmtpServer();
+        final Map<String, String> smtpServer = notificationsPreferences.getSmtpServer();
         if (smtpServer != null && smtpServer.containsKey("host")) {
             if (logger.isInfoEnabled()) {
                 logger.info("Setting SMTP host to: {}", smtpServer.get("host"));
@@ -125,61 +127,61 @@ public class ArcSpecManager {
         }
 
         if (logger.isInfoEnabled()) {
-            logger.info("Setting enable new registrations to: {}", preferences.getUserRegistration());
+            logger.info("Setting enable new registrations to: {}", siteConfigPreferences.getUserRegistration());
         }
-        arcSpec.setEnableNewRegistrations(preferences.getUserRegistration());
+        arcSpec.setEnableNewRegistrations(siteConfigPreferences.getUserRegistration());
 
         if (logger.isInfoEnabled()) {
-            logger.info("Setting reguire login to: {}", preferences.getRequireLogin());
+            logger.info("Setting reguire login to: {}", siteConfigPreferences.getRequireLogin());
         }
-        arcSpec.setRequireLogin(preferences.getRequireLogin());
+        arcSpec.setRequireLogin(siteConfigPreferences.getRequireLogin());
 
-        if (StringUtils.isNotBlank(preferences.getPipelinePath())) {
+        if (StringUtils.isNotBlank(siteConfigPreferences.getPipelinePath())) {
             if (logger.isInfoEnabled()) {
-                logger.info("Setting pipeline path to: {}", preferences.getPipelinePath());
+                logger.info("Setting pipeline path to: {}", siteConfigPreferences.getPipelinePath());
             }
-            arcSpec.setProperty("globalPaths/pipelinePath", preferences.getPipelinePath());
-        }
-
-        if (StringUtils.isNotBlank(preferences.getArchivePath())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting archive path to: {}", preferences.getArchivePath());
-            }
-            arcSpec.setProperty("globalPaths/archivePath", preferences.getArchivePath());
+            arcSpec.setProperty("globalPaths/pipelinePath", siteConfigPreferences.getPipelinePath());
         }
 
-        if (StringUtils.isNotBlank(preferences.getPrearchivePath())) {
+        if (StringUtils.isNotBlank(siteConfigPreferences.getArchivePath())) {
             if (logger.isInfoEnabled()) {
-                logger.info("Setting prearchive path to: {}", preferences.getPrearchivePath());
+                logger.info("Setting archive path to: {}", siteConfigPreferences.getArchivePath());
             }
-            arcSpec.setProperty("globalPaths/prearchivePath", preferences.getPrearchivePath());
+            arcSpec.setProperty("globalPaths/archivePath", siteConfigPreferences.getArchivePath());
         }
 
-        if (StringUtils.isNotBlank(preferences.getCachePath())) {
+        if (StringUtils.isNotBlank(siteConfigPreferences.getPrearchivePath())) {
             if (logger.isInfoEnabled()) {
-                logger.info("Setting cache path to: {}", preferences.getCachePath());
+                logger.info("Setting prearchive path to: {}", siteConfigPreferences.getPrearchivePath());
             }
-            arcSpec.setProperty("globalPaths/cachePath", preferences.getCachePath());
+            arcSpec.setProperty("globalPaths/prearchivePath", siteConfigPreferences.getPrearchivePath());
         }
 
-        if (StringUtils.isNotBlank(preferences.getFtpPath())) {
+        if (StringUtils.isNotBlank(siteConfigPreferences.getCachePath())) {
             if (logger.isInfoEnabled()) {
-                logger.info("Setting FTP path to: {}", preferences.getFtpPath());
+                logger.info("Setting cache path to: {}", siteConfigPreferences.getCachePath());
             }
-            arcSpec.setProperty("globalPaths/ftpPath", preferences.getFtpPath());
+            arcSpec.setProperty("globalPaths/cachePath", siteConfigPreferences.getCachePath());
         }
 
-        if (StringUtils.isNotBlank(preferences.getBuildPath())) {
+        if (StringUtils.isNotBlank(siteConfigPreferences.getFtpPath())) {
             if (logger.isInfoEnabled()) {
-                logger.info("Setting build path to: {}", preferences.getBuildPath());
+                logger.info("Setting FTP path to: {}", siteConfigPreferences.getFtpPath());
             }
-            arcSpec.setProperty("globalPaths/buildPath", preferences.getBuildPath());
+            arcSpec.setProperty("globalPaths/ftpPath", siteConfigPreferences.getFtpPath());
+        }
+
+        if (StringUtils.isNotBlank(siteConfigPreferences.getBuildPath())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Setting build path to: {}", siteConfigPreferences.getBuildPath());
+            }
+            arcSpec.setProperty("globalPaths/buildPath", siteConfigPreferences.getBuildPath());
         }
 
         if (logger.isInfoEnabled()) {
-            logger.info("Setting enable CSRF token to: {}", preferences.getEnableCsrfToken());
+            logger.info("Setting enable CSRF token to: {}", siteConfigPreferences.getEnableCsrfToken());
         }
-        arcSpec.setEnableCsrfToken(preferences.getEnableCsrfToken());
+        arcSpec.setEnableCsrfToken(siteConfigPreferences.getEnableCsrfToken());
 
         if (logger.isInfoEnabled()) {
             // logger.info("Saving arcspec: {}", displayArcSpec(arcSpec));

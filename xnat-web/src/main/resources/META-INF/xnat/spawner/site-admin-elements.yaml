@@ -446,10 +446,10 @@ securityServices:
 emailServerSettings:
     kind: panel.form
     method: POST
-    action: /xapi/siteConfig/smtpServer
+    action: /xapi/notifications/batchMail
     contentType: json
-    load: ?? XNAT.data.siteConfig.smtpServer
-    refresh: /xapi/siteConfig/smtpServer
+    load: ?? XNAT.data.notifications.batchMail
+    refresh: /xapi/notifications/batchMail
     name: emailServerSettings
     label: Mail Server Settings
     contents:
@@ -510,11 +510,11 @@ notifications:
     kind: panel.form
     name: notifications
     label: Notifications
-    action: /xapi/siteConfig/batch
+    action: /xapi/notifications/batch
     method: POST
     contentType: json
-    load: ?? XNAT.data.siteConfig
-    refresh: /xapi/siteConfig
+    load: ?? XNAT.data.notifications
+    refresh: /xapi/notifications
     contents:
         helpContactInfo:
             kind: panel.input.email

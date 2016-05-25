@@ -131,7 +131,7 @@ public class Transfer {
             xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
             xnatPipelineLauncher.setParameter("adminemail", admin_email);
             xnatPipelineLauncher.setParameter("xnatserver", system);
-            xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
+            xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
             xnatPipelineLauncher.setParameter("sessionType", mr.getXSIType());
             xnatPipelineLauncher.setParameter("xnat_project", mr.getProject());
             xnatPipelineLauncher.setParameter("logDir", XDAT.getSiteConfigPreferences().getCachePath() + "logs" + "/" + "transfer");

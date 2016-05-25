@@ -625,7 +625,7 @@ public class XnatPipelineLauncher {
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
         xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
-        xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
 
         xnatPipelineLauncher.setId(imageSession.getId());
@@ -662,7 +662,7 @@ public class XnatPipelineLauncher {
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
         xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
-        xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
 
         xnatPipelineLauncher.setId(imageSession.getId());

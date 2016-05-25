@@ -1011,6 +1011,8 @@ fileSystem:
     contentType: json
     action: /xapi/siteConfig/batch
     load: ?? XNAT.data.siteConfig
+    after:
+        - "<script type=\"text/javascript\">$('#archivePath').attr('disabled', 'disabled');</script>"
     contents:
         ${archivePath}
         ${cachePath}

@@ -1060,7 +1060,7 @@ misc:
                 link:
                     tag: a.link
                     element:
-#                        href: */page/admin/spawner/
+                        href: "*/page/admin/spawner/"
                         target: _blank
                         html: Manage The Spawner
         swagger:
@@ -1070,7 +1070,7 @@ misc:
                 link:
                     tag: a.link
                     element:
-#                        href: */xapi/swagger-ui.html
+                        href: "*/xapi/swagger-ui.html"
                         target: _blank
                         html: Swagger
 development:

@@ -21,93 +21,58 @@
 
                 <pg:restricted msg="${message}">
 
-                    <c:choose>
-                        <c:when test="${not empty param.init && param.init == true}">
+                    <c:import url="/xapi/siteConfig" var="siteConfig"/>
 
-                            <p>Initializing site...</p>
+                    <script>
+                        XNAT.data = extend({}, XNAT.data, {
+                            siteConfig: ${siteConfig}
+                        });
+                        // get rid of the 'targetSource' property
+                        delete XNAT.data.siteConfig.targetSource;
+                    </script>
 
-                            <script>
+                    <header id="content-header">
+                        <h2 class="pull-left">XNAT Site Setup</h2>
+                        <div class="hidden message pull-left">
+                            The settings below need to be configured before this XNAT system
+                            can be used. Please set the properties below and submit the form to continue.
+                        </div>
+                        <div class="clearfix"></div>
+                    </header>
 
-//                                xmodal.loading.open('#site-init');
-
-                                XNAT.xhr.postJSON({
-                                    url: XNAT.url.rootUrl('/xapi/siteConfig/batch'),
-                                    data: JSON.stringify({initialized:true}),
-                                    success: function(){
-                                        window.location.href = XNAT.url.rootUrl('/');
-                                    }
-                                }).fail(function(e, txt, jQxhr){
-                                    xmodal.loading.close('#site-init');
-                                    xmodal.message({
-                                        title: 'Error',
-                                        content: [
-                                            'An error occurred during initialization',
-                                            e,
-                                                txt
-                                        ].join(': <br>')
-                                    })
-                                });
-                            </script>
-
-                        </c:when>
-                        <c:otherwise>
-
-                            <c:import url="/xapi/siteConfig" var="siteConfig"/>
-
-                            <script>
-                                XNAT.data = extend({}, XNAT.data, {
-                                    siteConfig: ${siteConfig}
-                                });
-                                // get rid of the 'targetSource' property
-                                delete XNAT.data.siteConfig.targetSource;
-                            </script>
-
-                            <header id="content-header">
-                                <h2 class="pull-left">XNAT Site Setup</h2>
-                                <div class="hidden message pull-left">
-                                    The settings below need to be configured before this XNAT system
-                                    can be used. Please set the properties below and submit the form to continue.
-                                </div>
-                                <div class="clearfix"></div>
-                            </header>
-
-                            <!-- Setup tab container -->
-                            <div id="site-setup-panels">
+                    <!-- Setup tab container -->
+                    <div id="site-setup-panels">
 
 
-                                <!-- ======================== -->
-                                <!-- PANELS WILL SHOW UP HERE -->
-                                <!-- ======================== -->
+                        <!-- ======================== -->
+                        <!-- PANELS WILL SHOW UP HERE -->
+                        <!-- ======================== -->
 
 
-                            </div>
-                            <!-- /#site-setup-panels -->
+                    </div>
+                    <!-- /#site-setup-panels -->
 
-                            <script src="<c:url value="/scripts/xnat/app/siteSetup.js"/>"></script>
+                    <script src="<c:url value="/scripts/xnat/app/siteSetup.js"/>"></script>
 
-                            <script>
+                    <script>
 
-//                                XNAT.app.setupComplete = function(){
-//                                    XNAT.xhr.form('#site-setup', {});
-//                                };
-//
-                                XNAT.xhr.get({
-                                    url: XNAT.url.rootUrl('/setup/site-setup.yaml'),
-                                    //url: XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteSetup'),
-                                    success: function(data){
-                                        if (typeof data === 'string') {
-                                            data = YAML.parse(data);
-                                        }
-                                        var setupPanels = XNAT.spawner.spawn(data);
-                                        setupPanels.render('#site-setup-panels');
-                                    }
-                                });
+//                        XNAT.app.setupComplete = function(){
+//                            XNAT.xhr.form('#site-setup', {});
+//                        };
 
-                            </script>
+                        XNAT.xhr.get({
+                            url: XNAT.url.rootUrl('/setup/site-setup.yaml'),
+                            //url: XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteSetup'),
+                            success: function(data){
+                                if (typeof data === 'string') {
+                                    data = YAML.parse(data);
+                                }
+                                var setupPanels = XNAT.spawner.spawn(data);
+                                setupPanels.render('#site-setup-panels');
+                            }
+                        });
 
-                        </c:otherwise>
-                    </c:choose>
-
+                    </script>
 
                 </pg:restricted>
 

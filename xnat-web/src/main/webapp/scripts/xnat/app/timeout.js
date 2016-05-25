@@ -79,7 +79,7 @@ var XNAT = getObject(XNAT);
         };
 
         fn.is = function(value) {
-            return this.get().value.toString() === value.toString();
+            return (this.get().value||'').toString() === value.toString();
         };
 
         fn.cookie = function(name) {
@@ -104,7 +104,7 @@ var XNAT = getObject(XNAT);
     cookie.SESSION_DIALOG_CANCELLED = timeoutCookie('SESSION_DIALOG_CANCELLED').set('false');
 
     // is the session still active? (could have been logged out in another window)
-    cookie.SESSION_ACTIVE = timeoutCookie('SESSION_ACTIVE').get();
+    cookie.SESSION_ACTIVE = timeoutCookie('SESSION_ACTIVE').set(window.logged_in);
 
     // has the session timed out?
     cookie.SESSION_TIMED_OUT = timeoutCookie('SESSION_TIMED_OUT').get();
@@ -120,7 +120,7 @@ var XNAT = getObject(XNAT);
 
     // what was the last page visited?
     cookie.SESSION_LAST_PAGE = timeoutCookie('SESSION_LAST_PAGE').get();
-
+    
     timeout.expCookie = '';
 
     timeout.startTime = Date.now();
@@ -240,7 +240,9 @@ var XNAT = getObject(XNAT);
 
         function redirectToLogin() {
             timeout.redirecting = true;
-            xmodal.loading.open('#redirecting');
+            if (!window.top.debug) {
+                xmodal.loading.open('#redirecting');
+            }
             timeout.dialog.hide();
             cookie.SESSION_TIMEOUT_TIME.set(Date.now());
             cookie.SESSION_DIALOG_OPEN.set('false');
@@ -253,7 +255,7 @@ var XNAT = getObject(XNAT);
             // need to wait a little longer before reloading
             setTimeout(function(){
                 window.location.reload();
-            }, 2000);
+            }, 60000);
         }
 
 

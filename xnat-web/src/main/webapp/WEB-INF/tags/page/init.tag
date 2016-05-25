@@ -16,7 +16,7 @@
 
 <%-- REDIRECT IF NOT LOGGED IN (username will be '-') --%>
 <c:if test="${username == '-'}">
-    <c:redirect url="/app/template/Login.vm"/>
+    <%--<c:redirect url="/app/template/Login.vm"/>--%>
 </c:if>
 
 <sec:authorize access="hasAnyRole('Administrator', 'administrator', 'Admin', 'admin', 'ADMIN')">

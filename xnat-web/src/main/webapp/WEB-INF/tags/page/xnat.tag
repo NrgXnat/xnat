@@ -49,6 +49,8 @@
         //var showReason = typeof false != 'undefined' ? false : null;
         //var requireReason = typeof false != 'undefined' ? false : null;
 
+        window.logged_in = ${sessionScope.loggedIn};
+
     </script>
 
     <!-- XNAT global functions (no dependencies) -->
@@ -79,7 +81,6 @@
     <script src="${SITE_ROOT}/scripts/lib/js.cookie.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
 
-
     <%--<script src="${SITE_ROOT}/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>--%>
     <%--<script src="${SITE_ROOT}/scripts/yui/build/event/event-min.js"></script>--%>
     <%--<script src="${SITE_ROOT}/scripts/yui/build/container/container-min.js"></script>--%>
@@ -104,6 +105,10 @@
     <script src="${SITE_ROOT}/scripts/utils.js"></script>
 
     <script type="text/javascript">
+
+        if (window.logged_in) {
+            Cookies.set('guest', 'false', { path: '/' });
+        }
 
         /*
          * XNAT global namespace object, which will not be overwriten if
@@ -236,9 +241,6 @@ ${bodyTop}
                 <b>|</b>
                 <a id="logout_user" href="${SITE_ROOT}/app/action/LogoutUser">Logout</a>
             </span>
-            <script type="text/javascript">
-                Cookies.set('guest', 'false', {path: '/'});
-            </script>
             <script src="${SITE_ROOT}/scripts/xnat/app/timeout.js"></script>
 
         </c:if>
@@ -443,9 +445,6 @@ ${bodyTop}
                         placeholder_text_single: 'Stored Searches',
                         search_contains: true
                     });
-
-
-                    window.logged_in = true;
 
                 </script>
             </form>

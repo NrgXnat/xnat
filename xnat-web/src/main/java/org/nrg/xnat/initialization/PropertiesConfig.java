@@ -25,10 +25,9 @@ import java.util.List;
  * Configures the properties for XNAT. This looks in three different places for
  */
 @Configuration
-@PropertySources({
-     @PropertySource(value = PropertiesConfig.XNAT_HOME_URL, ignoreResourceNotFound = true),
-     @PropertySource(value = PropertiesConfig.XNAT_CONFIG_HOME_URL, ignoreResourceNotFound = true),
-     @PropertySource(value = PropertiesConfig.XNAT_CONFIG_URL, ignoreResourceNotFound = true)})
+@PropertySources({@PropertySource(value = PropertiesConfig.XNAT_HOME_URL, ignoreResourceNotFound = true),
+                  @PropertySource(value = PropertiesConfig.XNAT_CONFIG_HOME_URL, ignoreResourceNotFound = true),
+                  @PropertySource(value = PropertiesConfig.XNAT_CONFIG_URL, ignoreResourceNotFound = true)})
 public class PropertiesConfig {
 
     public static final String ENV_HOME              = "HOME";
@@ -67,7 +66,7 @@ public class PropertiesConfig {
             // thrown an exception.
             _xnatHome = configFolderPaths().get(0).getParent();
             if (_log.isInfoEnabled()) {
-                _log.info("Set path {} as the XNAT home folder.");
+                _log.info("Set path {} as the XNAT home folder.", _xnatHome);
             }
         }
         return _xnatHome;
@@ -106,11 +105,20 @@ public class PropertiesConfig {
     private static File getConfigurationFile(final Environment environment) {
         final List<Path> folders = getConfigFolderPaths(environment);
         for (final Path path : folders) {
+            if (_log.isDebugEnabled()) {
+                _log.debug("Checking path {}", path.toString());
+            }
             if (path.toFile().exists() && path.toFile().isFile()) {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("The path {} exists and is a file, using this to initialize", path.toString());
+                }
                 return path.toFile();
             }
             final File candidate = path.resolve(XNAT_CONF_FILE).toFile();
             if (candidate.exists()) {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Found the file {} at the candidate path {}, using this to initialize", XNAT_CONF_FILE, path.toString());
+                }
                 return candidate;
             }
         }
@@ -126,6 +134,8 @@ public class PropertiesConfig {
                     _log.info("Adding path {} to the list of available configuration folders.", path.toString());
                 }
                 configFolderPaths.add(path);
+            } else if (_log.isDebugEnabled()) {
+                _log.debug("The location {} and path {} did not resolve to a usable path.", CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index));
             }
         }
         if (configFolderPaths.size() == 0) {
@@ -148,7 +158,10 @@ public class PropertiesConfig {
                 _log.debug("Value of environment variable {} was blank, not a candidate.", variable);
             }
             return null;
+        } else if (_log.isDebugEnabled()) {
+            _log.debug("Found value of '{}' for environment variable {}", value, variable);
         }
+
         final Path candidate = Paths.get(value, relative);
         final File file      = candidate.toFile();
         if (file.exists()) {
@@ -160,15 +173,24 @@ public class PropertiesConfig {
                 // Then cool, just return that.
                 return candidate;
             } else {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Environment variable {} resolved to path {}, which exists but is not a directory, checking to see if it's a known configuration file.", variable, candidate.toString());
+                }
                 // If it's a file, then the parent is probably a config folder, so if this is xnat-conf.properties (the default) or the specific file identified by xnat.config...
                 if (file.getName().equals(XNAT_CONF_FILE) || StringUtils.equals(candidate.toString(), environment.getProperty(JAVA_XNAT_CONFIG))) {
                     // So its parent is a config folder, QED.
+                    if (_log.isDebugEnabled()) {
+                        _log.debug("Environment variable {} resolved to path {}, this is a known configuration file so returning this.", variable, candidate.toString());
+                    }
                     return candidate.getParent();
                 }
             }
-        } else if (_log.isDebugEnabled()) {
-            _log.debug("The path suggested by environment variable {} resolved to {}, which doesn't exist, not a candidate.", variable, candidate.toString());
         }
+
+        if (_log.isDebugEnabled()) {
+            _log.debug("The environment variable {} resolved to path {}, this doesn't indicate a directory or known configuration file so returning null.", variable, candidate.toString());
+        }
+
         return null;
     }
 

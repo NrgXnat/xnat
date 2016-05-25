@@ -100,6 +100,8 @@ archivePath:
     label: Archive Path
     validation: required path
     description: ""
+    element:
+        disabled: true
 cachePath:
     kind: panel.input.text
     id: cachePath
@@ -1022,8 +1024,6 @@ fileSystem:
     contentType: json
     action: /xapi/siteConfig/batch
     load: ?? XNAT.data.siteConfig
-    after:
-        - "<script type=\"text/javascript\">$('#archivePath').attr('disabled', 'disabled');</script>"
     contents:
         ${archivePath}
         ${cachePath}
@@ -1060,7 +1060,7 @@ misc:
                 link:
                     tag: a.link
                     element:
-                        href: */page/admin/spawner/
+#                        href: */page/admin/spawner/
                         target: _blank
                         html: Manage The Spawner
         swagger:
@@ -1070,7 +1070,7 @@ misc:
                 link:
                     tag: a.link
                     element:
-                        href: */xapi/swagger-ui.html
+#                        href: */xapi/swagger-ui.html
                         target: _blank
                         html: Swagger
 development:

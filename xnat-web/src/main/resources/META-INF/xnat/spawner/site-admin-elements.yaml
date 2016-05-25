@@ -140,7 +140,18 @@ zipExtensions:
     id: zipExtensions
     name: zipExtensions
     label: Zip Extensions
-    
+checksums:
+    kind: panel.input.checkbox
+    id: checksums
+    name: checksums
+    label: Checksums?
+    description: "Indicates whether checksums should be calculated for each image file as it's archived. Activating this provides greater assurance of data integrity, but may add significant overhead to the archive process."
+checksumsPropertyChangedListener:
+    kind: panel.input.text
+    id: checksumsPropertyChangedListener
+    name: checksums.property.changed.listener
+    label: Checksums Property Changed Listener?
+
 siteInfo:
     kind: panel.form
     name: siteInfo
@@ -1021,6 +1032,8 @@ fileSystem:
         ${buildPath}
         ${pipelinePath}
         ${zipExtensions}
+        ${checksums}
+        ${checksumsPropertyChangedListener}
 
 misc:
     kind: panel.form
@@ -1032,16 +1045,6 @@ misc:
     load: ?? XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
-        checksums:
-            kind: panel.input.checkbox
-            id: checksums
-            name: checksums
-            label: Checksums?
-        checksumsPropertyChangedListener:
-            kind: panel.input.text
-            id: checksumsPropertyChangedListener
-            name: checksums.property.changed.listener
-            label: Checksums Property Changed Listener?
         scanTypeMapping:
             kind: panel.input.checkbox
             id: scanTypeMapping

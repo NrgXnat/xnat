@@ -19,14 +19,14 @@
 											#if($assessor.getHeader())
 												<a href="$url" title="$assessor.getIdentifier($project)">$!assessor.getHeader()</A>
 											#else
-												<a href="$url" title="$assessor.getIdentifier($project)">$user.getDisplayManager().getSingularDisplayNameForElement($assessor.getXSIType())</A>
+												<a href="$url" title="$assessor.getIdentifier($project)">$displayManager.getSingularDisplayNameForElement($assessor.getXSIType())</A>
 											#end
 											
 										#else
 											#if($assessor.getHeader())
 												<a title="$assessor.getIdentifier($project)">$!assessor.getHeader()</A>
 											#else
-												<a title="$assessor.getIdentifier($project)">$user.getDisplayManager().getSingularDisplayNameForElement($assessor.getXSIType())</A>
+												<a title="$assessor.getIdentifier($project)">$displayManager.getSingularDisplayNameForElement($assessor.getXSIType())</A>
 											#end
 										#end
 										</TD>

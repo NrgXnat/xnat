@@ -176,7 +176,18 @@ zipExtensions:
     id: zipExtensions
     name: zipExtensions
     label: Zip Extensions
-    
+checksums:
+    kind: panel.input.checkbox
+    id: checksums
+    name: checksums
+    label: Checksums?
+    description: "Indicates whether checksums should be calculated for each image file as it's archived. Activating this provides greater assurance of data integrity, but may add significant overhead to the archive process."
+checksumsPropertyChangedListener:
+    kind: panel.input.text
+    id: checksumsPropertyChangedListener
+    name: checksums.property.changed.listener
+    label: Checksums Property Changed Listener?
+
 siteInfo:
     kind: panel.form
     name: siteInfo
@@ -190,8 +201,6 @@ siteInfo:
         ${siteId}
         ${siteUrl}
         ${siteDescriptionType}
-        ${siteDescriptionPage}
-        ${siteDescriptionText}
         ${siteLoginLanding}
         ${siteLandingLayout}
         ${siteHome}
@@ -259,7 +268,9 @@ userLoginsSessionControls:
             id: sessionTimeout
             name: sessionTimeout
             label: Session Timeout
-            description: "Interval for timing out user sessions. Uses <a target=\"_blank\" href=\"http://www.postgresql.org/docs/9.0/static/functions-datetime.html\">PostgreSQL interval notation</a>"
+            description: >
+              Interval for timing out user sessions. Uses
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         aliasTokenTimeout:
             kind: panel.input.text
             id: aliasTokenTimeout
@@ -1024,7 +1035,7 @@ dicomScpReceivers:
             kind: panel.input.number
             id: dicomPortNumber
             name: dicomPortNumber
-            label: DICOM Host
+            label: DICOM Port
             description: "Port for DICOM Receiver(s)"
         defaultDicomReceiver:
             kind: panel.select.single
@@ -1047,11 +1058,6 @@ fileSystem:
     contentType: json
     action: /xapi/siteConfig/batch
     load: ?? XNAT.data.siteConfig
-#    after:
-#        disableArchivePath:
-#            tag: script
-#            element:
-#                html: "$$('id=archivePath').attr('disabled', 'disabled')"
     contents:
         ${archivePath}
         ${cachePath}
@@ -1060,6 +1066,8 @@ fileSystem:
         ${buildPath}
         ${pipelinePath}
         ${zipExtensions}
+        ${checksums}
+        ${checksumsPropertyChangedListener}
 
 misc:
     kind: panel.form
@@ -1071,16 +1079,6 @@ misc:
     load: ?? XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
-        checksums:
-            kind: panel.input.checkbox
-            id: checksums
-            name: checksums
-            label: Checksums?
-        checksumsPropertyChangedListener:
-            kind: panel.input.text
-            id: checksumsPropertyChangedListener
-            name: checksums.property.changed.listener
-            label: Checksums Property Changed Listener?
         scanTypeMapping:
             kind: panel.input.checkbox
             id: scanTypeMapping

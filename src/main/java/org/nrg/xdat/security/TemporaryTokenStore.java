@@ -13,7 +13,6 @@ package org.nrg.xdat.security;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 
@@ -156,7 +155,7 @@ public final class TemporaryTokenStore {
 		final String body = "Dear " + u.getFirstname() + " " + u.getLastname() + ",\n" + emailBody(null);
 		CallableWith<Void,String> emailAction = new CallableWith<Void,String>() {
 			public Void call(String login) {
-				if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
+				if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
 					try {
 						XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subj, body);
 					} catch (MessagingException exception) {

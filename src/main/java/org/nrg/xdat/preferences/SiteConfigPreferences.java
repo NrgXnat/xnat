@@ -2,17 +2,10 @@ package org.nrg.xdat.preferences;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.framework.constants.Scope;
-import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.scope.EntityId;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
-import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.prefs.exceptions.UnknownToolId;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
@@ -24,12 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 
 import javax.xml.bind.annotation.XmlRootElement;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 @SuppressWarnings("unused")
 @XmlRootElement
@@ -38,7 +28,7 @@ import java.util.Map;
                    description = "Manages site configurations and settings for the XNAT system.",
                    properties = "config/site/siteConfiguration.properties",
                    strict = false)
-public class SiteConfigPreferences extends AbstractPreferenceBean {
+public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
     @NrgPreference(defaultValue = "XNAT")
@@ -158,18 +148,6 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "{'host':'localhost','port':'25'}")
-    public Map<String, String> getSmtpServer() {
-        return getMapValue("smtpServer");
-    }
-
-    public void setSmtpServer(final Map<String, String> smtpServer) {
-        try {
-            setMapValue("smtpServer", smtpServer);
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'smtpServer': something is very wrong here.", e);
-        }
-    }
 
     @NrgPreference(defaultValue = "^.*$")
     public String getPasswordComplexity() {
@@ -353,19 +331,6 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "true")
-    public boolean getEmailAllowNonuserSubscribers() {
-        return getBooleanValue("emailAllowNonuserSubscribers");
-    }
-
-    public void setEmailAllowNonuserSubscribers(final boolean emailAllowNonuserSubscribers) {
-        try {
-            setBooleanValue(emailAllowNonuserSubscribers, "emailAllowNonuserSubscribers");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'emailAllowNonuserSubscribers': something is very wrong here.", e);
-        }
-    }
-
     @NrgPreference(defaultValue = "Interval")
     public String getPasswordExpirationType() {
         return getValue("passwordExpirationType");
@@ -532,19 +497,6 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
             setBooleanValue(scanTypeMapping, "scanTypeMapping");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "true", property = "smtp.enabled")
-    public boolean getSmtpEnabled() {
-        return getBooleanValue("smtp.enabled");
-    }
-
-    public void setSmtpEnabled(final boolean smtpEnabled) {
-        try {
-            setBooleanValue(smtpEnabled, "smtp.enabled");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'smtp.enabled': something is very wrong here.", e);
         }
     }
 
@@ -1247,349 +1199,6 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(property = "notifications.helpContactInfo")
-    public String getHelpContactInfo(){
-        return getValue("notifications.helpContactInfo");
-    }
-
-    public void setHelpContactInfo(final String helpContactInfo) {
-        try {
-            set(helpContactInfo, "notifications.helpContactInfo");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.helpContactInfo': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(property = "notifications.emailMessageUserRegistration")
-    public String getEmailMessageUserRegistration(){
-        return getValue("notifications.emailMessageUserRegistration");
-    }
-
-    public void setEmailMessageUserRegistration(final String emailMessageUserRegistration) {
-        try {
-            set(emailMessageUserRegistration, "notifications.emailMessageUserRegistration");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailMessageUserRegistration': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(property = "notifications.emailMessageForgotUsernameRequest")
-    public String getEmailMessageForgotUsernameRequest(){
-        return getValue("notifications.emailMessageForgotUsernameRequest");
-    }
-
-    public void setEmailMessageForgotUsernameRequest(final String emailMessageForgotUsernameRequest) {
-        try {
-            set(emailMessageForgotUsernameRequest, "notifications.emailMessageForgotUsernameRequest");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailMessageForgotUsernameRequest': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(property = "notifications.emailMessageForgotPasswordReset")
-    public String getEmailMessageForgotPasswordReset(){
-        return getValue("notifications.emailMessageForgotPasswordReset");
-    }
-
-    public void setEmailMessageForgotPasswordReset(final String emailMessageForgotPasswordReset) {
-        try {
-            set(emailMessageForgotPasswordReset, "notifications.emailMessageForgotPasswordReset");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailMessageForgotPasswordReset': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminUserRegistration")
-    public boolean getNotifyAdminUserRegistration(){
-        return getBooleanValue("notifications.notifyAdminUserRegistration");
-    }
-
-    public void setNotifyAdminUserRegistration(final boolean notifyAdminUserRegistration) {
-        try {
-            setBooleanValue(notifyAdminUserRegistration, "notifications.notifyAdminUserRegistration");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.notifyAdminUserRegistration': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminPipelineEmails")
-    public boolean getNotifyAdminPipelineEmails(){
-        return getBooleanValue("notifications.notifyAdminPipelineEmails");
-    }
-
-    public void setNotifyAdminPipelineEmails(final boolean notifyAdminPipelineEmails) {
-        try {
-            setBooleanValue(notifyAdminPipelineEmails, "notifications.notifyAdminPipelineEmails");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.notifyAdminPipelineEmails': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminProjectAccessRequest")
-    public boolean getNotifyAdminProjectAccessRequest(){
-        return getBooleanValue("notifications.notifyAdminProjectAccessRequest");
-    }
-
-    public void setNotifyAdminProjectAccessRequest(final boolean notifyAdminProjectAccessRequest) {
-        try {
-            setBooleanValue(notifyAdminProjectAccessRequest, "notifications.notifyAdminProjectAccessRequest");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.notifyAdminProjectAccessRequest': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminProjectOnSessionTransfer")
-    public boolean getNotifyAdminSessionTransfer(){
-        return getBooleanValue("notifications.notifyAdminProjectOnSessionTransfer");
-    }
-
-    public void setNotifyAdminSessionTransfer(final boolean notifyAdminProjectOnSessionTransfer) {
-        try {
-            setBooleanValue(notifyAdminProjectOnSessionTransfer, "notifications.notifyAdminProjectOnSessionTransfer");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.notifyAdminProjectOnSessionTransfer': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(property = "notifications.emailRecipientErrorMessages")
-    public String getEmailRecipientErrorMessages(){
-        return getValue("notifications.emailRecipientErrorMessages");
-    }
-
-    public void setEmailRecipientErrorMessages(final String emailRecipientErrorMessages) {
-        try {
-            set(emailRecipientErrorMessages, "notifications.emailRecipientErrorMessages");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailRecipientErrorMessages': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(property = "notifications.emailRecipientIssueReports")
-    public String getEmailRecipientIssueReports(){
-        return getValue("notifications.emailRecipientIssueReports");
-    }
-
-    public void setEmailRecipientIssueReports(final String emailRecipientIssueReports) {
-        try {
-            set(emailRecipientIssueReports, "notifications.emailRecipientIssueReports");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailRecipientIssueReports': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(property = "notifications.emailRecipientNewUserAlert")
-    public String getEmailRecipientNewUserAlert(){
-        return getValue("notifications.emailRecipientNewUserAlert");
-    }
-
-    public void setEmailRecipientNewUserAlert(final String emailRecipientNewUserAlert) {
-        try {
-            set(emailRecipientNewUserAlert, "notifications.emailRecipientNewUserAlert");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailRecipientNewUserAlert': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(property = "notifications.emailRecipientUpdate")
-    public String getEmailRecipientUpdate(){
-        return getValue("notifications.emailRecipientUpdate");
-    }
-
-    public void setEmailRecipientUpdate(final String emailRecipientUpdate) {
-        try {
-            set(emailRecipientUpdate, "notifications.emailRecipientUpdate");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailRecipientUpdate': something is very wrong here.", e);
-        }
-    }
-
-    private void triggerEventIfChanging(final String namespacedPropertyId, final String oldValue, final String newValue){
-        if(!StringUtils.equals(oldValue,newValue)) { //Check if value is being changed.
-            XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent(namespacedPropertyId, newValue));
-        }
-    }
-
-    @JsonIgnore
-    @Override
-    public void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getValue(namespacedPropertyId);
-        super.set(scope, entityId, value, key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value);
-    }
-
-    @JsonIgnore
-    @Override
-    public void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getValue(namespacedPropertyId);
-        super.set(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value);
-    }
-
-    @JsonIgnore
-    @Override
-    public void setBooleanValue(final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getBooleanValue(namespacedPropertyId).toString();
-        super.setBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setBooleanValue(final Scope scope, final String entityId, final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getBooleanValue(namespacedPropertyId).toString();
-        super.set(scope, entityId, value.toString(), key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setIntegerValue(final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getIntegerValue(namespacedPropertyId).toString();
-        super.setIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setIntegerValue(final Scope scope, final String entityId, final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getIntegerValue(namespacedPropertyId).toString();
-        super.set(scope, entityId, value.toString(), key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setLongValue(final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getLongValue(namespacedPropertyId).toString();
-        super.setLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setLongValue(final Scope scope, final String entityId, final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getLongValue(namespacedPropertyId).toString();
-        super.set(scope, entityId, value.toString(), key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setFloatValue(final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getFloatValue(namespacedPropertyId).toString();
-        super.setFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setFloatValue(final Scope scope, final String entityId, final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getFloatValue(namespacedPropertyId).toString();
-        super.set(scope, entityId, value.toString(), key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setDoubleValue(final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getDoubleValue(namespacedPropertyId).toString();
-        super.setDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setDoubleValue(final Scope scope, final String entityId, final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getDoubleValue(namespacedPropertyId).toString();
-        super.set(scope, entityId, value.toString(), key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getDateValue(namespacedPropertyId).toString();
-        super.setDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        final String namespacedPropertyId = super.getNamespacedPropertyId(key, subkeys);
-        String oldValue = getDateValue(namespacedPropertyId).toString();
-        super.set(scope, entityId, Long.toString(value.getTime()), key, subkeys);
-        triggerEventIfChanging(namespacedPropertyId, oldValue, value.toString());
-    }
-
-    @JsonIgnore
-    @Override
-    public <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
-        this.setMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, map);
-    }
-
-    @JsonIgnore
-    @Override
-    public <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
-        Iterator var5 = map.keySet().iterator();
-
-        while(var5.hasNext()) {
-            String key = (String)var5.next();
-            String id = this.getNamespacedPropertyId(preferenceName, new String[]{key});
-
-            try {
-                this.set(scope, entityId, this.serialize(map.get(key)), id, new String[0]);
-            } catch (IOException var9) {
-                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", var9);
-            }
-        }
-    }
-
-    @JsonIgnore
-    @Override
-    public <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
-        this.setListValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, list);
-    }
-
-    @JsonIgnore
-    @Override
-    public <T> void setListValue(final Scope scope, final String entityId, final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
-        try {
-            this.set(scope, entityId, preferenceName, this.serialize(list), new String[0]);
-        } catch (IOException var6) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", var6);
-        }
-    }
-
-    @JsonIgnore
-    @Override
-    public <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
-        this.setArrayValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, array);
-    }
-
-    @JsonIgnore
-    @Override
-    public <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
-        try {
-            this.set(scope, entityId, preferenceName, this.serialize(array), new String[0]);
-        } catch (IOException var6) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", var6);
-        }
-    }
-
     @JsonIgnore
     public static long convertPGIntervalToSeconds(final String expression) throws SQLException {
         final PGInterval interval = new PGInterval(expression);
@@ -1611,6 +1220,8 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
                !StringUtils.isBlank(getFtpPath());
     }
 
+    private static final Logger _log = LoggerFactory.getLogger(SiteConfigPreferences.class);
+
     @Lazy
     @Autowired
     private NrgEventService _eventService;
@@ -1619,5 +1230,4 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";
     private static final String SHOW_CHANGE_JUSTIFICATION = "audit.show_change_justification";
 
-    private static final Logger _log = LoggerFactory.getLogger(SiteConfigPreferences.class);
 }

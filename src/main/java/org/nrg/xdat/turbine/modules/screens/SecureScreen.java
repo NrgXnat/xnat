@@ -86,6 +86,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         c.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
         c.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
 
+        c.put("notifications", XDAT.getNotificationsPreferences());
         c.put("siteConfig", XDAT.getSiteConfigPreferences());
     }
 

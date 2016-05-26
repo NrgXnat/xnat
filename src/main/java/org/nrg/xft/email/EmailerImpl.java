@@ -84,7 +84,7 @@ public class EmailerImpl implements EmailerI {
 
     public void send() throws EmailException {
         try {
-            String host = XDAT.getSiteConfigPreferences().getSmtpServer().get("host");
+            String host = XDAT.getNotificationsPreferences().getSmtpServer().get("host");
 
             HtmlEmail sm = new HtmlEmail();
 

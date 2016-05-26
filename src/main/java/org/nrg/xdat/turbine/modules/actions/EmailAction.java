@@ -11,8 +11,6 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import javax.mail.MessagingException;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
@@ -21,6 +19,8 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
+
+import javax.mail.MessagingException;
 
 /**
  * @author Tim
@@ -51,7 +51,7 @@ public class EmailAction extends SecureAction {
 
 	public void sendMessage(RunData data, Context context) {
 
-		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
+		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
 			if (!StringUtils.isBlank(toAddress) || !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {
 				if (AdminUtils.GetPageEmail()) {
 					if (StringUtils.isBlank(bccAddress)) {

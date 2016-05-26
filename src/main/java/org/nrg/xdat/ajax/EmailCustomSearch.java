@@ -36,7 +36,7 @@ public class EmailCustomSearch {
         UserI user = XDAT.getUserDetails();
 
         String _return ="<DIV class=\"error\">Unknown Exception</DIV>";
-		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
+		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
         if (user!=null){
             String toAddress = req.getParameter("toAddress");
             String ccAddress = req.getParameter("ccAddress");

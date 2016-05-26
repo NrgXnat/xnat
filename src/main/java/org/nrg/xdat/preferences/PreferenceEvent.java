@@ -4,9 +4,9 @@ import org.nrg.framework.event.entities.EventSpecificFields;
 import java.util.Set;
 import java.util.HashSet;
 
-public class SiteConfigPreferenceEvent extends StructuredEvent {
+public class PreferenceEvent extends StructuredEvent {
 
-    public SiteConfigPreferenceEvent(String preferenceName, String value){
+    public PreferenceEvent(String preferenceName, String value){
         Set<EventSpecificFields> eventSpecificFields = new HashSet<EventSpecificFields>();
         EventSpecificFields field = new EventSpecificFields(preferenceName, value);
         eventSpecificFields.add(field);

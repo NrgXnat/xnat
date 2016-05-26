@@ -36,6 +36,7 @@ import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
@@ -96,6 +97,7 @@ public class XDAT implements Initializable,Configurable{
     private static ConfigService _configurationService;
     private static SiteConfigurationService _siteConfigurationService;
 	private static SiteConfigPreferences _siteConfigPreferences;
+	private static NotificationsPreferences _notificationsPreferences;
 	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
 	private static String _configFilesLocation = null;
 	private String instanceSettingsLocation = null;
@@ -528,6 +530,17 @@ public class XDAT implements Initializable,Configurable{
 	    	_siteConfigPreferences = getContextService().getBean(SiteConfigPreferences.class);
 	    }
 	    return _siteConfigPreferences;
+	}
+
+	/**
+	 * Returns an instance of the notifications preferences bean.
+	 * @return An instance of the {@link NotificationsPreferences} bean.
+	 */
+	public static NotificationsPreferences getNotificationsPreferences() {
+		if (_notificationsPreferences == null) {
+			_notificationsPreferences = getContextService().getBean(NotificationsPreferences.class);
+		}
+		return _notificationsPreferences;
 	}
 
 	public static XdatUserAuthService getXdatUserAuthService() {

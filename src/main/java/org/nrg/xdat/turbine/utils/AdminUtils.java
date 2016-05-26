@@ -248,7 +248,7 @@ public class AdminUtils {
 
    public static void sendNewUserVerificationEmail(String email, String firstName, String lastName, String userName) throws Exception{
 
-		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
+		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
        if((email == null || email.equals("")) || (firstName == null || firstName.equals("")) ||
           (lastName == null || lastName.equals("")) || (userName == null || userName.equals("")))
        {
@@ -274,7 +274,7 @@ public class AdminUtils {
 	 */
 
 	public static void sendNewUserEmailMessage(String username, String email, Context context) throws Exception {
-		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
+		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
         context.put("username", username);
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("system", TurbineUtils.GetSystemName());
@@ -312,7 +312,7 @@ public class AdminUtils {
 	 */
 
 	public static void sendAuthorizationEmailMessage(UserI user) {
-		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
+		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
 		String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 		String[] tos = StringUtils.split(getAuthorizerEmailId(), ", ");
 		String[] ccs = AdminUtils.GetNewUserRegistrationsEmail() ? new String[] { from } : null;
@@ -327,7 +327,7 @@ public class AdminUtils {
 	}
 
     public static boolean sendUserHTMLEmail(String subject, String message, boolean ccAdmin, String[] email_addresses) {
-		if (XDAT.getSiteConfigPreferences().getSmtpEnabled()) {
+		if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
 			if (email_addresses.length > 0) {
 				final String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 				try {
@@ -369,7 +369,7 @@ public class AdminUtils {
 	}
 
 	public static void sendAdminEmail(UserI user, String subject, String message) {
-		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
+		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
 		String admin = XDAT.getSiteConfigPreferences().getAdminEmail();
 		String qualifiedSubject = TurbineUtils.GetSystemName() + ": " + subject;
 

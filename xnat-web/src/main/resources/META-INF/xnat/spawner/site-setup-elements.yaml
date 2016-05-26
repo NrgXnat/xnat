@@ -126,10 +126,10 @@ smtpServer:
     label: SMTP Server Settings
     footer: false
     method: POST
-    action: /xapi/siteConfig/smtpServer
+    action: /xapi/notifications/batchMail
     contentType: json
-    load: ?? XNAT.data.siteConfig.smtpServer
-    refresh: /xapi/siteConfig/smtpServer
+    load: ?? XNAT.data.notifications
+    refresh: /xapi/notifications/
     contents:
 
         host:

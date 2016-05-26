@@ -140,17 +140,17 @@ siteSetup:
             label: SMTP Server Settings
             footer: false
             method: POST
-            action: /xapi/siteConfig/smtpServer
+            action: /xapi/notifications/batchMail
             contentType: json
-#            load: ?? XNAT.data.siteConfig.smtpServer
-            refresh: /xapi/siteConfig/smtpServer
+#            load: ?? XNAT.data.notifications
+            refresh: /xapi/notifications/
             contents:
 
                 host:
                     kind: panel.input.text
                     name: host
                     label: Host
-                    value: ?? XNAT:data:siteConfig:smtpServer:host
+                    value: ?? XNAT:data:notifications:host
 #                    value: ""
                     placeholder: localhost
                     validation: required
@@ -159,7 +159,7 @@ siteSetup:
                     kind: panel.input.number
                     name: port
                     label: Port
-                    value: ?? XNAT:data:siteConfig:smtpServer:port
+                    value: ?? XNAT:data:notifications:port
 #                    value: ""
                     placeholder: 25
                     validation: required number
@@ -168,21 +168,21 @@ siteSetup:
                     kind: panel.input.text
                     name: username
                     label: Username
-                    value: ?? XNAT:data:siteConfig:smtpServer:username
+                    value: ?? XNAT:data:notifications:username
 #                    value: ""
 
                 password:
                     kind: panel.input.password
                     name: password
                     label: Password
-                    value: ?? XNAT:data:siteConfig:smtpServer:password
+                    value: ?? XNAT:data:notifications:password
 #                    value: ""
 
                 protocol:
                     kind: panel.input.text
                     name: protocol
                     label: Protocol
-                    value: ?? XNAT:data:siteConfig:smtpServer:protocol
+                    value: ?? XNAT:data:notifications:protocol
 #                    value: ""
 
                 mailServerProperties:
@@ -193,14 +193,14 @@ siteSetup:
                     kind: panel.input.checkbox
                     name: mail.smtp.auth
                     label: SMTP Auth?
-                    value: ?? XNAT:data:siteConfig:smtpServer:mail.smtp.auth
+                    value: ?? XNAT:data:notifications:mail.smtp.auth
 #                    value: ""
 
                 smtpStartTls:
                     kind: panel.input.checkbox
                     name: mail.smtp.starttls.enable
                     label: Smart TLS?
-                    value: ?? XNAT:data:siteConfig:smtpServer:mail.smtp.starttls.enable
+                    value: ?? XNAT:data:notifications:mail.smtp.starttls.enable
 #                    value: ""
 
                 smtpSSLTrust:

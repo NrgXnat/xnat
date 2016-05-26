@@ -5,6 +5,7 @@ import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -49,6 +50,11 @@ public class ApplicationConfig {
     @Bean
     public SiteConfigPreferences siteConfigPreferences() {
         return new SiteConfigPreferences();
+    }
+
+    @Bean
+    public NotificationsPreferences notificationsPreferences() {
+        return new NotificationsPreferences();
     }
 
     @Bean

@@ -18,6 +18,8 @@ import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
+import org.nrg.xnat.services.XnatAppInfo;
+import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 @Api(description = "XNAT Notifications management API")
@@ -49,6 +52,30 @@ public class NotificationsApi extends AbstractXnatRestApi {
                                                        + "remove existing properties by setting the property with an empty value. This will "
                                                        + "modify the existing server configuration. You can completely replace the configuration "
                                                        + "by calling the POST version of this method.";
+    @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
+    @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Map<String, Object>> getAllSiteConfigProperties(final HttpServletRequest request) {
+        final HttpStatus status = isPermitted();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        final String username = getSessionUser().getUsername();
+        if (_log.isDebugEnabled()) {
+            _log.debug("User " + username + " requested the site configuration.");
+        }
+
+        final Map<String, Object> preferences = _notificationsPrefs.getPreferenceMap();
+
+        if (!_appInfo.isInitialized()) {
+            if (_log.isInfoEnabled()) {
+                _log.info("The site is being initialized by user {}. Setting default values from context.", username);
+            }
+            preferences.put("siteUrl", XnatHttpUtils.getServerRoot(request));
+        }
+
+        return new ResponseEntity<>(preferences, HttpStatus.OK);
+    }
 
     @ApiOperation(value = "Sets a map of notifications properties.", notes = "Sets the notifications properties specified in the map.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Notifications properties successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set notifications properties."), @ApiResponse(code = 500, message = "Unexpected error")})
@@ -113,6 +140,19 @@ public class NotificationsApi extends AbstractXnatRestApi {
             }
         }
 
+        String host = _notificationsPrefs.getHostname();
+        int port = _notificationsPrefs.getPort();
+        String protocol = _notificationsPrefs.getProtocol();
+        String username = _notificationsPrefs.getUsername();
+        String password = _notificationsPrefs.getPassword();
+
+        logConfigurationSubmit(host,port,protocol,username,password, properties);
+
+        setHost(host, false);
+        setPort(port);
+        setProtocol(protocol);
+        setUsername(username);
+        setPassword(password);
 
         final Properties javaMailProperties = new Properties();
         if (properties != null) {
@@ -123,7 +163,6 @@ public class NotificationsApi extends AbstractXnatRestApi {
                 }
             }
         }
-        logConfigurationSubmit(_javaMailSender.getHost(),_javaMailSender.getPort(),_javaMailSender.getUsername(),_javaMailSender.getPassword(),_javaMailSender.getProtocol(), properties);
         _javaMailSender.setJavaMailProperties(javaMailProperties);
 
         setSmtp();
@@ -700,4 +739,8 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     @Inject
     private NotificationService _notificationService;
+
+    @Autowired
+    @Lazy
+    private XnatAppInfo _appInfo;
 }

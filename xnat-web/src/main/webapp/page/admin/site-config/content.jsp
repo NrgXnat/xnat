@@ -17,10 +17,12 @@
 <pg:restricted msg="${_msg}">
 
     <c:import url="/xapi/siteConfig" var="siteConfig"/>
+    <c:import url="/xapi/notifications" var="notifications"/>
 
     <script>
         XNAT.data = extend({}, XNAT.data, {
-            siteConfig: ${siteConfig}
+            siteConfig: ${siteConfig},
+            notifications: ${notifications}
         });
         // get rid of the 'targetSource' property
         delete XNAT.data.siteConfig.targetSource;

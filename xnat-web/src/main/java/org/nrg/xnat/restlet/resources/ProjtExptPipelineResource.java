@@ -276,7 +276,7 @@ public class ProjtExptPipelineResource extends SecureResource {
         hasParams.add("userfullname");
         xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
         hasParams.add("adminemail");
-        xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
         hasParams.add("mailhost");
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
         hasParams.add("xnatserver");
@@ -389,7 +389,7 @@ public class ProjtExptPipelineResource extends SecureResource {
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
 	    xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
 	    xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
-	    xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
+	    xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
 	    xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
 
 

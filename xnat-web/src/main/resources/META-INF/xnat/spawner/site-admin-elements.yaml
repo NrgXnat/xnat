@@ -478,10 +478,10 @@ securityServices:
 emailServerSettings:
     kind: panel.form
     method: POST
-    action: /xapi/siteConfig/smtpServer
+    action: /xapi/notifications/batchMail
     contentType: json
-    load: ?? XNAT.data.siteConfig.smtpServer
-    refresh: /xapi/siteConfig/smtpServer
+    load: ?? XNAT.data.notifications
+    refresh: /xapi/notifications
     name: emailServerSettings
     label: Mail Server Settings
     contents:
@@ -542,18 +542,18 @@ notifications:
     kind: panel.form
     name: notifications
     label: Notifications
-    action: /xapi/siteConfig/batch
+    action: /xapi/notifications/batch
     method: POST
     contentType: json
-    load: ?? XNAT.data.siteConfig
-    refresh: /xapi/siteConfig
+    load: ?? XNAT.data.notifications
+    refresh: /xapi/notifications
     contents:
         helpContactInfo:
             kind: panel.input.email
             id: helpContactInfo
             name: notifications.helpContactInfo
             label: "Help Contact Info"
-            value: "!? XNAT.data.siteConfig['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.notifications['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
 
         emailMessageSubhead:
             kind: panel.subhead
@@ -621,28 +621,28 @@ notifications:
             name: notifications.emailRecipientErrorMessages
             label: "Error Messages"
             description: "What email address should receive error emails"
-            value: "!? XNAT.data.siteConfig['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.notifications['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             id: emailRecipientIssueReports
             name: notifications.emailRecipientIssueReports
             label: "Issue Reports"
             description: "What email address should receive issue reports"
-            value: "!? XNAT.data.siteConfig['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.notifications['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             id: emailRecipientNewUserAlert
             name: notifications.emailRecipientNewUserAlert
             label: "New User Alert"
             description: "What email address should receive New User Registration emails"
-            value: "!? XNAT.data.siteConfig['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.notifications['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             id: emailRecipientUpdate
             name: notifications.emailRecipientUpdate
             label: "Updates"
             description: "What email address should receive update emails"
-            value: "!? XNAT.data.siteConfig['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
+            value: "!? XNAT.data.notifications['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
 
         otherSubhead:
             kind: panel.subhead

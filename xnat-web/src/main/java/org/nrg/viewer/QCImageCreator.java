@@ -51,7 +51,7 @@ public class QCImageCreator {
         xnatPipelineLauncher.setParameter("session", mrSession.getId() );
         xnatPipelineLauncher.setParameter("notify", "0" );
 	    xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
-	    xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
+	    xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
 	    xnatPipelineLauncher.setParameter("useremail", user.getEmail());
 	    xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
 

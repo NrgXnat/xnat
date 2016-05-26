@@ -210,7 +210,7 @@ public class QDECAction extends ListingAction{
         
         param = parameters.addNewParameter();
         param.setName("mailhost");
-        param.addNewValues().setUnique( XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
+        param.addNewValues().setUnique( XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
         
         return parameters;
         

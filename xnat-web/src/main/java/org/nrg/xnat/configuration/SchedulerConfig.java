@@ -1,19 +1,13 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.config.exceptions.SiteConfigurationException;
-import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
-import org.nrg.xdat.preferences.SiteConfigPreferenceEvent;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.preferences.PreferenceEvent;
 import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
-import org.nrg.xnat.security.DisableInactiveUsers;
 import org.nrg.xnat.security.ResetEmailRequests;
-import org.nrg.xnat.security.ResetFailedLogins;
-import org.nrg.xnat.security.alias.ClearExpiredAliasTokens;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -21,21 +15,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.scheduling.Trigger;
-import org.springframework.scheduling.TriggerContext;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.scheduling.config.TriggerTask;
-import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
 import javax.inject.Inject;
-import java.sql.SQLException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 @Configuration
@@ -104,9 +91,9 @@ public class SchedulerConfig implements SchedulingConfigurer {
 //        taskRegistrar.addTriggerTask(resetEmailRequests());
 //        taskRegistrar.addTriggerTask(clearExpiredAliasTokens());
 //        taskRegistrar.addTriggerTask(rebuildSessionXmls());
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new SiteConfigPreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
         for (final TriggerTask triggerTask : _triggerTasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }

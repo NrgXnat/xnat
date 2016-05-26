@@ -27,17 +27,19 @@ public class NotificationsConfig {
     public JavaMailSenderImpl mailSender() throws IOException, SiteConfigurationException {
         final Map<String, String> smtp = _preferences.getSmtpServer();
         final JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost(StringUtils.defaultIfBlank(smtp.remove("host"), "localhost"));
-        sender.setPort(Integer.parseInt(StringUtils.defaultIfBlank(smtp.remove("port"), "25")));
-        sender.setUsername(StringUtils.defaultIfBlank(smtp.remove("username"), ""));
-        sender.setPassword(StringUtils.defaultIfBlank(smtp.remove("password"), ""));
-        sender.setProtocol(StringUtils.defaultIfBlank(smtp.remove("protocol"), "smtp"));
-        if (smtp.size() > 0) {
-            final Properties properties = new Properties();
-            for (final String property : smtp.keySet()) {
-                properties.setProperty(property, smtp.get(property));
+        if(smtp!=null) {
+            sender.setHost(StringUtils.defaultIfBlank(smtp.remove("host"), "localhost"));
+            sender.setPort(Integer.parseInt(StringUtils.defaultIfBlank(smtp.remove("port"), "25")));
+            sender.setUsername(StringUtils.defaultIfBlank(smtp.remove("username"), ""));
+            sender.setPassword(StringUtils.defaultIfBlank(smtp.remove("password"), ""));
+            sender.setProtocol(StringUtils.defaultIfBlank(smtp.remove("protocol"), "smtp"));
+            if (smtp.size() > 0) {
+                final Properties properties = new Properties();
+                for (final String property : smtp.keySet()) {
+                    properties.setProperty(property, smtp.get(property));
+                }
+                sender.setJavaMailProperties(properties);
             }
-            sender.setJavaMailProperties(properties);
         }
         return sender;
     }

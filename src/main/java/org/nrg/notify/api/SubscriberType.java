@@ -10,7 +10,8 @@
 package org.nrg.notify.api;
 
 public enum SubscriberType {
-    User;
-    
+    User,
+    NonUser;
+
     public static SubscriberType Default = User;
 }

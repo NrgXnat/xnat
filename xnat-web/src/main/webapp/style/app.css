@@ -3568,3 +3568,13 @@ textarea.xml-formatted {
     display: block; padding: 10px; margin: 10px; width: 95%; height: 95%;
     overflow-x: scroll; overflow-y: scroll; border: 1px solid #ccc;
 }
+
+/* utility classes */
+.pad1 { padding: 1px; }
+.pad5 { padding: 5px; }
+.pad10 { padding: 10px; }
+.pad20 { padding: 20px; }
+.pad1h { padding-left: 1px; padding-right: 1px; }
+.pad5h { padding-left: 5px; padding-right: 5px; }
+.pad10h { padding-left: 10px; padding-right: 10px; }
+.pad20h { padding-left: 20px; padding-right: 20px; }

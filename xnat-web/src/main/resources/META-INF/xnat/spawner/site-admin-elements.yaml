@@ -17,34 +17,68 @@ siteId:
     validation: required id onblur
     description: "The id used to refer to this site (also used to generate database ids). The Site ID must start with a letter and contain only letters, numbers and underscores. It should be a short, one-word name or acronym which describes your site. No spaces or non-alphanumeric characters."
 
-siteDescriptionType:
-    kind: panel.display
-    id: siteDescriptionType
-    name: siteDescriptionType
-    label: Site Description
-    value: Select a site description option below
-    before:
-        - "<script type=\"text/javascript\" src=\"../../scripts/xnat/admin/siteInfo.js\"></script>"
-    after:
-        - "<span style=\"position: relative; top: -15px;left: 270px;\"><input type=\"radio\" name=\"siteDescriptionType\" id=\"siteDescriptionTypePage\" value=\"Page\">&nbsp;&nbsp;Page&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"radio\" name=\"siteDescriptionType\" id=\"siteDescriptionTypeText\" value=\"Text\">&nbsp;&nbsp;Text (Markdown)</span>"
-
 siteDescriptionPage:
-    kind: panel.input.text
-    id: siteDescriptionPage
-    name: siteDescriptionPage
-    label: " "
-    description: "Specify a velocity template file to display on the login page"
+    tag: input
+    element:
+        type: text
+        id: siteDescriptionPage
+        name: siteDescriptionPage
+        size: 50
+    after: "<p>Specify a velocity template file to display on the login page</p>"
 
 siteDescriptionText:
-    kind: panel.textarea
-    id: siteDescriptionText
-    name: siteDescriptionText
-    label: " "
-    description: "Specify a simple text description of this site"
+    tag: textarea
     element:
-        style:
-            width: 300px
-            height: 150px
+        id: siteDescriptionText
+        name: siteDescriptionText
+        rows: 8
+    after: "<p>Specify a simple text description of this site.</p>"
+
+siteDescriptionType:
+    kind: panel.element
+    #id: siteDescriptionType
+    #name: siteDescriptionType
+    label: Site Description
+    contents:
+        info:
+            tag: p
+            element:
+                style: "margin: 3px 0 8px 0;"
+            content: Select a site description option below
+        siteDescriptionTypePage:
+            tag: input|data-value=Page
+            element:
+                type: radio
+                name: siteDescriptionType
+                id: siteDescriptionTypePage
+                value: Page
+            after:
+                label:
+                    tag: label.pad5h|for=siteDescriptionTypePage
+                    content: Page
+        siteDescriptionTypeText:
+            tag: input|data-value=Text
+            element:
+                type: radio
+                name: siteDescriptionType
+                id: siteDescriptionTypeText
+                value: Text
+            after:
+                label:
+                    tag: label.pad5h|for=siteDescriptionTypeText
+                    content: Text (Markdown)
+        pagePath:
+            tag: div.input-bundle.page
+            contents:
+                ${siteDescriptionPage}
+        pageText:
+            tag: div.input-bundle.text
+            contents:
+                ${siteDescriptionText}
+        siteInfoJs:
+            tag: script
+            element:
+                src: ~/scripts/xnat/admin/siteInfo.js
 
 siteLoginLanding:
     kind: panel.input.text
@@ -100,6 +134,8 @@ archivePath:
     label: Archive Path
     validation: required path
     description: ""
+    element:
+        disabled: true
 cachePath:
     kind: panel.input.text
     id: cachePath
@@ -223,9 +259,7 @@ userLoginsSessionControls:
             id: sessionTimeout
             name: sessionTimeout
             label: Session Timeout
-            description: >
-              Interval for timing out user sessions. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+            description: "Interval for timing out user sessions. Uses <a target=\"_blank\" href=\"http://www.postgresql.org/docs/9.0/static/functions-datetime.html\">PostgreSQL interval notation</a>"
         aliasTokenTimeout:
             kind: panel.input.text
             id: aliasTokenTimeout
@@ -617,7 +651,9 @@ themeManagement:
     action: /xapi/theme
     contents:
         themeScript:
-            tag: script|type=text/javascript;src=../../scripts/xnat/admin/themeManagement.js
+            tag: script
+            element:
+                src: ~/scripts/xnat/admin/themeManagement.js
         themeStyle:
             tag: style
             element:
@@ -1011,8 +1047,11 @@ fileSystem:
     contentType: json
     action: /xapi/siteConfig/batch
     load: ?? XNAT.data.siteConfig
-    after:
-        - "<script type=\"text/javascript\">$('#archivePath').attr('disabled', 'disabled');</script>"
+#    after:
+#        disableArchivePath:
+#            tag: script
+#            element:
+#                html: "$$('id=archivePath').attr('disabled', 'disabled')"
     contents:
         ${archivePath}
         ${cachePath}
@@ -1057,7 +1096,7 @@ misc:
                 link:
                     tag: a.link
                     element:
-                        href: */page/admin/spawner/
+                        href: ~/page/admin/spawner/
                         target: _blank
                         html: Manage The Spawner
         swagger:
@@ -1067,26 +1106,10 @@ misc:
                 link:
                     tag: a.link
                     element:
-                        href: */xapi/swagger-ui.html
+                        href: ~/xapi/swagger-ui.html
                         target: _blank
                         html: Swagger
-development:
-    kind: panel
-    name: development
-    label: Development Utilities
-    contents:
-        manageSpawner:
-            kind: panel.element
-            name: manageSpawner
-            label: Manage Spawner Elements
-            element:
-                html: >
-                    <a href="/page/admin/spawner">Manage Spawner Elements</a>
 
-
-
-
-            
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####

@@ -129,12 +129,12 @@ XNAT.xhr.getJSON({
                                         url: elementUrl,
                                         data: obj.$modal.find('textarea.yaml').val(),
                                         contentType: 'text/x-yaml',
-                                        // processData:  false,
+                                        processData:  false,
                                         success: function(){
                                             xmodal.message('Data saved.')
                                         },
-                                        error: function(e){
-                                            xmodal.message('An error occured: ' + e)
+                                        error: function(e, f, g){
+                                            xmodal.message(['<b>Error:</b>', e, f, g].join('<br>'))
                                         }
                                     });
                                 }

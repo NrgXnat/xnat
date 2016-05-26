@@ -34,7 +34,7 @@ var XNAT = getObject(XNAT);
     spawner.notSpawned = [];
 
     function setRoot(url){
-        url = url.replace(/^([*.]\/+)/, '/');
+        url = url.replace(/^([*~.]\/+)/, '/');
         return XNAT.url.rootUrl(url)
     }
 
@@ -50,7 +50,7 @@ var XNAT = getObject(XNAT);
             var kind, methodName, method, spawnedElement, $spawnedElement;
             
             // save the config properties in a new object
-            prop = getObject(prop);
+            prop = cloneObject(prop);
 
             prop.config = prop.config || prop.element || {};
 
@@ -79,9 +79,14 @@ var XNAT = getObject(XNAT);
             // do a raw spawn() if 'kind' is 'element'
             // or if there's a tag property
             if (kind === 'element' || prop.tag || prop.config.tag) {
+
+                // pass 'content' (not contentS) property to add
+                // stuff directly to spawned element
+                prop.content = prop.content || prop.children || prop.inner || '';
+
                 try {
                     spawnedElement =
-                        spawn(prop.tag || prop.config.tag || 'div', prop.config);
+                        spawn(prop.tag || prop.config.tag || 'div', prop.config, prop.content);
                     // jQuery's .append() method is
                     // MUCH more robust and forgiving
                     // than element.appendChild()
@@ -141,8 +146,8 @@ var XNAT = getObject(XNAT);
             // spawn child elements from...
             // 'contents' or 'content' or 'children' or
             // a property matching the value of either 'contains' or 'kind'
-            if (prop.contains || prop.contents || prop.content || prop.children || prop[prop.kind]) {
-                prop.contents = prop[prop.contains] || prop.contents || prop.content || prop.children || prop[prop.kind];
+            if (prop.contains || prop.contents || prop[prop.kind]) {
+                prop.contents = prop[prop.contains] || prop.contents || prop[prop.kind];
                 // if there's a 'target' property, put contents in there
                 if (spawnedElement.target || spawnedElement.inner) {
                     $spawnedElement = $(spawnedElement.target || spawnedElement.inner);
@@ -150,19 +155,43 @@ var XNAT = getObject(XNAT);
                 else {
                     $spawnedElement = $(spawnedElement.element);
                 }
-                $spawnedElement.append(_spawn(prop.contents).get());
+
+                // if a string, number, or boolean is passed as 'contents'
+                // just append that as-is (as a string)
+                if (stringable(prop.contents)) {
+                    $spawnedElement.append(prop.contents+'');
+                }
+                else {
+                    $spawnedElement.append(_spawn(prop.contents).get());
+                }
             }
             
+            // Treat 'before' and 'after' just like 'contents'
+            // but insert the items 'before' or 'after' the main
+            // spawned (outer) element. This may have unintended
+            // consequences depending on the HTML structure of the
+            // spawned widget that has things 'before' or 'after' it.
+
             if (prop.after) {
-                $frag.append(prop.after)
+                if (stringable(prop.after) || Array.isArray(prop.after)) {
+                    $frag.append(prop.after)
+                }
+                else if (isPlainObject(prop.after)) {
+                    $frag.append(_spawn(prop.after).get())
+                }
             }
-            
+
             if (prop.before) {
-                $frag.prepend(prop.before)
+                if (stringable(prop.before) || Array.isArray(prop.before)) {
+                    $frag.prepend(prop.before)
+                }
+                else if (isPlainObject(prop.before)) {
+                    $frag.prepend(_spawn(prop.before).get())
+                }
             }
-            
+
             // if there's a .load() method, fire that
-            if (isFunction(spawnedElement.load)) {
+            if (isFunction(spawnedElement.load||null)) {
                 spawnedElement.load();
             }
 

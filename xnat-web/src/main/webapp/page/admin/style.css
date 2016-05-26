@@ -92,6 +92,8 @@ body.xnat .panel-default { border: 1px solid #c8c8c8; }
 .panel .panel-element span.after { margin-left: 10px; }
 .panel .panel-element label.small { font-weight: normal; }
 
+.panel .input-bundle { margin-top: 5px; }
+
 .panel .panel-subhead {
     padding: 2px; margin: 10px;
     font-size: 13px;

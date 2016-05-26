@@ -91,7 +91,7 @@ public class EmailBundleAction extends BundleAction {
                 sb.append("Message from sender:\n");
                 sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
                 sb.append("\n\nThis email was sent by the <" +TurbineUtils.GetFullServerPath() + ">XNAT data management system on ").append(Calendar.getInstance().getTime()).append(".");
-                sb.append("  If you have questions or concerns, please contact the <" + XDAT.getSiteConfigPreferences().getAdminEmail() + ">CNDA administrator.");
+                sb.append("  If you have questions or concerns, please contact the <" + XDAT.getNotificationsPreferences().getHelpContactInfo() + ">CNDA administrator.");
                 return sb.toString();
             } catch (Exception e) {
                 logger.error("",e);
@@ -144,7 +144,7 @@ public class EmailBundleAction extends BundleAction {
                 sb.append("Message from sender:<BR>");
                 sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
                 sb.append("<BR><BR>This email was sent by the <A HREF=\"" +TurbineUtils.GetFullServerPath() + "\">XNAT</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
-                sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
+                sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:" +XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
                 
                 sb.append("</body>");
                 sb.append("</html>");

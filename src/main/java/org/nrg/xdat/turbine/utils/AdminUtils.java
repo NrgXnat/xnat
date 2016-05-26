@@ -278,7 +278,7 @@ public class AdminUtils {
         context.put("username", username);
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("system", TurbineUtils.GetSystemName());
-        context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
+        context.put("contactEmail", XDAT.getSiteConfigPreferences().getAdminEmail());
 
         String body = populateVmTemplate(context, "/screens/email/WelcomeNewUser.vm");
         String subject = "Welcome to " + TurbineUtils.GetSystemName();
@@ -301,7 +301,7 @@ public class AdminUtils {
 		String msg = "Authorization for new or updated access privilege has been requested for <b>" + UserName_AwaitingAuthorization + "</b>";
 		msg += "<br><br> This user will not be able to access the requested resources until you have completed authorization. Please review the privileges <a href=\"" + TurbineUtils.GetFullServerPath()
 				+ "/app/action/DisplayItemAction/search_element/xdat:user/search_field/xdat:user.login/search_value/" + login + "/\">here</a>.";
-		msg += "<br><br> For help, contact  <a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + " Assistance\">" + TurbineUtils.GetSystemName() + " Management </A>";
+		msg += "<br><br> For help, contact  <a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "?subject=" + TurbineUtils.GetSystemName() + " Assistance\">" + TurbineUtils.GetSystemName() + " Management </A>";
 		return msg;
 	}
 

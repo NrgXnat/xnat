@@ -608,7 +608,128 @@ public class XDAT implements Initializable,Configurable{
         getNotificationService().subscribe(subscriber, SubscriberType.User, definition, channel);
     }
 
-    /**
+	/**
+	 * This returns a string containing a comma-separated list of all the email addresses subscribing to the given event.
+	 * @param event    The site-wide event to find subscribers for.
+	 */
+	public static String getSubscriberEmailsListAsString(NotificationType event) {
+		final Channel channel = getHtmlMailChannel();
+
+		Category category = getNotificationService().getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, event.toString());
+		if (category == null) {
+			category = getNotificationService().getCategoryService().newEntity();
+			category.setScope(CategoryScope.Site);
+			category.setEvent(event.toString());
+			getNotificationService().getCategoryService().create(category);
+		}
+
+		Definition definition;
+		List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
+		if (definitions == null || definitions.size() == 0) {
+			definition = getNotificationService().getDefinitionService().newEntity();
+			definition.setCategory(category);
+			getNotificationService().getDefinitionService().create(definition);
+		} else {
+			definition = definitions.get(0);
+		}
+
+		List<Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriptionsForDefinition(definition);
+		List<String> emails = new ArrayList<String>();
+		if (subscriptions != null && subscriptions.size() > 0) {
+			// There are subscribers! Return them.
+			for(Subscription sub : subscriptions){
+				List<String> emailsForSubscriber = sub.getSubscriber().getEmailList();
+
+				//First remove any ones already in there to prevent duplicates
+				emails.removeAll(emailsForSubscriber);
+				emails.addAll(emailsForSubscriber);
+			}
+		}
+
+		return StringUtils.join(emails, ',');
+	}
+
+	/**
+	 * This replaces the old list of subscribers to this event with the supplies list of emails.
+	 * @param newSubscriberEmails  	A String containing a comma-separated list of all the email addresses to be subscribed to the event.
+     * @param event    				The site-wide event to replace subscribers for.
+	 */
+	public static void replaceSubscriberList(String newSubscriberEmails, NotificationType event, boolean allowNonUserSubscribers) {
+		final String adminEmail = getSiteConfigPreferences().getAdminEmail();
+		final Channel channel = getHtmlMailChannel();
+		boolean created = false;
+
+		Category category = getNotificationService().getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, event.toString());
+		if (category == null) {
+			category = getNotificationService().getCategoryService().newEntity();
+			category.setScope(CategoryScope.Site);
+			category.setEvent(event.toString());
+			getNotificationService().getCategoryService().create(category);
+			created = true;
+		}
+
+		Definition definition;
+		List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
+		if (definitions == null || definitions.size() == 0) {
+			definition = getNotificationService().getDefinitionService().newEntity();
+			definition.setCategory(category);
+			getNotificationService().getDefinitionService().create(definition);
+			created = true;
+		} else {
+			definition = definitions.get(0);
+		}
+
+		// If we created either the category or the definition, obviously there aren't any current subscribers, so we
+		// don't even bother to check. If we *didn't* create the category or the definition, there may be subscribers,
+		// so let's check that.
+		if (!created) {
+			List<Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriptionsForDefinition(definition);
+			if (subscriptions != null && subscriptions.size() > 0) {
+				for(Subscription sub : subscriptions) {
+					getNotificationService().getSubscriptionService().delete(sub);
+				}
+			}
+		}
+
+		// If we made it this far, there are no subscribers to the indicated site-wide event, so create the requested subscribers
+		List<String> newSubscriberEmailList = (List)(StringUtils.isBlank(newSubscriberEmails)?new ArrayList():Arrays.asList(newSubscriberEmails.split("[\\s]*,[\\s]*")));
+		for(String newSubscriberEmailString : newSubscriberEmailList){
+			List<UserI> users = Users.getUsersByEmail(newSubscriberEmailString);
+			if(users!=null && users.size()>0){
+				for(UserI user : users){
+					Subscriber subscriber = getNotificationService().getSubscriberService().getSubscriberByName(user.getUsername());
+					if (subscriber == null) {
+						try {
+							subscriber = getNotificationService().getSubscriberService().createSubscriber(user.getUsername(), user.getEmail());
+						} catch (DuplicateSubscriberException exception) {
+							// This shouldn't happen, since we just checked for the subscriber's existence.
+						}
+					}
+					assert subscriber != null : "Unable to create or retrieve subscriber for user "+user.getUsername();
+
+					// We have an event and subscriber, let's bring them together.
+					getNotificationService().subscribe(subscriber, SubscriberType.User, definition, channel);
+				}
+			}
+			else if(allowNonUserSubscribers){
+				Subscriber subscriber = getNotificationService().getSubscriberService().getSubscriberByName(newSubscriberEmailString);
+				if (subscriber == null) {
+					try {
+						subscriber = getNotificationService().getSubscriberService().createSubscriber(newSubscriberEmailString, newSubscriberEmailString);
+					} catch (DuplicateSubscriberException exception) {
+						// This shouldn't happen, since we just checked for the subscriber's existence.
+					}
+				}
+				assert subscriber != null : "Unable to create or retrieve subscriber for email "+newSubscriberEmailString;
+
+				// We have an event and subscriber, let's bring them together.
+				getNotificationService().subscribe(subscriber, SubscriberType.NonUser, definition, channel);
+
+			}
+		}
+	}
+
+	/**
      * Retrieves the HTML mail channel to be used for default subscription configuration.
      * @return The HTML mail channel definition.
      */

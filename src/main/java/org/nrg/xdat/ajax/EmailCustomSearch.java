@@ -92,7 +92,7 @@ public class EmailCustomSearch {
                        "Message from sender:\n" +
                        msg +
                        "\n\nThis email was sent by the <" + TurbineUtils.GetFullServerPath() + ">XNAT data management system on " + Calendar.getInstance().getTime() + "." +
-                       "  If you have questions or concerns, please contact the <" + XDAT.getSiteConfigPreferences().getAdminEmail() + ">CNDA administrator.";
+                       "  If you have questions or concerns, please contact the <" + XDAT.getNotificationsPreferences().getHelpContactInfo() + ">CNDA administrator.";
             } catch (Exception e) {
                 logger.error("",e);
                 return "error";
@@ -117,7 +117,7 @@ public class EmailCustomSearch {
                        "Message from sender:<BR>" +
                        msg +
                        "<BR><BR>This email was sent by the <A HREF=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetSystemName() + "</A> data management system on " + Calendar.getInstance().getTime() + "." +
-                       "  If you have questions or concerns, please contact the <A HREF=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "\">" + TurbineUtils.GetSystemName() + " administrator</A>." +
+                       "  If you have questions or concerns, please contact <A HREF=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + TurbineUtils.GetSystemName() + " help</A>." +
                        "</body>" +
                        "</html>";
             } catch (Exception e) {

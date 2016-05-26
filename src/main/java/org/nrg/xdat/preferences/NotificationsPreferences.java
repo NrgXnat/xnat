@@ -1,9 +1,11 @@
 package org.nrg.xdat.preferences;
 
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.mail.api.NotificationType;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,54 +133,38 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
 
     @NrgPreference(property = "notifications.emailRecipientErrorMessages")
     public String getEmailRecipientErrorMessages(){
-        return getValue("notifications.emailRecipientErrorMessages");
+        return XDAT.getSubscriberEmailsListAsString(NotificationType.Error);
     }
 
     public void setEmailRecipientErrorMessages(final String emailRecipientErrorMessages) {
-        try {
-            set(emailRecipientErrorMessages, "notifications.emailRecipientErrorMessages");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailRecipientErrorMessages': something is very wrong here.", e);
-        }
+        XDAT.replaceSubscriberList(emailRecipientErrorMessages, NotificationType.Error, getEmailAllowNonuserSubscribers());
     }
 
     @NrgPreference(property = "notifications.emailRecipientIssueReports")
     public String getEmailRecipientIssueReports(){
-        return getValue("notifications.emailRecipientIssueReports");
+        return XDAT.getSubscriberEmailsListAsString(NotificationType.Issue);
     }
 
     public void setEmailRecipientIssueReports(final String emailRecipientIssueReports) {
-        try {
-            set(emailRecipientIssueReports, "notifications.emailRecipientIssueReports");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailRecipientIssueReports': something is very wrong here.", e);
-        }
+        XDAT.replaceSubscriberList(emailRecipientIssueReports, NotificationType.Issue, getEmailAllowNonuserSubscribers());
     }
 
     @NrgPreference(property = "notifications.emailRecipientNewUserAlert")
     public String getEmailRecipientNewUserAlert(){
-        return getValue("notifications.emailRecipientNewUserAlert");
+        return XDAT.getSubscriberEmailsListAsString(NotificationType.NewUser);
     }
 
     public void setEmailRecipientNewUserAlert(final String emailRecipientNewUserAlert) {
-        try {
-            set(emailRecipientNewUserAlert, "notifications.emailRecipientNewUserAlert");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailRecipientNewUserAlert': something is very wrong here.", e);
-        }
+        XDAT.replaceSubscriberList(emailRecipientNewUserAlert, NotificationType.NewUser, getEmailAllowNonuserSubscribers());
     }
 
     @NrgPreference(property = "notifications.emailRecipientUpdate")
     public String getEmailRecipientUpdate(){
-        return getValue("notifications.emailRecipientUpdate");
+        return XDAT.getSubscriberEmailsListAsString(NotificationType.Update);
     }
 
     public void setEmailRecipientUpdate(final String emailRecipientUpdate) {
-        try {
-            set(emailRecipientUpdate, "notifications.emailRecipientUpdate");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailRecipientUpdate': something is very wrong here.", e);
-        }
+        XDAT.replaceSubscriberList(emailRecipientUpdate, NotificationType.Update, getEmailAllowNonuserSubscribers());
     }
 
     @NrgPreference(defaultValue = "{'host':'localhost','port':'25'}")

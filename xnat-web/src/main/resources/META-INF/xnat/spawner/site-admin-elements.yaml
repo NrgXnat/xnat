@@ -1001,7 +1001,7 @@ dicomScpReceivers:
             kind: panel.input.number
             id: dicomPortNumber
             name: dicomPortNumber
-            label: DICOM Host
+            label: DICOM Port
             description: "Port for DICOM Receiver(s)"
         defaultDicomReceiver:
             kind: panel.select.single

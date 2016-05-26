@@ -4,18 +4,10 @@ import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.mail.api.NotificationType;
-import org.nrg.notify.api.CategoryScope;
-import org.nrg.notify.api.SubscriberType;
-import org.nrg.notify.entities.*;
-import org.nrg.notify.exceptions.DuplicateDefinitionException;
-import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.InitializationException;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -38,6 +30,7 @@ import java.util.*;
 @XapiRestController
 @RequestMapping(value = "/notifications")
 public class NotificationsApi extends AbstractXnatRestApi {
+
     public static final String POST_PROPERTIES_NOTES = "Sets the mail service host, port, username, password, and protocol. You can set "
                                                        + "extra properties on the mail sender (e.g. for configuring SSL or TLS transport) by "
                                                        + "specifying the property name and value. Any parameters submitted that are not one "
@@ -96,7 +89,21 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
         for (final String name : properties.keySet()) {
             try {
-                _notificationsPrefs.set(properties.get(name), name);
+                if(StringUtils.equals(name, "notifications.emailRecipientErrorMessages")){
+                    _notificationsPrefs.setEmailRecipientErrorMessages(properties.get(name));
+                }
+                else if(StringUtils.equals(name, "notifications.emailRecipientIssueReports")){
+                    _notificationsPrefs.setEmailRecipientIssueReports(properties.get(name));
+                }
+                else if(StringUtils.equals(name, "notifications.emailRecipientNewUserAlert")){
+                    _notificationsPrefs.setEmailRecipientNewUserAlert(properties.get(name));
+                }
+                else if(StringUtils.equals(name, "notifications.emailRecipientUpdate")){
+                    _notificationsPrefs.setEmailRecipientUpdate(properties.get(name));
+                }
+                else {
+                    _notificationsPrefs.set(properties.get(name), name);
+                }
                 if (_log.isInfoEnabled()) {
                     _log.info("Set property {} to value: {}", name, properties.get(name));
                 }
@@ -519,7 +526,6 @@ public class NotificationsApi extends AbstractXnatRestApi {
     @ApiResponses({@ApiResponse(code = 200, message = "Error subscribers successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the error subscribers."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"subscribers/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setErrorSubscribers(@ApiParam(value = "The values to set for email addresses for error notifications.", required = true) @RequestParam final String subscribers) {
-        setSubscribersForNotificationType(NotificationType.Error, subscribers);
         _notificationsPrefs.setEmailRecipientErrorMessages(subscribers);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -528,7 +534,6 @@ public class NotificationsApi extends AbstractXnatRestApi {
     @ApiResponses({@ApiResponse(code = 200, message = "Issue subscribers successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the issue subscribers."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"subscribers/issue"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setIssueSubscribers(@ApiParam(value = "The values to set for email addresses for issue notifications.", required = true) @RequestParam final String subscribers) {
-        setSubscribersForNotificationType(NotificationType.Issue, subscribers);
         _notificationsPrefs.setEmailRecipientIssueReports(subscribers);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -537,7 +542,6 @@ public class NotificationsApi extends AbstractXnatRestApi {
     @ApiResponses({@ApiResponse(code = 200, message = "New user subscribers successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the new user subscribers."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"subscribers/newuser"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setNewUserSubscribers(@ApiParam(value = "The values to set for email addresses for new user notifications.", required = true) @RequestParam final String subscribers) {
-        setSubscribersForNotificationType(NotificationType.NewUser, subscribers);
         _notificationsPrefs.setEmailRecipientNewUserAlert(subscribers);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -546,7 +550,6 @@ public class NotificationsApi extends AbstractXnatRestApi {
     @ApiResponses({@ApiResponse(code = 200, message = "Update subscribers successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the update subscribers."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"subscribers/update"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setUpdateSubscribers(@ApiParam(value = "The values to set for email addresses for update notifications.", required = true) @RequestParam final String subscribers) {
-        setSubscribersForNotificationType(NotificationType.Update, subscribers);
         _notificationsPrefs.setEmailRecipientUpdate(subscribers);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -676,54 +679,6 @@ public class NotificationsApi extends AbstractXnatRestApi {
                 }
             }
             _log.info(message.toString());
-        }
-    }
-
-    private void setSubscribersForNotificationType(NotificationType notificationType, final String subscribersString){
-        List<String> subscribers = Arrays.asList(subscribersString.split("\\s*,\\s*"));
-        Category category = _notificationService.getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, notificationType.id());
-        if(category==null) {
-            category = _notificationService.getCategoryService().newEntity();
-            category.setScope(CategoryScope.Site);
-            category.setEvent(notificationType.id());
-            XDAT.getNotificationService().getCategoryService().create(category);
-        }
-        for(String subscriber : subscribers){
-            try {
-                Subscriber subscriberObject = _notificationService.getSubscriberService().getSubscriberByName(subscriber);
-
-                if(subscriberObject==null){
-                    subscriberObject = _notificationService.getSubscriberService().createSubscriber(subscriber, subscriber);
-                    XDAT.getNotificationService().getSubscriberService().create(subscriberObject);
-                }
-
-                Definition definition1 = _notificationService.getDefinitionService().getDefinitionForCategoryAndEntity(category,1L);
-                if(definition1==null) {
-                    definition1 = _notificationService.createDefinition(CategoryScope.Site, notificationType.id(), 1L);
-                    XDAT.getNotificationService().getDefinitionService().create(definition1);
-                }
-
-                Channel channel1 = _notificationService.getChannelService().getChannel("htmlMail");
-                if(channel1==null) {
-                    _notificationService.getChannelService().createChannel("htmlMail", "text/html");
-                }
-
-                Map<Subscriber, Subscription> subscriberMapOfSubscriptions = _notificationService.getSubscriptionService().getSubscriberMapOfSubscriptionsForDefinition(definition1);
-                for (Map.Entry<Subscriber, Subscription> entry : subscriberMapOfSubscriptions.entrySet()) {
-                    //Remove all existing subscriptions that match this definition since we are replacing the old list with the new one.
-                    Subscriber tempSubscriber = entry.getKey();
-                    Subscription tempSubscription = entry.getValue();
-                    tempSubscriber.removeSubscription(tempSubscription);
-                }
-                Subscription subscription = _notificationService.subscribe(subscriberObject, SubscriberType.User, definition1, channel1);
-
-            } catch (DuplicateSubscriberException e) {
-                _log.error("You tried to subscribe someone who was already subscribed",e);
-            } catch (DuplicateDefinitionException e) {
-                _log.error("Multiple definitions for this scope, event, and entity exist.",e);
-            } catch (NrgServiceException e) {
-                _log.error("Error setting email addresses for error notifications.",e);
-            }
         }
     }
 

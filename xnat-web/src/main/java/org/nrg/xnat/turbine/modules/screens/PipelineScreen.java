@@ -253,7 +253,7 @@ public abstract class PipelineScreen extends SecureReport {
             }
         }        
         if (rtn == null) {
-            message = "Pipeline with step id " + pipeline_step + " is not defined. Please contact your site administrator <a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=Invalid Pipeline Step " + pipeline_step + " for " + item.getXSIType() + "\">Report problem</A>";
+            message = "Pipeline with step id " + pipeline_step + " is not defined. Please contact your site administrator <a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "?subject=Invalid Pipeline Step " + pipeline_step + " for " + item.getXSIType() + "\">Report problem</A>";
         }
         return rtn;
     }

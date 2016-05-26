@@ -186,7 +186,7 @@ public class PipelineActions extends SecureAction{
             }
         } catch (Exception e){
         	logger.error("",e);
-            data.setMessage("<p><img src=\"/fcon/images/error.gif\">The build process failed to launch. Please contact the <a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=Failed to launch build \">NRG techdesk</a>");
+            data.setMessage("<p><img src=\"/fcon/images/error.gif\">The build process failed to launch. Please contact the <a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "?subject=Failed to launch build \">NRG techdesk</a>");
             data.setScreenTemplate("Error.vm");
         }
     }

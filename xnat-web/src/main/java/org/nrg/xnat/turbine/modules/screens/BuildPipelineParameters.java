@@ -54,7 +54,7 @@ public class BuildPipelineParameters extends SecureReport {
             return;
         }catch(Exception e) {
             String errorString = "<img src=\"/cnda1/images/error.gif\"> Error in the Build Spec file document for the pipeline " + context.get("pipelineName") ;
-            errorString += "<p>Please contact the <a href=\"mailto:"+XDAT.getSiteConfigPreferences().getAdminEmail()+"?subject=Error in Build Spec file for " + mr.getSessionType() + " pipeline " + pipelineName + "\">CNL techdesk</a> to resolve the error.</p>";
+            errorString += "<p>Please contact the <a href=\"mailto:"+XDAT.getNotificationsPreferences().getHelpContactInfo()+"?subject=Error in Build Spec file for " + mr.getSessionType() + " pipeline " + pipelineName + "\">CNL techdesk</a> to resolve the error.</p>";
             data.setMessage(errorString);
             data.getParameters().add("exception",e.getMessage());
             data.setScreenTemplate("Error.vm");

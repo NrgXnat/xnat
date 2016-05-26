@@ -81,14 +81,14 @@ public class PipelineScreen_set_site_parameters extends AdminEditScreenA{
     				data.setMessage("The pipeline has been added to the repository");
     				data.setScreenTemplate("ClosePage.vm");
 				} catch (Exception e) {
-					data.setMessage("The pipeline could not be added to the repository. Please contact " + XDAT.getSiteConfigPreferences().getAdminEmail() );
+					data.setMessage("The pipeline could not be added to the repository. Please contact " + XDAT.getNotificationsPreferences().getHelpContactInfo() );
 					data.setScreenTemplate("Error.vm");
             	}
 			}
 		}catch(Exception e) {
 			logger.error(e);
 			e.printStackTrace();
-			data.setMessage("The pipeline could not be added to the repository. Please contact " + XDAT.getSiteConfigPreferences().getAdminEmail());
+			data.setMessage("The pipeline could not be added to the repository. Please contact " + XDAT.getNotificationsPreferences().getHelpContactInfo());
 			data.setScreenTemplate("Error.vm");
 		}
 	}

@@ -2,6 +2,7 @@ package org.nrg.xnat.event.listeners;
 
 import com.google.common.collect.Maps;
 
+import org.nrg.xdat.XDAT;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
@@ -58,6 +59,7 @@ public class AutoRunEmailHandler extends PipelineEmailHandlerAbst implements Con
     public void handleEvent(WorkflowStatusEvent e) {
         Map<String,Object> params = Maps.newHashMap();
         params.put("pipelineName",PIPELINE_NAME_PRETTY);
+		params.put("contactEmail", XDAT.getNotificationsPreferences().getHelpContactInfo());
         if (!(e.getWorkflow() instanceof WrkWorkflowdata)) {
         	return;
         }

@@ -2,6 +2,7 @@ package org.nrg.xnat.event.listeners;
 
 import com.google.common.collect.Maps;
 
+import org.nrg.xdat.XDAT;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
@@ -66,6 +67,7 @@ public class DicomToNiftiEmailHandler extends PipelineEmailHandlerAbst implement
     	WrkWorkflowdata wrk = (WrkWorkflowdata)e.getWorkflow();
         Map<String,Object> params = Maps.newHashMap();
         params.put("pipelineName",PIPELINE_NAME_PRETTY);
+		params.put("contactEmail", XDAT.getNotificationsPreferences().getHelpContactInfo());
         if (completed(e)) {
             standardPipelineEmailImpl(e, wrk, PIPELINE_NAME, DEFAULT_TEMPLATE_SUCCESS, DEFAULT_SUBJECT_SUCCESS, "processed.lst", params);
         } else if (failed(e)) {

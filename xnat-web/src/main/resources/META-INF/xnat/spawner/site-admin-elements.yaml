@@ -620,28 +620,28 @@ notifications:
             id: emailRecipientErrorMessages
             name: notifications.emailRecipientErrorMessages
             label: "Error Messages"
-            description: "What email address should receive error emails"
+            description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             id: emailRecipientIssueReports
             name: notifications.emailRecipientIssueReports
             label: "Issue Reports"
-            description: "What email address should receive issue reports"
+            description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             id: emailRecipientNewUserAlert
             name: notifications.emailRecipientNewUserAlert
             label: "New User Alert"
-            description: "What email address should receive New User Registration emails"
+            description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             id: emailRecipientUpdate
             name: notifications.emailRecipientUpdate
             label: "Updates"
-            description: "What email address should receive update emails"
+            description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
 
         otherSubhead:

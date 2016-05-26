@@ -123,7 +123,7 @@ public class QDECAction extends ListingAction{
             data.setMessage( "<p><b>Your QDEC analysis was successfully launched.  Status email will be sent to you upon its completion.</b></p>");
             data.setScreenTemplate("ClosePage.vm");
         }catch(Exception e) {
-            data.setMessage("<p><b>The QDEC Analysis process could not be launched.  Please contact <A HREF=\"mailto:"+XDAT.getSiteConfigPreferences().getAdminEmail()+"?subject=Error: Performing QDEC Group Analysis" + "\">Report Error to" +TurbineUtils.GetSystemName() + "  Techdesk</A></b></p>");
+            data.setMessage("<p><b>The QDEC Analysis process could not be launched.  Please contact <A HREF=\"mailto:"+XDAT.getNotificationsPreferences().getHelpContactInfo()+"?subject=Error: Performing QDEC Group Analysis" + "\">Report Error to" +TurbineUtils.GetSystemName() + "  Techdesk</A></b></p>");
             data.setScreenTemplate("Error.vm");
         }   
 	}

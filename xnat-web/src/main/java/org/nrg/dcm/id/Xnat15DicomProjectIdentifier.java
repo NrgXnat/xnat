@@ -11,15 +11,15 @@
 package org.nrg.dcm.id;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.Tag;
+import org.nrg.config.entities.Configuration;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -31,11 +31,11 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
     Xnat15DicomProjectIdentifier() {
         super(getIdentifiers());
     }
-    
+
     private static Logger slog() {
         return LoggerFactory.getLogger(Xnat15DicomProjectIdentifier.class);
     }
-    
+
     private static List<DicomDerivedString> getIdentifiers() {
         final List<DicomDerivedString> identifiers = Lists.newArrayList();
         identifiers.add(new ContainedAssignmentDicomIdentifier(Tag.PatientComments, "Project", Pattern.CASE_INSENSITIVE));
@@ -45,14 +45,22 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
         loadFrom15Config(identifiers);
         return identifiers;
     }
-    
+
     private static void loadFrom15Config(final Collection<DicomDerivedString> identifiers) {
-        final File config = new File(XFT.GetConfDir(), DICOM_PROJECT_RULES);
-        IOException ioexception = null;
-        if (config.isFile()) {
-            try {
-                final BufferedReader reader = new BufferedReader(new FileReader(config));
-                try {
+        try {
+            final Reader        source;
+            final Configuration configuration = XDAT.getConfigService().getConfig("dicom", "projectRules");
+            final File          config        = new File(XFT.GetConfDir(), DICOM_PROJECT_RULES);
+            if (configuration != null && configuration.isEnabled() && StringUtils.isNotBlank(configuration.getContents())) {
+                source = new StringReader(configuration.getContents());
+            } else if (config.exists() && config.isFile()) {
+                source = new FileReader(config);
+            } else {
+                source = null;
+            }
+
+            if (source != null) {
+                try (final BufferedReader reader = new BufferedReader(source)) {
                     String line;
                     while (null != (line = reader.readLine())) {
                         final DicomDerivedString extractor = parseRule(line);
@@ -60,23 +68,15 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
                             identifiers.add(extractor);
                         }
                     }
-                } catch (IOException e) {
-                    throw ioexception = e;
-                } finally {
-                    try {
-                        reader.close();
-                    } catch (IOException e) {
-                        throw ioexception = null == ioexception ? e : ioexception;
-                    }
                 }
-            } catch (Throwable t) {
-                slog().error("Unable to load project identification rules from " + DICOM_PROJECT_RULES, t);
             }
-        } else {
-            slog().debug("custom project rules spec {} not found", DICOM_PROJECT_RULES);                
+        } catch (FileNotFoundException ignored) {
+            //
+        } catch (IOException e) {
+            slog().error("An error occurred trying to open the DICOM project rules configuration", e);
         }
     }
-    
+
     private static final Pattern CUSTOM_RULE_PATTERN = Pattern.compile("\\((\\p{XDigit}{4})\\,(\\p{XDigit}{4})\\):(.+?)(?::(\\d+))?");
 
 
@@ -85,10 +85,10 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
         if (matcher.matches()) {
             final StringBuilder tagsb = new StringBuilder("0x");
             tagsb.append(matcher.group(1)).append(matcher.group(2));
-            final int tag = Integer.decode(tagsb.toString());
-            final String regexp = matcher.group(3);
+            final int    tag      = Integer.decode(tagsb.toString());
+            final String regexp   = matcher.group(3);
             final String groupIdx = matcher.group(4);
-            final int group = null == groupIdx ? 1 : Integer.parseInt(groupIdx);
+            final int    group    = null == groupIdx ? 1 : Integer.parseInt(groupIdx);
             return new PatternDicomIdentifier(tag, Pattern.compile(regexp), group);
         } else {
             return null;

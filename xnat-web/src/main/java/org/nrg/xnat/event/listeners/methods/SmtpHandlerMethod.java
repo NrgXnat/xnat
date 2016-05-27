@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -38,11 +39,11 @@ public class SmtpHandlerMethod extends AbstractNotificationsPreferenceHandlerMet
 
     private void updateSmtp(){
 		try {
-            XDAT.getContextService().getBean(JavaMailSenderImpl.class).setHost(XDAT.getNotificationsPreferences().getHostname());
-            XDAT.getContextService().getBean(JavaMailSenderImpl.class).setPort(XDAT.getNotificationsPreferences().getPort());
-            XDAT.getContextService().getBean(JavaMailSenderImpl.class).setUsername(XDAT.getNotificationsPreferences().getUsername());
-            XDAT.getContextService().getBean(JavaMailSenderImpl.class).setPassword(XDAT.getNotificationsPreferences().getPassword());
-            XDAT.getContextService().getBean(JavaMailSenderImpl.class).setProtocol(XDAT.getNotificationsPreferences().getProtocol());
+            _mailSender.setHost(XDAT.getNotificationsPreferences().getHostname());
+            _mailSender.setPort(XDAT.getNotificationsPreferences().getPort());
+            _mailSender.setUsername(XDAT.getNotificationsPreferences().getUsername());
+            _mailSender.setPassword(XDAT.getNotificationsPreferences().getPassword());
+            _mailSender.setProtocol(XDAT.getNotificationsPreferences().getProtocol());
 
 		} catch (Exception e1) {
 			_log.error("", e1);
@@ -55,5 +56,8 @@ public class SmtpHandlerMethod extends AbstractNotificationsPreferenceHandlerMet
     @Autowired
     @Lazy
     private JdbcTemplate _template;
+
+    @Inject
+    private JavaMailSenderImpl _mailSender;
 
 }

@@ -91,12 +91,12 @@ public class SchedulerConfig implements SchedulingConfigurer {
 //        taskRegistrar.addTriggerTask(resetEmailRequests());
 //        taskRegistrar.addTriggerTask(clearExpiredAliasTokens());
 //        taskRegistrar.addTriggerTask(rebuildSessionXmls());
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("emailPrefix", String.valueOf(XDAT.getNotificationsPreferences().getEmailPrefix())));
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("host", String.valueOf(XDAT.getNotificationsPreferences().getHostname())));
-        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("requireLogin", String.valueOf(XDAT.getSiteConfigPreferences().getRequireLogin())));
+        _eventService.triggerEvent(new PreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
+        _eventService.triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
+        _eventService.triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
+        _eventService.triggerEvent(new PreferenceEvent("emailPrefix", String.valueOf(XDAT.getNotificationsPreferences().getEmailPrefix())));
+        _eventService.triggerEvent(new PreferenceEvent("host", String.valueOf(XDAT.getNotificationsPreferences().getHostname())));
+        _eventService.triggerEvent(new PreferenceEvent("requireLogin", String.valueOf(XDAT.getSiteConfigPreferences().getRequireLogin())));
         for (final TriggerTask triggerTask : _triggerTasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }
@@ -121,4 +121,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     @Inject
     private List<TriggerTask> _triggerTasks;
+
+    @Inject
+    private NrgEventService _eventService;
 }

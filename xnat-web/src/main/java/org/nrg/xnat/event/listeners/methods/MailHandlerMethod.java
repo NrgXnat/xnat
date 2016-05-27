@@ -1,6 +1,7 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
+import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.renderers.NrgMailChannelRenderer;
 import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -38,8 +40,8 @@ public class MailHandlerMethod extends AbstractSiteConfigNotificationsPreference
 
     private void updateMail(){
 		try {
-            XDAT.getContextService().getBean(NrgMailChannelRenderer.class).setFromAddress(XDAT.getSiteConfigPreferences().getAdminEmail());
-            XDAT.getContextService().getBean(NrgMailChannelRenderer.class).setSubjectPrefix(XDAT.getNotificationsPreferences().getEmailPrefix());
+            ((NrgMailChannelRenderer)_mailRenderer).setFromAddress(XDAT.getSiteConfigPreferences().getAdminEmail());
+            ((NrgMailChannelRenderer)_mailRenderer).setSubjectPrefix(XDAT.getNotificationsPreferences().getEmailPrefix());
 
 		} catch (Exception e1) {
 			_log.error("", e1);
@@ -52,5 +54,8 @@ public class MailHandlerMethod extends AbstractSiteConfigNotificationsPreference
     @Autowired
     @Lazy
     private JdbcTemplate _template;
+
+    @Inject
+    private ChannelRenderer _mailRenderer;
 
 }

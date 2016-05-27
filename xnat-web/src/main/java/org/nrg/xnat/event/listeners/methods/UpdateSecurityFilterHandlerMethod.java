@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -38,10 +39,8 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPrefere
     }
 
     private void updateSecurityFilter(){
-        FilterSecurityInterceptor interceptor = XDAT.getContextService().getBean(FilterSecurityInterceptor.class);
-        FilterSecurityInterceptorBeanPostProcessor postProcessor = XDAT.getContextService().getBean(FilterSecurityInterceptorBeanPostProcessor.class);
-        if(interceptor!=null && postProcessor!=null){
-            interceptor.setSecurityMetadataSource(postProcessor.getMetadataSource(XDAT.getSiteConfigPreferences().getRequireLogin()));
+        if(_interceptor!=null && _postProcessor!=null){
+            _interceptor.setSecurityMetadataSource(_postProcessor.getMetadataSource(XDAT.getSiteConfigPreferences().getRequireLogin()));
         }
 	}
 
@@ -51,4 +50,11 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPrefere
     @Autowired
     @Lazy
     private JdbcTemplate _template;
+
+    @Inject
+    private FilterSecurityInterceptor _interceptor;
+
+    @Inject
+    private FilterSecurityInterceptorBeanPostProcessor _postProcessor;
+
 }

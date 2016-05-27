@@ -6,6 +6,7 @@ import org.nrg.xnat.security.alias.ClearExpiredAliasTokens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -38,14 +39,14 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPrefere
 
     private void updateAliasTokenTimeout(){
         try {
-            XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-            Iterator<Runnable> iter = XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").getScheduledThreadPoolExecutor().getQueue().iterator();
+            _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
+            Iterator<Runnable> iter = _scheduler.getScheduledThreadPoolExecutor().getQueue().iterator();
 
             for(ScheduledFuture temp: scheduledAliasTokenTimeouts){
                 temp.cancel(false);
             }
 
-            scheduledAliasTokenTimeouts.add(XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").schedule(new ClearExpiredAliasTokens(_template), new CronTrigger(XDAT.getSiteConfigPreferences().getAliasTokenTimeoutSchedule())));
+            scheduledAliasTokenTimeouts.add(_scheduler.schedule(new ClearExpiredAliasTokens(_template), new CronTrigger(XDAT.getSiteConfigPreferences().getAliasTokenTimeoutSchedule())));
 
         } catch (Exception e1) {
             _log.error("", e1);
@@ -60,4 +61,8 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPrefere
     private JdbcTemplate _template;
 
     private              ArrayList<ScheduledFuture> scheduledAliasTokenTimeouts = new ArrayList<>();
+
+    @Autowired
+    @Qualifier("taskScheduler")
+    private ThreadPoolTaskScheduler _scheduler;
 }

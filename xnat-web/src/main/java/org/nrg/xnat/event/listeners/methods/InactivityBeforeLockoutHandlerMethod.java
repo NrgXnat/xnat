@@ -7,6 +7,7 @@ import org.nrg.xnat.security.DisableInactiveUsers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -39,14 +40,14 @@ public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPref
 
 	private void updateInactivityBeforeLockout(){
 		try {
-			XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-			Iterator<Runnable> iter = XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").getScheduledThreadPoolExecutor().getQueue().iterator();
+            _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
+			Iterator<Runnable> iter = _scheduler.getScheduledThreadPoolExecutor().getQueue().iterator();
 
 			for(ScheduledFuture temp: scheduledInactivityBeforeLockout){
 				temp.cancel(false);
 			}
 
-			scheduledInactivityBeforeLockout.add(XDAT.getContextService().getBeansOfType(ThreadPoolTaskScheduler.class).get("taskScheduler").schedule(new DisableInactiveUsers((new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout()))).intValue(),(new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration()))).intValue()),new CronTrigger(XDAT.getSiteConfigPreferences().getInactivityBeforeLockoutSchedule())));
+			scheduledInactivityBeforeLockout.add(_scheduler.schedule(new DisableInactiveUsers((new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout()))).intValue(),(new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration()))).intValue()),new CronTrigger(XDAT.getSiteConfigPreferences().getInactivityBeforeLockoutSchedule())));
 
 		} catch (Exception e1) {
 			_log.error("", e1);
@@ -61,4 +62,8 @@ public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPref
     private JdbcTemplate _template;
 
     private              ArrayList<ScheduledFuture> scheduledInactivityBeforeLockout = new ArrayList<>();
+
+    @Autowired
+    @Qualifier("taskScheduler")
+    private ThreadPoolTaskScheduler _scheduler;
 }

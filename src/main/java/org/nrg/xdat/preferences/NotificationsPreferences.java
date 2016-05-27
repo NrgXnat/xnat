@@ -206,7 +206,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "mail.smtp.auth")
+    @NrgPreference(defaultValue = "false", property = "mail.smtp.auth")
     public boolean getSmtpAuth() {
         return getBooleanValue("mail.smtp.auth");
     }
@@ -219,7 +219,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "mail.smtp.starttls.enable")
+    @NrgPreference(defaultValue = "false", property = "mail.smtp.starttls.enable")
     public boolean getSmtpStartTls() {
         return getBooleanValue("mail.smtp.starttls.enable");
     }

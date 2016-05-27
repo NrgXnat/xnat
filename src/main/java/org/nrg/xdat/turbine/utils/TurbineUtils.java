@@ -38,7 +38,6 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.PoolDBUtils;
@@ -65,6 +64,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -353,15 +353,11 @@ public class TurbineUtils {
      * @return The full server path.
      */
     public static String GetFullServerPath() {
-        if (XDAT.getSiteConfigPreferences().getSiteUrl() == null || XDAT.getSiteConfigPreferences().getSiteUrl().equals("")) {
-            String s = Turbine.getServerScheme() + "://" + Turbine.getServerName();
-            if (!Turbine.getServerPort().equals("80"))
-                s += ":" + Turbine.getServerPort();
-            s += Turbine.getContextPath();
-            return s;
-        } else {
-            return XDAT.getSiteConfigPreferences().getSiteUrl();
+        final String siteUrl = XDAT.getSiteConfigPreferences().getSiteUrl();
+        if (StringUtils.isNotBlank(siteUrl)) {
+            return siteUrl;
         }
+        return Turbine.getServerScheme() + "://" + Turbine.getServerName() + (!Turbine.getServerPort().equals("80") ? ":" + Turbine.getServerPort() : "") + Turbine.getContextPath();
     }
 
     /**
@@ -393,34 +389,34 @@ public class TurbineUtils {
      * @return The full server path.
      */
     public static String GetFullServerPath(HttpServletRequest req) {
-        if (XDAT.getSiteConfigPreferences().getSiteUrl() == null || XDAT.getSiteConfigPreferences().getSiteUrl().equals("")) {
-            String s = req.getRequestURL().toString();
-            String server = null;
-
-            if (req.getContextPath() != null && !req.getContextPath().equals("")) {
-                final String path = req.getContextPath() + "/";
-                if (s.contains(path)) {
-                    final int breakIndex = s.indexOf(path) + (path.length());
-                    server = s.substring(0, breakIndex);
-                }
-            }
-
-            if (server == null) {
-                final String port = (new Integer(req.getServerPort())).toString();
-                if (s.contains(port)) {
-                    final int breakIndex = s.indexOf(port) + port.length();
-                    server = s.substring(0, breakIndex);
-                }
-            }
-
-            if (server == null) {
-                server = req.getScheme() + "://" + req.getServerName();
-            }
-
-            return server;
-        } else {
+        if (StringUtils.isNotBlank(XDAT.getSiteConfigPreferences().getSiteUrl())) {
             return XDAT.getSiteConfigPreferences().getSiteUrl();
         }
+
+        String s      = req.getRequestURL().toString();
+        String server = null;
+
+        if (req.getContextPath() != null && !req.getContextPath().equals("")) {
+            final String path = req.getContextPath() + "/";
+            if (s.contains(path)) {
+                final int breakIndex = s.indexOf(path) + (path.length());
+                server = s.substring(0, breakIndex);
+            }
+        }
+
+        if (server == null) {
+            final String port = (new Integer(req.getServerPort())).toString();
+            if (s.contains(port)) {
+                final int breakIndex = s.indexOf(port) + port.length();
+                server = s.substring(0, breakIndex);
+            }
+        }
+
+        if (server == null) {
+            server = req.getScheme() + "://" + req.getServerName();
+        }
+
+        return server;
     }
 
     public static String GetContext() {
@@ -1051,24 +1047,24 @@ public class TurbineUtils {
     public String getTemplateName(String module, String dataType, String project) {
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
-            String temp = validateTemplate("/screens/" + root.getSQLName() + "/" + root.getSQLName() + module, project);
+            String temp = validateTemplate(Paths.get("/screens", root.getSQLName(), root.getSQLName() + module).toString(), project);
             if (temp != null) {
                 return temp;
             }
 
-            temp = validateTemplate("/screens/" + root.getSQLName() + "/" + module, project);
+            temp = validateTemplate(Paths.get("/screens", root.getSQLName(), module).toString(), project);
             if (temp != null) {
                 return temp;
             }
 
             for (ArrayList primary : root.getExtendedElements()) {
                 GenericWrapperElement p = ((SchemaElementI) primary.get(0)).getGenericXFTElement();
-                temp = validateTemplate("/screens/" + p.getSQLName() + "/" + p.getSQLName() + module, project);
+                temp = validateTemplate(Paths.get("/screens", p.getSQLName(), p.getSQLName() + module).toString(), project);
                 if (temp != null) {
                     return temp;
                 }
 
-                temp = validateTemplate("/screens/" + p.getSQLName() + "/" + module, project);
+                temp = validateTemplate(Paths.get("/screens", p.getSQLName(), module).toString(), project);
                 if (temp != null) {
                     return temp;
                 }
@@ -1113,7 +1109,7 @@ public class TurbineUtils {
 
                             if (files != null) {
                                 for (File f : files) {
-                                    String path = subFolder + "/" + f.getName();
+                                    String path = Paths.get(subFolder, f.getName()).toString();
                                     if (!exists.contains(path)) {
                                         try {
                                             SecureScreen.addProps(f, screens, _defaultScreens, path);
@@ -1129,7 +1125,7 @@ public class TurbineUtils {
                 }
 
                 //add paths for files on the classpath
-                List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory("screens" + "/" + subFolder);
+                List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory(Paths.get("screens", subFolder).toString());
                 for (URL url : uris) {
                     String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
                     String path = CustomClasspathResourceLoader.safeJoin("/", subFolder, fileName);
@@ -1184,12 +1180,14 @@ public class TurbineUtils {
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
 
-            props.addAll(getTemplates(root.getSQLName() + "/" + subFolder));
-            mergePropsNoOverwrite(props, getTemplates(root.getSQLName() + "/" + subFolder), "fileName");
+            final String subFolderPath = Paths.get(root.getSQLName(), subFolder).toString();
+            final List<Properties> templates = getTemplates(subFolderPath);
+            props.addAll(templates);
+            mergePropsNoOverwrite(props, templates, "fileName");
 
             for (final List<Object> primary : root.getExtendedElements()) {
                 final GenericWrapperElement p = ((SchemaElementI) primary.get(0)).getGenericXFTElement();
-                mergePropsNoOverwrite(props, getTemplates(p.getSQLName() + "/" + subFolder), "fileName");
+                mergePropsNoOverwrite(props, getTemplates(Paths.get(p.getSQLName(), subFolder).toString()), "fileName");
             }
 
             Collections.sort(props, PROPERTIES_COMPARATOR);
@@ -1203,24 +1201,24 @@ public class TurbineUtils {
     public String getTemplateName(String module, String dataType, String project, String subFolder) {
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
-            String temp = validateTemplate("/screens/" + root.getSQLName() + "/" + subFolder + "/" + root.getSQLName() + module, project);
+            String temp = validateTemplate(Paths.get("/screens", root.getSQLName(), subFolder, root.getSQLName() + module).toString(), project);
             if (temp != null) {
                 return temp;
             }
 
-            temp = validateTemplate("/screens/" + root.getSQLName() + "/" + subFolder + "/" + module, project);
+            temp = validateTemplate(Paths.get("/screens", root.getSQLName(), subFolder, module).toString(), project);
             if (temp != null) {
                 return temp;
             }
 
             for (List<Object> primary : root.getExtendedElements()) {
                 final GenericWrapperElement p = ((SchemaElementI) primary.get(0)).getGenericXFTElement();
-                temp = validateTemplate("/screens/" + p.getSQLName() + "/" + subFolder + "/" + p.getSQLName() + module, project);
+                temp = validateTemplate(Paths.get("/screens", p.getSQLName(), subFolder, p.getSQLName() + module).toString(), project);
                 if (temp != null) {
                     return temp;
                 }
 
-                temp = validateTemplate("/screens/" + p.getSQLName() + "/" + subFolder + "/" + module, project);
+                temp = validateTemplate(Paths.get("/screens", p.getSQLName(), subFolder, module).toString(), project);
                 if (temp != null) {
                     return temp;
                 }

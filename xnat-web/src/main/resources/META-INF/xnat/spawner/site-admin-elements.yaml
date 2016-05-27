@@ -843,6 +843,11 @@ registrationOptions:
             id: requireEmailVerificationToRegister
             name: emailVerification
             label: "Require Email Verification To Register?"
+            description: >
+                If true, users will receive an email after registering for an account and must click a 
+                link in the email to verify their email address before they are able to use their account. 
+                If false, no verification emails will be sent and users will not be required to verify their email 
+                before using their account. Either way the administrator receives an email notification when a user registers.
         emailVerificationMessage:
             kind: panel.textarea
             id: emailVerificationMessage
@@ -858,6 +863,10 @@ registrationOptions:
             id: autoEnableUserRegistration
             name: userRegistration
             label: "Auto-enable User Registration?"
+            description: >
+                If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public' 
+                projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator 
+                receives an email notification when a user registers.
         allowUserCommentsOnRegistration:
             kind: panel.input.checkbox
             id: allowUserCommentsOnRegistration
@@ -917,6 +926,8 @@ anonymization:
             id: sitewideAnonymizationScript
             name: sitewideAnonymizationScript
             label: "Edit Anonymization Script"
+            description: >
+                This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="http://nrg.wustl.edu/software/dicomedit/dicomedit-reference/" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
 
 seriesImportFilter:
     kind: panel.form
@@ -938,6 +949,8 @@ seriesImportFilter:
             id: sitewideSeriesImportFilterMode
             name: sitewideSeriesImportFilterMode
             label: Filter Mode
+            description: >
+                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload applet. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
             options:
                 whitelist:
                     label: Whitelist
@@ -950,6 +963,10 @@ seriesImportFilter:
             id: sitewideSeriesImportFilter
             name: sitewideSeriesImportFilter
             label: "Edit Series Import Filter"
+            description: >
+                The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
+                <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive, 
+                i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
 
 sessionUploadMethod:
     kind: panel.form

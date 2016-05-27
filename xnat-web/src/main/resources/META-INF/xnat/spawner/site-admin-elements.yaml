@@ -1,3 +1,4 @@
+
 tabGroups:
 #    dashboard: Dashboard
     xnatSetup: XNAT Setup
@@ -85,6 +86,7 @@ siteLoginLanding:
     id: siteLoginLanding
     name: siteLoginLanding
     label: Site Login Landing
+    description: "The page users will land on immediately after logging in."
 
 siteLandingLayout:
     kind: panel.input.text
@@ -97,6 +99,7 @@ siteHome:
     id: siteHome
     name: siteHome
     label: Site Home
+    description: "The page users will land on by clicking the XNAT logo in the menu bar."
 
 siteHomeLayout:
     kind: panel.input.text
@@ -109,14 +112,22 @@ siteUrl:
     id: siteUrl
     name: siteUrl
     label: Site Url
-    validation: required id
-    description: ""
+    validation: required url
+    description: >
+        The address you want visible to users in emails, and other external links. This should be a
+        functional address (i.e. if the user pasted this address in their web browser, they should
+        come to the site). localhost only works if the web browser is located on the same machine.
+        You are required to guarantee that this address is functional for reaching the site.
 
 adminEmail:
     kind: panel.input.email
     id: adminEmail
     name: adminEmail
     label: Site Administrator Email Address
+    description: >
+        The administrative email account to receive system emails. This address will receive frequent emails 
+        on system events, such as errors, processing completion, new user registration and so on. These emails
+        can be configured on the Notifications tab.
 
 fileSystemSettingsWarning:
     someInfo:
@@ -653,6 +664,7 @@ notifications:
             id: emailAllowNonuserSubscribers
             name: emailAllowNonuserSubscribers
             label: "Allow Nonuser Subscribers"
+            description: "Indicates whether this site should restrict email addresses for site notifications to addresses that are associated with valid active users of the XNAT installation. If turned on, the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events."
 #            value: "?? XNAT.data.siteConfig.emailAllowNonuserSubscribers"
 
 themeManagement:

@@ -35,7 +35,7 @@ import java.util.Map;
  * Configuration for the XNAT root application context. This contains all of the basic infrastructure for initializing
  * and bootstrapping the site, including data source configuration, transaction and session management, and site
  * configuration preferences.
- *
+ * <p>
  * <b>NOTE:</b> If you are adding code to this class, please be sure you know what you're doing! Most configuration code
  * for standard XNAT components should be added in the {@link ApplicationConfig application configuration class}.
  */

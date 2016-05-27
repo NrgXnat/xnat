@@ -120,7 +120,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
             for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
                 final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
                 final XnatPluginBean plugin = new XnatPluginBean(properties);
-                final Class<?> config = plugin.getConfigClass();
+                final Class<?> config = Class.forName(plugin.getPluginClass());
                 configs.add(config);
             }
         } catch (IOException e) {

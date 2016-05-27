@@ -1,5 +1,6 @@
 package org.nrg.xnat.configuration;
 
+import com.google.common.base.Joiner;
 import org.apache.commons.io.IOUtils;
 import org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory;
 import org.hibernate.cache.spi.RegionFactory;
@@ -7,6 +8,7 @@ import org.hibernate.cfg.ImprovedNamingStrategy;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy;
+import org.nrg.framework.processors.XnatPluginBean;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.framework.utilities.Beans;
 import org.slf4j.Logger;
@@ -16,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -25,9 +28,9 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 @Configuration
 @EnableTransactionManagement(proxyTargetClass = true)
@@ -39,8 +42,8 @@ public class OrmConfig {
 
     @Bean
     public PropertiesFactoryBean hibernateProperties() {
-        final PropertiesFactoryBean bean = new PropertiesFactoryBean();
-        final Properties properties = Beans.getNamespacedProperties(_environment, "hibernate", false);
+        final PropertiesFactoryBean bean       = new PropertiesFactoryBean();
+        final Properties            properties = Beans.getNamespacedProperties(_environment, "hibernate", false);
         if (properties.size() == 0) {
             if (_log.isDebugEnabled()) {
                 final StringBuilder message = new StringBuilder("No Hibernate properties specified, using default properties:\n");
@@ -67,8 +70,8 @@ public class OrmConfig {
     @Bean
     public LocalSessionFactoryBean sessionFactory(final DataSource dataSource) throws NrgServiceException {
         try {
-            final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
-            final String[] packages = getXnatEntityPackages();
+            final LocalSessionFactoryBean bean     = new LocalSessionFactoryBean();
+            final String[]                packages = getXnatEntityPackages();
             if (_log.isDebugEnabled()) {
                 final StringBuilder message = new StringBuilder("The following packages will be scanned for persistent entities:\n");
                 for (final String packageName : packages) {
@@ -93,14 +96,26 @@ public class OrmConfig {
     }
 
     private static String[] getXnatEntityPackages() throws IOException {
-        final List<String> packages = new ArrayList<>();
+        final Set<String> packages = new HashSet<>();
         for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/entities/**/*-entity-packages.txt")) {
             if (_log.isDebugEnabled()) {
-                _log.debug("Processing entity packages from the resource: " + resource.getFilename());
+                _log.debug("Processing entity packages from the resource: {}", resource.getFilename());
             }
             try (final InputStream input = resource.getInputStream()) {
                 packages.addAll(IOUtils.readLines(input, "UTF-8"));
             }
+        }
+        try {
+            for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
+                final Properties     properties = PropertiesLoaderUtils.loadProperties(resource);
+                final XnatPluginBean plugin     = new XnatPluginBean(properties);
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Processing entity packages from plugin {}: {}", plugin.getId(), Joiner.on(", ").join(plugin.getEntityPackages()));
+                }
+                packages.addAll(plugin.getEntityPackages());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("An error occurred trying to locate XNAT plugin definitions.");
         }
         return packages.toArray(new String[packages.size()]);
     }

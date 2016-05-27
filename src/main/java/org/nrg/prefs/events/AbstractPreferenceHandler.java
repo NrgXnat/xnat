@@ -36,7 +36,7 @@ public abstract class AbstractPreferenceHandler<T extends StructuredEvent> exten
     @Autowired
     public void setAvailableMethods(final List<PreferenceHandlerMethod> methods) {
         for (final PreferenceHandlerMethod method : methods) {
-            if (StringUtils.equals(method.getToolId(), _toolId)) {
+            if (method.getToolIds().contains(_toolId)) {
                 _methods.add(method);
             }
         }
@@ -63,7 +63,7 @@ public abstract class AbstractPreferenceHandler<T extends StructuredEvent> exten
     private List<PreferenceHandlerMethod> getMethodsForPreferences(final List<String> preferences) {
         final List<PreferenceHandlerMethod> resolved = new ArrayList<>(_methods);
         for (final PreferenceHandlerMethod method : _methods) {
-            if (!Collections.disjoint(method.getHandledPreferences(), preferences)) {
+            if ((!Collections.disjoint(method.getHandledPreferences(), preferences)) && !(resolved.contains(method))) {
                 resolved.add(method);
             }
         }

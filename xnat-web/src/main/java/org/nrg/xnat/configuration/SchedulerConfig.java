@@ -94,6 +94,8 @@ public class SchedulerConfig implements SchedulingConfigurer {
         XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
         XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
         XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("emailPrefix", String.valueOf(XDAT.getNotificationsPreferences().getEmailPrefix())));
+        XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent("host", String.valueOf(XDAT.getNotificationsPreferences().getHostname())));
         for (final TriggerTask triggerTask : _triggerTasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }

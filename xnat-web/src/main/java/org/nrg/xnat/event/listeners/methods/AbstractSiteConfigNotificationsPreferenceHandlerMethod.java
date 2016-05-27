@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class AbstractSiteConfigPreferenceHandlerMethod implements PreferenceHandlerMethod {
+public abstract class AbstractSiteConfigNotificationsPreferenceHandlerMethod implements PreferenceHandlerMethod {
     @Override
     public List<String> getToolIds() {
-        return new ArrayList<String>(Arrays.asList(SiteConfigPreferences.SITE_CONFIG_TOOL_ID));
+        return new ArrayList<String>(Arrays.asList(NotificationsPreferences.NOTIFICATIONS_TOOL_ID, SiteConfigPreferences.SITE_CONFIG_TOOL_ID));
     }
 }

@@ -53,7 +53,7 @@ public class ResetFailedLoginsHandlerMethod extends AbstractSiteConfigPreference
 	}
 
     private static final Logger       _log        = LoggerFactory.getLogger(ResetFailedLoginsHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("aliasTokenTimeout", "aliasTokenTimeoutSchedule"));
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("maxFailedLoginsLockoutDuration", "resetFailedLoginsSchedule"));
 
     @Autowired
     @Lazy

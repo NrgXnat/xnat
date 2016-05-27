@@ -54,7 +54,7 @@ public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPref
 	}
 
     private static final Logger       _log        = LoggerFactory.getLogger(InactivityBeforeLockoutHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("aliasTokenTimeout", "aliasTokenTimeoutSchedule"));
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("inactivityBeforeLockout", "inactivityBeforeLockoutSchedule"));
 
     @Autowired
     @Lazy

@@ -18,6 +18,8 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -28,7 +30,7 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
 
     private void triggerEventIfChanging(final String namespacedPropertyId, final String oldValue, final String newValue){
         if(!StringUtils.equals(oldValue,newValue)) { //Check if value is being changed.
-            XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(new PreferenceEvent(namespacedPropertyId, newValue));
+            _eventService.triggerEvent(new PreferenceEvent(namespacedPropertyId, newValue));
         }
     }
 
@@ -195,4 +197,8 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
     private NrgPreferenceService _service;
 
     private final Map<String, PreferenceInfo> _preferences = new HashMap<>();
+
+    @Lazy
+    @Autowired
+    private NrgEventService _eventService;
 }

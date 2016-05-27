@@ -990,19 +990,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "XNAT")
-    public String getEmailPrefix() {
-        return getValue("emailPrefix");
-    }
-
-    public void setEmailPrefix(final String emailPrefix) {
-        try {
-            set(emailPrefix, "emailPrefix");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'emailPrefix': something is very wrong here.", e);
-        }
-    }
-
     @NrgPreference(defaultValue = "org.nrg.config.services.impl.PrefsBasedSiteConfigurationService", property = "admin.siteConfig.service")
     public String getSiteConfigurationService() {
         return getValue("admin.siteConfig.service");

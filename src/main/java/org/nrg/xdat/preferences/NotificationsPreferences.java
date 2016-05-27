@@ -245,7 +245,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "emailPrefix")
+    @NrgPreference(defaultValue = "XNAT", property = "emailPrefix")
     public String getEmailPrefix() {
         return getValue("emailPrefix");
     }

@@ -257,9 +257,9 @@ generalSecuritySettings:
             element:
                 id: security-channel
                 title: Security Channel
-        requireUserLogin:
+        requireLogin:
             kind: panel.input.checkbox
-            id: requireUserLogin
+            id: requireLogin
             name: requireLogin
             label: Require User Login
             description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
@@ -537,7 +537,7 @@ emailServerSettings:
         smtpStartTls:
             kind: panel.input.checkbox
             name: mail.smtp.starttls.enable
-            label: Smart TLS?
+            label: Start TLS?
         smtpSSLTrust:
             kind: panel.input.text
             name: mail.smtp.ssl.trust
@@ -838,12 +838,6 @@ registrationOptions:
     load: ?? XNAT.data.siteConfig
     contentType: json
     contents:
-        requireLogin:
-            kind: panel.input.checkbox
-            id: requireLogin
-            name: requireLogin
-            label: "Require User Login?"
-            disabled: true
         requireEmailVerificationToRegister:
             kind: panel.input.checkbox
             id: requireEmailVerificationToRegister

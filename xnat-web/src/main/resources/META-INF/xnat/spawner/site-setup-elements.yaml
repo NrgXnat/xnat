@@ -179,7 +179,7 @@ smtpServer:
         smtpStartTls:
             kind: panel.input.checkbox
             name: mail.smtp.starttls.enable
-            label: Smart TLS?
+            label: Start TLS?
             #value: "?? XNAT:data:siteConfig:smtpServer:mail.smtp.starttls.enable"
 
         smtpSSLTrust:

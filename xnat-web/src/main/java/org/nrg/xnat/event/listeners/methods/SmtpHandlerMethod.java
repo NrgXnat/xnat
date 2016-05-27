@@ -39,11 +39,11 @@ public class SmtpHandlerMethod extends AbstractNotificationsPreferenceHandlerMet
 
     private void updateSmtp(){
 		try {
-            _mailSender.setHost(XDAT.getNotificationsPreferences().getHostname());
-            _mailSender.setPort(XDAT.getNotificationsPreferences().getPort());
-            _mailSender.setUsername(XDAT.getNotificationsPreferences().getUsername());
-            _mailSender.setPassword(XDAT.getNotificationsPreferences().getPassword());
-            _mailSender.setProtocol(XDAT.getNotificationsPreferences().getProtocol());
+            mailSender.setHost(XDAT.getNotificationsPreferences().getHostname());
+            mailSender.setPort(XDAT.getNotificationsPreferences().getPort());
+            mailSender.setUsername(XDAT.getNotificationsPreferences().getUsername());
+            mailSender.setPassword(XDAT.getNotificationsPreferences().getPassword());
+            mailSender.setProtocol(XDAT.getNotificationsPreferences().getProtocol());
 
 		} catch (Exception e1) {
 			_log.error("", e1);
@@ -58,6 +58,6 @@ public class SmtpHandlerMethod extends AbstractNotificationsPreferenceHandlerMet
     private JdbcTemplate _template;
 
     @Inject
-    private JavaMailSenderImpl _mailSender;
+    private JavaMailSenderImpl mailSender;
 
 }

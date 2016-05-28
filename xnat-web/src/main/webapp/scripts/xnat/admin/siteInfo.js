@@ -9,7 +9,7 @@
         sdtPage.click(changeSiteDescriptionType);
         sdtText.click(changeSiteDescriptionType);
         changeSiteDescriptionType(XNAT.data.siteConfig.siteDescriptionType);
-    }, 100);
+    }, 1);
 
     function changeSiteDescriptionType(eventOrValue){
 

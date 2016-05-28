@@ -34,35 +34,27 @@ var XNAT = getObject(XNAT || {});
     // ==================================================
     // SET UP ONE TAB GROUP
     // add a single tab group to the groups
-    tab.group = function(obj, container){
+    tab.group = function(obj){
         var id = toDashed(obj.id || obj.name);
         if (!id) return; // a tab group MUST have an id
-        var group = spawn('ul.nav.tab-group', { id: id }, [
+        return spawn('ul.nav.tab-group', { id: id }, [
             ['li.label', (obj.label || obj.title || obj.text || 'Tab Group')]
         ]);
-        if (container) {
-            $$(container).append(group);
-        }
-        return group;
     };
     // ==================================================
 
 
     // ==================================================
     // SET UP TAB GROUPS
-    tab.groups = function(obj, container, empty){
-        var groups = [],
-            $container = $$(container);
+    tab.groups = function(obj){
+        var groups = [];
         $.each(obj, function(name, label){
             groups.push(tab.group({
                 id: toDashed(name),
                 label: label
             }));
         });
-        if (empty) {
-            $container.empty();
-        }
-        $container.append(groups);
+        // console.log(groups);
         return groups;
     };
     // ==================================================
@@ -70,57 +62,28 @@ var XNAT = getObject(XNAT || {});
 
     // save the id of the active tab
     XNAT.ui.tab.active = '';
+    tab.activate = function(name, container){
 
-    function activateTab(tab, id){
-
-        var $tab  = $(tab),
-            $tabs = $(tab).closest('div.xnat-tab-container');
-
-        // first deactivate ALL tabs and panes
-        $tabs
-            .find('div.tab-pane')
-            .hide()
-            .removeClass('active');
-
-        $tabs
-            .find('li.tab')
-            .removeClass('active');
-
-        // then activate THIS tab and pane
-
-        $tab.addClass('active');
-
-        $('#' + id)
-            .show()
-            .addClass('active');
-
-        XNAT.ui.tab.active = id;
-
-    }
-    
+    };
 
     // ==================================================
     // CREATE A SINGLE TAB
     tab.init = function _tab(obj){
 
-        var $group, _flipper, _pane;
+        var $group, groupId, tabId, _flipper, _pane;
 
-        obj = getObject(obj);
-        obj.config = getObject(obj.config);
-        obj.config.id = obj.config.id || obj.id || (toDashed(obj.name) + '-content');
-        obj.config.data = extend({ name: obj.name }, obj.config.data);
+        obj = cloneObject(obj);
+        obj.config = cloneObject(obj.config);
+
+        tabId = toDashed(obj.id || obj.name || '');
 
         _flipper = spawn('li.tab', {
-            // onclick event handler attached
-            // directly to tab flipper
-            onclick: function(){
-                activateTab(this, obj.config.id)
-            }
+            data: { tab: tabId }
         }, [
             ['a', {
                 title: obj.label,
                 // href: '#'+obj.config.id,
-                href: '#!',
+                href: '#' + tabId,
                 html: obj.label
             }]
         ]);
@@ -137,6 +100,12 @@ var XNAT = getObject(XNAT || {});
         }
         tab.paneFooter = paneFooter;
 
+        obj.config.data =
+            extend(true, {}, obj.config.data, {
+                name: obj.name||'',
+                tab: tabId
+            });
+
         _pane = spawn('div.tab-pane', obj.config);
 
         if (obj.active) {
@@ -145,14 +114,18 @@ var XNAT = getObject(XNAT || {});
             tab.active = _pane.id;
         }
 
+        groupId = toDashed(obj.group||'other');
+
         // un-hide the group that this tab is in
         // (groups are hidden until there is a tab for them)
-        $group = $('#' + (toDashed(obj.group || 'other')) + '.tab-group');
-        
+        $group = $('#' + groupId + '.tab-group');
+
         $group.show();
         
         // add all the flippers
         $group.append(_flipper);
+
+        // console.log($group[0]);
 
         function render(element){
             $$(element).append(_pane);
@@ -176,29 +149,58 @@ var XNAT = getObject(XNAT || {});
     };
     // ==================================================
 
-
+    
     // ==================================================
     // MAIN FUNCTION
-    tabs.init = function _tabs(obj){
+    tabs.init = function tabsInit(obj){
 
-        var spawned = spawn('div.tabs');
+        var layout, container, $container, 
+            navTabs, tabContent;
+
+        // set container and layout before spawning:
+        // XNAT.tabs.container = 'div.foo';
+        container = tabs.container || 'div.xnat-tab-container';
+
+        layout = tabs.layout || 'left';
+
+        navTabs = spawn('div.xnat-nav-tabs');
+        tabContent = spawn('div.xnat-tab-content');
+
+        if (layout === 'left') {
+            navTabs.className += ' side pull-left';
+            tabContent.className += ' side pull-right';
+        }
+
+        $container = $$(container);
+
+        $container.append(navTabs);
+        $container.append(tabContent);
 
         // set up the group elements
-        tab.groups(obj.meta.tabGroups, '#admin-config-tabs > .xnat-nav-tabs');
+        $(navTabs).append(tab.groups(obj.meta.tabGroups));
+
+        // bind tab click events
+        $container.on('click', 'li.tab', function(){
+            var clicked = $(this).data('tab');
+            // de-activate all tabs and panes
+            $container.find('[data-tab]').removeClass('active');
+            // activate the clicked tab and pane
+            $container.find('[data-tab="' + clicked + '"]').addClass('active');
+        });
 
         function render(element){
-            $$(element).append(spawned);
-            return spawned;
+            $$(element).append(tabContent);
+            return tabContent;
         }
 
         function get(){
-            return spawned;
+            return tabContent;
         }
 
         return {
             // contents: obj.tabs||obj.contents||obj.content||'',
-            element: spawned,
-            spawned: spawned,
+            element: tabContent,
+            spawned: tabContent,
             render: render,
             get: get
         };
@@ -211,3 +213,4 @@ var XNAT = getObject(XNAT || {});
     return tabs;
 
 }));
+

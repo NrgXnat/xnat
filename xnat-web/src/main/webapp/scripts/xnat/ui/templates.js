@@ -224,30 +224,6 @@ var XNAT = getObject(XNAT);
             ajaxValue(element, ajaxUrl.trim(), ajaxProp.trim());
         }
 
-        // if (opts.load) {
-        //     if (opts.load.lookup) {
-        //         lookupValue(element, opts.load.lookup.trim());
-        //     }
-        //     else if (opts.load.url){
-        //         $.ajax({
-        //             method: opts.load.method || 'GET',
-        //             url: XNAT.url.restUrl(opts.load.url),
-        //             success: function(data){
-        //                 // get value from specific object path
-        //                 if (isPlainObject(data) && opts.load.prop) {
-        //                     data = lookupObjectValue(data, opts.load.prop);
-        //                     // opts.load.prop.split('.').forEach(function(part){
-        //                     //     data = data[part] || {};
-        //                     // });
-        //                     // data = lookupObjectValue(opts.load.prop);
-        //                 }
-        //                 $(element).changeVal(data);
-        //                 $(element).not('textarea').dataAttr('value', data);
-        //             }
-        //         })
-        //     }
-        // }
-
         // trigger an 'onchange' event
         $element.change();
 
@@ -302,35 +278,39 @@ var XNAT = getObject(XNAT);
 
     // ========================================
     // select element for form panels
-    template.panelSelect = function(opts){
-        opts = cloneObject(opts);
-        opts.name = opts.name || opts.id || randomID('select-', false);
-        opts.id = opts.id || toDashed(opts.name||'');
-        opts.element = extend({
-            id: opts.id,
-            name: opts.name,
-            className: opts.className||'',
-            //size: 25,
-            title: opts.title||opts.name||opts.id||'',
-            value: opts.value||''
-        }, opts.element);
-
-        var _select = spawn('select', opts.element, [['option|value=!', 'Select']]);
-        
-        // add the options
-        $.each(opts.options||{}, function(name, prop){
-            var _option = spawn('option', extend(true, {
-                html: prop.html || prop.text || prop.label || prop.value || prop,
-                value: prop.value || name
-            }, prop.element));
-            // select the option if it's the select element's value
-            if (prop.value === opts.value){
-                _option.selected = true;
-            }
-            _select.appendChild(_option)    
-        });
-        return template.panelInput(opts, _select);
-    };
+    // template.panelSelect = function(opts){
+    //    
+    //     opts = cloneObject(opts);
+    //    
+    //     opts.name = opts.name || opts.id || randomID('select-', false);
+    //     opts.id = opts.id || toDashed(opts.name||'');
+    //     opts.element = extend({
+    //         id: opts.id,
+    //         name: opts.name,
+    //         className: opts.className||'',
+    //         //size: 25,
+    //         title: opts.title||opts.name||opts.id||'',
+    //         value: opts.value||''
+    //     }, opts.element);
+    //
+    //     var _select = spawn('select', opts.element, [['option', 'Select']]);
+    //    
+    //     // add the options
+    //     $.each(opts.options||{}, function(name, prop){
+    //         var _option = spawn('option', extend(true, {
+    //             html: prop.html || prop.text || prop.label || prop.value || prop,
+    //             value: prop.value || name
+    //         }, prop.element));
+    //         // select the option if it's the select element's value
+    //         if (prop.value === opts.value){
+    //             _option.selected = true;
+    //         }
+    //         _select.appendChild(_option)    
+    //     });
+    //    
+    //     return template.panelInput(opts, _select);
+    //
+    // };
     // ========================================
 
 

@@ -22,14 +22,18 @@
 
             <div data-name="spawnerElements" class="panel-element" style="overflow:visible;">
 
+                <div class="description" style="margin:20px 5px 0">View and manage XNAT Spawner elements.</div>
+
                     <%--<label class="element-label" for="!?"></label>--%>
                     <%--<div class="element-wrapper">--%>
 
-                <table id="spawner-element-list" class="xnat-table alt1 clean" style="width:100%;border:none;">
+                <style type="text/css">
+                    #spawner-element-list td { padding: 4px; }
+                </style>
+
+                <table id="spawner-element-list" class="xnat-table highlight alt1 clean" style="width:100%;border:none;">
                     <!-- list of available namespaces will show here -->
                 </table>
-
-                <div class="description" style="margin:20px 5px 0">View and manage XNAT Spawner elements.</div>
 
                     <%--</div>--%>
 

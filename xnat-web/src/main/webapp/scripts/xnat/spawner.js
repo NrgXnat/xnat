@@ -27,6 +27,8 @@ var XNAT = getObject(XNAT);
     XNAT.spawner = spawner =
         getObject(XNAT.spawner || {});
 
+    spawner.counter = 0;
+    
     // keep track of items that spawned
     spawner.spawnedElements = [];
 
@@ -43,8 +45,11 @@ var XNAT = getObject(XNAT);
     spawner.spawn = function _spawn(obj){
 
         var frag  = document.createDocumentFragment(),
-            $frag = $(frag);
+            $frag = $(frag),
+            undefined;
 
+        spawner.counter++;
+        
         forOwn(obj, function(item, prop){
 
             var kind, methodName, method, spawnedElement, $spawnedElement;
@@ -82,7 +87,7 @@ var XNAT = getObject(XNAT);
 
                 // pass 'content' (not contentS) property to add
                 // stuff directly to spawned element
-                prop.content = prop.content || prop.children || prop.inner || '';
+                prop.content = prop.content || prop.children || '';
 
                 try {
                     spawnedElement =
@@ -142,6 +147,9 @@ var XNAT = getObject(XNAT);
                     spawner.notSpawned.push(item);
                 }
             }
+
+            // give up if no spawnedElement
+            if (!spawnedElement) return;
 
             // spawn child elements from...
             // 'contents' or 'content' or 'children' or
@@ -211,18 +219,34 @@ var XNAT = getObject(XNAT);
             return $frag.contents();    
         };
 
-        _spawn.render = function(element, empty){
-            var $el = $$(element);
-            // empty the container element before spawning?
-            if (empty) {
-                $el.empty();
+        _spawn.done = function(callback){
+            if (isFunction(callback)) {
+                callback()
             }
-            $el.append(frag);
-            return spawn;
+            return _spawn;
+        };
+
+        _spawn.render = function(container, wait, callback){
+
+            var $container = $$(container);
+
+            wait = wait !== undefined ? wait : 100;
+
+            $container.hide().append(frag);
+            $container.fadeIn(wait);
+
+            setTimeout(function(){
+                if (isFunction(callback)) {
+                    callback()
+                }
+            }, wait);
+
+            return _spawn;
+
         };
 
         _spawn.foo = '(spawn.foo)';
-
+        
         return _spawn;
 
     };

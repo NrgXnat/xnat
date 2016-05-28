@@ -61,20 +61,27 @@ img {
 input[type="text"],
 input[type="password"],
 input[type="number"] {
-    padding: 4px 5px 3px 5px;
-    border: 1px solid #b0b0b0;
+    padding: 5px 7px;
+    border: 1px solid #c0c0c0;
 }
 
 textarea {
     padding: 4px;
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 12px;
-    border: 1px solid #b0b0b0;
+    font-size: 13px;
+    border: 1px solid #c0c0c0;
 }
 
-select {
-    /* */
+input:focus,
+textarea:focus {
+    border-color: #2fa4e7;
+    box-shadow: 0 0 2px #2fa4e7;
+    outline: none;
 }
+
+select:focus { outline: none; }
+
+select {  }
 
 /* xnat.css */
 /***********************************************/
@@ -961,7 +968,7 @@ hr {
 /* //////////  FORM ELEMENTS  ////////// */
 input {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 /* 'required' items */
@@ -983,9 +990,10 @@ body [type="reset"] {
     border-radius: 3px;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 13px;
+    white-space: nowrap;
     letter-spacing: 0.02em;
     text-decoration: none;
-    box-shadow: 0px 1px 1px #ccc;
+    box-shadow: 0 1px 1px #ccc;
 }
 
 /* style for button hover */
@@ -3578,3 +3586,4 @@ textarea.xml-formatted {
 .pad5h { padding-left: 5px; padding-right: 5px; }
 .pad10h { padding-left: 10px; padding-right: 10px; }
 .pad20h { padding-left: 20px; padding-right: 20px; }
+

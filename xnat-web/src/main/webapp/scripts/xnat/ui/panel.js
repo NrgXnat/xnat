@@ -732,26 +732,35 @@ var XNAT = getObject(XNAT || {});
         var _menu;
 
         opts = cloneObject(opts);
-        opts.element = opts.element || opts.config || {};
-        opts.element.name = opts.element.name || opts.name || '';
-        opts.element.id = opts.element.id || opts.id || toDashed(opts.element.name);
+
+        opts.name = opts.name || opts.id || randomID('select-', false);
+        opts.id = opts.id || toDashed(opts.name||'');
+        opts.element = extend({
+            id: opts.id,
+            name: opts.name,
+            className: opts.className||'',
+            title: opts.title||opts.name||opts.id||'',
+            value: opts.value||''
+        }, opts.element);
+        
         if (multi) {
             opts.element.multiple = true;
         }
-        _menu = spawn('select', opts.element, [['option|value=!', 'Select']]);
+
+        _menu = spawn('select', opts.element, [['option', 'Select']]);
 
         if (opts.options){
             forOwn(opts.options, function(name, prop){
                 _menu.appendChild(spawn('option', {
-                    value: prop.value,
+                    html: prop.html || prop.text || prop.label || prop.value || prop,
+                    value: prop.value || name,
                     selected: prop.selected || (prop.value === opts.value)
-                }, prop.label));
+                }));
             });
         }
-        return XNAT.ui.template.panelInput({
-            label: opts.label,
-            name: opts.name
-        }, _menu).spawned;
+
+        return XNAT.ui.template.panelInput(opts, _menu).spawned;
+
     };
     panel.select.init = panel.select.menu;
     panel.select.single = panel.select.menu;
@@ -760,12 +769,6 @@ var XNAT = getObject(XNAT || {});
         return panel.select.menu(opts, true)
     };
     panel.select.multi.init = panel.select.multi;
-
-    panel.selectMenu = function panelSelectMenu(opts){
-        opts = cloneObject(opts);
-        return XNAT.ui.template.panelSelect(opts).spawned;
-    };
-
 
     function footerButton(text, type, disabled, classes){
         var button = {

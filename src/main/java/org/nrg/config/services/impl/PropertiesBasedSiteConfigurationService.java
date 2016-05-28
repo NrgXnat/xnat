@@ -26,6 +26,7 @@ import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import java.io.*;
+import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -317,7 +318,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
             for (int i = 0; i < _configFilesLocations.size(); ++i) {
                 File configFilesLocation = new File(_configFilesLocations.get(i));
                 if (!configFilesLocation.isAbsolute()) {
-                    String absoluteConfigFilesLocation = getConfigFilesLocationsRoot() + File.separator + _configFilesLocations.get(i);
+                    String absoluteConfigFilesLocation = Paths.get(getConfigFilesLocationsRoot(), _configFilesLocations.get(i)).toString();
                     _configFilesLocations.set(i, absoluteConfigFilesLocation);
                 }
             }

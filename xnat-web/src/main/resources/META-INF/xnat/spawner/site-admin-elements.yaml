@@ -322,6 +322,7 @@ userLoginsSessionControls:
             name: UI.login_failure_message
             label: Login Failure Message
             description: Text to show when a user fails to login
+            value: "?? XNAT:data:siteConfig:UI.login_failure_message"
         maximumFailedLogins:
             kind: panel.input.number
             id: maximumFailedLogins

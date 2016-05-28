@@ -9,11 +9,8 @@ import org.nrg.xdat.preferences.PreferenceEvent;
 import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
 import org.nrg.xnat.security.ResetEmailRequests;
 import org.nrg.xnat.utils.XnatUserProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
@@ -28,48 +25,10 @@ import java.util.List;
 @Configuration
 @EnableScheduling
 public class SchedulerConfig implements SchedulingConfigurer {
-//    @Bean
-//    public TriggerTask disableInactiveUsers() throws SiteConfigurationException {
-//        try {
-//            final DisableInactiveUsers task = new DisableInactiveUsers(_preferences.getInactivityBeforeLockout(), (int) SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration()));
-//            return new TriggerTask(task, new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule()));
-//        } catch (SQLException e) {
-//            // This isn't a real thing: PGInterval doesn't actually access the database. But just to make everyone happy...
-//            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "This really shouldn't happen.", e);
-//        }
-//    }
-
-//    @Bean
-//    public TriggerTask resetFailedLogins() throws SiteConfigurationException {
-//        return new TriggerTask(new ResetFailedLogins(_template, _preferences.getMaxFailedLoginsLockoutDuration()), new PeriodicTrigger(900000));
-//    }
-
     @Bean
     public TriggerTask resetEmailRequests() {
         return new TriggerTask(new ResetEmailRequests(_emailRequestLogService), new PeriodicTrigger(900000));
     }
-//
-//    @Bean
-//    public TriggerTask clearExpiredAliasTokens() throws SiteConfigurationException {
-//        return new TriggerTask(new ClearExpiredAliasTokens(_template), new Trigger() {
-//            @Override public Date nextExecutionTime(TriggerContext triggerContext) {
-//                Calendar nextExecutionTime =  new GregorianCalendar();
-//                Date lastActualExecutionTime = triggerContext.lastActualExecutionTime();
-//                nextExecutionTime.setTime(lastActualExecutionTime != null ? lastActualExecutionTime : new Date());
-//                long expirationInterval = XDAT.getSiteConfigPreferences().getAliasTokenTimeout();
-//                if(expirationInterval<120){//Check every minute if interval is 2 hours or less
-//                    nextExecutionTime.add(Calendar.MINUTE, 1);
-//                }
-//                else if(expirationInterval<2880){//Check every hour if interval is 2 days or less
-//                    nextExecutionTime.add(Calendar.HOUR, 1);
-//                }
-//                else{//Check every day
-//                    nextExecutionTime.add(Calendar.DAY_OF_MONTH, 1);
-//                }
-//                return nextExecutionTime.getTime();
-//            }
-//        });
-//    }
 
     @Bean
     public TriggerTask rebuildSessionXmls() throws SiteConfigurationException {
@@ -80,17 +39,14 @@ public class SchedulerConfig implements SchedulingConfigurer {
 
     @Bean(destroyMethod = "shutdown")
     public ThreadPoolTaskScheduler taskScheduler() {
-        return new ThreadPoolTaskScheduler();
+        final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setRemoveOnCancelPolicy(true);
+        return scheduler;
     }
 
     @Override
     public void configureTasks(final ScheduledTaskRegistrar taskRegistrar) {
         taskRegistrar.setScheduler(taskScheduler());
-//        taskRegistrar.addTriggerTask(resetFailedLogins());
-//        taskRegistrar.addTriggerTask(disableInactiveUsers());
-//        taskRegistrar.addTriggerTask(resetEmailRequests());
-//        taskRegistrar.addTriggerTask(clearExpiredAliasTokens());
-//        taskRegistrar.addTriggerTask(rebuildSessionXmls());
         _eventService.triggerEvent(new PreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
         _eventService.triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
         _eventService.triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
@@ -105,10 +61,6 @@ public class SchedulerConfig implements SchedulingConfigurer {
 
     @Inject
     private EmailRequestLogService _emailRequestLogService;
-
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
 
     @Inject
     private XnatUserProvider _provider;

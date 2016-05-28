@@ -10,10 +10,7 @@
  */
 package org.nrg.dcm.id;
 
-import java.util.regex.Pattern;
-
-import javax.inject.Provider;
-
+import com.google.common.collect.ImmutableSortedSet;
 import org.dcm4che2.data.DicomObject;
 import org.nrg.dcm.ChainExtractor;
 import org.nrg.dcm.Extractor;
@@ -22,67 +19,57 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Labels;
 
-import com.google.common.collect.ImmutableSortedSet;
+import javax.inject.Provider;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
 
-public class CompositeDicomObjectIdentifier implements
-DicomObjectIdentifier<XnatProjectdata> {
-    private final DicomProjectIdentifier projectID;
-    private final Extractor subjectExtractor, sessionExtractor, aaExtractor;
-    private final ImmutableSortedSet<Integer> tags;
-
-    public CompositeDicomObjectIdentifier(final DicomProjectIdentifier projectID,
-            final Extractor subjectExtractor,
-            final Extractor sessionExtractor,
-            final Extractor aaExtractor) {
-        this.projectID = projectID;
-        this.subjectExtractor = subjectExtractor;
-        this.sessionExtractor = sessionExtractor;
-        this.aaExtractor = aaExtractor;
-        
-        ImmutableSortedSet.Builder<Integer> builder = ImmutableSortedSet.naturalOrder();
-        builder.addAll(projectID.getTags());
-        builder.addAll(aaExtractor.getTags());
-        builder.addAll(sessionExtractor.getTags());
-        builder.addAll(subjectExtractor.getTags());
-        tags = builder.build();  
-    }
-    
-    public CompositeDicomObjectIdentifier(final DicomProjectIdentifier projectID,
-            final Iterable<Extractor> subjectExtractors,
-            final Iterable<Extractor> sessionExtractors,
-            final Iterable<Extractor> aaExtractors) {
-        this(projectID, new ChainExtractor(subjectExtractors),
-                new ChainExtractor(sessionExtractors), new ChainExtractor(aaExtractors));
+public class CompositeDicomObjectIdentifier implements DicomObjectIdentifier<XnatProjectdata> {
+    public CompositeDicomObjectIdentifier(final DicomProjectIdentifier identifier,
+                                          final Extractor subjectExtractor,
+                                          final Extractor sessionExtractor,
+                                          final Extractor aaExtractor) {
+        _identifier = identifier;
+        _subjectExtractor = subjectExtractor;
+        _sessionExtractor = sessionExtractor;
+        _aaExtractor = aaExtractor;
     }
 
-    private UserI user = null;
-    private Provider<UserI> userProvider = null;
-    
+    public CompositeDicomObjectIdentifier(final DicomProjectIdentifier identifier,
+                                          final Iterable<Extractor> subjectExtractors,
+                                          final Iterable<Extractor> sessionExtractors,
+                                          final Iterable<Extractor> aaExtractors) {
+        this(identifier,
+             new ChainExtractor(subjectExtractors),
+             new ChainExtractor(sessionExtractors),
+             new ChainExtractor(aaExtractors));
+    }
+
     /*
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#getProject(org.dcm4che2.data.DicomObject)
      */
     public final XnatProjectdata getProject(final DicomObject o) {
-	if (null == user && null != userProvider) {
-	    user = userProvider.get();
-	}
-	return projectID.apply(user, o);
+        if (null == user && null != userProvider) {
+            user = userProvider.get();
+        }
+        return _identifier.apply(user, o);
     }
-    
+
     /*
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#getSessionLabel(org.dcm4che2.data.DicomObject)
      */
     public final String getSessionLabel(final DicomObject o) {
-        return Labels.toLabelChars(sessionExtractor.extract(o));
+        return Labels.toLabelChars(_sessionExtractor.extract(o));
     }
-    
+
     /*
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#getSubjectLabel(org.dcm4che2.data.DicomObject)
      */
     public final String getSubjectLabel(final DicomObject o) {
-        return Labels.toLabelChars(subjectExtractor.extract(o));
+        return Labels.toLabelChars(_subjectExtractor.extract(o));
     }
 
     /*
@@ -90,18 +77,18 @@ DicomObjectIdentifier<XnatProjectdata> {
      * @see org.nrg.xnat.DicomObjectIdentifier#getTags()
      */
     public final ImmutableSortedSet<Integer> getTags() {
-        return tags;
+        if (!_initialized) {
+            initialize();
+        }
+        return ImmutableSortedSet.copyOf(_tags);
     }
-    
-    private static final Pattern TRUE = Pattern.compile("t(?:rue)?", Pattern.CASE_INSENSITIVE);
-    private static final Pattern FALSE = Pattern.compile("f(?:alse)?", Pattern.CASE_INSENSITIVE);
 
     /*
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#requestsAutoarchive(org.dcm4che2.data.DicomObject)
      */
     public final Boolean requestsAutoarchive(DicomObject o) {
-        final String aa = aaExtractor.extract(o);
+        final String aa = _aaExtractor.extract(o);
         if (null == aa) {
             return null;
         } else if (TRUE.matcher(aa).matches()) {
@@ -112,12 +99,33 @@ DicomObjectIdentifier<XnatProjectdata> {
             return null;
         }
     }
-    
+
     public final void setUser(final UserI user) {
         this.user = user;
     }
-    
+
     public final void setUserProvider(final Provider<UserI> userProvider) {
         this.userProvider = userProvider;
     }
+
+    private void initialize() {
+        ImmutableSortedSet.Builder<Integer> builder = ImmutableSortedSet.naturalOrder();
+        builder.addAll(_identifier.getTags());
+        builder.addAll(_aaExtractor.getTags());
+        builder.addAll(_sessionExtractor.getTags());
+        builder.addAll(_subjectExtractor.getTags());
+        _tags.addAll(builder.build());
+        _initialized = true;
+    }
+
+    private static final Pattern TRUE  = Pattern.compile("t(?:rue)?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern FALSE = Pattern.compile("f(?:alse)?", Pattern.CASE_INSENSITIVE);
+
+    private UserI           user         = null;
+    private Provider<UserI> userProvider = null;
+
+    private final DicomProjectIdentifier _identifier;
+    private final Extractor              _subjectExtractor, _sessionExtractor, _aaExtractor;
+    private final SortedSet<Integer> _tags        = new TreeSet<>();
+    private       boolean            _initialized = false;
 }

@@ -32,22 +32,18 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPrefere
 
     @Override
     public void handlePreference(final String preference, final String value) {
-        if(PREFERENCES.contains(preference)){
+        if (PREFERENCES.contains(preference)) {
             updateAliasTokenTimeout();
         }
     }
 
-    private void updateAliasTokenTimeout(){
+    private void updateAliasTokenTimeout() {
         try {
-            _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-            Iterator<Runnable> iter = _scheduler.getScheduledThreadPoolExecutor().getQueue().iterator();
-
-            for(ScheduledFuture temp: scheduledAliasTokenTimeouts){
-                temp.cancel(false);
+            for (final ScheduledFuture future : _timeouts) {
+                future.cancel(false);
             }
-
-            scheduledAliasTokenTimeouts.add(_scheduler.schedule(new ClearExpiredAliasTokens(_template), new CronTrigger(XDAT.getSiteConfigPreferences().getAliasTokenTimeoutSchedule())));
-
+            _timeouts.clear();
+            _timeouts.add(_scheduler.schedule(new ClearExpiredAliasTokens(_template), new CronTrigger(XDAT.getSiteConfigPreferences().getAliasTokenTimeoutSchedule())));
         } catch (Exception e1) {
             _log.error("", e1);
         }
@@ -60,7 +56,7 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPrefere
     @Lazy
     private JdbcTemplate _template;
 
-    private              ArrayList<ScheduledFuture> scheduledAliasTokenTimeouts = new ArrayList<>();
+    private ArrayList<ScheduledFuture> _timeouts = new ArrayList<>();
 
     @Autowired
     @Qualifier("taskScheduler")

@@ -1,13 +1,14 @@
 package org.nrg.xnat.configuration;
 
-import org.apache.commons.lang.StringUtils;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.services.ContextService;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.*;
+import org.nrg.xdat.security.HistoricPasswordValidator;
+import org.nrg.xdat.security.PasswordValidatorChain;
+import org.nrg.xdat.security.RegExpValidator;
+import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
@@ -19,7 +20,10 @@ import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.annotation.*;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 
 @Configuration
 @ComponentScan({"org.nrg.automation.repositories", "org.nrg.config.daos", "org.nrg.dcm.xnat", "org.nrg.dicomtools.filters",
@@ -79,9 +83,8 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public PasswordValidatorChain validator(final RegExpValidator regExpValidator, final HistoricPasswordValidator historicPasswordValidator) {
+    public PasswordValidatorChain validator() {
         return new PasswordValidatorChain();
-
     }
 
     // MIGRATION: I'm not even sure this is used, but we need to do away with it in favor of prefs.
@@ -98,12 +101,12 @@ public class ApplicationConfig {
 
     @Bean
     public XnatRestletExtensions xnatRestletExtensions() {
-        return new XnatRestletExtensions(new HashSet<>(Arrays.asList(new String[]{"org.nrg.xnat.restlet.extensions"})));
+        return new XnatRestletExtensions(new HashSet<>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.extensions"})));
     }
 
     @Bean
     public ImporterHandlerPackages importerHandlerPackages() {
-        return new ImporterHandlerPackages(new HashSet<>(Arrays.asList(new String[]{"org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive"})));
+        return new ImporterHandlerPackages(new HashSet<>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive"})));
     }
 
     @Inject

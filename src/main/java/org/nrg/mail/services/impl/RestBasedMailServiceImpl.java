@@ -97,78 +97,88 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
     @Override
     public void sendMessage(MailMessage message, String username, String password) throws MessagingException {
-        assert !StringUtils.isBlank(message.getFrom()) : "You must specify a from address for your email.";
-        assert message.getTos() != null && message.getTos().size() > 0 : "You must specify at least one address to which to send an email.";
-        assert message.getSubject() != null : "You must specify a subject for your email.";
+        if(enabled) {
+            assert !StringUtils.isBlank(message.getFrom()) : "You must specify a from address for your email.";
+            assert message.getTos() != null && message.getTos().size() > 0 : "You must specify at least one address to which to send an email.";
+            assert message.getSubject() != null : "You must specify a subject for your email.";
 
-        MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<>();
-        parameters.add("from", message.getFrom());
-        for (String to : message.getTos()) {
-            parameters.add("to", to);
-        }
-        List<String> ccs = message.getCcs();
-        if (ccs != null && ccs.size() > 0) {
-            for (String cc : ccs) {
-                if (cc != null) {
-                    parameters.add("cc", cc);
+            MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<>();
+            parameters.add("from", message.getFrom());
+            for (String to : message.getTos()) {
+                parameters.add("to", to);
+            }
+            List<String> ccs = message.getCcs();
+            if (ccs != null && ccs.size() > 0) {
+                for (String cc : ccs) {
+                    if (cc != null) {
+                        parameters.add("cc", cc);
+                    }
                 }
             }
-        }
-        List<String> bccs = message.getBccs();
-        if (bccs != null && bccs.size() > 0) {
-            for (String bcc : bccs) {
-                if (bcc != null) {
-                    parameters.add("bcc", bcc);
+            List<String> bccs = message.getBccs();
+            if (bccs != null && bccs.size() > 0) {
+                for (String bcc : bccs) {
+                    if (bcc != null) {
+                        parameters.add("bcc", bcc);
+                    }
                 }
             }
-        }
-        parameters.add("subject", message.getSubject());
+            parameters.add("subject", message.getSubject());
 
-        String text = message.getText();
-        if (!StringUtils.isBlank(text)) {
-            parameters.add("text", text);
-        }
-        String html = message.getHtml();
-        if (!StringUtils.isBlank(html)) {
-            parameters.add("html", html);
-        }
-        Map<String, File> attachments = message.getAttachments();
-        if (attachments != null) {
-            for (String id : attachments.keySet()) {
-                parameters.add(id, new FileSystemResource(attachments.get(id)));
+            String text = message.getText();
+            if (!StringUtils.isBlank(text)) {
+                parameters.add("text", text);
             }
-        }
-        final Map<String, List<String>> headers = message.getHeaders();
-        if (headers != null) {
-            for (final String header : headers.keySet()) {
-                List<String> values = headers.get(header);
-                for (final String value : values) {
-                    parameters.add("header:" + header, value);
+            String html = message.getHtml();
+            if (!StringUtils.isBlank(html)) {
+                parameters.add("html", html);
+            }
+            Map<String, File> attachments = message.getAttachments();
+            if (attachments != null) {
+                for (String id : attachments.keySet()) {
+                    parameters.add(id, new FileSystemResource(attachments.get(id)));
                 }
             }
-        }
-
-        AuthenticatedClientHttpRequestFactory factory = new AuthenticatedClientHttpRequestFactory(username, password);
-        if (_proxy != null) {
-            factory.setProxy(_proxy);
-        }
-
-        RestTemplate template = new RestTemplate(factory);
-        template.setMessageConverters(Arrays.asList(messageConverters));
-        ResponseEntity<String> response = template.postForEntity(_address, parameters, String.class);
-
-        if (_log.isInfoEnabled()) {
-            _log.info(String.format("Found the following response from %s: [%s] %s", _address, response.getStatusCode(), response.getBody()));
-            if (_log.isDebugEnabled()) {
-                for (Entry<String, List<String>> header : response.getHeaders().entrySet()) {
-                    _log.info("Found header: " + header.getKey() + " with values: " + header.getValue());
+            final Map<String, List<String>> headers = message.getHeaders();
+            if (headers != null) {
+                for (final String header : headers.keySet()) {
+                    List<String> values = headers.get(header);
+                    for (final String value : values) {
+                        parameters.add("header:" + header, value);
+                    }
                 }
             }
-        }
 
-        if (response.getStatusCode() != HttpStatus.OK) {
-            throw new MessagingException(String.format("Got a non-HTTP OK response from the server: [%s] %s", response.getStatusCode(), response.getBody()));
+            AuthenticatedClientHttpRequestFactory factory = new AuthenticatedClientHttpRequestFactory(username, password);
+            if (_proxy != null) {
+                factory.setProxy(_proxy);
+            }
+
+            RestTemplate template = new RestTemplate(factory);
+            template.setMessageConverters(Arrays.asList(messageConverters));
+            ResponseEntity<String> response = template.postForEntity(_address, parameters, String.class);
+
+            if (_log.isInfoEnabled()) {
+                _log.info(String.format("Found the following response from %s: [%s] %s", _address, response.getStatusCode(), response.getBody()));
+                if (_log.isDebugEnabled()) {
+                    for (Entry<String, List<String>> header : response.getHeaders().entrySet()) {
+                        _log.info("Found header: " + header.getKey() + " with values: " + header.getValue());
+                    }
+                }
+            }
+
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new MessagingException(String.format("Got a non-HTTP OK response from the server: [%s] %s", response.getStatusCode(), response.getBody()));
+            }
         }
+    }
+
+    public void setSmtpEnabled(boolean enabled){
+        this.enabled = enabled;
+    }
+
+    public boolean getSmtpEnabled(){
+        return this.enabled;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(RestBasedMailServiceImpl.class);
@@ -178,5 +188,6 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
     private URI _proxy;
     private String _username;
     private String _password;
+    private boolean enabled = true;
 }
 

@@ -9,10 +9,6 @@
  */
 package org.nrg.mail.services.impl;
 
-import javax.inject.Inject;
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.mail.api.MailMessage;
 import org.slf4j.Logger;
@@ -20,25 +16,31 @@ import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
 @Service("mailService")
 public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 
 	@Override
 	public void sendMessage(MailMessage message) throws MessagingException {
-		if (StringUtils.isBlank(message.getHtml())
-				&& StringUtils.isBlank(message.getOnBehalfOf())
-				&& (message.getAttachments() == null || message
-						.getAttachments().size() == 0)
-				&& (message.getHeaders() == null || message.getHeaders().size() == 0)) {
-			if (_log.isDebugEnabled()) {
-				_log.debug("Sending email as a simple mail message");
+		if(enabled){
+			if (StringUtils.isBlank(message.getHtml())
+					&& StringUtils.isBlank(message.getOnBehalfOf())
+					&& (message.getAttachments() == null || message
+					.getAttachments().size() == 0)
+					&& (message.getHeaders() == null || message.getHeaders().size() == 0)) {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Sending email as a simple mail message");
+				}
+				_sender.send(message.asSimpleMailMessage());
+			} else {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Sending email as a MIME message");
+				}
+				sendMimeMessage(message.asMimeMessage(getMimeMessage()));
 			}
-			_sender.send(message.asSimpleMailMessage());
-		} else {
-			if (_log.isDebugEnabled()) {
-				_log.debug("Sending email as a MIME message");
-			}
-			sendMimeMessage(message.asMimeMessage(getMimeMessage()));
 		}
 	}
 
@@ -66,6 +68,14 @@ public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 		return _sender.createMimeMessage();
 	}
 
+	public void setSmtpEnabled(boolean enabled){
+		this.enabled = enabled;
+	}
+
+	public boolean getSmtpEnabled(){
+		return this.enabled;
+	}
+
 	/**
 	 * Sends a MIME message using the mail service. You should create this
 	 * message by calling the {@link #getMimeMessage()} method.
@@ -78,6 +88,8 @@ public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 	}
 
 	private static final Logger _log = LoggerFactory.getLogger(SpringBasedMailServiceImpl.class);
+
+	private boolean enabled = true;
 
 	@Inject
 	private JavaMailSender _sender;

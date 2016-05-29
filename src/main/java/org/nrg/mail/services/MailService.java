@@ -9,13 +9,12 @@
  */
 package org.nrg.mail.services;
 
-import java.io.File;
-import java.util.Map;
-
-import javax.mail.MessagingException;
-
 import org.nrg.framework.services.NrgService;
 import org.nrg.mail.api.MailMessage;
+
+import javax.mail.MessagingException;
+import java.io.File;
+import java.util.Map;
 
 public interface MailService extends NrgService {
 
@@ -428,4 +427,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String)
 	 */
 	void sendHtmlMessage(String from, String to, String subject, String message) throws MessagingException;
+
+	void setSmtpEnabled(boolean enabled);
+	boolean getSmtpEnabled();
 }

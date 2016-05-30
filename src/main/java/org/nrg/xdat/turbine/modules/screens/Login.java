@@ -49,29 +49,38 @@ public class Login extends VelocitySecureScreen {
 		String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
 		
 		Cookie[] cookies = data.getRequest().getCookies();
+		boolean sessionTimedOut = false;
+		boolean recentTimeout = false;
+		Date logoutTime = new Date();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
+				if (cookie.getName().equalsIgnoreCase("SESSION_TIMED_OUT")) {
+					String val = cookie.getValue();
+					if(StringUtils.equals(val,"true")){
+						sessionTimedOut = true;
+					}
+				}
                 if (cookie.getName().equalsIgnoreCase("SESSION_TIMEOUT_TIME")) {
                 	String val = cookie.getValue();
                 	if(val!=null && (!val.equals("")) && (cookie.getValue()!=null)){
-                		Date logoutTime = (new Date(Long.parseLong(cookie.getValue())));
+                		logoutTime = (new Date(Long.parseLong(cookie.getValue())));
                 		Date currTime = new Date();
-						String messageTemplate = XDAT.getSiteConfigPreferences().getSessionTimeoutMessage();
                 		//If their session timed out within the last 5 seconds, display a message to the user telling them that their session timed out.
                 		if((currTime.getTime()-logoutTime.getTime())<5000){
-							data.setMessage(messageTemplate.replaceAll("TIMEOUT_TIME",logoutTime.toString()));
-                		}
-                		else {
-                			if (!StringUtils.isBlank(message) && message.startsWith("Session timed out at")) {
-                				//If the message still says "Session timed out at ...", but they did not time out recently, reset it
-                				data.setMessage("");
-                			}
+							recentTimeout=true;
                 		}
 
                 	}
-                    break;
                 }
             }
+			if(sessionTimedOut&&recentTimeout){
+				String messageTemplate = XDAT.getSiteConfigPreferences().getSessionTimeoutMessage();
+				data.setMessage(messageTemplate.replaceAll("TIMEOUT_TIME",logoutTime.toString()));
+			}
+			else if(!StringUtils.isBlank(message) && message.startsWith("Session timed out at")){
+				//If the message still says "Session timed out at ...", but they did not time out recently, reset it
+				data.setMessage("");
+			}
         }
 
 		if(failed!=null && failed.equals("true")){

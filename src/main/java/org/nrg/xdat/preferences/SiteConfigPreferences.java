@@ -255,19 +255,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "true")
-    public boolean getAllowUserCommentsOnRegistration() {
-        return getBooleanValue("allowUserCommentsOnRegistration");
-    }
-
-    public void setAllowUserCommentsOnRegistration(final boolean allowUserCommentsOnRegistration) {
-        try {
-            setBooleanValue(allowUserCommentsOnRegistration, "allowUserCommentsOnRegistration");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'allowUserCommentsOnRegistration': something is very wrong here.", e);
-        }
-    }
-
     @NrgPreference(defaultValue = "false")
     public boolean getRestrictUserListAccessToAdmins() {
         return getBooleanValue("restrictUserListAccessToAdmins");

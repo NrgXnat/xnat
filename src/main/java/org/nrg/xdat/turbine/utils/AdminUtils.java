@@ -257,12 +257,20 @@ public class AdminUtils {
 
        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(userName);
        Context context = new VelocityContext();
-       context.put("name", firstName + " " + lastName);
-       context.put("verifyEmailLink", TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret());
+       String fullName = firstName + " " + lastName;
+       String verificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
+       context.put("name", fullName);
+       context.put("verifyEmailLink", verificationUrl);
 
        String subject = TurbineUtils.GetSystemName() + " Email Verification";
-       String text = populateVmTemplate(context, "/screens/email/NewUserVerification.vm");
-       XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), email, subject, text);
+       String emailText = XDAT.getSiteConfigPreferences().getEmailVerificationMessage();
+       if(emailText==null){
+          emailText = populateVmTemplate(context, "/screens/email/NewUserVerification.vm");
+       }
+       emailText = emailText.replaceAll("FULL_NAME",fullName);
+       emailText = emailText.replaceAll("VERIFICATION_URL",verificationUrl);
+
+       XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), email, subject, emailText);
    }
    }
 

@@ -241,7 +241,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "true")
+    @NrgPreference(defaultValue = "false")
     public boolean getUserRegistration() {
         return getBooleanValue("userRegistration");
     }

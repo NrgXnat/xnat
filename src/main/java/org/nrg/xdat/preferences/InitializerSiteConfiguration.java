@@ -52,20 +52,16 @@ public class InitializerSiteConfiguration extends PropertiesBasedSiteConfigurati
         return getSiteConfigurationProperty("passwordExpirationType");
     }
 
-    public int getPasswordExpirationInterval() throws SiteConfigurationException {
-        return getIntegerSiteConfigurationProperty("passwordExpirationInterval");
+    public String getPasswordExpirationInterval() throws SiteConfigurationException {
+        return getSiteConfigurationProperty("passwordExpirationInterval");
     }
 
-    public Date getPasswordExpirationDate() throws SiteConfigurationException {
+    public String getPasswordExpirationDate() throws SiteConfigurationException {
         final String dateValue = getSiteConfigurationProperty("passwordExpirationDate");
         if (StringUtils.isBlank(dateValue)) {
             return null;
         }
-        try {
-            return new Date(Long.parseLong(dateValue));
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        return dateValue;
     }
 
     public String getPasswordComplexity() throws SiteConfigurationException {

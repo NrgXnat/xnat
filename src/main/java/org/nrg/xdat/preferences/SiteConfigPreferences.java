@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Lazy;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.List;
 
 @SuppressWarnings("unused")
@@ -333,27 +332,27 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "365")
-    public int getPasswordExpirationInterval() {
-        return getIntegerValue("passwordExpirationInterval");
+    @NrgPreference(defaultValue = "1 year")
+    public String getPasswordExpirationInterval() {
+        return getValue("passwordExpirationInterval");
     }
 
-    public void setPasswordExpirationInterval(final int passwordExpirationInterval) {
+    public void setPasswordExpirationInterval(final String passwordExpirationInterval) {
         try {
-            setIntegerValue(passwordExpirationInterval, "passwordExpirationInterval");
+            set(passwordExpirationInterval, "passwordExpirationInterval");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'passwordExpirationInterval': something is very wrong here.", e);
         }
     }
 
     @NrgPreference
-    public Date getPasswordExpirationDate() {
-        return getDateValue("passwordExpirationDate");
+    public String getPasswordExpirationDate() {
+        return getValue("passwordExpirationDate");
     }
 
-    public void setPasswordExpirationDate(final Date passwordExpirationDate) {
+    public void setPasswordExpirationDate(final String passwordExpirationDate) {
         try {
-            setDateValue(passwordExpirationDate, "passwordExpirationDate");
+            set(passwordExpirationDate, "passwordExpirationDate");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'passwordExpirationDate': something is very wrong here.", e);
         }

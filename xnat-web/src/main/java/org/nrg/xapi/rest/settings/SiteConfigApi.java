@@ -44,6 +44,39 @@ public class SiteConfigApi extends AbstractXnatRestApi {
         return new ResponseEntity<>(_appInfo.getSystemProperties(), HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Returns a map of extended build attributes.", notes = "The values are dependent on what attributes are set for the build. It is not unexpected that there are no extended build attributes.", response = String.class, responseContainer = "Map")
+    @ApiResponses({@ApiResponse(code = 200, message = "Extended build attributes successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "buildInfo/attributes", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Map<String, Map<String, String>>> getBuildAttributeInfo() {
+        if (_log.isDebugEnabled()) {
+            _log.debug("User " + getSessionUser().getUsername() + " requested the extended application build attributes.");
+        }
+
+        return new ResponseEntity<>(_appInfo.getSystemAttributes(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the system uptime.", notes = "This returns the uptime as a map of time units: days, hours, minutes, and seconds.", response = String.class, responseContainer = "Map")
+    @ApiResponses({@ApiResponse(code = 200, message = "System uptime successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "uptime", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Map<String, String>> getSystemUptime() {
+        if (_log.isDebugEnabled()) {
+            _log.debug("User " + getSessionUser().getUsername() + " requested the system uptime map.");
+        }
+
+        return new ResponseEntity<>(_appInfo.getUptime(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the system uptime.", notes = "This returns the uptime as a formatted string.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "System uptime successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "uptime/display", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<String> getFormattedSystemUptime() {
+        if (_log.isDebugEnabled()) {
+            _log.debug("User " + getSessionUser().getUsername() + " requested the formatted system uptime.");
+        }
+
+        return new ResponseEntity<>(_appInfo.getFormattedUptime(), HttpStatus.OK);
+    }
+
     @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})

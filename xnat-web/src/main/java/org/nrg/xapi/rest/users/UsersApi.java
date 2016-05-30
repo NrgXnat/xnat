@@ -6,6 +6,7 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
@@ -19,6 +20,8 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,14 +40,26 @@ public class UsersApi extends AbstractXnatRestApi {
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<String>> usersGet() {
+        if (_preferences.getRestrictUserListAccessToAdmins()) {
+            final HttpStatus status = isPermitted();
+            if (status != null) {
+                return new ResponseEntity<>(status);
+            }
+        }
         return new ResponseEntity<List<String>>(new ArrayList<>(Users.getAllLogins()), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get list of user profiles.", notes = "The users' profiles function returns a list of all users of the XNAT system with brief information about each.", response = User.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of user profiles"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/profiles"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @RequestMapping(value = {"profiles"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<Map<String, String>>> usersProfilesGet() {
+        if (_preferences.getRestrictUserListAccessToAdmins()) {
+            final HttpStatus status = isPermitted();
+            if (status != null) {
+                return new ResponseEntity<>(status);
+            }
+        }
         List<UserI>               users    = Users.getUsers();
         List<Map<String, String>> userMaps = new ArrayList<>();
         for (UserI user : users) {
@@ -396,7 +411,6 @@ public class UsersApi extends AbstractXnatRestApi {
         }
     }
 
-
     @SuppressWarnings("unused")
     public static class Event {
         public static String Added                 = "Added User";
@@ -410,4 +424,8 @@ public class UsersApi extends AbstractXnatRestApi {
         public static String ModifiedSettings      = "Modified User Settings";
         public static String VerifiedEmail         = "Verified User Email";
     }
+
+    @Autowired
+    @Lazy
+    private SiteConfigPreferences _preferences;
 }

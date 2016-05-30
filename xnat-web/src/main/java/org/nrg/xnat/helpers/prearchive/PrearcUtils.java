@@ -215,7 +215,7 @@ public class PrearcUtils {
         String prearcPath;
         if (project == null || project.equals(COMMON)) {
             if (allowUnassigned || user == null || Roles.isSiteAdmin(user)) {
-                prearcPath = ArcSpecManager.GetInstance(false).getGlobalPrearchivePath();
+                prearcPath = XDAT.getSiteConfigPreferences().getPrearchivePath();
             } else {
                 throw new InvalidPermissionException("user " + user.getUsername() + " does not have permission to access the Unassigned directory ");
             }

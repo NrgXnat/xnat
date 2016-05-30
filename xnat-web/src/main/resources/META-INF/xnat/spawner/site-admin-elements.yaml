@@ -869,10 +869,10 @@ registrationOptions:
                 If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public' 
                 projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator 
                 receives an email notification when a user registers.
-        allowUserCommentsOnRegistration:
+        uiAllowNewUserComments:
             kind: panel.input.checkbox
-            id: allowUserCommentsOnRegistration
-            name: allowUserCommentsOnRegistration
+            id: uiAllowNewUserComments
+            name: UI.allow-new-user-comments
             label: "Allow User Comments on Registration?"
         restrictUserListAccessToAdmins:
             kind: panel.input.checkbox

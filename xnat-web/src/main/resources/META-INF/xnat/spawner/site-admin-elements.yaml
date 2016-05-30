@@ -998,17 +998,22 @@ sessionUploadMethod:
             kind: panel.input.checkbox
             id: showApplet
             name: showApplet
-            label: Show Applet
+            label: Display Applet Link
+            description: "Enable to display link to Upload Applet on various XNAT pages."
         enableProjectAppletScript:
             kind: panel.input.checkbox
             id: enableProjectAppletScript
             name: enableProjectAppletScript
             label: Enable Project Applet Script
+            description: "The site-wide applet settings script can be supplemented by applet settings specified at the project level if this setting is enabled."
         appletScript:
             kind: panel.textarea
             id: appletScript
             name: appletScript
             label: "Applet Script"
+            description: >
+                Details on how to configure an Upload Applet script may be found
+                <a href="https://wiki.xnat.org/display/XKB/Adding+parameters+and+launch+requirements+for+the+upload+applet" target="_blank">here</a>.
         sessionXmlRebuilderRepeat:
             kind: panel.input.number
             id: sessionXmlRebuilderRepeat

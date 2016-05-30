@@ -35,27 +35,37 @@ if (typeof jQuery == 'undefined') {
         // can't decide on a prefix for selection by id
         // use ONE of these:
         // id= | id: | @id= | @# | @= | @: | @ | #= | #: | #/
-        var ALL_PREFIX = /^\*!/, // $$('*!div.foo') --> return all 'div.foo' elements as an array
-            RAW_ID = /^#!/,      // $$('#!foo') --> return (one) element with id 'foo'
-            RAW_PREFIX = /^!/,   // $$('!div.foo') --> return FIRST 'div.foo' element
-            ID_PREFIX = /^(id=|id:|@id=|@#|@=|@:|@|#=|#:|#\/)/;
+        var ALL_PREFIX = /^!\*/,  // $$('!*div.foo') --> return raw 'div.foo' elements as an array
+            RAW_ID     = /^!#/,   // $$('!#foo')     --> return (one) raw element with id 'foo'
+            NAME_RAW   = /^!\?/,  // $$('!?foo')     --> return raw elements with [name="foo"]
+            NAME_$     = /^\?/,   // $$('?foo')      --> return wrapped elements with [name="foo"]
+            RAW_PREFIX = /^!/,    // $$('!div.foo')  --> return FIRST raw 'div.foo' element
+            ID_PREFIX  = /^(id=|id:|@id=|@#|@=|@:|@|#=|#:|#\/)/;
         if (!el || el.jquery){
             return el;
         }
-        if (el.search(ALL_PREFIX) === 0){
-            return document.querySelectorAll(el.replace(ALL_PREFIX, ''));
-        }
-        // pass empty string or null as the second argument
-        // to get the bare element by id (no jQuery)
-        if (id_prefix === '' || id_prefix === null || el.search(RAW_ID) === 0){
-            return document.getElementById(el.replace(RAW_ID,''));
-        }
-        if (el.search(RAW_PREFIX) === 0){
-            return document.querySelector(el.replace(RAW_PREFIX,''));
-        }
-        id_prefix = id_prefix || ID_PREFIX;
-        if (el.search(id_prefix) === 0){
-            return $(document.getElementById(el.replace(id_prefix,'')));
+        if (typeof el == 'string'){
+            if (el.search(ALL_PREFIX) === 0){
+                return document.querySelectorAll(el.replace(ALL_PREFIX, ''));
+            }
+            // pass empty string or null as the second argument
+            // to get the bare element by id (no jQuery)
+            if (id_prefix === '' || id_prefix === null || el.search(RAW_ID) === 0){
+                return document.getElementById(el.replace(RAW_ID,''));
+            }
+            if (el.search(NAME_RAW) === 0){
+                return document.getElementsByName(el.replace(NAME_RAW, ''));
+            }
+            if (el.search(NAME_$) === 0){
+                return $(document.getElementsByName(el.replace(NAME_$, '')));
+            }
+            if (el.search(RAW_PREFIX) === 0){
+                return document.querySelector(el.replace(RAW_PREFIX,''));
+            }
+            id_prefix = id_prefix || ID_PREFIX;
+            if (el.search(id_prefix) === 0){
+                return $(document.getElementById(el.replace(id_prefix,'')));
+            }
         }
         return $(el);
     }

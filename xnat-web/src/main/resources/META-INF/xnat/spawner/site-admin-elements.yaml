@@ -24,7 +24,7 @@ siteDescriptionPage:
         type: text
         id: siteDescriptionPage
         name: siteDescriptionPage
-        size: 50
+        size: 30
     after: "<p>Specify a velocity template file to display on the login page</p>"
 
 siteDescriptionText:
@@ -206,7 +206,7 @@ siteInfo:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         ${siteId}
@@ -224,7 +224,7 @@ adminInfo:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         ${adminEmail}
@@ -236,7 +236,7 @@ generalSecuritySettings:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         securityChannel:
@@ -245,7 +245,7 @@ generalSecuritySettings:
             name: security.channel
             label: Security Channel
             options:
-                any: 
+                any:
                     label: Any
                     value: any
                 http:
@@ -270,7 +270,7 @@ userLoginsSessionControls:
     label: User Logins / Session Controls
     method: POST
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contentType: json
     contents:
@@ -370,7 +370,7 @@ passwords:
     method: POST
     action: /xapi/siteConfig/batch
     contentType: json
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         passwordComplexity:
@@ -444,7 +444,7 @@ csrf:
     method: POST
     action: /xapi/siteConfig/batch
     contentType: json
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         enableCsrfToken:
@@ -467,7 +467,7 @@ securityServices:
     action: /xapi/siteConfig/batch
     method: POST
     contentType: json
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         securityServicesFeatureDefault:
@@ -490,13 +490,13 @@ securityServices:
             id: securityServicesRoleRepositoryDefault
             name: security.services.roleRepository.default
             label: Role Repository Default
-            
+
 emailServerSettings:
     kind: panel.form
     method: POST
     action: /xapi/notifications/batchMail
     contentType: json
-    load: ?? XNAT.data.notifications
+    load: XNAT.data.notifications
     refresh: /xapi/notifications
     name: emailServerSettings
     label: Mail Server Settings
@@ -561,7 +561,7 @@ notifications:
     action: /xapi/notifications/batch
     method: POST
     contentType: json
-    load: ?? XNAT.data.notifications
+    load: XNAT.data.notifications
     refresh: /xapi/notifications
     contents:
         helpContactInfo:
@@ -726,7 +726,7 @@ authenticationMethods:
     method: POST
     action: /xapi/siteConfig/batch
     contentType: json
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         xnatInternal:
@@ -751,7 +751,7 @@ genericAuthenticationProvider:
     method: POST
     action: /xapi/siteConfig/batch
     contentType: json
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         providerDbName:
@@ -777,7 +777,7 @@ ldapAuthentication:
     method: POST
     action: /xapi/siteConfig/batch
     contentType: json
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         ldapName:
@@ -840,7 +840,7 @@ registrationOptions:
     label: Registration Options
     method: POST
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     contentType: json
     contents:
         requireEmailVerificationToRegister:
@@ -898,7 +898,7 @@ manageDataTypes:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         displayNameForGenericImageSessionSingular:
@@ -919,7 +919,7 @@ anonymization:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         enableSitewideAnonymizationScript:
@@ -942,7 +942,7 @@ seriesImportFilter:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         enableSitewideSeriesImportFilter:
@@ -981,7 +981,7 @@ sessionUploadMethod:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         selectUploadMethod:
@@ -991,11 +991,11 @@ sessionUploadMethod:
             label: "Session Upload Method"
 #            options:                             # don't know where to populate this from
 #                http:
-#                    label: 
-#                    value: 
+#                    label:
+#                    value:
 #                https:
-#                    label: 
-#                    value: 
+#                    label:
+#                    value:
         showApplet:
             kind: panel.input.checkbox
             id: showApplet
@@ -1028,13 +1028,72 @@ sessionUploadMethod:
             label: Session Xml Rebuilder Interval
 
 dicomScpReceivers:
-    kind: panel.form
+    kind: panel
     name: dicomScpReceivers
+    label: Manage DICOM SCP Receivers
+    footer: false
+    contents:
+        message:
+            tag: div.message.bold
+            content: >
+                Caution: Changes to this setting will take effect immediately.
+                Before disabling the receiver, verify that there are no
+                transmissions currently in progress.
+        dicomScpEditorTemplate:
+            tag: "div#dicom-scp-editor-template.html-template"
+            contents:
+                dicomScpEditor:
+                    kind: panel.form
+                    name: dicomScpEditor
+                    id: dicom-scp-editor
+                    header: false
+                    footer: false
+                    method: PUT
+                    action: /xapi/dicomscp
+                    contentType: json
+                    contents:
+                        scpId:
+                            kind: panel.input.text
+                            id: scp-id
+                            name: scpId
+                            label: SCP ID
+                            validation: required
+                        aeTitle:
+                            kind: panel.input.text
+                            name: aeTitle
+                            label: AE Title
+                            validation: required
+                        port:
+                            kind: panel.input.number
+                            name: port
+                            label: Port
+                            validation: required naturalNoZero
+                        fileNamer:
+                            kind: panel.input.text
+                            name: fileNamer
+                            label: File Namer
+                        identifier:
+                            kind: panel.input.text
+                            name: identifier
+                            label: Identifier
+                        enabled:
+                            kind: panel.input.checkbox
+                            name: enabled
+        dicomScpManager:
+            tag: "div#dicom-scp-manager"
+        dicomScpManagerScript:
+            tag: script
+            element:
+                src: /scripts/xnat/admin/dicomScpManager.js
+
+dicomScpReceiversOld:
+    kind: panel.form
+    name: dicomScpReceiversOld
     label: DICOM SCP Receivers
     method: POST
     action: /xapi/dicomscp
     contentType: json
-    load: $? /xapi/dicomscp
+    load: /xapi/dicomscp
     contents:
         enableDicomReceiver:
             kind: panel.input.checkbox
@@ -1083,7 +1142,7 @@ dicomScpReceivers:
             name: receivedFileUser
             label: "Default DICOM Receiver: User"
             description: "User account for default DICOM receiver"
-            
+
 fileSystem:
     kind: panel.form
     name: fileSystem
@@ -1091,7 +1150,7 @@ fileSystem:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     contents:
         ${archivePath}
         ${cachePath}
@@ -1110,7 +1169,7 @@ misc:
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
-    load: ?? XNAT.data.siteConfig
+    load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
         scanTypeMapping:
@@ -1130,7 +1189,7 @@ misc:
                     element:
                         href: ~/page/admin/spawner/
                         target: _blank
-                        html: Manage The Spawner
+                        html: Manage Spawner Elements
         swagger:
             kind: panel.element
             description: View the Swagger page.

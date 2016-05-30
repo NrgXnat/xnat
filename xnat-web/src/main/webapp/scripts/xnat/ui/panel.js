@@ -37,12 +37,12 @@ var XNAT = getObject(XNAT || {});
     }
     
     // string that indicates to look for a namespaced object value
-    var doLookupString = '??';
+    var lookupPrefix = '??';
 
-    function doLookup(input){
+    function lookupValue(input){
         if (!input) return '';
-        if (input.toString().indexOf(doLookupString) === 0){
-            input = input.split(doLookupString)[1].trim();
+        if (input.toString().indexOf(lookupPrefix) === 0){
+            input = input.split(lookupPrefix)[1].trim();
             return lookupObjectValue(window, input);
         }
         return input;
@@ -57,15 +57,19 @@ var XNAT = getObject(XNAT || {});
 
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
+        opts.title = opts.title || opts.label || opts.header;
 
         var _target = spawn('div.panel-body', opts.element),
+                
+            hideHeader = (isDefined(opts.header) && (opts.header === false || /^-/.test(opts.title))),
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
 
             _panel  = spawn('div.panel.panel-default', [
-                ['div.panel-heading', [
-                    ['h3.panel-title', opts.title || opts.label]
-                ]],
+
+                (hideHeader ? ['div.hidden'] : ['div.panel-heading', [
+                    ['h3.panel-title', opts.title]
+                ]]),
 
                 // target is where the next spawned item will render
                 _target,
@@ -88,16 +92,22 @@ var XNAT = getObject(XNAT || {});
             }
         }
     };
+    
+    panel.formSampleConfig = {
+            
+    };
 
     // creates a panel that's a form that can be submitted
     panel.form = function panelForm(opts, callback){
 
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
-
-        opts.name = opts.name || opts.element.name || opts.id || opts.element.id || randomID('form-', false)
+        opts.title = opts.title || opts.label || opts.header;
+        opts.name = opts.name || opts.element.name || opts.id || opts.element.id || randomID('form-', false);
 
         var _target = spawn('div.panel-body', opts.element),
+
+            hideHeader = (isDefined(opts.header) && (opts.header === false || /^-/.test(opts.title))),
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
 
@@ -114,13 +124,14 @@ var XNAT = getObject(XNAT || {});
             _formPanel = spawn('form.validate.xnat-form-panel.panel.panel-default', {
                 name: opts.name,
                 method: opts.method || 'POST',
-                action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!'
+                action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
+                addClass: opts.classes || ''
             }, [
-                ['div.panel-heading', [
-                    ['h3.panel-title', opts.title || opts.label]
-                ]],
 
-                
+                (hideHeader ? ['div.hidden'] : ['div.panel-heading', [
+                    ['h3.panel-title', opts.title]
+                ]]),
+
                 // target is where this form's "contents" will be inserted
                 _target,
 
@@ -171,37 +182,57 @@ var XNAT = getObject(XNAT || {});
 
             obj = cloneObject(obj);
 
-            xmodal.loading.open('#load-data');
-
             // need a form to put the data into!
-            if (!form) {
+            // and a 'load' property too
+            if (!form || !obj.load) {
                 xmodal.loading.close('#load-data');
                 return;
             }
 
-            // if 'load' starts with ??, do lookup
-            var doLookup = '??';
+            xmodal.loading.open('#load-data');
 
-            if (obj.load && obj.load.toString().indexOf(doLookup) === 0) {
-                obj.load = (obj.load.split(doLookup)[1]||'').trim().split('|')[0];
-                obj.prop = obj.prop || obj.load.split('|')[1] || '';
-                setValues(form, lookupObjectValue(window, obj.load, obj.prop));
-                xmodal.loading.close('#load-data');
-                return form;
+            obj.load = obj.load.toString().trim();
 
-            }
-            
+            // if 'load' starts with '$?', '~/', or just '/'
+            // then values need to load via REST
+            var ajaxPrefix = /^(\$\?|~\/|\/)/;
+            var doAjax = ajaxPrefix.test(obj.load);
+
             // if 'load' starts with '!?' do an eval()
-            var doEval = '!?';
+            var evalPrefix = '!?';
 
-            if (obj.load && obj.load.toString().indexOf(doEval) === 0) {
-                obj.load = (obj.load.split(doEval)[1]||'').trim();
-                setValues(form, eval(obj.load));
+            // if 'load' starts with ?? (or NOT evalPrefix or ajaxPrefix), do lookup
+            var lookupPrefix = '??';
+
+            if (!doAjax) {
+
+                var doLookup = obj.load.indexOf(lookupPrefix) === 0;
+                if (doLookup) {
+                    obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
+                    obj.prop = obj.prop || obj.load.split('|')[1] || '';
+                    setValues(form, lookupObjectValue(window, obj.load, obj.prop));
+                    xmodal.loading.close('#load-data');
+                    return form;
+                }
+
+                var doEval = obj.load.indexOf(evalPrefix) === 0;
+                if (doEval) {
+                    obj.load = (obj.load.split(evalPrefix)[1]||'').trim();
+                }
+
+                // lastly try to eval the 'load' value
+                try {
+                    setValues(form, eval(obj.load));
+                }
+                catch (e) {
+                    console.log(e);
+                }
+
                 xmodal.loading.close('#load-data');
                 return form;
-
+                
             }
-            
+
             //////////
             // REST
             //////////
@@ -209,12 +240,13 @@ var XNAT = getObject(XNAT || {});
             var ajaxUrl = obj.refresh || '';
 
             // if 'load' starts with $?, do ajax request
-            var ajaxPrefix = '$?';
+            //var ajaxPrefix = '$?';
             var ajaxProp = '';
 
             // value: $? /path/to/data | obj:prop:name
-            if (obj.load && obj.load.toString().indexOf(ajaxPrefix) === 0) {
-                ajaxUrl = (obj.load.split(ajaxPrefix)[1]||'').trim().split('|')[0];
+            // value: ~/path/to/data|obj.prop.name
+            if (doAjax) {
+                ajaxUrl = (obj.load.split(ajaxPrefix)[2]||'').trim().split('|')[0];
                 ajaxProp = ajaxUrl.split('|')[1] || '';
             }
 
@@ -268,6 +300,7 @@ var XNAT = getObject(XNAT || {});
 
         opts.onload = opts.onload || callback;
 
+        // custom event for reloading data (refresh)
         $formPanel.on('reload-data', function(){
             loadData(this, {
                 refresh: opts.refresh || opts.load || opts.url
@@ -712,7 +745,7 @@ var XNAT = getObject(XNAT || {});
             opts.text ||
             opts.html || '';
     
-        opts.element.html = doLookup(opts.element.html);
+        opts.element.html = lookupValue(opts.element.html);
 
         opts.element.rows = 6;
         

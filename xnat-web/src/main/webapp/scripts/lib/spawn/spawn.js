@@ -148,7 +148,7 @@
         var el, $el, parts, id, classes, tagParts, attrs, isVoid,
             // property names to skip later
             skip = [
-                'innerHTML', 'html', 'attr', 'append', 'appendTo',
+                'innerHTML', 'html', 'attr', 'prepend', 'append', 'appendTo',
                 'classes', 'className', 'style', 'data', 'fn'
             ],
             errors = []; // collect errors
@@ -370,18 +370,18 @@
 
         var frag = document.createDocumentFragment();
 
-        if (opts.after){
-            frag.appendChild(el);
-            appendChildren(frag, opts.after, spawn);
-            el = frag;
-        }
-        
         if (opts.before){
             appendChildren(frag, opts.before, spawn);
             frag.appendChild(el);
             el = frag;
         }
 
+        if (opts.after){
+            frag.appendChild(el);
+            appendChildren(frag, opts.after, spawn);
+            el = frag;
+        }
+        
         if (errors.length){
             if (hasConsole) console.log(errors);
         }

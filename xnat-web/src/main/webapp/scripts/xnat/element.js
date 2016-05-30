@@ -215,7 +215,7 @@ var XNAT = getObject(XNAT||{});
     's small sub sup u b i em strong pre ' +
     'form fieldset button input textarea ' +
     'label select option optgroup ' +
-    'img map area embed object script' +
+    'img map area embed object' +
     '').split(/\s+/);
 
     tagNames.forEach(function(tag, i){
@@ -257,10 +257,45 @@ var XNAT = getObject(XNAT||{});
         // -> <div>Foo</div>
         element[tag] = function(opts, content){
             var args = setOpts(opts, content);
-            return spawn.element(tag, args[0], args[1]);
+            return spawn(tag, args[0], args[1]);
         }
 
     });
+    
+    
+    // insert items into <head> element
+    element.head = {
+        append: function(opts){
+            opts = cloneObject(opts);
+            opts.tagName = opts.tagName || opts.tag;
+            if (!opts.tagName) return;
+            delete opts.tag;
+            var el = spawn(opts.tagName, opts);
+            document.head.appendChild(el);
+            return {
+                element: el,
+                spawned: el
+            }
+        }
+    };
+    element.head.insert = element.head.append;
+    
+
+    // special handling of <script> elements
+    // add them to the <head>
+    element.script = function(opts){
+        opts = cloneObject(opts);
+        var el;
+        if (opts.src) {
+            opts.html = '';
+        }
+        el = spawn('script', opts);
+        document.head.appendChild(el);
+        return {
+            element: el,
+            spawned: el
+        }
+    };
 
 
     //////////////////////////////////////////////////////////////////////

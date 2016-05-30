@@ -221,7 +221,7 @@ var XNAT = getObject(XNAT);
 
         _spawn.done = function(callback){
             if (isFunction(callback)) {
-                callback()
+                callback(_spawn)
             }
             return _spawn;
         };

@@ -60,7 +60,7 @@ var XNAT = getObject(XNAT);
 
             resetBtn = spawn('button', {
                 type: 'button',
-                classes: 'btn btn-sm btn-default revert pull-right',
+                classes: 'btn revert pull-right',
                 html: 'Discard Changes',
                 onclick: function(e){
                     e.preventDefault();

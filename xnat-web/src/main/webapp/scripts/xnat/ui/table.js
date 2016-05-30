@@ -25,7 +25,7 @@ var XNAT = getObject(XNAT);
 }(function(XNAT, $){
 
     var table,
-        element = spawn.element,
+        element = window.spawn,
         undefined;
 
     // add new element class without destroying existing class

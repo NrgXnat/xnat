@@ -26,9 +26,11 @@ public class XnatLogoutHandler extends SecurityContextLogoutHandler implements L
         super.logout(request, response, authentication);
 
         //expire that guy here.
-        SessionInformation si = _registry.getSessionInformation(request.getSession().getId());
-        if (si!=null) {
-            si.expireNow();
+        if(_registry!=null) {
+            SessionInformation si = _registry.getSessionInformation(request.getSession().getId());
+            if (si != null) {
+                si.expireNow();
+            }
         }
 
     }

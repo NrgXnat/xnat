@@ -303,7 +303,7 @@ userLoginsSessionControls:
             id: sessionTimeoutMessage
             name: sessionTimeoutMessage
             label: Session Timeout Message
-            description: Alert message provided to users after a session timeout and logout. TIMEOUT_TIME will be replaced by the timeout time.
+            description: Alert message provided to users after a session timeout. TIMEOUT_TIME will be replaced by the timeout time.
 #        allowResumeOnNextLogin:
 #            kind: panel.input.checkbox
 #            id: allow-resume-on-next-login

@@ -183,8 +183,8 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                         chain.doFilter(req, res);
                     } else if (user.isEnabled()) {
                         boolean isExpired = checkForExpiredPassword(user);
-
-                        if ((!isUserNonExpiring(user) && isExpired) || (_initializerPreferences.getRequireSaltedPasswords() && user.getSalt() == null)) {
+                        boolean requireSalted = useSiteConfigPrefs? XDAT.getSiteConfigPreferences().getRequireSaltedPasswords() : _initializerPreferences.getRequireSaltedPasswords();
+                        if ((!isUserNonExpiring(user) && isExpired) || (requireSalted && user.getSalt() == null)) {
                             request.getSession().setAttribute("expired", isExpired);
                             response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
                         } else {

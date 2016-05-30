@@ -384,14 +384,6 @@ passwords:
             id: passwordComplexityMessage
             name: passwordComplexityMessage
             label: Password Complexity Message
-        passwordHistoryDuration:
-            kind: panel.input.text
-            id: passwordHistoryDuration
-            name: passwordHistoryDuration
-            label: Password History (Duration)
-            description: >
-              Interval for which users cannot reuse an old password of theirs. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         passwordExpirationType:
             kind: panel.select.single
             id: passwordExpirationType
@@ -429,6 +421,14 @@ passwords:
                 Historical:
                     label: Historical
                     value: Historical
+        passwordHistoryDuration:
+            kind: panel.input.text
+            id: passwordHistoryDuration
+            name: passwordHistoryDuration
+            label: Password History (Duration)
+            description: >
+              Interval for which users cannot reuse an old password of theirs. Uses
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         requireSaltedPasswords:
             kind: panel.input.checkbox
             id: requireSaltedPasswords

@@ -184,7 +184,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                     } else if (user.isEnabled()) {
                         boolean isExpired = checkForExpiredPassword(user);
 
-                        if ((!isUserNonExpiring(user) && isExpired) || (_preferences.getRequireSaltedPasswords() && user.getSalt() == null)) {
+                        if ((!isUserNonExpiring(user) && isExpired) || (_initializerPreferences.getRequireSaltedPasswords() && user.getSalt() == null)) {
                             request.getSession().setAttribute("expired", isExpired);
                             response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
                         } else {
@@ -264,7 +264,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 return false;
             }
             if (isPasswordExpirationInterval()) {
-                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT ((now()-password_updated)> (Interval '" + passwordExpirationSetting + " days')) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[] {username}, new RowMapper<Boolean>() {
+                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT ((now()-password_updated)> (Interval '" + passwordExpirationSetting + "')) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[] {username}, new RowMapper<Boolean>() {
                     public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                         return rs.getBoolean(1);
                     }
@@ -288,20 +288,39 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         if (!passwordExpirationDirtied) {
             return passwordExpirationDisabled;
         }
-        final String type = _preferences.getPasswordExpirationType();
-        if (StringUtils.isBlank(type)) {
-            passwordExpirationDisabled = true;
-        } else if (type.equals("Interval")) {
-            passwordExpirationInterval = true;
-            passwordExpirationSetting = Integer.toString(_preferences.getPasswordExpirationInterval());
-            passwordExpirationDisabled = passwordExpirationSetting.equals("0");
-        } else if (type.equals("Date")) {
-            passwordExpirationInterval = false;
-            passwordExpirationSetting = Long.toString(_preferences.getPasswordExpirationDate().getTime());
-            passwordExpirationDisabled = passwordExpirationSetting.equals("0");
-        } else {
-            passwordExpirationDisabled = true;
+        if(useSiteConfigPrefs){
+            final String type = XDAT.getSiteConfigPreferences().getPasswordExpirationType();
+            if (StringUtils.isBlank(type)) {
+                passwordExpirationDisabled = true;
+            } else if (type.equals("Interval")) {
+                passwordExpirationInterval = true;
+                passwordExpirationSetting = XDAT.getSiteConfigPreferences().getPasswordExpirationInterval();
+                passwordExpirationDisabled = passwordExpirationSetting.equals("0");
+            } else if (type.equals("Date")) {
+                passwordExpirationInterval = false;
+                passwordExpirationSetting = Long.toString((new Date(XDAT.getSiteConfigPreferences().getPasswordExpirationDate())).getTime());
+                passwordExpirationDisabled = passwordExpirationSetting.equals("0");
+            } else {
+                passwordExpirationDisabled = true;
+            }
         }
+        else{
+            final String type = _initializerPreferences.getPasswordExpirationType();
+            if (StringUtils.isBlank(type)) {
+                passwordExpirationDisabled = true;
+            } else if (type.equals("Interval")) {
+                passwordExpirationInterval = true;
+                passwordExpirationSetting = _initializerPreferences.getPasswordExpirationInterval();
+                passwordExpirationDisabled = StringUtils.equals(passwordExpirationSetting,"0");
+            } else if (type.equals("Date")) {
+                passwordExpirationInterval = false;
+                passwordExpirationSetting = Long.toString((new Date(_initializerPreferences.getPasswordExpirationDate())).getTime());
+                passwordExpirationDisabled = StringUtils.equals(passwordExpirationSetting,"0");
+            } else {
+                passwordExpirationDisabled = true;
+            }
+        }
+
         passwordExpirationDirtied = false;
         return passwordExpirationDisabled;
     }
@@ -337,9 +356,16 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         return _aliasTokenService;
     }
 
+    public void refreshFromSiteConfig(){
+        useSiteConfigPrefs = true;
+        passwordExpirationDirtied = true;
+    }
+
+    private boolean useSiteConfigPrefs = false;
+
     @Autowired
     @Lazy
-    private InitializerSiteConfiguration _preferences;
+    private InitializerSiteConfiguration _initializerPreferences;
 
     @Autowired
     @Lazy

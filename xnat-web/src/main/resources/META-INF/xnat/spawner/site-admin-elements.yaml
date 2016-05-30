@@ -398,17 +398,19 @@ passwords:
                     label: Date
                     value: Date
         passwordExpirationInterval:
-            kind: panel.input.number
+            kind: panel.input.text
             id: passwordExpirationInterval
             name: passwordExpirationInterval
             label: Password Expiration (Interval)
-            description: "-1 to disable"
+            description: >
+              Interval of time after which unchanged passwords expire and users have to change them. Enter "0" to disable. Uses
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         passwordExpirationDate:
             kind: panel.input.text
             id: passwordExpirationDate
             name: passwordExpirationDate
             label: Password Expiration (Date)
-            description: Dates must be formatted MM/DD/YYYY
+            description: Expire passwords that were last changed before this date and require those users to change them. Enter "0" to disable. Dates must be formatted MM/DD/YYYY
         passwordReuseRestriction:
             kind: panel.select.single
             id: passwordReuseRestriction
@@ -425,7 +427,7 @@ passwords:
             kind: panel.input.text
             id: passwordHistoryDuration
             name: passwordHistoryDuration
-            label: Password History (Duration)
+            label: Password History
             description: >
               Interval for which users cannot reuse an old password of theirs. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>

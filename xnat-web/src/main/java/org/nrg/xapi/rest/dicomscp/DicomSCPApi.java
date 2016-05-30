@@ -108,7 +108,10 @@ public class DicomSCPApi extends AbstractXnatRestApi {
         if (!_manager.hasDicomSCP(id)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        _manager.getDicomSCPInstance(id).setEnabled(flag);
+        DicomSCPInstance instanceToChange = _manager.getDicomSCPInstance(id);
+        instanceToChange.setEnabled(flag);
+        _manager.setDicomSCPInstance(instanceToChange);
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

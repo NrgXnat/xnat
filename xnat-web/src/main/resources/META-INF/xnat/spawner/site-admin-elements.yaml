@@ -385,11 +385,13 @@ passwords:
             name: passwordComplexityMessage
             label: Password Complexity Message
         passwordHistoryDuration:
-            kind: panel.input.number
+            kind: panel.input.text
             id: passwordHistoryDuration
             name: passwordHistoryDuration
             label: Password History (Duration)
-            description: "-1 to disable"
+            description: >
+              Interval for which users cannot reuse an old password of theirs. Uses
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         passwordExpirationType:
             kind: panel.select.single
             id: passwordExpirationType

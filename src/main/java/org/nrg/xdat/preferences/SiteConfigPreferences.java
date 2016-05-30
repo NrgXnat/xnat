@@ -175,14 +175,14 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "365")
-    public int getPasswordHistoryDuration() {
-        return getIntegerValue("passwordHistoryDuration");
+    @NrgPreference(defaultValue = "1 year")
+    public String getPasswordHistoryDuration() {
+        return getValue("passwordHistoryDuration");
     }
 
-    public void setPasswordHistoryDuration(final int passwordHistoryDuration) {
+    public void setPasswordHistoryDuration(final String passwordHistoryDuration) {
         try {
-            setIntegerValue(passwordHistoryDuration, "passwordHistoryDuration");
+            set(passwordHistoryDuration, "passwordHistoryDuration");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'passwordHistoryDuration': something is very wrong here.", e);
         }

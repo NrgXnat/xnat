@@ -14,8 +14,6 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.HibernateUtils;
 import org.nrg.framework.services.SerializerService;
-import org.nrg.prefs.annotations.NrgPreference;
-import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.PreferenceBeanHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,8 +76,8 @@ public class InitializerSiteConfiguration extends PropertiesBasedSiteConfigurati
         return getSiteConfigurationProperty("passwordComplexityMessage");
     }
 
-    public int getPasswordHistoryDuration() throws SiteConfigurationException {
-        return getIntegerSiteConfigurationProperty("passwordHistoryDuration");
+    public String getPasswordHistoryDuration() throws SiteConfigurationException {
+        return getSiteConfigurationProperty("passwordHistoryDuration");
     }
 
     public String getReceivedFileUser() throws SiteConfigurationException {

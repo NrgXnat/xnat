@@ -30,12 +30,12 @@ public class HistoricPasswordValidator implements PasswordValidator {
         //if there's no user, they're probably new so there's nothing to do here.
         if (user != null) {
             try {
-                int durationInDays = _preferences.getPasswordHistoryDuration();
+                long durationInSeconds = SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getPasswordHistoryDuration());
                 String userId = user.getUsername();
                 String dbName = user.getDBName();
                 Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-                Timestamp lastYearsTimestamp = new java.sql.Timestamp(today.getTime() - durationInDays * 86400000L);// 24 * 60 * 60 * 1000);    //31557600000L);
-                String query = "SELECT primary_password AS hashed_password, salt AS salt FROM xdat_user_history WHERE login='" + userId + "' AND change_date > '" + lastYearsTimestamp + "' UNION SELECT primary_password AS password, salt AS salt FROM xdat_user WHERE login='" + userId + "';";
+                Timestamp startOfDurationTimestamp = new java.sql.Timestamp(today.getTime() - (durationInSeconds * 1000L));// Multiplying by 1000 to convert to milliseconds;
+                String query = "SELECT primary_password AS hashed_password, salt AS salt FROM xdat_user_history WHERE login='" + userId + "' AND change_date > '" + startOfDurationTimestamp + "' UNION SELECT primary_password AS password, salt AS salt FROM xdat_user WHERE login='" + userId + "';";
                 XFTTable table = TableSearch.Execute(query, dbName, userId);
                 table.resetRowCursor();
                 while (table.hasMoreRows()) {
@@ -61,7 +61,7 @@ public class HistoricPasswordValidator implements PasswordValidator {
     }
 
     private String getDefaultMessage() {
-        return String.format("Password has been used in the previous %d days.", _preferences.getPasswordHistoryDuration());
+        return "Password has been used in the previous "+_preferences.getPasswordHistoryDuration()+".";
     }
 
     @Autowired

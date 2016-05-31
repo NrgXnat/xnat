@@ -16,17 +16,16 @@ import java.util.concurrent.Future;
 import static reactor.bus.selector.Selectors.type;
 
 public abstract class AbstractPreferenceHandler<T extends StructuredEvent> extends AbstractParameterizedWorker implements Consumer<Event<T>> {
-    private final String _toolId;
-    private final List<PreferenceHandlerMethod> _methods = new ArrayList<>();
 
-    protected AbstractPreferenceHandler(final String toolId, final EventBus eventBus) {
-        _toolId = toolId;
+    protected AbstractPreferenceHandler(final EventBus eventBus) {
         eventBus.on(type(getParameterizedType()), this);
     }
 
-    public String getToolId() {
-        return _toolId;
-    }
+    public abstract String getToolId();
+    public abstract void setToolId(String toolId);
+
+    public abstract List<PreferenceHandlerMethod> getMethods();
+    public abstract void addMethod(PreferenceHandlerMethod method);
 
     @Override
     public void accept(final Event<T> event) {
@@ -36,8 +35,8 @@ public abstract class AbstractPreferenceHandler<T extends StructuredEvent> exten
     @Autowired
     public void setAvailableMethods(final List<PreferenceHandlerMethod> methods) {
         for (final PreferenceHandlerMethod method : methods) {
-            if (method.getToolIds().contains(_toolId)) {
-                _methods.add(method);
+            if (method.getToolIds().contains(getToolId())) {
+                addMethod(method);
             }
         }
     }
@@ -61,8 +60,8 @@ public abstract class AbstractPreferenceHandler<T extends StructuredEvent> exten
     }
 
     private List<PreferenceHandlerMethod> getMethodsForPreferences(final List<String> preferences) {
-        final List<PreferenceHandlerMethod> resolved = new ArrayList<>(_methods);
-        for (final PreferenceHandlerMethod method : _methods) {
+        final List<PreferenceHandlerMethod> resolved = new ArrayList<>();
+        for (final PreferenceHandlerMethod method : getMethods()) {
             if ((!Collections.disjoint(method.getHandledPreferences(), preferences)) && !(resolved.contains(method))) {
                 resolved.add(method);
             }

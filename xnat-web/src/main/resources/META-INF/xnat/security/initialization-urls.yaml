@@ -1,0 +1,14 @@
+configPath: /setup
+nonAdminErrorPath: /app/template/Unconfigured.vm
+
+initPaths:
+  - /xapi/siteConfig/batch
+  - /xapi/notifications/smtp
+  - /xapi/spawner/resolve/siteAdmin/siteSetup
+
+exemptedPaths:
+  - /app/template/XDATScreen_UpdateUser.vm
+  - /app/action/ModifyPassword
+  - /app/template/Login.vm
+  - /style/app.css
+  - /login

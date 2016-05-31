@@ -1,6 +1,8 @@
 package org.nrg.xnat.initialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
@@ -100,7 +102,7 @@ public class SecurityConfig {
         final SecurityContextLogoutHandler securityContextLogoutHandler = new SecurityContextLogoutHandler();
         securityContextLogoutHandler.setInvalidateHttpSession(true);
         final XnatLogoutHandler xnatLogoutHandler = new XnatLogoutHandler();
-        final LogoutFilter      filter            = new LogoutFilter(logoutSuccessHandler, securityContextLogoutHandler, xnatLogoutHandler);
+        final LogoutFilter filter = new LogoutFilter(logoutSuccessHandler, securityContextLogoutHandler, xnatLogoutHandler);
         filter.setFilterProcessesUrl("/app/action/LogoutUser");
         return filter;
     }
@@ -109,7 +111,7 @@ public class SecurityConfig {
     public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor() throws IOException {
         final Resource resource = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         try (final InputStream inputStream = resource.getInputStream()) {
-            final HashMap<String, ArrayList<String>>         urlMap        = _serializer.deserializeYaml(inputStream, TYPE_REFERENCE);
+            final HashMap<String, ArrayList<String>> urlMap = _serializer.deserializeYaml(inputStream, TYPE_REFERENCE);
             final FilterSecurityInterceptorBeanPostProcessor postProcessor = new FilterSecurityInterceptorBeanPostProcessor();
             postProcessor.setOpenUrls(urlMap.get("openUrls"));
             postProcessor.setAdminUrls(urlMap.get("adminUrls"));
@@ -195,13 +197,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatInitCheckFilter xnatInitCheckFilter() {
-        final XnatInitCheckFilter filter = new XnatInitCheckFilter();
-        filter.setInitializationPaths(Arrays.asList("/xapi/siteConfig/batch", "/xapi/notifications/smtp"));
-        filter.setConfigurationPath("/setup");
-        filter.setNonAdminErrorPath("/app/template/Unconfigured.vm");
-        filter.setExemptedPaths(Arrays.asList("/app/template/XDATScreen_UpdateUser.vm", "/app/action/ModifyPassword", "/app/template/Login.vm", "/style/app.css", "/login"));
-        return filter;
+    public XnatInitCheckFilter xnatInitCheckFilter() throws IOException {
+        final Resource resource = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/initialization-urls.yaml");
+        try (final InputStream inputStream = resource.getInputStream()) {
+            final XnatInitCheckFilter filter = new XnatInitCheckFilter();
+            final JsonNode paths = _serializer.deserializeYaml(inputStream);
+            filter.setConfigurationPath(paths.get("configPath").asText());
+            filter.setNonAdminErrorPath(paths.get("nonAdminErrorPath").asText());
+            filter.setInitializationPaths(nodeToList(paths.get("initPaths")));
+            filter.setExemptedPaths(nodeToList(paths.get("exemptedPaths")));
+            return filter;
+        }
     }
 
     @Bean
@@ -209,6 +215,21 @@ public class SecurityConfig {
         final XnatDatabaseUserDetailsService service = new XnatDatabaseUserDetailsService();
         service.setDataSource(dataSource);
         return service;
+    }
+
+    protected List<String> nodeToList(final JsonNode node) {
+        final List<String> list = new ArrayList<>();
+        if (node.isArray()) {
+            final ArrayNode arrayNode = (ArrayNode) node;
+            for (final JsonNode item : arrayNode) {
+                list.add(item.asText());
+            }
+        } else if (node.isTextual()) {
+            list.add(node.asText());
+        } else {
+            list.add(node.toString());
+        }
+        return list;
     }
 
     private static final ResourceLoader                                    RESOURCE_LOADER = new DefaultResourceLoader();

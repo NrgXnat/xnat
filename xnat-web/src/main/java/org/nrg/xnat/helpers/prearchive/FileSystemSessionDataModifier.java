@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.List;
@@ -203,7 +204,8 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
             this.newProject = newProject;
             this.f = new File(this.uri);
             this.timestampDir = f.getParentFile();
-            this.newTimestampDir = new File(this.basePath + this.newProject, this.timestampDir.getName());
+            Path newTimestampDirPath = Paths.get( this.basePath, this.newProject, this.timestampDir.getName());
+            this.newTimestampDir = newTimestampDirPath.normalize().toFile();
             this.xml = new File(timestampDir, session + ".xml");
             copy = new Copy(timestampDir, newTimestampDir, session);
             setXml = new SetXml(xml, newProject, (new File(newTimestampDir, session)).getAbsolutePath());

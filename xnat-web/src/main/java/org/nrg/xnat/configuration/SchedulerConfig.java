@@ -30,13 +30,6 @@ public class SchedulerConfig implements SchedulingConfigurer {
         return new TriggerTask(new ResetEmailRequests(_emailRequestLogService), new PeriodicTrigger(900000));
     }
 
-    @Bean
-    public TriggerTask rebuildSessionXmls() throws SiteConfigurationException {
-        final PeriodicTrigger trigger = new PeriodicTrigger(_preferences.getSessionXmlRebuilderRepeat());
-        trigger.setInitialDelay(60000);
-        return new TriggerTask(new SessionXMLRebuilder(_provider, _preferences.getSessionXmlRebuilderInterval(), _jmsTemplate), trigger);
-    }
-
     @Bean(destroyMethod = "shutdown")
     public ThreadPoolTaskScheduler taskScheduler() {
         final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
@@ -47,6 +40,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
     @Override
     public void configureTasks(final ScheduledTaskRegistrar taskRegistrar) {
         taskRegistrar.setScheduler(taskScheduler());
+        _eventService.triggerEvent(new PreferenceEvent("sessionXmlRebuilderRepeat", String.valueOf(XDAT.getSiteConfigPreferences().getSessionXmlRebuilderRepeat())));
         _eventService.triggerEvent(new PreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
         _eventService.triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
         _eventService.triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));

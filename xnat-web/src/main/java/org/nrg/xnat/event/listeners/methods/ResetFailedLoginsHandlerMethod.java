@@ -45,7 +45,7 @@ public class ResetFailedLoginsHandlerMethod extends AbstractSiteConfigPreference
 			for(ScheduledFuture temp: scheduledResetFailedLogins){
 				temp.cancel(false);
 			}
-
+            scheduledResetFailedLogins.clear();
 			scheduledResetFailedLogins.add(_scheduler.schedule(new ResetFailedLogins(_template,XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration()),new CronTrigger(XDAT.getSiteConfigPreferences().getResetFailedLoginsSchedule())));
 
 		} catch (Exception e1) {

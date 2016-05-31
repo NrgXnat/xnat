@@ -2,23 +2,25 @@ package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xnat.security.DisableInactiveUsers;
+import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
+import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.scheduling.support.CronTrigger;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 
 @Component
-public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+public class SessionXmlRebuilderHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
     @Override
     public List<String> getHandledPreferences() {
         return PREFERENCES;
@@ -27,43 +29,48 @@ public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPref
     @Override
     public void handlePreferences(final Map<String, String> values) {
         if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateInactivityBeforeLockout();
+            updateSessionXmlRebuilder();
         }
     }
 
     @Override
     public void handlePreference(final String preference, final String value) {
         if(PREFERENCES.contains(preference)){
-            updateInactivityBeforeLockout();
+            updateSessionXmlRebuilder();
         }
     }
 
-	private void updateInactivityBeforeLockout(){
+	private void updateSessionXmlRebuilder(){
 		try {
             _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
 
-
-			for(ScheduledFuture temp: scheduledInactivityBeforeLockout){
+			for(ScheduledFuture temp: scheduledXmlRebuilder){
 				temp.cancel(false);
 			}
-            scheduledInactivityBeforeLockout.clear();
-			scheduledInactivityBeforeLockout.add(_scheduler.schedule(new DisableInactiveUsers((new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout()))).intValue(),(new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration()))).intValue()),new CronTrigger(XDAT.getSiteConfigPreferences().getInactivityBeforeLockoutSchedule())));
+            scheduledXmlRebuilder.clear();
+			scheduledXmlRebuilder.add(_scheduler.schedule(new SessionXMLRebuilder(_provider, XDAT.getSiteConfigPreferences().getSessionXmlRebuilderInterval(), _jmsTemplate),new PeriodicTrigger(XDAT.getSiteConfigPreferences().getSessionXmlRebuilderRepeat())));
 
 		} catch (Exception e1) {
 			_log.error("", e1);
 		}
 	}
 
-    private static final Logger       _log        = LoggerFactory.getLogger(InactivityBeforeLockoutHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("inactivityBeforeLockout", "inactivityBeforeLockoutSchedule"));
+    private static final Logger       _log        = LoggerFactory.getLogger(SessionXmlRebuilderHandlerMethod.class);
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("sessionXmlRebuilderRepeat", "sessionXmlRebuilderInterval"));
 
     @Autowired
     @Lazy
     private JdbcTemplate _template;
 
-    private              ArrayList<ScheduledFuture> scheduledInactivityBeforeLockout = new ArrayList<>();
+    private              ArrayList<ScheduledFuture> scheduledXmlRebuilder = new ArrayList<>();
 
     @Autowired
     @Qualifier("taskScheduler")
     private ThreadPoolTaskScheduler _scheduler;
+
+    @Inject
+    private JmsTemplate _jmsTemplate;
+
+    @Inject
+    private XnatUserProvider _provider;
 }

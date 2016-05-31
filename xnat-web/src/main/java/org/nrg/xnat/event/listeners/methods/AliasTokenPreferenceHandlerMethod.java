@@ -39,6 +39,7 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPrefere
 
     private void updateAliasTokenTimeout() {
         try {
+            _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
             for (final ScheduledFuture future : _timeouts) {
                 future.cancel(false);
             }

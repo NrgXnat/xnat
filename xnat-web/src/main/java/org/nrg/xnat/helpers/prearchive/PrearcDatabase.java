@@ -442,7 +442,12 @@ public final class PrearcDatabase {
      * @return The path to the project.
      */
     static String projectPath(String project) {
-        return Paths.get(PrearcDatabase.prearcPath, project).toString();
+        if(project==null){
+            return PrearcDatabase.prearcPath;
+        }
+        else {
+            return Paths.get(PrearcDatabase.prearcPath, project).toString();
+        }
     }
 
     /**

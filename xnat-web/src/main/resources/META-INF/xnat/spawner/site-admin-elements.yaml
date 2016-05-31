@@ -263,6 +263,18 @@ generalSecuritySettings:
             name: requireLogin
             label: Require User Login
             description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
+        restrictUserListAccessToAdmins:
+            kind: panel.input.checkbox
+            id: restrictUserListAccessToAdmins
+            name: restrictUserListAccessToAdmins
+            label: "Restrict user list access to site administrators?"
+            description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
+        uiAllowNonAdminProjectCreation:
+            kind: panel.input.checkbox
+            id: uiAllowNonAdminProjectCreation
+            name: UI.allow-non-admin-project-creation
+            label: "Allow non-administrators to create projects?"
+            description: "Should this site allow non-administrator users to create new projects? If turned on, the site is more secure, but this can make it more difficult for regular users to create new projects for their research efforts."
 
 userLoginsSessionControls:
     kind: panel.form
@@ -878,18 +890,6 @@ registrationOptions:
             id: uiAllowNewUserComments
             name: UI.allow-new-user-comments
             label: "Allow User Comments on Registration?"
-        restrictUserListAccessToAdmins:
-            kind: panel.input.checkbox
-            id: restrictUserListAccessToAdmins
-            name: restrictUserListAccessToAdmins
-            label: "Restrict user list access to site administrators?"
-            description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
-        uiAllowNonAdminProjectCreation:
-            kind: panel.input.checkbox
-            id: uiAllowNonAdminProjectCreation
-            name: UI.allow-non-admin-project-creation
-            label: "Allow non-administrators to create projects?"
-            description: "Should this site allow non-administrator users to create new projects? If turned on, the site is more secure, but this can make it more difficult for regular users to create new projects for their research efforts."
 
 manageDataTypes:
     kind: panel.form

@@ -346,12 +346,12 @@
             <li><a href="#adminbox">Administer</a>
                 <ul>
                     <!-- Sequence: 10 -->
+                    <li><a href="/app/template/Configuration.vm">Site Administration</a></li>
                     <li><a href="/app/template/XDATScreen_admin.vm">Users</a></li>
                     <li><a href="/app/template/XDATScreen_groups.vm">Groups</a></li>
                     <li><a href="/app/template/XDATScreen_dataTypes.vm">Data Types</a></li>
                     <li><a href="/app/template/XDATScreen_email.vm">Email</a></li>
                     <li><a href="/app/template/XDATScreen_manage_pipeline.vm">Pipelines</a></li>
-                    <li><a href="/app/template/Configuration.vm">Configuration</a></li>
                     <li><a href="/app/template/Scripts.vm">Automation</a></li>
                     <li><a href="/app/template/XDATScreen_admin_options.vm">More...</a></li>
                 </ul>

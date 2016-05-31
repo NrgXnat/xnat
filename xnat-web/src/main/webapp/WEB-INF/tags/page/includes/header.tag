@@ -50,11 +50,11 @@
             <li id="nav-admin" class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu">
+                    <li><a href="#">Site Administration</a></li>
                     <li><a href="#">Users</a></li>
                     <li><a href="#">Data Types</a></li>
                     <li><a href="#">Pipelines</a></li>
                     <li><a href="#">Email</a></li>
-                    <li><a href="#">Configuration</a></li>
                     <li class="divider"></li>
                     <li><a href="#">More...</a></li>
                 </ul>

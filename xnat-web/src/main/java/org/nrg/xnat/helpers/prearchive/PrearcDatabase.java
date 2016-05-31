@@ -32,7 +32,6 @@ import org.nrg.xdat.bean.XnatPetsessiondataBean;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatPetscandataI;
 import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
@@ -174,10 +173,6 @@ public final class PrearcDatabase {
      */
 
     protected static String getPrearcPath() {
-        final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
-        if (preferences != null) {
-            return preferences.getPrearchivePath();
-        }
         return XDAT.getSiteConfigPreferences().getPrearchivePath();
     }
 
@@ -441,7 +436,7 @@ public final class PrearcDatabase {
      *
      * @return The path to the project.
      */
-    static String projectPath(String project) {
+    public static String projectPath(String project) {
         if(project==null){
             return PrearcDatabase.prearcPath;
         }

@@ -17,8 +17,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.model.ArcProjectI;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
@@ -43,6 +45,7 @@ import java.net.MalformedURLException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -213,9 +216,11 @@ public class PrearcUtils {
      */
     public static File getPrearcDir(final UserI user, final String project, final boolean allowUnassigned) throws Exception {
         String prearcPath;
+        String prearchRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();
+        String prearchRootArcSpec = ArcSpecManager.GetInstance().getGlobalPrearchivePath();
         if (project == null || project.equals(COMMON)) {
             if (allowUnassigned || user == null || Roles.isSiteAdmin(user)) {
-                prearcPath = XDAT.getSiteConfigPreferences().getPrearchivePath();
+                prearcPath = prearchRootPref;
             } else {
                 throw new InvalidPermissionException("user " + user.getUsername() + " does not have permission to access the Unassigned directory ");
             }
@@ -228,7 +233,29 @@ public class PrearcUtils {
                 if (user != null && !userHelperService.hasEditAccessToSessionDataByTag(project)) {
                     throw new InvalidPermissionException("user " + user.getUsername() + " does not have create permissions for project " + project);
                 }
-                prearcPath = ArcSpecManager.GetInstance().getPrearchivePathForProject(project);
+                String arcSpecPathForProject = ArcSpecManager.GetInstance().getPrearchivePathForProject(project);
+                String newPathForProject = arcSpecPathForProject.replaceFirst("^/data/xnat/prearchive/", "");
+                if(!StringUtils.equals(arcSpecPathForProject,newPathForProject)){
+                    prearcPath = Paths.get(prearchRootPref, newPathForProject).toString();
+                }
+                else{
+                    prearcPath = arcSpecPathForProject;
+                }
+                List<ArcProjectI> projectsList = ArcSpecManager.GetInstance().getProjects_project();
+
+                SiteConfigPreferences siteConfigPreferences = XDAT.getSiteConfigPreferences();
+                for(ArcProjectI proj:projectsList){
+                    if(StringUtils.equals(project,proj.getId())){
+                        org.nrg.xdat.model.ArcPathinfoI paths = proj.getPaths();
+                        paths.setPipelinepath(Paths.get(siteConfigPreferences.getPipelinePath(),proj.getId()).toString());
+                        paths.setArchivepath(Paths.get(siteConfigPreferences.getArchivePath(),proj.getId()).toString());
+                        paths.setPrearchivepath(Paths.get(siteConfigPreferences.getPrearchivePath(),proj.getId()).toString());
+                        paths.setCachepath(Paths.get(siteConfigPreferences.getCachePath(),proj.getId()).toString());
+                        paths.setFtppath(Paths.get(siteConfigPreferences.getFtpPath(),proj.getId()).toString());
+                        paths.setBuildpath(Paths.get(siteConfigPreferences.getBuildPath(),proj.getId()).toString());
+                        proj.setPaths(paths);
+                    }
+                }
             } else {
                 //check to see if it used a project alias
                 XnatProjectdata proj = XnatProjectdata.getProjectByIDorAlias(project, user, false);
@@ -236,7 +263,15 @@ public class PrearcUtils {
                     if (user != null && !userHelperService.hasEditAccessToSessionDataByTag(project)) {
                         throw new InvalidPermissionException("user " + user.getUsername() + " does not have create permissions for project " + project);
                     }
-                    prearcPath = proj.getPrearchivePath();
+                    String arcSpecPathForProject = proj.getPrearchivePath();
+                    String newPathForProject = arcSpecPathForProject.replaceFirst("^/data/xnat/prearchive/", "");
+                    if(!StringUtils.equals(arcSpecPathForProject,newPathForProject)){
+                        prearcPath = Paths.get(prearchRootPref, newPathForProject).toString();
+                    }
+                    else{
+                        prearcPath = arcSpecPathForProject;
+                    }
+                    proj.setProperty("arc:project/paths/prearchivePath", Paths.get(ArcSpecManager.GetInstance().getGlobalPrearchivePath(), proj.getId()).toString());
                 } else {
                     throw new IOException("No project named " + project);
                 }

@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.utils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.model.ArcProjectI;
 import org.nrg.xdat.om.ArcArchivespecification;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -28,7 +29,9 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -176,6 +179,20 @@ public class ArcSpecManager {
                 logger.info("Setting build path to: {}", siteConfigPreferences.getBuildPath());
             }
             arcSpec.setProperty("globalPaths/buildPath", siteConfigPreferences.getBuildPath());
+        }
+
+        List<ArcProjectI> projList =arcSpec.getProjects_project();
+
+
+        for(ArcProjectI proj : projList){
+            org.nrg.xdat.model.ArcPathinfoI paths = proj.getPaths();
+            paths.setPipelinepath(Paths.get(siteConfigPreferences.getPipelinePath(),proj.getId()).toString());
+            paths.setArchivepath(Paths.get(siteConfigPreferences.getArchivePath(),proj.getId()).toString());
+            paths.setPrearchivepath(Paths.get(siteConfigPreferences.getPrearchivePath(),proj.getId()).toString());
+            paths.setCachepath(Paths.get(siteConfigPreferences.getCachePath(),proj.getId()).toString());
+            paths.setFtppath(Paths.get(siteConfigPreferences.getFtpPath(),proj.getId()).toString());
+            paths.setBuildpath(Paths.get(siteConfigPreferences.getBuildPath(),proj.getId()).toString());
+            proj.setPaths(paths);
         }
 
         if (logger.isInfoEnabled()) {

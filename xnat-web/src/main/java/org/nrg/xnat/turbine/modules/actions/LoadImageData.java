@@ -10,13 +10,6 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -24,9 +17,17 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 public class LoadImageData extends SecureAction {
     private final static String PREARC_PAGE = "XDATScreen_prearchives.vm";
     
@@ -79,12 +80,10 @@ public class LoadImageData extends SecureAction {
             return;
         }
 
-        final String prearchive_path=ArcSpecManager.GetInstance().getPrearchivePathForProject(project);
-            
-            
+        String prearchive_path= PrearcDatabase.projectPath(project);
         //LOAD FOLDER
-        final File dir = new File("NONE".equals(root) ? prearchive_path : (prearchive_path + root));
-            
+        final File dir = new File("NONE".equals(root) ? prearchive_path : (Paths.get(prearchive_path, root).toString()));
+
         final Collection<String> folders;
         if (dir.exists()) {
             folders = new HashSet<String>(Arrays.asList(dir.list()));

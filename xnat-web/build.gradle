@@ -1,5 +1,6 @@
 def vXnat = '1.7.0-SNAPSHOT'
 def vXnatPipeline = vXnat
+def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.5.RELEASE'
 def vSpringSecurity = '4.0.4.RELEASE'
 def vSwagger = '2.4.0'
@@ -411,6 +412,7 @@ dependencies {
     compile "javax.mail:javax.mail-api:1.5.5"
     compile 'com.google.code.gson:gson:2.6.2'
 
+    runtime "org.nrg.xnatx.plugins:ximgview-plugin:${vXImgView}"
     runtime "org.apache.activemq:activemq-core:5.7.0"
     runtime "ant:ant:1.6.5"
     runtime "axis:axis-ant:1.4"

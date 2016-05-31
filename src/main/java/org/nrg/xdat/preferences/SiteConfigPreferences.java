@@ -462,6 +462,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "")
+    public String getAppletScript() {
+        return getValue("appletScript");
+    }
+
+    public void setAppletScript(final String appletScript) {
+        try {
+            set(appletScript, "appletScript");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'appletScript': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true")
     public boolean getChecksums() {
         return getBooleanValue("checksums");

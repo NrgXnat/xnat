@@ -20,7 +20,6 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -41,7 +40,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Enumeration;
-import java.util.UUID;
 
 /**
  * @author Tim
@@ -160,7 +158,7 @@ public abstract class SecureAction extends VelocitySecureAction
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken, boolean strict) throws Exception {
     	
-    	boolean csrfEmailEnabled = XDAT.getBoolSiteConfigurationProperty("enableCsrfEmail", false);
+    	boolean csrfEmailEnabled = XDAT.getSiteConfigPreferences().getCsrfEmailAlert();
     	
     	if(!XDAT.getSiteConfigPreferences().getEnableCsrfToken()){
     		return true;

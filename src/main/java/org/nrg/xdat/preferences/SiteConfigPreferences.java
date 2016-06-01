@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Lazy;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.sql.SQLException;
-import java.util.List;
 
 @SuppressWarnings("unused")
 @XmlRootElement
@@ -588,14 +587,23 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         setBooleanValue(requireImageAssessorLabels, "security.require_image_assessor_labels");
     }
 
-    @NrgPreference(defaultValue = "['zip','jar','rar','ear','gar','mrb']")
-    public List<String> getZipExtensions() {
-        return getListValue("zipExtensions");
+    @NrgPreference(defaultValue = "zip,jar,rar,ear,gar,mrb")
+    public String getZipExtensions() {
+        return getValue("zipExtensions");
     }
 
-    public void setZipExtensions(final List<String> zipExtensions) {
+    public String[] getZipExtensionsAsArray(){
+        String[] extensions = getValue("zipExtensions").split("\\s*,\\s*");
+        String[] extensionsWithPeriods = new String[extensions.length];
+        for (int index = 0; index < extensions.length; index++) {
+            extensionsWithPeriods[index] = "." + extensions[index];
+        }
+        return extensionsWithPeriods;
+    }
+
+    public void setZipExtensions(final String zipExtensions) {
         try {
-            setListValue("zipExtensions", zipExtensions);
+            set("zipExtensions", zipExtensions);
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'zipExtensions': something is very wrong here.", e);
         }

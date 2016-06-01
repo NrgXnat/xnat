@@ -1170,7 +1170,7 @@ fileSystem:
         ${pipelinePath}
         ${zipExtensions}
         ${checksums}
-        ${checksumsPropertyChangedListener}
+#        ${checksumsPropertyChangedListener}
 
 misc:
     kind: panel.form

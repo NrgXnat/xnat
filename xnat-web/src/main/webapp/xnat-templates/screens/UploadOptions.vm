@@ -567,11 +567,14 @@
         <tr id="option4">
             <td>
                 <br><b>DICOM C-STORE receiver (SCP) Specifications</b>
-                <ul>
-                    <li>Host Name: $!arc.getDcm_dcmHost()</li>
-                    <li>Port: $!arc.getDcm_dcmPort()</li>
-                    <li>AE Title(s): $!arc.getDcm_dcmAe()</li>
-                </ul>
+                #foreach ($scp in $scps)
+                    <ul>
+                        <li>ID: $!scp.getScpId()</li>
+                        <li>AE Title: $!scp.getAeTitle()</li>
+                        <li>Port: $!scp.getPort()</li>
+                    </ul>
+                    <br>
+                #end
             </td>
         </tr>
     <tr>

@@ -12,12 +12,14 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.ArcArchivespecification;
+import org.nrg.dcm.DicomSCPManager;
+import org.nrg.dcm.preferences.DicomSCPInstance;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 
 public class DICOMSCPPage extends SecureScreen {
 
@@ -25,8 +27,8 @@ public class DICOMSCPPage extends SecureScreen {
 	protected void doBuildTemplate(RunData data, Context context) throws Exception {
 		final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_hhmmss");
 		context.put("uploadID", formatter.format(Calendar.getInstance().getTime()));
-		final ArcArchivespecification arc = ArcSpecManager.GetInstance();
-		context.put("arc", arc);
+		List<DicomSCPInstance> scps = XDAT.getContextService().getBean(DicomSCPManager.class).getDicomSCPInstances();
+		context.put("host", XDAT.getSiteConfigPreferences().getSiteUrl());
+		context.put("scps", scps);
 	}
-
 }

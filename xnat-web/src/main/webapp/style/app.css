@@ -978,6 +978,7 @@ input {
 }
 
 /* base button style */
+.btn,
 .btn1,
 .btn2,
 body button,
@@ -997,7 +998,7 @@ body [type="reset"] {
 }
 
 /* style for button hover */
-.btn,
+.btn:hover,
 .btn1:hover,
 .btn2:hover,
 body button:hover,
@@ -1054,10 +1055,13 @@ body [type="reset"]:hover {
 }
 
 /* smaller btn */
+.btn.btn-sm,
+.btn.sm,
+.btn.small,
 .btn1.btn-sm,
 .btn2.btn-sm {
-    font-size: 11px !important;
-    padding: 4px 8px !important;
+    font-size: 12px !important;
+    padding: 5px 9px !important;
 }
 
 .btn-inline {
@@ -1476,6 +1480,12 @@ span.sep {
     line-height: 15px;
     background: #ffc;
     border: 1px solid #ee9;
+}
+
+.header-banner {
+    height: auto;
+    z-index: 9;
+
 }
 
 /* footer graphic */

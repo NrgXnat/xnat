@@ -111,6 +111,19 @@ var XNAT = getObject(XNAT);
                     // submit ALL enclosed forms
                     $forms.each(function(){
                         var $form = $(this);
+
+                        // copy values for elements with [data-value-from] attributes
+                        $form.find('input[data-value-from]').each(function(){
+                            var $destInput = $(this);
+                            // prevent overwriting existing values
+                            if (!$destInput.val()){
+                                var source = $destInput.data('valueFrom');
+                                // var value = $form.find('[name="' + source + '"]')[0].value;
+                                var value = $$(source)[0].value;
+                                $(this).val(value);
+                            }
+                        });
+
                         XNAT.xhr.form($form, {
                             contentType: 'application/json',
                             validate: function(){
@@ -243,3 +256,4 @@ var XNAT = getObject(XNAT);
     return XNAT.app.siteSetup = siteSetup;
 
 }));
+

@@ -1199,3 +1199,16 @@ function prettifyJSON(data, indent) {
         return '<span class="' + cls + '">' + match + '</span>';
     }) + '</pre>';
 }
+
+// call 'test' at 'interval' until it returns true
+// then execute 'callback' -- basic but useful
+function waitForIt(interval, test, callback){
+    var waiting = setInterval(function(){
+        if (test()) {
+            var called = callback();
+            clearInterval(waiting);
+            return called;
+        }
+    }, interval || 10);
+    return waiting;
+}

@@ -210,6 +210,7 @@
     <script src="${SITE_ROOT}/scripts/xnat/ui/table.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/panel.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/tabs.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/banner.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/popup.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.js"></script>
 

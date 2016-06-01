@@ -393,7 +393,7 @@ var XNAT = getObject(XNAT||{}),
         if ($.isArray(val) || $.isPlainObject(val)) {
             return JSON.stringify(val);
         }
-        return '';
+        return ''+val;
     }
 
     function processJSON(data, stringify){
@@ -453,14 +453,24 @@ var XNAT = getObject(XNAT||{}),
                 val = stringable(dataObj) ? dataObj+'' : dataObj[this.name] || '';
             }
             changeValue(this, val);
+            // special handling for checkboxes
+            if (this.type === 'checkbox') {
+                this.checked = (realValue(this.value) === true)
+            }
+            // // special handling for radio buttons (???)
+            // if (this.type === 'radio') {
+            //     this.checked = (realValue(this.value) === (dataObj[this.name]||''))
+            // }
         });
         // set textarea innerText from a 'value' property
         $form.find('textarea[name]').each(function(){
             var $textarea = $(this);
-            $textarea.innerText =  (function(){
+            var textValue =  (function(){
                 var val = dataObj[this.name];
                 return stringable(val) ? val+'' : safeStringify(val);
             })();
+            changeValue($textarea, textValue);
+            // $textarea.val(textValue).change();
         });
         return $form;
     }

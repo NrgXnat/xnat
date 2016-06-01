@@ -16,7 +16,11 @@ siteId:
     name: siteId
     label: Site ID
     validation: required id onblur
-    description: "The id used to refer to this site (also used to generate database ids). The Site ID must start with a letter and contain only letters, numbers and underscores. It should be a short, one-word name or acronym which describes your site. No spaces or non-alphanumeric characters."
+    description: >
+        The id used to refer to this site (also used to generate database ids).
+        The Site ID must start with a letter and contain only letters, numbers
+        and underscores. It should be a short, one-word name or acronym which
+        describes your site. No spaces or non-alphanumeric characters.
 
 siteDescriptionPage:
     tag: input
@@ -123,7 +127,7 @@ adminEmail:
     kind: panel.input.email
     id: adminEmail
     name: adminEmail
-    label: Site Administrator Email Address
+    label: Site Admin Email
     description: >
         The administrative email account to receive system emails. This address will receive frequent emails 
         on system events, such as errors, processing completion, new user registration and so on. These emails
@@ -192,12 +196,15 @@ checksums:
     id: checksums
     name: checksums
     label: Checksums?
-    description: "Indicates whether checksums should be calculated for each image file as it's archived. Activating this provides greater assurance of data integrity, but may add significant overhead to the archive process."
-checksumsPropertyChangedListener:
-    kind: panel.input.text
-    id: checksumsPropertyChangedListener
-    name: checksums.property.changed.listener
-    label: Checksums Property Changed Listener?
+    description: >
+        Indicates whether checksums should be calculated for each image file as it's archived.
+        Activating this provides greater assurance of data integrity, but may add significant
+        overhead to the archive process.
+#checksumsPropertyChangedListener:
+#    kind: panel.input.text
+#    id: checksumsPropertyChangedListener
+#    name: checksums.property.changed.listener
+#    label: Checksums Property Changed Listener?
 
 siteInfo:
     kind: panel.form
@@ -1060,24 +1067,27 @@ dicomScpReceivers:
                             validation: required
                         aeTitle:
                             kind: panel.input.text
+                            id: scp-title
                             name: aeTitle
                             label: AE Title
                             validation: required
                         port:
                             kind: panel.input.number
+                            id: scp-port
                             name: port
                             label: Port
                             validation: required naturalNoZero
-                        fileNamer:
-                            kind: panel.input.text
-                            name: fileNamer
-                            label: File Namer
-                        identifier:
-                            kind: panel.input.text
-                            name: identifier
-                            label: Identifier
+#                        fileNamer:
+#                            kind: panel.input.text
+#                            name: fileNamer
+#                            label: File Namer
+#                        identifier:
+#                            kind: panel.input.text
+#                            name: identifier
+#                            label: Identifier
                         enabled:
                             kind: panel.input.checkbox
+                            id: scp-enabled
                             name: enabled
         dicomScpManager:
             tag: "div#dicom-scp-manager"
@@ -1320,36 +1330,62 @@ adminPage:
             label: Miscellaneous
             contents:
                 ${misc}
-#                ${development}
 
 
 ###########################################
 ####  Initial Site Setup Admin Panels  ####
 ###########################################
-siteIdMain:
+setupMessage:
+    tag: div.message
+    element:
+        style:
+            marginBottom: 24px
+        html: >
+            The settings below need to be configured before this XNAT system
+            can be used. Please set the properties below and submit the form to continue.
+
+siteSetupSiteInfo:
     kind: panel.form
-    name: siteIdMain
-    label: Site Identification
+    name: siteSetupSiteInfo
+    label: Site Information
+    footer: false
+    method: POST
+    action: /xapi/siteConfig/batch
+    contentType: json
+    load: /xapi/siteConfig
     contents:
         ${siteId}
         ${siteUrl}
         ${adminEmail}
-sitePaths:
+
+dataStorage:
     kind: panel.form
-    name: sitePaths
-    label: Site Paths
+    name: dataStorage
+    label: File System
+    footer: false
+    method: POST
+    contentType: json
+    action: /xapi/siteConfig/batch
+    load: XNAT.data.siteConfig
+    refresh: /xapi/siteConfig
     contents:
-#        ${archivePath}
-#        ${cachePath}
-#        ${prearchivePath}
-#        ${ftpPath}
-#        ${buildPath}
-#        ${pipelinePath}
+        ${archivePath}
+        ${prearchivePath}
+        ${ftpPath}
+        ${buildPath}
+        ${bipelinePath}
+        ${cachePath}
+#        ${zipExtensions}
+#        ${checksums}
+#        ${checksumsPropertyChangedListener}
+
+
 initialSetup:
-    kind: panel
+    kind: app.siteSetup.form
     name: initialSetup
-    label: Initial XNAT Setup
+    label: XNAT Initial Setup
     contents:
-#        ${siteIdMain}
-#        ${smtpServer}
-        ${sitePaths}
+        ${setupMessage}
+        ${setupSiteInfo}
+        ${fileSystem}
+        ${emailServerSettings}

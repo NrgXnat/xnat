@@ -165,7 +165,7 @@ var XNAT = getObject(XNAT);
             name: opts.name,
             className: opts.className||'',
             size: opts.size || 25,
-            title: opts.title||opts.name||opts.id,
+            title: opts.title||opts.label||opts.name||opts.id,
             value: opts.value||''
         }, opts.element);
 

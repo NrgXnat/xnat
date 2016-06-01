@@ -92,10 +92,6 @@ var XNAT = getObject(XNAT || {});
             }
         }
     };
-    
-    panel.formSampleConfig = {
-            
-    };
 
     // creates a panel that's a form that can be submitted
     panel.form = function panelForm(opts, callback){
@@ -111,10 +107,10 @@ var XNAT = getObject(XNAT || {});
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
 
-            _resetBtn = spawn('button.btn.btn-sm.btn-default.revert.pull-right|type=button', 'Discard Changes'),
+            _resetBtn = spawn('button.btn.btn-sm.revert.pull-right|type=button', 'Discard Changes'),
 
             _footer = [
-                ['button.btn.btn-sm.btn-primary.save.pull-right|type=submit', 'Submit'],
+                ['button.btn.btn-sm.submit.save.pull-right|type=submit', 'Submit'],
                 ['span.pull-right', '&nbsp;&nbsp;&nbsp;'],
                 _resetBtn,
                 //['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
@@ -409,11 +405,13 @@ var XNAT = getObject(XNAT || {});
                     obj.refresh = opts.refresh || opts.reload || opts.url || opts.load;
                     if (!silent){
                         xmodal.loading.close(saveLoader.$modal);
-                        xmodal.message('Data saved successfully.', {
-                            action: function(){
-                                loadData($form, obj);
-                            }
-                        });
+                        XNAT.ui.banner.top(2000, 'Data saved successfully.', 'success');
+                        loadData($form, obj);
+                        // xmodal.message('Data saved successfully.', {
+                        //     action: function(){
+                        //         loadData($form, obj);
+                        //     }
+                        // });
                     }
                 }
             };
@@ -466,7 +464,7 @@ var XNAT = getObject(XNAT || {});
 
             resetBtn  = spawn('button', {
                 type: 'button',
-                classes: 'btn btn-sm btn-default revert pull-right',
+                classes: 'btn revert pull-right',
                 html: 'Discard Changes',
                 onclick: function(e){
                     e.preventDefault();
@@ -479,7 +477,7 @@ var XNAT = getObject(XNAT || {});
 
             defaults = spawn('button', {
                 type: 'button',
-                classes: 'btn btn-sm btn-link defaults pull-left',
+                classes: 'btn btn-link defaults pull-left',
                 html: 'Default Settings'
             }),
 

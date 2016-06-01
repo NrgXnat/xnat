@@ -300,7 +300,7 @@ if (typeof jQuery == 'undefined') {
             if ( $open.length ) {
                 $open.removeClass('top');
                 //xmodal.topZ = $modal.css('z-index')+10;
-                $(this).css('z-index',++xmodal.topZ).addClass('top');
+                $(this).not('.static').css('z-index',++xmodal.topZ).addClass('top');
             }
         });
 

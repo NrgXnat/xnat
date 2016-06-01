@@ -2,17 +2,10 @@ siteSetup:
     kind: app.siteSetup.form
     name: siteSetup
     label: XNAT Initial Setup
-#    method: GET
-#    action: /setup?init=true
-#    callback: XNAT.app.setupComplete
-#    contentType: json
-#    element:
-#        id: site-setup
-#    load:
-#        lookup: XNAT.data.siteConfig
-#        refresh: /xapi/siteConfig
     contents:
 
+        # =========================
+        # HEADER MESSAGE
         setupMessage:
             tag: div.message
             element:
@@ -22,8 +15,8 @@ siteSetup:
                     The settings below need to be configured before this XNAT system
                     can be used. Please set the properties below and submit the form to continue.
 
-        # ====================
-        # PANEL
+        # =========================
+        # SITE INFORMATION
         siteInfo:
             kind: panel.form
             name: siteInfo
@@ -32,7 +25,7 @@ siteSetup:
             method: POST
             action: /xapi/siteConfig/batch
             contentType: json
-            load: ?? XNAT.data.siteConfig
+            load: XNAT.data.siteConfig
             refresh: /xapi/siteConfig
             contents:
 
@@ -64,14 +57,41 @@ siteSetup:
                 adminEmail:
                     kind: panel.input.email
                     name: adminEmail
+                    id: site-admin-email
                     label: Administrator Email Address
                     value: ''
                     placeholder: admin@localhost
                     description: Email address for site administrator.
                     validation: required email
 
-        # ====================
-        # PANEL
+# this is buggy - disabling for now
+#                notificationRecipients:
+#                    type: panel.form
+#                    classes: hidden
+#                    header: false
+#                    footer: false
+#                    method: POST
+#                    action: /xapi/notifications/batchMail
+#                    contentType: json
+#                    load: /xapi/notifications
+#                    contents:
+#                        adminEmail:
+#                            tag: input.disabled | disabled, type=hidden, data-value-from=#site-admin-email, name=adminEmail
+#                            value: !? $('#site-admin-email').val()
+#                        # copy adminEmail value to these properties:
+#                        help:
+#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.helpContactInfo
+#                        errorMessages:
+#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.emailRecipientErrorMessages
+#                        issueReports:
+#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.emailRecipientIssueReports
+#                        newUserAlert:
+#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.emailRecipientNewUserAlert
+#                        update:
+#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.emailRecipientUpdate
+
+        # =========================
+        # DATA STORAGE
         dataStorage:
             kind: panel.form
             name: dataStorage
@@ -80,7 +100,7 @@ siteSetup:
             method: POST
             action: /xapi/siteConfig/batch
             contentType: json
-            load: ?? XNAT.data.siteConfig
+            load: XNAT.data.siteConfig
             refresh: /xapi/siteConfig
             contents:
 
@@ -88,7 +108,7 @@ siteSetup:
                     kind: panel.input.text
                     name: archivePath
                     label: Archive Location
-                    size: 50
+                    size: 35
                     value: ''
                     validation: required path
 
@@ -96,7 +116,7 @@ siteSetup:
                     kind: panel.input.text
                     name: prearchivePath
                     label: Pre-archive Location
-                    size: 50
+                    size: 35
                     value: ''
                     validation: required path
 
@@ -104,7 +124,7 @@ siteSetup:
                     kind: panel.input.text
                     name: cachePath
                     label: Cache Location
-                    size: 50
+                    size: 35
                     value: ''
                     validation: required path
 
@@ -112,7 +132,7 @@ siteSetup:
                     kind: panel.input.text
                     name: buildPath
                     label: Build Location
-                    size: 50
+                    size: 35
                     value: ''
                     validation: required path
 
@@ -120,7 +140,7 @@ siteSetup:
                     kind: panel.input.text
                     name: ftpPath
                     label: FTP Location
-                    size: 50
+                    size: 35
                     value: ''
                     validation: required path
 
@@ -128,12 +148,12 @@ siteSetup:
                     kind: panel.input.text
                     name: pipelinePath
                     label: Pipeline Installation Location
-                    size: 50
+                    size: 35
                     value: ''
                     validation: required path
 
-        # ====================
-        # PANEL
+        # =========================
+        # SMTP SERVER SETTINGS
         smtpServer:
             kind: panel.form
             name: smtpServer
@@ -142,16 +162,13 @@ siteSetup:
             method: POST
             action: /xapi/notifications/batchMail
             contentType: json
-#            load: ?? XNAT.data.notifications
-            refresh: /xapi/notifications/
+            load: /xapi/notifications
             contents:
 
                 host:
                     kind: panel.input.text
                     name: host
                     label: Host
-                    value: ?? XNAT:data:notifications:host
-#                    value: ""
                     placeholder: localhost
                     validation: required
 
@@ -159,8 +176,6 @@ siteSetup:
                     kind: panel.input.number
                     name: port
                     label: Port
-                    value: ?? XNAT:data:notifications:port
-#                    value: ""
                     placeholder: 25
                     validation: required number
 
@@ -168,22 +183,16 @@ siteSetup:
                     kind: panel.input.text
                     name: username
                     label: Username
-                    value: ?? XNAT:data:notifications:username
-#                    value: ""
 
                 password:
                     kind: panel.input.password
                     name: password
                     label: Password
-                    value: ?? XNAT:data:notifications:password
-#                    value: ""
 
                 protocol:
                     kind: panel.input.text
                     name: protocol
                     label: Protocol
-                    value: ?? XNAT:data:notifications:protocol
-#                    value: ""
 
                 mailServerProperties:
                     kind: panel.subhead
@@ -193,20 +202,14 @@ siteSetup:
                     kind: panel.input.checkbox
                     name: mail.smtp.auth
                     label: SMTP Auth?
-                    value: ?? XNAT:data:notifications:mail.smtp.auth
-#                    value: ""
 
                 smtpStartTls:
                     kind: panel.input.checkbox
                     name: mail.smtp.starttls.enable
                     label: Start TLS?
-                    value: ?? XNAT:data:notifications:mail.smtp.starttls.enable
-#                    value: ""
 
                 smtpSSLTrust:
                     kind: panel.input.text
                     name: mail.smtp.ssl.trust
                     label: SSL Trust
-#                    value: ?? XNAT:data:siteConfig:smtpServer:mail.smtp.ssl.trust
-                    value: ""
 

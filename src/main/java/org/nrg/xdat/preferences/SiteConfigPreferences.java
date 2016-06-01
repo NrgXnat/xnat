@@ -500,18 +500,18 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", property = "checksums.property.changed.listener")
-    public String getChecksumsPropertyChangedListener() {
-        return getValue("checksums.property.changed.listener");
-    }
-
-    public void setChecksumsPropertyChangedListener(final String checksumsPropertyChangedListener) {
-        try {
-            set(checksumsPropertyChangedListener, "checksums.property.changed.listener");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'checksums.property.changed.listener': something is very wrong here.", e);
-        }
-    }
+//    @NrgPreference(defaultValue = "org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", property = "checksums.property.changed.listener")
+//    public String getChecksumsPropertyChangedListener() {
+//        return getValue("checksums.property.changed.listener");
+//    }
+//
+//    public void setChecksumsPropertyChangedListener(final String checksumsPropertyChangedListener) {
+//        try {
+//            set(checksumsPropertyChangedListener, "checksums.property.changed.listener");
+//        } catch (InvalidPreferenceName e) {
+//            _log.error("Invalid preference name 'checksums.property.changed.listener': something is very wrong here.", e);
+//        }
+//    }
 
     @NrgPreference(defaultValue = "true")
     public boolean isEnableDicomReceiver() {

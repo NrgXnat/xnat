@@ -15,6 +15,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.nrg.action.ActionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
@@ -22,7 +23,6 @@ import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.FileWriterWrapper;
 import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.nrg.xnat.utils.UserUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -46,7 +46,6 @@ public class UserCacheResource extends SecureResource {
 
 	static Logger logger = Logger.getLogger(UserCacheResource.class);
 
-	static final String[] zipExtensions={".zip",".jar",".rar",".ear",".gar",".xar"};
 	private enum CompressionMethod { ZIP, TAR, GZ, NONE }
 	
 	public UserCacheResource(Context context, Request request, Response response) {
@@ -543,7 +542,7 @@ public class UserCacheResource extends SecureResource {
         String file_extension = null;
         if (fileName.indexOf(".")!=-1) {
         	file_extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
-        	if (Arrays.asList(zipExtensions).contains(file_extension)) {
+        	if (Arrays.asList(XDAT.getSiteConfigPreferences().getZipExtensionsAsArray()).contains(file_extension)) {
 	        	return CompressionMethod.ZIP;
 	        } else if (file_extension.equalsIgnoreCase(".tar")) {
 	        	return CompressionMethod.TAR;

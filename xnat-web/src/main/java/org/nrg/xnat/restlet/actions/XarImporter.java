@@ -10,28 +10,11 @@
  */
 package org.nrg.xnat.restlet.actions;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.zip.ZipOutputStream;
-
 import org.apache.log4j.Logger;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatImageassessordata;
-import org.nrg.xdat.om.XnatImagescandata;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatReconstructedimagedata;
-import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.*;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
@@ -52,10 +35,14 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.zip.ZipOutputStream;
+
 @ImporterHandler(handler = ImporterHandlerA.XAR_IMPORTER)
 public class XarImporter extends ImporterHandlerA implements Callable<List<String>> {
-
-	private static final String[] zipExtensions={".zip",".jar",".rar",".ear",".gar",".xar"};
 
 	private static final Logger logger = Logger.getLogger(XarImporter.class);
 
@@ -399,7 +386,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
         String file_extension = null;
         if (fileName!=null && fileName.indexOf(".")!=-1) {
         	file_extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
-        	if (Arrays.asList(zipExtensions).contains(file_extension)) {
+        	if (Arrays.asList(XDAT.getSiteConfigPreferences().getZipExtensionsAsArray()).contains(file_extension)) {
         		return new ZipUtils();
 	        } else if (file_extension.equalsIgnoreCase(".tar")) {
         		return new TarUtils();

@@ -76,19 +76,6 @@ public class FileList extends XNATCatalogTemplate {
     private String[] notifyList = new String[0];
     private XnatAbstractresource resource = null;
     private final boolean listContents = isQueryVariableTrueHelper(this.getQueryVariable("listContents"));
-    private static String[] zipExtensions = null;
-
-    static {
-        final String defaultExtensions = "zip,jar,rar,ear,gar,mrb";
-        try {
-            // Try to get the files.zip_extensions configuration property.  Use default values if it isn't set.
-            zipExtensions = XDAT.getSiteConfigurationProperty("files.zip_extensions", defaultExtensions).split(",");
-        } catch (Throwable t) {
-            // Something went wrong with the above call to the config service, so set zipExtensions to the default values.
-            logger.error("Error occurred while initializing FileList service. Unable to read files.zip_extensions property.", t);
-            zipExtensions = defaultExtensions.split(",");
-        }
-    }
 
     public FileList(Context context, Request request, Response response) {
         super(context, request, response, isQueryVariableTrue("all", request));
@@ -949,7 +936,7 @@ public class FileList extends XNATCatalogTemplate {
                 } else {
                     String lowercase = filepath.toLowerCase();
 
-                    for (String s : zipExtensions) {
+                    for (String s : XDAT.getSiteConfigPreferences().getZipExtensionsAsArray()) {
                         s = "." + s;
                         if (lowercase.contains(s + "!") || lowercase.contains(s + "/")) {
                             zipEntry = filepath.substring(lowercase.indexOf(s) + s.length());
@@ -1133,7 +1120,7 @@ public class FileList extends XNATCatalogTemplate {
      * @return - true / false is the file a zip file?
      */
     private boolean isFileZipArchive(String f) {
-        for (String s : zipExtensions) {
+        for (String s : XDAT.getSiteConfigPreferences().getZipExtensionsAsArray()) {
             if (f.contains(s)) {
                 return true;
             }

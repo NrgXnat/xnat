@@ -971,6 +971,9 @@ seriesImportFilter:
                 blacklist:
                     label: Blacklist
                     value: blacklist
+                modalityMap:
+                    label: Modality Map
+                    value: modalityMap
         sitewideSeriesImportFilter:
             kind: panel.textarea
             id: sitewideSeriesImportFilter

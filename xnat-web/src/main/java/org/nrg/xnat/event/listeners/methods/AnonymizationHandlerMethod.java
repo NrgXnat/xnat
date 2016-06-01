@@ -29,18 +29,18 @@ public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHand
     @Override
     public void handlePreferences(final Map<String, String> values) {
         if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateInactivityBeforeLockout();
+            updateAnon();
         }
     }
 
     @Override
     public void handlePreference(final String preference, final String value) {
         if(PREFERENCES.contains(preference)){
-            updateInactivityBeforeLockout();
+            updateAnon();
         }
     }
 
-	private void updateInactivityBeforeLockout(){
+	private void updateAnon(){
         try {
             if (XDAT.getSiteConfigPreferences().getEnableSitewideAnonymizationScript()) {
                 AnonUtils.getService().enableSiteWide(getAdminUser().getLogin(), DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null));

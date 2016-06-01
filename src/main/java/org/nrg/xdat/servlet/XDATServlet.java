@@ -19,6 +19,7 @@ import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.generators.SQLCreateGenerator;
@@ -68,9 +69,9 @@ public class XDATServlet extends HttpServlet {
 
             //store some  more convenience paths
             XDAT.setScreenTemplatesFolder(getWebAppPath("templates", "screens"));
-            XDAT.addScreenTemplatesFolder(getWebAppPath("templates", "screens"));
-            XDAT.addScreenTemplatesFolder(getWebAppPath("xnat-templates", "screens"));
-            XDAT.addScreenTemplatesFolder(getWebAppPath("xdat-templates", "screens"));
+            for (final String path : CustomClasspathResourceLoader.paths) {
+                XDAT.addScreenTemplatesFolder(path, new File(getWebAppPath(path, "screens")));
+            }
 
             //call the logic to check if the database is up to date.
             if (updateDatabase(getWebAppPath("resources", "default-sql"))) {

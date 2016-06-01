@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.velocity.loaders;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.ExtendedProperties;
 import org.apache.commons.lang3.StringUtils;
@@ -48,7 +49,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
         }
     }
 
-    private static final List<String> paths = Arrays.asList("templates", "module-templates", "xnat-templates", "xdat-templates", "base-templates");
+    public static final List<String> paths = ImmutableList.of("templates", "module-templates", "xnat-templates", "xdat-templates", "base-templates");
     private static Map<String, String> templatePaths = Collections.synchronizedMap(new HashMap<String, String>());
 
     /**
@@ -197,16 +198,31 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
      * @return The URLs of all Velocity templates located in the specified directory.
      */
     public static List<URL> findVMsByClasspathDirectory(String dir) {
+        final List<URL> matches = Lists.newArrayList();
+        for (String folder : paths) {
+            matches.addAll(findVMsByClasspathDirectory(folder, dir));
+        }
+        return matches;
+    }
+
+    /**
+     * Identifies all of the VM files in the specified directory
+     * Adds META-INF/resources to the package.
+     * Looks in templates, xnat-templates, xdat-templates, and base-templates
+     *
+     * @param folder    The root directory to search.
+     * @param dir       The subdirectory to search.
+     * @return The URLs of all Velocity templates located in the specified directory.
+     */
+    public static List<URL> findVMsByClasspathDirectory(final String folder, String dir) {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         assert loader != null;
 
         final List<URL> matches = Lists.newArrayList();
         try {
-            for (String folder : paths) {
-                final org.springframework.core.io.Resource[] resources = new PathMatchingResourcePatternResolver((ClassLoader) null).getResources("classpath*:" + safeJoin("/", META_INF_RESOURCES, folder, dir, "*.vm"));
-                for (org.springframework.core.io.Resource r : resources) {
-                    matches.add(r.getURL());
-                }
+            final org.springframework.core.io.Resource[] resources = new PathMatchingResourcePatternResolver((ClassLoader) null).getResources("classpath*:" + safeJoin("/", META_INF_RESOURCES, folder, dir, "*.vm"));
+            for (org.springframework.core.io.Resource r : resources) {
+                matches.add(r.getURL());
             }
         } catch (IOException e) {
             //not sure if we care about this, I don't think so

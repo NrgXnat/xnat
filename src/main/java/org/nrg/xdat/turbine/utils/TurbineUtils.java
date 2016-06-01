@@ -1095,27 +1095,48 @@ public class TurbineUtils {
                 //need to build the list of props.
                 screens = new ArrayList<>();
                 List<String> exists = new ArrayList<>();
-                List<File> screensFolders = XDAT.getScreenTemplateFolders();
-                for (File screensFolder : screensFolders) {
-                    if (screensFolder.exists()) {
-                        File subFile = new File(screensFolder, subFolder);
-                        if (subFile.exists()) {
-                            File[] files = subFile.listFiles(new FilenameFilter() {
-                                @Override
-                                public boolean accept(File folder, String name) {
-                                    return name.endsWith(".vm");
-                                }
-                            });
 
-                            if (files != null) {
-                                for (File f : files) {
-                                    String path = Paths.get(subFolder, f.getName()).toString();
-                                    if (!exists.contains(path)) {
-                                        try {
-                                            SecureScreen.addProps(f, screens, _defaultScreens, path);
-                                            exists.add(path);
-                                        } catch (FileNotFoundException e) {
-                                            //this shouldn't happen
+                for (final String path : CustomClasspathResourceLoader.paths) {
+                    List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory(path, Paths.get("screens", subFolder).toString());
+                    if (uris.size() > 0) {
+                        final URL url = uris.get(0); // TODO: Is this right? Should be only one, I think.
+                        String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
+                        String resolved = Paths.get(subFolder, fileName).toString();
+                        if (!exists.contains(resolved)) {
+                            try {
+                                // TODO: It looks like the critical test is whether the input stream is null.
+                                SecureScreen.addProps(fileName, CustomClasspathResourceLoader.getInputStream("screens/" + resolved), screens, _defaultScreens, resolved);
+                                exists.add(resolved);
+                            } catch (FileNotFoundException e) {
+                                //this shouldn't happen
+                            } catch (ResourceNotFoundException e) {
+                                logger.error("", e);
+                            }
+                        }
+                    } else {
+                        // TODO: If you find the template in the previous block, cache and return that.
+                        // TODO: If not, proceed to try the file.
+                        final File screensFolder = XDAT.getScreenTemplateFolder(path);
+                        if (screensFolder.exists()) {
+                            File subFile = new File(screensFolder, subFolder);
+                            if (subFile.exists()) {
+                                File[] files = subFile.listFiles(new FilenameFilter() {
+                                    @Override
+                                    public boolean accept(File folder, String name) {
+                                        return name.endsWith(".vm");
+                                    }
+                                });
+
+                                if (files != null) {
+                                    for (File f : files) {
+                                        String subpath = Paths.get(subFolder, f.getName()).toString();
+                                        if (!exists.contains(subpath)) {
+                                            try {
+                                                SecureScreen.addProps(f, screens, _defaultScreens, subpath);
+                                                exists.add(subpath);
+                                            } catch (FileNotFoundException e) {
+                                                //this shouldn't happen
+                                            }
                                         }
                                     }
                                 }
@@ -1124,25 +1145,7 @@ public class TurbineUtils {
                     }
                 }
 
-                //add paths for files on the classpath
-                List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory(Paths.get("screens", subFolder).toString());
-                for (URL url : uris) {
-                    String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
-                    String path = CustomClasspathResourceLoader.safeJoin("/", subFolder, fileName);
-                    if (!exists.contains(path)) {
-                        try {
-                            SecureScreen.addProps(fileName, CustomClasspathResourceLoader.getInputStream("screens/" + path), screens, _defaultScreens, path);
-                            exists.add(path);
-                        } catch (FileNotFoundException e) {
-                            //this shouldn't happen
-                        } catch (ResourceNotFoundException e) {
-                            logger.error("", e);
-                        }
-                    }
-                }
-
                 Collections.sort(screens, PROPERTIES_COMPARATOR);
-
                 cachedVMS.put(subFolder, screens);
             }
         }

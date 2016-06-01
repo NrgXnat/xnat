@@ -102,7 +102,7 @@ public class XDAT implements Initializable,Configurable{
 	private static String _configFilesLocation = null;
 	private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
-    private static List<File> _screenTemplatesFolders= new ArrayList<>();
+    private static Map<String, File> _screenTemplatesFolders= new HashMap<>();
 
     public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
         return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
@@ -424,12 +424,16 @@ public class XDAT implements Initializable,Configurable{
 	    return _notificationService;
 	}
 
-    public static void addScreenTemplatesFolder(String screenTemplatesFolder) {
-        _screenTemplatesFolders.add(new File(screenTemplatesFolder));
+    public static void addScreenTemplatesFolder(final String path, final File screenTemplatesFolder) {
+        _screenTemplatesFolders.put(path, screenTemplatesFolder);
     }
 
     public static List<File> getScreenTemplateFolders(){
-    	return _screenTemplatesFolders;
+    	return new ArrayList<>(_screenTemplatesFolders.values());
+    }
+
+    public static File getScreenTemplateFolder(final String folder) {
+    	return _screenTemplatesFolders.get(folder);
     }
 
     /**

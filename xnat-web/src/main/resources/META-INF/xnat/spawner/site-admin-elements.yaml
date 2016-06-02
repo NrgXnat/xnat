@@ -220,9 +220,9 @@ siteInfo:
         ${siteUrl}
         ${siteDescriptionType}
         ${siteLoginLanding}
-        ${siteLandingLayout}
+#        ${siteLandingLayout}
         ${siteHome}
-        ${siteHomeLayout}
+#        ${siteHomeLayout}
 
 adminInfo:
     kind: panel.form

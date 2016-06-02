@@ -994,24 +994,24 @@ sessionUploadMethod:
     load: XNAT.data.siteConfig
     refresh: /xapi/siteConfig
     contents:
-        selectUploadMethod:
-            kind: panel.select.single
-            id: selectUploadMethod
-            name: selectUploadMethod
-            label: "Session Upload Method"
-#            options:                             # don't know where to populate this from
-#                http:
-#                    label:
-#                    value:
-#                https:
-#                    label:
-#                    value:
-        showApplet:
-            kind: panel.input.checkbox
-            id: showApplet
-            name: showApplet
-            label: Display Applet Link
-            description: "Enable to display link to Upload Applet on various XNAT pages."
+#        selectUploadMethod:
+#            kind: panel.select.single
+#            id: selectUploadMethod
+#            name: selectUploadMethod
+#            label: "Session Upload Method"
+##            options:                             # don't know where to populate this from
+##                http:
+##                    label:
+##                    value:
+##                https:
+##                    label:
+##                    value:
+#        showApplet:
+#            kind: panel.input.checkbox
+#            id: showApplet
+#            name: showApplet
+#            label: Display Applet Link
+#            description: "Enable to display link to Upload Applet on various XNAT pages."
         enableProjectAppletScript:
             kind: panel.input.checkbox
             id: enableProjectAppletScript
@@ -1267,15 +1267,15 @@ adminPage:
             group: xnatSetup
             contents:
                 ${themeManagement}
-        authenticationMethods:
-            kind: tab
-            name: authenticationMethods
-            label: Authentication Methods
-            group: manageAccess
-            contents:
-                ${authenticationMethods}
-                ${genericAuthenticationProvider}
-                ${ldapAuthentication}
+#        authenticationMethods:
+#            kind: tab
+#            name: authenticationMethods
+#            label: Authentication Methods
+#            group: manageAccess
+#            contents:
+#                ${authenticationMethods}
+#                ${genericAuthenticationProvider}
+#                ${ldapAuthentication}
 #        users:            # enable when users table can be re-implemented in spawner, until then use old users config?
 #            kind: tab
 #            name: users
@@ -1297,13 +1297,13 @@ adminPage:
             group: manageAccess
             contents:
                 ${registrationOptions}
-        manageDataTypes:
-            kind: tab
-            name: manageDataTypes
-            label: Manage Data Types
-            group: manageData
-            contents:
-                ${manageDataTypes}
+#        manageDataTypes:
+#            kind: tab
+#            name: manageDataTypes
+#            label: Manage Data Types
+#            group: manageData
+#            contents:
+#                ${manageDataTypes}
         sessionUploadImportAnonymization:
             kind: tab
             name: sessionUploadImportAnonymization

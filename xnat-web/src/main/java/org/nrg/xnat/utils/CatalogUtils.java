@@ -88,7 +88,7 @@ public class CatalogUtils {
      * @param checksumConfig The value to set for the cached checksum configuration setting.
      * @return The previous value for the cached checksum configuration setting.
      */
-    static Boolean setChecksumConfiguration(boolean checksumConfig) {
+    public static Boolean setChecksumConfiguration(boolean checksumConfig) {
         Boolean hold = _checksumConfig;
         _checksumConfig = checksumConfig;
         return hold;

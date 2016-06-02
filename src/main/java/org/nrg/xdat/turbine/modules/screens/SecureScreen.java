@@ -13,6 +13,7 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import com.google.common.base.Joiner;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
@@ -27,6 +28,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.TableSearch;
@@ -41,6 +43,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.*;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -347,23 +350,41 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
     protected List<Properties> findTabs(String subfolder) throws FileNotFoundException {
         List<Properties> tabs = new ArrayList<>();
-        File tabsFolder = XDAT.getScreenTemplatesSubfolder(subfolder);
-        if (tabsFolder != null && tabsFolder.exists()) {
-            File[] files = tabsFolder.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File folder, String name) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Testing the name: " + name + " in folder: " + folder.getAbsolutePath());
+        File tabsFolder;
+        String forwardSlashSubFolder = subfolder;
+        if(forwardSlashSubFolder!=null){
+            forwardSlashSubFolder = subfolder.replace("\\", "/");
+        }
+        List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory("screens" + "/" + forwardSlashSubFolder);
+        if (uris.size() > 0) {
+            final URL url = uris.get(0);
+            String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
+            String resolved = CustomClasspathResourceLoader.safeJoin("/", forwardSlashSubFolder, fileName);
+            try {
+                //addProps(cpTabFile, tabs, _defaultTabs, forwardSlashSubFolder + "/" + cpTabFile.getName());
+                addProps(fileName, CustomClasspathResourceLoader.getInputStream("screens/" + resolved), tabs, _defaultTabs, resolved);
+            } catch (IOException e) {
+                logger.error("", e);
+            }
+        } else {
+            tabsFolder = XDAT.getScreenTemplatesSubfolder(subfolder);
+            if (tabsFolder != null && tabsFolder.exists()) {
+                File[] files = tabsFolder.listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File folder, String name) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Testing the name: " + name + " in folder: " + folder.getAbsolutePath());
+                        }
+                        return name.endsWith(".vm");
                     }
-                    return name.endsWith(".vm");
-                }
-            });
+                });
 
-            for (File file : files) {
-                try {
-                    addProps(file, tabs, _defaultTabs, subfolder + "/" + file.getName());
-                } catch (IOException e) {
-                    logger.error("", e);
+                for (File file : files) {
+                    try {
+                        addProps(file, tabs, _defaultTabs, subfolder + "/" + file.getName());
+                    } catch (IOException e) {
+                        logger.error("", e);
+                    }
                 }
             }
         }

@@ -1097,11 +1097,15 @@ public class TurbineUtils {
                 List<String> exists = new ArrayList<>();
 
                 for (final String path : CustomClasspathResourceLoader.paths) {
-                    List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory(path, Paths.get("screens", subFolder).toString());
+                    String forwardSlashSubFolder = subFolder;
+                    if(forwardSlashSubFolder!=null){
+                        forwardSlashSubFolder = subFolder.replace("\\", "/");
+                    }
+                    List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory("screens" + "/" + forwardSlashSubFolder);
                     if (uris.size() > 0) {
                         final URL url = uris.get(0); // TODO: Is this right? Should be only one, I think.
                         String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
-                        String resolved = Paths.get(subFolder, fileName).toString();
+                        String resolved = CustomClasspathResourceLoader.safeJoin("/", forwardSlashSubFolder, fileName);
                         if (!exists.contains(resolved)) {
                             try {
                                 // TODO: It looks like the critical test is whether the input stream is null.
@@ -1113,30 +1117,31 @@ public class TurbineUtils {
                                 logger.error("", e);
                             }
                         }
-                    } else {
-                        // TODO: If you find the template in the previous block, cache and return that.
-                        // TODO: If not, proceed to try the file.
-                        final File screensFolder = XDAT.getScreenTemplateFolder(path);
-                        if (screensFolder.exists()) {
-                            File subFile = new File(screensFolder, subFolder);
-                            if (subFile.exists()) {
-                                File[] files = subFile.listFiles(new FilenameFilter() {
-                                    @Override
-                                    public boolean accept(File folder, String name) {
-                                        return name.endsWith(".vm");
-                                    }
-                                });
+                    }
+                    final File screensFolder = XDAT.getScreenTemplateFolder(path);
+                    if (screensFolder.exists()) {
+                        File subFile = new File(screensFolder, subFolder);
+                        if (subFile.exists()) {
+                            File[] files = subFile.listFiles(new FilenameFilter() {
+                                @Override
+                                public boolean accept(File folder, String name) {
+                                    return name.endsWith(".vm");
+                                }
+                            });
 
-                                if (files != null) {
-                                    for (File f : files) {
-                                        String subpath = Paths.get(subFolder, f.getName()).toString();
-                                        if (!exists.contains(subpath)) {
-                                            try {
-                                                SecureScreen.addProps(f, screens, _defaultScreens, subpath);
-                                                exists.add(subpath);
-                                            } catch (FileNotFoundException e) {
-                                                //this shouldn't happen
-                                            }
+                            if (files != null) {
+                                for (File f : files) {
+                                    String subpath = Paths.get(subFolder, f.getName()).toString();
+                                    String forwardSlashSubPath = subpath;
+                                    if(forwardSlashSubPath!=null){
+                                        forwardSlashSubPath = subpath.replace("\\", "/");
+                                    }
+                                    if (!exists.contains(forwardSlashSubPath)) {  // ...so that it matches the resolved path string above and doesn't add duplicates
+                                        try {
+                                            SecureScreen.addProps(f, screens, _defaultScreens, subpath);
+                                            exists.add(forwardSlashSubPath);
+                                        } catch (FileNotFoundException e) {
+                                            //this shouldn't happen
                                         }
                                     }
                                 }

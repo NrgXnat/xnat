@@ -6,9 +6,6 @@ import org.nrg.prefs.events.AbstractPreferenceHandler;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
 import org.nrg.xdat.preferences.PreferenceEvent;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import reactor.bus.EventBus;
 
@@ -45,10 +42,6 @@ public class SiteConfigPreferenceHandler extends AbstractPreferenceHandler<Prefe
 	public void addMethod(PreferenceHandlerMethod method){
 		_methods.add(method);
 	}
-
-	@Autowired
-	@Lazy
-	private JdbcTemplate _template;
 
 	private static final Log _log = LogFactory.getLog(SiteConfigPreferenceHandler.class);
 

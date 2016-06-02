@@ -6,8 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -42,10 +40,6 @@ public class PasswordExpirationHandlerMethod extends AbstractSiteConfigPreferenc
 
     private static final Logger       _log        = LoggerFactory.getLogger(PasswordExpirationHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("passwordExpirationType", "passwordExpirationInterval", "passwordExpirationDate"));
-
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
 
     @Autowired
     @Qualifier("expiredPasswordFilter")

@@ -3,10 +3,7 @@ package org.nrg.xnat.configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
-import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
-import org.nrg.xdat.security.services.FeatureServiceI;
-import org.nrg.xdat.security.services.RoleRepositoryServiceI;
-import org.nrg.xdat.security.services.RoleServiceI;
+import org.nrg.xdat.security.services.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -41,21 +38,21 @@ public class FeaturesConfig {
     }
 
     @Bean
-    public RoleServiceI roleService() throws ClassNotFoundException, IllegalAccessException, InstantiationException, SiteConfigurationException {
+    public RoleHolder roleService() throws ClassNotFoundException, IllegalAccessException, InstantiationException, SiteConfigurationException {
         final String serviceImpl = StringUtils.defaultIfBlank(_preferences.getRoleService(), DEFAULT_ROLE_SERVICE);
         if (_log.isDebugEnabled()) {
             _log.debug("Creating role service with implementing class " + serviceImpl);
         }
-        return Class.forName(serviceImpl).asSubclass(RoleServiceI.class).newInstance();
+        return new RoleHolder(Class.forName(serviceImpl).asSubclass(RoleServiceI.class).newInstance());
     }
 
     @Bean
-    public RoleRepositoryServiceI roleRepositoryService() throws ClassNotFoundException, IllegalAccessException, InstantiationException, SiteConfigurationException {
+    public RoleRepositoryHolder roleRepositoryService() throws ClassNotFoundException, IllegalAccessException, InstantiationException, SiteConfigurationException {
         final String serviceImpl = StringUtils.defaultIfBlank(_preferences.getRoleRepositoryService(), DEFAULT_ROLE_REPO_SERVICE);
         if (_log.isDebugEnabled()) {
             _log.debug("Creating role repository service with implementing class " + serviceImpl);
         }
-        return Class.forName(serviceImpl).asSubclass(RoleRepositoryServiceI.class).newInstance();
+        return new RoleRepositoryHolder(Class.forName(serviceImpl).asSubclass(RoleRepositoryServiceI.class).newInstance());
     }
 
     private static final Logger _log = LoggerFactory.getLogger(FeaturesConfig.class);

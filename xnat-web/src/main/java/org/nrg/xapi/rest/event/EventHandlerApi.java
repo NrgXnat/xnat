@@ -6,7 +6,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import javassist.Modifier;
-
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationEventIds;
 import org.nrg.automation.event.entities.AutomationFilters;
@@ -21,7 +20,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.event.conf.EventPackages;
 import org.slf4j.Logger;
@@ -291,10 +290,13 @@ public class EventHandlerApi {
                     return HttpStatus.INTERNAL_SERVER_ERROR;
                 }
             } else {
-                return (Roles.isSiteAdmin(sessionUser)) ? null : HttpStatus.FORBIDDEN;
+                return (_roleHolder.isSiteAdmin(sessionUser)) ? null : HttpStatus.FORBIDDEN;
             }
         }
         _log.error("Error checking read status for project");
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
+
+    @Autowired
+    private RoleHolder _roleHolder;
 }

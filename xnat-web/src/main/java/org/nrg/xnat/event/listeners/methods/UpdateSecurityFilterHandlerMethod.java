@@ -5,9 +5,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xnat.security.FilterSecurityInterceptorBeanPostProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.stereotype.Component;
 
@@ -46,10 +43,6 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPrefere
 
     private static final Logger       _log        = LoggerFactory.getLogger(UpdateSecurityFilterHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("requireLogin"));
-
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
 
     @Inject
     private FilterSecurityInterceptor _interceptor;

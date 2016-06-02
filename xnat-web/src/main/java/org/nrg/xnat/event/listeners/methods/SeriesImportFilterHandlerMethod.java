@@ -3,14 +3,13 @@ package org.nrg.xnat.event.listeners.methods;
 import com.google.common.collect.ImmutableList;
 import org.nrg.dicomtools.filters.*;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -65,7 +64,7 @@ public class SeriesImportFilterHandlerMethod extends AbstractSiteConfigPreferenc
     private UserI getAdminUser() throws Exception {
         for (String login : Users.getAllLogins()) {
             final UserI user = Users.getUser(login);
-            if (Roles.isSiteAdmin(user)) {
+            if (_roleHolder.isSiteAdmin(user)) {
                 return user;
             }
         }
@@ -87,6 +86,5 @@ public class SeriesImportFilterHandlerMethod extends AbstractSiteConfigPreferenc
     }
 
     @Autowired
-    @Lazy
-    private JdbcTemplate _template;
+    private RoleHolder _roleHolder;
 }

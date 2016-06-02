@@ -17,9 +17,9 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xft.security.UserI;
+import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.services.ThemeService;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -165,8 +168,11 @@ public class ThemeApi {
     private HttpStatus isPermitted() {
         UserI sessionUser = getSessionUser();
         if ((sessionUser instanceof XDATUser)) {
-            return Roles.isSiteAdmin(sessionUser) ? null : HttpStatus.FORBIDDEN;
+            return _roleHolder.isSiteAdmin(sessionUser) ? null : HttpStatus.FORBIDDEN;
         }
         return null;
     }
+
+    @Autowired
+    private RoleHolder _roleHolder;
 }

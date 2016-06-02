@@ -2,16 +2,14 @@ package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -65,13 +63,12 @@ public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHand
     private UserI getAdminUser() throws Exception {
         for (String login : Users.getAllLogins()) {
             final UserI user = Users.getUser(login);
-            if (Roles.isSiteAdmin(user)) {
+            if (_roleHolder.isSiteAdmin(user)) {
                 return user;
             }
         }
         return null;
     }
     @Autowired
-    @Lazy
-    private JdbcTemplate _template;
+    private RoleHolder _roleHolder;
 }

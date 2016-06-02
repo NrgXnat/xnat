@@ -10,8 +10,8 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.AliasTokenService;
@@ -264,7 +264,7 @@ public class UsersApi extends AbstractXnatRestApi {
             if (user == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-            Collection<String> roles = Roles.getRoles(user);
+            Collection<String> roles = _roleHolder.getRoles(user);
             return new ResponseEntity<>(roles, HttpStatus.OK);
         } catch (UserInitException e) {
             _log.error("An error occurred initializing the user " + id, e);
@@ -288,7 +288,7 @@ public class UsersApi extends AbstractXnatRestApi {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             try {
-                Roles.addRole(getSessionUser(), user, role);
+                _roleHolder.addRole(getSessionUser(), user, role);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
                 _log.error("Error occurred adding role " + role + " to user " + user.getLogin() + ".");
@@ -317,7 +317,7 @@ public class UsersApi extends AbstractXnatRestApi {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             try {
-                Roles.deleteRole(getSessionUser(), user, role);
+                _roleHolder.deleteRole(getSessionUser(), user, role);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
                 _log.error("Error occurred removing role " + role + " from user " + user.getLogin() + ".");
@@ -428,4 +428,7 @@ public class UsersApi extends AbstractXnatRestApi {
     @Autowired
     @Lazy
     private SiteConfigPreferences _preferences;
+
+    @Autowired
+    private RoleHolder _roleHolder;
 }

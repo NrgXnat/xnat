@@ -1,15 +1,13 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -50,7 +48,7 @@ public class PathHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod
         for (String login : Users.getAllLogins()) {
             try {
                 final UserI user = Users.getUser(login);
-                if (Roles.isSiteAdmin(user)) {
+                if (_roleHolder.isSiteAdmin(user)) {
                     return user;
                 }
             }
@@ -65,6 +63,5 @@ public class PathHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("archivePath","prearchivePath","cachePath","ftpPath","buildPath","pipelinePath"));
 
     @Autowired
-    @Lazy
-    private JdbcTemplate _template;
+    private RoleHolder _roleHolder;
 }

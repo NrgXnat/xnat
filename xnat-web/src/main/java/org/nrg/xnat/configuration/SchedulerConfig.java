@@ -50,6 +50,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
         _eventService.triggerEvent(new PreferenceEvent("security.channel", String.valueOf(XDAT.getSiteConfigPreferences().getSecurityChannel())));
         _eventService.triggerEvent(new PreferenceEvent("passwordExpirationType", String.valueOf(XDAT.getSiteConfigPreferences().getPasswordExpirationType())));
         _eventService.triggerEvent(new PreferenceEvent("archivePath", String.valueOf(XDAT.getSiteConfigPreferences().getArchivePath())));
+        _eventService.triggerEvent(new PreferenceEvent("security.services.role.default", String.valueOf(XDAT.getSiteConfigPreferences().getRoleService())));
         for (final TriggerTask triggerTask : _triggerTasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }

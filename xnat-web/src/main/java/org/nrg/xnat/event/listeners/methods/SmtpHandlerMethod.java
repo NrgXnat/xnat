@@ -6,8 +6,6 @@ import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Component;
 
@@ -64,10 +62,6 @@ public class SmtpHandlerMethod extends AbstractNotificationsPreferenceHandlerMet
 
     private static final Logger       _log        = LoggerFactory.getLogger(SmtpHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("smtp.enabled", "host","port", "username","password", "protocol","smtp.enabled", "mail.smtp.auth","mail.smtp.starttls.enable", "mail.smtp.ssl.trust"));
-
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
 
     @Inject
     private JavaMailSenderImpl mailSender;

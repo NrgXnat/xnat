@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
@@ -56,10 +54,6 @@ public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPref
 
     private static final Logger       _log        = LoggerFactory.getLogger(InactivityBeforeLockoutHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("inactivityBeforeLockout", "inactivityBeforeLockoutSchedule"));
-
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
 
     private              ArrayList<ScheduledFuture> scheduledInactivityBeforeLockout = new ArrayList<>();
 

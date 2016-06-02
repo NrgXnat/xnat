@@ -6,9 +6,6 @@ import org.nrg.notify.renderers.NrgMailChannelRenderer;
 import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -50,10 +47,6 @@ public class MailHandlerMethod extends AbstractSiteConfigNotificationsPreference
 
     private static final Logger       _log        = LoggerFactory.getLogger(MailHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("emailPrefix", "adminEmail"));
-
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
 
     @Inject
     private ChannelRenderer _mailRenderer;

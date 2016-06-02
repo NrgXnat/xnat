@@ -132,6 +132,12 @@ public class ProjectResource extends ItemResource {
                 if (project == null || Permissions.canEdit(user, project)) {
                     XFTItem item = loadItem("xnat:projectData", true);
 
+                    //Hacky fix. Something changed so that loadItem no longer produces null when handlePut expects it to.
+                    // This fix nulls the item to allow the project item to be stored in the item object.
+                    if(item!=null && item.toString().equals("<XFTItem name=\"xnat:projectData\"/>\r\n")){
+                        item=null;
+                    }
+
                     if (item == null) {
                         String xsiType = getQueryVariable("xsiType");
                         if (xsiType != null) {

@@ -422,31 +422,31 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "selectUploadMethod")
-    public String getSelectUploadMethod() {
-        return getValue("selectUploadMethod");
-    }
-
-    public void setSelectUploadMethod(final String selectUploadMethod) {
-        try {
-            set(selectUploadMethod, "selectUploadMethod");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'selectUploadMethod': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "false")
-    public boolean getShowApplet() {
-        return getBooleanValue("showApplet");
-    }
-
-    public void setShowApplet(final boolean showApplet) {
-        try {
-            setBooleanValue(showApplet, "showApplet");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'showApplet': something is very wrong here.", e);
-        }
-    }
+//    @NrgPreference(defaultValue = "", property = "selectUploadMethod")
+//    public String getSelectUploadMethod() {
+//        return getValue("selectUploadMethod");
+//    }
+//
+//    public void setSelectUploadMethod(final String selectUploadMethod) {
+//        try {
+//            set(selectUploadMethod, "selectUploadMethod");
+//        } catch (InvalidPreferenceName e) {
+//            _log.error("Invalid preference name 'selectUploadMethod': something is very wrong here.", e);
+//        }
+//    }
+//
+//    @NrgPreference(defaultValue = "false")
+//    public boolean getShowApplet() {
+//        return getBooleanValue("showApplet");
+//    }
+//
+//    public void setShowApplet(final boolean showApplet) {
+//        try {
+//            setBooleanValue(showApplet, "showApplet");
+//        } catch (InvalidPreferenceName e) {
+//            _log.error("Invalid preference name 'showApplet': something is very wrong here.", e);
+//        }
+//    }
 
     @NrgPreference(defaultValue = "false")
     public boolean getEnableProjectAppletScript() {
@@ -500,18 +500,18 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-//    @NrgPreference(defaultValue = "org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", property = "checksums.property.changed.listener")
-//    public String getChecksumsPropertyChangedListener() {
-//        return getValue("checksums.property.changed.listener");
-//    }
-//
-//    public void setChecksumsPropertyChangedListener(final String checksumsPropertyChangedListener) {
-//        try {
-//            set(checksumsPropertyChangedListener, "checksums.property.changed.listener");
-//        } catch (InvalidPreferenceName e) {
-//            _log.error("Invalid preference name 'checksums.property.changed.listener': something is very wrong here.", e);
-//        }
-//    }
+    @NrgPreference(defaultValue = "org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", property = "checksums.property.changed.listener")
+    public String getChecksumsPropertyChangedListener() {
+        return getValue("checksums.property.changed.listener");
+    }
+
+    public void setChecksumsPropertyChangedListener(final String checksumsPropertyChangedListener) {
+        try {
+            set(checksumsPropertyChangedListener, "checksums.property.changed.listener");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'checksums.property.changed.listener': something is very wrong here.", e);
+        }
+    }
 
     @NrgPreference(defaultValue = "true")
     public boolean isEnableDicomReceiver() {

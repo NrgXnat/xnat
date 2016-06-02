@@ -7,9 +7,9 @@ import org.nrg.xdat.entities.FeatureDefinition;
 import org.nrg.xdat.security.ElementAction;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.FeatureDefinitionI;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
+import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.services.FeatureDefinitionService;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.event.EventUtils;
@@ -18,6 +18,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -183,7 +184,7 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
     private UserI getAdminUser() throws Exception {
         for (String login : Users.getAllLogins()) {
             final UserI user = Users.getUser(login);
-            if (Roles.isSiteAdmin(user)) {
+            if (_roleHolder.isSiteAdmin(user)) {
                 return user;
             }
         }
@@ -205,4 +206,7 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
     private FeatureDefinitionService _service;
 
     private final Map<String, String> _newFeatures = new HashMap<>();
+
+    @Autowired
+    private RoleHolder _roleHolder;
 }

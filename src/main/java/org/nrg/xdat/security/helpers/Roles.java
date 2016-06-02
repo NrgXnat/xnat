@@ -3,6 +3,8 @@ package org.nrg.xdat.security.helpers;
 import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.RoleRepositoryHolder;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI.RoleDefinitionI;
 import org.nrg.xdat.security.services.RoleServiceI;
@@ -13,51 +15,57 @@ import java.util.Collection;
 
 public class Roles {
     static Logger logger = Logger.getLogger(Roles.class);
-    private static RoleRepositoryServiceI repository = null;
-    private static RoleServiceI roleService = null;
 
-    private static RoleRepositoryServiceI getRoleRepositoryService() {
+    private static RoleRepositoryHolder getRoleRepositoryService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
-        if (repository == null) {
-            // First find out if it exists in the application context.
-            final ContextService contextService = XDAT.getContextService();
-            if (contextService != null) {
-                try {
-                    return repository = contextService.getBean(RoleRepositoryServiceI.class);
-                } catch (NoSuchBeanDefinitionException ignored) {
-                    // This is OK, we'll just create it from the indicated class.
-                }
-            }
-            //default to RoleRepositoryServiceImpl implementation (unless a different default is configured)
-            //we can swap in other ones later by setting a default
-            //we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
+
+        // First find out if it exists in the application context.
+        final ContextService contextService = XDAT.getContextService();
+        if (contextService != null) {
             try {
-                String className = XDAT.safeSiteConfigProperty("security.roleRepositoryService.default", "org.nrg.xdat.security.services.impl.RoleRepositoryServiceImpl");
-                return repository = (RoleRepositoryServiceI) Class.forName(className).newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                logger.error("", e);
+                return contextService.getBean(RoleRepositoryHolder.class);
+            } catch (NoSuchBeanDefinitionException ignored) {
+                // This is OK, we'll just create it from the indicated class.
             }
         }
-        return repository;
+        //default to RoleRepositoryServiceImpl implementation (unless a different default is configured)
+        //we can swap in other ones later by setting a default
+        //we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
+        try {
+            String className = XDAT.safeSiteConfigProperty("security.roleRepositoryService.default", "org.nrg.xdat.security.services.impl.RoleRepositoryServiceImpl");
+            return new RoleRepositoryHolder((RoleRepositoryServiceI) Class.forName(className).newInstance());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            logger.error("", e);
+        }
+        return null;
     }
 
     public static Collection<RoleDefinitionI> getRoles() {
         return getRoleRepositoryService().getRoles();
     }
 
-    private static RoleServiceI getRoleService() {
-        if (roleService == null) {
-            //default to RoleServiceImpl implementation (unless a different default is configured)
-            //we can swap in other ones later by setting a default
-            //we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
+    private static RoleHolder getRoleService() {
+
+        // First find out if it exists in the application context.
+        final ContextService contextService = XDAT.getContextService();
+        if (contextService != null) {
             try {
-                String className = XDAT.safeSiteConfigProperty("security.roleService.default", "org.nrg.xdat.security.services.impl.RoleServiceImpl");
-                roleService = (RoleServiceI) Class.forName(className).newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                logger.error("", e);
+                return contextService.getBean(RoleHolder.class);
+            } catch (NoSuchBeanDefinitionException ignored) {
+                // This is OK, we'll just create it from the indicated class.
             }
         }
-        return roleService;
+        //default to RoleServiceImpl implementation (unless a different default is configured)
+        //we can swap in other ones later by setting a default
+        //we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
+        try {
+            String className = XDAT.safeSiteConfigProperty("security.roleService.default", "org.nrg.xdat.security.services.impl.RoleServiceImpl");
+            return new RoleHolder((RoleServiceI) Class.forName(className).newInstance());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            logger.error("", e);
+        }
+
+        return null;
     }
 
     public static boolean checkRole(UserI user, String role) {

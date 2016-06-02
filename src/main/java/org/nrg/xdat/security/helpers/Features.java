@@ -1,19 +1,18 @@
 package org.nrg.xdat.security.helpers;
 
-import java.util.Collection;
-import java.util.List;
-
+import com.google.common.collect.Lists;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xft.security.UserI;
-
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import java.util.Collection;
+import java.util.List;
 
 public class Features {
 
@@ -36,6 +35,18 @@ public class Features {
     }
 
     /**
+     * Sets a new features service.
+     */
+    public static void setFeatureServiceToSiteConfigPreference() {
+        try {
+            singleton = Class.forName(XDAT.getSiteConfigPreferences().getFeatureService()).asSubclass(FeatureServiceI.class).newInstance();
+        }
+        catch(Exception e){
+            logger.error("Failed to set Feature Service.",e);
+        }
+    }
+
+    /**
      * Returns the currently configured feature repository service. You can change the default implementation returned
      * via the security.featureService.default configuration parameter.
      *
@@ -46,6 +57,18 @@ public class Features {
             repository = getServiceInstance(FeatureRepositoryServiceI.class, "security.featureRepositoryService.default", "org.nrg.xdat.security.services.impl.FeatureRepositoryServiceImpl");
         }
         return repository;
+    }
+
+    /**
+     * Sets a new features repository service.
+     */
+    public static void setFeatureRepositoryServiceToSiteConfigPreference() {
+        try {
+            repository = Class.forName(XDAT.getSiteConfigPreferences().getFeatureRepositoryService()).asSubclass(FeatureRepositoryServiceI.class).newInstance();
+        }
+        catch(Exception e){
+            logger.error("Failed to set Feature Service.",e);
+        }
     }
 
     public static Collection<? extends FeatureDefinitionI> getAllFeatures() {

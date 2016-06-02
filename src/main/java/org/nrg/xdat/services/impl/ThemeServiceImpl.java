@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJoin;
+
 @Service
 public class ThemeServiceImpl implements ThemeService {
     private static final Logger         _log = LoggerFactory.getLogger(ThemeServiceImpl.class);
@@ -163,7 +165,7 @@ public class ThemeServiceImpl implements ThemeService {
         for (String ext : extensions) {
             File themePageFile = (useTypeSeparator ? Paths.get(theme.getPath(), type + "s", pageName + "." + ext) : Paths.get(theme.getPath(), pageName + "." + ext)).toFile();
             if(themePageFile.exists()) {
-                pagePath = Paths.get("/" + webRelativeThemePath, theme.getName(), type + "s", pageName + "." + ext).toString();
+                pagePath = safeJoin("/" + webRelativeThemePath, theme.getName(), type + "s", pageName + "." + ext);
                 break;
             }
         }

@@ -91,7 +91,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
                         }
                     } else if (known.startsWith("c:")) {
                         //VMs fond on the classpath, will have c: on the start of their path.
-                        result = classLoader.getResourceAsStream(safeJoin("/", META_INF_RESOURCES, known.substring(2)));
+                        result = classLoader.getResourceAsStream(safeJoin(META_INF_RESOURCES, known.substring(2)));
                         if (result != null) {
                             return result;
                         } else {
@@ -108,7 +108,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             for (final String path : paths) {
                 //iterate through potential sub-directories (templates, xnat-templates, etc) looking for a match.
                 //ordering of the paths is significant as it enforces the VM overwriting model
-                final String possible = safeJoin("/", path, name);
+                final String possible = safeJoin(path, name);
                 try {
                     result = findMatch(name, possible);
                     if (result != null) {
@@ -155,7 +155,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             //ignore.  shouldn't happen because we check if it exists first.
         }
 
-        final InputStream result = this.getClass().getClassLoader().getResourceAsStream(safeJoin("/", META_INF_RESOURCES, possible));
+        final InputStream result = this.getClass().getClassLoader().getResourceAsStream(safeJoin(META_INF_RESOURCES, possible));
         if (result != null) {
             //once we find a match, lets cache the name of it
             templatePaths.put(name.intern(), ("c:" + possible).intern());
@@ -168,6 +168,19 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
     }
 
     /**
+     * Joins together multiple strings using the default separator character "/".  This will not duplicate the separator
+     * if the joined strings already include them.
+     *
+     * @param elements  The elements to join.
+     *
+     * @return The submitted elements joined by the separator.
+     */
+    @SafeVarargs
+    public static <T extends String> String safeJoin(T... elements) {
+        return safeJoin('/', elements);
+    }
+
+    /**
      * Joins together multiple strings using the referenced separator.  However, it will not duplicate the separator if the joined strings already include them.
      *
      * @param separator The separator on which to join.
@@ -175,12 +188,13 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
      * @return The submitted elements joined by the separator.
      */
     @SafeVarargs
-    public static <T extends String> String safeJoin(final String separator, T... elements) {
+    public static <T extends String> String safeJoin(final Character separator, T... elements) {
+        final String converted = separator.toString();
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < elements.length; i++) {
             sb.append(elements[i]);
             if ((i + 1) < elements.length) {
-                if (!elements[i].endsWith(separator) && !elements[(i + 1)].startsWith(separator)) {
+                if (!elements[i].endsWith(converted) && !elements[(i + 1)].startsWith(converted)) {
                     sb.append(separator);
                 }
             }
@@ -220,7 +234,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 
         final List<URL> matches = Lists.newArrayList();
         try {
-            final org.springframework.core.io.Resource[] resources = new PathMatchingResourcePatternResolver((ClassLoader) null).getResources("classpath*:" + safeJoin("/", META_INF_RESOURCES, folder, dir, "*.vm"));
+            final org.springframework.core.io.Resource[] resources = new PathMatchingResourcePatternResolver((ClassLoader) null).getResources("classpath*:" + safeJoin(META_INF_RESOURCES, folder, dir, "*.vm"));
             for (org.springframework.core.io.Resource r : resources) {
                 matches.add(r.getURL());
             }

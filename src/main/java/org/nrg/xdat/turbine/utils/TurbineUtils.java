@@ -70,6 +70,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJoin;
+
 /**
  * @author Tim
  */
@@ -444,18 +446,6 @@ public class TurbineUtils {
     @Deprecated
     public static void setUser(RunData data, UserI user) throws Exception {
         XDAT.setUserDetails(user);
-    }
-
-    /**
-     * Sets user details for a new user.
-     * @param data    The request run data.
-     * @param user    The user object.
-     * @param context The request context.
-     * @throws Exception When something goes wrong.
-     * @deprecated Use {@link XDAT#setNewUserDetails(UserI, RunData, Context)} instead.
-     */
-    public static void setNewUser(RunData data, UserI user, Context context) throws Exception {
-        XDAT.setNewUserDetails(user, data, context);
     }
 
     public boolean checkRole(final UserI user, final String role) {
@@ -1047,12 +1037,12 @@ public class TurbineUtils {
     public String getTemplateName(String module, String dataType, String project) {
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
-            String temp = validateTemplate(Paths.get("/screens", root.getSQLName(), root.getSQLName() + module).toString(), project);
+            String temp = validateTemplate(safeJoin("/screens", root.getSQLName(), root.getSQLName() + module), project);
             if (temp != null) {
                 return temp;
             }
 
-            temp = validateTemplate(Paths.get("/screens", root.getSQLName(), module).toString(), project);
+            temp = validateTemplate(safeJoin("/screens", root.getSQLName(), module), project);
             if (temp != null) {
                 return temp;
             }
@@ -1091,7 +1081,7 @@ public class TurbineUtils {
         List<String> _defaultScreens = new ArrayList<>();
         if (screens == null) {
             synchronized (this) {
-                //synchronized so that two calls don't overwrite eachother.  I only synchronized this chunk in hopes that when the screens list is cached, the block woudn't occur.
+                //synchronized so that two calls don't overwrite each other.  I only synchronized this chunk in hopes that when the screens list is cached, the block wouldn't occur.
                 //need to build the list of props.
                 screens = new ArrayList<>();
                 List<String> exists = new ArrayList<>();
@@ -1105,7 +1095,7 @@ public class TurbineUtils {
                     if (uris.size() > 0) {
                         final URL url = uris.get(0); // TODO: Is this right? Should be only one, I think.
                         String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
-                        String resolved = CustomClasspathResourceLoader.safeJoin("/", forwardSlashSubFolder, fileName);
+                        String resolved = safeJoin(forwardSlashSubFolder, fileName);
                         if (!exists.contains(resolved)) {
                             try {
                                 // TODO: It looks like the critical test is whether the input stream is null.
@@ -1175,7 +1165,7 @@ public class TurbineUtils {
     }
 
     /**
-     * Looks for templates in the give subFolder underneath the give dataType in the xdat-templatea, xnat-templates, or templates.
+     * Looks for templates in the give subFolder underneath the give dataType in the xdat-templates, xnat-templates, or templates.
      * dataType/subFolder
      *
      * @param dataType     The data type for which to search.
@@ -1188,14 +1178,14 @@ public class TurbineUtils {
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
 
-            final String subFolderPath = Paths.get(root.getSQLName(), subFolder).toString();
+            final String subFolderPath = safeJoin(root.getSQLName(), subFolder);
             final List<Properties> templates = getTemplates(subFolderPath);
             props.addAll(templates);
             mergePropsNoOverwrite(props, templates, "fileName");
 
             for (final List<Object> primary : root.getExtendedElements()) {
                 final GenericWrapperElement p = ((SchemaElementI) primary.get(0)).getGenericXFTElement();
-                mergePropsNoOverwrite(props, getTemplates(Paths.get(p.getSQLName(), subFolder).toString()), "fileName");
+                mergePropsNoOverwrite(props, getTemplates(safeJoin(p.getSQLName(), subFolder)), "fileName");
             }
 
             Collections.sort(props, PROPERTIES_COMPARATOR);
@@ -1209,24 +1199,24 @@ public class TurbineUtils {
     public String getTemplateName(String module, String dataType, String project, String subFolder) {
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
-            String temp = validateTemplate(Paths.get("/screens", root.getSQLName(), subFolder, root.getSQLName() + module).toString(), project);
+            String temp = validateTemplate(safeJoin("/screens", root.getSQLName(), subFolder, root.getSQLName() + module), project);
             if (temp != null) {
                 return temp;
             }
 
-            temp = validateTemplate(Paths.get("/screens", root.getSQLName(), subFolder, module).toString(), project);
+            temp = validateTemplate(safeJoin("/screens", root.getSQLName(), subFolder, module), project);
             if (temp != null) {
                 return temp;
             }
 
             for (List<Object> primary : root.getExtendedElements()) {
                 final GenericWrapperElement p = ((SchemaElementI) primary.get(0)).getGenericXFTElement();
-                temp = validateTemplate(Paths.get("/screens", p.getSQLName(), subFolder, p.getSQLName() + module).toString(), project);
+                temp = validateTemplate(safeJoin("/screens", p.getSQLName(), subFolder, p.getSQLName() + module), project);
                 if (temp != null) {
                     return temp;
                 }
 
-                temp = validateTemplate(Paths.get("/screens", p.getSQLName(), subFolder, module).toString(), project);
+                temp = validateTemplate(safeJoin("/screens", p.getSQLName(), subFolder, module), project);
                 if (temp != null) {
                     return temp;
                 }

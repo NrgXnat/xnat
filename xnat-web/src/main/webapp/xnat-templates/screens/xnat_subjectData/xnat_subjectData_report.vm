@@ -96,12 +96,16 @@ function summaryTabManagerInit(){
 </tr>
 	<TR>
 		<TD>
-            #if($turbineUtils.getTemplates($om.getXSIType(),"report/assessor_tabs").size() == 0)
+			#if($turbineUtils.getTemplates($om.getXSIType(),"report/assessor_tabs").size() == 0)
 			    #parse($turbineUtils.getTemplateName("_assessors","xnat:subjectData",$project))
 			#else
                 #set($useTabs=true)
                 #parse($turbineUtils.getTemplateName("assessors_tabs","xnat:subjectData",$project))
             #end
+			#set($path = "screens/xnat_subjectData/report/assessor_tabs/Visits.vm")
+			#if($turbineUtils.validateClasspathTemplate($path))
+				#parse($path)
+			#end
 		</TD>
 	</TR>
 <tr>

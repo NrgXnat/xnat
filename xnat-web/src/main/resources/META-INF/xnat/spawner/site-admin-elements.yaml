@@ -726,7 +726,7 @@ themeManagement:
                     label: None
                     value: None
             after:
-                - "<span style=\"position: relative; top: -49px;left: 270px;\"> <!-- &nbsp;<button id=\"submitThemeButton\" onclick=\"setTheme();\">Set Theme</button>&nbsp;&nbsp; --> <button id=\"removeThemeButton\" onclick=\"removeTheme();\">Remove Theme</button></span>"
+                - "<span style=\"position: relative; top: -78px;left: 270px;\"> <!-- &nbsp;<button id=\"submitThemeButton\" onclick=\"setTheme();\">Set Theme</button>&nbsp;&nbsp; --> <button id=\"removeThemeButton\" onclick=\"removeTheme();\">Remove Theme</button></span>"
             element:
                 style:
                     min-width: 250px

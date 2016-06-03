@@ -1,4 +1,7 @@
-#parse($turbineUtils.getTemplateName("_bundle_header","xnat:projectData",$project.getId()))
+#set($path = "screens/xnat_projectData/xnat_projectData_bundle_header.vm")
+#if($turbineUtils.validateClasspathTemplate($path))
+    #parse($path)
+#end
 #set($bundles = $project.getBundles())
 #if($bundles.size()>0)
 ##         <script type="text/javascript" src="$content.getURI("scripts/tabWrangler/tabWrangler.js")"></script>
@@ -58,7 +61,12 @@
 
         window.tab_manager.init(stored_searches);
 
-        #parse($turbineUtils.getTemplateName("_bundle_default","xnat:projectData",$project.getId()))
+        #set($path = "screens/xnat_projectData/xnat_projectData_bundle_default.vm")
+        #if($turbineUtils.validateClasspathTemplate($path))
+            #parse($path)
+        #else
+            #parse($turbineUtils.getTemplateName("_bundle_default","xnat:projectData",$project.getId()))
+        #end
 
         var bundles = YAHOO.util.Cookie.get("${project.getId()}.open_bundle.tabs");
         if (bundles !== null && bundles.length > 0) {

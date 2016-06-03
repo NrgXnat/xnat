@@ -937,10 +937,10 @@ public class TurbineUtils {
             screen = screen.substring(0, screen.length() - 3);
         }
 
-        if (project != null && Velocity.resourceExists(screen + "_" + project + ".vm")) {
+        if (project != null && resourceExists(screen + "_" + project + ".vm")) {
             return screen + "_" + project + ".vm";
         } else {
-            if (Velocity.resourceExists(screen + ".vm")) {
+            if (resourceExists(screen + ".vm")) {
                 return screen + ".vm";
             } else {
                 return null;
@@ -1193,6 +1193,21 @@ public class TurbineUtils {
             logger.error("", e);
         }
         return props;
+    }
+
+    public boolean validateClasspathTemplate(String screen){
+        String forwardSlashScreen = screen;
+        if(forwardSlashScreen!=null){
+            forwardSlashScreen = forwardSlashScreen.replace("\\", "/");
+            forwardSlashScreen = forwardSlashScreen.substring(0, forwardSlashScreen.lastIndexOf('/'));
+        }
+        List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory(forwardSlashScreen);
+        if (uris.size() > 0) {
+            // Something exists in a plugin that needs to override core content
+            // Just return true to assert it's valid.
+            return true;
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")

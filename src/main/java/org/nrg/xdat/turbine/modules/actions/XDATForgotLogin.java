@@ -131,7 +131,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
                                text=text.replaceAll("USER_LASTNAME",user.getLastname());
                                text=text.replaceAll("ADMIN_EMAIL",XDAT.getSiteConfigPreferences().getAdminEmail());
                                text=text.replaceAll("HELP_EMAIL",XDAT.getNotificationsPreferences().getHelpContactInfo());
-                               text=text.replaceAll("RESET_URL",TurbineUtils.GetFullServerPath() + "app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret());
+                               text=text.replaceAll("RESET_URL",TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret());
                                text=text.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
                                text=text.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
 

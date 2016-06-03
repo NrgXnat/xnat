@@ -151,7 +151,7 @@ public final class TemporaryTokenStore {
 		String body = XDAT.getNotificationsPreferences().getEmailMessageForgotPasswordReset();
 		body=body.replaceAll("USER_FIRSTNAME",u.getFirstname());
 		body=body.replaceAll("USER_LASTNAME",u.getLastname());
-		body=body.replaceAll("RESET_URL",TurbineUtils.GetFullServerPath() + "app/template/XDATScreen_UpdateUser.vm?token=" + null);
+		body=body.replaceAll("RESET_URL",TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?token=" + null);
 		body=body.replaceAll("USER_USERNAME",u.getUsername());
 		body=body.replaceAll("ADMIN_EMAIL",XDAT.getSiteConfigPreferences().getAdminEmail());
 		body=body.replaceAll("HELP_EMAIL",XDAT.getNotificationsPreferences().getHelpContactInfo());

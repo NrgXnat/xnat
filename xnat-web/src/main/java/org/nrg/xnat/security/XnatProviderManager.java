@@ -346,7 +346,7 @@ public class XnatProviderManager extends ProviderManager {
         private synchronized void addFailedLoginAttempt(final Authentication auth) throws SiteConfigurationException {
             XdatUserAuth ua = _manager.getUserByAuth(auth);
             if (ua != null) {
-                if (_manager._preferences.getMaxFailedLogins() > 0) {
+                if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
                     ua.setFailedLoginAttempts(ua.getFailedLoginAttempts() + 1);
                     ua.setLastLoginAttempt(new Date());
                     XDAT.getXdatUserAuthService().update(ua);
@@ -356,8 +356,8 @@ public class XnatProviderManager extends ProviderManager {
                     Integer uid = Users.getUserid(ua.getXdatUsername());
                     if (uid != null) {
                         try {
-                            if (ua.getFailedLoginAttempts().equals(_manager._preferences.getMaxFailedLogins())) {
-                                String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), (int) SiteConfigPreferences.convertPGIntervalToSeconds(_manager._preferences.getMaxFailedLoginsLockoutDuration())));
+                            if (ua.getFailedLoginAttempts().equals(XDAT.getSiteConfigPreferences().getMaxFailedLogins())) {
+                                String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), 1000 * (int) SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
                                 _log.info("Locked out " + ua.getXdatUsername() + " user account until " + expiration);
                                 AdminUtils.sendAdminEmail(ua.getXdatUsername() + " account temporarily disabled.", "User " + ua.getXdatUsername() + " has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at " + expiration + ".");
                             }
@@ -370,7 +370,7 @@ public class XnatProviderManager extends ProviderManager {
         }
 
         public void clearCount(final Authentication auth) throws SiteConfigurationException {
-            if (_manager._preferences.getMaxFailedLogins() > 0) {
+            if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
                 XdatUserAuth ua = _manager.getUserByAuth(auth);
                 if (ua != null) {
                     ua.setFailedLoginAttempts(0);

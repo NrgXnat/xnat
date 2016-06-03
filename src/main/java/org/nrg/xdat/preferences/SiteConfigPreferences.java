@@ -422,6 +422,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "", property = "sitewidePetTracers")
+    public String getSitewidePetTracers() {
+        return getValue("sitewidePetTracers");
+    }
+
+    public void setSitewidePetTracers(final String sitewidePetTracers) {
+        try {
+            set(sitewidePetTracers, "sitewidePetTracers");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'sitewidePetTracers': something is very wrong here.", e);
+        }
+    }
+
 //    @NrgPreference(defaultValue = "", property = "selectUploadMethod")
 //    public String getSelectUploadMethod() {
 //        return getValue("selectUploadMethod");

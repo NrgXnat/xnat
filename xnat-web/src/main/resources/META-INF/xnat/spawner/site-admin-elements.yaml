@@ -129,7 +129,7 @@ adminEmail:
     name: adminEmail
     label: Site Admin Email
     description: >
-        The administrative email account to receive system emails. This address will receive frequent emails 
+        The administrative email account to receive system emails. This address will receive frequent emails
         on system events, such as errors, processing completion, new user registration and so on. These emails
         can be configured on the Notifications tab.
 
@@ -868,9 +868,9 @@ registrationOptions:
             name: emailVerification
             label: "Require Email Verification To Register?"
             description: >
-                If true, users will receive an email after registering for an account and must click a 
-                link in the email to verify their email address before they are able to use their account. 
-                If false, no verification emails will be sent and users will not be required to verify their email 
+                If true, users will receive an email after registering for an account and must click a
+                link in the email to verify their email address before they are able to use their account.
+                If false, no verification emails will be sent and users will not be required to verify their email
                 before using their account. Either way the administrator receives an email notification when a user registers.
         emailVerificationMessage:
             kind: panel.textarea
@@ -889,8 +889,8 @@ registrationOptions:
             name: userRegistration
             label: "Auto-enable User Registration?"
             description: >
-                If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public' 
-                projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator 
+                If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
+                projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
                 receives an email notification when a user registers.
         uiAllowNewUserComments:
             kind: panel.input.checkbox
@@ -981,7 +981,7 @@ seriesImportFilter:
             label: "Edit Series Import Filter"
             description: >
                 The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
-                <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive, 
+                <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive,
                 i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
 
 petTracers:
@@ -1076,7 +1076,6 @@ dicomScpReceivers:
                     id: dicom-scp-editor
                     header: false
                     footer: false
-                    method: PUT
                     action: /xapi/dicomscp
                     contentType: json
                     contents:

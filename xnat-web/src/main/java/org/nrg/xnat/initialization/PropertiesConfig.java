@@ -16,10 +16,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Configures the properties for XNAT. This looks in three different places for
@@ -85,7 +82,9 @@ public class PropertiesConfig {
     @Bean
     public List<Path> configFolderPaths() {
         if (_configFolderPaths.size() == 0) {
+            final Map<String, String> paths = new HashMap<>();
             for (int index = 0; index < CONFIG_LOCATIONS.size(); index++) {
+                paths.put(CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index));
                 final Path path = getConfigFolder(_environment, CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index));
                 if (path != null) {
                     if (_log.isInfoEnabled()) {
@@ -96,7 +95,18 @@ public class PropertiesConfig {
                 }
             }
             if (_configFolderPaths.size() == 0) {
-                throw new RuntimeException("No XNAT home specified in any of the accepted locations: " + Joiner.on(", ").join(CONFIG_URLS));
+                final StringBuilder writer = new StringBuilder("No XNAT home specified in any of the accepted locations:\n");
+                for (final String variable : paths.keySet()) {
+                    writer.append(" * ");
+                    final String value = _environment.getProperty(variable);
+                    if (StringUtils.isBlank(value)) {
+                        writer.append(variable).append(": Not defined");
+                    } else {
+                        writer.append(variable).append(": ").append(value).append("/").append(paths.get(variable));
+                    }
+                    writer.append("\n");
+                }
+                throw new RuntimeException(writer.toString());
             }
         }
         return _configFolderPaths;

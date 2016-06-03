@@ -7,7 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.processors.XnatPluginBean;
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.configuration.ApplicationConfig;
@@ -17,8 +16,6 @@ import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.nrg.xnat.servlet.ArchiveServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
@@ -27,7 +24,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
@@ -117,11 +117,8 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     private List<Class<?>> getPluginConfigs() {
         final List<Class<?>> configs = new ArrayList<>();
         try {
-            for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
-                final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
-                final XnatPluginBean plugin = new XnatPluginBean(properties);
-                final Class<?> config = Class.forName(plugin.getPluginClass());
-                configs.add(config);
+            for (final XnatPluginBean plugin : XnatPluginBean.findAllXnatPluginBeans()) {
+                configs.add(Class.forName(plugin.getPluginClass()));
             }
         } catch (IOException e) {
             throw new RuntimeException("An error occurred trying to locate XNAT plugin definitions.");

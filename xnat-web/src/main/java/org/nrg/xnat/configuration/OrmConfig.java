@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -106,9 +105,7 @@ public class OrmConfig {
             }
         }
         try {
-            for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
-                final Properties     properties = PropertiesLoaderUtils.loadProperties(resource);
-                final XnatPluginBean plugin     = new XnatPluginBean(properties);
+            for (final XnatPluginBean plugin : XnatPluginBean.findAllXnatPluginBeans()) {
                 if (_log.isDebugEnabled()) {
                     _log.debug("Processing entity packages from plugin {}: {}", plugin.getId(), Joiner.on(", ").join(plugin.getEntityPackages()));
                 }

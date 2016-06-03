@@ -945,7 +945,7 @@ anonymization:
 seriesImportFilter:
     kind: panel.form
     name: seriesImportFilter
-    label: "Series Import Filter"
+    label: "Series Import Filter (Site Wide)"
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
@@ -983,6 +983,24 @@ seriesImportFilter:
                 The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
                 <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive, 
                 i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
+
+petTracers:
+    kind: panel.form
+    name: petTracers
+    label: "Pet Tracers (Site Wide)"
+    method: POST
+    contentType: json
+    action: /xapi/siteConfig/batch
+    load: XNAT.data.siteConfig
+    refresh: /xapi/siteConfig
+    contents:
+        sitewidePetTracers:
+            kind: panel.textarea
+            id: sitewidePetTracers
+            name: sitewidePetTracers
+            label: "Pet Tracers"
+            description: >
+                This is the site-wide list of PET tracers. List entries should be separated by whitespace. This list can also be replaced at the project level.
 
 sessionUploadMethod:
     kind: panel.form
@@ -1312,6 +1330,7 @@ adminPage:
             contents:
                 ${anonymization}
                 ${seriesImportFilter}
+                ${petTracers}
                 ${sessionUploadMethod}
         dicomScpReceivers:
             kind: tab

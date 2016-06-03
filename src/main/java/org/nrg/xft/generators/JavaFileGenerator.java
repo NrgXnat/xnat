@@ -71,6 +71,7 @@ public class JavaFileGenerator {
         sb.append("/*\n * GENERATED FILE\n * Created on " + Calendar.getInstance().getTime() + "\n *\n */");
         sb.append("\npackage " + packageName + ";");
         //IMPORTS
+        sb.append("\nimport org.apache.log4j.Logger;");
         sb.append("\nimport org.nrg.xft.*;");
         sb.append("\nimport org.nrg.xft.security.UserI;");
         sb.append("\nimport org.nrg.xdat.om.*;");
@@ -90,9 +91,9 @@ public class JavaFileGenerator {
         
 
         sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
-        sb.append("\npublic abstract class ").append(getClassName(e)).append(" extends " + extensionName + " implements "+JavaBeanGenerator.INTERFACE_PACKAGE + "." + JavaBeanGenerator.getFormattedInterface(e) +" {");
-        sb.append("\n\tpublic static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("+getClassName(e)+".class);");
-        sb.append("\n\tpublic static String SCHEMA_ELEMENT_NAME=\"").append(e.getFullXMLName()).append("\";");
+        sb.append("\npublic abstract class ").append(getClassName(e)).append(" extends ").append(extensionName).append(" implements ").append(JavaBeanGenerator.INTERFACE_PACKAGE).append(".").append(JavaBeanGenerator.getFormattedInterface(e)).append(" {");
+        sb.append("\n\tpublic static final Logger logger = Logger.getLogger(").append(getClassName(e)).append(".class);");
+        sb.append("\n\tpublic static final String SCHEMA_ELEMENT_NAME=\"").append(e.getFullXMLName()).append("\";");
         //ADD CONSTRUCTORS
         sb.append("\n\n");
         sb.append("\tpublic ").append(getClassName(e)).append("(ItemI item)\n\t{\n\t\tsuper(item);\n\t}");

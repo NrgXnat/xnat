@@ -62,9 +62,10 @@ public class JavaBeanGenerator {
         
         String packageName = project + ".bean";
         
-        sb.append("/*\n * GENERATED FILE\n * Created on " + Calendar.getInstance().getTime() + "\n *\n */");
-        sb.append("\npackage " + packageName + ";");
+        sb.append("/*\n * GENERATED FILE\n * Created on ").append(Calendar.getInstance().getTime()).append("\n *\n */");
+        sb.append("\npackage ").append(packageName).append(";");
         //IMPORTS
+        sb.append("\nimport org.apache.log4j.Logger;");
         sb.append("\nimport org.nrg.xdat.bean.base.BaseElement;");
         sb.append("\n\nimport java.util.*;");
         sb.append("\n\n/**\n * @author XDAT\n *\n */");
@@ -83,9 +84,9 @@ public class JavaBeanGenerator {
         
         sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
         
-        sb.append("\npublic class ").append(getFormattedBean(e)).append(" extends " + extensionName + " implements java.io.Serializable, "+INTERFACE_PACKAGE + "." + this.getFormattedInterface(e) +" {");
-        sb.append("\n\tpublic static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("+getFormattedBean(e)+".class);");
-        sb.append("\n\tpublic static String SCHEMA_ELEMENT_NAME=\"").append(e.getFullXMLName()).append("\";");
+        sb.append("\npublic class ").append(getFormattedBean(e)).append(" extends ").append(extensionName).append(" implements java.io.Serializable, ").append(INTERFACE_PACKAGE).append(".").append(getFormattedInterface(e)).append(" {");
+        sb.append("\n\tpublic static final Logger logger = Logger.getLogger(").append(getFormattedBean(e)).append(".class);");
+        sb.append("\n\tpublic static final String SCHEMA_ELEMENT_NAME=\"").append(e.getFullXMLName()).append("\";");
         //ADD CONSTRUCTORS
 
 

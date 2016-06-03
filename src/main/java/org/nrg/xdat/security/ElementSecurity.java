@@ -15,6 +15,8 @@ package org.nrg.xdat.security;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.framework.processors.XnatDataModelBean;
+import org.nrg.framework.processors.XnatPluginBean;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
@@ -25,6 +27,7 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.*;
 import org.nrg.xft.cache.CacheManager;
@@ -53,6 +56,7 @@ import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,13 +119,55 @@ public class ElementSecurity extends ItemWrapper {
         Map<String, ElementSecurity> elements = (Map<String, ElementSecurity>) GetElementSecurities().clone();
 
         boolean _new = false;
+        UserI admin = AdminUtils.getAdminUser();
+        assert admin != null;
         for (DataModelDefinition def : XFTManager.discoverDataModelDefs()) {
             for (String s : def.getSecuredElements()) {
 
-                if ((StringUtils.isNotBlank(s)) && elements.get(s) == null) {
+                if ((StringUtils.isNotBlank(s)) && !elements.containsKey(s)) {
                     if (GenericWrapperElement.GetFieldForXMLPath(s + "/project") != null) {
                         ElementSecurity es = ElementSecurity.newElementSecurity(s);
-                        es.initExistingPermissions("admin");
+                        es.initExistingPermissions(admin.getUsername());
+                        _new = true;
+                    }
+                }
+            }
+        }
+
+        for (final XnatPluginBean plugin : XnatPluginBean.findAllXnatPluginBeans()) {
+            for (final XnatDataModelBean bean : plugin.getDataModelBeans()) {
+                if (!elements.containsKey(bean.getType()) && bean.isSecured()) {
+                    if (GenericWrapperElement.GetFieldForXMLPath(bean.getType() + "/project") != null) {
+                        ElementSecurity es = ElementSecurity.newElementSecurity(bean.getType());
+                        es.initExistingPermissions(admin.getUsername());
+
+                        final boolean hasSingular = StringUtils.isNotBlank(bean.getSingular());
+                        final boolean hasPlural = StringUtils.isNotBlank(bean.getPlural());
+                        final boolean hasCode = StringUtils.isNotBlank(bean.getCode());
+                        if (hasSingular || hasPlural || hasCode) {
+                            es.setSingular(bean.getSingular());
+                            es.setPlural(bean.getPlural());
+                            es.setPlural(bean.getPlural());
+                            final StringBuilder query = new StringBuilder("update xdat_element_security set ");
+                            if (hasSingular) {
+                                query.append("singular = '").append(bean.getSingular()).append("'");
+                            }
+                            if (hasSingular && hasPlural) {
+                                query.append(", ");
+                            }
+                            if (hasPlural) {
+                                query.append("plural = '").append(bean.getPlural()).append("'");
+                            }
+                            if (hasCode) {
+                                query.append("code = '").append(bean.getCode()).append("'");
+                            }
+                            query.append(" where element_name = '").append(bean.getType()).append("'");
+                            final JdbcTemplate template = XDAT.getContextService().getBean(JdbcTemplate.class);
+                            final int results = template.update(query.toString());
+                            if (logger.isInfoEnabled()) {
+                                logger.info("Updated " + results + " rows with the query: " + query.toString());
+                            }
+                        }
                         _new = true;
                     }
                 }

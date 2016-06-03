@@ -23,6 +23,7 @@ import org.nrg.mail.api.NotificationType;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserRegistrationData;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
@@ -420,4 +421,20 @@ public class AdminUtils {
         template.merge(context, writer);
         return writer.toString();
     }
+
+	public static UserI getAdminUser() {
+		for (String login : Users.getAllLogins()) {
+			try {
+				final UserI user = Users.getUser(login);
+				if (Roles.isSiteAdmin(user)) {
+					return user;
+				}
+			} catch (Exception ignored){
+
+			}
+		}
+		return null;
+	}
+
+
 }

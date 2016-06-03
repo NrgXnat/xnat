@@ -40,7 +40,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(property = "notifications.emailMessageUserRegistration")
+    @NrgPreference(defaultValue="Welcome to the SITE_NAME Web Archive!<br><br>You can now log on to the SITE_NAME at:<a href=\"SITE_URL\">SITE_URL</a><br><br>Your username is: USER_USERNAME<br><br><br>For support, contact the <a href=\"mailto:ADMIN_EMAIL?subject=SITE_NAME Assistance\">SITE_NAME Management </A>", property = "notifications.emailMessageUserRegistration")
     public String getEmailMessageUserRegistration(){
         return getValue("notifications.emailMessageUserRegistration");
     }
@@ -53,7 +53,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(property = "notifications.emailMessageForgotUsernameRequest")
+    @NrgPreference(defaultValue="\nYou requested your username, which is: USER_USERNAME\n<br><br><br>Please login to the site for additional user information <a href=\"SITE_URL\">SITE_NAME</a>.\n", property = "notifications.emailMessageForgotUsernameRequest")
     public String getEmailMessageForgotUsernameRequest(){
         return getValue("notifications.emailMessageForgotUsernameRequest");
     }
@@ -66,7 +66,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(property = "notifications.emailMessageForgotPasswordReset")
+    @NrgPreference(defaultValue="Dear USER_FIRSTNAME USER_LASTNAME,\nPlease click this link to reset your password: RESET_URL <br/>\r\nThis link will expire in 24 hours.", property = "notifications.emailMessageForgotPasswordReset")
     public String getEmailMessageForgotPasswordReset(){
         return getValue("notifications.emailMessageForgotPasswordReset");
     }

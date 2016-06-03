@@ -23,6 +23,7 @@ import org.nrg.mail.api.NotificationType;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserRegistrationData;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.ItemI;
@@ -283,20 +284,25 @@ public class AdminUtils {
 
 	public static void sendNewUserEmailMessage(String username, String email, Context context) throws Exception {
 		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
-        context.put("username", username);
-        context.put("server", TurbineUtils.GetFullServerPath());
-        context.put("system", TurbineUtils.GetSystemName());
-        context.put("contactEmail", XDAT.getSiteConfigPreferences().getAdminEmail());
+			String body = XDAT.getNotificationsPreferences().getEmailMessageUserRegistration();
+			body = body.replaceAll("USER_USERNAME",username);
+			body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
+			body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
+			body = body.replaceAll("ADMIN_EMAIL",XDAT.getSiteConfigPreferences().getAdminEmail());
 
-        String body = populateVmTemplate(context, "/screens/email/WelcomeNewUser.vm");
-        String subject = "Welcome to " + TurbineUtils.GetSystemName();
+			UserI user = Users.getUser(username);
+			body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+			body = body.replaceAll("USER_LASTNAME",user.getLastname());
+			body = body.replaceAll("HELP_EMAIL",XDAT.getNotificationsPreferences().getHelpContactInfo());
 
-        if (AdminUtils.GetNewUserRegistrationsEmail()) {
-			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), new String[] { email }, new String[] { XDAT.getSiteConfigPreferences().getAdminEmail() }, null, subject, body);
-		} else {
-			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), email, subject, body);
+			String subject = "Welcome to " + TurbineUtils.GetSystemName();
+
+			if (AdminUtils.GetNewUserRegistrationsEmail()) {
+				XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), new String[] { email }, new String[] { XDAT.getSiteConfigPreferences().getAdminEmail() }, null, subject, body);
+			} else {
+				XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), email, subject, body);
+			}
 		}
-	}
 	}
 
 	/**

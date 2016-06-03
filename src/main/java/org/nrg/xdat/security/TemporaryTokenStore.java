@@ -142,22 +142,28 @@ public final class TemporaryTokenStore {
 		}
 	}
 	
-	public static String emailBody (String token) {
-		return "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "app/template/XDATScreen_UpdateUser.vm?token=" + token + "\n This link will expire in 24 hours.";
-	}
-	
  	public static void addTokenAndEmail(final String login, final String subject) throws Exception {
 		final UserI u = Users.getUser(login);
 		final String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 		final String[] tos = {u.getEmail()};
 		final String[] ccs = {};
 		final String subj = TurbineUtils.GetSystemName() + ": " + subject;
-		final String body = "Dear " + u.getFirstname() + " " + u.getLastname() + ",\n" + emailBody(null);
+		String body = XDAT.getNotificationsPreferences().getEmailMessageForgotPasswordReset();
+		body=body.replaceAll("USER_FIRSTNAME",u.getFirstname());
+		body=body.replaceAll("USER_LASTNAME",u.getLastname());
+		body=body.replaceAll("RESET_URL",TurbineUtils.GetFullServerPath() + "app/template/XDATScreen_UpdateUser.vm?token=" + null);
+		body=body.replaceAll("USER_USERNAME",u.getUsername());
+		body=body.replaceAll("ADMIN_EMAIL",XDAT.getSiteConfigPreferences().getAdminEmail());
+		body=body.replaceAll("HELP_EMAIL",XDAT.getNotificationsPreferences().getHelpContactInfo());
+		body=body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
+		body=body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
+		final String emailBody = body;
+
 		CallableWith<Void,String> emailAction = new CallableWith<Void,String>() {
 			public Void call(String login) {
 				if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
 					try {
-						XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subj, body);
+						XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subj, emailBody);
 					} catch (MessagingException exception) {
 						logger.error("Unable to send mail", exception);
 					}

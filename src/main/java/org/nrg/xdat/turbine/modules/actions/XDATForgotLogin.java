@@ -76,7 +76,16 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 		data.setScreenTemplate("Login.vm");
                 	}else{
                 		String url=TurbineUtils.GetFullServerPath() + "/app/template/Index.vm";
-                    	String message = String.format(USERNAME_REQUEST, user.getUsername(), url, TurbineUtils.GetSystemName());
+                    	String message = XDAT.getNotificationsPreferences().getEmailMessageForgotUsernameRequest();
+                        message = message.replaceAll("USER_USERNAME",user.getUsername());
+                        message = message.replaceAll("SITE_URL",url);
+                        message = message.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
+                        message = message.replaceAll("USER_FIRSTNAME",user.getFirstname());
+                        message = message.replaceAll("USER_LASTNAME",user.getLastname());
+                        message = message.replaceAll("ADMIN_EMAIL",XDAT.getSiteConfigPreferences().getAdminEmail());
+                        message = message.replaceAll("HELP_EMAIL",XDAT.getNotificationsPreferences().getHelpContactInfo());
+
+
                     	XDAT.getMailService().sendHtmlMessage(admin, email, subject, message);
                     	if(requestLog!= null){ requestLog.logEmailRequest(email, new Date()); }
 						data.setMessage("The corresponding username for this email address has been emailed to your account.");
@@ -115,7 +124,17 @@ public class XDATForgotLogin extends VelocitySecureAction {
                                data.setScreenTemplate("Login.vm");
                             }else{
                                AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user,true,null);
-                               String text = "Dear " + user.getFirstname() + " " + user.getLastname() + ",<br/>\r\n" + "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
+
+                               String text = XDAT.getNotificationsPreferences().getEmailMessageForgotPasswordReset();
+                               text=text.replaceAll("USER_USERNAME",user.getUsername());
+                               text=text.replaceAll("USER_FIRSTNAME",user.getFirstname());
+                               text=text.replaceAll("USER_LASTNAME",user.getLastname());
+                               text=text.replaceAll("ADMIN_EMAIL",XDAT.getSiteConfigPreferences().getAdminEmail());
+                               text=text.replaceAll("HELP_EMAIL",XDAT.getNotificationsPreferences().getHelpContactInfo());
+                               text=text.replaceAll("RESET_URL",TurbineUtils.GetFullServerPath() + "app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret());
+                               text=text.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
+                               text=text.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
+
                                XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
                                if(requestLog != null){ requestLog.logEmailRequest(to, new Date()); }
                                data.setMessage("You have been sent an email with a link to reset your password. Please check your email.");
@@ -147,6 +166,4 @@ public class XDATForgotLogin extends VelocitySecureAction {
         return true;
     }
 
-	// TODO: This should be converted to use a Velocity template or property in a resource bundle.
-	private static final String USERNAME_REQUEST = "\nYou requested your username, which is: %s\n<br><br><br>Please login to the site for additional user information <a href=\"%s\">%s</a>.\n";
 }

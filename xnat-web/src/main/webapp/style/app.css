@@ -2094,7 +2094,7 @@ input.invalid {
 /* ADD/EDIT PROJECT FORM */
 #new-project-form,
 #edit-project-form {
-    width: 760px;
+    /* width: 760px; */
     margin: 0 auto;
 }
 
@@ -3596,4 +3596,3 @@ textarea.xml-formatted {
 .pad5h { padding-left: 5px; padding-right: 5px; }
 .pad10h { padding-left: 10px; padding-right: 10px; }
 .pad20h { padding-left: 20px; padding-right: 20px; }
-

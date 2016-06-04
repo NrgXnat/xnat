@@ -61,6 +61,12 @@ public class DicomSCPApi extends AbstractXnatRestApi {
         } else {
             _manager.setDicomSCPInstance(instance);
         }
+        if(instance.isEnabled()){
+            _manager.startDicomSCP(id);
+        }
+        else{
+            _manager.stopDicomSCP(id);
+        }
         return new ResponseEntity<>(instance, HttpStatus.OK);
     }
 
@@ -112,6 +118,12 @@ public class DicomSCPApi extends AbstractXnatRestApi {
         instanceToChange.setEnabled(flag);
         _manager.setDicomSCPInstance(instanceToChange);
 
+        if(flag){
+            _manager.startDicomSCP(id);
+        }
+        else{
+            _manager.stopDicomSCP(id);
+        }
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

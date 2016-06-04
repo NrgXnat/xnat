@@ -1,9 +1,6 @@
 package org.nrg.dcm.preferences;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 @SuppressWarnings("WeakerAccess")
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class DicomSCPInstance {
     @SuppressWarnings("unused")
     public DicomSCPInstance() {
@@ -18,6 +15,14 @@ public class DicomSCPInstance {
     }
 
     @SuppressWarnings("unused")
+    public DicomSCPInstance(final String scpId, final int port, final String aeTitle, final boolean enabled) {
+        setScpId(scpId);
+        setPort(port);
+        setAeTitle(aeTitle);
+        setEnabled(enabled);
+    }
+
+    @SuppressWarnings("unused")
     public DicomSCPInstance(final String scpId, final int port, final String aeTitle, final String identifier, final String fileNamer) {
         setScpId(scpId);
         setPort(port);
@@ -25,6 +30,18 @@ public class DicomSCPInstance {
         setIdentifier(identifier);
         setFileNamer(fileNamer);
     }
+
+    @SuppressWarnings("unused")
+    public DicomSCPInstance(final String scpId, final int port, final String aeTitle, final String identifier, final String fileNamer, final boolean enabled) {
+        setScpId(scpId);
+        setPort(port);
+        setAeTitle(aeTitle);
+        setIdentifier(identifier);
+        setFileNamer(fileNamer);
+        setEnabled(enabled);
+    }
+
+
 
     public String getScpId() {
         return _scpId;

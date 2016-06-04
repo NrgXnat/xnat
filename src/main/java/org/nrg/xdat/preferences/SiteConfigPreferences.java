@@ -29,6 +29,19 @@ import java.sql.SQLException;
 public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
+    @NrgPreference(defaultValue = "false")
+    public boolean isInitialized() {
+        return getBooleanValue("initialized");
+    }
+
+    public void setInitialized(final boolean initialized) {
+        try {
+            setBooleanValue(initialized, "initialized");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name initialized: something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "XNAT")
     public String getSiteId() {
         return getValue("siteId");
@@ -370,7 +383,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "sitewideAnonymizationScript")
+    @NrgPreference(property = "sitewideAnonymizationScript")
     public String getSitewideAnonymizationScript() {
         return getValue("sitewideAnonymizationScript");
     }
@@ -409,7 +422,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "sitewideSeriesImportFilter")
+    @NrgPreference(property = "sitewideSeriesImportFilter")
     public String getSitewideSeriesImportFilter() {
         return getValue("sitewideSeriesImportFilter");
     }
@@ -422,7 +435,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "sitewidePetTracers")
+    @NrgPreference(property = "sitewidePetTracers")
     public String getSitewidePetTracers() {
         return getValue("sitewidePetTracers");
     }
@@ -434,32 +447,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             _log.error("Invalid preference name 'sitewidePetTracers': something is very wrong here.", e);
         }
     }
-
-//    @NrgPreference(defaultValue = "", property = "selectUploadMethod")
-//    public String getSelectUploadMethod() {
-//        return getValue("selectUploadMethod");
-//    }
-//
-//    public void setSelectUploadMethod(final String selectUploadMethod) {
-//        try {
-//            set(selectUploadMethod, "selectUploadMethod");
-//        } catch (InvalidPreferenceName e) {
-//            _log.error("Invalid preference name 'selectUploadMethod': something is very wrong here.", e);
-//        }
-//    }
-//
-//    @NrgPreference(defaultValue = "false")
-//    public boolean getShowApplet() {
-//        return getBooleanValue("showApplet");
-//    }
-//
-//    public void setShowApplet(final boolean showApplet) {
-//        try {
-//            setBooleanValue(showApplet, "showApplet");
-//        } catch (InvalidPreferenceName e) {
-//            _log.error("Invalid preference name 'showApplet': something is very wrong here.", e);
-//        }
-//    }
 
     @NrgPreference(defaultValue = "false")
     public boolean getEnableProjectAppletScript() {
@@ -474,7 +461,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "")
+    @NrgPreference
     public String getAppletScript() {
         return getValue("appletScript");
     }
@@ -512,19 +499,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             _log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
         }
     }
-
-//    @NrgPreference(defaultValue = "org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", property = "checksums.property.changed.listener")
-//    public String getChecksumsPropertyChangedListener() {
-//        return getValue("checksums.property.changed.listener");
-//    }
-//
-//    public void setChecksumsPropertyChangedListener(final String checksumsPropertyChangedListener) {
-//        try {
-//            set(checksumsPropertyChangedListener, "checksums.property.changed.listener");
-//        } catch (InvalidPreferenceName e) {
-//            _log.error("Invalid preference name 'checksums.property.changed.listener': something is very wrong here.", e);
-//        }
-//    }
 
     @NrgPreference(defaultValue = "true")
     public boolean isEnableDicomReceiver() {
@@ -1238,5 +1212,4 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     private static final String STR_REQUIRE_EVENT_NAME = "audit.require_event_name";
     private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";
     private static final String SHOW_CHANGE_JUSTIFICATION = "audit.show_change_justification";
-
 }

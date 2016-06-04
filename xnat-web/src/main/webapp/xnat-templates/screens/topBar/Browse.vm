@@ -1,0 +1,6 @@
+<!-- Sequence: 11 -->
+<li><a href="#browse">Browse</a>
+    <ul style="width: 151px;">
+        #addGlobalCustomScreens("topBar/Browse")
+    </ul>
+</li>

@@ -116,10 +116,10 @@ var XNAT = getObject(XNAT || {});
                     //     $form.find('[name="'+prop+'"]').val(val);
                     // });
                 }
-                if (isNew) {
-                    $form.find('#scp-enabled').prop('checked', true);
-                    // $$('?enabled')[0].checked = true;
-                }
+                //if (isNew) {
+                //    $form.find('#scp-enabled').prop('checked', true);
+                //    // $$('?enabled')[0].checked = true;
+                //}
             },
             okClose: false,
             okLabel: 'Save',

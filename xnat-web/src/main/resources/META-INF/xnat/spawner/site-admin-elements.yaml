@@ -1105,10 +1105,6 @@ dicomScpReceivers:
 #                            kind: panel.input.text
 #                            name: identifier
 #                            label: Identifier
-                        enabled:
-                            kind: panel.input.checkbox
-                            id: scp-enabled
-                            name: enabled
         dicomScpManager:
             tag: "div#dicom-scp-manager"
         dicomScpManagerScript:

@@ -613,38 +613,38 @@ notifications:
             label: "Password Reset"
             description: "Text of message emailed to users upon lost password reset. Link for password reset is auto-populated"
 
-        notifyAdminSubhead:
-            kind: panel.subhead
-            label: "Notify Administrator on..."
-
-        notifyAdminUserRegistration:
-            kind: panel.input.checkbox
-            id: notifyAdminUserRegistration
-            name: notifications.notifyAdminUserRegistration
-#            value: "?? XNAT:data:siteConfig:notifications.notifyAdminUserRegistration"
-            label: "User Registration"
-            description: "Whether to cc admin user on new user emails. Requires valid admin email address."
-        notifyAdminPipelineEmails:
-            kind: panel.input.checkbox
-            id: notifyAdminPipelineEmails
-            name: notifications.notifyAdminPipelineEmails
-#            value: "?? XNAT:data:siteConfig:notifications.notifyAdminPipelineEmails"
-            label: "Pipeline Emails"
-            description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
-        notifyAdminProjectAccessRequest:
-            kind: panel.input.checkbox
-            id: notifyAdminProjectAccessRequest
-            name: notifications.notifyAdminProjectAccessRequest
-#            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectAccessRequest"
-            label: "Project Access Request"
-            description: "Whether to cc admin user on user project access request. Requires valid admin email address."
-        notifyAdminSessionTransfer:
-            kind: panel.input.checkbox
-            id: notifyAdminSessionTransfer
-            name: notifications.notifyAdminProjectOnSessionTransfer
-#            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectOnSessionTransfer"
-            label: "Session Transfer"
-            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
+#        notifyAdminSubhead:
+#            kind: panel.subhead
+#            label: "Notify Administrator on..."
+#
+#        notifyAdminUserRegistration:
+#            kind: panel.input.checkbox
+#            id: notifyAdminUserRegistration
+#            name: notifications.notifyAdminUserRegistration
+##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminUserRegistration"
+#            label: "User Registration"
+#            description: "Whether to cc admin user on new user emails. Requires valid admin email address."
+#        notifyAdminPipelineEmails:
+#            kind: panel.input.checkbox
+#            id: notifyAdminPipelineEmails
+#            name: notifications.notifyAdminPipelineEmails
+##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminPipelineEmails"
+#            label: "Pipeline Emails"
+#            description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
+#        notifyAdminProjectAccessRequest:
+#            kind: panel.input.checkbox
+#            id: notifyAdminProjectAccessRequest
+#            name: notifications.notifyAdminProjectAccessRequest
+##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectAccessRequest"
+#            label: "Project Access Request"
+#            description: "Whether to cc admin user on user project access request. Requires valid admin email address."
+#        notifyAdminSessionTransfer:
+#            kind: panel.input.checkbox
+#            id: notifyAdminSessionTransfer
+#            name: notifications.notifyAdminProjectOnSessionTransfer
+##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectOnSessionTransfer"
+#            label: "Session Transfer"
+#            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
 
         emailRecipientSubhead:
             kind: panel.subhead

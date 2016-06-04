@@ -67,13 +67,14 @@ public class XnatAppInfo {
      * @return Returns true if the system has been initialized, false otherwise.
      */
     public boolean isInitialized() {
+        // If it's not initialized...
         if (!_initialized) {
-            // The value for siteUrl is a proxy for whether the system has been initialized: siteUrl can NOT be blank,
-            // so if it is this hasn't been initialized.
+            // Recheck to see if it has been initialized. We don't need to recheck to see if it's been
+            // uninitialized because that's silly.
             //noinspection SqlDialectInspection,SqlNoDataSourceInspection
-            _initialized = StringUtils.isNotBlank(_template.queryForObject("select value from xhbm_preference p, xhbm_tool t where t.tool_id = 'siteConfig' and p.tool = t.id and p.name = 'siteUrl';", String.class));
+            _initialized = _template.queryForObject("select value from xhbm_preference p, xhbm_tool t where t.tool_id = 'siteConfig' and p.tool = t.id and p.name = 'initialized';", Boolean.class);
             if (_log.isInfoEnabled()) {
-                _log.info("The site was not flagged as initialized, but a valid siteUrl setting was found. Flagging as initialized.");
+                _log.info("The site was not flagged as initialized, but found initialized preference set to true. Flagging as initialized.");
             }
         }
         return _initialized;

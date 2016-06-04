@@ -157,8 +157,14 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             _log.info(message.toString());
         }
 
+        // Is this call initializing the system?
+        final boolean isInitializing = properties.containsKey("initialized") && StringUtils.equals("true", properties.get("initialized"));
         for (final String name : properties.keySet()) {
             try {
+                // If we're initializing, we're going to make sure everything else is set BEFORE we set initialized to true, so skip it here.
+                if (isInitializing && name.equals("initialized")) {
+                    continue;
+                }
                 _preferences.set(properties.get(name), name);
                 if (_log.isInfoEnabled()) {
                     _log.info("Set property {} to value: {}", name, properties.get(name));
@@ -168,8 +174,13 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             }
         }
 
-        if (properties.containsKey("initialized") && StringUtils.equals("true", properties.get("initialized"))) {
+        // If we're initializing...
+        if (isInitializing) {
+            // Make the final initialization call.
             initialize();
+
+            // Now make the initialized setting true.
+            _preferences.setInitialized(true);
         }
 
         return new ResponseEntity<>(HttpStatus.OK);
@@ -188,15 +199,16 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             _log.info("User {} is setting the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
         }
 
-        try {
-            _preferences.set(value, property);
-        } catch (InvalidPreferenceName invalidPreferenceName) {
-            _log.error("Got an invalid preference name error for the preference: " + property + ", which is weird because the site configuration is not strict");
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
         if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
             initialize();
+            _preferences.setInitialized(true);
+        } else {
+            try {
+                _preferences.set(value, property);
+            } catch (InvalidPreferenceName invalidPreferenceName) {
+                _log.error("Got an invalid preference name error for the preference: " + property + ", which is weird because the site configuration is not strict");
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
 
         return new ResponseEntity<>(HttpStatus.OK);

@@ -59,7 +59,7 @@ $page.setVlinkColor($ui.vlink)
 		</TD>
 	</TR>
 	#xdatEditProps($item $edit_screen)
-	<input type="hidden" name="destination" value="$!destination"/>
+	<input type="hidden" name="destination" value="JS_Return_Autoclose.vm"/>
 	<TR><TD COLSPAN=2 ALIGN=center><input type="submit" name="eventSubmit_doSetup" value="Submit"/></TD></TR>
 </table>
 

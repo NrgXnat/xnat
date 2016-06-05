@@ -11,8 +11,10 @@ var displayProjectNav = function(projectList) {
 var displayFavoriteProjects = function(projectList) {
     if (projectList.length > 0) {
         for (p in projectList) {
-            var pLink = '<li><a href="'+serverRoot+'/data/projects/'+projectList[p].id+'">'+projectList[p].name+'</a></li>';
-            $('#favorite-projects').append(pLink);
+            if (projectList[p].name !== undefined) {
+                var pLink = '<li><a href="'+serverRoot+'/data/projects/'+projectList[p].id+'">'+projectList[p].name+'</a></li>';
+                $('#favorite-projects').append(pLink);
+            }
         };
         $('#favorite-projects').parent('li').removeClass('hidden');
     }

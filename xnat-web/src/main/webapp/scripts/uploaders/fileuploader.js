@@ -27,7 +27,7 @@ abu.FileUploader = function(o){
 		$(this._options.element).append(
 			'<div class="abu-uploader">' +
 				'<div id="abu-files-processing" class="abu-files-processing">        Processing...... </div>' +
-				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel" onclick="abu._fileUploader.uploaderHelp()">?</a>' +
+				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel" onclick="abu._fileUploader.uploaderHelp()">Click here for help.</a>' +
 				'<div class="abu-upload-drop-area" style="display: none;"><span>Drop files here to upload</span></div>' +
 				'<div class="abu-xnat-interactivity-area">' +
 				'</div>' +

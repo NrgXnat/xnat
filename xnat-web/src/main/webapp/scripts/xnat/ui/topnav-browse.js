@@ -1,8 +1,10 @@
 var displayProjectNav = function(projectList) {
     if (projectList.length > 0) {
-        for (p in projectList) {
-            var pLink = '<li><a href="'+serverRoot+'/data/projects/'+projectList[p].id+'">'+projectList[p].name+'</a></li>';
-            $('#browse-projects').append(pLink);
+        for (p=0, q=projectList.length; p<q; p++) {
+            if (projectList[p].name !== undefined) {
+                var pLink = '<li><a href="'+serverRoot+'/data/projects/'+projectList[p].id+'">'+projectList[p].name+'</a></li>';
+                $('#browse-projects').append(pLink);
+            }
         };
     } else {
         $('#browse-projects').find('.create-project').removeClass('hidden');
@@ -10,7 +12,7 @@ var displayProjectNav = function(projectList) {
 };
 var displayFavoriteProjects = function(projectList) {
     if (projectList.length > 0) {
-        for (p in projectList) {
+        for (p=0, q=projectList.length; p<q; p++) {
             if (projectList[p].name !== undefined) {
                 var pLink = '<li><a href="'+serverRoot+'/data/projects/'+projectList[p].id+'">'+projectList[p].name+'</a></li>';
                 $('#favorite-projects').append(pLink);
@@ -27,7 +29,7 @@ var displayProjectNavFail = function() {
 var displayDataNav = function() {
     var dataTypes = window.available_elements;
     if (dataTypes.length > 0) {
-        for (d in dataTypes) {
+        for (d=0, e=dataTypes.length; d<e; d++) {
             if (dataTypes[d].plural !== undefined && dataTypes[d].element_name !== 'wrk:workflowData') {
                 var dLink = '<li><a href="'+serverRoot+'/app/template/Search.vm/node/d.'+dataTypes[d].element_name+'">'+dataTypes[d].plural+'</a></li>';
                 $('#browse-data').append(dLink);

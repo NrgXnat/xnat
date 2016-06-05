@@ -97,18 +97,18 @@ public class XnatInitCheckFilter extends GenericFilterBean {
 
     public void setInitializationPaths(final List<String> initializationPaths) {
         for (final String initializationPath : initializationPaths) {
-            _initializationPathPatterns.add(Pattern.compile("^https*://.*" + initializationPath + ".*$"));
+            _initializationPathPatterns.add(Pattern.compile("^(https*://.*)?" + initializationPath + ".*$"));
         }
     }
 
     public void setConfigurationPath(String configurationPath) {
         _configurationPath = configurationPath;
-        _configurationPathPattern = Pattern.compile("^https*://.*" + configurationPath + "/*");
+        _configurationPathPattern = Pattern.compile("^(https*://.*)?" + configurationPath + "/*");
     }
 
     public void setNonAdminErrorPath(String nonAdminErrorPath) {
         _nonAdminErrorPath = nonAdminErrorPath;
-        _nonAdminErrorPathPattern = Pattern.compile("^https*://.*" + nonAdminErrorPath + "/*");
+        _nonAdminErrorPathPattern = Pattern.compile("^(https*://.*)?" + nonAdminErrorPath + "/*");
     }
 
     public void setExemptedPaths(List<String> exemptedPaths) {

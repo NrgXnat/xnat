@@ -40,6 +40,12 @@ public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHand
 
 	private void updateAnon(){
         try {
+            AnonUtils.getService().setSiteWideScript(getAdminUser().getLogin(), DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null), XDAT.getSiteConfigPreferences().getSitewideAnonymizationScript());
+        }
+        catch(Exception e){
+            _log.error("Failed to set sitewide anon script.",e);
+        }
+        try {
             if (XDAT.getSiteConfigPreferences().getEnableSitewideAnonymizationScript()) {
                 AnonUtils.getService().enableSiteWide(getAdminUser().getLogin(), DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null));
             } else {
@@ -48,12 +54,6 @@ public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHand
         }
         catch(Exception e){
             _log.error("Failed to enable/disable sitewide anon script.",e);
-        }
-        try {
-            AnonUtils.getService().setSiteWideScript(getAdminUser().getLogin(), DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null), XDAT.getSiteConfigPreferences().getSitewideAnonymizationScript());
-        }
-        catch(Exception e){
-            _log.error("Failed to set sitewide anon script.",e);
         }
     }
 

@@ -42,9 +42,12 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Files;
 import org.nrg.xnat.Labels;
+import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.AnonUtils;
-import org.nrg.xnat.helpers.prearchive.*;
+import org.nrg.xnat.helpers.prearchive.DatabaseSession;
+import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase.Either;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.SessionFileLockException;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
@@ -443,7 +446,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
             try {
                 // check to see of this session came in through the upload applet
-                if (!session.getPreventAnon()) {
+                if (!session.getPreventAnon() && AnonUtils.getService().isEnabled(DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null),null)) {
                     Configuration c = AnonUtils.getCachedSitewideAnon();
                     if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
                         //noinspection deprecation
@@ -457,7 +460,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     } else {
                         logger.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without anonymization.", session.getProject(), session.getSubject(), session.getName());
                     }
-                } else {
+                } else if(session.getPreventAnon()){
                     logger.debug("The session {} {} {} has already been anonymized by the uploader, proceeding without further anonymization.", session.getProject(), session.getSubject(), session.getName());
                 }
             } catch (Throwable e) {

@@ -270,6 +270,30 @@ ${bodyTop}
                         });
                     </script>
                 </li>
+                <!-- Sequence: 11 -->
+                <li><a id="browse" title="Browse" href="#Browse">Browse</a>
+                    <ul class="" style="display:none; min-width: 120px;">
+                    <!-- Browse/Default -->
+                        <li><a href="#BrowseProjects">Projects</a>
+                            <ul id="browse-projects">
+                                <!-- Sequence: 10 -->
+                                <li class="create-project hidden"><a href="${SITE_ROOT}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
+                            </ul>
+                        </li>
+                        <li class="hidden"><a href="#FavoriteProjects">Favorite Projects</a>
+                            <ul id="favorite-projects">
+                                <!-- Sequence: 10 -->
+                            </ul>
+                        </li>
+                        <li class="hidden"><a href="#BrowseData">Data</a>
+                            <ul id="browse-data">
+                                <!-- Sequence: 10 -->
+                            </ul>
+                        </li>
+
+                    <script src="${SITE_ROOT}/scripts/xnat/ui/topnav-browse.js"></script>
+                    </ul>
+                </li>
                 <!-- Sequence: 20 -->
                 <li class="more"><a href="#new">New</a>
                     <ul class="" style="display: none;">
@@ -330,7 +354,7 @@ ${bodyTop}
                         <!-- Sequence: 10 -->
                         <!-- allowGuest: true -->
                         <li>
-                            <a href="https://wiki.xnat.org/display/XNAT16/XNAT+Desktop" target="_blank">XNAT Desktop (XND)</a>
+                            <a href="https://wiki.xnat.org/display/XTOOLS/XNAT+Desktop" target="_blank">XNAT Desktop (XND)</a>
                         </li>
                         <li>
                             <a href="http://nrg.wustl.edu/software/dicom-browser/" target="_blank">DICOM Browser</a>

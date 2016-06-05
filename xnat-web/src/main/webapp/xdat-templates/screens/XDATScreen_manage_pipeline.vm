@@ -17,14 +17,14 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
 
 #if ($pipelines.size() > 0)
-<table>
+<table class="xnat-table">
 
-<tr> <td> </td>  <tH> Applies To </tH> <tH> Generates </tH> <tH> Description </tH> <tH> Path </tH> </tr>
+<tr> <th> </th>  <tH> Applies To </tH> <tH> Generates </tH> <tH> Description </tH> <tH> Path </tH> </tr>
 
 #foreach ($pipeline in $pipelines)
-<tr> 
-	<td> #set ( $url = $link.setPage("XDATScreen_delete_pipeline.vm").addQueryData("popup","true").addQueryData("path","$pipeline.getPath()" )  ) 
-				<a href="#" ONCLICK="return popupWSize('$url',400,800);"> 
+<tr>
+	<td> #set ( $url = $link.setPage("XDATScreen_delete_pipeline.vm").addQueryData("popup","true").addQueryData("path","$pipeline.getPath()" )  )
+				<a href="#" ONCLICK="return popupWSize('$url',400,800);">
 				Delete
 				</a></td>
 	<td> $repository.getDisplayName($pipeline.getAppliesto()) </td>

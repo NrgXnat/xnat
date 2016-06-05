@@ -496,7 +496,7 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 	if ($('#whatToDoSelect').find('option').length==1) {
 		$('#whatToDoOption').html('NONE DEFINED'); 
 	} else if ($('#whatToDoSelect').find('option').length==2) {
-		$('#whatToDoSelect').find('option').get(0).remove();
+		$('#whatToDoSelect').find('option').get(0).parentElement.removeChild($('#whatToDoSelect').find('option').get(0));
 	}
 	XNAT.app.abu.whatToDoChange();
 }

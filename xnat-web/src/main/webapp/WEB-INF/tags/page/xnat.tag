@@ -537,8 +537,8 @@ ${bodyTop}
                                 //jq('#main_nav li').removeClass('open');
                                 li$.find('ul.subnav').each(function(){
                                     var sub$ = $(this);
-                                    var offsetL = sub$.closest('ul').outerWidth();
-                                    sub$.css({ 'left': offsetL + -37 })
+                                    var offsetL = sub$.closest('li').width();
+                                    sub$.css({ 'left': offsetL });
                                 });
                                 if (body$.hasClass('applet')) {
                                     coverApplet(li$.find('> ul'));

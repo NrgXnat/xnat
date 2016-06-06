@@ -2,8 +2,6 @@
     XNAT Admin UI custom styles
 */
 
-#page_wrapper { overflow: auto; }
-
 .xnat-nav-tabs { position: relative; z-index: 1; }
 .xnat-nav-tabs li {
     float: left; margin-right: -1px; margin-bottom: -1px;

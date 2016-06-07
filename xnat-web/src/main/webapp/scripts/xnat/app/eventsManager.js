@@ -193,7 +193,7 @@ $(function(){
             height: 350,
             overflow: 'auto',
             beforeShow: function(obj){
-                //chosenInit(obj.$modal.find('select.event, select.scriptId'), null, 300);
+                //menuInit(obj.$modal.find('select.event, select.scriptId'), null, 300);
                 //obj.$modal.find('select.event, select.scriptId').chosen({
                 //    width: '300px',
                 //    disable_search_threshold: 6

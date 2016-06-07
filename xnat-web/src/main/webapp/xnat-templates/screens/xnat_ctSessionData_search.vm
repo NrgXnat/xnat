@@ -58,14 +58,14 @@
 
                 <input type="hidden" name="${schemaElement.getFullXMLName()}.COMBO2_FIELDS" value="${schemaElement.getFullXMLName()}.PROJECT_equals,${schemaElement.getFullXMLName()}.sharing.share.project_equals"/>
                 #set($TYPE_value=$!search.getWebFormValue("${schemaElement.getFullXMLName()}.PROJECTS_equals"))
-                <select multiple size="6" class="chosen-menu project-multi-select-menu" data-chosen-opts="width:280px" style="min-width:100px;" name="${schemaElement.getFullXMLName()}.COMBO2">
+                <select multiple size="6" class="xnat-menu project-multi-select-menu" data-menu-opts="width:280px" style="min-width:100px;" name="${schemaElement.getFullXMLName()}.COMBO2">
                     #foreach($mr_project in $mr_projects)
                         <option value="'$mr_project'" #if($TYPE_value.indexOf("'$mr_project'")!=-1) SELECTED #end>$mr_project</option>
                     #end
                 </select>
 
                 <script type="text/javascript">
-                    chosenInit('select.project-multi-select-menu');
+                    menuInit('select.project-multi-select-menu');
                 </script>
 
             </div>

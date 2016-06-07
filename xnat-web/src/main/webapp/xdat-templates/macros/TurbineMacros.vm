@@ -1797,13 +1797,13 @@ then adds any subsequent strings to a block of text to use as a pop-over.
     <div class="project-multi-select">
 ##        <h5>$displayManager.getSingularDisplayNameForProject():</h5>
         #set($TYPE_value=$!search.getWebFormValue("${schemaElement.getFullXMLName()}.PROJECTS_equals"))
-        <select multiple size="6" class="chosen-menu project-multi-select-menu" data-chosen-opts="width:280px" style="min-width:100px;" name="${schemaElement.getFullXMLName()}.PROJECTS_equals">
+        <select multiple size="6" class="xnat-menu project-multi-select-menu" data-menu-opts="width:280px" style="min-width:100px;" name="${schemaElement.getFullXMLName()}.PROJECTS_equals">
             #foreach($proj in $projects)
                 <option value="/<$proj>" #if($TYPE_value && $TYPE_value.indexOf("<$proj>")!=-1) SELECTED #end>$proj</option>
             #end
         </select>
         <script type="text/javascript">
-            chosenInit($('select.project-multi-select-menu'));
+            menuInit($('select.project-multi-select-menu'));
             //$('select.project-multi-select-menu').chosen();
         </script>
     </div>

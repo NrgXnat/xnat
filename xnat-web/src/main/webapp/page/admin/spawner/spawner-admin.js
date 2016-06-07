@@ -153,7 +153,7 @@ XNAT.xhr.getJSON({
                     var id = this;
                     idsMenu.appendChild(spawn('option', { value: id, html: id }))
                 });
-                chosenInit(idsMenu, { width: '250px' });
+                menuInit(idsMenu, { width: '250px' });
             });
 
         });

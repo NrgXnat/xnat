@@ -34,7 +34,7 @@
                 <h5>Investigator:</h5>
                 #set($queryResults = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList(
                     "SELECT lastname, lastname || ', ' || firstname FROM xnat_investigatorData ORDER BY lastname"))
-                <select id="project-investigator" class="chosen-menu" data-chosen-opts="width:220px" name="${schemaElement.getFullXMLName()}.PROJECT_INVS_equals">
+                <select id="project-investigator" class="xnat-menu" data-menu-opts="width:220px" name="${schemaElement.getFullXMLName()}.PROJECT_INVS_equals">
                     <option value="">(SELECT)</option>
                     #foreach($inv in $queryResults)
                         <option value="$inv.get(1)">$inv.get(1)</option>

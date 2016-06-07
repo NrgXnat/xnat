@@ -148,8 +148,8 @@
         var el, $el, parts, id, classes, tagParts, attrs, isVoid,
             // property names to skip later
             skip = [
-                'innerHTML', 'html', 'attr', 'prepend', 'append', 'appendTo',
-                'classes', 'className', 'style', 'data', 'fn'
+                'innerHTML', 'html', 'attr', 'config', 'kind', 'prepend', 'append', 'appendTo',
+                'classes', 'className', 'addClass', 'style', 'data', 'fn', 'label'
             ],
             errors = []; // collect errors
 
@@ -251,10 +251,13 @@
             el.className = [].concat(opts.className||[], opts.classes||[], opts.addClass||[]).join(' ').trim();
         }
 
+        // IE *REALLY* hates method="PUT" on forms
+        var methodPut = (opts.method && /put/i.test(opts.method));
+
         // add attributes and properties to element
         forOwn(opts, function(prop, val){
             // only add if NOT in 'skip' array
-            if (skip.indexOf(prop) === -1){
+            if (skip.indexOf(prop) === -1 || !methodPut){
                 el[prop] = val;
             }
         });

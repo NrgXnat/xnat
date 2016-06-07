@@ -72,7 +72,7 @@ $page.setTitle("$siteId - Please Login")
                     <input type="hidden" id="login_method" name="login_method" value="Database">
                 #elseif($login_methods && $login_methods.size() > 1)
                     <label for="login_method">Login</label>
-                    <select id="login_method" class="chosen-menu" data-chosen-opts="width:160px" name="login_method">
+                    <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
                         #foreach ($method in $login_methods)
                             <option value="$method">$method</option>
                         #end
@@ -149,7 +149,7 @@ $page.setTitle("$siteId - Please Login")
                 <input type="hidden" id="login_method" name="login_method" value="Database">
             #elseif($login_methods && $login_methods.size() > 1)
                 <label for="login_method">Login</label>
-                <select id="login_method" class="chosen-menu" data-chosen-opts="width:160px" name="login_method">
+                <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
                     #foreach ($method in $login_methods)
                         <option value="$method">$method</option>
                     #end

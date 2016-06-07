@@ -204,7 +204,7 @@ XNAT.app.automation = {};
 
             $container.empty().append($menu);
 
-            chosenInit($menu, null, 370);
+            menuInit($menu, null, 370);
 
             initCustomEventNameToggler($defineEventDialog);
 

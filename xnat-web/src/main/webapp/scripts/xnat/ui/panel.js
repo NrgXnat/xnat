@@ -160,7 +160,7 @@ var XNAT = getObject(XNAT || {});
                     val = stringable(val) ? val : JSON.stringify(val);
                 }
 
-                $(this).val(val);
+                $(this).changeVal(val);
 
                 if (/checkbox|radio/i.test(this.type)) {
                     this.checked = !!this.value;
@@ -171,6 +171,7 @@ var XNAT = getObject(XNAT || {});
                 xmodal.loading.closeAll();
             }
         }
+
 
         // populate the data fields if this panel is in the 'active' tab
         // (only getting values for the active tab should cut down on requests)
@@ -187,7 +188,7 @@ var XNAT = getObject(XNAT || {});
 
             xmodal.loading.open('#load-data');
 
-            obj.load = obj.load.toString().trim();
+            obj.load = (obj.load+'').trim();
 
             // if 'load' starts with '$?', '~/', or just '/'
             // then values need to load via REST
@@ -1375,6 +1376,5 @@ var XNAT = getObject(XNAT || {});
         //$('[data-modify]').trigger('change.modify');
 
     });
-
 
 })(XNAT, jQuery, window);

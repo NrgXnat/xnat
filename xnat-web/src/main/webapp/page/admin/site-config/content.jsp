@@ -2,19 +2,11 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<c:if test="${empty hasInit}">
-    <pg:init>
-        <c:if test="${empty hasVars}">
-            <pg:jsvars/>
-        </c:if>
-    </pg:init>
-</c:if>
-
-<c:set var="_msg">
+<c:set var="MSG">
     Nope.
 </c:set>
 
-<pg:restricted msg="${_msg}">
+<pg:restricted msg="${MSG}">
 
     <c:import url="/xapi/siteConfig" var="siteConfig"/>
     <c:import url="/xapi/notifications" var="notifications"/>
@@ -47,8 +39,8 @@
                         <label for="select-site-config-item" class="element-label">Select a property</label>
                         <div class="element-wrapper">
 
-                            <select id="select-site-config-item" style="width:350px;">
-                                <option value="!"> &nbsp; </option>
+                            <select id="select-site-config-item">
+                                <%--<option value="!"> &nbsp; </option>--%>
                             </select>
 
                             <br><br>
@@ -59,7 +51,7 @@
 
                             <button type="button" id="show-site-config-json">Show Site Config JSON</button>
 
-                            <form method="" action=""></form>
+                            <form method="get" action="#!"></form>
                             <div class="description"></div>
 
                         </div>
@@ -117,7 +109,7 @@
             });
 
             $(function(){
-                $siteConfigSelect.chosen();
+                $siteConfigSelect.selectize();
             })
 
         })();

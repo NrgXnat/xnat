@@ -393,8 +393,8 @@ function getById$(id){
 
 // global function for initializing "Chosen" menus
 // options: http://harvesthq.github.io/chosen/options.html
-function chosenInit(select, opts, width){
-    var $select = $$(select||'select.chosen-menu'),
+function menuInit(select, opts, width){
+    var $select = $$(select||'select.xnat-menu'),
         defaults = {
             disable_search_threshold: 7,
             placeholder_text_single: 'Select...',
@@ -406,23 +406,23 @@ function chosenInit(select, opts, width){
         var $this = $(this),
             dataChosenOpts = {};
         // trigger an update if it's already been initialized
-        if ($this.hasClass('chosen-ready')){
+        if ($this.hasClass('menu-ready')){
             $this.trigger('chosen:updated');
             return;
         }
-        if ($this.data('chosen-opts')){
-            parseOptions(dataChosenOpts, $this.data('chosen-opts'));
+        if ($this.data('menu-opts')){
+            parseOptions(dataChosenOpts, $this.data('menu-opts'));
         }
         var _opts = $.extend(defaults, dataChosenOpts, opts||{});
         // turn menus into "Chosen" menus
-        $this.chosen(_opts).addClass('chosen-ready');
+        $this.chosen(_opts).addClass('menu-ready');
     });
     // return the jQuery object/collection
     return $select;
 }
 
-function chosenUpdate(select){
-    return $$(select||'select.chosen-menu').trigger('chosen:updated');
+function menuUpdate(select){
+    return $$(select||'select.xnat-menu').trigger('chosen:updated');
 }
 
 

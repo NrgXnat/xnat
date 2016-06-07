@@ -322,7 +322,7 @@
             // update the radio buttons/checkboxes
             __searchMethodInputs.prop('checked',false);
             __searchMethodInputs.filter('.' + method).prop('checked', true);
-            chosenUpdate();
+            menuUpdate();
         });
     };
 

@@ -28,9 +28,9 @@
     <script>
         +function(){
             var userList = JSON.parse('${userList}');
-            var ul = spawn.element('ul#users');
+            var ul = spawn('ul#users');
             $.each(userList, function(i, name){
-                ul.appendChild(spawn.element('li', name))
+                ul.appendChild(spawn('li', name))
             });
             $('#user-list').append(ul);
         }()

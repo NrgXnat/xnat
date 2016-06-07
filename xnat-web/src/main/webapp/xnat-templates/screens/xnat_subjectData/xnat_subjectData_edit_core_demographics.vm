@@ -231,7 +231,7 @@
     #formLabel("Gender")
     <td>
         #set($temp_gender=$!item.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender"))
-        <select class="chosen-menu" data-chosen-opts="width:150px" data-placeholder=" " name="xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender">
+        <select class="xnat-menu" data-menu-opts="width:150px" data-placeholder=" " name="xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender">
             <option value="" #if ( "" ==  $temp_gender) selected #end></option>
             #if ( "M" ==  $temp_gender || "F" ==  $temp_gender)
                 <option value="M" #if ( "M" ==  $temp_gender) selected #end>M</option>
@@ -246,7 +246,7 @@
 <tr>
     #set($temp_hand=$!item.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/handedness"))
     #formLabel("Handedness")
-    <td><select class="chosen-menu" data-chosen-opts="width:150px" data-placeholder=" " name="xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/handedness">
+    <td><select class="xnat-menu" data-menu-opts="width:150px" data-placeholder=" " name="xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/handedness">
         <option value="" #if ( "" ==  $temp_hand) selected #end></option>
         <option value="right" #if ( "right" == $temp_hand ) selected #end>Right</option>
         <option value="left" #if ( "left" == $temp_hand ) selected #end>Left</option>

@@ -65,7 +65,7 @@
 
         container.load(url, function(){
             // callbacks
-            chosenInit();
+            menuInit();
             XNAT.app.searchMethodToggler(container);
         });
 

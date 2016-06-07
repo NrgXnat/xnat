@@ -135,11 +135,11 @@ XNAT.app.projectSubjectSelector = function( proj_menu, subj_menu, submit_button,
                     removeAttr('disabled').
                     prop('disabled',false);
 
-                chosenInit($proj_menu, null, 300);
+                menuInit($proj_menu, null, 300);
 
             }
 
-            chosenUpdate($proj_menu);
+            menuUpdate($proj_menu);
             //$proj_menu.trigger('chosen:updated');
 
         });
@@ -216,10 +216,10 @@ XNAT.app.projectSubjectSelector = function( proj_menu, subj_menu, submit_button,
                     removeAttr('disabled').
                     prop('disabled', false);
 
-                chosenInit($subj_menu, null, 300);
+                menuInit($subj_menu, null, 300);
             }
 
-            chosenUpdate($subj_menu);
+            menuUpdate($subj_menu);
             //$subj_menu.trigger('chosen:updated');
 
         });

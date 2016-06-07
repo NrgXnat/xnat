@@ -164,11 +164,11 @@ $navigation.setTemplate("/BaseJS.vm")
 </script>
 <script>
     // initialize "Chosen" menus on DOM load
-    // all <select class="chosen-menu"> elements
+    // all <select class="xnat-menu"> elements
     // will be converted
     // putting this here to be at the top of
     // the jQuery DOM-ready queue
-    jq(function(){chosenInit()});
+    jq(function(){menuInit()});
 </script>
 <script src="$content.getURI('scripts/xdat.js')"></script>
 <script src="$content.getURI('scripts/DynamicJSLoad.js')"></script>

@@ -567,7 +567,7 @@ jq(window).load(function(){
     jq('#actionsMenu ul ul').addClass('shadowed');
 
     // initialize any more "Chosen" menus
-    chosenInit();
+    menuInit();
 
     // email verification scripts
     //

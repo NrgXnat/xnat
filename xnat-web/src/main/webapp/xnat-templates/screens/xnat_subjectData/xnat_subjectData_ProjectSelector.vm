@@ -21,7 +21,7 @@ $item.getProperty("project")
 #end
 #else
 #if($create_projects.size()>0)
-<SELECT ID="$item.getXSIType()/project" class="chosen-menu required" data-chosen-opts="width:200px,allow_single_deselect:true" data-placeholder="Select Project" name="$item.getXSIType()/project" ONCHANGE="">
+<SELECT ID="$item.getXSIType()/project" class="xnat-menu required" data-menu-opts="width:200px,allow_single_deselect:true" data-placeholder="Select Project" name="$item.getXSIType()/project" ONCHANGE="">
 <option value=""></option>
 #foreach($proj in $create_projects)
 	#if($proj!="*")

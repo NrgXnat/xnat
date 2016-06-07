@@ -58,8 +58,8 @@
 
     <!-- required libraries -->
     <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.min.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.js"></script>
     <script type="text/javascript">
         // use 'jq' to avoid _possible_ conflicts with Velocity
         var jq = jQuery;
@@ -144,12 +144,12 @@
     </script>
     <script type="text/javascript">
         // initialize "Chosen" menus on DOM load
-        // all <select class="chosen-menu"> elements
+        // all <select class="xnat-menu"> elements
         // will be converted
         // putting this here to be at the top of
         // the jQuery DOM-ready queue
         jq(function(){
-            chosenInit()
+            menuInit()
         });
     </script>
 
@@ -647,7 +647,7 @@ ${bodyTop}
                 // update the radio buttons/checkboxes
                 searchMethodInputs$.prop('checked', false);
                 searchMethodInputs$.filter('.' + method).prop('checked', true);
-                chosenUpdate();
+                menuUpdate();
             });
         };
 
@@ -706,16 +706,46 @@ ${bodyTop}
     <div id="mylogger"></div>
 </div>
 <!-- /page_wrapper -->
-
-<div id="xnat_power">
-    <a target="_blank" href="http://www.xnat.org/" style="" title="XNAT Version 1.7"><img
-            src="${SITE_ROOT}/images/xnat_power_small.png"></a>
-    <small>version 1.7</small>
-</div>
+<div class="clear"></div>
+<div id="xnat_power"></div>
 
 <script type="text/javascript">
 
-    loadjs(scriptUrl('xnat/event.js'), function(){
+    (function(){
+
+        <c:import url="/xapi/siteConfig/buildInfo" var="buildInfo" scope="session"/>
+
+        var buildInfo = XNAT.data.siteConfig.buildInfo = ${buildInfo};
+
+        var buildInfoSample = {
+            "Application-Name": "XNAT",
+            "Manifest-Version": "1.0",
+            buildDate: "Sun Jun 05 12:41:24 CDT 2016",
+            buildNumber: "Manual",
+            commit: "v275-gd2220fd",
+            version: "1.7.0-SNAPSHOT"
+        };
+
+        // add version to title attribute of XNAT logos
+        var version = buildInfo.version + " build: " + buildInfo.buildNumber;
+
+        var isNonRelease = /.*(SNAPSHOT|BETA|RC).*/i.test(buildInfo.version);
+
+        if (isNonRelease) {
+            version += " (" + buildInfo.commit + ")";
+        }
+
+        $('#xnat_power')
+            .spawn('a.xnat-version', {
+                href: 'http://www.xnat.org',
+                target: '_blank',
+                title: 'XNAT version ' + version
+            }, [['img|src=${SITE_ROOT}/images/xnat_power_small.png']])
+            .spawn('small', 'version ' + version + (isNonRelease ? '<br>' + buildInfo.buildDate : ''));
+
+        $('#header_logo').attr('title','XNAT version ' + version);
+
+        XNAT.app.version = version ;
 
         var clicker = XNAT.event.click('#header_logo, #xnat_power > a');
 
@@ -739,7 +769,7 @@ ${bodyTop}
             XNAT.ui.popup(XNAT.url.rootUrl('/xapi/swagger-ui.html'));
         });
 
-    })
+    })();
 
 </script>
 <%--<script src="${SITE_ROOT}/scripts/footer.js"></script>--%>

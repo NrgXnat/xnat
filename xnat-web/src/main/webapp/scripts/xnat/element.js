@@ -27,7 +27,7 @@ var XNAT = getObject(XNAT||{});
 
     function setupElement(tag, opts, content){
         var setup = setOpts(opts, content);
-        return spawn.element(tag, setup[0], setup[1]);
+        return spawn(tag, setup[0], setup[1]);
     }
 
     function Element(tag, opts, content){

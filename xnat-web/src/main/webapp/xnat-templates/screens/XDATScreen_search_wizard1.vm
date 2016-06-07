@@ -27,7 +27,7 @@
             </select>
 
             <script type="text/javascript">
-                chosenInit('#exptType', { width: '200px', placeholder_text_single: 'Select', disable_search_threshold: 7 } );
+                menuInit('#exptType', { width: '200px', placeholder_text_single: 'Select', disable_search_threshold: 7 } );
             </script>
         
         </li>

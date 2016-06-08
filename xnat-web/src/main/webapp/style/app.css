@@ -2861,7 +2861,9 @@ div.xmodal #layout_content {
 /* prearchive file list modal */
 table.file-details {
     margin-top: -5px;
-    min-width: 840px;
+    margin-left: -15px;
+    width: 100%;
+    min-width: 830px;
 }
 
 table.file-details th,
@@ -3349,6 +3351,10 @@ label.disabled {
 
 /* prearchives.css */
 /***********************************************/
+#prearchive_table {
+    left: 35px !important;
+}
+
 div.instructions {
     width: 80%;
     margin: 1em;
@@ -3572,6 +3578,10 @@ hr.light {
     #search_tabs .xT_p,
     #search_tabs .xT_c {
         width: 900px !important;
+    }
+
+    #prearchive_table {
+        left: -65px !important;
     }
 
 }

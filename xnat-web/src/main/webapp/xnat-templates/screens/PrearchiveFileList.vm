@@ -2,48 +2,34 @@
 	#set ($template = $data.getTemplateInfo())
 	$!template.setLayoutTemplate("ScreenOnly.vm")
 #end
-<table>
-	<tr>
-		<td>
-            <table class="file-details padding-sm" cellspacing="0">
-            	<tr class="file-details-header">
-            		<th align="left" width="">File</th>
-            		<th align="center" width="100px">Size</th>
-            		<th width="240px">&nbsp;</th>
-            	</tr>
-			#set($lastURL="0")
-            #foreach($row in $table.toArrayListOfLists())
-				#set($lastURL=$content.getURI("$!row.get(2)"))
-            	<tr class="file-details-row highlight-row">
-            		<td class="scan-image-link">
-                        <a class="image-download" href="$lastURL" style="text-decoration:underline" title="Download File: $!row.get(0)">$!row.get(0)</a>
-                    </td>
-            		<td class="scan-image-size" align="center">$!row.get(1)</td>
-            		<td class="scan-image-buttons" align="right">
-            		#if($!row.get(2).contains("/DICOM/"))
-						#set($hasDICOM="1")
-            			<button onclick="XNAT.app.headerDialog.load('$content.getURI("/REST/services/dicomdump?src=$!row.get(2).substring(5)&format=html&requested_screen=DicomFileTable.vm")','File $!row.get(0) DICOM');">Review DICOM Tags</button>
-						##&nbsp;&nbsp;<a onclick="document.getElementById('viewer').src='$lastURL'">JPEG</a>
-##                        <button onclick="popupCentered('$lastURL?format=image/jpeg', '', 256, 256, 2.2, {location:'no',scrollbars:'no',toolbar:'no',status:'no'})">View Image</button>
-                        <button
-                            class="view-image-button" data-popup-opts="$lastURL|$!row.get(0)|256|256"
-                            ##data-popup="$lastURL?format=image/jpeg | View Image | 256 | 256 | 3 | location=no,status=no,toolbar=no,scrollbars=no"
-                            ##onclick="popupCentered('$lastURL?format=image/jpeg', '', 256, 256, 'location=no,scrollbars=no,toolbar=no,status=no')"
-                            >View Image</button>
-                        ##window.open('$lastURL?format=image/jpeg','Image Popup','scrollbars=no,width=256,height=256,resizable,status,chrome,centerscreen')
-                    #end
-            		</td>
-            	</tr>
-            #end
-            </table>
-		</td>
-        #if($lastURL!="0")
-		<!--<td>
-			<img id="viewer" src="$lastURL" border="0"/>
-		</td>-->
-		#end
-	</tr>
+
+<table class="file-details padding-sm" cellspacing="0">
+    <tr class="file-details-header">
+        <th align="left" width="">File</th>
+        <th align="center" width="100px">Size</th>
+        <th width="240px">&nbsp;</th>
+    </tr>
+    #set($lastURL="0")
+    #foreach($row in $table.toArrayListOfLists())
+        #set($lastURL=$content.getURI("$!row.get(2)"))
+        <tr class="file-details-row highlight-row">
+            <td class="scan-image-link">
+                <a class="image-download" href="$lastURL" style="text-decoration:underline" title="Download File: $!row.get(0)">$!row.get(0)</a>
+            </td>
+            <td class="scan-image-size" align="center">$!row.get(1)</td>
+            <td class="scan-image-buttons" align="right">
+                #if($!row.get(2).contains("/DICOM/"))
+                    #set($hasDICOM="1")
+                    <button onclick="XNAT.app.headerDialog.load('$content.getURI("/REST/services/dicomdump?src=$!row.get(2).substring(5)&format=html&requested_screen=DicomFileTable.vm")','File $!row.get(0) DICOM');">Review DICOM Tags</button>
+                    <button class="view-image-button" data-popup-opts="$lastURL|$!row.get(0)|256|256">View Image</button>
+                #end
+            </td>
+        </tr>
+    #end
 </table>
+#if($lastURL!="0")
+<!-- <img id="viewer" src="$lastURL" border="0"/> -->
+#end
 
 <script type="text/javascript">
 
@@ -73,7 +59,7 @@
                 '</div>';
             imageModal.title = 'Image: ' + title;
             imageModal.width = parseInt(width,10);
-            imageModal.height = parseInt(height,10) + 54;
+            imageModal.height = parseInt(height,10) + 72;
             imageModal.footer = false;
             imageModal.modal = false;
             imageModal.scroll = false;

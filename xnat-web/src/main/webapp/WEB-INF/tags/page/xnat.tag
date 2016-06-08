@@ -726,6 +726,8 @@ ${bodyTop}
             version: "1.7.0-SNAPSHOT"
         };
 
+        XNAT.version = buildInfo.version;
+
         // add version to title attribute of XNAT logos
         var version = buildInfo.version + " build: " + buildInfo.buildNumber;
 
@@ -772,11 +774,6 @@ ${bodyTop}
     })();
 
 </script>
-<%--<script src="${SITE_ROOT}/scripts/footer.js"></script>--%>
-
-<%--<div id="xmodal-loading" style="position:fixed;left:-9999px;top:-9999px;">--%>
-    <%--<img src="${SITE_ROOT}/scripts/xmodal/loading_bar.gif" alt="loading">--%>
-<%--</div>--%>
 
 ${bodyBottom}
 

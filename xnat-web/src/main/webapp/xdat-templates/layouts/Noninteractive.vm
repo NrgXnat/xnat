@@ -66,8 +66,7 @@
     <script type="text/javascript" src="$content.getURI("scripts/utils.js")"></script>
 
     <!-- xdat.css and xnat.css loaded last to override YUI styles -->
-    <link rel="stylesheet" type="text/css" href="$content.getURI("style/xdat.css")">
-    <link rel="stylesheet" type="text/css" href="$content.getURI("style/xnat.css")">
+    <link rel="stylesheet" type="text/css" href="$content.getURI("style/app.css")">
 
     <link rel="stylesheet" type="text/css" href="$content.getURI("scripts/xmodal-v1/xmodal.css")">
     <script type="text/javascript" src="$content.getURI("scripts/xmodal-v1/xmodal.js")"></script>

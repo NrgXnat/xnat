@@ -508,8 +508,6 @@ XNAT.app.toggle=function (_name){
     }
 };
 
-var XNAT_version;
-
 $(function(){
 
     var $body = $body || $(document.body);
@@ -531,23 +529,6 @@ $(function(){
         return false;
     });
 
-    // add version to title attribute of XNAT logos
-    if (typeof window.top.logged_in != 'undefined' && window.top.logged_in == true){
-        Cookies.set('SESSION_ACTIVE', 'true');
-        $.get(serverRoot+'/xapi/siteConfig/buildInfo',function(data){
-            XNAT_version = data.version + " build: " + data.buildNumber;
-            var isNonRelease = /.*(SNAPSHOT|BETA|RC).*/.test(data.version);
-            if (isNonRelease) {
-                XNAT_version += " (" + data.commit + ")";
-            }
-            $('#xnat_power').find('a').attr('title','XNAT version ' + XNAT_version).after('<small>version ' + XNAT_version + (isNonRelease ? "<br>" + data.buildDate : "") + '</small>');
-            $('#header_logo').attr('title','XNAT version ' + XNAT_version);
-            XNAT.app.version = XNAT_version ;
-        });
-    }
-    else {
-        Cookies.set('SESSION_ACTIVE', 'false');
-    }
 });
 
 jq(window).load(function(){

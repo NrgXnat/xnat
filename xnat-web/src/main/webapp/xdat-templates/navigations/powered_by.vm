@@ -1,12 +1,34 @@
 
 <div class="clear"></div>
 <div id="xnat_power">
-    <a target="_blank" href="http://www.xnat.org/" style=""><img src="$content.getURI('images/xnat_power_small.png')"></a>
+    <a target="_blank" href="http://www.xnat.org/" style="">
+        <img src="$content.getURI('images/xnat_power_small.png')">
+    </a>
 </div>
 
 <script type="text/javascript">
 
-    loadjs(scriptUrl('xnat/event.js'), function(){
+    (function(){
+
+        // add version to title attribute of XNAT logos
+        if (typeof window.top.logged_in != 'undefined' && window.top.logged_in == true){
+            Cookies.set('SESSION_ACTIVE', 'true');
+            $.get(serverRoot+'/xapi/siteConfig/buildInfo',function(data){
+                var version = XNAT.version = data.version;
+                var version_string = version + " build: " + data.buildNumber;
+                var isNonRelease = /.*(SNAPSHOT|BETA|RC).*/i.test(version);
+                if (isNonRelease) {
+                    version_string += " (" + data.commit + ")";
+                }
+                $('#xnat_power').find('a').attr('title','XNAT version ' + version_string)
+                                .after('<small>version ' + version_string + (isNonRelease ? "<br>" + data.buildDate : "") + '</small>');
+                $('#header_logo').attr('title','XNAT version ' + version_string);
+                XNAT.app.version = version_string ;
+            });
+        }
+        else {
+            Cookies.set('SESSION_ACTIVE', 'false');
+        }
 
         var clicker = XNAT.event.click('#header_logo, #xnat_power > a');
 
@@ -30,6 +52,6 @@
             XNAT.ui.popup(XNAT.url.rootUrl('/xapi/swagger-ui.html'));
         });
 
-    })
+    })();
 
 </script>

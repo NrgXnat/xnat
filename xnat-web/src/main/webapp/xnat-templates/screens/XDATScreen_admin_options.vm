@@ -29,8 +29,6 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
         <a href="/page/admin/">Configuration</a>
 
-        <a href="$link.setPage("XDATScreen_EditScript.vm").addPathInfo("user","Test")">View Edit Script</a>
-
         <a class="iframe-dialog" href="$link.setPage("XDATScreen_emailSpecifications.vm").addPathInfo("popup","true")?message=false">Set Email Settings</a>
 
         <a href="$link.setAction("RefreshAction").addPathInfo("refresh","ElementSecurity")">Reload Security Settings</a>

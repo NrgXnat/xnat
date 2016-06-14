@@ -36,8 +36,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.*;
 import org.springframework.security.web.session.ConcurrentSessionFilter;
 
 import javax.sql.DataSource;
@@ -87,11 +86,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    public ConcurrentSessionControlAuthenticationStrategy sas(final SessionRegistry sessionRegistry) throws SiteConfigurationException {
+    public CompositeSessionAuthenticationStrategy sas(final SessionRegistry sessionRegistry) throws SiteConfigurationException {
+        ArrayList<SessionAuthenticationStrategy> authStrategies = new ArrayList<>();
+
         final ConcurrentSessionControlAuthenticationStrategy strategy = new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
         strategy.setMaximumSessions(_configuration.getConcurrentMaxSessions());
         strategy.setExceptionIfMaximumExceeded(true);
-        return strategy;
+        authStrategies.add(strategy);
+
+        SessionFixationProtectionStrategy fixationProtectionStrategy = new SessionFixationProtectionStrategy();
+        authStrategies.add(fixationProtectionStrategy);
+
+        RegisterSessionAuthenticationStrategy registerSessionAuthenticationStrategy = new RegisterSessionAuthenticationStrategy(sessionRegistry);
+        authStrategies.add(registerSessionAuthenticationStrategy);
+
+        final CompositeSessionAuthenticationStrategy compositeSessionAuthenticationStrategy = new CompositeSessionAuthenticationStrategy(authStrategies);
+        return compositeSessionAuthenticationStrategy;
     }
 
     @Bean

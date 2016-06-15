@@ -78,20 +78,21 @@ body.xnat .xmodal .panel { border: none; }
 /* hide footer on individual form elements that are part of a multi-form panel */
 .multi-form .panel .footer { display: none; }
 
-.panel-default .panel-body { padding: 20px; }
+.panel-default .panel-body { padding: 30px; }
 .panel-default .panel-footer  { padding: 12px; background: #f0f0f0; border-top: #c8c8c8; }
 .panel-title { font-weight: normal; font-size: 18px; line-height: inherit; }
 
 /* PANEL ELEMENTS */
-.panel .panel-element { margin: 15px 0; clear: both; overflow: auto; }
+.panel .panel-element { clear: both; overflow: auto; margin: 0 0 30px;}
+.panel .panel-element:last-child { margin: 0; }
 .panel .panel-element > * { box-sizing: border-box; }
 .panel .panel-element .element-label {
-    width: 35%; padding-right: 10px; float: left;
-    color: #222; font-weight: bold; text-align: right;
+    color: #222; font-weight: bold; text-align: left;
     line-height: 24px; vertical-align: middle;
+    display: block;
 }
-.panel .panel-element .element-wrapper { display: inline-block; width: 65%; float: right; }
-.panel .panel-element .element-wrapper .description { margin: 10px 0; }
+.panel .panel-element .element-wrapper { display: block; }
+.panel .panel-element .element-wrapper .description { margin: 3px 0; font-size: 12px; color: #848484;}
 .panel .panel-element span.before { right: 10px; }
 .panel .panel-element span.after { margin-left: 10px; }
 .panel .panel-element label.small { font-weight: normal; }
@@ -99,9 +100,10 @@ body.xnat .xmodal .panel { border: none; }
 .panel .input-bundle { margin-top: 5px; }
 
 .panel .panel-subhead {
-    padding: 2px; margin: 10px;
-    font-size: 13px;
     border-bottom: 1px solid #c8c8c8;
+    color: #757575;
+    margin: 40px 0 20px;
+    text-transform: uppercase;
 }
 
 .panel .panel-element textarea {

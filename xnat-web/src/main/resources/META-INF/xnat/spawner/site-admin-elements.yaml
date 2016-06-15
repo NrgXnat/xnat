@@ -29,7 +29,7 @@ siteDescriptionPage:
         id: siteDescriptionPage
         name: siteDescriptionPage
         size: 30
-    after: "<p>Specify a velocity template file to display on the login page</p>"
+    after: "<p class='description'>Specify a velocity template file to display on the login page</p>"
 
 siteDescriptionText:
     tag: textarea
@@ -37,7 +37,7 @@ siteDescriptionText:
         id: siteDescriptionText
         name: siteDescriptionText
         rows: 8
-    after: "<p>Specify a simple text description of this site.</p>"
+    after: "<p class='description'>Specify a simple text description of this site.</p>"
 
 siteDescriptionType:
     kind: panel.element

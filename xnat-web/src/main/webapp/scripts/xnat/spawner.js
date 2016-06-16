@@ -57,7 +57,7 @@ var XNAT = getObject(XNAT);
             // save the config properties in a new object
             prop = cloneObject(prop);
 
-            prop.config = prop.config || prop.element || {};
+            prop.element = prop.element || prop.config || {};
 
             // use 'name' property in element or config
             // then look for 'name' at object root
@@ -70,20 +70,20 @@ var XNAT = getObject(XNAT);
             kind = prop.kind || prop.type || 'div.spawned';
 
             // make 'href' 'src' and 'action' properties
-            // start at the site root if starting with '*/'
-            if (prop.config.href) {
-                prop.config.href = setRoot(prop.config.href)
+            // start at the site root if starting with '/'
+            if (prop.element.href) {
+                prop.element.href = setRoot(prop.element.href)
             }
-            if (prop.config.src) {
-                prop.config.src = setRoot(prop.config.src)
+            if (prop.element.src) {
+                prop.element.src = setRoot(prop.element.src)
             }
-            if (prop.config.action) {
-                prop.config.action = setRoot(prop.config.action)
+            if (prop.element.action) {
+                prop.element.action = setRoot(prop.element.action)
             }
 
             // do a raw spawn() if 'kind' is 'element'
             // or if there's a tag property
-            if (kind === 'element' || prop.tag || prop.config.tag) {
+            if (kind === 'element' || prop.tag || prop.element.tag) {
 
                 // pass 'content' (not contentS) property to add
                 // stuff directly to spawned element
@@ -91,7 +91,7 @@ var XNAT = getObject(XNAT);
 
                 try {
                     spawnedElement =
-                        spawn(prop.tag || prop.config.tag || 'div', prop.config, prop.content);
+                        spawn(prop.tag || prop.element.tag || 'div', prop.element, prop.content);
                     // jQuery's .append() method is
                     // MUCH more robust and forgiving
                     // than element.appendChild()

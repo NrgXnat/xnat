@@ -92,7 +92,7 @@ var XNAT = getObject(XNAT);
         } 
         else {
             label = spawn('label', {
-                attr: { for: config.id }
+                attr: { "for": config.id }
             }, config.label);
             
             if (config.layout !== 'right') {

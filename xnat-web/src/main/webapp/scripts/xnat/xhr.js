@@ -97,7 +97,7 @@ var XNAT = getObject(XNAT||{}),
     xhr.$.get       = xhr.get$       = $.get;
     xhr.$.post      = xhr.post$      = $.post;
     xhr.$.put       = xhr.put$       = $.put;
-    xhr.$.delete    = xhr.delete$    = $.delete;
+    xhr.$['delete'] = xhr.delete$    = $['delete'];
     xhr.$.getJSON   = xhr.getJSON$   = $.getJSON;
     xhr.$.getScript = xhr.getScript$ = $.getScript;
     xhr.$.load = xhr.load$ = function(selector, url, data, success){

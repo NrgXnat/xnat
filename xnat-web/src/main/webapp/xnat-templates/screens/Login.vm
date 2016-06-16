@@ -15,11 +15,17 @@ $page.setTitle("$siteId - Please Login")
 
 <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
 <div id="login_area">
-    <div id="ie8_error" class="error" style="display: none; margin-top: -4em; margin-bottom: 4em; background-image: none; z-index: 9">
-        $!systemName is not fully supported for use with Internet Explorer version 8 or below &ndash; there may be errors which prevent the site from working properly.
+
+    <!--[if lte IE 8]>
+    <div id="ie8_error" class="error" style="display:none;margin-bottom:4em;background-image:none;z-index:9">
+            $!systemName does not support Internet Explorer version 8 or below.
         <br><br>
-        We recommend using a modern browser such as an up-to-date <a class="link" href="https://www.mozilla.org/en-US/firefox/desktop/" target="_blank">Mozilla Firefox</a>.
+        We recommend using a modern browser such as
+        <a class="link" href="https://www.mozilla.org/en-US/firefox/desktop/" target="_blank">Mozilla Firefox</a>,
+        <a class="link" href="http://www.opera.com/" target="_blank">Opera</a>, or
+        <a class="link" href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>.
     </div>
+    <![endif]-->
 
 #if($siteConfig.getProperty("siteWideAlertStatus","")!="0")
     <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;"><strong>$siteConfig.getProperty("siteWideAlertMessage","")</strong></div>
@@ -52,14 +58,14 @@ $page.setTitle("$siteId - Please Login")
     #end
 
     <div id="register_box_container">
-        <h3>New User Registration <span class="btn btn-xs btn-inline right" onclick="javascript:showLogin()">Already Have an Account?</span></h3>
+        <h3>New User Registration <span class="btn btn-xs btn-inline right" onclick="showLogin()">Already Have an Account?</span></h3>
         <div id="register_box">
             #parse("/screens/register_box.vm")
         </div>
     </div>
 
     <div id="login_box_container" class="hidden">
-        <h3>Existing User Login <span class="btn btn-xs btn-inline right" onclick="javascript:showRegistration()">Register?</span> </h3>
+        <h3>Existing User Login <span class="btn btn-xs btn-inline right" onclick="showRegistration()">Register?</span> </h3>
         <div class="message">
             <p><strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.getProperty("siteId","") account. </p>
             <p>&nbsp;</p>
@@ -120,7 +126,7 @@ $page.setTitle("$siteId - Please Login")
     <div id="login_welcome">
         #if($siteConfig.getProperty("siteDescriptionType","")=="Text")
             <div id="siteDescription"></div>
-            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.getProperty("siteDescriptionText","")</textarea>
+            <div id="siteDescriptionMd" style="display: none;">$siteConfig.getProperty("siteDescriptionText","")</div>
             <script>
                 var mdtext = jq('#siteDescriptionMd').text();
                 var markedText = marked(mdtext);
@@ -179,20 +185,18 @@ $page.setTitle("$siteId - Please Login")
 </div>
 <!-- END xnat-templates/screens/Login.vm -->
 
+<!--[if lte IE 8]>
 <script>
     // detect IE8, prevent user logon. From http://stackoverflow.com/a/15983064
     function isIE () {
         var myNav = navigator.userAgent.toLowerCase();
         return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
     }
-
     if (isIE() === 8) {
-//        document.getElementById('login_box').style.backgroundColor = '#ffdfdf';
-//        // IE8 code
-//        jq('#login_box')
-//                .css('background-color','#ffdfdf')
-//                .find('input').prop('disabled','disabled');
-        jq('#ie8_error').show();
+        $('#login_box').addClass('disabled')
+                .css('background-color','#ffdfdf')
+                .find('input').prop('disabled', true);
+        $('#ie8_error').show();
     }
-
 </script>
+<![endif]-->

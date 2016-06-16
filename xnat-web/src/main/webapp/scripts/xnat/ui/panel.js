@@ -680,7 +680,7 @@ var XNAT = getObject(XNAT || {});
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.date = function panelInputPassword(opts){
+    panel.input.date = function panelInputDate(opts){
         opts = cloneObject(opts);
         opts.type = 'date';
         addClassName(opts, 'date');

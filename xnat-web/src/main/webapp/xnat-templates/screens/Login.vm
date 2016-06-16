@@ -22,8 +22,9 @@ $page.setTitle("$siteId - Please Login")
         <br><br>
         We recommend using a modern browser such as
         <a class="link" href="https://www.mozilla.org/en-US/firefox/desktop/" target="_blank">Mozilla Firefox</a>,
-        <a class="link" href="http://www.opera.com/" target="_blank">Opera</a>, or
-        <a class="link" href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>.
+        <a class="link" href="http://www.opera.com/" target="_blank">Opera</a>,
+        <a class="link" href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>, or a newer
+        version of Internet Explorer (version 9.0 or higher).
     </div>
     <![endif]-->
 
@@ -193,9 +194,7 @@ $page.setTitle("$siteId - Please Login")
         return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
     }
     if (isIE() === 8) {
-        $('#login_box').addClass('disabled')
-                .css('background-color','#ffdfdf')
-                .find('input').prop('disabled', true);
+        $('#login_box').addClass('disabled').find(':input').addClass('disabled').prop('disabled', true);
         $('#ie8_error').show();
     }
 </script>

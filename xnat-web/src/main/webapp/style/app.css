@@ -1086,7 +1086,16 @@ body [type="reset"]:disabled {
     /*color: #a0a0a0;*/
     /*border-color: #c0c0c0;*/
     /*background: #e0e0e0;*/
-    cursor: default !important;
+    cursor: not-allowed !important;
+}
+
+body button.disabled,
+body button:disabled,
+body button.disabled:hover,
+body button:disabled:hover {
+    background: #e0e0e0;
+    border-color: #c0c0c0;
+    cursor: not-allowed !important;
 }
 
 /* remove outline from <button> or <input type="button/submit/reset"> elements */

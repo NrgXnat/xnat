@@ -92,7 +92,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminPipelineEmails")
+    @NrgPreference(defaultValue = "true", property = "notifications.notifyAdminPipelineEmails")
     public boolean getNotifyAdminPipelineEmails(){
         return getBooleanValue("notifications.notifyAdminPipelineEmails");
     }
@@ -105,7 +105,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminProjectAccessRequest")
+    @NrgPreference(defaultValue = "true", property = "notifications.notifyAdminProjectAccessRequest")
     public boolean getNotifyAdminProjectAccessRequest(){
         return getBooleanValue("notifications.notifyAdminProjectAccessRequest");
     }
@@ -118,7 +118,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminProjectOnSessionTransfer")
+    @NrgPreference(defaultValue = "true", property = "notifications.notifyAdminProjectOnSessionTransfer")
     public boolean getNotifyAdminSessionTransfer(){
         return getBooleanValue("notifications.notifyAdminProjectOnSessionTransfer");
     }

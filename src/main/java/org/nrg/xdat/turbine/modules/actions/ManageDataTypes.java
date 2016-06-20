@@ -12,8 +12,6 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.util.ArrayList;
-
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatElementSecurity;
@@ -25,6 +23,8 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+
+import java.util.ArrayList;
 
 public class ManageDataTypes extends AdminAction {
 
@@ -62,6 +62,8 @@ public class ManageDataTypes extends AdminAction {
         ElementSecurity.refresh();
         
         data.setMessage("Data-Types modified.");
+
+        data.setScreenTemplate("XDATScreen_dataTypes.vm");
     }
 
 }

@@ -679,11 +679,11 @@ addGroup("$!groupid.getGroupid()");
                                             </span>
                                             &nbsp;&nbsp;&nbsp;
                                             <span align=left nowrap>
-                                                <input type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObject.getGroup("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
+                                                <input type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
                                             </span>
                                             &nbsp;&nbsp;&nbsp;
                                             <span align=left nowrap>
-                                                <input type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObject.getGroup("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
+                                                <input type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
                                             </span>
                                         </td>
                                     </tr>

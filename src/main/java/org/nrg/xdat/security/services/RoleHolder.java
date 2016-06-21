@@ -31,11 +31,11 @@ public class RoleHolder {
     }
 
     public void addRole(UserI authenticatedUser, UserI user, String role) throws Exception {
-        addRole(authenticatedUser,user,role);
+        roleService.addRole(authenticatedUser,user,role);
     }
 
     public void deleteRole(UserI authenticatedUser, UserI user, String role) throws Exception {
-        deleteRole(authenticatedUser,user,role);
+        roleService.deleteRole(authenticatedUser,user,role);
     }
 
     public boolean isSiteAdmin(UserI user) {

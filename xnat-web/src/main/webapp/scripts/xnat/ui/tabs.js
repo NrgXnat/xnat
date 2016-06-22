@@ -62,9 +62,16 @@ var XNAT = getObject(XNAT || {});
 
     // save the id of the active tab
     XNAT.ui.tab.active = '';
-    tab.activate = function(name, container){
 
+
+    // ==================================================
+    // SELECT A TAB
+    tab.select = tab.activate = function(name, container){
+        container = container || tabs.container || 'body';
+        $$(container).find('li.tab[data-tab="' + name + '"]').trigger('click');
     };
+    // ==================================================
+
 
     // ==================================================
     // CREATE A SINGLE TAB
@@ -180,12 +187,16 @@ var XNAT = getObject(XNAT || {});
         $(navTabs).append(tab.groups(obj.meta.tabGroups));
 
         // bind tab click events
-        $container.on('click', 'li.tab', function(){
+        $container.on('click', 'li.tab', function(e){
+            e.preventDefault();
             var clicked = $(this).data('tab');
             // de-activate all tabs and panes
             $container.find('[data-tab]').removeClass('active');
             // activate the clicked tab and pane
             $container.find('[data-tab="' + clicked + '"]').addClass('active');
+            // set the url hash
+            //var baseUrl = window.location.href.split('#')[0];
+            window.location.replace('#' + clicked);
         });
 
         function render(element){

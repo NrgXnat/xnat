@@ -93,6 +93,25 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
+    function footerButton(text, type, disabled, classes){
+        var button = {
+            type: type || 'button',
+            html: text || 'Submit'
+        };
+        button.classes = [classes || '', 'btn btn-sm'];
+        if (type === 'link') {
+            button.classes.push('btn-link')
+        }
+        else if (/submit|primary/.test(type)) {
+            button.classes.push('submit')
+        }
+        if (disabled) {
+            button.classes.push('disabled');
+            button.disabled = 'disabled'
+        }
+        return spawn('button', button);
+    }
+
     // creates a panel that's a form that can be submitted
     panel.form = function panelForm(opts, callback){
 
@@ -107,10 +126,11 @@ var XNAT = getObject(XNAT || {});
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
 
-            _resetBtn = spawn('button.btn.btn-sm.revert.pull-right|type=button', 'Discard Changes'),
+            _resetBtn = footerButton('Discard Changes', 'button', false, 'revert pull-right'),
+            //_resetBtn = spawn('button.btn.btn-sm.revert.pull-right|type=button', 'Discard Changes'),
 
             _footer = [
-                ['button.btn.btn-sm.submit.save.pull-right|type=submit', 'Submit'],
+                footerButton('Save', 'submit', false, 'submit save pull-right'),
                 ['span.pull-right', '&nbsp;&nbsp;&nbsp;'],
                 _resetBtn,
                 //['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
@@ -186,7 +206,7 @@ var XNAT = getObject(XNAT || {});
                 return;
             }
 
-            xmodal.loading.open('#load-data');
+            //xmodal.loading.open('#load-data');
 
             obj.load = (obj.load+'').trim();
 
@@ -362,7 +382,7 @@ var XNAT = getObject(XNAT || {});
 
             // only open loading dialog for standard (non-multi) submit
             if (!multiform.count){
-                var saveLoader = xmodal.loading.open('#form-save');
+                //var saveLoader = xmodal.loading.open('#form-save');
             }
 
             // var ajaxSubmitOpts = {
@@ -405,7 +425,7 @@ var XNAT = getObject(XNAT || {});
                     // ALWAYS reload from the server
                     obj.refresh = opts.refresh || opts.reload || opts.url || opts.load;
                     if (!silent){
-                        xmodal.loading.close(saveLoader.$modal);
+                        //xmodal.loading.close(saveLoader.$modal);
                         XNAT.ui.banner.top(2000, 'Data saved successfully.', 'success');
                         loadData($form, obj);
                         // xmodal.message('Data saved successfully.', {
@@ -802,6 +822,23 @@ var XNAT = getObject(XNAT || {});
     };
     panel.select.multi.init = panel.select.multi;
 
+    return XNAT.ui.panel = panel;
+
+
+    
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // STOP EVERYTHING!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // EVERYTHING BELOW HERE IS EFFECTIVELY DISABLED
+    // WITH THE return STATEMENT ABOVE
+    //
+    // IT IS BEING KEPT AROUND TEMPORARILY FOR REFERENCE
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
     function footerButton(text, type, disabled, classes){
         var button = {
             type: type || 'button',
@@ -823,24 +860,6 @@ var XNAT = getObject(XNAT || {});
         }
         return spawn('button', button);
     }
-
-
-    return XNAT.ui.panel = panel;
-
-
-    
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // STOP EVERYTHING!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // EVERYTHING BELOW HERE IS EFFECTIVELY DISABLED
-    // WITH THE return STATEMENT ABOVE
-    //
-    // IT IS BEING KEPT AROUND TEMPORARILY FOR REFERENCE
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
 
     /**

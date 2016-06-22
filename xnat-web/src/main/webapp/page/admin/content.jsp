@@ -75,9 +75,13 @@
                                 // SPAWN THE TABS
                                 var adminTabs = XNAT.spawner.spawn(data);
 
-                                adminTabs.render(XNAT.tabs.container, 500);
+                                adminTabs.render(XNAT.tabs.container, 500, function(){
+                                    if (window.location.hash) {
+                                        XNAT.ui.tab.select(getUrlHashValue(), XNAT.tabs.container);
+                                    }
+                                });
 
-                                // SAVE THE JSON
+                                // SAVE THE UI JSON
                                 XNAT.app.adminTabs = adminTabs;
 
                             }

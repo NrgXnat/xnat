@@ -228,18 +228,18 @@ var XNAT = getObject(XNAT);
 
         _spawn.render = function(container, wait, callback){
 
-            var $container = $$(container);
+            var $container = $$(container).hide();
 
             wait = wait !== undefined ? wait : 100;
 
-            $container.hide().append(frag);
+            $container.append(frag);
             $container.fadeIn(wait);
 
-            setTimeout(function(){
+            //setTimeout(function(){
                 if (isFunction(callback)) {
                     callback()
                 }
-            }, wait);
+            //}, wait);
 
             return _spawn;
 

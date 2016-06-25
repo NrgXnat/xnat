@@ -102,7 +102,7 @@ public abstract class SecureResource extends Resource {
 
     public static List<Variant> STANDARD_VARIANTS = Arrays.asList(new Variant(MediaType.APPLICATION_JSON), new Variant(MediaType.TEXT_HTML), new Variant(MediaType.TEXT_XML));
 
-    public Hashtable<String, String> fieldMapping = new Hashtable<>();
+    public Map<String, String> fieldMapping = new HashMap<>();
 
     // TODO: these should be proper extension types: application/x-xList, application/x-xcat+xml, application/x-xar
     public static final MediaType APPLICATION_XLIST = MediaType.register(

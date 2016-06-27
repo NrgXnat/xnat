@@ -414,7 +414,7 @@ public class ExperimentResource extends ItemResource {
                 }
 
 
-                if (StringUtils.isNotBlank(_experiment.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(_experiment.getId())) {
+                if (StringUtils.isNotBlank(_experiment.getLabel()) && !XftStringUtils.isValidId(_experiment.getId())) {
                     getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in experiment label.");
                     return;
                 }

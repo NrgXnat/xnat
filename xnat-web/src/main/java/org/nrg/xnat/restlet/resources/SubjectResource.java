@@ -344,7 +344,7 @@ public class SubjectResource extends ItemResource {
                         sub.setProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender", this.getQueryVariable("gender"));
                     }
 
-                    if (StringUtils.isNotBlank(sub.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(sub.getId())) {
+                    if (StringUtils.isNotBlank(sub.getLabel()) && !XftStringUtils.isValidId(sub.getId())) {
                         this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in subject label.");
                         return;
                     }

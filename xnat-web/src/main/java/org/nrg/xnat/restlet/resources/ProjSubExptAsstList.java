@@ -236,7 +236,7 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 						allowDataDeletion=true;
 					}
 					
-				if(StringUtils.isNotBlank(assessor.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(assessor.getId())){
+				if(StringUtils.isNotBlank(assessor.getLabel()) && !XftStringUtils.isValidId(assessor.getId())){
 					this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED,"Invalid character in experiment label.");
 					return;
 				}

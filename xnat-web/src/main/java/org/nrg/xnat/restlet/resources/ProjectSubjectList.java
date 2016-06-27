@@ -151,7 +151,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 						}
 				
 
-				if(StringUtils.isNotBlank(sub.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(sub.getId())){
+				if(StringUtils.isNotBlank(sub.getLabel()) && !XftStringUtils.isValidId(sub.getId())){
 					this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED,"Invalid character in subject label.");
 					return;
 								}

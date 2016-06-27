@@ -411,7 +411,8 @@ $(function(){
     }
 
     function addEventHandler(){
-         initEventsMenu();
+        initEventsMenu();
+        initScriptsMenu();
     }
 
     function doDeleteHandler( triggerId ){

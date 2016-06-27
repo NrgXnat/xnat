@@ -630,12 +630,7 @@ public class XftStringUtils {
 
 	public static String StandardizeXMLPath(String fullString)
 	{
-	    if (XFT.PATH_SEPARATOR == '.')
-	    {
-	        fullString = StringUtils.replaceChars(fullString, '/', XFT.PATH_SEPARATOR);
-	    }else{
-	        fullString = StringUtils.replaceChars(fullString, '.', XFT.PATH_SEPARATOR);
-	    }
+		fullString = StringUtils.replaceChars(fullString, '.', XFT.PATH_SEPARATOR);
         fullString = StringUtils.replace(fullString, "[@", "[*");
         fullString = StringUtils.replaceChars(fullString, '@', XFT.PATH_SEPARATOR);
         fullString = StringUtils.replace(fullString, "[*", "[@");
@@ -648,8 +643,8 @@ public class XftStringUtils {
         return fullString;
 	}
 
-	public static boolean IsAlphaNumericUnderscore(String s) {
-		return !StringUtils.isBlank(s) && ALPHANUMERICUNDERSCORE.matcher(s).matches();
+	public static boolean isValidId(String s) {
+		return !StringUtils.isBlank(s) && REGEX_VALID_ID.matcher(s).matches();
 	}
 	
 	public static boolean OccursBefore(String root,String f, String l) {
@@ -660,6 +655,6 @@ public class XftStringUtils {
 		return (s!=null)?s.intern():s;
 	}
 
-	private static final Pattern ALPHANUMERICUNDERSCORE = Pattern.compile("^[A-z0-9_]+$");
+	private static final Pattern REGEX_VALID_ID = Pattern.compile("^[A-z0-9_-]+$");
 }
 

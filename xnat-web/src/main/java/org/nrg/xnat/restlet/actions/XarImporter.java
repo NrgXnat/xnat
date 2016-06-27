@@ -125,7 +125,6 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 
         final ArrayList<File> dirs = new ArrayList<File>();
         final ArrayList<File> extraFiles = new ArrayList<File>();
-
         for (File f: destination.listFiles()){
             if (f.isDirectory()){
                 dirs.add(f);
@@ -135,7 +134,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                     try {
                         XFTItem item = reader.parse(f.getAbsolutePath());
                         ItemI om = org.nrg.xdat.base.BaseElement.GetGeneratedItem(item);
-                       	urlList.add("/archive/experiments/" + ((XnatExperimentdata)om).getId());
+                       	//urlList.add("/archive/experiments/" + ((XnatExperimentdata)om).getId());
                         if (om instanceof XnatImagesessiondata){
                             if (!itemsByType.containsKey("SESSION")){
                                 itemsByType.put("SESSION", new ArrayList<ItemI>());
@@ -204,6 +203,8 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                 if (items.size()==1){
                     session =(XnatImagesessiondata)items.get(0);
                     this.populateSession(session);
+                   	urlList.add("/archive/experiments/" + session.getId());
+
                     if (session.getProject()==null){
                     	throw new ClientException("Could not process XAR file - Invalid project tag.");
                     }
@@ -240,6 +241,8 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                             multiSession=true;
                         }
                     }
+                   	urlList.add("/archive/experiments/" + session.getId());
+
 
                     if (session!=null)
 						try {
@@ -270,6 +273,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                             multiSession=true;
                         }
                     }
+                   	urlList.add("/archive/experiments/" + session.getId());
 
                     if (session!=null)
 						try {
@@ -293,6 +297,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                 	
                     XnatImageassessordata scan = (XnatImageassessordata)om;
                     this.populateAssessor(scan);
+
                     if (session==null){
                         session = scan.getImageSessionData();
                     }else{
@@ -300,6 +305,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                             multiSession=true;
                         }
                     }
+                   	urlList.add("/archive/experiments/" + session.getId());
 
                     if (scan.getProject()==null){
                     	throw new ClientException("Could not process XAR file - Invalid project tag.");

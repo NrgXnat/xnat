@@ -10,19 +10,9 @@
  */
 package org.nrg.xnat.restlet.resources.search;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
+import com.noelios.restlet.ext.servlet.ServletCall;
 import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.om.XdatCriteria;
-import org.nrg.xdat.om.XdatCriteriaSet;
-import org.nrg.xdat.om.XdatStoredSearch;
-import org.nrg.xdat.om.XdatStoredSearchAllowedUser;
-import org.nrg.xdat.om.XdatStoredSearchGroupid;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.presentation.CSVPresenter;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.DisplaySearch;
@@ -59,7 +49,12 @@ import org.restlet.resource.Variant;
 import org.springframework.util.StringUtils;
 import org.xml.sax.SAXException;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class SavedSearchResource extends ItemResource {
 	XdatStoredSearch xss = null;
@@ -300,8 +295,8 @@ public class SavedSearchResource extends ItemResource {
 				return;
 			}
 
-			final boolean isPrimary=(search.getTag()!=null && (search.getId().equals(search.getTag() + "_" + search.getRootElementName()))) ||
-			search.getBriefDescription().equals(DisplayManager.GetInstance().getPluralDisplayNameForElement(search.getRootElementName()));
+			final boolean isPrimary = (search.getTag() != null && (search.getId().equals(search.getTag() + "_" + search.getRootElementName()))) ||
+									  (org.apache.commons.lang3.StringUtils.isNotBlank(search.getBriefDescription()) && search.getBriefDescription().equals(DisplayManager.GetInstance().getPluralDisplayNameForElement(search.getRootElementName())));
 
 			if(isNew && isPrimary){
 				if(!Permissions.can(user,"xnat:projectData/ID", search.getTag(), SecurityManager.DELETE)){

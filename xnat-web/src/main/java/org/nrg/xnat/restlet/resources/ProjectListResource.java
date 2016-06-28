@@ -104,7 +104,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                     return;
                 }
 
-                if (!XftStringUtils.IsAlphaNumericUnderscore(project.getId())) {
+                if (!XftStringUtils.isValidId(project.getId())) {
                     this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in project ID.");
                     return;
                 }

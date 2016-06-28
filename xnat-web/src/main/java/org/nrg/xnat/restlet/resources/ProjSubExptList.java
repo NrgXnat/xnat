@@ -233,7 +233,7 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 						allowDataDeletion=true;
 					}
 
-				if(StringUtils.isNotBlank(expt.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(expt.getId())){
+				if(StringUtils.isNotBlank(expt.getLabel()) && !XftStringUtils.isValidId(expt.getId())){
 					this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED,"Invalid character in experiment label.");
 					return;
 				}

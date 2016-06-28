@@ -254,7 +254,7 @@ public class ProjectResource extends ItemResource {
                                 return;
                             }
 
-                            if (!XftStringUtils.IsAlphaNumericUnderscore(project.getId()) && !isQueryVariableTrue("testHyphen")) {
+                            if (!XftStringUtils.isValidId(project.getId()) && !isQueryVariableTrue("testHyphen")) {
                                 getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in project ID.");
                                 return;
                             }

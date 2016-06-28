@@ -340,6 +340,18 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                 if (!dest.exists())
                     dest.mkdirs();
 				try {
+	                for(ItemI item : items){
+	                	PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, item.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), EventUtils.STORE_XAR, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
+                		EventMetaI c=wrk.buildEvent();
+                        try {
+                        	SaveItemHelper.unauthorizedSave(item, user, false, true,c);
+							WorkflowUtils.complete(wrk, c);
+						} catch (Exception e) {
+							WorkflowUtils.fail(wrk, c);
+							// Re-throw exception.  Should not proceed as if complete successfully.
+							throw(e);
+						}
+	                }
 					if (dirs.size()==1 && extraFiles.size()==0){
 	                    //CONTAINER FOLDER
 	                	File[] children = dirs.get(0).listFiles();
@@ -359,18 +371,8 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 	                        FileUtils.MoveFile(f, new File(dest,f.getName()), true);
 	                    }
 	                }
-	                for(ItemI item : items){
-	                	PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, item.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), EventUtils.STORE_XAR, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
-                		EventMetaI c=wrk.buildEvent();
-                        try {
-                        	SaveItemHelper.unauthorizedSave(item, user, false, true,c);
-							WorkflowUtils.complete(wrk, c);
-						} catch (Exception e) {
-							WorkflowUtils.fail(wrk, c);
-						}
-	                }
 				} catch (Exception e) {
-					throw new ServerException("ERROR:  Server-side exception");
+					throw new ServerException("ERROR:  Server-side exception (" + e.toString() + ")");
 				}
             }
             

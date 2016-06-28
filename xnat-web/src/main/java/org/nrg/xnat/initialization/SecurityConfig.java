@@ -70,7 +70,7 @@ public class SecurityConfig {
     @Bean
     public XnatAuthenticationEntryPoint loginUrlAuthenticationEntryPoint() {
         final XnatAuthenticationEntryPoint entryPoint = new XnatAuthenticationEntryPoint("/app/template/Login.vm");
-        entryPoint.setDataPaths(Arrays.asList("/data/**", "/REST/**", "/fs/**"));
+        entryPoint.setDataPaths(Arrays.asList("/xapi/**", "/data/**", "/REST/**", "/fs/**"));
         entryPoint.setInteractiveAgents(Arrays.asList(".*MSIE.*", ".*Mozilla.*", ".*AppleWebKit.*", ".*Opera.*"));
         return entryPoint;
     }

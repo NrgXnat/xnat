@@ -38,14 +38,13 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                 _table = table[0];
 
             _table.id = 'user_TABLE';
-            table.addClass('xnat-table sortable');
-            table.find('tr').addClass('highlight');
+            table.addClass('xnat-table highlight sortable');
             table.find('img').closest('td').addClass('center');
             // add sortable content for green/red 'lights'
             table.find('img[src*="cr"]').closest('td').append('<i class="hidden">9</i>'); // off/red
             table.find('img[src*="cg"]').closest('td').append('<i class="hidden">1</i>'); // on/green
 
-            ts_makeSortable(_table);
+            //ts_makeSortable(_table);
             //sortables_init();
 
             // hack to replace inline 'onclick'

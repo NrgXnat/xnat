@@ -33,11 +33,10 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
             var table = jq('#group-table').find('> table');
 
-            table.addClass('xnat-table sortable');
-            table.find('tr').addClass('highlight');
+            table.addClass('xnat-table highlight sortable');
 
             //sortables_init();
-            ts_makeSortable(table[0]);
+            //ts_makeSortable(table[0]);
 
             // xdat:userGroup.ID
 

@@ -60,10 +60,10 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
             #set($row=0)
             #foreach($data_type in $data_types)
                 #if($row==0)
-                <tr class="highlight">
+                <tr>
                     #set($row=1)
                 #else
-                <tr class="highlight">
+                <tr>
                     #set($row=0)
                 #end
 
@@ -154,7 +154,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
         //popupCentered(this.href,' ',960,720,3)
     });
 
-    ts_makeSortable(document.getElementById('data-type-table'));
+    //ts_makeSortable(document.getElementById('data-type-table'));
 
     //jq('#data-type-table').tableSort();
 

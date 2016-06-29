@@ -16,12 +16,12 @@
     #if($pScope)
         <div id="proj_expts" style="display:none">
 
-            <table width="100%">
+            <table width="100%" class="highlight sortable">
                 <tr>
-                    <th align="left" class="underscore">Date</th>
-                    <th align="left" class="underscore">Experiment</th>
-                    <th align="left" class="underscore">$displayManager.getSingularDisplayNameForProject()</th>
-                    <th align="left" class="underscore">Label</th>
+                    <th align="left" class="underscore sort">Date</th>
+                    <th align="left" class="underscore sort">Experiment</th>
+                    <th align="left" class="underscore sort">$displayManager.getSingularDisplayNameForProject()</th>
+                    <th align="left" class="underscore sort">Label</th>
                 </tr>
                 #foreach ($assessor in $subject.getMinimalLoadAssessors())
                     #if($assessor.hasProject($project))
@@ -36,12 +36,12 @@
     #end
     <div id="all_expts" style="display:none">
 
-        <table width="100%">
+        <table width="100%" class="highlight sortable">
             <tr>
-                <th align="left" class="underscore">Date</th>
-                <th align="left" class="underscore">Experiment</th>
-                <th align="left" class="underscore">$displayManager.getSingularDisplayNameForProject()</th>
-                <th align="left" class="underscore">Label</th>
+                <th align="left" class="underscore sort">Date</th>
+                <th align="left" class="underscore sort">Experiment</th>
+                <th align="left" class="underscore sort">$displayManager.getSingularDisplayNameForProject()</th>
+                <th align="left" class="underscore sort">Label</th>
             </tr>
             #foreach ($assessor in $subject.getMinimalLoadAssessors())
                 #parse($turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))

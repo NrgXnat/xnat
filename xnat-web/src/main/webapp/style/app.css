@@ -2360,10 +2360,9 @@ span.close {
 }
 
 #proj_expts td,
-#all_expts td,
-.expts_container td {
+#all_expts td {
     padding: 2px 20px 2px 5px;
-    min-width: 80px;
+    min-width: 100px;
 }
 
 #proj_expts td a,
@@ -2855,6 +2854,37 @@ span.spacer {
 .xnat-table.borderless th,
 .xnat-table.borderless td {
     border: none;
+}
+
+th.sort {
+    position: relative;
+}
+
+th.sort > i {
+    display: inline-block;
+    width: 11px;
+    position: relative;
+    left: 5px;
+    background: transparent right center no-repeat;
+    background-image: url('../images/sort-none.png');
+}
+
+.xnat-table.alt1 th.sort > i {
+    position: absolute;
+    right: 9px;
+    left: auto;
+}
+
+th.sort.asc > i {
+    background-image: url('../images/sort-asc.png');
+}
+
+th.sort.desc > i {
+    background-image: url('../images/sort-desc.png');
+}
+
+th.sort:hover {
+    cursor: pointer;
 }
 
 /* overrides for Chosen menus (if used) */

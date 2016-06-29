@@ -33,14 +33,13 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
         (function(){
 
             var __table = jq('#bundle-table').find('> table');
-            __table.addClass('xnat-table sortable');
-            __table.find('tr').addClass('highlight');
+            __table.addClass('xnat-table highlight sortable');
             __table.find('th').each(function(){
                 this.innerText = titleCase(this.innerText);
             });
 
             //sortables_init();
-            ts_makeSortable(__table[0]);
+            //ts_makeSortable(__table[0]);
 
             // hack to replace inline 'onclick'
             // with a different function

@@ -93,7 +93,7 @@ function cleanBadChars( val, what ){
 
 
 // replace items in 'str' with 'replacements' object map
-function replaceMultiple(str, replacements, regex_params){
+function replaceEach(str, replacements, regex_params){
     forOwn(replacements, function(to_replace, replacement){
         var regex = new RegExp(to_replace, regex_params||'g');
         str = str.replace(regex, replacement)
@@ -287,31 +287,79 @@ jQuery.fn.sortElements = (function(){
 
 })();
 
-
 // http://stackoverflow.com/questions/3160277/jquery-table-sort
+// $('table.sortable').tableSort(); // <-- makes <table> sortable
 jQuery.fn.tableSort = function(){
     var $table = this;
-    $table.find('th.sort').
-        wrapInner('<a href="#" class="nolink" title="click to sort on this column"/>').
-        each(function(){
-            var th = $(this),
-                thIndex = th.index(),
-                inverse = false;
-            th.click(function(){
-                $table.find('td').filter(function(){
-                    return $(this).index() === thIndex;
-                }).sortElements(function(a, b){
-                    return $.text([a]) > $.text([b]) ?
-                        inverse ? -1 : 1 : inverse ? 1 : -1;
-                }, function(){
-                    // parentNode is the element we want to move
-                    return this.parentNode;
-                });
-                inverse = !inverse;
-            });
-        });
+    if ($table.hasClass('sort-ready')) return this;
+    $table.find('tr').each(function(i){
+        // add a hidden 'index' cell to each row to reset sorting
+        $(this).prepend('<td class="index hidden" style="display:none;">' + i + '</td>');
+    });
+    $table.find('th.sort')
+          .append('<i>&nbsp;</i>')
+          // wrapInner('<a href="#" class="nolink" title="click to sort on this column"/>').
+          .each(function(){
+              // don't overwrite existing title
+              this.title += ' (click to sort) ';
+              $(this).on('click.sort', function(){
+                  var $this = $(this),
+                      thIndex = $this.index(),
+                      sorted = $this.hasAnyClass('asc desc'),
+                      sortOrder = 1,
+                      sortClass = 'asc';
+                  if (sorted) {
+                      // if already sorted, switch to descending order
+                      if ($this.hasClass('asc')) {
+                          sortClass = 'desc';
+                      }
+                      else {
+                          thIndex = 0;
+                          sortClass = '';
+                      }
+                  }
+                  $table.find('th.sort').removeClass('asc desc');
+                  $this.addClass(sortClass);
+                  sortOrder = (sortClass === 'desc') ? -1 : 1;
+                  sorted = !!sortClass;
+                  $table.find('td').filter(function(){
+                      return $(this).index() === thIndex;
+                  }).sortElements(function(a, b){
+                      a = $.text([a]).toLowerCase(); // make comparison case-insensitive
+                      b = $.text([b]).toLowerCase();
+                      return a > b ? sortOrder : -(sortOrder);
+                  }, function(){
+                      // parentNode is the element we want to move
+                      return this.parentNode;
+                  });
+                  //inverse = !inverse;
+              });
+          });
+    $table.addClass('sort-ready');
+    return this;
 };
-
+$(function(){
+    // make <table> elements with 'sortable' or 'sort' class sortable
+    // this enables sorting for ALL columns
+    $('table.sortable, table.sort').not('.sort-ready').each(function(){
+        var $table = $(this);
+        $table.find('th').filter(function(){
+            return this.innerHTML.trim() > '';
+        }).addClass('sort');
+        $table.tableSort();
+    });
+    // even if it's not available on DOM ready
+    $('body').on('click', 'table:not(.sort-ready) th.sort', function(){
+        var $th = $(this),
+            $table = $th.closest('table');
+        // exit if table is already sort-ready
+        if ($table.hasClass('sort-ready')) return;
+        // bind the event handler
+        $table.tableSort();
+        // and trigger a click
+        $th.triggerHandler('click.sort');
+    });
+});
 
 // alphabetically (but not numerically)
 // sort an array of objects ('objects')

@@ -120,6 +120,10 @@ var XNAT = getObject(XNAT || {});
         opts.title = opts.title || opts.label || opts.header;
         opts.name = opts.name || opts.element.name || opts.id || opts.element.id || randomID('form-', false);
 
+        addDataObjects(opts, {
+            panel: toDashed(opts.name)
+        });
+
         var _target = spawn('div.panel-body', opts.element),
 
             hideHeader = (isDefined(opts.header) && (opts.header === false || /^-/.test(opts.title))),
@@ -138,10 +142,12 @@ var XNAT = getObject(XNAT || {});
             ],
 
             _formPanel = spawn('form.validate.xnat-form-panel.panel.panel-default', {
+                id: toDashed(opts.id || opts.element.id || opts.name) + '-panel',
                 name: opts.name,
                 method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
-                addClass: opts.classes || ''
+                addClass: opts.classes || '',
+                data: opts.data
             }, [
 
                 (hideHeader ? ['div.hidden'] : ['div.panel-heading', [
@@ -151,16 +157,10 @@ var XNAT = getObject(XNAT || {});
                 // target is where this form's "contents" will be inserted
                 _target,
 
-                
                 (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer || _footer])
 
             ]);
-
-        // add an id to the outer panel element if present
-        if (opts.id || opts.element.id) {
-            _formPanel.id = (opts.id || opts.element.id) + '-panel';
-        }
-
+        
         // cache a jQuery-wrapped element
         var $formPanel = $(_formPanel);
 
@@ -586,6 +586,11 @@ var XNAT = getObject(XNAT || {});
                 return multiForm
             }
         }
+    };
+    
+    // setup a dialog box that contains stuff
+    panel.dialogForm = panel.formDialog = function(opts){
+        var dialog = new xmodal.Modal    
     };
 
     // create a single generic panel element

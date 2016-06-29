@@ -3,7 +3,7 @@
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
 <c:set var="redirect">
-    <p>Not authorized. Redirecting...</p>
+    <div class="error">Not authorized. Redirecting...</div>
     <script> window.location.href = XNAT.url.rootUrl('/') </script>
 </c:set>
 
@@ -48,7 +48,10 @@
                 <script>
                     (function(){
 
-                        XNAT.data = getObject(XNAT.data);
+                        XNAT.data = extend(true, {
+                            siteConfig: {},
+                            notifications: {}
+                        }, XNAT.data);
 
                         <%-- safety check --%>
                         <c:if test="${not empty siteConfig}">
@@ -68,7 +71,7 @@
                             url: jsonUrl,
                             success: function(data){
 
-                                // these properties need to be set before spawning 'tabs' widgets
+                                // these properties MUST be set before spawning 'tabs' widgets
                                 XNAT.tabs.container = $('#admin-config-tabs').find('div.content-tabs');
                                 XNAT.tabs.layout = 'left';
 
@@ -76,9 +79,9 @@
                                 var adminTabs = XNAT.spawner.spawn(data);
 
                                 adminTabs.render(XNAT.tabs.container, 500, function(){
-                                    if (window.location.hash) {
-                                        XNAT.ui.tab.select(getUrlHashValue(), XNAT.tabs.container);
-                                    }
+                                    //if (window.location.hash) {
+                                    //    XNAT.ui.tab.select(getUrlHashValue());
+                                    //}
                                 });
 
                                 // SAVE THE UI JSON

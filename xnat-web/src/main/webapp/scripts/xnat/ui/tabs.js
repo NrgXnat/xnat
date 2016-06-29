@@ -16,7 +16,8 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var ui, tab, tabs, page;
+    var ui, tab, tabs, page,
+        urlHashValue = getUrlHashValue('#',':');
     
     XNAT.ui = ui =
         getObject(XNAT.ui || {});
@@ -61,7 +62,7 @@ var XNAT = getObject(XNAT || {});
 
 
     // save the id of the active tab
-    XNAT.ui.tab.active = '';
+    tab.active = '';
 
 
     // ==================================================
@@ -77,12 +78,12 @@ var XNAT = getObject(XNAT || {});
     // CREATE A SINGLE TAB
     tab.init = function _tab(obj){
 
-        var $group, groupId, tabId, _flipper, _pane;
+        var $group, groupId, tabId, tabIdHash, _flipper, _pane;
 
         obj = cloneObject(obj);
         obj.config = cloneObject(obj.config);
 
-        tabId = toDashed(obj.id || obj.name || '');
+        tabId = toDashed(obj.id || obj.name || randomID('t', false));
 
         _flipper = spawn('li.tab', {
             data: { tab: tabId }
@@ -115,10 +116,18 @@ var XNAT = getObject(XNAT || {});
 
         _pane = spawn('div.tab-pane', obj.config);
 
-        if (obj.active) {
-            $(_flipper).addClass('active');
-            $(_pane).addClass('active');
-            tab.active = _pane.id;
+        // if 'active' is explicitly set, use the tabId value
+        obj.active = (obj.active) ? tabId : '';
+
+        // set active tab on page load if tabId matches url hash
+        if (urlHashValue && urlHashValue === tabId) {
+            tabIdHash = tabId;
+        }
+
+        if ((tabIdHash||obj.active) === tabId) {
+            //$(_flipper).addClass('active');
+            //$(_pane).addClass('active');
+            tabs.active = tab.active = tabId;
         }
 
         groupId = toDashed(obj.group||'other');
@@ -132,12 +141,8 @@ var XNAT = getObject(XNAT || {});
         // add all the flippers
         $group.append(_flipper);
 
-        // console.log($group[0]);
-
-        function render(element){
-            $$(element).append(_pane);
-            $$(element).append(paneFooter());
-            return _pane;
+        function onRender(){
+            console.log('tab: ' + tabId)
         }
 
         function get(){
@@ -150,7 +155,7 @@ var XNAT = getObject(XNAT || {});
             pane: _pane,
             element: _pane,
             spawned: _pane,
-            render: render,
+            onRender: onRender,
             get: get
         }
     };
@@ -178,7 +183,7 @@ var XNAT = getObject(XNAT || {});
             tabContent.className += ' side pull-right';
         }
 
-        $container = $$(container);
+        $container = $$(container).hide();
 
         $container.append(navTabs);
         $container.append(tabContent);
@@ -199,9 +204,11 @@ var XNAT = getObject(XNAT || {});
             window.location.replace('#' + clicked);
         });
 
-        function render(element){
-            $$(element).append(tabContent);
-            return tabContent;
+        function onRender($element){
+            $container.find('li.tab, div.tab-pane').removeClass('active');
+            $container.find('[data-tab="' + tabs.active + '"]').addClass('active');
+            // console.log($element);
+            // $container.find('li.tab.active').last().trigger('click');
         }
 
         function get(){
@@ -212,13 +219,20 @@ var XNAT = getObject(XNAT || {});
             // contents: obj.tabs||obj.contents||obj.content||'',
             element: tabContent,
             spawned: tabContent,
-            render: render,
+            onRender: onRender,
             get: get
         };
 
     };
     // ==================================================
 
+    // activate tab indicated in url hash
+    // $(function(){
+    //     if (window.location.hash) {
+    //         tab.activate(getUrlHashValue())
+    //     }
+    // });
+    
     tabs.tab = tab;
 
     return tabs;

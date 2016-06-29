@@ -46,6 +46,7 @@ var XNAT = getObject(XNAT);
 
         var frag  = document.createDocumentFragment(),
             $frag = $(frag),
+            callbacks = [],
             undefined;
 
         spawner.counter++;
@@ -132,8 +133,9 @@ var XNAT = getObject(XNAT);
                 if (isFunction(method)) {
 
                     // 'spawnedElement' item will be an
-                    // object with a .get() method that
-                    // will retrieve the spawned item
+                    // object with an 'element' property 
+                    // or a .get() method that will retrieve 
+                    // the spawned item
                     spawnedElement = method(prop);
 
                     // add spawnedElement to the master frag
@@ -200,7 +202,16 @@ var XNAT = getObject(XNAT);
 
             // if there's a .load() method, fire that
             if (isFunction(spawnedElement.load||null)) {
-                spawnedElement.load();
+                spawnedElement.load.call(spawnedElement);
+            }
+            
+            // if there's an .onRender() method, queue it
+            if (isFunction(spawnedElement.onRender||null)) {
+                callbacks.push({
+                    onRender: spawnedElement.onRender,
+                    spawned: spawnedElement,
+                    $element: $spawnedElement
+                });
             }
 
         });
@@ -235,11 +246,21 @@ var XNAT = getObject(XNAT);
             $container.append(frag);
             $container.fadeIn(wait);
 
-            //setTimeout(function(){
+            // fire collected callbacks
+            callbacks.forEach(function(obj){
+                try {
+                    obj.onRender.call(obj.spawned, obj.$element, obj);
+                }
+                catch(e) {
+                    console.log(e)
+                }
+            });
+
+            setTimeout(function(){
                 if (isFunction(callback)) {
                     callback()
                 }
-            //}, wait);
+            }, wait/2);
 
             return _spawn;
 

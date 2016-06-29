@@ -133,7 +133,7 @@ var XNAT = getObject(XNAT);
 
     // after the page is finished loading, set empty
     // input values from [data-lookup] attribute
-    $(window).load(function(){
+    $(window).on('load', function(){
         $(':input[data-lookup]').each(function(){
             var $input = $(this);
             var val = lookupValue($input.dataAttr('lookup'));

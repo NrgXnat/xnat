@@ -448,6 +448,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "delete", property = "sitewidePetMr")
+    public String getSitewidePetMr() {
+        return getValue("sitewidePetMr");
+    }
+
+    public void setSitewidePetMr(final String sitewidePetMr) {
+        try {
+            set(sitewidePetMr, "sitewidePetMr");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'sitewidePetMr': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "false")
     public boolean getEnableProjectAppletScript() {
         return getBooleanValue("enableProjectAppletScript");
@@ -697,7 +710,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             _log.error("Invalid preference name 'sessions.concurrent_max': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "/Index.vm")
     public String getSiteHomeLayout() {
         return getValue("siteHomeLayout");

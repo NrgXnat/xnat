@@ -65,15 +65,12 @@ public class PrearcUtils {
     public static final String PREARC_SESSION_FOLDER = "PREARC_SESSION_FOLDER";
 
     public static String getSeparatePetMr() {
-        final Configuration siteWide = XDAT.getConfigService().getConfig("separatePETMR", "config");
-        if (siteWide == null) {
+        final String siteWide = XDAT.getSiteConfigPreferences().getSitewidePetMr();
+
+        if (StringUtils.isEmpty(siteWide)) {
             return "";
         }
-        final String contents = siteWide.getContents();
-        if (StringUtils.isEmpty(contents)) {
-            return "";
-        }
-        return contents;
+        return siteWide;
     }
 
     public static String getSeparatePetMr(final String project) {

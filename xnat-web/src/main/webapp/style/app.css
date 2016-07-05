@@ -3645,3 +3645,5 @@ textarea.xml-formatted {
 .pad5h { padding-left: 5px; padding-right: 5px; }
 .pad10h { padding-left: 10px; padding-right: 10px; }
 .pad20h { padding-left: 20px; padding-right: 20px; }
+
+.inline { display: inline }

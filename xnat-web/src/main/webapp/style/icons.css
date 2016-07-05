@@ -1,0 +1,97 @@
+/* ICONS */
+/* common usage is <span class="icon icon-sm icon-alert"></span>, in place of an inline <img> tag */
+
+.icon { display:inline-block; height:48px; width: 48px; margin-right: 10px; }
+
+.icon-add { background: url('icons/icon-add-48.png'); }
+.icon-add-article { background: url('icons/icon-document-add-48.png'); }
+.icon-add-rev { background: url('icons/icon-add-rev-48.png'); }
+.icon-add-subjects { background: url('icons/icon-add-subjects.png'); }
+.icon-alert { background: url('icons/icon-alert-48.png'); }
+.icon-arrow-right { background: url('icons/icon-arrow-rt-48.png'); }
+.icon-arrow-left { background: url('icons/icon-arrow-lt-48.png'); }
+.icon-arrow-up { background: url('icons/icon-arrow-up-48.png'); }
+.icon-arrow-down { background: url('icons/icon-arrow-dn-48.png'); }
+.icon-caret-right { background: url('icons/icon-caret-rt-48.png'); }
+.icon-caret-left { background: url('icons/icon-caret-lt-48.png'); }
+.icon-caret-up { background: url('icons/icon-caret-up-48.png'); }
+.icon-caret-down { background: url('icons/icon-caret-dn-48.png'); }
+.icon-cancel { background: url('icons/icon-cancel-48.png'); }
+.icon-check-green { background: url('icons/icon-check-green-48.png'); }
+.icon-check-blue { background: url('icons/icon-check-blue-48.png'); }
+.icon-check-red { background: url('icons/icon-check-red-48.png'); }
+.icon-cinab { background: url('icons/icon-cinab-48.png'); }
+.icon-close { background: url('icons/icon-close-48.png'); }
+.icon-dashboard { background: url('icons/icon-dashboard-48.png'); }
+.icon-download { background: url('icons/icon-download-48.png'); }
+.icon-doc-add { background: url('icons/icon-document-add-48.png'); }
+.icon-doc-csv { background: url('icons/icon-doc-csv-48.png'); }
+.icon-doc-csv-rst { background: url('icons/icon-doc-csv-RST-48.png'); }
+.icon-doc-rst { background: url('icons/icon-doc-RST-48.png'); }
+.icon-doc-xml { background: url('icons/icon-doc-xml-48.png'); }
+.icon-doc { background: url('icons/icon-doc-48.png'); }
+.icon-docs { background: url('icons/icon-documents-48.png'); }
+.icon-edit { background: url('icons/icon-edit-48.png'); }
+.icon-edit-gray { background: url('icons/icon-edit-gray-48.png'); }
+.icon-email { background: url('icons/icon-email-48.png'); }
+.icon-error { background: url('icons/icon-error-48.png'); }
+.icon-event,
+.icon-cal,
+.icon-calendar { background: url('icons/icon-event-48.png'); }
+.icon-event-adhoc,
+.icon-event-ad-hoc,
+.icon-ad-hoc-event { background: url('icons/icon-event-ad-hoc-48.png'); }
+.icon-event-add { background: url('icons/icon-event-add-green-48.png'); }
+.icon-event-remove { background: url('icons/icon-event-remove-48.png'); }
+.icon-folder { background: url('icons/icon-folder-48.png'); }
+.icon-get-csv { background: url('icons/icon-get-csv-48.png'); }
+.icon-get-csv-RST { background: url('icons/icon-doc-RST-48.png'); }
+.icon-get-files { background: url('icons/icon-get-files-48.png'); }
+.icon-group { background: url('icons/icon-group-48.png'); }
+.icon-group-save { background: url('icons/icon-group-save-48.png'); }
+.icon-info { background: url('icons/icon-info-48.png'); }
+.icon-link { background: url('icons/icon-link-48.png'); }
+.icon-list,
+.icon-list-view,
+.icon-view-list { background:url('icons/icon-view-list-48.png'); }
+.icon-locked { background:url('icons/icon-lock-48.png'); }
+.icon-message,
+.icon-note { background: url('icons/icon-info-48.png'); }
+.icon-open { background: url('icons/icon-open-48.png'); }
+.icon-remove { background: url('icons/icon-remove-48.png'); }
+.icon-patch { background: url('icons/icon-patch-48.png'); }
+.icon-qm { background: url('icons/icon-qm-48.png'); }
+.icon-reassign { background: url('icons/icon-reassign-48.png'); }
+.icon-report,
+.icon-reports { background: url('icons/icon-report-48.png'); }
+.icon-return { background: url('icons/icon-arrow-return-up-48.png'); }
+.icon-rst-tier1 { background: url('icons/icon-RST-tier1-48.png'); }
+.icon-rst-tier2 { background: url('icons/icon-RST-tier2-48.png'); }
+.icon-settings,
+.icon-gear { background: url('icons/icon-settings-48.png'); }
+.icon-skip { background: url('icons/icon-arrow-skip-48.png'); }
+.icon-status-exception {background: url('icons/icon-cancel-48.png'); }
+.icon-status-complete { background: url('icons/icon-check-green-circle-48.png'); }
+.icon-subject { background: url('icons/icon-subject-48.png'); }
+.icon-timer { background: url('icons/icon-timer-48.png'); }
+.icon-trash,
+.icon-trash-gray { background: url('icons/icon-trash-gray-48.png'); }
+.icon-trash-red { background: url('icons/icon-trash-red-48.png'); }
+.icon-unlocked { background:url('icons/icon-unlocked-48.png'); }
+.icon-upload { background: url('icons/icon-upload-48.png'); }
+.icon-user,
+.icon-user-guest { background: url('icons/icon-user-guest-48.png'); }
+.icon-user-admin { background: url('icons/icon-user-admin-48.png'); }
+.icon-user-Owners { background: url('icons/icon-user-owner-48.png'); }
+.icon-user-Members { background: url('icons/icon-user-member-48.png'); }
+.icon-user-Collaborators { background: url('icons/icon-user-collaborator-48.png'); }
+.icon-user-fellow { background: url('icons/icon-user-fellow-48.png'); }
+.icon-view { background: url('icons/icon-view-48.png'); }
+
+.tool .icon, .icon-lg { background-size: 32px 32px; height: 32px; width: 32px; margin: 0 auto; }
+.btn .icon, .icon-md { background-size: 24px 24px; height: 24px; width: 24px; margin: -4px 4px -8px -2px; }
+.btn-sm .icon, .vertical .tool .icon, .icon-sm { background-size: 16px 16px; height: 16px; width: 16px; margin: 0 4px -3px 0; }
+.btn-xs .icon, .icon-xs { background-size: 12px 12px; height: 12px; width: 12px; margin: 0 4px -1px 0; }
+
+.warning .icon, .note .icon, .message .icon, .alert .icon { margin-right: 0; position: absolute; right: 10px; }
+

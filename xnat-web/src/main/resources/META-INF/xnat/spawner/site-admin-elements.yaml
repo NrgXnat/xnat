@@ -39,6 +39,34 @@ siteDescriptionText:
         rows: 8
     after: "<p class='description'>Specify a simple text description of this site.</p>"
 
+passwordExpirationInterval:
+    tag: input
+    before:
+        label:
+            tag: br
+    element:
+        type: text
+        id: passwordExpirationInterval
+        name: passwordExpirationInterval
+        label: Password Expiration (Interval)
+    description: >
+                  Interval of time after which unchanged passwords expire and users have to change them. Enter "0" to disable. Uses
+                  <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+
+passwordExpirationDate:
+    tag: input
+    before:
+        label:
+            tag: br
+    element:
+        type: text
+        id: passwordExpirationDate
+        name: passwordExpirationDate
+        label: Password Expiration (Date)
+    description: >
+                  Expire passwords that were last changed before this date and require those users to change them. Enter "0" to disable. Dates must be formatted MM/DD/YYYY
+
+
 siteDescriptionType:
     kind: panel.element
     #id: siteDescriptionType
@@ -381,7 +409,6 @@ userLoginsSessionControls:
               How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
 
-
 passwords:
     kind: panel.form
     name: passwords
@@ -403,33 +430,68 @@ passwords:
             id: passwordComplexityMessage
             name: passwordComplexityMessage
             label: Password Complexity Message
-        passwordExpirationType:
-            kind: panel.select.single
-            id: passwordExpirationType
-            name: passwordExpirationType
-            label: passwordExpirationType
-            value: Interval
-            options:
-                Interval:
-                    label: Interval
-                    value: Interval
-                Date:
-                    label: Date
-                    value: Date
-        passwordExpirationInterval:
-            kind: panel.input.text
-            id: passwordExpirationInterval
-            name: passwordExpirationInterval
-            label: Password Expiration (Interval)
-            description: >
-              Interval of time after which unchanged passwords expire and users have to change them. Enter "0" to disable. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
-        passwordExpirationDate:
-            kind: panel.input.text
-            id: passwordExpirationDate
-            name: passwordExpirationDate
-            label: Password Expiration (Date)
-            description: Expire passwords that were last changed before this date and require those users to change them. Enter "0" to disable. Dates must be formatted MM/DD/YYYY
+        passwordExpiration:
+            kind: panel.element
+            label: Password Expiration
+            contents:
+                info:
+                    tag: p
+                    element:
+                        style: "margin: 3px 0 8px 0;"
+                    content: Select a password expiration type below
+                passwordExpirationTypeDisabled:
+                    tag: input|data-value=Disabled
+                    element:
+                        type: radio
+                        id: passwordExpirationTypeDisabled
+                        name: passwordExpirationType
+                        value: Disabled
+                    after:
+                        label:
+                            tag: label.pad5h|for=passwordExpirationTypeDisabled
+                            content: Disabled
+                passwordExpirationTypeInterval:
+                    tag: input|data-value=Interval
+                    element:
+                        type: radio
+                        id: passwordExpirationTypeInterval
+                        name: passwordExpirationType
+                        value: Interval
+                    after:
+                        label:
+                            tag: label.pad5h|for=passwordExpirationTypeInterval
+                            content: Interval
+                passwordExpirationTypeDate:
+                    tag: input|data-value=Date
+                    element:
+                        type: radio
+                        id: passwordExpirationTypeDate
+                        name: passwordExpirationType
+                        value: Date
+                    after:
+                        label:
+                            tag: label.pad5h|for=passwordExpirationTypeDate
+                            content: Date
+                passwordExpirationInterval:
+                    tag: div.input-bundle.interval.inline
+                    after:
+                        label:
+                            tag: span#intervalUnits
+                            content: "&nbsp;days"
+                    contents:
+                        ${passwordExpirationInterval}
+                passwordExpirationDate:
+                    tag: div.input-bundle.date.inline
+                    after:
+                        label:
+                            tag: span#datePicker
+                            content: "&nbsp;&nbsp;<span id='openCal-passwordExpirationDate' class='icon icon-sm icon-calendar'/>"
+                    contents:
+                        ${passwordExpirationDate}
+                pwExpTypeJs:
+                    tag: script
+                    element:
+                        src: ~/scripts/xnat/admin/pwExpType.js
         passwordReuseRestriction:
             kind: panel.select.single
             id: passwordReuseRestriction

@@ -199,7 +199,7 @@
         tr.appendChild(td);
         td = document.createElement("td");
         var remInvestButton = document.createElement("div");
-        remInvestButton.className = "icon-remove";
+        remInvestButton.className = "icon-cancel";
         remInvestButton.style.backgroundImage = removeInvestigatorIcon;
         remInvestButton.id = "remInvestBut_" + (tbody.rows.length);
         remInvestButton.title = "Remove Investigator";
@@ -232,7 +232,7 @@
             tr.appendChild(td);
             td = document.createElement("td");
             var remInvestButton = document.createElement("div");
-            remInvestButton.className = "icon-remove";
+            remInvestButton.className = "icon-cancel";
             remInvestButton.style.backgroundImage = removeInvestigatorIcon;
             remInvestButton.id = "remInvestBut_" + (tbody.rows.length);
             remInvestButton.title = "Remove Investigator";
@@ -304,7 +304,7 @@
       tr.appendChild(td);
       td= document.createElement("td");
       var remInvestButton = document.createElement("div");
-      remInvestButton.className="icon-remove";
+      remInvestButton.className="icon-cancel";
       remInvestButton.style.backgroundImage=removeInvestigatorIcon;
       remInvestButton.id="remInvestBut_"+(tbody.rows.length);
       remInvestButton.title="Remove Investigator";

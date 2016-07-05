@@ -59,7 +59,7 @@
     <!-- required libraries -->
     <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate-1.2.1.min.js"></script>
     <script type="text/javascript">
         // use 'jq' to avoid _possible_ conflicts with Velocity
         var jq = jQuery;
@@ -144,7 +144,7 @@
     </script>
     <script type="text/javascript">
         // initialize "Chosen" menus on DOM load
-        // all <select class="xnat-menu"> elements
+        // all <select class="chosen-menu"> elements
         // will be converted
         // putting this here to be at the top of
         // the jQuery DOM-ready queue
@@ -178,6 +178,9 @@
     <!-- YUI css -->
     <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">--%>
 
+    <!-- Icon sets -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
+
     <!-- xdat.css and xnat.css loaded last to override YUI styles -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
 
@@ -195,9 +198,8 @@
     <%--<script src="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.js"></script>--%>
 
     <!-- date input stuff -->
-    <%--<link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/yui/build/calendar/assets/skins/sam/calendar.css?${versionString}">--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/ezCalendar.js"></script>--%>
+    <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.min.css?${versionString}">
+    <script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.min.js"></script>
 
     <!-- XNAT JLAPI scripts -->
     <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
@@ -270,30 +272,6 @@ ${bodyTop}
                         });
                     </script>
                 </li>
-                <!-- Sequence: 11 -->
-                <li><a id="browse" title="Browse" href="#Browse">Browse</a>
-                    <ul class="" style="display:none; min-width: 120px;">
-                    <!-- Browse/Default -->
-                        <li><a href="#BrowseProjects">Projects</a>
-                            <ul id="browse-projects">
-                                <!-- Sequence: 10 -->
-                                <li class="create-project hidden"><a href="${SITE_ROOT}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
-                            </ul>
-                        </li>
-                        <li class="hidden"><a href="#FavoriteProjects">Favorite Projects</a>
-                            <ul id="favorite-projects">
-                                <!-- Sequence: 10 -->
-                            </ul>
-                        </li>
-                        <li class="hidden"><a href="#BrowseData">Data</a>
-                            <ul id="browse-data">
-                                <!-- Sequence: 10 -->
-                            </ul>
-                        </li>
-
-                    <script src="${SITE_ROOT}/scripts/xnat/ui/topnav-browse.js"></script>
-                    </ul>
-                </li>
                 <!-- Sequence: 20 -->
                 <li class="more"><a href="#new">New</a>
                     <ul class="" style="display: none;">
@@ -354,13 +332,13 @@ ${bodyTop}
                         <!-- Sequence: 10 -->
                         <!-- allowGuest: true -->
                         <li>
-                            <a href="https://wiki.xnat.org/display/XTOOLS/XNAT+Desktop" target="_blank">XNAT Desktop (XND)</a>
+                            <a href="https://wiki.xnat.org/display/XNAT16/XNAT+Desktop" target="_blank">XNAT Desktop (XND)</a>
                         </li>
                         <li>
-                            <a href="http://nrg.wustl.edu/software/dicom-browser/" target="_blank">DICOM Browser</a>
+                            <a href="http://nrg.wustl.edu/projects/DICOM/DicomBrowser.jsp" target="_blank">DICOM Browser</a>
                         </li>
                         <li>
-                            <a href="https://wiki.xnat.org/display/XTOOLS" target="_blank">Command Prompt Tools</a>
+                            <a href="https://wiki.xnat.org/display/XNAT16/XNAT+Client+Tools" target="_blank">Command Prompt Tools</a>
                         </li>
                     </ul>
                 </li>
@@ -537,8 +515,8 @@ ${bodyTop}
                                 //jq('#main_nav li').removeClass('open');
                                 li$.find('ul.subnav').each(function(){
                                     var sub$ = $(this);
-                                    var offsetL = sub$.closest('li').width();
-                                    sub$.css({ 'left': offsetL });
+                                    var offsetL = sub$.closest('ul').outerWidth();
+                                    sub$.css({ 'left': offsetL + -37 })
                                 });
                                 if (body$.hasClass('applet')) {
                                     coverApplet(li$.find('> ul'));
@@ -647,7 +625,7 @@ ${bodyTop}
                 // update the radio buttons/checkboxes
                 searchMethodInputs$.prop('checked', false);
                 searchMethodInputs$.filter('.' + method).prop('checked', true);
-                menuUpdate();
+                chosenUpdate();
             });
         };
 
@@ -706,48 +684,16 @@ ${bodyTop}
     <div id="mylogger"></div>
 </div>
 <!-- /page_wrapper -->
-<div class="clear"></div>
-<div id="xnat_power"></div>
+
+<div id="xnat_power">
+    <a target="_blank" href="http://www.xnat.org/" style="" title="XNAT Version 1.7"><img
+            src="${SITE_ROOT}/images/xnat_power_small.png"></a>
+    <small>version 1.7</small>
+</div>
 
 <script type="text/javascript">
 
-    (function(){
-
-        <c:import url="/xapi/siteConfig/buildInfo" var="buildInfo" scope="session"/>
-
-        var buildInfo = XNAT.data.siteConfig.buildInfo = ${buildInfo};
-
-        var buildInfoSample = {
-            "Application-Name": "XNAT",
-            "Manifest-Version": "1.0",
-            buildDate: "Sun Jun 05 12:41:24 CDT 2016",
-            buildNumber: "Manual",
-            commit: "v275-gd2220fd",
-            version: "1.7.0-SNAPSHOT"
-        };
-
-        XNAT.version = buildInfo.version;
-
-        // add version to title attribute of XNAT logos
-        var version = buildInfo.version + " build: " + buildInfo.buildNumber;
-
-        var isNonRelease = /.*(SNAPSHOT|BETA|RC).*/i.test(buildInfo.version);
-
-        if (isNonRelease) {
-            version += " (" + buildInfo.commit + ")";
-        }
-
-        $('#xnat_power')
-            .spawn('a.xnat-version', {
-                href: 'http://www.xnat.org',
-                target: '_blank',
-                title: 'XNAT version ' + version
-            }, [['img|src=${SITE_ROOT}/images/xnat_power_small.png']])
-            .spawn('small', 'version ' + version + (isNonRelease ? '<br>' + buildInfo.buildDate : ''));
-
-        $('#header_logo').attr('title','XNAT version ' + version);
-
-        XNAT.app.version = version ;
+    loadjs(scriptUrl('xnat/event.js'), function(){
 
         var clicker = XNAT.event.click('#header_logo, #xnat_power > a');
 
@@ -771,9 +717,14 @@ ${bodyTop}
             XNAT.ui.popup(XNAT.url.rootUrl('/xapi/swagger-ui.html'));
         });
 
-    })();
+    })
 
 </script>
+<%--<script src="${SITE_ROOT}/scripts/footer.js"></script>--%>
+
+<%--<div id="xmodal-loading" style="position:fixed;left:-9999px;top:-9999px;">--%>
+    <%--<img src="${SITE_ROOT}/scripts/xmodal/loading_bar.gif" alt="loading">--%>
+<%--</div>--%>
 
 ${bodyBottom}
 

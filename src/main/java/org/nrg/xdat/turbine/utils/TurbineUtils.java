@@ -1093,19 +1093,20 @@ public class TurbineUtils {
                     }
                     List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory("screens" + "/" + forwardSlashSubFolder);
                     if (uris.size() > 0) {
-                        final URL url = uris.get(0); // TODO: Is this right? Should be only one, I think.
-                        String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
-                        String resolved = safeJoin(forwardSlashSubFolder, fileName);
-                        if (!exists.contains(resolved)) {
-                            try {
-                                // TODO: It looks like the critical test is whether the input stream is null.
-                                SecureScreen.addProps(fileName, CustomClasspathResourceLoader.getInputStream("screens/" + resolved), screens, _defaultScreens, resolved);
-                                exists.add(resolved);
-                            } catch (FileNotFoundException e) {
-                                //this shouldn't happen
-                            } catch (ResourceNotFoundException e) {
-                                logger.error("", e);
-                            }
+                    	for (final URL url : uris) {
+                    		final String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
+                    		final String resolved = safeJoin(forwardSlashSubFolder, fileName);
+                    		if (!exists.contains(resolved)) {
+                    			try {
+                    				// TODO: It looks like the critical test is whether the input stream is null.
+                    				SecureScreen.addProps(fileName, CustomClasspathResourceLoader.getInputStream("screens/" + resolved), screens, _defaultScreens, resolved);
+                    				exists.add(resolved);
+                    			} catch (FileNotFoundException e) {
+                    				//this shouldn't happen
+                    			} catch (ResourceNotFoundException e) {
+                    				logger.error("", e);
+                    			}
+                    		}
                         }
                     }
                     final File screensFolder = XDAT.getScreenTemplateFolder(path);

@@ -13,7 +13,7 @@ import java.util.Arrays;
 /**
  * Provides basic functions for integrating Spring REST controllers with XNAT.
  */
-public abstract class AbstractXnatRestApi {
+public abstract class AbstractXapiRestController {
     /**
      * Indicates whether the user is permitted to access a particular REST function. Access is granted if the user is a
      * site administrator <i>or</i> the user's login name matches one of the submitted <b>id</b> values. The latter case

@@ -448,7 +448,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "delete", property = "sitewidePetMr")
+    @NrgPreference(property = "sitewidePetMr")
     public String getSitewidePetMr() {
         return getValue("sitewidePetMr");
     }

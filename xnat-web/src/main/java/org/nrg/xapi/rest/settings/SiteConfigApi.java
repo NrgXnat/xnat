@@ -7,7 +7,7 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.rest.AbstractXnatRestApi;
+import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.XnatHttpUtils;
@@ -32,7 +32,7 @@ import java.util.Properties;
 @Api(description = "Site Configuration Management API")
 @XapiRestController
 @RequestMapping(value = "/siteConfig")
-public class SiteConfigApi extends AbstractXnatRestApi {
+public class SiteConfigApi extends AbstractXapiRestController {
     @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Application build properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "buildInfo", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})

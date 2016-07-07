@@ -6,7 +6,7 @@ import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.rest.NotFoundException;
-import org.nrg.xdat.rest.AbstractXnatRestApi;
+import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,7 @@ import java.util.List;
 @Api(description = "XNAT DICOM SCP management API")
 @XapiRestController
 @RequestMapping(value = "/dicomscp")
-public class DicomSCPApi extends AbstractXnatRestApi {
+public class DicomSCPApi extends AbstractXapiRestController {
     private static final Logger _log = LoggerFactory.getLogger(DicomSCPApi.class);
 
     @ApiOperation(value = "Get list of all configured DICOM SCP receiver definitions.", notes = "The primary DICOM SCP retrieval function returns a list of all DICOM SCP receivers defined for the current system.", response = DicomSCPInstance.class, responseContainer = "List")

@@ -7,7 +7,7 @@ import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.rest.AbstractXnatRestApi;
+import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
@@ -32,7 +32,7 @@ import java.util.*;
 @Api(description = "User Management API")
 @XapiRestController
 @RequestMapping(value = "/users")
-public class UsersApi extends AbstractXnatRestApi {
+public class UsersApi extends AbstractXapiRestController {
     private static final Logger _log = LoggerFactory.getLogger(UsersApi.class);
 
     @ApiOperation(value = "Get list of users.", notes = "The primary users function returns a list of all users of the XNAT system.", response = User.class, responseContainer = "List")

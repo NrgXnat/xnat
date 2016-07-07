@@ -9,7 +9,7 @@ import org.nrg.notify.services.NotificationService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xdat.preferences.NotificationsPreferences;
-import org.nrg.xdat.rest.AbstractXnatRestApi;
+import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ import java.util.*;
 @Api(description = "XNAT Notifications management API")
 @XapiRestController
 @RequestMapping(value = "/notifications")
-public class NotificationsApi extends AbstractXnatRestApi {
+public class NotificationsApi extends AbstractXapiRestController {
 
     public static final String POST_PROPERTIES_NOTES = "Sets the mail service host, port, username, password, and protocol. You can set "
                                                        + "extra properties on the mail sender (e.g. for configuring SSL or TLS transport) by "

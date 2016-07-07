@@ -385,9 +385,10 @@ dependencies {
     compile "org.apache.httpcomponents:httpcore-nio:4.4.4"
 
     compile "org.codehaus.groovy:groovy-all:${vGroovy}"
-    compile "org.python:jython-standalone:${vJython}"
+    compile "org.python:jython:${vJython}"
 
     compile "net.sourceforge.saxon:saxon:${vSaxon}"
+    compile "xalan:xalan:2.7.2"
 
     compile "nl.bitwalker:UserAgentUtils:1.2.4"
     compile "com.twmacinta:fast-md5:2.7.1"
@@ -423,7 +424,6 @@ dependencies {
     runtime "net.imagej:ij:1.50e"
     runtime "net.bull.javamelody:javamelody-core:1.58.0"
     runtime "org.javassist:javassist:3.20.0-GA"
-    runtime "xalan:xalan:2.7.2"
 
     providedCompile "javax.servlet:javax.servlet-api:${vServletApi}"
 

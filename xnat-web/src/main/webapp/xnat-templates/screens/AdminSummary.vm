@@ -35,6 +35,9 @@ From:
 </form>
 
 
+<script type="text/javascript" src="$content.getURI("scripts/sortable_us.js")"></script>
+
+
 <div id="new_projects" class="section">
     <h3>New $displayManager.getPluralDisplayNameForProject()</h3>
     $qm.execute("select meta.insert_date as ""Date Created"", textcat(textcat(use.firstname, ' '),use.lastname) as ""Creator"", invest.lastname as ""Investigator"", proj.id as ""ID"", proj.name as ""Name"", proj.secondary_id as ""Secondary ID"", proj.description as ""Description"", proj.keywords as ""Keywords"" from xnat_projectdata_meta_data meta join xnat_projectdata proj on proj.projectdata_info = meta.meta_data_id left join xnat_investigatordata invest on proj.pi_xnat_investigatordata_id = invest.xnat_investigatordata_id left join xdat_user use on meta.insert_user_xdat_user_id = use.xdat_user_id where meta.insert_date > (NOW()-interval '$duration1') AND meta.insert_date < (NOW()-interval '$duration2')")
@@ -82,6 +85,8 @@ From:
                 table_id = div.id + '_TABLE';
 
             div.style.marginTop = '20px';
+//            __div.css('margin-top','20px');
+//            __div.find('> h3').css('margin-bottom','10px');
 
             // remove the table if there are no records
             if (__table.find('> tbody > tr').length === 0){
@@ -90,17 +95,14 @@ From:
                 return;
             }
 
+//            jq(table).removeAttr('width');
+
             table.id = table_id;
-            table.className = 'xnat-table alt1 highlight sortable'
+            table.className = 'sortable xnat-table alt1'
             table.width = '100%';
             table.style.marginTop = '10px';
 
-            __table.find('tr').each(function(){
-                var __tr = $(this);
-                __tr.find('> th, > td').first().addClass('index');
-            })
-
-            __table.tableSort();
+            ts_makeSortable(table);
 
         });
 

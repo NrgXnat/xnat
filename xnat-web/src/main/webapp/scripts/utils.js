@@ -294,8 +294,14 @@ jQuery.fn.tableSort = function(){
     if ($table.hasClass('sort-ready')) return this;
     $table.find('tr').each(function(i){
         // add a hidden 'index' cell to each row to reset sorting
-        $(this).prepend('<td class="index hidden" style="display:none;">' + i + '</td>');
+        var $tr = $(this);
+        // but only if an index column is not already present
+        if ($tr.find('> th, > td').first().hasClass('index')) return;
+        $tr.prepend('<td class="index hidden" style="display:none;">' + i + '</td>');
     });
+    $table.find('th').not('.sort').filter(function(){
+        return this.innerHTML.trim() > '';
+    }).addClass('sort');
     $table.find('th.sort')
           .append('<i>&nbsp;</i>')
           // wrapInner('<a href="#" class="nolink" title="click to sort on this column"/>').
@@ -343,9 +349,9 @@ $(function(){
     // this enables sorting for ALL columns
     $('table.sortable, table.sort').not('.sort-ready').each(function(){
         var $table = $(this);
-        $table.find('th').filter(function(){
-            return this.innerHTML.trim() > '';
-        }).addClass('sort');
+        // $table.find('th').filter(function(){
+        //     return this.innerHTML.trim() > '';
+        // }).addClass('sort');
         $table.tableSort();
     });
     // even if it's not available on DOM ready

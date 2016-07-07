@@ -120,11 +120,13 @@ var XNAT = getObject(XNAT || {});
         opts.title = opts.title || opts.label || opts.header;
         opts.name = opts.name || opts.element.name || opts.id || opts.element.id || randomID('form-', false);
 
+        // data-* attributes to add to panel
         addDataObjects(opts, {
-            panel: toDashed(opts.name)
+            panel: toDashed(opts.name),
+            method: (opts.method || 'POST').toLowerCase()
         });
 
-        var _target = spawn('div.panel-body', opts.element),
+        var _target = spawn('div.panel-body'),
 
             hideHeader = (isDefined(opts.header) && (opts.header === false || /^-/.test(opts.title))),
 
@@ -141,10 +143,11 @@ var XNAT = getObject(XNAT || {});
                 ['div.clear']
             ],
 
-            _formPanel = spawn('form.validate.xnat-form-panel.panel.panel-default', {
+            // TODO: use opts.element for the panel itself
+            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
                 id: toDashed(opts.id || opts.element.id || opts.name) + '-panel',
                 name: opts.name,
-                method: opts.method || 'POST',
+                //method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
                 addClass: opts.classes || '',
                 data: opts.data
@@ -160,6 +163,12 @@ var XNAT = getObject(XNAT || {});
                 (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer || _footer])
 
             ]);
+
+        // if there's a 'validation' (or 'validate') property, add 'validate' class
+        if (opts.validation || opts.validate) {
+            addClassName(_formPanel, 'validate');
+            addDataObjects()
+        }
         
         // cache a jQuery-wrapped element
         var $formPanel = $(_formPanel);
@@ -827,6 +836,89 @@ var XNAT = getObject(XNAT || {});
     };
     panel.select.multi.init = panel.select.multi;
 
+
+
+    //////////////////////////////////////////////////
+    // DATA PANELS - RETRIEVE/DISPLAY DATA
+    //////////////////////////////////////////////////
+
+    panel.data = {};
+
+    panel.data.table = function(opts){
+        // initialize the table
+        opts = cloneObject(opts);
+        opts.element = opts.element || {};
+        addClassName(opts.element, 'data-table xnat-table');
+        if (opts.sortable) {
+            if (opts.sortable === true) {
+                addClassName(opts.element, 'sortable');
+            }
+            else {
+                opts.sortable = opts.sortable.split(',').map(function(item){return item.trim()});
+            }
+        }
+        opts.element.style = {
+            width: opts.width || '100%'
+        };
+        var dataTable = XNAT.table(opts.element);
+        // request data for table rows
+        XNAT.xhr.get({
+            url: XNAT.url.rootUrl(opts.load||opts.url),
+            dataType: opts.dataType || 'json',
+            success: function(data){
+                var props = [];
+                if (opts.items) {
+                    dataTable.tr();
+                    forOwn(opts.items, function(name, val){
+                        props.push(name);
+                        dataTable.th(val);
+                        if (opts.sortable === true || opts.sortable.indexOf(name) !== -1) {
+                            addClassName(dataTable.last.th, 'sort');
+                        }
+                    });
+                }
+                else {
+                    forOwn(data[0], function(name, val){
+                        props.push(name);
+                    });
+                }
+                data.forEach(function(item){
+                    dataTable.tr();
+                    props.forEach(function(name){
+                        dataTable.td({ className: name }, item[name]);
+                    });
+                });
+                if (opts.container) {
+                    $$(opts.container).append(dataTable.table);
+                }
+            }
+        });
+        return {
+            element: dataTable.table,
+            spawned: dataTable.table,
+            get: function(){
+                return dataTable.table
+            }
+        };
+    };
+
+    panel.data.list = function(opts){
+        // initialize the table
+        opts = cloneObject(opts);
+        opts.element = opts.element || {};
+        addClassName(opts.element, 'data-list');
+        var dataList = spawn('ul', opts.element);
+        XNAT.xhr.get({
+            url: XNAT.url.rootUrl(opts.load||opts.url),
+            dataType: opts.dataType || 'json',
+            success: function(data){
+
+            }
+        });
+
+
+    };
+
     return XNAT.ui.panel = panel;
 
 
@@ -842,29 +934,6 @@ var XNAT = getObject(XNAT || {});
     //
     // IT IS BEING KEPT AROUND TEMPORARILY FOR REFERENCE
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-    function footerButton(text, type, disabled, classes){
-        var button = {
-            type: type || 'button',
-            html: text || 'Submit'
-        };
-        button.classes = [classes || '', 'btn btn-sm'];
-        if (type === 'link') {
-            button.classes.push('btn-link')
-        }
-        else if (/submit|primary/.test(type)) {
-            button.classes.push('btn-primary')
-        }
-        else {
-            button.classes.push('btn-default')
-        }
-        if (disabled) {
-            button.classes.push('disabled');
-            button.disabled = 'disabled'
-        }
-        return spawn('button', button);
-    }
 
 
     /**
@@ -1057,144 +1126,6 @@ var XNAT = getObject(XNAT || {});
 
     }
 
-    // return a single panel element
-    function panelElement(item){
-
-        var elements = [],
-            element, tag,
-            children = '',
-            before   = [],
-            after    = [],
-            kind     = item.kind || '',
-            obj      = {};
-
-        // input (or other) element
-        tag = item.tag || item.kind || 'div';
-
-        if (kind === 'element-group' && item.elements.length) {
-            element = groupElements(item.elements);
-            //element = spawn(tag, [radioToggle(item)]);
-        }
-        else {
-            if (item.name) {
-                obj.name = item.name
-            }
-
-            if (item.type) {
-                obj.type = item.type;
-            }
-        }
-
-        if (item.id) {
-            obj.id = item.id;
-        }
-
-        if (tag === 'input' && !item.type) {
-            obj.type = 'text';
-        }
-
-        // 'checkbox' kind
-        if (kind === 'checkbox') {
-            tag = 'input';
-            obj.type = 'checkbox';
-        }
-
-        // set a default 'size' value for text inputs
-        if (tag === 'input' && /text|email|url/.test(item.type || obj.type || '')) {
-            obj.size = '25';
-        }
-
-        if (item.label) {
-            obj.title = item.label;
-        }
-
-        obj.data = item.data ? extend(true, {}, item.data) : {};
-
-        if (item.value) {
-            obj.value = item.value;
-            obj.data.value = item.value;
-        }
-
-        if (item.checked) {
-            obj.checked = true;
-            obj.data.state = 'checked';
-        }
-
-        if (item.info) {
-            obj.data.info = item.info;
-        }
-
-        if (item.attr || item.attributes) {
-            obj.attr = item.attr || item.attributes || {};
-        }
-
-        if (/form-table|inputTable|input-table/i.test(kind)) {
-            element = XNAT.ui.inputTable(item.tableData).get();
-        }
-        else {
-            obj.innerHTML = [].concat(item.innerHTML || item.html || []).join('\n');
-        }
-
-        if (item.before) {
-            console.log('before');
-            before = item.before;
-            //elements.push(spawn('span.before', item.before))
-        }
-
-        if (item.after) {
-            console.log('after');
-            after = item.after;
-            //elements.push(spawn('span.after', item.after))
-        }
-
-        if (kind !== 'hidden') {
-            // enable the 'Save' and 'Discard Changes' buttons on change
-            obj.onchange = function(){
-                var $panel = $(this).closest('.panel');
-                setDisabled([$panel.find('.save'), $panel.find('.revert')], false);
-            };
-        }
-
-        if (kind === 'select' && item.options) {
-            children = item.options.map(function(option){
-                var obj = {};
-                obj.value = option.value;
-                obj.html = option.label;
-                if (isDefined(item.value)) {
-                    if (item.value === obj.value) {
-                        obj.selected = true;
-                    }
-                }
-                return ['option', obj]
-            });
-        }
-
-        element = element || spawn(tag, obj, children);
-
-        if (!elements.length) {
-            elements = [].concat(before, element, after);
-        }
-        // add a description if present
-        if (item.description) {
-            elements.push(spawn('div.description', item.description))
-        }
-
-        // element setup
-        return elements;
-
-    }
-
-    function elementLabel(label, id){
-        var obj = {
-            innerHTML: label || ''
-        };
-        if (id) {
-            obj.attr = {
-                'for': id
-            }
-        }
-        return spawn('label.element-label', obj);
-    }
 
     // create elements that are part of an 'element-group'
     // returns Spawn arguments array
@@ -1209,29 +1140,7 @@ var XNAT = getObject(XNAT || {});
             return [tag, [].concat(label, panelElement(item))];
         });
     }
-
-    // create elements from the 'elements' array
-    // returns Spawn arguments array
-    function setupElements(items){
-        return items.map(function(item){
-            var label = '';
-            var tag = 'div.panel-element';
-            switch (item.kind) {
-                case 'hidden':
-                    tag = 'div.hidden';
-                    break;
-                case 'element-group':
-                    tag += '.element-group';
-                    break;
-            }
-            if (item.label) {
-                label = elementLabel(item.label, item.id)
-            }
-            tag += '|data-name=' + item.name;
-            return [tag, [label, ['div.element-wrapper', panelElement(item)]]];
-        });
-    }
-
+    
     function discardChanges(form){
 
         var $form = $$(form);

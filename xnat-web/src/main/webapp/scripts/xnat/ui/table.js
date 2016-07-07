@@ -74,7 +74,7 @@ var XNAT = getObject(XNAT);
         };
 
         this._rows = [];
-        this.cols = this.columns = [];
+        this._cols = 0; // how many columns?
 
     }
 
@@ -106,59 +106,65 @@ var XNAT = getObject(XNAT);
     // object to set the properties
     // and use append or innerHTML
     // to add the cell content
-    Table.p.td = function(content){
-        var td = element('td', content);
+    Table.p.td = function(opts, content){
+        var td = element('td', opts, content);
+        this.last.td = td;
         this.last.tr.appendChild(td);
         return this;
     };
 
-    Table.p.th = function(content){
-        var th = element('th', content);
+    Table.p.th = function(opts, content){
+        var th = element('th', opts, content);
+        this.last.th = th;
         this.last.tr.appendChild(th);
         return this;
     };
 
     Table.p.tr = function(opts, data){
+        var _this = this;
         var tr = element('tr', opts);
         //data = data || this.data || null;
         if (data) {
+            this.last.tr = tr;
             [].concat(data).forEach(function(item){
-                tr.appendChild(element('td', item))
+                _this.td(item);                
             });
         }
         // only add <tr> elements to <table>, <thead>, <tbody>, and <tfoot>
-        if (/(table|thead|tbody|tfoot)/.test(this.last.parent.tagName.toLowerCase())) {
+        if (/(table|thead|tbody|tfoot)/i.test(this.last.parent.tagName)) {
             this.last.parent.appendChild(tr);
         }
         this.last.tr = tr;
         //this.setLast(tr);
+        // nullify last <th> and <td> elements since this is a new row
+        this.last.th = this.last.td = null;
         return this;
     };
 
     // create a row with <tr> and <td> elements
     // in the <tbody>
     Table.p.row = function(data, opts){
-        var tr = element('tr', opts);
+        // var tr = element('tr', opts);
         data = data || [];
-        [].concat(data).forEach(function(item){
-            tr.appendChild(element('td', item));
-        });
-        (this.last.tbody || this.table).appendChild(tr);
+        this.tr(opts, data);
+        // (this.last.tbody || this.table).appendChild(tr);
+        // nullify last <th> and <td> elements since this is a new row
+        // this.last.th = this.last.td = null;
         return this;
     };
 
     // create *multiple* <td> elements
     Table.p.tds = function(items, opts){
-        var last_tr = this.last.tr;
+        var _this = this;
+        // var last_tr = this.last.tr;
         [].concat(items).forEach(function(item){
-            var td;
-            if (isPlainObject(item)) {
-                td = element('td', '', extend(true, item, opts));
+            if (stringable(item)) {
+                _this.td(opts, item);
             }
+            // if 'item' isn't stringable, it will be an object
             else {
-                td = element('td', item, opts);
+                _this.td(extend(true, {}, opts, item));
             }
-            last_tr.appendChild(td);
         });
         // don't reset 'last' so we
         // keep using the parent <tr>
@@ -167,9 +173,11 @@ var XNAT = getObject(XNAT);
 
     Table.p.rows = function(data, opts){
         var _this = this,
-            rows  = [];
+            rows  = [],
+            cols = data[0].length; // first array length determines how many columns
         data = data || [];
         data.forEach(function(row){
+            row = row.slice(0, cols);
             rows.push(_this.tr(opts, row))
         });
         this._rows = rows;
@@ -285,6 +293,7 @@ var XNAT = getObject(XNAT);
         // set the number of columns based on
         // the header or first row of data
         cols = (header) ? header.length : (obj.data[0] || []).length;
+        this._cols = cols;
 
         // add the header
         if (header) {
@@ -344,7 +353,7 @@ var XNAT = getObject(XNAT);
             tableData = opts;
             opts = data;
         }
-        addClassName(opts, 'data-table');
+        addClassName(opts, 'xnat-table data-table');
         var newTable = new Table(opts);
         return newTable.init(tableData);
     };

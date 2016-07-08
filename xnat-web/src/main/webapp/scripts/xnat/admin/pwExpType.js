@@ -4,6 +4,7 @@
     setTimeout(function(){
       fieldInterval = $('#passwordExpirationInterval');
       fieldDate = $('#passwordExpirationDate');
+      fieldDate.attr('placeholder', 'MM/DD/YYYY');
       openCal = $('#openCal-passwordExpirationDate');
       openCal.click(openCalendar);
       fieldInterval[0].style.width = '40px';
@@ -13,8 +14,8 @@
       fieldDate[0].style.marginTop='10px';
       fieldDate.datetimepicker({
         timepicker:false,
-        format:'d/m/Y',
-        minDate:'-1970/01/01' // today is minimum date
+        format:'m/d/Y',
+//        minDate:'-1970/01/01' // today is minimum date
       });
       sdtDisabled = $('#passwordExpirationTypeDisabled');
       sdtInterval = $('#passwordExpirationTypeInterval');

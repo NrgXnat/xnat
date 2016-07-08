@@ -18,6 +18,14 @@
     <meta http-equiv="expires" content="-1">
     <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
 
+    <script>
+        window.loggedIn = true;
+##        #set($username = $user.getUsername())
+##        #if (!$username)
+//            window.loggedIn = false;
+##        #end
+    </script>
+
     <script type="text/javascript">
 
         var serverRoot = "$content.getURI('')";
@@ -72,18 +80,17 @@
     <script type="text/javascript" src="$content.getURI("scripts/xmodal-v1/xmodal.js")"></script>
     <script type="text/javascript" src="$content.getURI("scripts/xmodal-v1/xmodal-migrate.js")"></script>
 
-	
 </head>
 <body class="noninteractive">
 
 <div id="page_wrapper">
 
-                $navigation.setTemplate("/NoninteractiveTop.vm")
+    $navigation.setTemplate("/NoninteractiveTop.vm")
 
-                <div id="layout_content2" style="display:none;">Loading...</DIV>
-                <div id="layout_content">$screen_placeholder</DIV>
+    <div id="layout_content2" style="display:none;">Loading...</div>
+    <div id="layout_content">$screen_placeholder</div>
 
-                $navigation.setTemplate("/DefaultBottom.vm")
+    $navigation.setTemplate("/DefaultBottom.vm")
 
 </div>
 <!-- /page_wrapper -->

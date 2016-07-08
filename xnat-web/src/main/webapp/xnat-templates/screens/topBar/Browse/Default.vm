@@ -1,20 +1,22 @@
 <!-- Sequence: 10 -->
 <!-- Browse/Default -->
-    <li><a href="#BrowseProjects">Projects</a>
+    <li class="hidden"><a href="#BrowseProjects">Projects</a>
         <ul id="browse-projects">
             <!-- Sequence: 10 -->
-            <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
+            #if($siteConfig.getUiAllowNonAdminProjectCreation() || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData"))
+                <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
+            #end
         </ul>
     </li>
     <li class="hidden"><a href="#FavoriteProjects">Favorite Projects</a>
         <ul id="favorite-projects">
-            <!-- Sequence: 10 -->
+            <!-- Sequence: 20 -->
         </ul>
     </li>
     <li class="hidden"><a href="#BrowseData">Data</a>
         <ul id="browse-data">
-            <!-- Sequence: 10 -->
+            <!-- Sequence: 30 -->
         </ul>
     </li>
 
-<script src="$content.getURI("/scripts/xnat/ui/topnav-browse.js")"></script>
+<script src="$content.getURI("/scripts/xnat/app/topnav-browse.js")"></script>

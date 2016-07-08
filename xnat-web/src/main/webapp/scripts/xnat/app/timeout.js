@@ -115,7 +115,7 @@ var XNAT = getObject(XNAT);
     cookie.SESSION_DIALOG_CANCELLED = timeoutCookie('SESSION_DIALOG_CANCELLED').set('false');
 
     // is the session still active? (could have been logged out in another window)
-    cookie.SESSION_ACTIVE = timeoutCookie('SESSION_ACTIVE').set(window.logged_in);
+    cookie.SESSION_ACTIVE = timeoutCookie('SESSION_ACTIVE').set(window.loggedIn);
 
     // has the session timed out?
     cookie.SESSION_TIMED_OUT = timeoutCookie('SESSION_TIMED_OUT').get();
@@ -272,7 +272,7 @@ var XNAT = getObject(XNAT);
             // need to wait a little longer before reloading
             setTimeout(function(){
                 window.location.reload();
-            }, 2000);
+            }, 120000);
         }
 
 

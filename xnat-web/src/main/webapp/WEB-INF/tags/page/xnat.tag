@@ -49,7 +49,7 @@
         //var showReason = typeof false != 'undefined' ? false : null;
         //var requireReason = typeof false != 'undefined' ? false : null;
 
-        window.logged_in = ${sessionScope.loggedIn};
+        window.loggedIn = ${sessionScope.loggedIn};
 
     </script>
 
@@ -73,40 +73,17 @@
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.js"></script>
 
-    <%-- probably not going to use the jquery spawner --%>
-    <%--<script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.spawn.js"></script>--%>
-
     <!-- other libraries -->
     <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/js.cookie.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
-
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/event/event-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/container/container-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/menu/menu-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/element/element-beta-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/button/button-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/connection/connection-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/treeview/treeview-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/cookie/cookie-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/tabview/tabview-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/datasource/datasource-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/resize/resize-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/dragdrop/dragdrop-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/datatable/datatable-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/paginator/paginator-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/build/json/json-min.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/yui/xnat_loader.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/LeftBarTreeView.js"></script>--%>
-    <%--<script src="${SITE_ROOT}/scripts/justification/justification.js"></script>--%>
 
     <!-- XNAT utility functions -->
     <script src="${SITE_ROOT}/scripts/utils.js"></script>
 
     <script type="text/javascript">
 
-        if (window.logged_in) {
+        if (window.loggedIn) {
             Cookies.set('guest', 'false', { path: '/' });
         }
 
@@ -177,9 +154,6 @@
 
     <!-- YUI css -->
     <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">--%>
-
-    <!-- Icon sets -->
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
 
     <!-- xdat.css and xnat.css loaded last to override YUI styles -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
@@ -273,34 +247,40 @@ ${bodyTop}
                     </script>
                 </li>
                 <!-- Sequence: 11 -->
-                <li><a id="browse" title="Browse" href="#Browse">Browse</a>
+                <li class="hidden"><a id="browse" title="Browse" href="#Browse">Browse</a>
                     <ul class="" style="display:none; min-width: 120px;">
                     <!-- Browse/Default -->
-                        <li><a href="#BrowseProjects">Projects</a>
+                        <li class="hidden"><a href="#BrowseProjects">Projects</a>
                             <ul id="browse-projects">
                                 <!-- Sequence: 10 -->
-                                <li class="create-project hidden"><a href="${SITE_ROOT}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
                             </ul>
                         </li>
                         <li class="hidden"><a href="#FavoriteProjects">Favorite Projects</a>
                             <ul id="favorite-projects">
-                                <!-- Sequence: 10 -->
+                                <!-- Sequence: 20 -->
                             </ul>
                         </li>
                         <li class="hidden"><a href="#BrowseData">Data</a>
                             <ul id="browse-data">
-                                <!-- Sequence: 10 -->
+                                <!-- Sequence: 30 -->
                             </ul>
                         </li>
-
-                    <script src="${SITE_ROOT}/scripts/xnat/ui/topnav-browse.js"></script>
                     </ul>
+                    <script src="${SITE_ROOT}/scripts/xnat/app/topnav-browse.js"></script>
                 </li>
                 <!-- Sequence: 20 -->
                 <li class="more"><a href="#new">New</a>
                     <ul class="" style="display: none;">
                         <!-- Sequence: 10 -->
-                        <li><a href="${SITE_ROOT}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
+                        <c:set var="hidden_li">
+                            <li class="hidden">&nbsp;</li>
+                        </c:set>
+                        <%-- only allow admins to create projects for now --%>
+                        <pg:restricted msg="${hidden_li}">
+                            <li id="top-new-project">
+                                <a href="${SITE_ROOT}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a>
+                            </li>
+                        </pg:restricted>
                         <li>
                             <a href="${SITE_ROOT}/app/action/XDATActionRouter/xdataction/edit/search_element/xnat:subjectData">Subject</a>
                         </li>

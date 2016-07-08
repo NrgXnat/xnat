@@ -5,11 +5,11 @@
 <c:set var="pageName" value="blank" scope="request"/>
 
 <c:set var="_headTop">
-    <script>alert('(it is blank)')</script>
+    <script>console.log('(it is blank)')</script>
 </c:set>
 
 <c:set var="_bodyBottom">
-    <h1>I'm at the bottom.</h1>
+    <!-- <h1>I'm at the bottom.</h1> -->
 </c:set>
 
 <pg:wrapper>

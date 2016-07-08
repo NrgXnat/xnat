@@ -47,8 +47,6 @@
     </div>
 </div><!-- /user_bar -->
 
-<script src="$content.getURI("scripts/xnat/app/timeout.js")"></script>
-
 #if ($sessionCount > 1 || $sessionIpCount > 1 )
 ##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
 <script type="text/javascript">
@@ -116,35 +114,7 @@
 
         // cache it
         var main_nav$ = jq('#main_nav ul.nav');
-
-//        function subnav(items){
-//            var lis = [];
-//            items.forEach(function(item){
-//                lis.push(['li', '<a href="' + item.href + '">' + item.label + '</a>']);
-//            });
-//            return spawn('li|class=more', [
-//                spawn('a', 'More...'),
-//                spawn('ul|class=subnav', lis)
-//            ]);
-//        }
-//
-//        // spawn a subnav under "New"
-//        main_nav$.find('[href="#new"]').next('ul').append(subnav([
-//            { href: '#!mr', label: 'MR Session'},
-//            { href: '#!pet', label: 'PET Session'},
-//            { href: '#!ct', label: 'CT Session'}
-//        ]))
-//
-//
-//        // spawn a subnav under "Upload"
-//        main_nav$.find('[href="#upload"]').next('ul').append(subnav([
-//            { href: '#!json', label: 'JSON'},
-//            { href: '#!text', label: 'Text'},
-//            { href: '#!html', label: 'HTML'}
-//        ]))
-
         var body$ = jq('body');
-
         var cover_up_count = 1;
 
         function coverApplet(el$){
@@ -281,8 +251,6 @@
 
     })();
 
-    logged_in = true ;
-
     // initialize the advanced search method toggler
     XNAT.app.searchMethodToggler = function(_parent){
 
@@ -327,6 +295,10 @@
     };
 
 </script>
+<script>
+    window.loggedIn = true;
+</script>
+<script src="$content.getURI("scripts/xnat/app/timeout.js")"></script>
 
 <div id="tp_fm"></div>
 

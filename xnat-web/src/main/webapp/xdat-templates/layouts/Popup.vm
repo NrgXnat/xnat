@@ -11,6 +11,7 @@ $navigation.setTemplate("/htmlOpen.vm")
 </style>
 ## insert any template-specific <head> code here
 <script type="text/javascript">
+    window.loggedIn = true; // just assume we're logged in - how else would we get here?
     window.isPopup = true;
     jq(function(){
         jq('body').addClass('popup');

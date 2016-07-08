@@ -147,7 +147,7 @@ var XNAT = getObject(XNAT || {});
             _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
                 id: toDashed(opts.id || opts.element.id || opts.name) + '-panel',
                 name: opts.name,
-                //method: opts.method || 'POST',
+                method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
                 addClass: opts.classes || '',
                 data: opts.data

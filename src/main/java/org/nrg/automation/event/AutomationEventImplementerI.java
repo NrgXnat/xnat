@@ -7,6 +7,9 @@ import org.nrg.framework.event.StructuredEventI;
 
 /**
  * The Interface AutomationEventImplementerI.
+ * 
+ * This interface should be implemented for all XNAT events that wish to trigger an automation event.  The AutomationEventScriptHandler
+ * listens for events implementing this interface and launches scripts that have handlers associated with your event.  
  */
 public interface AutomationEventImplementerI extends StructuredEventI {
 	

@@ -14,6 +14,7 @@ import javax.persistence.Transient;
 import org.nrg.framework.event.EventI;
 import org.nrg.framework.event.StructuredEventI;
 import org.nrg.framework.event.entities.EventSpecificFields;
+import org.nrg.framework.event.persist.PersistentEventImplementerI;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import com.google.common.collect.Maps;
@@ -21,11 +22,14 @@ import com.google.common.collect.Sets;
 
 /**
  * The Class PersistentEvent.
+ * 
+ * This class should be extended for all events that wish to be persistent.  It is a hibernate entity class which will be
+ * persisted.
  */
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @SuppressWarnings("serial")
-public class PersistentEvent extends AbstractHibernateEntity implements EventI, StructuredEventI {
+public abstract class PersistentEvent extends AbstractHibernateEntity implements PersistentEventImplementerI {
     
 	/** The src event class. */
 	private String srcEventClass;

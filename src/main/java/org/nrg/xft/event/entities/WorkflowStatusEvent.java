@@ -2,11 +2,9 @@ package org.nrg.xft.event.entities;
 
 import java.util.Map;
 
-import org.nrg.automation.event.AutomationEventImplementerI;
-import org.nrg.automation.event.entities.AutomationCompletionEvent;
+import org.nrg.automation.event.AutomationEvent;
 import org.nrg.framework.event.EventClass;
 import org.nrg.framework.event.Filterable;
-import org.nrg.framework.event.StructuredEvent;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -17,8 +15,8 @@ import org.python.google.common.collect.Maps;
 /**
  * The Class WorkflowStatusEvent.
  */
-@EventClass(displayName = "Workflow Status Event")
-public class WorkflowStatusEvent extends StructuredEvent implements AutomationEventImplementerI {
+@EventClass(name = "WorkflowStatusEvent", description = "Workflow Status Event")
+public class WorkflowStatusEvent extends AutomationEvent {
 	
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = 7465778737330635218L;
@@ -31,11 +29,6 @@ public class WorkflowStatusEvent extends StructuredEvent implements AutomationEv
 	
 	/** The justification. */
 	private String justification;
-
-	/** The automationCompletionEvent. */
-	private AutomationCompletionEvent automationCompletionEvent;
-
-	private Map<String,Object> parameterMap = Maps.newHashMap();
 	
 	/**
 	 * Instantiates a new workflow status event.
@@ -118,37 +111,6 @@ public class WorkflowStatusEvent extends StructuredEvent implements AutomationEv
 	 */
 	public String getJustification() {
 		return justification;
-	}
-
-	/* (non-Javadoc)
-	 * @see org.nrg.xft.event.AutomationEventImplementerI#setAutomationCompletionEvent(org.nrg.xft.event.entities.AutomationCompletionEvent)
-	 */
-	@Override
-	public void setAutomationCompletionEvent(AutomationCompletionEvent automationCompletionEvent) {
-		this.automationCompletionEvent = automationCompletionEvent; 
-	}
-
-	/* (non-Javadoc)
-	 * @see org.nrg.xft.event.AutomationEventImplementerI#getAutomationCompletionEvent()
-	 */
-	@Override
-	public AutomationCompletionEvent getAutomationCompletionEvent() {
-		return automationCompletionEvent;
-	}
-
-	@Override
-	public Map<String, Object> getParameterMap() {
-		return this.parameterMap;
-	}
-
-	@Override
-	public void setParameterMap(Map<String, Object> parameterMap) {
-		this.parameterMap = parameterMap;
-	}
-
-	@Override
-	public void addParameterToParameterMap(String parameter, Object value) {
-		this.parameterMap.put(parameter, value);
 	}
 
 }

@@ -103,7 +103,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 			    if (!this.getItem().isPreLoaded()) extend(true);
 			    setExtended(true);
 			}
-		} catch (Exception e) {
+        } catch (UserNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
 			throw new UserInitException(e.getMessage());
 		}
         if (XFT.VERBOSE) System.out.println("User(login) Loaded (" + (Calendar.getInstance().getTimeInMillis() - startTime) + ")ms");

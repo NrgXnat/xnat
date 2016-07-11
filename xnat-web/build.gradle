@@ -385,7 +385,7 @@ dependencies {
     compile "org.apache.httpcomponents:httpcore-nio:4.4.4"
 
     compile "org.codehaus.groovy:groovy-all:${vGroovy}"
-    compile "org.python:jython:${vJython}"
+    compile "org.python:jython-standalone:${vJython}"
 
     compile "net.sourceforge.saxon:saxon:${vSaxon}"
     compile "xalan:xalan:2.7.2"

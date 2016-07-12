@@ -27,7 +27,7 @@ abu.FileUploader = function(o){
 		$(this._options.element).append(
 			'<div class="abu-uploader">' +
 				'<div id="abu-files-processing" class="abu-files-processing">        Processing...... </div>' +
-				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel" onclick="abu._fileUploader.uploaderHelp()">Click here for help.</a>' +
+				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel" onclick="abu._fileUploader.uploaderHelp()">?</a>' +
 				'<div class="abu-upload-drop-area" style="display: none;"><span>Drop files here to upload</span></div>' +
 				'<div class="abu-xnat-interactivity-area">' +
 				'</div>' +
@@ -96,14 +96,35 @@ abu.FileUploader = function(o){
 		 });
 
 		if (this.ALLOW_DRAG_AND_DROP) {
+			$(".abu-upload-drop-area").on('dragleave',function(e) { 
+					if (this.DRAG_AND_DROP_ON) {
+						this.showDrag = false;
+						if (typeof this.timeout !== "undefined") {
+							clearTimeout( this.timeout );
+						}
+						this.timeout = setTimeout( function(){
+							if( !this.showDrag ){ 
+								$(".abu-upload-drop-area").css('display','none');
+								$(".abu-upload-drop-area").removeClass('abu-upload-drop-area-active');
+								try { 
+									e.preventDefault();
+									e.stopPropogation();
+								} catch(e) { /* Do nothing */ }
+ 							}
+						}.bind(this), 200 ).bind(this);
+					}
+				}.bind(this)
+			);
 			$(".abu-upload-drop-area").on('dragover',function(e) {
 					if (this.DRAG_AND_DROP_ON) {
+						this.showDrag = true;
 						this.activateUploadArea(e);
 					}
 				}.bind(this)
 			);
 			$(".abu-upload-drop-area").on('dragenter',function(e) {
 					if (this.DRAG_AND_DROP_ON) {
+						this.showDrag = true;
 						this.activateUploadArea(e);
 					}
 				}.bind(this)
@@ -120,14 +141,35 @@ abu.FileUploader = function(o){
 					}
 				}.bind(this)
 			);
+			$(this._options.element).on('dragleave',function(e) {
+					if (this.DRAG_AND_DROP_ON) {
+						this.showDrag = false;
+						if (typeof this.timeout !== "undefined") {
+							clearTimeout( this.timeout );
+						}
+						this.timeout = setTimeout( function(){
+							if( !this.showDrag ){ 
+								$(".abu-upload-drop-area").css('display','none');
+								$(".abu-upload-drop-area").removeClass('abu-upload-drop-area-active');
+								try { 
+									e.preventDefault();
+									e.stopPropogation();
+								} catch(e) { /* Do nothing */ }
+ 							}
+						}.bind(this), 200 ).bind(this);
+					}
+				}.bind(this)
+			).bind(this);
 			$(this._options.element).on('dragover',function(e) {
 					if (this.DRAG_AND_DROP_ON) {
+						this.showDrag = true;
 						this.activateUploadArea(e);
 					}
 				}.bind(this)
 			).bind(this);
 			$(this._options.element).on('dragenter',function(e) {
 					if (this.DRAG_AND_DROP_ON) {
+						this.showDrag = true;
 						this.activateUploadArea(e);
 					}
 				}.bind(this)
@@ -145,9 +187,10 @@ abu.FileUploader = function(o){
 
 	this.processingComplete = function() {
 		$("#abu-done-button-text").html("Done");
-		//$("#abu-process-button").css("display","None");
 		//$("#abu-upload-button").css("display","None");
 		$("#abu-process-button").addClass("abu-button-disabled");
+		//$("#abu-process-button-text").html("&nbsp;");
+		$("#abu-process-button").css("visibility","hidden");
 		$("#abu-upload-button").addClass("abu-button-disabled");
 		$("#abu-files-processing").css("display","None");
 	}
@@ -292,14 +335,16 @@ abu.FileUploader = function(o){
 			'<div id="file-uploader-instructions" class="abu-uploader-instructions">' + 
 			'<h3>Instructions</h3>' + 
 			'<ul>' +  
-			'<li>To upload, click the <b>Upload Files</b> button or drag files into the space below the buttons. (Drag-and-drop is supported in FF, Chrome.)</li>' +
+			((this.ALLOW_DRAG_AND_DROP) ?
+			'<li>To upload, click the <b>Upload Files</b> button or drag files into the space below the buttons. (Drag-and-drop is supported in FF, Chrome.)</li>' :
+			'<li>To upload, click the <b>Upload Files</b> to begin selection of files for upload.</li>') +
 			((this._options.maxFiles == 1) ?
 				'<li>This uploader supports only a single file upload</li>' :
 				'<li>Multiple files may be selected</li>'
 			) +
 			'<li>Uploads will begin automatically</li>' + 
 			'<li>Upload of directories is not supported</li>' + 
-			'<li>When finished uploading, press <b>Process Files</b> to process the uploaded files</li>' + 
+			'<li>When finished uploading, press <b>Done</b> to close the modal, or, if an automation script is to be launched by this upload process, press <b>Process Files</b> to process the uploaded files.</li>' + 
 			'</ul>' + 
 			'</div>';
 		xmodal.message("Uploader Instructions",templateV, undefined, {height:"400px",width:"800px"});

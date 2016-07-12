@@ -270,8 +270,12 @@ XNAT.app.abu.eventHandlerChange = function(){
 	var eventHandler = $('#eventHandlerSelect').val();
 	if (typeof eventHandler === 'undefined' || eventHandler == null || eventHandler.length<1 && ($("#handlerDefaultOption").html() == 'NONE DEFINED' || $("#handlerDefaultOption").html() == 'SELECT')) {
 		$("#abu-process-button").addClass("abu-button-disabled");
+		//$("#abu-process-button-text").html("&nbsp;");
+		$("#abu-process-button").css("visibility","hidden");
 	} else if ((XNAT.app.abu.usageSelect=='Launch') || (abu._fileUploader._uploadStarted && abu._fileUploader._filesInProgress<1)) {
 		$("#abu-process-button").removeClass("abu-button-disabled");
+		//$("#abu-process-button-text").html("&nbsp;");
+		$("#abu-process-button").css("visibility","visible");
 	}
 	XNAT.app.abu.filesProcessed = false;
 }
@@ -411,7 +415,7 @@ XNAT.app.abu.populateEventHandlerSelect = function(){
 		if ($('#eventHandlerSelect').find('option').length==1) {
 			$('#handlerDefaultOption').html('NONE DEFINED'); 
 		} else if ($('#eventHandlerSelect').find('option').length==2) {
-			$('#eventHandlerSelect').find('option').get(0).remove();
+			$($('#eventHandlerSelect').find('option').get(0)).remove();
 		}
 	} else {
 		$('#eventHandlerSelect').append('<option value="">NONE DEFINED</option>'); 
@@ -591,6 +595,8 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					var eventHandler = $('#eventHandlerSelect').val();
 					if (typeof eventHandler !== 'undefined' && eventHandler != null && eventHandler.length>0) {
 						$("#abu-process-button").removeClass("abu-button-disabled");
+						$("#abu-process-button-text").html("Process Files");
+						$("#abu-process-button").css("visibility","visible");
 					} else {
 						$("#abu-done-button-text").html("Done");
 						$("#abu-done-button").removeClass("abu-button-disabled");
@@ -615,6 +621,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 				var eventHandler = $('#eventHandlerSelect').val();
 				if (eventHandler != undefined && eventHandler != null && eventHandler.length>0) {
 					$("#abu-process-button").removeClass("abu-button-disabled");
+					$("#abu-process-button").css("visibility","visible");
 				} else {
 					$("#abu-done-button").removeClass("abu-button-disabled");
 					$("#abu-done-button-text").html("Done");
@@ -628,6 +635,8 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 				$("#abu-done-button-text").html("Cancel");
 				if ($('#eventHandlerSelect option').size()>1 && $('#eventHandlerSelect').val()=="") {
 					$("#abu-process-button").addClass("abu-button-disabled");
+					//$("#abu-process-button-text").html("&nbsp;");
+					$("#abu-process-button").css("visibility","hidden");
 				} 
 				$("#file-uploader-instructions-sel").css("display","none");
 			} else {
@@ -637,6 +646,8 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					abu._fileUploader.DRAG_AND_DROP_ON = false;
 				} 
 				$("#abu-process-button").addClass("abu-button-disabled");
+				//$("#abu-process-button-text").html("&nbsp;");
+				$("#abu-process-button").css("visibility","hidden");
 				$(".upload-area").css("display","none");
 				$(".eventhandler-area").css("display","none");
 			}
@@ -662,8 +673,9 @@ XNAT.app.abu.usageSelectAction = function(){
 		$("#abu-upload-button").removeClass("abu-button-disabled");
 		abu._fileUploader.DRAG_AND_DROP_ON = true;
 		$("#abu-process-button").addClass("abu-button-disabled");
+		//$("#abu-process-button-text").html("&nbsp;");
+		$("#abu-process-button").css("visibility","hidden");
 		$("#script-select-text").html("Post-upload processing script:");
-		$("#abu-process-button-text").html("Process files");
 		$("#resourceSelect").prop('disabled',false);
 		$(".response_text").html('');
 	} else if (XNAT.app.abu.usageSelect=='Launch') { 
@@ -674,6 +686,7 @@ XNAT.app.abu.usageSelectAction = function(){
 		var eventHandler = $('#eventHandlerSelect').val();
 		if (eventHandler != undefined && eventHandler != null && eventHandler.length>0) {
 			$("#abu-process-button").removeClass("abu-button-disabled");
+			$("#abu-process-button").css("visibility","visible");
 		}
 		$("#script-select-text").html("Script to launch:");
 		$("#abu-process-button-text").html("Run script");
@@ -716,6 +729,8 @@ XNAT.app.abu.whatToDoChange = function(){
 	$('#eventHandlerSelect').val(launchSelect);
 	if (typeof abu !== 'undefined' && abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
 		$("#abu-process-button").removeClass("abu-button-disabled");
+		$("#abu-process-button-text").html("Process files");
+		$("#abu-process-button").css("visibility","visible");
 	}
 	if (XNAT.app.abu.usageSelect == 'Upload' && $('#whatToDoSelect option').size()>1 && $('#whatToDoSelect').val()=="") {
 		$("#abu-upload-button").addClass("abu-button-disabled");
@@ -903,9 +918,9 @@ XNAT.app.abu.processFiles=function() {
 				 ((this.paramsToPass.length>0) ? "Please supply values for the following parameters:" :  "Please supply a value for the following parameter:") +
 '				</h3><div style="width:100px"><table>' + paramText + "</table>");
 			// Not sure why the setTimeout seems necessary.
-			$(".passParamInput").get(0).focus();
+			$($(".passParamInput").get(0)).focus();
 			setTimeout(function(){
-				$(".passParamInput").get(0).focus();
+				$($(".passParamInput").get(0)).focus();
 			},100);
 
 		} else {

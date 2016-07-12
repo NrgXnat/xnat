@@ -36,6 +36,10 @@ public class InitializerSiteConfiguration extends PropertiesBasedSiteConfigurati
         return getSiteConfigurationProperty("admin.siteConfig.service");
     }
 
+    public String getSiteId() throws SiteConfigurationException {
+        return getSiteConfigurationProperty("siteId");
+    }
+
     public boolean getRequireLogin() {
         return getBoolSiteConfigurationProperty("requireLogin", true);
     }

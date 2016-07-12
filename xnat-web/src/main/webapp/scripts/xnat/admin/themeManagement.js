@@ -84,8 +84,8 @@ function removeTheme(){
 
 /*** Theme Package Upload Functions ***/
 themeUploadForm.action = themeUrl+q+csrf;
-$(themeUploadForm).parent().css('position','relative');
-$(themeUploadForm).parent().css('top','-30px');
+$(themeUploadForm).parent().parent().css('position','relative');
+$(themeUploadForm).parent().parent().css('top','-30px');
 themeUploadForm.onsubmit = function(event) {
     event.preventDefault();
     $(themeUploadSubmit).text('Uploading...');
@@ -120,7 +120,7 @@ themeUploadForm.onsubmit = function(event) {
         uploaded = true;
     }
     if(!uploaded){
-        xmodal.message('Nothing Uploaded', 'No valid theme package files were selected for upload.');
+        xmodal.message('Nothing Uploaded', 'No valid theme package files were selected for upload.<br><br>Click the "Choose Files" button below to browse for a theme package.');
         $(themeUploadSubmit).text('Upload');
         $(themeUploadSubmit).removeAttr('disabled');
     }

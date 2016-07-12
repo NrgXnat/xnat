@@ -69,7 +69,7 @@ public class SecurityConfig {
 
     @Bean
     public XnatAuthenticationEntryPoint loginUrlAuthenticationEntryPoint() {
-        final XnatAuthenticationEntryPoint entryPoint = new XnatAuthenticationEntryPoint("/app/template/Login.vm");
+        final XnatAuthenticationEntryPoint entryPoint = new XnatAuthenticationEntryPoint("/app/template/Login.vm", _configuration);
         entryPoint.setDataPaths(Arrays.asList("/xapi/**", "/data/**", "/REST/**", "/fs/**"));
         entryPoint.setInteractiveAgents(Arrays.asList(".*MSIE.*", ".*Mozilla.*", ".*AppleWebKit.*", ".*Opera.*"));
         return entryPoint;
@@ -100,8 +100,7 @@ public class SecurityConfig {
         RegisterSessionAuthenticationStrategy registerSessionAuthenticationStrategy = new RegisterSessionAuthenticationStrategy(sessionRegistry);
         authStrategies.add(registerSessionAuthenticationStrategy);
 
-        final CompositeSessionAuthenticationStrategy compositeSessionAuthenticationStrategy = new CompositeSessionAuthenticationStrategy(authStrategies);
-        return compositeSessionAuthenticationStrategy;
+        return new CompositeSessionAuthenticationStrategy(authStrategies);
     }
 
     @Bean

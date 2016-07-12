@@ -13,6 +13,8 @@ package org.nrg.xnat.security;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.config.exceptions.SiteConfigurationException;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -28,8 +30,9 @@ import java.util.regex.Pattern;
 
 public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoint {
 
-    public XnatAuthenticationEntryPoint(String loginFormUrl) {
+    public XnatAuthenticationEntryPoint(final String loginFormUrl, final InitializerSiteConfiguration configuration) {
         super(loginFormUrl);
+        _configuration = configuration;
     }
 
     /**
@@ -41,8 +44,9 @@ public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoi
      * @param request       HTTP request object.
      * @param response      HTTP response object.
      * @param authException An authentication exception that may have redirected the agent to re-authenticate.
-     * @throws IOException
-     * @throws ServletException
+     *
+     * @throws IOException When an error occurs reading or writing data.
+     * @throws ServletException When an error occurs in the framework.
      */
     @Override
     public void commence(final HttpServletRequest request, final HttpServletResponse response, final AuthenticationException authException) throws IOException, ServletException {
@@ -51,27 +55,33 @@ public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoi
 
         if (_log.isDebugEnabled()) {
             _log.debug("Evaluating data path request: " + strippedUri + ", user agent: " + userAgent);
+        }
+
+        if (!StringUtils.isBlank(strippedUri) && strippedUri.contains("/action/AcceptProjectAccess/par/")) {
+            int index = strippedUri.indexOf("/par/") + 5;
+            if (strippedUri.length() > index) {//par number included?
+                String parS = strippedUri.substring(index);
+                if (parS.contains("/")) {
+                    parS = parS.substring(0, parS.indexOf("/"));
+                }
+
+                request.getSession().setAttribute("par", parS);
             }
-
-        if(!StringUtils.isBlank(strippedUri) && strippedUri.contains("/action/AcceptProjectAccess/par/")) {
-        	int index=strippedUri.indexOf("/par/")+5;
-        	if(strippedUri.length()>index){//par number included?
-        		String parS=strippedUri.substring(index);
-        		if(parS.contains("/")){
-        			parS=parS.substring(0,parS.indexOf("/"));
-        		}
-        		
-        		request.getSession().setAttribute("par", parS);
-        	}
         }
-        
+
         if (isDataPath(request) && !isInteractiveAgent(userAgent)) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
-
+            try {
+                response.setHeader("WWW-Authenticate", "Basic realm=\"" + _configuration.getSiteId() + "\"");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            } catch (SiteConfigurationException e) {
+                _log.error("An error occurred trying to access system resources: siteId", e);
+                response.setHeader("WWW-Authenticate", "Basic");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            }
+        } else {
             super.commence(request, response, authException);
         }
+    }
 
     /**
      * Sets the data paths, i.e. those paths which require a user-agent interactivity test to determine whether the user
@@ -83,7 +93,7 @@ public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoi
     public void setDataPaths(final List<String> dataPaths) {
         if (_log.isDebugEnabled()) {
             _log.debug("Adding " + dataPaths + " data paths");
-    }
+        }
 
         for (final String dataPath : dataPaths) {
             if (_log.isDebugEnabled()) {
@@ -102,7 +112,7 @@ public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoi
         for (final String interactiveAgent : interactiveAgents) {
             if (_log.isDebugEnabled()) {
                 _log.debug("Adding interactive agent specifier: " + interactiveAgent);
-}
+            }
             final Pattern pattern = Pattern.compile(interactiveAgent);
             _agentPatterns.add(pattern);
         }
@@ -146,8 +156,10 @@ public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoi
         return false;
     }
 
+    private final InitializerSiteConfiguration _configuration;
+
     private static final Log _log = LogFactory.getLog(XnatAuthenticationEntryPoint.class);
 
-    private final List<RequestMatcher> _dataPaths = new ArrayList<>();
-    private final List<Pattern> _agentPatterns = new ArrayList<>();
+    private final List<RequestMatcher> _dataPaths     = new ArrayList<>();
+    private final List<Pattern>        _agentPatterns = new ArrayList<>();
 }

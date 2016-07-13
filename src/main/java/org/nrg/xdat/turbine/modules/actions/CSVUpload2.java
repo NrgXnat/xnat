@@ -54,6 +54,8 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CSVUpload2 extends SecureAction {
 
@@ -583,4 +585,6 @@ public class CSVUpload2 extends SecureAction {
             data.setScreenTemplate("XDATScreen_uploadCSV2.vm");
         }
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(CSVUpload2.class);
 }

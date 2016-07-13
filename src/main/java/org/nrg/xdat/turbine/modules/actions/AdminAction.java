@@ -15,6 +15,8 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AdminAction extends SecureAction {
 	/* (non-Javadoc)
@@ -40,4 +42,5 @@ public abstract class AdminAction extends SecureAction {
         return authorized;
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(AdminAction.class);
 }

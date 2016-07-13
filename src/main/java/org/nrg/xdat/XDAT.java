@@ -202,8 +202,7 @@ public class XDAT implements Initializable,Configurable{
 		String password = userDetails.getPassword();
 		UserI user;
 		try {
-			user = Authenticator.Authenticate(new Authenticator.Credentials(
-                    username, password));
+			user = Authenticator.Authenticate(new Authenticator.Credentials(username, password));
 
 			XDAT.setUserDetails(user);
 
@@ -216,8 +215,6 @@ public class XDAT implements Initializable,Configurable{
 			SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI)null);
 
 			HttpSession session = data.getSession();
-			session.setAttribute("loggedin", true);
-			session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
 			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getUsername());
 
@@ -756,11 +753,9 @@ public class XDAT implements Initializable,Configurable{
 		setUserDetails(user);
 
         HttpSession session = data.getSession();
-        session.setAttribute("loggedin",true);
         session.setAttribute("forcePasswordChange",forcePasswordChange);
-        session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
         XFTItem item = XFTItem.NewItem("xdat:user_login",user);
-        java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+        Date today = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
         item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
         item.setProperty("xdat:user_login.login_date",today);
         item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));

@@ -40,14 +40,15 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.servlet.http.HttpSession;
 import java.util.*;
 
+@SuppressWarnings("unused")
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
+        //noinspection Duplicates
     	try {
 			SecureAction.isCsrfTokenOk(data);
 		} catch (Exception e1) {
@@ -55,27 +56,27 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			data.setScreenTemplate("Login.vm");
 			return;
 		}
-    	
+
 		try {
 			UserI found=Users.createUser(TurbineUtils.GetDataParameterHash(data));
-			
+
 			if(found.getID()!=null){
                 //This shouldn't have a pk yet
                 handleInvalid(data, context, "Error registering user account");
                 return;
 			}
-			
+
 			UserI existing=null;
 			try {
 				existing = Users.getUser(found.getLogin());
 			} catch (Exception ignored) {
 			}
-			
+
             if (existing == null) {
             	String emailWithWhite = found.getEmail();
         		String noWhiteEmail = emailWithWhite.trim();
         		found.setEmail(emailWithWhite);
-        		
+
         		List<UserI> matches=Users.getUsersByEmail(emailWithWhite);
         		List<UserI> matches2=Users.getUsersByEmail(noWhiteEmail);
 
@@ -83,7 +84,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 	                PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 	                if (validator.isValid(tempPass, null)) {
-	                
+
 		                // NEW USER
                         found.setPassword(tempPass);
 
@@ -108,8 +109,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         else {
 	                		found.setVerified(Boolean.FALSE);
                         }
-                        
-                        UserI currUser=TurbineUtils.getUser(data);
+
+                        UserI currUser = XDAT.getUserDetails();
                         UserI userToSave = found;
                         if(currUser!=null && !currUser.isGuest()){
                             userToSave = currUser;
@@ -123,11 +124,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         if (autoApproval) {
                             if (!hasPAR(data) && XDAT.getSiteConfigPreferences().getEmailVerification()) {
                             	try {
-                                    AdminUtils.sendNewUserVerificationEmail(found);
-            				        context.put("emailTo", found.getEmail());
-            				        context.put("emailUsername", found.getLogin());
-            				        data.setRedirectURI(null);
-                                    data.setScreenTemplate("VerificationSent.vm");
+                                    sendNewUserVerificationEmail(data, context, found);
                                 } catch (Exception e) {
                                     logger.error("Error occurred sending new user email", e);
                                     handleInvalid(data, context, "We are unable to send you the verification email. If you entered a valid email address, please contact our technical support.");
@@ -136,12 +133,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                            XDAT.setUserDetails(found);
                                 UserHelper.setUserHelper(data.getRequest(),found);
 
-	                            HttpSession session = data.getSession();
-			                    session.setAttribute("loggedin",true);
 			                    data.setMessage("User registration complete.");
-			                    
-			                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-			                    
+
 			                    if (AdminUtils.GetNewUserRegistrationsEmail()) {
                                     AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
                                 }
@@ -160,7 +153,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getLogin(), tempPass, grantedAuthorities);
 			    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
 			    		    	securityContext.setAuthentication(authentication);
-								
+
 			                    try{
 			                    	directRequest(data,context,found);
 			                    }catch(Exception e){
@@ -174,16 +167,11 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                    } catch(Exception e) {
 		                        logger.error(e);
 		                    }
-		                	
+
 		                    try {
                                 cacheRegistrationData(found, comments, phone, lab);
                                 if (XDAT.getSiteConfigPreferences().getEmailVerification()) {
-                                    // If verification is on, the user must verify their email before the admin gets emailed.
-                                    AdminUtils.sendNewUserVerificationEmail(found);
-            				        context.put("emailTo", found.getEmail());
-            				        context.put("emailUsername", found.getLogin());
-            				        data.setRedirectURI(null);
-                                    data.setScreenTemplate("VerificationSent.vm");
+                                    sendNewUserVerificationEmail(data, context, found);
                                 } else {
                                 	AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
 	                            	data.setRedirectURI(null);
@@ -212,6 +200,15 @@ public class XDATRegisterUser extends VelocitySecureAction {
             logger.error("Error Storing User",e);
             handleInvalid(data, context, "Error Storing User.");
         }
+    }
+
+    protected void sendNewUserVerificationEmail(final RunData data, final Context context, final UserI found) throws Exception {
+        // If verification is on, the user must verify their email before the admin gets emailed.
+        AdminUtils.sendNewUserVerificationEmail(found);
+        context.put("emailTo", found.getEmail());
+        context.put("emailUsername", found.getLogin());
+        data.setRedirectURI(null);
+        data.setScreenTemplate("VerificationSent.vm");
     }
 
     private void cacheRegistrationData(final UserI newUser, final String comments, final String phone, final String lab) throws NrgServiceException {
@@ -268,13 +265,13 @@ public class XDATRegisterUser extends VelocitySecureAction {
             context.put("par", par);
         }
     }
-    
+
     public void directRequest(RunData data,Context context,UserI user) throws Exception{
 		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 
         data.setScreenTemplate("Index.vm");
-        
+
         if ((XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar()) && !XDAT.getSiteConfigPreferences().getEmailVerification()){
          if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);

@@ -55,7 +55,6 @@ import org.xml.sax.InputSource;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -1196,6 +1195,7 @@ public class TurbineUtils {
         return props;
     }
 
+    @SuppressWarnings("unused")
     public boolean validateClasspathTemplate(String screen){
         String forwardSlashScreen = screen;
         if(forwardSlashScreen!=null){
@@ -1203,12 +1203,7 @@ public class TurbineUtils {
             forwardSlashScreen = forwardSlashScreen.substring(0, forwardSlashScreen.lastIndexOf('/'));
         }
         List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory(forwardSlashScreen);
-        if (uris.size() > 0) {
-            // Something exists in a plugin that needs to override core content
-            // Just return true to assert it's valid.
-            return true;
-        }
-        return false;
+        return uris.size() > 0;
     }
 
     @SuppressWarnings("unchecked")
@@ -1360,16 +1355,11 @@ public class TurbineUtils {
 
     public static boolean isAuthorized(final RunData data, final UserI user, final boolean allowGuestAccess) throws Exception {
         if (user ==null) {
-            HttpSession session = data.getSession();
-            session.removeAttribute("loggedin");
-
             UserI guest= Users.getGuest();
             if (guest!=null) {
                 XDAT.setUserDetails(guest);
-                session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-
-                String Destination = data.getTemplateInfo().getScreenTemplate();
-                data.getParameters().add("nextPage", Destination);
+                final String destination = data.getTemplateInfo().getScreenTemplate();
+                data.getParameters().add("nextPage", destination);
                 if (!data.getAction().equalsIgnoreCase("")) {
                     data.getParameters().add("nextAction", data.getAction());
                 } else {

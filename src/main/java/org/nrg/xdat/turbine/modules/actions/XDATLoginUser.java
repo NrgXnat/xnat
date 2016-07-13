@@ -12,16 +12,10 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.sql.SQLException;
-import java.util.UUID;
-
-import javax.servlet.http.HttpSession;
-
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
@@ -36,21 +30,19 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
 /**
  * @author Tim
  *
  */
 public class XDATLoginUser extends VelocityAction{
 
-    static org.apache.log4j.Logger logger = Logger.getLogger(XDATLoginUser.class);
-/**
- * This is where we authenticate the user logging into the system
- * against a user in the database. If the user exists in the database
- * that users last login time will be updated.
- *
- */
+    private final static Logger logger       = LoggerFactory.getLogger(XDATLoginUser.class);
 	/** CGI Parameter for the user name */
-	public static final String CGI_USERNAME = "username";
+	public static final  String CGI_USERNAME = "username";
 
 	/** CGI Parameter for the password */
 	public static final String CGI_PASSWORD = "password";
@@ -108,9 +100,6 @@ public class XDATLoginUser extends VelocityAction{
 
 			XDAT.setUserDetails(user);
 			
-			HttpSession session = data.getSession();
-            session.setAttribute("loggedin",true);
-            session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
             AccessLogger.LogActionAccess(data, "Valid Login:"+user.getLogin());
 
@@ -168,7 +157,7 @@ public class XDATLoginUser extends VelocityAction{
 		 * by the "template.home" property as listed in
 		 * TR.props for the webapp.
 		 */
-		 if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+		 if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
             VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
             action.doPerform(data, context);
@@ -176,7 +165,7 @@ public class XDATLoginUser extends VelocityAction{
 			data.setScreenTemplate(nextPage);
 		 }
 
-         if (data.getScreenTemplate().indexOf("Error.vm")!=-1)
+         if (data.getScreenTemplate().contains("Error.vm"))
          {
              data.setMessage("<b>Previous session expired.</b><br>If you have bookmarked this page, please redirect your bookmark to: " + TurbineUtils.GetFullServerPath());
              data.setScreenTemplate("Index.vm");

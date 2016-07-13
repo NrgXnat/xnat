@@ -19,6 +19,8 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URLEncoder;
 import java.util.Calendar;
@@ -128,6 +130,7 @@ public class EmailCustomSearchAction extends SecureAction{
         }else{
             return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data));
         }
-
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailCustomSearchAction.class);
 }

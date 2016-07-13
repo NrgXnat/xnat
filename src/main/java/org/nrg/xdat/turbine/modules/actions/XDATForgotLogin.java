@@ -41,7 +41,8 @@ public class XDATForgotLogin extends VelocitySecureAction {
     
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
-    	try {
+        //noinspection Duplicates
+        try {
 			SecureAction.isCsrfTokenOk(data);
 		} catch (Exception e1) {
 			data.setMessage("Due to a technical issue, the requested action cannot be performed.");
@@ -102,7 +103,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 UserI user=null;
 				try {
 					user = Users.getUser(username);
-				} catch (Exception e1) {
+				} catch (Exception ignored) {
 				}
 
                 if (user==null){

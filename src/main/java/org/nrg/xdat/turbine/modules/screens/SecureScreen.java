@@ -275,14 +275,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     isAuthorized = false;
                 }
 
-                HttpSession session = data.getSession();
-                session.removeAttribute("loggedin");
                 UserI guest = Users.getGuest();
                 if (guest != null) {
                     XDAT.setUserDetails(guest);
-                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-                    String Destination = data.getTemplateInfo().getScreenTemplate();
-                    data.getParameters().add("nextPage", Destination);
+                    data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());
                     if (!data.getAction().equalsIgnoreCase("")) {
                         data.getParameters().add("nextAction", data.getAction());
                     } else {
@@ -379,11 +375,13 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     }
                 });
 
-                for (File file : files) {
-                    try {
-                        addProps(file, tabs, _defaultTabs, subfolder + "/" + file.getName());
-                    } catch (IOException e) {
-                        logger.error("", e);
+                if (files != null) {
+                    for (File file : files) {
+                        try {
+                            addProps(file, tabs, _defaultTabs, subfolder + "/" + file.getName());
+                        } catch (IOException e) {
+                            logger.error("", e);
+                        }
                     }
                 }
             }

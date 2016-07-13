@@ -34,6 +34,9 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @SuppressWarnings("unused")
 public class ModifyUserGroups extends SecureAction {
 
@@ -115,4 +118,5 @@ public class ModifyUserGroups extends SecureAction {
         }
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(ModifyUserGroups.class);
 }

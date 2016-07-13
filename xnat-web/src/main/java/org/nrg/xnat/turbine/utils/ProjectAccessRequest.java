@@ -21,7 +21,6 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.UserHelper;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.ItemAccessHistory;
 import org.nrg.xft.db.PoolDBUtils;
@@ -524,7 +523,7 @@ public class ProjectAccessRequest {
 
 			try {
 				for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(user).entrySet()) {
-					if (entry.getValue().getTag().equals(_projectId)) {
+					if (StringUtils.equals(entry.getValue().getTag(),_projectId)) {
 						if(!UserHelper.getUserHelperService(user).isOwner(_projectId)){
 							Groups.removeUserFromGroup(user, entry.getValue().getId(), eventInfo);
 						}

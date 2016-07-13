@@ -953,7 +953,7 @@ registrationOptions:
             name: par
             label: "Auto-enable with Project Access Request?"
             description: >
-                If true, user accounts created when accepting project access requests will always be enabled (ane verified) automatically. If false,
+                If true, user accounts created when accepting project access requests will always be enabled (and verified) automatically. If false,
                 user accounts will only be enabled automatically if "Auto-enable User Registration?" is true. So this setting determines whether project
                 access requests should override how user registration is normally handled. Either way the administrator receives an email notification
                 when a user registers.

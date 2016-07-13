@@ -22,6 +22,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.event.Filterable;
 import org.nrg.framework.event.persist.PersistentEventImplementerI;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
@@ -444,14 +445,23 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
             if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
                 WorkflowUtils.complete(workflow, workflow.buildEvent());
             }
-        } catch (NrgServiceException e) {
-            final String message = String.format("Failed running the script %s by user %s for event %s on data type %s instance %s from project %s",
+        } catch (NrgServiceException | NrgServiceRuntimeException e) {
+            final String message = String.format("Failed running the script %s by user %s for event %s on data type %s instance %s from project %s  (Exception=%s)",
                                                  request.getScriptId(),
                                                  request.getUser().getLogin(),
                                                  request.getEvent(),
                                                  request.getDataType(),
                                                  request.getDataId(),
-                                                 request.getExternalId());
+                                                 request.getExternalId(),
+                                                 e.toString());
+            if (scriptOut==null) {
+            	scriptOut = new ScriptOutput();
+            	scriptOut.setStatus(Status.ERROR);
+            	scriptOut.setOutput(message);
+            }
+            if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
+                WorkflowUtils.fail(workflow, workflow.buildEvent());
+            }
             AdminUtils.sendAdminEmail("Script execution failure", message);
             logger.error(message, e);
             if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {

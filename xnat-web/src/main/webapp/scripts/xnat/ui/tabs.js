@@ -171,9 +171,9 @@ var XNAT = getObject(XNAT || {});
 
         // set container and layout before spawning:
         // XNAT.tabs.container = 'div.foo';
-        container = tabs.container || 'div.xnat-tab-container';
+        container = obj.container || tabs.container || 'div.xnat-tab-container';
 
-        layout = tabs.layout || 'left';
+        layout = obj.layout || tabs.layout || 'left';
 
         navTabs = spawn('div.xnat-nav-tabs');
         tabContent = spawn('div.xnat-tab-content');

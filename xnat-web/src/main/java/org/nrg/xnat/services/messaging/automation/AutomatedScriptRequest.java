@@ -87,7 +87,9 @@ public class AutomatedScriptRequest implements Serializable {
 	 */
 	public AutomatedScriptRequest(final String srcEventId, final String srcEventClass, final UserI user, final String scriptId, final String event, final String scriptWorkflow, final String dataType, final String dataId, final String externalId, Map<String,Object> argumentMap) {
 		this(srcEventId, srcEventClass, user, scriptId, event, scriptWorkflow, dataType, dataId, externalId);
-		_argumentMap.putAll(argumentMap);
+		if (argumentMap != null) {
+			_argumentMap.putAll(argumentMap);
+		}
 	}	
 
 	/**

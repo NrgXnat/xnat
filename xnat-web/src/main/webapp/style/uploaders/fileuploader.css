@@ -85,13 +85,14 @@ div.abu-xnat-interactivity-area-sub {
 .abu-upload-duplicate {display:inline;color:#008800}
 .abu-upload-duplicate.abu-upload-duplicate-text {display:inline;color:#008800}
 
-.abu-uploader-instructions-sel {margin-bottom:0px; margin-right:10px; display:inline; width:100%; float:right; background-color:#CCCCCC; border-color:#1A75BB; color:#1A75BB; border-style:solid; border-width:1px; border-color:#1A75BB; font-size:14px; font-weight: bold; padding:2px; }
+.abu-uploader-instructions-sel {margin-bottom:0px; margin-right:10px; display:inline; float:right; background-color:#CCCCCC; border-style:solid; border-width:1px; width:auto; font-size:14px; font-weight: bold; padding:2px; }
+
 .abu-uploader-instructions {margin-bottom:10px; display:inline}
 
 .abu-return-floatmessage {position:absolute;z-index:10001;width:auto;cursor:pointer;background-color:#FFFFCC; }
 .abu-return-message {width:auto;cursor:pointer;background-color:#FFFFCC; }
 
-.abu-options-div { position: relative; float: left; width: 430px; margin-left: 10px; }
+.abu-options-div { position: relative; float: left; width: 420px; margin-left: 10px; }
 .abu-options-cb {
     display:block; /* or inline-block */
     width: auto; padding: 7px 0; text-align:center; margin-left:10px; float:left; padding-top: 0px; padding-bottom: 0px;    

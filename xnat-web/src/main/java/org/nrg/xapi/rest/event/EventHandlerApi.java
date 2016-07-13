@@ -12,8 +12,9 @@ import org.nrg.automation.event.entities.AutomationFilters;
 import org.nrg.automation.services.impl.hibernate.HibernateAutomationEventIdsService;
 import org.nrg.automation.services.impl.hibernate.HibernateAutomationFiltersService;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.event.EventClass;
 import org.nrg.framework.event.Filterable;
-import org.nrg.framework.utilities.Reflection;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.model.event.EventClassInfo;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -22,11 +23,12 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.event.conf.EventPackages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * The Class EventHandlerApi.
@@ -68,13 +71,6 @@ public class EventHandlerApi {
      */
     @Autowired
     private HibernateAutomationFiltersService filtersService;
-
-    /**
-     * The event packages.
-     */
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-    @Autowired
-    private EventPackages eventPackages;
 
     /**
      * Inits the this.
@@ -183,7 +179,7 @@ public class EventHandlerApi {
                         Collections.sort(valueList);
                         filterableFields.put(autoFilters.getField(), valueList);
                     } else {
-                        for (String value : autoFilters.getValues()) {
+                        for (final String value : autoFilters.getValues()) {
                             final List<String> values = filterableFields.get(autoFilters.getField());
                             if (!values.contains(value)) {
                                 values.add(value);
@@ -206,23 +202,28 @@ public class EventHandlerApi {
      */
     private List<String> getEventClassList(List<AutomationEventIds> eventIdsList) {
         final List<String> classList = Lists.newArrayList();
-        // ClassList should be pulled from available event classes rather than from events
-        if (eventPackages != null) {
-            for (final String pkg : eventPackages) {
-                try {
-                    for (final Class<?> clazz : Reflection.getClassesForPackage(pkg)) {
-                        if (AutomationEventImplementerI.class.isAssignableFrom(clazz) && !clazz.isInterface() &&
-                            !Modifier.isAbstract(clazz.getModifiers())) {
-                            if (!classList.contains(clazz.getName())) {
-                                classList.add(clazz.getName());
-                            }
-                        }
-                    }
-                } catch (ClassNotFoundException | IOException e) {
-                    // Do nothing.
-                }
-            }
-        }
+        try {
+			for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/events/*-event.properties")) {
+				final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+				if (!properties.containsKey(EventClass.EVENT_CLASS)) {
+					continue;
+				}
+				final String clssStr = properties.get(EventClass.EVENT_CLASS).toString();
+				try {
+					final Class<?> clazz = Class.forName(clssStr);
+					if (AutomationEventImplementerI.class.isAssignableFrom(clazz) && !clazz.isInterface() &&
+							!Modifier.isAbstract(clazz.getModifiers())) {
+						if (!classList.contains(clazz.getName())) {
+							classList.add(clazz.getName());
+						}
+					}
+				} catch (ClassNotFoundException cex) {
+					_log.debug("Could not load class for class name (" + clssStr + ")");
+				}
+			}
+		} catch (IOException e) {
+			_log.debug("Could not load event class properties resources (META-INF/xnat/*-event.properties)");
+		}
         // I think for now we'll not pull from the database if we've found event classes.  If the database
         // contains any thing different, it should only be event classes that are no longer available.
         if (classList.size() < 1) {

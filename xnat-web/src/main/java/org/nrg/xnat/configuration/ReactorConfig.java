@@ -26,12 +26,6 @@ public class ReactorConfig {
         return new XftItemEventListener(eventBus);
     }
 
-    @Bean
-    public EventPackages eventPackages() {
-        // NOTE:  These should be treated as parent packages.  All sub-packages should be searched
-        return new EventPackages(new HashSet<>(Arrays.asList(new String[]{"org.nrg.xnat.event", "org.nrg.xft.event", "org.nrg.xdat.event"})));
-    }
-
     /**
      * Env.
      *

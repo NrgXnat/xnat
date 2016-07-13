@@ -359,36 +359,11 @@ ${bodyTop}
 
             <!-- search script -->
             <script type="text/javascript">
-                <!--
-                function DefaultEnterKey(e, button){
-                    var keynum, keychar, numcheck;
-
-                    if (window.event) // IE
-                    {
-                        keynum = e.keyCode;
-                        if (keynum == 13) {
-                            submitQuickSearch();
-                            return true;
-                        }
-                    }
-                    else if (e) // Netscape/Firefox/Opera
-                    {
-                        keynum = e.which;
-                        if (keynum == 13) {
-                            submitQuickSearch();
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-
                 function submitQuickSearch(){
-                    concealContent();
-                    if (document.getElementById('quickSearchForm').value != "")
-                        document.getElementById('quickSearchForm').submit();
+                  if($('#searchValue').val()!="") {
+                    $('#quickSearchForm').submit();
+                  }
                 }
-
-                //-->
             </script>
             <!-- end search script -->
 
@@ -426,11 +401,20 @@ ${bodyTop}
                     </optgroup>
                 </select>
                 <input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="">
+                <input id="xnat_csrf" name="XNAT_CSRF" type="hidden" value="">
                 <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
 
                 <script>
-
-                    $('#searchValue').each(function(){
+                    var searchField = $('#searchValue');
+                    searchField.keyup(function( event ) {
+                      if (event.which == 13) {
+                        submitQuickSearch();
+                      }
+                    });
+                    
+                    $('#xnat_csrf').val(window.csrfToken);
+                    
+                    searchField.each(function(){
                         var _this = this;
                         _this.value = _this.value || 'search';
                         $(_this).focus(function(){

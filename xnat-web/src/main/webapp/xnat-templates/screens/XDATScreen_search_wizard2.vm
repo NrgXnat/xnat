@@ -57,13 +57,13 @@
 
             <p>Define the constraints which will determine which rows show up in your search results.</p>
 
-            <p style="margin-bottom:20px;">
+            <!-- p style="margin-bottom:20px;">
                 You must also select a search method (this affects all tabs below):
                 <label class="search-method-label" style="border-right:1px solid #ccc;">
                     <input type="checkbox" class="search-method by-criteria" value="by-criteria"> By Specific Criteria</label>
                 <label class="search-method-label">
                     <input type="checkbox" class="search-method by-id" value="by-id"> By Exact ID</label>
-            </p>
+            </p -->
 
             <div id="super_search" class="yui-navset" style="max-width:800px !important;margin-top:30px;margin-left:-40px;">
                 <ul class="yui-nav" style="">

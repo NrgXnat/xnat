@@ -301,8 +301,7 @@ dependencies {
     compile "org.nrg:ecat4xnat:1.7.0-SNAPSHOT"
     compile "org.nrg:DicomDB:4.1.0"
     compile "org.nrg:ExtAttr:4.1.0"
-//    compile "org.nrg:DicomEdit:4.2.1"
-    compile "org.nrg:DicomEdit:4.2.2"
+    compile "org.nrg:DicomEdit:4.2.3"
     compile "org.nrg:DicomImageUtils:${vXnat}"
     compile "org.nrg:DicomUtils:1.3.1"
     compile "org.nrg:PrearcImporter:${vXnat}"
@@ -386,7 +385,7 @@ dependencies {
     compile "org.apache.httpcomponents:httpcore-nio:4.4.4"
 
     compile "org.codehaus.groovy:groovy-all:${vGroovy}"
-    compile "org.python:jython:${vJython}"
+    compile "org.python:jython-standalone:${vJython}"
 
     compile "net.sourceforge.saxon:saxon:${vSaxon}"
     compile "xalan:xalan:2.7.2"

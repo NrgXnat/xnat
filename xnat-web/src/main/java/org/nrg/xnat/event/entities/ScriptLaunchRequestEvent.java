@@ -10,15 +10,16 @@ import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationCompletionEvent;
 import org.nrg.automation.event.entities.PersistentEvent;
 import org.nrg.framework.event.EventClass;
-import org.nrg.framework.event.persist.PersistentEventImplementerI;
+
+import com.google.common.collect.Maps;
 
 /**
  * The Class AutomationLaunchRequestEvent.
  */
 @Entity
 @PrimaryKeyJoinColumn(name="ID", referencedColumnName="ID")
-@EventClass(displayName="Script Launch Request Event")
-public class ScriptLaunchRequestEvent extends PersistentEvent implements PersistentEventImplementerI, AutomationEventImplementerI {
+@EventClass(name="ScriptLaunchRequestEvent", description="Script Launch Request Event")
+public class ScriptLaunchRequestEvent extends PersistentEvent implements AutomationEventImplementerI {
 	
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = 7465778737330635218L;
@@ -26,7 +27,7 @@ public class ScriptLaunchRequestEvent extends PersistentEvent implements Persist
 	/** The automation completion event. */
 	private AutomationCompletionEvent automationCompletionEvent;
 	
-	private Map<String,Object> parameterMap;
+	private Map<String,Object> parameterMap = Maps.newHashMap();
 	
 	/**
 	 * Instantiates a new automation launch request event.

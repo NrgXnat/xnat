@@ -275,6 +275,7 @@ var XNAT = getObject(XNAT);
         else {
             obj = data || {};
         }
+
         if (obj.header) {
             // if there's a 'header' property
             // set to true, pick the header from
@@ -347,15 +348,103 @@ var XNAT = getObject(XNAT);
 
     // helper for future XNAT DataTable widget
     table.dataTable = function(data, opts){
+
         var tableData = data;
+
         // tolerate reversed arguments
         if (Array.isArray(opts)){
             tableData = opts;
-            opts = data;
+            opts = getObject(data);
         }
-        addClassName(opts, 'xnat-table data-table');
-        var newTable = new Table(opts);
-        return newTable.init(tableData);
+
+        // don't modify original object
+        opts = cloneObject(opts);
+
+        var allItems = opts.header || (opts.items && opts.items === 'all');
+
+        // properties for spawned element
+        opts.element = opts.element || {};
+
+        addClassName(opts.element, 'data-table xnat-table');
+
+        if (opts.sortable) {
+            if (opts.sortable === true) {
+                addClassName(opts.element, 'sortable');
+            }
+            else {
+                opts.sortable = opts.sortable.split(',').map(function(item){return item.trim()});
+            }
+        }
+
+        opts.element = extend(true, {
+            style: {
+                width: opts.width || '100%'
+            }
+        }, opts.element);
+
+        // initialize the table
+        var newTable = new Table(opts.element);
+
+        function createTable(rows){
+            var props = [];
+            if (!allItems && (opts.items || opts.properties)) {
+                newTable.tr();
+                forOwn(opts.items||opts.properties, function(name, val){
+                    props.push(name);
+                    newTable.th(val);
+                    if (!opts.sortable) return;
+                    if (opts.sortable === true || opts.sortable.indexOf(name) !== -1) {
+                        addClassName(newTable.last.th, 'sort');
+                    }
+                });
+            }
+            else {
+                if (allItems) {
+                    newTable.tr();
+                }
+                forOwn(rows[0], function(name, val){
+                    if (allItems) {
+                        newTable.th(name);
+                    }
+                    props.push(name);
+                });
+            }
+            rows.forEach(function(item){
+                newTable.tr();
+                props.forEach(function(name){
+                    newTable.td({ className: name }, item[name]);
+                });
+            });
+        }
+
+        // if 'tableData' is a string, use as the url
+        if (typeof tableData == 'string') {
+            opts.url = tableData;
+        }
+
+        // request data for table rows
+        if (opts.load || opts.url) {
+            XNAT.xhr.get({
+                url: XNAT.url.rootUrl(opts.load||opts.url),
+                dataType: opts.dataType || 'json',
+                success: function(json){
+                    // handle data returned in ResultSet.Result array
+                    json = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
+                    createTable(json);
+                }
+            });
+        }
+        else {
+            createTable(tableData.data||tableData);
+            // newTable.init(tableData);
+        }
+
+        if (opts.container) {
+            $$(opts.container).append(newTable.table);
+        }
+
+        return newTable;
+
     };
 
     // table with <input> elements in the cells
@@ -395,4 +484,3 @@ var XNAT = getObject(XNAT);
     XNAT.ui.inputTable = XNAT.inputTable = table.inputTable;
 
 }));
-

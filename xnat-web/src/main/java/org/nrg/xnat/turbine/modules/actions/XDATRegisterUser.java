@@ -105,9 +105,8 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
         }
     }
 
-	@Override
 	public boolean autoApproval(RunData data, Context context) throws Exception {
-		boolean autoApproval = super.autoApproval(data, context);
+		boolean autoApproval = XDAT.getSiteConfigPreferences().getUserRegistration();
 
 		if (autoApproval) {
             logger.debug("Auto-approval for registration came from super...");

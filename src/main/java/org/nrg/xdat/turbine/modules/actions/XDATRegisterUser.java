@@ -21,22 +21,19 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.PasswordValidatorChain;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.UserRegistrationDataService;
-import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -45,7 +42,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;
-import org.nrg.xdat.security.helpers.UserHelper;
 
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
@@ -91,10 +87,13 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                // NEW USER
                         found.setPassword(tempPass);
 
-		                boolean autoApproval = autoApproval(data, context);
-		                
-		                if (autoApproval) {
-		                	if (XDAT.getSiteConfigPreferences().getEmailVerification() && !hasPAR(data)) {
+		                boolean autoApproval = XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar();
+
+                        if(XDAT.getSiteConfigPreferences().getPar() && hasPAR(data)){
+                            found.setEnabled(Boolean.TRUE);
+                        }
+		                else if (autoApproval) {
+		                	if (XDAT.getSiteConfigPreferences().getEmailVerification()) {
 		                		found.setEnabled(Boolean.FALSE);
 		                	} else {
 		                		found.setEnabled(Boolean.TRUE);
@@ -270,17 +269,13 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
     
-    public boolean autoApproval(RunData data, Context context)throws Exception{
-    	return XDAT.getSiteConfigPreferences().getUserRegistration();
-    }
-    
     public void directRequest(RunData data,Context context,UserI user) throws Exception{
 		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 
         data.setScreenTemplate("Index.vm");
         
-        if (XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.getSiteConfigPreferences().getEmailVerification()){
+        if ((XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar()) && !XDAT.getSiteConfigPreferences().getEmailVerification()){
          if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
             VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);

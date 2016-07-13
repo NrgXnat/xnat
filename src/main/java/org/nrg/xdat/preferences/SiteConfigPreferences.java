@@ -266,6 +266,20 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+
+    @NrgPreference(defaultValue = "true")
+    public boolean getPar() {
+        return getBooleanValue("par");
+    }
+
+    public void setPar(final boolean par) {
+        try {
+            setBooleanValue(par, "par");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'par': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "false")
     public boolean getRestrictUserListAccessToAdmins() {
         return getBooleanValue("restrictUserListAccessToAdmins");

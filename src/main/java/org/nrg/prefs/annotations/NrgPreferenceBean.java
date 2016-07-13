@@ -27,7 +27,7 @@ public @interface NrgPreferenceBean {
      *
      * @return The name for the tool.
      */
-    String toolName() default "";
+    String toolName();
 
     /**
      * Specifies the message resource key containing the tool name in the preferences service. This name must be unique.

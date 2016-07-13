@@ -400,14 +400,15 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     @JsonIgnore
     @Override
-    public void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
-        set(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    public String set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        return set(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
     @JsonIgnore
     @Override
-    public void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+    public String set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         final String namespacedPropertyId = getNamespacedPropertyId(key, subkeys);
+        final String current = getValue(namespacedPropertyId);
         if (_preferences.containsKey(namespacedPropertyId)) {
             try {
                 final Properties existing   = _service.getToolProperties(getToolId(), Collections.singletonList(namespacedPropertyId));
@@ -424,6 +425,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         } else {
             _service.setPreferenceValue(getToolId(), namespacedPropertyId, scope, entityId, value);
         }
+        return current;
     }
 
     @JsonIgnore

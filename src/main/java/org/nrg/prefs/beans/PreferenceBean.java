@@ -1,6 +1,5 @@
 package org.nrg.prefs.beans;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.nrg.framework.constants.Scope;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.PreferenceInfo;
@@ -8,8 +7,12 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+@SuppressWarnings("unused")
 public interface PreferenceBean {
     String NAMESPACE_DELIMITER = ":";
 
@@ -81,9 +84,9 @@ public interface PreferenceBean {
 
     void create(Scope scope, String entityId, String value, String key, String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+    String set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+    String set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
     void setBooleanValue(final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 

@@ -91,6 +91,8 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      *
      * @param toolId         The tool ID for the preference object.
      * @param preferenceName The name of the preference object.
+     *
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void delete(final String toolId, final String preferenceName) throws InvalidPreferenceName;
 
@@ -121,10 +123,10 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * Returns the properties with name specified in the <b>preferenceNames</b> list for the selected tool at the indicated
      * scope.
      *
-     * @param toolId             The ID of the tool.
-     * @param scope              The scope for which properties should be retrieved.
-     * @param entityId           The entity for which properties should be retrieved.
-     * @param preferenceNames    The names of the preferences to retrieve.
+     * @param toolId          The ID of the tool.
+     * @param scope           The scope for which properties should be retrieved.
+     * @param entityId        The entity for which properties should be retrieved.
+     * @param preferenceNames The names of the preferences to retrieve.
      *
      * @return All of the properties for the selected tool at the indicated scope, returned as a Java properties object.
      */

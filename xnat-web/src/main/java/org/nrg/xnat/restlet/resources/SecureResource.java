@@ -133,8 +133,6 @@ public abstract class SecureResource extends Resource {
     public String requested_format = null;
     public String filepath = null;
 
-    protected String csrfToken = null;
-
     private final SerializerService _serializer;
 
     public SecureResource(Context context, Request request, Response response) {

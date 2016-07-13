@@ -390,7 +390,7 @@ dependencies {
     compile "net.sourceforge.saxon:saxon:${vSaxon}"
     compile "xalan:xalan:2.7.2"
 
-    compile "nl.bitwalker:UserAgentUtils:1.2.4"
+    compile "eu.bitwalker:UserAgentUtils:1.20"
     compile "com.twmacinta:fast-md5:2.7.1"
     compile "com.h2database:h2:1.4.191"
     compile "com.lowagie:itext:4.2.1"

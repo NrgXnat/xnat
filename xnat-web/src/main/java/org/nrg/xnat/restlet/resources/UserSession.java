@@ -21,8 +21,6 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
 
-import java.util.UUID;
-
 public class UserSession extends SecureResource {
     protected UserI user = null;
 
@@ -33,7 +31,6 @@ public class UserSession extends SecureResource {
 
         // copy the user from the request into the session
         getHttpSession().setAttribute("userHelper", UserHelper.getUserHelperService(user));
-        getHttpSession().setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
     }
 
     @Override

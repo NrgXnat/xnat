@@ -30,8 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.util.UUID;
 
 public class XnatSecureGuard extends Filter {
 	private static final Logger logger     = LoggerFactory.getLogger(XnatSecureGuard.class);
@@ -109,14 +107,11 @@ public class XnatSecureGuard extends Filter {
 			if (challengeResponse != null) {
 				user = authenticateBasic(challengeResponse);
 				if (user != null) {
-					httpRequest.getSession().setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 					return true;
 				}
 			}
 			else if (!XDAT.getSiteConfigPreferences().getRequireLogin()) {
 				try {
-					HttpSession session = httpRequest.getSession();
-					session.removeAttribute("loggedin");
 					user=Users.getGuest();
 					if (user!=null) {
 						return true;

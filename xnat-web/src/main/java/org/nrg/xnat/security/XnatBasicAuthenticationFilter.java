@@ -39,8 +39,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 
 public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
 
@@ -152,23 +153,24 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
                                               Authentication authResult) throws IOException {
         try {
             final UserI user = XDAT.getUserDetails();
-            Object lock = locks.get(user.getID());
-            if (lock == null) {
-                locks.put(user.getID(), new Object());
-                lock = locks.get(user.getID());
-            }
+            if (user != null) {
+                Object lock = locks.get(user.getID());
+                if (lock == null) {
+                    locks.put(user.getID(), new Object());
+                    lock = locks.get(user.getID());
+                }
 
-            synchronized (lock) {
-                java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-                XFTItem item = XFTItem.NewItem("xdat:user_login", user);
-                item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
-                item.setProperty("xdat:user_login.login_date", today);
-                item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
-                item.setProperty("xdat:user_login.session_id", request.getSession().getId());
-                SaveItemHelper.authorizedSave(item, null, true, false, EventUtils.DEFAULT_EVENT(user, null));
+                synchronized (lock) {
+                    Date today = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+                    XFTItem item = XFTItem.NewItem("xdat:user_login", user);
+                    item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
+                    item.setProperty("xdat:user_login.login_date", today);
+                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
+                    item.setProperty("xdat:user_login.session_id", request.getSession().getId());
+                    SaveItemHelper.authorizedSave(item, null, true, false, EventUtils.DEFAULT_EVENT(user, null));
+                }
+                request.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(user));
             }
-            request.getSession().setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-            request.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(user));
         } catch (Exception e) {
             logger.error(e);
         }

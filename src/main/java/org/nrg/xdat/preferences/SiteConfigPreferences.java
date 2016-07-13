@@ -595,8 +595,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
 
     // just the extensions.  not the delimiter too.
     public String[] getZipExtensionsAsArray(){
-        String[] extensions = getValue("zipExtensions").split("\\s*,\\s*");
-        return extensions;
+        return getValue("zipExtensions").split("\\s*,\\s*");
     }
 
     public void setZipExtensions(final String zipExtensions) {

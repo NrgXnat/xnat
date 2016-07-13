@@ -947,6 +947,16 @@ registrationOptions:
                 If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
                 projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
                 receives an email notification when a user registers.
+        autoEnablePar:
+            kind: panel.input.checkbox
+            id: autoEnablePar
+            name: par
+            label: "Auto-enable with Project Access Request?"
+            description: >
+                If true, user accounts created when accepting project access requests will always be enabled (ane verified) automatically. If false,
+                user accounts will only be enabled automatically if "Auto-enable User Registration?" is true. So this setting determines whether project
+                access requests should override how user registration is normally handled. Either way the administrator receives an email notification
+                when a user registers.
         uiAllowNewUserComments:
             kind: panel.input.checkbox
             id: uiAllowNewUserComments

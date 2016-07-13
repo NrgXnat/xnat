@@ -426,7 +426,8 @@ var XNAT = getObject(XNAT || {});
             }
 
             var ajaxConfig = {
-                method: opts.method,
+                //method: opts.method,
+                method: $form.data('method') || opts.method || 'POST',
                 url: this.action,
                 success: function(){
                     var obj = {};
@@ -845,54 +846,10 @@ var XNAT = getObject(XNAT || {});
     panel.data = {};
 
     panel.data.table = function(opts){
+
         // initialize the table
-        opts = cloneObject(opts);
-        opts.element = opts.element || {};
-        addClassName(opts.element, 'data-table xnat-table');
-        if (opts.sortable) {
-            if (opts.sortable === true) {
-                addClassName(opts.element, 'sortable');
-            }
-            else {
-                opts.sortable = opts.sortable.split(',').map(function(item){return item.trim()});
-            }
-        }
-        opts.element.style = {
-            width: opts.width || '100%'
-        };
-        var dataTable = XNAT.table(opts.element);
-        // request data for table rows
-        XNAT.xhr.get({
-            url: XNAT.url.rootUrl(opts.load||opts.url),
-            dataType: opts.dataType || 'json',
-            success: function(data){
-                var props = [];
-                if (opts.items) {
-                    dataTable.tr();
-                    forOwn(opts.items, function(name, val){
-                        props.push(name);
-                        dataTable.th(val);
-                        if (opts.sortable === true || opts.sortable.indexOf(name) !== -1) {
-                            addClassName(dataTable.last.th, 'sort');
-                        }
-                    });
-                }
-                else {
-                    forOwn(data[0], function(name, val){
-                        props.push(name);
-                    });
-                }
-                data.forEach(function(item){
-                    dataTable.tr();
-                    props.forEach(function(name){
-                        dataTable.td({ className: name }, item[name]);
-                    });
-                });
-                if (opts.container) {
-                    $$(opts.container).append(dataTable.table);
-                }
-            }
-        });
+        var dataTable = XNAT.table.dataTable(opts.data||[], opts);
+
         return {
             element: dataTable.table,
             spawned: dataTable.table,
@@ -900,6 +857,7 @@ var XNAT = getObject(XNAT || {});
                 return dataTable.table
             }
         };
+        
     };
 
     panel.data.list = function(opts){

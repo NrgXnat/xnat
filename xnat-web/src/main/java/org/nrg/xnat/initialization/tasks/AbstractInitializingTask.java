@@ -11,7 +11,7 @@ public abstract class AbstractInitializingTask implements InitializingTask {
     @Override
     public abstract void run();
 
-        @Override
+    @Override
     public boolean isCompleted() {
         return _completedAt != null;
     }

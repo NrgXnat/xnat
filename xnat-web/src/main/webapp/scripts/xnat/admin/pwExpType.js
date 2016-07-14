@@ -7,15 +7,15 @@
       fieldDate.attr('placeholder', 'MM/DD/YYYY');
       openCal = $('#openCal-passwordExpirationDate');
       openCal.click(openCalendar);
-      fieldInterval[0].style.width = '40px';
-      fieldInterval[0].style.textAlign = 'right';
+//      fieldInterval[0].style.width = '40px';
+//      fieldInterval[0].style.textAlign = 'right';
       fieldInterval[0].style.marginTop='10px';
       fieldDate[0].style.width = '90px';
       fieldDate[0].style.marginTop='10px';
       fieldDate.datetimepicker({
         timepicker:false,
         format:'m/d/Y',
-//        minDate:'-1970/01/01' // today is minimum date
+        maxDate:'1970/01/01' // today is max date, disallow future date selection
       });
       sdtDisabled = $('#passwordExpirationTypeDisabled');
       sdtInterval = $('#passwordExpirationTypeInterval');

@@ -1,9 +1,10 @@
 <!-- Sequence: 10 -->
+
 <!-- Browse/Default -->
     <li class="hidden"><a href="#BrowseProjects">Projects</a>
         <ul id="browse-projects">
             <!-- Sequence: 10 -->
-            #if($siteConfig.getUiAllowNonAdminProjectCreation() || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData"))
+            #if($siteConfig.getUiAllowNonAdminProjectCreation() || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData/project"))
                 <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
             #end
         </ul>

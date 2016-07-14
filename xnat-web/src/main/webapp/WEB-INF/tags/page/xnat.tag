@@ -681,7 +681,13 @@ ${bodyTop}
 
         <c:import url="/xapi/siteConfig/buildInfo" var="buildInfo" scope="session"/>
 
-        var buildInfo = XNAT.data.siteConfig.buildInfo = ${buildInfo};
+        extend(true, XNAT, {
+            data: { siteConfig: {
+                buildInfo: ${buildInfo}
+            }}
+        });
+
+        var buildInfo = XNAT.data.siteConfig.buildInfo;
 
         var buildInfoSample = {
             "Application-Name": "XNAT",

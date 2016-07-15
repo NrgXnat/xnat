@@ -42,7 +42,6 @@ public class SystemPathVerification extends AbstractInitializingTask {
         try {
             String archivePath = _siteConfigPreferences.getArchivePath();
             validatePath(archivePath, "Archive", true);
-
             final ProjectExtractor pe = new ProjectExtractor();
             final SubjectExtractor se = new SubjectExtractor();
             final Map<String, String> projects = _template.query("SELECT id, name FROM xnat_projectdata", pe);
@@ -51,6 +50,13 @@ public class SystemPathVerification extends AbstractInitializingTask {
                 if(subjects.size() > 0){
 
                 }
+            }
+
+            if(pathErrors.size() > 0) {
+
+                // Send warning email to admin
+System.out.println(pathErrors);
+
             }
             complete();
         } catch (Exception e) {
@@ -86,11 +92,13 @@ public class SystemPathVerification extends AbstractInitializingTask {
                 pathErrors.add(noFiles);
                 return false;
             }
+/*
 else {
     for (File file : files) {
         System.out.println(file);
     }
 }
+*/
         }
         return true;
     }

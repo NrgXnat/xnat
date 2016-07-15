@@ -27,6 +27,9 @@ public class EventClassInfo {
 	/** The _display name. */
 	String _displayName;
 	
+	/** The _display name. */
+	String _description;
+	
 	/** The _filterable fields. */
 	final Map<String,List<String>> _filterableFields = Maps.newHashMap();
 	
@@ -48,15 +51,18 @@ public class EventClassInfo {
 			Class clazz = Class.forName(className);
 			if (clazz.isAnnotationPresent(EventClass.class)) {
 				
-				Annotation anno = AnnotationUtils.findAnnotation(clazz, EventClass.class);
-				Object annoDisplayNameObj = AnnotationUtils.getValue(anno, "displayName");
+				final Annotation anno = AnnotationUtils.findAnnotation(clazz, EventClass.class);
+				final Object annoDisplayNameObj = AnnotationUtils.getValue(anno, "name");
 				_displayName = (annoDisplayNameObj != null && annoDisplayNameObj instanceof String) ? annoDisplayNameObj.toString() : _className;
 				
-				Object annoEventIdsObj = AnnotationUtils.getValue(anno, "defaultEventIds");
+				final Object annoDescriptionObj = AnnotationUtils.getValue(anno, "description");
+				_description = (annoDescriptionObj != null && annoDescriptionObj instanceof String) ? annoDescriptionObj.toString() : _description;
+				
+				final Object annoEventIdsObj = AnnotationUtils.getValue(anno, "defaultEventIds");
 				String[] annoEventIds = (annoEventIdsObj != null && annoEventIdsObj instanceof String[]) ? (String[])annoEventIdsObj : new String[] {};
 				_eventIds.addAll(Arrays.asList(annoEventIds));
 				
-				Object annoIncludeValuesFromDatabase = AnnotationUtils.getValue(anno, "includeValuesFromDatabase");
+				final Object annoIncludeValuesFromDatabase = AnnotationUtils.getValue(anno, "includeValuesFromDatabase");
 				if (annoIncludeValuesFromDatabase != null && annoIncludeValuesFromDatabase instanceof Boolean) {
 					_includeEventIdsFromDatabase = (boolean)annoIncludeValuesFromDatabase;
 				}
@@ -100,6 +106,17 @@ public class EventClassInfo {
         _className = className;
     }
 
+    /**
+     * Gets the description
+     *
+     * @return the description
+     */
+    @ApiModelProperty(value = "Description")
+    @JsonProperty("description")
+    public String getDescription() {
+        return _description;
+    }
+    
     /**
      * Gets the filterable fields map.
      *

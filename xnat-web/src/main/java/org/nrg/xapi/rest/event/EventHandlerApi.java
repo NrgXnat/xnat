@@ -6,10 +6,11 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import javassist.Modifier;
+
 import org.nrg.automation.event.AutomationEventImplementerI;
-import org.nrg.automation.event.entities.AutomationEventIds;
+import org.nrg.automation.event.entities.AutomationEventIdsIds;
 import org.nrg.automation.event.entities.AutomationFilters;
-import org.nrg.automation.services.impl.hibernate.HibernateAutomationEventIdsService;
+import org.nrg.automation.services.impl.hibernate.HibernateAutomationEventIdsIdsService;
 import org.nrg.automation.services.impl.hibernate.HibernateAutomationFiltersService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.event.EventClass;
@@ -60,11 +61,18 @@ public class EventHandlerApi {
      */
     private static final Logger _log = LoggerFactory.getLogger(EventHandlerApi.class);
 
+	/** The maximum number of event IDs to return for each event class in each project. */
+	private static final int MAX_EVENT_IDS_LIST = 20;
+
+    /** The _role holder. */
+    @Autowired
+    private RoleHolder _roleHolder;
+
     /**
      * The event ids service.
      */
     @Autowired
-    private HibernateAutomationEventIdsService eventIdsService;
+    private HibernateAutomationEventIdsIdsService eventIdsService;
 
     /**
      * The filters service.
@@ -91,12 +99,17 @@ public class EventHandlerApi {
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/projects/{project_id}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<List<EventClassInfo>> automationEventClassesGet(@PathVariable("project_id") String project_id) {
+    public ResponseEntity<List<EventClassInfo>> automationEventClassesGetByProject(@PathVariable("project_id") String project_id) {
         final HttpStatus status = isPermitted(project_id);
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-        return new ResponseEntity<>(getEventInfoList(project_id), HttpStatus.OK);
+        try {
+        	return new ResponseEntity<>(getEventInfoList(project_id), HttpStatus.OK);
+        } catch (Throwable t) {
+        	_log.error("EventHandlerApi exception:  " + t.toString());
+        	return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -113,7 +126,12 @@ public class EventHandlerApi {
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-        return new ResponseEntity<>(getEventInfoList(null), HttpStatus.OK);
+        try {
+        	return new ResponseEntity<>(getEventInfoList(null), HttpStatus.OK);
+        } catch (Throwable t) {
+        	_log.error("EventHandlerApi exception:  " + t.toString());
+        	return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -124,19 +142,17 @@ public class EventHandlerApi {
      */
     private List<EventClassInfo> getEventInfoList(String project_id) {
         final List<EventClassInfo>     eventInfoList = Lists.newArrayList();
-        final List<AutomationEventIds> eventIdsList  = getEventIdsService().getEventIds(project_id, false);
+        final List<AutomationEventIdsIds> eventIdsList  = getEventIdsService().getEventIds(project_id, false, MAX_EVENT_IDS_LIST);
         final List<AutomationFilters>  filtersList   = getFiltersService().getAutomationFilters(project_id, false);
         for (final String className : getEventClassList(eventIdsList)) {
             final EventClassInfo            eci              = new EventClassInfo(className);
             final List<String>              eventIds         = eci.getEventIds();
             final Map<String, List<String>> filterableFields = eci.getFilterableFieldsMap();
             if (eci.getIncludeEventIdsFromDatabase()) {
-                for (final AutomationEventIds autoIds : eventIdsList) {
-                    if (autoIds.getSrcEventClass().equals(className)) {
-                        for (String eId : autoIds.getEventIds()) {
-                            if (!eventIds.contains(eId)) {
-                                eventIds.add(eId);
-                            }
+                for (final AutomationEventIdsIds autoIds : eventIdsList) {
+                    if (autoIds.getParentAutomationEventIds().getSrcEventClass().equals(className)) {
+                        if (!eventIds.contains(autoIds.getEventId())) {
+                            eventIds.add(autoIds.getEventId());
                         }
                     }
                 }
@@ -153,8 +169,11 @@ public class EventHandlerApi {
                         final Object   annoInitialValuesObj = AnnotationUtils.getValue(anno, "initialValues");
                         final String[] annoInitialValues    = (annoInitialValuesObj != null && annoInitialValuesObj instanceof String[]) ? (String[]) annoInitialValuesObj : new String[] {};
 
+                        final Object annoFilterRequired = AnnotationUtils.getValue(anno, "filterRequired");
+                        boolean      filterRequired     = (annoFilterRequired == null || !(annoFilterRequired instanceof Boolean)) ? false : (boolean) annoFilterRequired;
+
                         final Object annoIncludeValuesFromDatabase = AnnotationUtils.getValue(anno, "includeValuesFromDatabase");
-                        boolean      includeValuesFromDatabase     = !(annoIncludeValuesFromDatabase != null && annoIncludeValuesFromDatabase instanceof Boolean) || (boolean) annoIncludeValuesFromDatabase;
+                        boolean      includeValuesFromDatabase     = (annoIncludeValuesFromDatabase == null || !(annoIncludeValuesFromDatabase instanceof Boolean)) ? true :(boolean) annoIncludeValuesFromDatabase;
                         if (!filterableFields.containsKey(column)) {
                             final List<String> newValueList = Lists.newArrayList();
                             filterableFields.put(column, newValueList);
@@ -170,6 +189,12 @@ public class EventHandlerApi {
                             }
                         }
                         Collections.sort(valueList);
+                        if (!filterRequired) {
+                        	// TODO:  Should probably add an EventFilterInfo class and keep the list of filter values there, along with a
+                        	// a boolean required value and a default value.  
+                        	// NOTE:  This is handled in JavaScript as non-required filter
+                        	valueList.add(0,"_FILTER_NOT_REQUIRED_");
+                        }
                     }
                 }
             } catch (SecurityException | ClassNotFoundException e) {
@@ -200,10 +225,10 @@ public class EventHandlerApi {
      * @param eventIdsList the event ids list
      * @return the event class list
      */
-    private List<String> getEventClassList(List<AutomationEventIds> eventIdsList) {
+    private List<String> getEventClassList(List<AutomationEventIdsIds> eventIdsList) {
         final List<String> classList = Lists.newArrayList();
         try {
-			for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/events/*-event.properties")) {
+			for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/event/*-event.properties")) {
 				final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
 				if (!properties.containsKey(EventClass.EVENT_CLASS)) {
 					continue;
@@ -222,14 +247,14 @@ public class EventHandlerApi {
 				}
 			}
 		} catch (IOException e) {
-			_log.debug("Could not load event class properties resources (META-INF/xnat/*-event.properties)");
+			_log.debug("Could not load event class properties resources (META-INF/xnat/event/*-event.properties)");
 		}
         // I think for now we'll not pull from the database if we've found event classes.  If the database
         // contains any thing different, it should only be event classes that are no longer available.
         if (classList.size() < 1) {
-            for (final AutomationEventIds auto : eventIdsList) {
-                if (!classList.contains(auto.getSrcEventClass())) {
-                    classList.add(auto.getSrcEventClass());
+            for (final AutomationEventIdsIds auto : eventIdsList) {
+                if (!classList.contains(auto.getParentAutomationEventIds().getSrcEventClass())) {
+                    classList.add(auto.getParentAutomationEventIds().getSrcEventClass());
                 }
             }
         }
@@ -241,9 +266,9 @@ public class EventHandlerApi {
      *
      * @return the event ids service
      */
-    private HibernateAutomationEventIdsService getEventIdsService() {
+    private HibernateAutomationEventIdsIdsService getEventIdsService() {
         if (eventIdsService == null) {
-            eventIdsService = XDAT.getContextService().getBean(HibernateAutomationEventIdsService.class);
+            eventIdsService = XDAT.getContextService().getBean(HibernateAutomationEventIdsIdsService.class);
         }
         return eventIdsService;
     }
@@ -297,7 +322,4 @@ public class EventHandlerApi {
         _log.error("Error checking read status for project");
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
-
-    @Autowired
-    private RoleHolder _roleHolder;
 }

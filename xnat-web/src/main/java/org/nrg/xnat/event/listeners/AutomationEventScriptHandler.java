@@ -10,8 +10,10 @@ import org.nrg.automation.entities.ScriptOutput.Status;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationCompletionEvent;
 import org.nrg.automation.event.entities.AutomationEventIds;
+import org.nrg.automation.event.entities.AutomationEventIdsIds;
 import org.nrg.automation.event.entities.AutomationFilters;
 import org.nrg.automation.event.entities.PersistentEvent;
+import org.nrg.automation.services.AutomationEventIdsIdsService;
 import org.nrg.automation.services.AutomationEventIdsService;
 import org.nrg.automation.services.AutomationFiltersService;
 import org.nrg.automation.services.PersistentEventService;
@@ -108,12 +110,14 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
      */
     @Inject
     private PersistentEventService _persistentEventService;
-
-    /**
-     * Automation event IDs service.
-     */
+    
+    /** The _ids service. */
     @Inject
     private AutomationEventIdsService _idsService;
+    
+    /** The _ids ids service. */
+    @Inject
+    private AutomationEventIdsIdsService _idsIdsService;
 
     /**
      * Instantiates a new automated script handler.
@@ -184,15 +188,15 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
         if (eventData.getEventId() == null || eventData.getClass() == null) {
             return;
         }
-        final List<AutomationEventIds> autoIds = _idsService.getEventIds(eventData.getExternalId(), eventData.getSrcEventClass(), true);
+        final List<AutomationEventIdsIds> autoIds = _idsIdsService.getEventIds(eventData.getExternalId(), eventData.getSrcEventClass(), eventData.getEventId(), true);
         if (autoIds.size() < 1) {
-            final AutomationEventIds ids = new AutomationEventIds(eventData);
-            _idsService.saveOrUpdate(ids);
+            final AutomationEventIdsIds idsids = new AutomationEventIdsIds(eventData, _idsService);
+            _idsIdsService.saveOrUpdate(idsids);
         } else {
-            for (final AutomationEventIds ids : autoIds) {
-                if (!ids.getEventIds().contains(eventData.getEventId())) {
-                    ids.getEventIds().add(eventData.getEventId());
-                    _idsService.saveOrUpdate(ids);
+            for (final AutomationEventIdsIds ids : autoIds) {
+                if (ids.getEventId().equals(eventData.getEventId())) {
+                	ids.setCounter(ids.getCounter()+1);
+                    _idsIdsService.saveOrUpdate(ids);
                 }
             }
         }
@@ -248,9 +252,6 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
      * Handle event.
      *
      * @param event the event
-     */
-    /* (non-Javadoc)
-     * @see org.nrg.xnat.event.listeners.WorkflowStatusEventHandlerAbst#handleEvent(org.nrg.xft.event.WorkflowStatusEvent)
      */
     public void handleEvent(Event<AutomationEventImplementerI> event) {
         final AutomationEventImplementerI automationEvent = event.getData();
@@ -348,6 +349,12 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
         }
     }
 
+    /**
+     * Script output to html string.
+     *
+     * @param scriptOutputs the script outputs
+     * @return the string
+     */
     private String scriptOutputToHtmlString(List<ScriptOutput> scriptOutputs) {
         if (scriptOutputs == null) {
             return "";

@@ -48,7 +48,10 @@ import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationCompletionEvent;
+import org.nrg.automation.event.entities.AutomationEventIdsIds;
 import org.nrg.automation.entities.ScriptTrigger;
+import org.nrg.automation.services.AutomationEventIdsIdsService;
+import org.nrg.automation.services.AutomationEventIdsService;
 import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.event.Filterable;
@@ -735,6 +738,12 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			// Make workflow save request, requesting that the workflow not trigger an event.  We want to make
 			// the save request here.
 			PersistentWorkflowUtils.save(wrk, em, false, false);
+			// Update automationEventIds table since we're not triggering an event (allows event to appear in UI).
+			try {
+				updateAutomationEventIdsIds(proj, WorkflowStatusEvent.class.getCanonicalName(), eventText);
+			} catch (Throwable t) {
+				logger.debug("Couldn't update hibernate event id table", t);
+			}
 			return wrk;
 		} catch (EventRequirementAbsent e1) {
 			returnList.add("ERROR:  error generating workflow -" + e1.toString());
@@ -747,6 +756,24 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	}
 
 
+
+	private void updateAutomationEventIdsIds(XnatProjectdata proj, String canonicalName, String eventText) {
+        AutomationEventIdsIdsService _idsIdsService = XDAT.getContextService().getBean(AutomationEventIdsIdsService.class);
+        AutomationEventIdsService _idsService = XDAT.getContextService().getBean(AutomationEventIdsService.class);
+		final List<AutomationEventIdsIds> autoIds = _idsIdsService.getEventIds(proj.getId(), canonicalName, eventText, true);
+        if (autoIds.size() < 1) {
+            final AutomationEventIdsIds idsids = new AutomationEventIdsIds(proj.getId(), canonicalName, eventText, _idsService);
+            _idsIdsService.saveOrUpdate(idsids);
+        } else {
+            for (final AutomationEventIdsIds ids : autoIds) {
+                if (ids.getEventId().equals(eventText)) {
+                	ids.setCounter(ids.getCounter()+1);
+                    _idsIdsService.saveOrUpdate(ids);
+                }
+            }
+        }
+		
+	}
 
 	/**
 	 * Gets the event text from configured resource config.

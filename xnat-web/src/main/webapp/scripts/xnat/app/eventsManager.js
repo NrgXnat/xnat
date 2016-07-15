@@ -240,9 +240,12 @@ $(function(){
                         var filterableVals = filterableFields[filterable];
                         if (typeof filterableVals !== 'undefined' && filterableVals.length>0) {
                             filterableHtml = filterableHtml + '<div style="width:100%;margin-top:5px;margin-bottom:5px">' + filterable + ' &nbsp;<select id="filter_sel_' + filterable + '" name="' + filterable + '" class="filter">';
-                            filterableHtml = filterableHtml + '<option value="">&lt;NONE&gt;</option>';
                             for (var i=0; i<filterableVals.length; i++) {
-                                filterableHtml = filterableHtml + '<option value="' + filterableVals[i] + '">' + filterableVals[i] + '</option>';
+				if (filterableVals[i]!=='_FILTER_NOT_REQUIRED_') {
+                                	filterableHtml = filterableHtml + '<option value="' + filterableVals[i] + '">' + filterableVals[i] + '</option>';
+				} else {
+                            		filterableHtml = filterableHtml + '<option value="">&lt;NONE&gt;</option>';
+				}
                             }
                             filterableHtml = filterableHtml + '</select> <input type="text" id="filter_input_' + filterable + '" name="' + filterable +
                                   '" class="filter" style="display:none" size="15"/> <button class="customButton">Custom Value</button></div>';

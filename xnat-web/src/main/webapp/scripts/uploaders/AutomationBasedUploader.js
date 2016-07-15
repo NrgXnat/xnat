@@ -1231,8 +1231,10 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 	configHtml+='<div style="margin-left:20px;width:100%"><p><b>Usage:</b>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchFromCacheUploads" name="ULC_RB" value="launchFromCacheUploads"' +
 				 ((configObj.launchFromCacheUploads) ? ' checked' : '') + '> <b> Use for cache space uploads</b> </div>';
-	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchFromResourceUploads" name="ULC_RB" value="launchFromResourceUploads"' +
-				 ((configObj.launchFromResourceUploads) ? ' checked' : '') + '> <b> Use for configured resource uploads </b> </div>';
+	if (scope!='site') {
+		configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchFromResourceUploads" name="ULC_RB" value="launchFromResourceUploads"' +
+					 ((configObj.launchFromResourceUploads) ? ' checked' : '') + '> <b> Use for configured resource uploads </b> </div>';
+	}
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchWithoutUploads" name="ULC_RB" value="launchWithoutUploads"' +
 				 ((configObj.launchWithoutUploads) ? ' checked' : '') + '> <b> Trigger without uploads </b> </div>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_doNotUseUploader" name="ULC_RB" value="doNotUseUploader"' +
@@ -1268,26 +1270,28 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 	}
 	var selectSize = (configuredResources.length<4) ? 4 : ((configuredResources.length>10) ? 10 : configuredResources.length);
 	configHtml+='<p>';
-	configHtml+='<div style="margin-left:20px;width:100%"><p><b>Configured resources for which this handler is applicable:</b> ' + 
-				'<span style="margin-left:10px"><input type="checkbox" id="ULC_resourcesAllCB" ' + allChecked + 
-					((configObj.launchFromResourceUploads) ? '' : ' disabled="disabled"') + '>Applicable for all configured resources.</span>';
-	if (configuredResources.length<1) {
-		configHtml+='<div style="margin-left:20px;width:100%"><p><b>NONE DEFINED</b></p></div>';
-	} else  {
-		configHtml+='<div style="margin-left:20px;width:100%"><p>' + 
-		'<div style="width:100%;float:left;margin-bottom:10px;"><div style="width:auto;float:left;"> <select id="ULC_configuredResources" size=' + selectSize + ' style="max-width:500px;width:200px;" multiple ' + 
-			((allChecked || !(configObj.launchFromResourceUploads)) ? 'disabled="disabled"' : '')  + '>';
-		for (var i=0;i<configuredResources.length;i++) {
-			configHtml+='<option value="' + configuredResources[i].name + '" ' + 
-							((typeof(configObj.resourceConfigs)!=='undefined' && $.inArray(configuredResources[i].name,configObj.resourceConfigs)>=0) ? 'selected' : '') +
-				 '>' + configuredResources[i].name + '</option>';
-		} 
-		configHtml+='</select></div><span style="margin-left:10px">NOTE:  Multiple resources may be selected</span></div>';
-		configHtml+='</p></div>';
+	if (scope!='site') {
+		configHtml+='<div style="margin-left:20px;width:100%"><p><b>Configured resources for which this handler is applicable:</b> ' + 
+					'<span style="margin-left:10px"><input type="checkbox" id="ULC_resourcesAllCB" ' + allChecked + 
+						((configObj.launchFromResourceUploads) ? '' : ' disabled="disabled"') + '>Applicable for all configured resources.</span>';
+		if (configuredResources.length<1) {
+			configHtml+='<div style="margin-left:20px;width:100%"><p><b>NONE DEFINED</b></p></div>';
+		} else  {
+			configHtml+='<div style="margin-left:20px;width:100%"><p>' + 
+			'<div style="width:100%;float:left;margin-bottom:10px;"><div style="width:auto;float:left;"> <select id="ULC_configuredResources" size=' + selectSize + ' style="max-width:500px;width:200px;" multiple ' + 
+				((allChecked || !(configObj.launchFromResourceUploads)) ? 'disabled="disabled"' : '')  + '>';
+			for (var i=0;i<configuredResources.length;i++) {
+				configHtml+='<option value="' + configuredResources[i].name + '" ' + 
+								((typeof(configObj.resourceConfigs)!=='undefined' && $.inArray(configuredResources[i].name,configObj.resourceConfigs)>=0) ? 'selected' : '') +
+					 '>' + configuredResources[i].name + '</option>';
+			} 
+			configHtml+='</select></div><span style="margin-left:10px">NOTE:  Multiple resources may be selected</span></div>';
+			configHtml+='</p></div>';
+		}
+		configHtml+='</div></p>';
+	
+		configHtml+='<p>';
 	}
-	configHtml+='</div></p>';
-
-	configHtml+='<p>';
 	var allContextsChecked = '';
 	if (typeof(configObj.contexts)==='undefined') {
 		allContextsChecked = 'checked';

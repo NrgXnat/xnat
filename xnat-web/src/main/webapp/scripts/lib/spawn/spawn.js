@@ -148,17 +148,28 @@
         var el, $el, parts, id, classes, tagParts, attrs, isVoid,
             // property names to skip later
             skip = [
-                'innerHTML', 'html', 'attr', 'config', 'kind', 'prepend', 'append', 'appendTo',
-                'classes', 'className', 'addClass', 'style', 'data', 'fn', 'label'
+                'innerHTML', 'html', 'attr', 'config', 
+                'kind', 'tag', 'tagName',
+                'prepend', 'append', 'appendTo',
+                'classes', 'className', 'addClass',
+                'style', 'data', 'fn', 'label', 'done'
             ],
             errors = []; // collect errors
 
-        // deal with passing an array as the only argument
+        // handle passing an array with the arguments
         if (Array.isArray(tag)){
             children = tag[2];
             opts = tag[1];
             tag = tag[0];
         }
+        
+        // handle passing a config object as the only argument
+        if (!children && !opts) {
+            opts = tag;
+            tag = null;
+        }
+        
+        tag = tag || opts.tag || opts.tagName || 'span';
 
         if (tag === '!'){
             el = doc.createDocumentFragment();
@@ -380,7 +391,11 @@
         }
 
         if (opts.after){
-            frag.appendChild(el);
+            // don't append element twice if 
+            // there's 'before' AND 'after'
+            if (!opts.before) {
+                frag.appendChild(el);
+            }
             appendChildren(frag, opts.after, spawn);
             el = frag;
         }
@@ -394,9 +409,16 @@
 
         el.element = el;
 
-        el.get = function(){
+        el.get = function(callback){
+            if (typeof callback == 'function') {
+                callback.call(el);
+            }
             return el;
         };
+
+        if (typeof opts.done == 'function') {
+            opts.done.call(el);    
+        }
 
         return el;
 

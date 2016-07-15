@@ -3,18 +3,22 @@
  * xnat-templates/screens/Scripts.vm
  */
 
-var XNAT = getObject(XNAT||{});
+var XNAT = getObject(XNAT || {});
 
 (function(XNAT){
 
     var app, scriptEditor,
         xhr = XNAT.xhr;
 
+    var csrfParam = {
+        XNAT_CSRF: csrfToken
+    };
+    
     XNAT.app =
-        app = getObject(XNAT.app||{});
+        app = getObject(XNAT.app || {});
 
     XNAT.app.scriptEditor =
-        scriptEditor = getObject(XNAT.app.scriptEditor||{});
+        scriptEditor = getObject(XNAT.app.scriptEditor || {});
 
     scriptEditor.scriptIds = [];
     scriptEditor.languages = scriptEditor.runners = [];
@@ -41,12 +45,13 @@ var XNAT = getObject(XNAT||{});
     };
 
     // return script url with common parts pre-defined
-    function scriptURL( scriptId, params ){
-        return XNAT.url.restUrl('/data/automation/scripts/' + scriptId, params);
+    function scriptURL(scriptId, params){
+        scriptId = (scriptId) ? '/' + scriptId : '';
+        return XNAT.url.restUrl('/data/automation/scripts' + scriptId, params);
     }
 
     // return script url with common parts pre-defined
-    function scriptVersionsURL( scriptId, params ){
+    function scriptVersionsURL(scriptId, params){
         return XNAT.url.restUrl('/data/automation/scriptVersions/' + scriptId, params);
     }
 
@@ -56,7 +61,7 @@ var XNAT = getObject(XNAT||{});
 
         var langOptions = '<option value="!">Select a Language</option>';
 
-        if (langs.length){
+        if (langs.length) {
             forEach(langs, function(lang){
                 langOptions +=
                     '<option value="' + lang + '">' + lang + '</option>';
@@ -69,25 +74,25 @@ var XNAT = getObject(XNAT||{});
 
     scriptEditor.loadScripts = function(){
 
-        var rowTemplate = $('#script-row-template').find('> tbody').html(),
+        var rowTemplate  = $('#script-row-template').find('> tbody').html(),
             scriptsTable = $('#scripts-table'),
-            noScripts = $('#no-scripts-installed');
+            noScripts    = $('#no-scripts-installed');
 
-        xhr.getJSON(XNAT.url.restUrl('/data/automation/scripts'), function(json){
+        xhr.getJSON(scriptURL(), function(json){
 
             var scripts = json.ResultSet.Result,
-                list = '';
+                list    = '';
 
             // reset id array
             scriptEditor.scriptIds = [];
 
-            if (scripts.length){
+            if (scripts.length) {
                 $.each(scripts, function(i, script){
                     scriptEditor.scriptIds.push(script['Script ID']);
                     list +=
-                        rowTemplate.
-                        replace(/__SCRIPT_ID__/g, script['Script ID']).
-                        replace(/__SCRIPT_DESCRIPTION__/g, XNAT.utils.escapeXML(script['Description']));
+                        rowTemplate.replace(/__SCRIPT_ID__/g, script['Script ID'])
+                                   .replace(/__SCRIPT_LABEL__/g, script['Script Label'])
+                                   .replace(/__SCRIPT_DESCRIPTION__/g, XNAT.utils.escapeXML(script['Description']));
                 });
                 scriptsTable.find('> tbody').html(list);
                 scriptsTable.show();
@@ -102,27 +107,27 @@ var XNAT = getObject(XNAT||{});
 
     };
 
-    function saveScript( scriptId, $dialog, editor_id ){
+    function saveScript(scriptId, $dialog, editor_id){
 
         var $scriptIdInput = $dialog.find('.script-id-input');
 
-        if ( !scriptId ) {
+        if (!scriptId) {
             xmodal.message('Error: Empty Script ID', 'Please give your script an ID before saving.');
         }
         // check for valid script ID
-        else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(scriptId)){
+        else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(scriptId)) {
             xmodal.message({
                 title: 'Error: Invalid Characters in Script ID',
                 message: 'Script ID must start with a letter and can only consist of letters, numbers, and the underscore "_" character.',
                 action: function(){
                     setTimeout(function(){
                         $scriptIdInput.focus().select();
-                    },10);
+                    }, 10);
                 }
             });
         }
         // check to see if script already exists
-        else if ( scriptEditor.scriptIds.indexOf($scriptIdInput.val()) > -1 ) {
+        else if (scriptEditor.scriptIds.indexOf($scriptIdInput.val()) > -1) {
             // TODO: (maybe) get list via REST instead of when the page loads
             xmodal.message({
                 title: 'Error: Script ID Already Exists',
@@ -130,7 +135,7 @@ var XNAT = getObject(XNAT||{});
                 action: function(){
                     setTimeout(function(){
                         $scriptIdInput.focus().select();
-                    },10);
+                    }, 10);
                 }
             });
         }
@@ -141,31 +146,30 @@ var XNAT = getObject(XNAT||{});
                 $dialog.find('.editor-content').attr('id');
 
             var data = {
-                scriptLabel: $dialog.find('.scriptLabel').val(),
+                // copy id to label if empty
+                scriptLabel: $dialog.find('.scriptLabel').val() || scriptId,
                 content: ace.edit(editor_id).getSession().getValue(),
                 description: $dialog.find('.script-description').val(),
                 scriptVersion: $dialog.find('.script-version').val(),
                 language: $dialog.find('input.language').val() || ''
             };
 
-            if (!data.content || /^\s+$/.test(data.content)){
+            if (!data.content || /^\s+$/.test(data.content)) {
                 xmodal.message('No Content', 'Please add script content and try again.');
             }
             else {
-                var csrfParam = {
-                    XNAT_CSRF: csrfToken
-                };
                 xhr.put(scriptURL(scriptId, csrfParam), data, {
                     success: function(){
+                        xmodal.close($dialog);
+                        scriptEditor.loadScripts();
                         xmodal.message('Success', 'Your script was successfully saved.', {
                             action: function(){
-                                scriptEditor.loadScripts();
                                 xmodal.closeAll();
                             }
                         });
                         //xmodal.close($dialog);
                     },
-                    error: function( request, status, error ){
+                    error: function(request, status, error){
                         xmodal.message('Error', 'An error occurred: [' + status + '] ' + error);
                     }
                 });
@@ -174,26 +178,119 @@ var XNAT = getObject(XNAT||{});
     }
 
     var counter = 0;
-    // open xmodal dialog for script editing
-    function renderEditor( json ){
-        //var fullJson = json || {};
-        //json = {};
-        //var largestVersion = -1;
-        //var arrayLength = fullJson.length;
-        //for (var i = 0; i < arrayLength; i++) {
-        //    if(fullJson[i].scriptVersion>largestVersion){
-        //        largestVersion = fullJson[i].scriptVersion;
-        //        json = fullJson[i];
-        //    }
-        //}
+
+    // load script into the editor
+    function loadEditor($dialog, json){
+
+        json = json || {};
+
+        console.log(json);
 
         var scriptId = json.scriptId || '';
         var lang = json.language || 'groovy';
-        var time = json.timestamp || '';
+
+        $dialog.find('.id').val(json.id || '');
+
+        // version menu
+        var $versionMenu = $dialog.find('select.script-version');
+
+        if (scriptId) {
+            
+            // if editing existing script, show id as text
+            $dialog.find('.script-id-text').html(scriptId);
+            $dialog.find('.script-id-input').remove();
+            
+            // and load the versions menu
+            xhr.getJSON({
+                url: scriptVersionsURL(scriptId),
+                success: function(versions){
+                    $versionMenu.empty().append(versions.map(function(vers, i){
+                        return spawn('option', {
+                            value: vers,
+                            html: i + 1
+                        });  
+                    }));
+                    // make sure latest version is selected
+                    $versionMenu.find('option').last().prop('selected', true);
+                    $versionMenu.change();
+                }
+            });
+        }
+        else {
+            $versionMenu.append('<option value="1" selected>1</option>')
+        }
+
+        var $wrapper = $dialog.find('.editor-wrapper');
+        
+        function initEditor(data){
+
+            var timestamp = data.timestamp || '',
+                modifiedDate = '';
+
+            // update top fields
+            $dialog.find('.scriptId').val(data.scriptId);
+            $dialog.find('.scriptLabel').val(data.scriptLabel || '');
+            $dialog.find('.timestamp').val(timestamp);
+            $dialog.find('.script-description').val(data.description || '');
+
+            // update date/time in foter
+            if (timestamp) {
+                modifiedDate = ('last modified: ' + (new Date(timestamp)).toString());
+                $dialog.find('.modified-date').html(modifiedDate);
+            }
+
+            var editor = spawn('div', {
+                id: 'script-' + (scriptId || (data.id || ++counter)) + '-content',
+                className: 'editor-content',
+                html: XNAT.utils.escapeXML(data.content || '') || '',
+                style: {
+                    position: 'absolute',
+                    top: 0, right: 0, bottom: 0, left: 0,
+                    border: '1px solid #ccc'
+                },
+                done: function(){
+                    var aceEditor = ace.edit(this);
+                    aceEditor.setTheme("ace/theme/eclipse");
+                    aceEditor.getSession().setMode("ace/mode/" + stringLower(lang));
+                }
+            });
+
+            // put the new editor div in the wrapper
+            $wrapper.empty().append(editor);
+
+            // save the id to outer scope for other functions
+            scriptEditor.editor_id = editor.id;
+
+            return editor;
+        
+        }
+
+        // init the editor on load
+        initEditor(json);
+        
+        // init the editor again when changing versions
+        $versionMenu.on('change', function(){
+            var selectedVersion = this.value;
+            xhr.getJSON({
+                url: scriptURL(scriptId + '/' + selectedVersion),
+                success: function(json){
+                    initEditor(json);
+                }
+            })
+        })
+
+    }
+
+
+    // open xmodal dialog for script editing
+    function renderEditor(json){
+
+        var scriptId = json.scriptId || '';
+        var lang = json.language || 'groovy';
 
         var opts = {};
         opts.width = 880;
-        opts.height = 695;
+        opts.height = 720;
         //opts.top = 100;
         opts.scroll = false;
         opts.template = $('#script-editor-template');
@@ -201,16 +298,11 @@ var XNAT = getObject(XNAT||{});
         opts.title += (lang) ? ' - ' + lang : '';
         opts.esc = false; // prevent closing on 'esc'
         opts.enter = false; // prevents modal closing on 'enter' keypress
-        opts.footerContent = '<span style="color:#555;">';
-        if (time){
-            opts.footerContent +=
-                'last modified: ' + (new Date(time)).toString();
-        }
-        opts.footerContent += '</span>';
+        opts.footerContent = '<span class="modified-date" style="color:#555;"></span>';
         opts.buttons = {
             save: {
                 label: 'Save and Close',
-                action: function( obj ){
+                action: function(obj){
                     scriptId =
                         obj.$modal.find('.scriptId').val() ||
                         obj.$modal.find('.script-id-input').val();
@@ -223,129 +315,18 @@ var XNAT = getObject(XNAT||{});
                 label: 'Cancel'
             }
         };
-        opts.beforeShow = function( obj ){
-
-            var $dialog = obj.$modal;
-
-            $dialog.find('.id').val(json.id || '');
-            $dialog.find('.scriptId').val(scriptId);
-            $dialog.find('.scriptLabel').val(json.scriptLabel || '');
-            $dialog.find('.language').val(lang);
-            $dialog.find('.timestamp').val(time);
-            $dialog.find('.script-description').val(json.description || '');
-
-            var currScriptVersion = 1;
-            if(scriptId) {
-                //xhr.getJSON(XNAT.url.restUrl('/data/automation/scriptVersions/' + scriptId), function (jsonVersions) {
-                //    for(var key in jsonVersions){
-                //        if(key!="contains") {
-                //            var currScript = jsonVersions[key];
-                //            currScriptVersion = currScript.scriptVersion;
-                //            $('#script-version')
-                //                .append($("<option></option>")
-                //                    .attr("value", currScriptVersion)
-                //                    .text(currScriptVersion));
-                //        }
-                //    }
-                //    $('#script-version').val(currScriptVersion);
-                //});
-                xhr.getJSON(XNAT.url.restUrl('/data/automation/scriptVersions/' + scriptId), function (versionsList) {
-                    var versCounter = 1;
-                    for(var vers in versionsList){
-                        if(vers!="contains") {
-                            currScriptVersion = versionsList[vers];
-                            $('#script-version')
-                                .append($("<option></option>")
-                                    .attr("value", currScriptVersion)
-                                    .text(versCounter));
-                            versCounter = versCounter+1;
-                        }
-                    }
-                    $('#script-version').val(currScriptVersion);
-                });
-            }
-            else{
-                $('#script-version')
-                    .append($("<option></option>")
-                        .attr("value", "1")
-                        .attr("selected","selected")
-                        .text("1"));
-            }
-            //$("div.script-version select").val(currScriptVersion);
-            $('#script-version').change(function(){
-                var selectedVersion = $('#script-version')[0].value;
-                xhr.getJSON(XNAT.url.restUrl('/data/automation/scripts/' + scriptId + '/'+ selectedVersion), function (versionObj) {
-                    json = versionObj;
-                    var $dialog = obj.$modal;
-
-                    //$dialog.find('.id').val(json.id || '');
-                    $dialog.find('.scriptId').val(scriptId || '');
-                    $dialog.find('.scriptLabel').val(json.scriptLabel || '');
-                    $dialog.find('.language').val(json.language || '');
-                    $dialog.find('.timestamp').val(json.timestamp || '');
-                    $dialog.find('.script-description').val(json.description || '');
-                    $dialog.find('.script-version').val(selectedVersion || '');
-
-                    var $wrapper = $dialog.find('.editor-wrapper');
-
-                    // make sure the editor wrapper is empty
-                    $wrapper.empty();
-
-                    // create an entirely new editor div
-                    var _editor = document.createElement('div');
-                    _editor.id = 'script-' + (scriptId || (json.id||++counter)) + '-content';
-                    _editor.className = 'editor-content';
-                    _editor.innerHTML = XNAT.utils.escapeXML(json.content) || '';
-                    _editor.style = 'position:absolute;top:0;right:0;bottom:0;left:0;border: 1px solid #ccc';
-
-                    // put the new editor div in the wrapper
-                    $wrapper.append(_editor);
-
-                    // save the id to outer scope for other functions
-                    scriptEditor.editor_id = _editor.id;
-
-                    var aceEditor = ace.edit(_editor);
-                    aceEditor.setTheme("ace/theme/eclipse");
-                    aceEditor.getSession().setMode("ace/mode/" + stringLower(lang));
-                });
-
-            });
-
-            if (scriptId){
-                $dialog.find('.script-id-text').html(scriptId);
-                $dialog.find('.script-id-input').remove();
-                //$dialog.find('.script-id-input').val(scriptId);
-            }
-
-            var $wrapper = $dialog.find('.editor-wrapper');
-
-            // make sure the editor wrapper is empty
-            $wrapper.empty();
-
-            // create an entirely new editor div
-            var _editor = document.createElement('div');
-            _editor.id = 'script-' + (scriptId || (json.id||++counter)) + '-content';
-            _editor.className = 'editor-content';
-            _editor.innerHTML = XNAT.utils.escapeXML(json.content) || '';
-            _editor.style = 'position:absolute;top:0;right:0;bottom:0;left:0;border: 1px solid #ccc';
-
-            // put the new editor div in the wrapper
-            $wrapper.append(_editor);
-
-            // save the id to outer scope for other functions
-            scriptEditor.editor_id = _editor.id;
-
-            var aceEditor = ace.edit(_editor);
-            aceEditor.setTheme("ace/theme/eclipse");
-            aceEditor.getSession().setMode("ace/mode/" + stringLower(lang));
-
+        opts.beforeShow = function(obj){
+            loadEditor(obj.$modal, json);
         };
         opts.afterShow = function(obj){
-            if (!scriptId){
+            if (!scriptId) {
                 obj.$modal.find('.script-id-input').focus().select();
             }
+            // TODO: prompt user to save if they could lose unsaved changes
         };
+
         xmodal.open(opts);
+
     }
 
     // open dialog to choose language
@@ -357,7 +338,6 @@ var XNAT = getObject(XNAT||{});
                 title: 'Select a Language',
                 content: '<p>Please select a language:</p>' +
                 '<select class="language">' + langMenuOptions(langs) + '</select>',
-                //top: 120,
                 beforeShow: function(obj){
                     //console.log(obj.content);
                 },
@@ -365,9 +345,9 @@ var XNAT = getObject(XNAT||{});
                 okClose: false,
                 okAction: function(obj){
                     var $langSelect = obj.$modal.find('select.language'),
-                        lang = $langSelect.val();
-                    if (lang === '!'){
-                        xmodal.message('Please select a language before proceeding.',{
+                        lang        = $langSelect.val();
+                    if (lang === '!') {
+                        xmodal.message('Please select a language before proceeding.', {
                             //top: 140,
                             width: 350,
                             height: 150
@@ -388,7 +368,7 @@ var XNAT = getObject(XNAT||{});
 
         // can we assume the language choices will be
         // up-to-date when the dialog opens?
-        if (scriptEditor.languages.length){
+        if (scriptEditor.languages.length) {
             langDialog(scriptEditor.languages);
         }
         // otherwise get the runners (again?)
@@ -400,14 +380,14 @@ var XNAT = getObject(XNAT||{});
 
     }
 
-    scriptEditor.editScript = function( scriptId ){
-        xhr.getJSON(scriptURL(scriptId), function( json ){
+    scriptEditor.editScript = function(scriptId){
+        xhr.getJSON(scriptURL(scriptId), function(json){
             renderEditor(json);
         });
     };
 
-    scriptEditor.duplicateScript = function( scriptId ){
-        xhr.getJSON(scriptURL(scriptId), function( json ){
+    scriptEditor.duplicateScript = function(scriptId){
+        xhr.getJSON(scriptURL(scriptId), function(json){
             var data = {
                 //scriptId: json.scriptId + '_copy',
                 scriptLabel: json.scriptLabel,
@@ -423,8 +403,8 @@ var XNAT = getObject(XNAT||{});
     scriptEditor.addScript = function(){
         //window.location = url;
         var $langMenu = $('#add-script-language'),
-            _lang = $langMenu.val();
-        if (_lang === '!'){
+            _lang     = $langMenu.val();
+        if (_lang === '!') {
             selectLanguage();
         }
         else {
@@ -434,7 +414,7 @@ var XNAT = getObject(XNAT||{});
         }
     };
 
-    function doDelete( scriptId ){
+    function doDelete(scriptId){
 
         var successDialog = {
             title: 'Success',
@@ -445,21 +425,18 @@ var XNAT = getObject(XNAT||{});
                 xmodal.closeAll();
             }
         };
-        var csrfParam = {
-            XNAT_CSRF: csrfToken
-        };
 
         xhr.delete(scriptURL(scriptId, csrfParam), {
             success: function(){
                 xmodal.message(successDialog);
             },
-            error: function( request, status, error ){
+            error: function(request, status, error){
                 xmodal.message('Error', 'An error occurred: [' + status + '] ' + error);
             }
         });
     }
 
-    scriptEditor.deleteScript = function( scriptId ){
+    scriptEditor.deleteScript = function(scriptId){
         xmodal.confirm({
             width: 450,
             title: 'Delete Script?',
@@ -498,3 +475,4 @@ var XNAT = getObject(XNAT||{});
     });
 
 })(XNAT);
+

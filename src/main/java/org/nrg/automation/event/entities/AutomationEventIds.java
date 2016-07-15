@@ -1,19 +1,16 @@
 package org.nrg.automation.event.entities;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Set;
 
-import javax.persistence.CollectionTable;
-import javax.persistence.ElementCollection;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-
-import com.google.common.collect.Lists;
 
 /**
  * The Class AutomationEventIds.
@@ -21,7 +18,7 @@ import com.google.common.collect.Lists;
 @Entity
 @SuppressWarnings("serial")
 @Table(uniqueConstraints=@UniqueConstraint(columnNames = { "externalId", "srcEventClass" }))
-public class AutomationEventIds extends AbstractHibernateEntity implements Serializable {
+public class AutomationEventIds extends AbstractHibernateEntity implements Serializable, Comparable<AutomationEventIds> {
 	
 	/**
 	 * Instantiates a new automation event ids.
@@ -39,9 +36,18 @@ public class AutomationEventIds extends AbstractHibernateEntity implements Seria
 		this();
 		this.externalId = eventData.getExternalId();
 		this.srcEventClass = eventData.getSrcEventClass();
-		this.eventIds = Lists.newArrayList();
-		this.eventIds.add(eventData.getEventId());
-		//this.eventId = eventData.getEventId();
+	}
+	
+	/**
+	 * Instantiates a new automation event ids.
+	 *
+	 * @param externalId the external id
+	 * @param srcEventClass the src event class
+	 */
+	public AutomationEventIds(String externalId, String srcEventClass) {
+		this();
+		this.externalId = externalId;
+		this.srcEventClass = srcEventClass;
 	}
     
 	/** The external id. */
@@ -50,8 +56,9 @@ public class AutomationEventIds extends AbstractHibernateEntity implements Seria
 	/** The src event class. */
 	private String srcEventClass;
 	
-	/** The event ids. */
-	private List<String> eventIds;
+	/** The automation event ids ids. */
+	private Set<AutomationEventIdsIds> automationEventIdsIds;
+	
 	
 	/**
 	 * Sets the external id.
@@ -88,25 +95,33 @@ public class AutomationEventIds extends AbstractHibernateEntity implements Seria
 	public String getSrcEventClass() {
 		return this.srcEventClass;
 	}
+	
+	/**
+	 * Gets the automation event ids ids.
+	 *
+	 * @return the automation event ids ids
+	 */
+	@OneToMany(cascade = CascadeType.ALL, mappedBy="parentAutomationEventIds")
+	public Set<AutomationEventIdsIds> getAutomationEventIdsIds() {
+		return automationEventIdsIds;
+	}
 
 	/**
-	 * Sets the event ids.
+	 * Sets the automation event ids ids.
 	 *
-	 * @param eventIds the new event ids
+	 * @param automationEventIdsIds the new automation event ids ids
 	 */
-	public void setEventIds(List<String> eventIds) {
-        this.eventIds = eventIds;
-    }
+	public void setAutomationEventIdsIds(Set<AutomationEventIdsIds> automationEventIdsIds) {
+		this.automationEventIdsIds = automationEventIdsIds;
+	}
 
-    /**
-     * Gets the event ids.
-     *
-     * @return the event ids
-     */
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable
-	public List<String> getEventIds() {
-        return this.eventIds;
-    }
-    
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	@Override
+	public int compareTo(AutomationEventIds o) {
+		final int compare = this.getExternalId().compareTo(o.getExternalId());
+		return (compare!=0) ? compare : getSrcEventClass().compareTo(o.getSrcEventClass());
+	}
+
 }

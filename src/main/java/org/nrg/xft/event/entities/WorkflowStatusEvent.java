@@ -90,7 +90,7 @@ public class WorkflowStatusEvent extends AutomationEvent {
 	 *
 	 * @return the status
 	 */
-	@Filterable(initialValues = { "Complete", "Failed" }, filterRequired = true, includeValuesFromDatabase = false)
+	@Filterable(initialValues = { "Complete", "Failed" }, defaultValue = "Complete", filterRequired = true, includeValuesFromDatabase = false)
 	public String getStatus() {
 		return status;
 	}

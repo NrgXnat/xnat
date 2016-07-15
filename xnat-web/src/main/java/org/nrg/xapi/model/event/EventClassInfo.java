@@ -31,7 +31,7 @@ public class EventClassInfo {
 	String _description;
 	
 	/** The _filterable fields. */
-	final Map<String,List<String>> _filterableFields = Maps.newHashMap();
+	final Map<String,EventHandlerFilterInfo> _filterableFields = Maps.newHashMap();
 	
 	/** The _event ids. */
 	final List<String> _eventIds = Lists.newArrayList();
@@ -124,7 +124,7 @@ public class EventClassInfo {
      */
     @ApiModelProperty(value = "Map of Filterable fields.")
     @JsonProperty("filterableFields")
-    public Map<String,List<String>> getFilterableFieldsMap() {
+    public Map<String,EventHandlerFilterInfo> getFilterableFieldsMap() {
         return _filterableFields;
     }
     

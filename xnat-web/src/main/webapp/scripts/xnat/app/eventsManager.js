@@ -237,14 +237,20 @@ $(function(){
                 if (typeof filterableFields !== 'undefined') {
                     for (var filterable in filterableFields) {
                         if (!filterableFields.hasOwnProperty(filterable)) continue;
-                        var filterableVals = filterableFields[filterable];
+                        var filterableInfo = filterableFields[filterable];
+                        var filterableVals = filterableInfo["filterValues"];
+			var filterableRequired = filterableInfo["filterRequired"];
+			var filterableDefault = filterableInfo["defaultValue"];
+			if (typeof filterableRequired !== 'undefined' && !filterableRequired) {
+                           filterableHtml = filterableHtml + '<option value="">&lt;NONE&gt;</option>';
+			}
                         if (typeof filterableVals !== 'undefined' && filterableVals.length>0) {
                             filterableHtml = filterableHtml + '<div style="width:100%;margin-top:5px;margin-bottom:5px">' + filterable + ' &nbsp;<select id="filter_sel_' + filterable + '" name="' + filterable + '" class="filter">';
                             for (var i=0; i<filterableVals.length; i++) {
-				if (filterableVals[i]!=='_FILTER_NOT_REQUIRED_') {
-                                	filterableHtml = filterableHtml + '<option value="' + filterableVals[i] + '">' + filterableVals[i] + '</option>';
+				if (typeof filterableDefault !== 'undefined' && filterableDefault == filterableVals[i]) {
+                               		filterableHtml = filterableHtml + '<option value="' + filterableVals[i] + '" selected>' + filterableVals[i] + '</option>';
 				} else {
-                            		filterableHtml = filterableHtml + '<option value="">&lt;NONE&gt;</option>';
+                               		filterableHtml = filterableHtml + '<option value="' + filterableVals[i] + '">' + filterableVals[i] + '</option>';
 				}
                             }
                             filterableHtml = filterableHtml + '</select> <input type="text" id="filter_input_' + filterable + '" name="' + filterable +

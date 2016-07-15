@@ -652,7 +652,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			returnList.add("ERROR: Could retrieve event service");
 			return;
 		}
-		eventService.triggerEvent(automationEvent);
+		eventService.triggerEvent(automationEvent, automationCompletionEvent);
 		final AutomationCompletionEventListener completionService = AutomationCompletionEventListener.getService();
 		List<ScriptOutput> scriptOutputs = null;
 		for (int i = 1; i < TIMEOUT_SECONDS; i++) {

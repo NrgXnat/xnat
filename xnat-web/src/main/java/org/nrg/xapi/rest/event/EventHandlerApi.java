@@ -17,6 +17,7 @@ import org.nrg.framework.event.EventClass;
 import org.nrg.framework.event.Filterable;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.model.event.EventClassInfo;
+import org.nrg.xapi.model.event.EventHandlerFilterInfo;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
@@ -43,6 +44,7 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -147,7 +149,7 @@ public class EventHandlerApi {
         for (final String className : getEventClassList(eventIdsList)) {
             final EventClassInfo            eci              = new EventClassInfo(className);
             final List<String>              eventIds         = eci.getEventIds();
-            final Map<String, List<String>> filterableFields = eci.getFilterableFieldsMap();
+            final Map<String, EventHandlerFilterInfo> filterableFields = eci.getFilterableFieldsMap();
             if (eci.getIncludeEventIdsFromDatabase()) {
                 for (final AutomationEventIdsIds autoIds : eventIdsList) {
                     if (autoIds.getParentAutomationEventIds().getSrcEventClass().equals(className)) {
@@ -169,16 +171,25 @@ public class EventHandlerApi {
                         final Object   annoInitialValuesObj = AnnotationUtils.getValue(anno, "initialValues");
                         final String[] annoInitialValues    = (annoInitialValuesObj != null && annoInitialValuesObj instanceof String[]) ? (String[]) annoInitialValuesObj : new String[] {};
 
+                        final Object   annoDefaultValueObj = AnnotationUtils.getValue(anno, "defaultValue");
+                        final String   annoDefaultValue    = (annoDefaultValueObj != null) ? annoDefaultValueObj.toString() : "";
+
                         final Object annoFilterRequired = AnnotationUtils.getValue(anno, "filterRequired");
                         boolean      filterRequired     = (annoFilterRequired == null || !(annoFilterRequired instanceof Boolean)) ? false : (boolean) annoFilterRequired;
 
                         final Object annoIncludeValuesFromDatabase = AnnotationUtils.getValue(anno, "includeValuesFromDatabase");
                         boolean      includeValuesFromDatabase     = (annoIncludeValuesFromDatabase == null || !(annoIncludeValuesFromDatabase instanceof Boolean)) ? true :(boolean) annoIncludeValuesFromDatabase;
                         if (!filterableFields.containsKey(column)) {
+                        	EventHandlerFilterInfo filterInfo = new EventHandlerFilterInfo();
+                        	filterInfo.setFilterValues(new ArrayList<String>());
                             final List<String> newValueList = Lists.newArrayList();
-                            filterableFields.put(column, newValueList);
+                            filterableFields.put(column, filterInfo);
                         }
-                        final List<String> valueList = filterableFields.get(column);
+                        final EventHandlerFilterInfo filterInfo = filterableFields.get(column);
+                        filterInfo.setDefaultValue(annoDefaultValue);
+                        filterInfo.setFilterRequired(filterRequired);
+                        filterInfo.setIncludeValuesFromDatabase(includeValuesFromDatabase);
+                        final List<String> valueList = filterInfo.getFilterValues();
                         valueList.addAll(Arrays.asList(annoInitialValues));
                         if (includeValuesFromDatabase) {
                             for (final AutomationFilters autoFilters : filtersList) {
@@ -189,6 +200,7 @@ public class EventHandlerApi {
                             }
                         }
                         Collections.sort(valueList);
+                        
                         if (!filterRequired) {
                         	// TODO:  Should probably add an EventFilterInfo class and keep the list of filter values there, along with a
                         	// a boolean required value and a default value.  
@@ -200,12 +212,16 @@ public class EventHandlerApi {
             } catch (SecurityException | ClassNotFoundException e) {
                 for (final AutomationFilters autoFilters : filtersList) {
                     if (!filterableFields.containsKey(autoFilters.getField())) {
+                       	EventHandlerFilterInfo filterInfo = new EventHandlerFilterInfo();
                         final List<String> valueList = Lists.newArrayList(autoFilters.getValues());
+                        filterInfo.setFilterValues(valueList);
+                        filterInfo.setFilterRequired(false);
+                        filterInfo.setIncludeValuesFromDatabase(true);
                         Collections.sort(valueList);
-                        filterableFields.put(autoFilters.getField(), valueList);
+                        filterableFields.put(autoFilters.getField(), filterInfo);
                     } else {
                         for (final String value : autoFilters.getValues()) {
-                            final List<String> values = filterableFields.get(autoFilters.getField());
+                            final List<String> values = filterableFields.get(autoFilters.getField()).getFilterValues();
                             if (!values.contains(value)) {
                                 values.add(value);
                             }

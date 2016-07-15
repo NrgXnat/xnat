@@ -4,7 +4,9 @@ import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.DicomSCPManager;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
 import org.nrg.dcm.id.TemplatizedDicomFileNamer;
+import org.nrg.dcm.preferences.DicomSCPPreference;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.annotation.Bean;
@@ -31,8 +33,8 @@ public class DicomImportConfig {
     }
     
     @Bean
-    public DicomSCPManager dicomSCPManager() throws Exception {
-        return new DicomSCPManager();
+    public DicomSCPManager dicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences) throws Exception {
+        return new DicomSCPManager(dicomScpPreferences, siteConfigPreferences);
     }
 
     @Bean

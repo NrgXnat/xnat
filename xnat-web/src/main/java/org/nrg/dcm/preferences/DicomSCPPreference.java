@@ -14,11 +14,9 @@ import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,46 +25,43 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 @NrgPreferenceBean(toolId = "dicomScpManager", toolName = "DICOM SCP Manager", description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.")
-public class DicomSCPPreference extends AbstractPreferenceBean implements ApplicationContextAware {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setApplicationContext(final ApplicationContext context) throws BeansException {
+public class DicomSCPPreference extends AbstractPreferenceBean {
+    @Autowired
+    public DicomSCPPreference(final XnatUserProvider provider, final ApplicationContext context) {
+        _provider = provider;
         _context = context;
     }
 
-    public boolean hasDicomSCPInstance(final String scpId) {
-        return getDicomSCPInstances().containsKey(scpId);
+    public boolean hasDicomSCPInstance(final int id) {
+        return getDicomSCPInstances().containsKey(Integer.toString(id));
     }
 
-    @NrgPreference(defaultValue = "{'XNAT':{'scpId':'XNAT','aeTitle':'XNAT','port':8104,'enabled':true}}", key = "scpId")
+    @NrgPreference(defaultValue = "{'1': {'id': '1', 'aeTitle': 'XNAT', 'port': 8104, 'enabled': true}}", key = "id")
     public Map<String, DicomSCPInstance> getDicomSCPInstances() {
         return getMapValue(PREF_ID);
     }
 
-    public DicomSCPInstance getDicomSCPInstance(final String scpId) {
-        return getDicomSCPInstances().get(scpId);
+    public DicomSCPInstance getDicomSCPInstance(final int id) {
+        return getDicomSCPInstances().get(Integer.toString(id));
     }
 
     public void setDicomSCPInstance(final DicomSCPInstance instance) throws IOException {
-        final String scpId = instance.getScpId();
-        deleteDicomSCP(scpId);
+        final int id = instance.getId();
+        deleteDicomSCP(id);
         try {
-            set(serialize(instance), PREF_ID, scpId);
+            set(serialize(instance), PREF_ID, Integer.toString(id));
         } catch (InvalidPreferenceName invalidPreferenceName) {
-            _log.info("Got an invalidate preference name error for " + scpId);
+            _log.info("Got an invalidate preference name error for " + id);
         }
-        _dicomSCPs.put(scpId, getDicomSCP(scpId));
+        _dicomSCPs.put(id, getDicomSCP(id));
     }
 
-    public void deleteDicomSCPInstance(final String scpId) {
-        deleteDicomSCP(scpId);
+    public void deleteDicomSCPInstance(final int id) {
+        deleteDicomSCP(id);
         try {
-            delete(PREF_ID, scpId);
+            delete(PREF_ID, Integer.toString(id));
         } catch (InvalidPreferenceName invalidPreferenceName) {
-            _log.info("Got an invalidate preference name error trying to delete DICOM SCP instance " + scpId);
+            _log.info("Got an invalidate preference name error trying to delete DICOM SCP instance " + id);
         }
     }
 
@@ -74,20 +69,20 @@ public class DicomSCPPreference extends AbstractPreferenceBean implements Applic
         return new ArrayList<>(_dicomSCPs.values());
     }
 
-    public DicomSCP getDicomSCP(final String scpId) throws IOException {
-        if (!hasDicomSCPInstance(scpId)) {
-            throw new NrgServiceRuntimeException(NrgServiceError.UnknownEntity, "There is no definition for the DICOM SCP with ID " + scpId);
+    public DicomSCP getDicomSCP(final int id) throws IOException {
+        if (!hasDicomSCPInstance(id)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UnknownEntity, "There is no definition for the DICOM SCP with ID " + id);
         }
-        if (!_dicomSCPs.containsKey(scpId)) {
-            final DicomSCPInstance instance = getDicomSCPInstance(scpId);
-            _dicomSCPs.put(scpId, DicomSCP.create(scpId, Executors.newCachedThreadPool(), instance.getPort(), _provider, instance.getAeTitle(), getIdentifier(instance.getIdentifier()), getDicomFileNamer(instance.getFileNamer())));
+        if (!_dicomSCPs.containsKey(id)) {
+            final DicomSCPInstance instance = getDicomSCPInstance(id);
+            _dicomSCPs.put(id, DicomSCP.create(id, Executors.newCachedThreadPool(), instance.getPort(), _provider, instance.getAeTitle(), getIdentifier(instance.getIdentifier()), getDicomFileNamer(instance.getFileNamer())));
         }
-        return _dicomSCPs.get(scpId);
+        return _dicomSCPs.get(id);
     }
 
-    private void deleteDicomSCP(final String scpId) {
-        if (_dicomSCPs.containsKey(scpId)) {
-            final DicomSCP deleted = _dicomSCPs.remove(scpId);
+    private void deleteDicomSCP(final int id) {
+        if (_dicomSCPs.containsKey(id)) {
+            final DicomSCP deleted = _dicomSCPs.remove(id);
             deleted.stop();
         }
     }
@@ -113,9 +108,7 @@ public class DicomSCPPreference extends AbstractPreferenceBean implements Applic
     private static final Logger _log    = LoggerFactory.getLogger(DicomSCPInstance.class);
     private static final String PREF_ID = "dicomSCPInstances";
 
-    @Inject
-    private XnatUserProvider _provider;
-
-    private ApplicationContext _context;
-    private final Map<String, DicomSCP> _dicomSCPs = new HashMap<>();
+    private final XnatUserProvider   _provider;
+    private final ApplicationContext _context;
+    private final Map<Integer, DicomSCP> _dicomSCPs = new HashMap<>();
 }

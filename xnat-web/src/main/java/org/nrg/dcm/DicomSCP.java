@@ -10,33 +10,12 @@
  */
 package org.nrg.dcm;
 
-import static org.dcm4che2.data.UID.ExplicitVRBigEndian;
-import static org.dcm4che2.data.UID.ExplicitVRLittleEndian;
-import static org.dcm4che2.data.UID.ImplicitVRLittleEndian;
-import static org.dcm4che2.data.UID.JPEG2000;
-import static org.dcm4che2.data.UID.JPEG2000LosslessOnly;
-import static org.dcm4che2.data.UID.JPEG2000Part2MultiComponent;
-import static org.dcm4che2.data.UID.JPEG2000Part2MultiComponentLosslessOnly;
-import static org.dcm4che2.data.UID.JPEGBaseline1;
-import static org.dcm4che2.data.UID.JPEGExtended24;
-import static org.dcm4che2.data.UID.JPEGLSLossless;
-import static org.dcm4che2.data.UID.JPEGLSLossyNearLossless;
-import static org.dcm4che2.data.UID.JPEGLossless;
-import static org.dcm4che2.data.UID.JPEGLosslessNonHierarchical14;
-import static org.dcm4che2.data.UID.JPIPReferenced;
-import static org.dcm4che2.data.UID.JPIPReferencedDeflate;
-import static org.dcm4che2.data.UID.MPEG2;
-import static org.dcm4che2.data.UID.RFC2557MIMEEncapsulation;
-import static org.dcm4che2.data.UID.RLELossless;
-import static org.dcm4che2.data.UID.VerificationSOPClass;
-import static org.dcm4che2.data.UID.XMLEncoding;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.Executor;
-
-import javax.inject.Provider;
-
+import com.google.common.base.Function;
+import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.net.Device;
 import org.dcm4che2.net.NetworkApplicationEntity;
@@ -52,37 +31,35 @@ import org.nrg.xnat.utils.NetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Function;
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
+import javax.inject.Provider;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Executor;
+
+import static org.dcm4che2.data.UID.*;
 
 // MIGRATION: Can we simplify this class by removing the map of AEs? What purpose does that serve? If we can maintain multiple AEs through the manager, that would be better.
 public class DicomSCP {
-    protected DicomSCP(final String scpId, final Executor executor, final Device device, final int port) {
-        _scpId = scpId;
+    protected DicomSCP(final int id, final Executor executor, final Device device, final int port) {
+        _id = id;
         _executor = executor;
         _device = device;
         _port = port;
         setStarted(false);
     }
 
-    public static DicomSCP create(final String scpId, final Executor executor, final int port,
-                                  final CStoreService.Specifier... cStoreSpecs) {
-        return create(scpId, executor, port, Arrays.asList(cStoreSpecs));
+    public static DicomSCP create(final int id, final Executor executor, final int port, final CStoreService.Specifier... cStoreSpecs) {
+        return create(id, executor, port, Arrays.asList(cStoreSpecs));
     }
 
-    public static DicomSCP create(final String scpId, final Executor executor, final int port,
-                                  final Iterable<CStoreService.Specifier> cStoreSpecs) {
+    public static DicomSCP create(final int id, final Executor executor, final int port, final Iterable<CStoreService.Specifier> cStoreSpecs) {
         final NetworkConnection nc = new NetworkConnection();
         nc.setPort(port);
 
         final Device device = new Device(DEVICE_NAME);
         device.setNetworkConnection(nc);
 
-        final DicomSCP scp = new DicomSCP(scpId, executor, device, port);
+        final DicomSCP scp = new DicomSCP(id, executor, device, port);
         for (final CStoreService.Specifier spec : cStoreSpecs) {
             scp.setCStoreService(spec);
         }
@@ -92,25 +69,27 @@ public class DicomSCP {
     /**
      * Creates a new DICOM C-STORE SCP.
      *
+     * @param id           ID of the DICOM C-STORE SCP definition.
      * @param executor     thread provider for server
      * @param port         TCP port number
      * @param userProvider provides XNAT user who owns the service
      * @param cstores      Map of AE title to DicomObjectIdentifier for C-STORE services
      * @return The newly created DICOM SCP object.
-     * @throws IOException
+     * @throws IOException When an error occurs reading or writing the DICOM SCP definition.
      */
-    public static DicomSCP create(final String scpId,
+    public static DicomSCP create(final int id,
                                   final Executor executor,
                                   final int port,
                                   final Provider<UserI> userProvider,
                                   final Map<String, DicomObjectIdentifier<XnatProjectdata>> cstores)
             throws IOException {
-        return create(scpId, executor, port, userProvider, cstores, Collections.<String, DicomFileNamer>emptyMap());
+        return create(id, executor, port, userProvider, cstores, Collections.<String, DicomFileNamer> emptyMap());
     }
 
     /**
      * Creates a new DICOM C-STORE SCP.
      *
+     * @param id           ID of the DICOM C-STORE SCP definition.
      * @param executor     thread provider for server
      * @param port         TCP port number
      * @param userProvider provides XNAT user who owns the service
@@ -118,44 +97,45 @@ public class DicomSCP {
      * @param namers       Map of AE title to DicomFileNamer assigning name policy
      *                     (if no entry for an AE title, uses default policy)
      * @return The newly created DICOM SCP object.
-     * @throws IOException
+     * @throws IOException When an error occurs reading or writing the DICOM SCP definition.
      */
-    public static DicomSCP create(final String scpId,
+    public static DicomSCP create(final int id,
                                   final Executor executor,
                                   final int port,
                                   final Provider<UserI> userProvider,
                                   final Map<String, DicomObjectIdentifier<XnatProjectdata>> cstores,
                                   final Map<String, DicomFileNamer> namers)
             throws IOException {
-        final Logger logger = LoggerFactory.getLogger(DicomSCP.class);
-        final List<CStoreService.Specifier> specs = Lists.newArrayList();
+        final Logger                        logger = LoggerFactory.getLogger(DicomSCP.class);
+        final List<CStoreService.Specifier> specs  = Lists.newArrayList();
         for (final Map.Entry<String, DicomObjectIdentifier<XnatProjectdata>> me : cstores.entrySet()) {
             logger.trace("preparing C-STORE service specifier for {}", me);
-            final String aeTitle = me.getKey();
-            final DicomFileNamer namer = namers.get(aeTitle);
-            final Specifier specifier = new Specifier(aeTitle, userProvider, me.getValue(), namer);
+            final String         aeTitle   = me.getKey();
+            final DicomFileNamer namer     = namers.get(aeTitle);
+            final Specifier      specifier = new Specifier(aeTitle, userProvider, me.getValue(), namer);
             specs.add(specifier);
         }
-        return create(scpId, executor, port, specs);
+        return create(id, executor, port, specs);
     }
 
     /**
      * Creates a new DICOM C-STORE SCP using the default name policy.
      *
+     * @param id           ID of the DICOM C-STORE SCP definition.
      * @param executor     thread provider for server
      * @param port         TCP port number
      * @param userProvider provides XNAT user who owns the service
      * @param aeTitle      application entity title
      * @param identifier   DICOM object identifier
      * @return The newly created DICOM SCP object.
-     * @throws IOException
+     * @throws IOException When an error occurs reading or writing the DICOM SCP definition.
      */
-    public static DicomSCP create(final String scpId, final Executor executor, final int port,
+    public static DicomSCP create(final int id, final Executor executor, final int port,
                                   final Provider<UserI> userProvider,
                                   final String aeTitle,
                                   final DicomObjectIdentifier<XnatProjectdata> identifier)
             throws IOException {
-        return create(scpId, executor, port, userProvider, aeTitle, identifier, null);
+        return create(id, executor, port, userProvider, aeTitle, identifier, null);
     }
 
 
@@ -164,6 +144,7 @@ public class DicomSCP {
      * than the constructor because it wraps creating some of the DICOM
      * networking infrastructure
      *
+     * @param id           ID of the DICOM C-STORE SCP definition.
      * @param executor     thread provider for server
      * @param port         TCP port number
      * @param userProvider provides XNAT user who owns the service
@@ -171,29 +152,28 @@ public class DicomSCP {
      * @param identifier   DICOM object identifier
      * @param namer        name policy implementation
      * @return The newly created DICOM SCP object.
-     * @throws IOException
+     * @throws IOException When an error occurs reading or writing the DICOM SCP definition.
      */
-    public static DicomSCP create(final String scpId, final Executor executor, final int port,
+    public static DicomSCP create(final int id, final Executor executor, final int port,
                                   final Provider<UserI> userProvider,
                                   final String aeTitle,
                                   DicomObjectIdentifier<XnatProjectdata> identifier,
-                                  final DicomFileNamer namer)
-            throws IOException {
-        return create(scpId, executor, port, new Specifier(aeTitle, userProvider, identifier, namer));
+                                  final DicomFileNamer namer) throws IOException {
+        return create(id, executor, port, new Specifier(aeTitle, userProvider, identifier, namer));
     }
 
-    public String getScpId() {
-        return _scpId;
+    public int getId() {
+        return _id;
     }
 
     @SuppressWarnings("unused")
     public Iterable<String> getAEs() {
         return Iterables.transform(_aes.keySet(),
-                new Function<NetworkApplicationEntity, String>() {
-                    public String apply(final NetworkApplicationEntity ae) {
-                        return ae.getAETitle();
-                    }
-                });
+                                   new Function<NetworkApplicationEntity, String>() {
+                                       public String apply(final NetworkApplicationEntity ae) {
+                                           return ae.getAETitle();
+                                       }
+                                   });
     }
 
     public int getPort() {
@@ -206,27 +186,6 @@ public class DicomSCP {
 
     public DicomSCP setCStoreService(final CStoreService.Specifier spec) {
         return setService(spec.getAETitle(), spec.build());
-    }
-
-    public DicomSCP setHostname(final String hostname) {
-        return setHostname(hostname, null);
-    }
-
-    /**
-     * Set the hostname for the SCP. This may be used to
-     * distinguish among multiple network interfaces.
-     *
-     * @param hostname    The host name for the SCP.
-     * @return This object.
-     */
-    public DicomSCP setHostname(final String hostname, final String aeTitle) {
-        // TODO: check state. is this possible?
-        for (final NetworkApplicationEntity ae : _aes.keySet()) {
-            if (null == aeTitle || aeTitle.equals(ae.getAETitle())) {
-                ae.getNetworkConnection()[0].setHostname(hostname);
-            }
-        }
-        return this;
     }
 
     public DicomSCP setService(final String aeTitle, final DicomService service) {
@@ -261,10 +220,10 @@ public class DicomSCP {
                 return;
             }
             logger.info("starting DICOM SCP on {}:{}",
-                    new Object[]{
-                            _device.getNetworkConnection()[0].getHostname(),
-                            _device.getNetworkConnection()[0].getPort(),
-                    });
+                        new Object[] {
+                                _device.getNetworkConnection()[0].getHostname(),
+                                _device.getNetworkConnection()[0].getPort(),
+                                });
             if (logger.isDebugEnabled()) {
                 logger.debug("Application Entities: ");
                 for (final NetworkApplicationEntity ae : _aes.keySet()) {
@@ -279,13 +238,13 @@ public class DicomSCP {
                 final List<TransferCapability> tcs = Lists.newArrayList();
                 ae.register(cecho);
                 tcs.add(new TransferCapability(VerificationSOPClass,
-                        VERIFICATION_SOP_TS, TransferCapability.SCP));
+                                               VERIFICATION_SOP_TS, TransferCapability.SCP));
                 for (final DicomService service : _aes.get(ae)) {
                     logger.trace("adding {}", service);
                     ae.register(service);
                     for (final String sopClass : service.getSopClasses()) {
                         tcs.add(new TransferCapability(sopClass, TSUIDS,
-                                TransferCapability.SCP));
+                                                       TransferCapability.SCP));
                     }
                 }
 
@@ -314,7 +273,7 @@ public class DicomSCP {
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder("DicomSCP{[").append(_scpId).append("]: ");
+        final StringBuilder builder = new StringBuilder("DicomSCP{[").append(_id).append("]: ");
         for (final Map.Entry<NetworkApplicationEntity, DicomService> ae : _aes.entries()) {
             final NetworkApplicationEntity entity = ae.getKey();
             builder.append(entity.getAETitle());
@@ -337,19 +296,19 @@ public class DicomSCP {
     // can be received but will give the XNAT processing pipeline fits
     // (e.g., anything compressed).
     private static final String[] TSUIDS = {ExplicitVRLittleEndian,
-            ExplicitVRBigEndian, ImplicitVRLittleEndian, JPEGBaseline1,
-            JPEGExtended24, JPEGLosslessNonHierarchical14, JPEGLossless,
-            JPEGLSLossless, JPEGLSLossyNearLossless, JPEG2000LosslessOnly,
-            JPEG2000, JPEG2000Part2MultiComponentLosslessOnly,
-            JPEG2000Part2MultiComponent, JPIPReferenced, JPIPReferencedDeflate,
-            MPEG2, RLELossless, RFC2557MIMEEncapsulation, XMLEncoding};
+                                            ExplicitVRBigEndian, ImplicitVRLittleEndian, JPEGBaseline1,
+                                            JPEGExtended24, JPEGLosslessNonHierarchical14, JPEGLossless,
+                                            JPEGLSLossless, JPEGLSLossyNearLossless, JPEG2000LosslessOnly,
+                                            JPEG2000, JPEG2000Part2MultiComponentLosslessOnly,
+                                            JPEG2000Part2MultiComponent, JPIPReferenced, JPIPReferencedDeflate,
+                                            MPEG2, RLELossless, RFC2557MIMEEncapsulation, XMLEncoding};
 
     private static final Logger logger = LoggerFactory.getLogger(DicomSCP.class);
 
-    private final String _scpId;
+    private final int      _id;
     private final Executor _executor;
-    private final Device _device;
+    private final Device   _device;
     private final Multimap<NetworkApplicationEntity, DicomService> _aes = LinkedHashMultimap.create();
     private boolean _started;
-    private int _port;
+    private int     _port;
 }

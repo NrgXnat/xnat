@@ -8,23 +8,23 @@ public class DicomSCPInstance {
     }
 
     @SuppressWarnings("unused")
-    public DicomSCPInstance(final String scpId, final int port, final String aeTitle) {
-        setScpId(scpId);
+    public DicomSCPInstance(final int id, final int port, final String aeTitle) {
+        setId(id);
         setPort(port);
         setAeTitle(aeTitle);
     }
 
     @SuppressWarnings("unused")
-    public DicomSCPInstance(final String scpId, final int port, final String aeTitle, final boolean enabled) {
-        setScpId(scpId);
+    public DicomSCPInstance(final int id, final int port, final String aeTitle, final boolean enabled) {
+        setId(id);
         setPort(port);
         setAeTitle(aeTitle);
         setEnabled(enabled);
     }
 
     @SuppressWarnings("unused")
-    public DicomSCPInstance(final String scpId, final int port, final String aeTitle, final String identifier, final String fileNamer) {
-        setScpId(scpId);
+    public DicomSCPInstance(final int id, final int port, final String aeTitle, final String identifier, final String fileNamer) {
+        setId(id);
         setPort(port);
         setAeTitle(aeTitle);
         setIdentifier(identifier);
@@ -32,8 +32,8 @@ public class DicomSCPInstance {
     }
 
     @SuppressWarnings("unused")
-    public DicomSCPInstance(final String scpId, final int port, final String aeTitle, final String identifier, final String fileNamer, final boolean enabled) {
-        setScpId(scpId);
+    public DicomSCPInstance(final int id, final int port, final String aeTitle, final String identifier, final String fileNamer, final boolean enabled) {
+        setId(id);
         setPort(port);
         setAeTitle(aeTitle);
         setIdentifier(identifier);
@@ -42,13 +42,12 @@ public class DicomSCPInstance {
     }
 
 
-
-    public String getScpId() {
-        return _scpId;
+    public int getId() {
+        return _id;
     }
 
-    public void setScpId(final String scpId) {
-        _scpId = scpId;
+    public void setId(final int id) {
+        _id = id;
     }
 
     public int getPort() {
@@ -94,17 +93,17 @@ public class DicomSCPInstance {
     @Override
     public String toString() {
         return "DicomSCPInstance{" +
-                "_scpId='" + _scpId + '\'' +
-                ", _port=" + _port +
-                ", _aeTitle='" + _aeTitle + '\'' +
-                ", _identifier='" + _identifier + '\'' +
-                ", _fileNamer='" + _fileNamer + '\'' +
-                ", _enabled='" + _enabled + '\'' +
-                '}';
+               "_id='" + _id + '\'' +
+               ", _port=" + _port +
+               ", _aeTitle='" + _aeTitle + '\'' +
+               ", _identifier='" + _identifier + '\'' +
+               ", _fileNamer='" + _fileNamer + '\'' +
+               ", _enabled='" + _enabled + '\'' +
+               '}';
     }
 
-    private String _scpId;
-    private int _port;
+    private int    _id;
+    private int    _port;
     private String _aeTitle;
     private String _identifier;
     private String _fileNamer;

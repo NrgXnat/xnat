@@ -19,16 +19,18 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 
 import javax.annotation.PreDestroy;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DicomSCPManager {
+
+    @Autowired
+    public DicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences) {
+        _dicomScpPreferences = dicomScpPreferences;
+        _siteConfigPreferences = siteConfigPreferences;
+    }
 
     @PreDestroy
     public void shutdown() {
@@ -37,23 +39,26 @@ public class DicomSCPManager {
     }
 
     public DicomSCP create(final DicomSCPInstance instance) throws NrgServiceException {
-        final String scpId = instance.getScpId();
-        if (_dicomScpPreferences.hasDicomSCPInstance(scpId)) {
-            throw new NrgServiceException(NrgServiceError.ConfigurationError, "There is already a DICOM SCP instance with the ID " + scpId);
-        }
+        instance.setId(getNextKey());
         try {
             _dicomScpPreferences.setDicomSCPInstance(instance);
-            return _dicomScpPreferences.getDicomSCP(scpId);
+            if (_log.isDebugEnabled()) {
+                _log.debug("Created new DICOM SCP: " + instance.toString());
+            }
+            return _dicomScpPreferences.getDicomSCP(instance.getId());
         } catch (IOException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to create DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
         }
     }
 
-    public void delete(final String scpId) throws NrgServiceException {
-        if (!_dicomScpPreferences.hasDicomSCPInstance(scpId)) {
-            throw new NrgServiceException(NrgServiceError.UnknownEntity, "There is no DICOM SCP instance with the ID " + scpId);
+    public void delete(final int id) throws NrgServiceException {
+        if (!_dicomScpPreferences.hasDicomSCPInstance(id)) {
+            throw new NrgServiceException(NrgServiceError.UnknownEntity, "There is no DICOM SCP instance with the ID " + id);
         }
-        _dicomScpPreferences.deleteDicomSCPInstance(scpId);
+        if (_log.isDebugEnabled()) {
+            _log.debug("Deleting DICOM SCP: " + id);
+        }
+        _dicomScpPreferences.deleteDicomSCPInstance(id);
     }
 
     public List<DicomSCPInstance> getDicomSCPInstances() {
@@ -68,44 +73,43 @@ public class DicomSCPManager {
         }
     }
 
-    public List<String> startOrStopDicomSCPAsDictatedByConfiguration() {
+    public List<DicomSCP> startOrStopDicomSCPAsDictatedByConfiguration() {
         final boolean enableDicomReceiver = _siteConfigPreferences.isEnableDicomReceiver();
         return enableDicomReceiver ? startDicomSCPs() : stopDicomSCPs();
     }
 
-    public List<String> startDicomSCPs() {
-        final List<String> started = new ArrayList<>();
+    public List<DicomSCP> startDicomSCPs() {
+        final List<DicomSCP> started = new ArrayList<>();
         for (final DicomSCPInstance instance : _dicomScpPreferences.getDicomSCPInstances().values()) {
             if (instance.isEnabled()) {
-                startDicomSCP(instance);
-                started.add(instance.getScpId());
+                started.add(startDicomSCP(instance));
             }
         }
         return started;
     }
 
-    public void startDicomSCP(final String scpId) {
-        startDicomSCP(_dicomScpPreferences.getDicomSCPInstance(scpId));
+    public void startDicomSCP(final int id) {
+        startDicomSCP(_dicomScpPreferences.getDicomSCPInstance(id));
     }
 
-    public List<String> stopDicomSCPs() {
-        final List<String> stopped = new ArrayList<>();
+    public List<DicomSCP> stopDicomSCPs() {
+        final List<DicomSCP> stopped = new ArrayList<>();
         for (final DicomSCP dicomSCP : _dicomScpPreferences.getDicomSCPs()) {
             if (dicomSCP.isStarted()) {
                 dicomSCP.stop();
-                stopped.add(dicomSCP.getScpId());
+                stopped.add(dicomSCP);
             }
         }
         return stopped;
     }
 
-    public void stopDicomSCP(final String scpId) {
-        final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(scpId);
+    public void stopDicomSCP(final int id) {
+        final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(id);
         if (instance == null) {
-            throw new NrgServiceRuntimeException(NrgServiceError.UnknownEntity, "Couldn't find the DICOM SCP instance identified by " + scpId);
+            throw new NrgServiceRuntimeException(NrgServiceError.UnknownEntity, "Couldn't find the DICOM SCP instance identified by " + id);
         }
         try {
-            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(scpId);
+            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(id);
             if (dicomSCP != null) {
                 if (dicomSCP.isStarted()) {
                     dicomSCP.stop();
@@ -116,14 +120,14 @@ public class DicomSCPManager {
         }
     }
 
-    public void enableDicomSCP(final String scpId) {
-        final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(scpId);
+    public void enableDicomSCP(final int id) {
+        final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(id);
         try {
             if (!instance.isEnabled()) {
                 instance.setEnabled(true);
                 _dicomScpPreferences.setDicomSCPInstance(instance);
             }
-            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(scpId);
+            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(id);
             if (!dicomSCP.isStarted()) {
                 dicomSCP.start();
             }
@@ -132,14 +136,14 @@ public class DicomSCPManager {
         }
     }
 
-    public void disableDicomSCP(final String scpId) {
-        final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(scpId);
+    public void disableDicomSCP(final int id) {
+        final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(id);
         try {
             if (instance.isEnabled()) {
                 instance.setEnabled(false);
                 _dicomScpPreferences.setDicomSCPInstance(instance);
             }
-            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(scpId);
+            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(id);
             if (dicomSCP.isStarted()) {
                 dicomSCP.stop();
             }
@@ -148,38 +152,43 @@ public class DicomSCPManager {
         }
     }
 
-    public Map<String, Boolean> areDicomSCPsStarted() {
-        final Map<String, Boolean> statuses = new HashMap<>();
+    public Map<DicomSCP, Boolean> areDicomSCPsStarted() {
+        final Map<DicomSCP, Boolean> statuses = new HashMap<>();
         for (final DicomSCP dicomSCP : _dicomScpPreferences.getDicomSCPs()) {
-            statuses.put(dicomSCP.getScpId(), dicomSCP.isStarted());
+            statuses.put(dicomSCP, dicomSCP.isStarted());
         }
         return statuses;
     }
 
-    public boolean hasDicomSCP(final String scpId) {
-        return _dicomScpPreferences.hasDicomSCPInstance(scpId);
+    public boolean hasDicomSCP(final int id) {
+        return _dicomScpPreferences.hasDicomSCPInstance(id);
     }
 
-    public DicomSCPInstance getDicomSCPInstance(final String scpId) {
-        return _dicomScpPreferences.getDicomSCPInstance(scpId);
+    public DicomSCPInstance getDicomSCPInstance(final int id) {
+        return _dicomScpPreferences.getDicomSCPInstance(id);
     }
 
-    private void startDicomSCP(final DicomSCPInstance instance) {
+    private DicomSCP startDicomSCP(final DicomSCPInstance instance) {
         try {
-            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(instance.getScpId());
+            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(instance.getId());
             dicomSCP.start();
+            return dicomSCP;
         } catch (IOException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to start DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
         }
     }
 
+    private int getNextKey() {
+        final Set<String> keys = _dicomScpPreferences.getDicomSCPInstances().keySet();
+        final Set<Integer> values = new HashSet<>(keys.size());
+        for (final String key : keys) {
+            values.add(Integer.parseInt(key));
+        }
+        return Collections.max(values) + 1;
+    }
+
     private static final Logger _log = LoggerFactory.getLogger(DicomSCPManager.class);
 
-    @Autowired
-    @Lazy
-    private DicomSCPPreference _dicomScpPreferences;
-
-    @Autowired
-    @Lazy
-    private SiteConfigPreferences _siteConfigPreferences;
+    private final DicomSCPPreference    _dicomScpPreferences;
+    private final SiteConfigPreferences _siteConfigPreferences;
 }

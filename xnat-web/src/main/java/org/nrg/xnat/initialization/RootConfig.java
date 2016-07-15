@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import javax.servlet.ServletContext;
@@ -43,8 +44,8 @@ import java.util.Map;
 @Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class})
 public class RootConfig {
     @Bean
-    public XnatAppInfo appInfo(final ServletContext context) throws IOException {
-        return new XnatAppInfo(context);
+    public XnatAppInfo appInfo(final ServletContext context, final JdbcTemplate template) throws IOException {
+        return new XnatAppInfo(context, template);
     }
 
     @Bean

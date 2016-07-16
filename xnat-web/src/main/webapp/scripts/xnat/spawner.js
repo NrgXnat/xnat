@@ -36,7 +36,7 @@ var XNAT = getObject(XNAT);
     spawner.notSpawned = [];
 
     function setRoot(url){
-        url = url.replace(/^([*~.]\/+)/, '/');
+        url = url.replace(/^([*~.]\/*)/, '/');
         return XNAT.url.rootUrl(url)
     }
 

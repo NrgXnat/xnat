@@ -164,7 +164,7 @@
         }
         
         // handle passing a config object as the only argument
-        if (!children && !opts) {
+        if (!children && !opts && typeof tag !== 'string') {
             opts = tag;
             tag = null;
         }

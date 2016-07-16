@@ -842,10 +842,8 @@ var XNAT = getObject(XNAT || {});
     //////////////////////////////////////////////////
     // DATA PANELS - RETRIEVE/DISPLAY DATA
     //////////////////////////////////////////////////
-
-    panel.data = {};
-
-    panel.data.table = function(opts){
+    
+    panel.dataTable = function(opts){
 
         // initialize the table
         var dataTable = XNAT.table.dataTable(opts.data||[], opts);
@@ -860,7 +858,7 @@ var XNAT = getObject(XNAT || {});
         
     };
 
-    panel.data.list = function(opts){
+    panel.dataList = function(opts){
         // initialize the table
         opts = cloneObject(opts);
         opts.element = opts.element || {};

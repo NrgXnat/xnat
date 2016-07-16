@@ -51,30 +51,36 @@ var XNAT = getObject(XNAT);
      */
     function Table(opts, config){
 
-        this.opts = opts || {};
-        this.config = config || null;
+        this.newTable = function(o, c){
+            o = o || opts || {};
+            c = c || config;
+            this.opts = cloneObject(o);
+            this.config = c ? cloneObject(c) : null;
+            this.table = element('table', this.opts);
+            this.$table = this.table$ = $(this.table);
 
-        this.table = element('table', this.opts);
-        this.table$ = $(this.table);
+            this.last = {};
 
-        this.last = {};
+            // 'parent' gets reset on return of chained methods
+            this.last.parent = this.table;
 
-        // 'parent' gets reset on return of chained methods
-        this.last.parent = this.table;
+            // get 'last' item wrapped in jQuery
+            this.last$ = function(el){
+                return $(this.last[el || 'parent']);
+            };
 
-        // get 'last' item wrapped in jQuery
-        this.last$ = function(el){
-            return $(this.last[el || 'parent']);
+            this.setLast = function(el){
+                this.last.parent =
+                    this.last[el.tagName.toLowerCase()] =
+                        el;
+            };
+
+            this._rows = [];
+            this._cols = 0; // how many columns?
+
         };
 
-        this.setLast = function(el){
-            this.last.parent =
-                this.last[el.tagName.toLowerCase()] =
-                    el;
-        };
-
-        this._rows = [];
-        this._cols = 0; // how many columns?
+        this.newTable();
 
     }
 
@@ -126,8 +132,9 @@ var XNAT = getObject(XNAT);
         //data = data || this.data || null;
         if (data) {
             this.last.tr = tr;
-            [].concat(data).forEach(function(item){
-                _this.td(item);                
+            [].concat(data).forEach(function(item, i){
+                if (_this._cols && _this._cols > i) return;
+                _this.td(item)._cols++;
             });
         }
         // only add <tr> elements to <table>, <thead>, <tbody>, and <tfoot>
@@ -141,22 +148,23 @@ var XNAT = getObject(XNAT);
         return this;
     };
 
-    // create a row with <tr> and <td> elements
+    // create a <tr> with optional <td> elements
     // in the <tbody>
-    Table.p.row = function(data, opts){
-        // var tr = element('tr', opts);
+    Table.p.row = Table.p.addRow = function(data, opts){
         data = data || [];
         this.tr(opts, data);
-        // (this.last.tbody || this.table).appendChild(tr);
-        // nullify last <th> and <td> elements since this is a new row
-        // this.last.th = this.last.td = null;
+        return this;
+    };
+
+    // add a <tr> to <tbody>
+    Table.p.bodyRow = function(data, opts){
+        this.toBody().row(data, opts);
         return this;
     };
 
     // create *multiple* <td> elements
     Table.p.tds = function(items, opts){
         var _this = this;
-        // var last_tr = this.last.tr;
         [].concat(items).forEach(function(item){
             if (stringable(item)) {
                 _this.td(opts, item);
@@ -206,34 +214,16 @@ var XNAT = getObject(XNAT);
     };
 
     // reset last.parent to <thead>
-    Table.p.toHead = Table.p.closestBody = function(){
+    Table.p.toHead = Table.p.closestHead = function(){
         this.setLast(this.last.thead || this.table);
         return this;
     };
 
-    Table.p.bodyRow = function(){
-        this.toBody();
-        this.tr();
-        return this;
-    };
-
-    // add a SINGLE row of data
-    Table.p.addRow = function(data){
-        var _this = this;
-        this.tr();
-        [].concat(data).forEach(function(item){
-            // could be an array of arrays
-            _this.td(item);
-        });
-        return this;
-    };
-
     // add multiple rows of data?
-    Table.p.appendBody = function(data){
+    Table.p.appendBody = Table.p.appendToBody = function(data){
         var _this = this;
         [].concat(data).forEach(function(row){
-            _this.toBody();
-            _this.addRow(row);
+            _this.toBody().addRow(row);
         });
         return this;
     };
@@ -242,11 +232,11 @@ var XNAT = getObject(XNAT);
         return this.table;
     };
 
-    Table.p.get$ = function(){
+    Table.p.$get = Table.p.get$ = function(){
         return $(this.table);
     };
 
-    Table.p.getHTML = function(){
+    Table.p.getHTML = Table.p.html = function(){
         return this.table.outerHTML;
     };
 
@@ -262,9 +252,13 @@ var XNAT = getObject(XNAT);
             header,
             cols  = 0;
 
-        // don't init twice
+        // don't init twice?
         if (this.inited) {
-            return this
+            // run .init() again to
+            // empty table and load new data
+            this.table$.empty();
+            //this.newTable();
+            //return this
         }
 
         data = data || [];
@@ -298,8 +292,7 @@ var XNAT = getObject(XNAT);
 
         // add the header
         if (header) {
-            this.thead();
-            this.tr();
+            this.thead().tr();
             [].concat(header).forEach(function(item){
                 _this.th(item);
             });
@@ -335,18 +328,14 @@ var XNAT = getObject(XNAT);
         }
         return this.table;
     };
-
-    Table.p.html = function(){
-        return this.table.outerHTML;
-    };
-
+    
     // 'opts' are options for the <table> element
     // 'config' is for other configurable stuff
     table = function(opts, config){
         return new Table(opts, config);
     };
 
-    // helper for future XNAT DataTable widget
+    // basic XNAT.dataTable widget
     table.dataTable = function(data, opts){
 
         var tableData = data;
@@ -442,6 +431,12 @@ var XNAT = getObject(XNAT);
         if (opts.container) {
             $$(opts.container).append(newTable.table);
         }
+
+        // add properties for Spawner compatibility
+        newTable.element = newTable.spawned = newTable.table;
+        newTable.get = function(){
+            return newTable.table;
+        };
 
         return newTable;
 

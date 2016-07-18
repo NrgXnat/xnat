@@ -42,6 +42,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "")
+    public String getPathErrorWarning() {
+        return getValue("pathErrorWarning");
+    }
+
+    public void setPathErrorWarning(final String pathErrorWarning) {
+        try {
+            set(pathErrorWarning, "pathErrorWarning");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name pathErrorWarning: something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "XNAT")
     public String getSiteId() {
         return getValue("siteId");

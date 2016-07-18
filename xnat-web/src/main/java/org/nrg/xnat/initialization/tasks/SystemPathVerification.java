@@ -11,6 +11,7 @@
  */
 package org.nrg.xnat.initialization.tasks;
 
+import org.nrg.mail.services.MailService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import javax.mail.MessagingException;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,27 +39,18 @@ public class SystemPathVerification extends AbstractInitializingTask {
     }
 
     private final static ArrayList<String> pathErrors = new ArrayList<>();
+    public static String pathErrorWarning = null;
 
     @Override
     public void run() {
         try {
-            String archivePath = _siteConfigPreferences.getArchivePath();
-            validatePath(archivePath, "Archive", true);
+            validatePath(_config.getArchivePath(), "Archive", true);
+
             final ProjectExtractor pe = new ProjectExtractor();
-            final SubjectExtractor se = new SubjectExtractor();
             final Map<String, String> projects = _template.query("SELECT id, name FROM xnat_projectdata", pe);
-            if(projects.size() > 0){
-                final Map<String, String> subjects = _template.query("SELECT id, name FROM xnat_subjectdata", se);
-                if(subjects.size() > 0){
-
-                }
-            }
-
             if(pathErrors.size() > 0) {
-
-                // Send warning email to admin
-System.out.println(pathErrors);
-
+                // Send warning email to admin and issue browser notification
+                notifyOfPathErrors(projects.size());
             }
             complete();
         } catch (Exception e) {
@@ -73,16 +67,7 @@ System.out.println(pathErrors);
             pathErrors.add(displayName+" path \""+path+"\" is not a directory.");
             return false;
         } else if (checkForFiles) {
-            // check for actual subdirectories and files existing here
-            /*
-            FileFilter directoryFilter = new FileFilter() {
-                public boolean accept(File file) {
-                    return file.isDirectory();
-                }
-            };
-            */
             File[] files = filePath.listFiles();
-            //directoryFilter);
             final String noFiles = displayName + " files do not exist under \"" + path + "\".";
             if(files == null) {
                 pathErrors.add(noFiles);
@@ -92,13 +77,6 @@ System.out.println(pathErrors);
                 pathErrors.add(noFiles);
                 return false;
             }
-/*
-else {
-    for (File file : files) {
-        System.out.println(file);
-    }
-}
-*/
         }
         return true;
     }
@@ -114,14 +92,32 @@ else {
         }
     }
 
-    private static class SubjectExtractor implements ResultSetExtractor<Map<String, String>> {
-        @Override
-        public Map<String, String> extractData(final ResultSet results) throws SQLException, DataAccessException {
-            final Map<String, String> subjects = new HashMap<>();
-            while (results.next()) {
-                subjects.put(results.getString(1), results.getString(2));
+    private void notifyOfPathErrors(int numProjects) {
+        if(numProjects > 0) {
+            int i = 1;
+            String adminEmail = _config.getAdminEmail();
+            String sysName = _config.getSiteId();
+            String emailSubj = sysName + " " + this.getTaskName() + " Failure";
+            StringBuffer sb = new StringBuffer(emailSubj);
+            String singPlurl = " has";
+            if (numProjects > 1) {
+                singPlurl = "s have";
             }
-            return subjects;
+            sb.append("\nThe following system path error" + singPlurl + " been discovered:");
+            for (String err : pathErrors) {
+                sb.append("\t");
+                sb.append(i);
+                sb.append(". ");
+                sb.append(err);
+            }
+            pathErrorWarning = sb.toString();
+            logger.error(pathErrorWarning);
+            _config.setPathErrorWarning(pathErrorWarning);
+            try {
+                _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, pathErrorWarning);
+            } catch (MessagingException e) {
+                logger.error("", e);
+            }
         }
     }
 
@@ -131,7 +127,10 @@ else {
     @Lazy
     private JdbcTemplate _template;
 
+    @Inject
+    private MailService _mailService;
+
     @Autowired
     @Lazy
-    private SiteConfigPreferences _siteConfigPreferences;
+    private SiteConfigPreferences _config;
 }

@@ -94,6 +94,10 @@
 </div>
 #end
 
+#if ($siteConfig.pathErrorWarning)
+    <h1>$siteConfig.pathErrorWarning</h1>
+#end
+
 <div id="main_nav">
     <div class="inner">
 

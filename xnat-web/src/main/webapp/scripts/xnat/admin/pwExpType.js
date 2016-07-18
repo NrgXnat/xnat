@@ -7,8 +7,6 @@
       fieldDate.attr('placeholder', 'MM/DD/YYYY');
       openCal = $('#openCal-passwordExpirationDate');
       openCal.click(openCalendar);
-//      fieldInterval[0].style.width = '40px';
-//      fieldInterval[0].style.textAlign = 'right';
       fieldInterval[0].style.marginTop='10px';
       fieldDate[0].style.width = '90px';
       fieldDate[0].style.marginTop='10px';

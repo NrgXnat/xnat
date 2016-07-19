@@ -51,6 +51,8 @@ public class SystemPathVerification extends AbstractInitializingTask {
             if(pathErrors.size() > 0) {
                 // Send warning email to admin and issue browser notification
                 notifyOfPathErrors(projects.size());
+            } else {
+                _config.setPathErrorWarning("");
             }
             complete();
         } catch (Exception e) {
@@ -98,21 +100,23 @@ public class SystemPathVerification extends AbstractInitializingTask {
             String adminEmail = _config.getAdminEmail();
             String sysName = _config.getSiteId();
             String emailSubj = sysName + " " + this.getTaskName() + " Failure";
-            StringBuffer sb = new StringBuffer(emailSubj);
+            StringBuffer sb = new StringBuffer();
             String singPlurl = " has";
             if (numProjects > 1) {
                 singPlurl = "s have";
             }
-            sb.append("\nThe following system path error" + singPlurl + " been discovered:");
+            sb.append("The following system path error");
+            sb.append(singPlurl);
+            sb.append(" been discovered:");
             for (String err : pathErrors) {
-                sb.append("\t");
+                sb.append("\n\t");
                 sb.append(i);
                 sb.append(". ");
                 sb.append(err);
             }
-            pathErrorWarning = sb.toString();
+            _config.setPathErrorWarning(sb.toString().replace("\n","<br>"));
+            pathErrorWarning = sb.insert(0, emailSubj+": ").toString();
             logger.error(pathErrorWarning);
-            _config.setPathErrorWarning(pathErrorWarning);
             try {
                 _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, pathErrorWarning);
             } catch (MessagingException e) {

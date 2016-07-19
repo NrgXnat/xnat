@@ -47,29 +47,26 @@
     </div>
 </div><!-- /user_bar -->
 
-#if ($sessionCount > 1 || $sessionIpCount > 1 )
-##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
 <script type="text/javascript">
     jq(document).ready(function(){
-
         if (Cookies.get('WARNING_BAR') == 'CLOSED'){
             jq('#attention_icon').show();
         }
         else {
             jq('#warning_bar').show();
         }
-
         jq('#attention_icon').click(function(){
             jq('#warning_bar').slideToggle(200);
         });
-
         jq('#warning_bar .close').click(function(){
             Cookies.set('WARNING_BAR','CLOSED',{path:'/'});
             jq('#warning_bar').slideUp(200);
         });
-
     })
 </script>
+
+#if ($sessionCount > 1 || $sessionIpCount > 1 )
+##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
 <div id="warning_bar" style="display:none;">
     <span class="close"><img src="$content.getURI('images/close.gif')"></span>
     <span>
@@ -95,7 +92,17 @@
 #end
 
 #if ($siteConfig.pathErrorWarning)
-    <h1>$siteConfig.pathErrorWarning</h1>
+  <div id="warning_bar" style="display:none;">
+    <span class="close"><img src="$content.getURI('images/close.gif')"></span>
+    <span>
+        XNAT System Path Verification Failure: Contact your system administrator
+        <span class="tip_text">(<i>what does this mean?</i>)
+            <span class="tip shadowed">
+                $siteConfig.pathErrorWarning
+            </span>
+        </span>
+    </span>
+  </div>
 #end
 
 <div id="main_nav">

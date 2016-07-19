@@ -137,7 +137,7 @@ var XNAT = getObject(XNAT || {});
             $group = $('#' + groupId + '.tab-group');
         }
         else {
-            $group = $$(tabs.navTabs).find('ul.tab-group')
+            $group = $$(tabs.navTabs).find('ul.tab-group').first();
         }
 
         // add all the flippers
@@ -201,6 +201,7 @@ var XNAT = getObject(XNAT || {});
             $(navTabs).append(tab.groups(obj.meta.tabGroups));
         }
         else {
+            tabs.hasGroups = false;
             $(navTabs).spawn('ul.tab-group');
         }
 

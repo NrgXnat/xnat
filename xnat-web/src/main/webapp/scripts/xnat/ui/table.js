@@ -123,6 +123,7 @@ var XNAT = getObject(XNAT);
         var th = element('th', opts, content);
         this.last.th = th;
         this.last.tr.appendChild(th);
+        this._cols++; // do this here?
         return this;
     };
 
@@ -133,8 +134,8 @@ var XNAT = getObject(XNAT);
         if (data) {
             this.last.tr = tr;
             [].concat(data).forEach(function(item, i){
-                if (_this._cols && _this._cols > i) return;
-                _this.td(item)._cols++;
+                //if (_this._cols && _this._cols > i) return;
+                _this.td(item);
             });
         }
         // only add <tr> elements to <table>, <thead>, <tbody>, and <tfoot>
@@ -417,8 +418,14 @@ var XNAT = getObject(XNAT);
                 url: XNAT.url.rootUrl(opts.load||opts.url),
                 dataType: opts.dataType || 'json',
                 success: function(json){
-                    // handle data returned in ResultSet.Result array
-                    json = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
+                    // support custom path for returned data
+                    if (opts.path) {
+                        json = lookupObjectValue(json, opts.path);
+                    }
+                    else {
+                        // handle data returned in ResultSet.Result array
+                        json = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
+                    }
                     createTable(json);
                 }
             });

@@ -20,10 +20,12 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
+import org.nrg.notify.configuration.NotificationServiceTestConfiguration;
 import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +49,8 @@ import static org.junit.Assert.*;
  * (e.g. calling {@link Hibernate#initialize(Object)}).
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = NotificationServiceTestConfiguration.class)
+@ComponentScan("org.nrg.mail.services")
 public class NotificationServiceTests {
     public NotificationServiceTests() {
         _log.info("Creating test class");

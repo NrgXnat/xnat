@@ -1,11 +1,9 @@
-/**
+/*
  * ChannelRendererProvider
- * (C) 2011 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Aug 30, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.entities;
 
@@ -28,7 +26,7 @@ public class ChannelRendererProvider implements Provider<Map<String, ChannelRend
 
     /**
      * Sets the map of available channel renderers.
-     * @param renderers
+     * @param renderers    The renderers to set for the channel.
      */
     public void setRenderers(Map<String, ChannelRenderer> renderers) {
         _renderers = renderers;

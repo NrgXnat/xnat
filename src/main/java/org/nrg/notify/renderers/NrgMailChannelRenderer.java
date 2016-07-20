@@ -1,4 +1,4 @@
-/**
+/*
  * NrgMailChannelRenderer
  * (C) 2011 Washington University School of Medicine
  * All Rights Reserved
@@ -26,12 +26,18 @@ import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.ChannelRendererProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@SuppressWarnings("unused")
 public class NrgMailChannelRenderer implements ChannelRenderer {
     public static final String DEFAULT_FORMAT = "text/html";
 
+    @Autowired
+    public NrgMailChannelRenderer(final MailService mailService) {
+        _mailService = mailService;
+    }
+
     /**
      * Renders the submitted notification to the submitted subscription.
-     * @throws ChannelRendererProcessingException 
+     * @throws ChannelRendererProcessingException An error occurred while rendering the notification.
      * @see ChannelRenderer#render(Subscription, Notification)
      */
     @Override
@@ -41,7 +47,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
 
     /**
      * Renders the submitted notification to the submitted subscription.
-     * @throws ChannelRendererProcessingException 
+     * @throws ChannelRendererProcessingException An error occurred while rendering the notification.
      * @see ChannelRenderer#render(Subscription, Notification)
      */
     @Override
@@ -64,13 +70,6 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
         } catch (InvalidMailAttachmentException exception) {
             throw new ChannelRendererProcessingException("The mail message was associated with an invalid attachment.", exception);
         }
-    }
-
-    /**
-     * @param mailService Sets the mailService property.
-     */
-    public void setMailService(MailService mailService) {
-        _mailService = mailService;
     }
 
     /**
@@ -151,8 +150,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     private static final TypeReference<HashMap<String, Object>> TYPEREF_HASHMAP_STRING_OBJECT = new TypeReference<HashMap<String, Object>>() {};
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    @Autowired
-    private MailService _mailService;
+    private final MailService _mailService;
 
     private String _fromAddress;
     private String _onBehalfOf;

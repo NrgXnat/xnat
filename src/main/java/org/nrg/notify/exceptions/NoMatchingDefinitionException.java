@@ -1,11 +1,9 @@
-/**
+/*
  * NoMatchingDefinitionException
  * (C) 2011 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.exceptions;
 
@@ -26,7 +24,7 @@ public class NoMatchingDefinitionException extends NrgNotificationException {
      * Message constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#NoMatchingDefinition}.
      *
-     * @param message    The message to set for this exception.
+     * @param message The message to set for this exception.
      */
     public NoMatchingDefinitionException(final String message) {
         super(NrgServiceError.NoMatchingDefinition, message);
@@ -36,7 +34,7 @@ public class NoMatchingDefinitionException extends NrgNotificationException {
      * Wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#NoMatchingDefinition}.
      *
-\     * @param cause    The cause to set for this exception.
+     * @param cause The cause to set for this exception.
      */
     public NoMatchingDefinitionException(final Throwable cause) {
         super(NrgServiceError.NoMatchingDefinition, cause);
@@ -46,8 +44,8 @@ public class NoMatchingDefinitionException extends NrgNotificationException {
      * Message and wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#NoMatchingDefinition}.
      *
-     * @param message    The message to set for this exception.
-     * @param cause    The cause to set for this exception.
+     * @param message The message to set for this exception.
+     * @param cause   The cause to set for this exception.
      */
     public NoMatchingDefinitionException(final String message, final Throwable cause) {
         super(NrgServiceError.NoMatchingDefinition, message, cause);

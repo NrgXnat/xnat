@@ -1,11 +1,9 @@
-/**
+/*
  * ChannelService
- * (C) 2011 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.services;
 
@@ -15,20 +13,23 @@ import org.nrg.notify.entities.Channel;
 
 public interface ChannelService extends BaseHibernateService<Channel> {
     @SuppressWarnings("unused")
-    public static String SERVICE_NAME = "ChannelService";
+    String SERVICE_NAME = "ChannelService";
 
     /**
      * A shortcut method for quickly creating a new channel.
-     * @param name The name of the channel.
+     *
+     * @param name   The name of the channel.
      * @param format The format supported by the channel.
      * @return The newly created channel object.
+     * @throws NrgServiceException When an error occurs creating the channel.
      */
-    abstract public Channel createChannel(String name, String format) throws NrgServiceException;
+    Channel createChannel(String name, String format) throws NrgServiceException;
 
     /**
      * Retrieves the channel with the indicated name.
+     *
      * @param name The name of the channel to retrieve.
      * @return The indicated channel.
      */
-    abstract public Channel getChannel(String name);
+    Channel getChannel(String name);
 }

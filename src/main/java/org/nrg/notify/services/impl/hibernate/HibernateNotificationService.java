@@ -79,7 +79,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @param definition The notification definition from which the notification should be created.
      * @param parameters Any parameters for this particular notification. These are transformed through JSON to a string.
      * @return The newly created and dispatched notification.
-     * @throws IOException
+     * @throws IOException Thrown when there's a problem converting the parameters to a string.
      * @see NotificationService#createNotification(Definition, Map)
      * @see NotificationService#createNotification(Definition, String)
      */

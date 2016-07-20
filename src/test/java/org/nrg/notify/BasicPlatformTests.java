@@ -25,6 +25,7 @@ import javax.sql.DataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.notify.api.CategoryScope;
+import org.nrg.notify.configuration.BasicPlatformTestConfiguration;
 import org.nrg.notify.daos.CategoryDAO;
 import org.nrg.notify.entities.Category;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,14 +35,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = BasicPlatformTestConfiguration.class)
 public class BasicPlatformTests {
     /**
      * This runs some basic sanity checks on the h2 data source to make
      * certain that simple database transactions are working properly
      * before moving onto more complex operations.
-     * 
-     * @throws SQLException
+     *
+     * @throws SQLException When an SQL error occurs.
      */
     @Test
     public void testDataSource() throws SQLException {

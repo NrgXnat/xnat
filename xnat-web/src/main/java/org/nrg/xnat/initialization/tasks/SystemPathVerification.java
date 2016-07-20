@@ -45,6 +45,9 @@ public class SystemPathVerification extends AbstractInitializingTask {
     public void run() {
         try {
             validatePath(_config.getArchivePath(), "Archive", true);
+            validatePath(_config.getCachePath(), "Archive", false);
+            validatePath(_config.getPipelinePath(), "Archive", false);
+            validatePath(_config.getPrearchivePath(), "Archive", false);
 
             final ProjectExtractor pe = new ProjectExtractor();
             final Map<String, String> projects = _template.query("SELECT id, name FROM xnat_projectdata", pe);
@@ -110,7 +113,7 @@ public class SystemPathVerification extends AbstractInitializingTask {
             sb.append(" been discovered:");
             for (String err : pathErrors) {
                 sb.append("\n\t");
-                sb.append(i);
+                sb.append(i++);
                 sb.append(". ");
                 sb.append(err);
             }

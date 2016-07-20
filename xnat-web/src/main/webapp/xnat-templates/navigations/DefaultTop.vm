@@ -91,7 +91,7 @@
 </div>
 #end
 
-#if ($siteConfig.pathErrorWarning)
+#if ($siteConfig.pathErrorWarning != "")
   <div id="warning_bar" style="display:none;">
     <span class="close"><img src="$content.getURI('images/close.gif')"></span>
     <span>

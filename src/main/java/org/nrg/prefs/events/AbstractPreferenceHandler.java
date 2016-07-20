@@ -1,6 +1,5 @@
 package org.nrg.prefs.events;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.event.StructuredEvent;
 import org.nrg.framework.generics.AbstractParameterizedWorker;
 import org.springframework.beans.factory.annotation.Autowired;

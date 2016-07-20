@@ -14,13 +14,10 @@ import org.postgresql.util.PGInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 
-import javax.xml.bind.annotation.XmlRootElement;
 import java.sql.SQLException;
 
 @SuppressWarnings("unused")
-@XmlRootElement
 @NrgPreferenceBean(toolId = SiteConfigPreferences.SITE_CONFIG_TOOL_ID,
                    toolName = "XNAT Site Preferences",
                    description = "Manages site configurations and settings for the XNAT system.",
@@ -28,6 +25,11 @@ import java.sql.SQLException;
                    strict = false)
 public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
+
+    @Autowired
+    public SiteConfigPreferences(final NrgEventService eventService) {
+        super(eventService);
+    }
 
     @NrgPreference(defaultValue = "false")
     public boolean isInitialized() {
@@ -42,7 +44,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "")
+    @NrgPreference
     public String getPathErrorWarning() {
         return getValue("pathErrorWarning");
     }
@@ -78,6 +80,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             set(siteUrl, "siteUrl");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name siteUrl: something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "admin")
+    public String getPrimaryAdminUsername() {
+        return getValue("primaryAdminUsername");
+    }
+
+    public void setPrimaryAdminUsername(final String primaryAdminUsername) {
+        try {
+            set(primaryAdminUsername, "primaryAdminUsername");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'primaryAdminUsername': something is very wrong here.", e);
         }
     }
 
@@ -1241,10 +1256,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     private static final Logger _log = LoggerFactory.getLogger(SiteConfigPreferences.class);
-
-    @Lazy
-    @Autowired
-    private NrgEventService _eventService;
 
     private static final String STR_REQUIRE_EVENT_NAME = "audit.require_event_name";
     private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";

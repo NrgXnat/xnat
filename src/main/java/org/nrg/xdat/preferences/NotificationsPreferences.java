@@ -9,23 +9,23 @@ import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Map;
 
-/**
- * Created by mmckay01 on 5/25/2016.
- */
 @SuppressWarnings("unused")
 @XmlRootElement
 @NrgPreferenceBean(toolId = NotificationsPreferences.NOTIFICATIONS_TOOL_ID,
-        toolName = "XNAT Site Notifications Preferences",
-        description = "Manages notifications and email settings for the XNAT system.",
-        properties = "",
-        strict = false)
-public class NotificationsPreferences extends EventTriggeringAbstractPreferenceBean{
+                   toolName = "XNAT Site Notifications Preferences",
+                   description = "Manages notifications and email settings for the XNAT system.",
+                   strict = false)
+public class NotificationsPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String NOTIFICATIONS_TOOL_ID = "notifications";
+
+    @Autowired
+    public NotificationsPreferences(final NrgEventService eventService) {
+        super(eventService);
+    }
 
     @NrgPreference(property = "notifications.helpContactInfo")
     public String getHelpContactInfo(){
@@ -232,7 +232,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "mail.smtp.ssl.trust")
+    @NrgPreference(property = "mail.smtp.ssl.trust")
     public String getSmtpSSLTrust() {
         return getValue("mail.smtp.ssl.trust");
     }
@@ -284,7 +284,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "username")
+    @NrgPreference(property = "username")
     public String getUsername() {
         return getValue("username");
     }
@@ -297,7 +297,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         }
     }
 
-    @NrgPreference(defaultValue = "", property = "password")
+    @NrgPreference(property = "password")
     public String getPassword() {
         return getValue("password");
     }
@@ -325,7 +325,4 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
 
     private static final Logger _log = LoggerFactory.getLogger(NotificationsPreferences.class);
 
-    @Lazy
-    @Autowired
-    private NrgEventService _eventService;
 }

@@ -2,8 +2,9 @@ package org.nrg.xdat.configuration;
 
 import org.nrg.framework.configuration.FrameworkConfig;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.framework.test.OrmTestConfiguration;
-import org.nrg.prefs.configuration.NrgPrefsServiceConfiguration;
+import org.nrg.prefs.configuration.NrgPrefsConfiguration;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 import org.nrg.xdat.daos.XdatUserAuthDAO;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -13,11 +14,12 @@ import org.nrg.xdat.services.impl.hibernate.HibernateXdatUserAuthService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import reactor.bus.EventBus;
 
 import java.io.IOException;
 
 @Configuration
-@Import({OrmTestConfiguration.class, XdatTestConfig.class, NrgPrefsServiceConfiguration.class, FrameworkConfig.class})
+@Import({OrmTestConfiguration.class, XdatTestConfig.class, NrgPrefsConfiguration.class, FrameworkConfig.class})
 public class TestXdatUserAuthServiceConfig {
     @Bean
     public XdatUserAuthService xdatUserAuthService() {
@@ -40,7 +42,17 @@ public class TestXdatUserAuthServiceConfig {
     }
 
     @Bean
-    public SiteConfigPreferences siteConfigPreferences() {
-        return new SiteConfigPreferences();
+    public EventBus eventBus() {
+        return EventBus.create();
+    }
+
+    @Bean
+    public NrgEventService eventService(final EventBus eventBus) {
+        return new NrgEventService(eventBus);
+    }
+
+    @Bean
+    public SiteConfigPreferences siteConfigPreferences(final NrgEventService service) {
+        return new SiteConfigPreferences(service);
     }
 }

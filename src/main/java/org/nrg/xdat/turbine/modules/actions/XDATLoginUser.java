@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
@@ -147,8 +148,10 @@ public class XDATLoginUser extends VelocityAction{
 	}
 
 	public void doRedirect(RunData data, Context context,UserI user) throws Exception{
-		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
-		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
+		final String nextPage = (String) TurbineUtils.GetPassedParameter("nextPage", data);
+		final String nextAction = (String) TurbineUtils.GetPassedParameter("nextAction", data);
+		final boolean hasNextPage = StringUtils.isNotBlank(nextPage);
+		final boolean hasNextAction = StringUtils.isNotBlank(nextAction);
 		/*
 		 * If the setPage("template.vm") method has not
 		 * been used in the template to authenticate the
@@ -157,19 +160,20 @@ public class XDATLoginUser extends VelocityAction{
 		 * by the "template.home" property as listed in
 		 * TR.props for the webapp.
 		 */
-		 if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+		if (hasNextAction && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
 			data.setAction(nextAction);
-            VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
-            action.doPerform(data, context);
-		 }else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
+			VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
+			action.doPerform(data, context);
+		} else if (hasNextPage && !nextPage.equals(Turbine.getConfiguration().getString("template.home"))) {
 			data.setScreenTemplate(nextPage);
-		 }
+		} else {
+			data.setScreenTemplate("Index.vm");
+		}
 
-         if (data.getScreenTemplate().contains("Error.vm"))
-         {
-             data.setMessage("<b>Previous session expired.</b><br>If you have bookmarked this page, please redirect your bookmark to: " + TurbineUtils.GetFullServerPath());
-             data.setScreenTemplate("Index.vm");
-         }
+		if (data.getScreenTemplate().contains("Error.vm")) {
+			data.setMessage("<b>Previous session expired.</b><br>If you have bookmarked this page, please redirect your bookmark to: " + TurbineUtils.GetFullServerPath());
+			data.setScreenTemplate("Index.vm");
+		}
 	}
 
 	public void doRegister(RunData data, Context context) throws Exception{

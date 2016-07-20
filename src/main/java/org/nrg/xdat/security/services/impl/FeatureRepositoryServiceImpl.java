@@ -21,12 +21,20 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.inject.Inject;
 import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
 public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, InitializingBean {
+    @Autowired
+    public void setFeatureDefinitionService(final FeatureDefinitionService service) {
+        _service = service;
+    }
+
+    @Autowired
+    public void setRoleHolder(final RoleHolder roleHolder) {
+        _roleHolder = roleHolder;
+    }
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -202,11 +210,8 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
     private static final String[] PROP_OBJECT_FIELDS            = new String[]{NAME, DESC, KEY, ON_BY_DEFAULT, ELEMENT_ACTION_NAME};
     private static final String   PROP_OBJECT_IDENTIFIER        = "org.nrg.Feature";
 
-    @Inject
-    private FeatureDefinitionService _service;
-
     private final Map<String, String> _newFeatures = new HashMap<>();
 
-    @Autowired
-    private RoleHolder _roleHolder;
+    private FeatureDefinitionService _service;
+    private RoleHolder               _roleHolder;
 }

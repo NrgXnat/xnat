@@ -8,10 +8,12 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 
 public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPreferenceBean {
+    protected EventTriggeringAbstractPreferenceBean(final NrgEventService eventService) {
+        _eventService = eventService;
+    }
+
     @JsonIgnore
     @Override
     public String set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
@@ -33,7 +35,5 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
         }
     }
 
-    @Lazy
-    @Autowired
-    private NrgEventService _eventService;
+    private final NrgEventService _eventService;
 }

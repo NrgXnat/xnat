@@ -23,6 +23,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.XftStringUtils;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -139,7 +140,7 @@ public class PoolDBUtils {
 
 		return o;
 	}
-	
+
 	public static synchronized Object GetNextID(String db,String table, String pk, String sequence) throws SQLException, Exception{
 		return (new PoolDBUtils()).getNextID(db, table, pk, sequence);
 	}
@@ -501,7 +502,12 @@ public class PoolDBUtils {
 	 */
 	private Connection getConnection() throws SQLException, DBPoolException {
 		if (con == null) {
-			con = XDAT.getDataSource().getConnection();
+			final DataSource dataSource = XDAT.getDataSource();
+			if (dataSource != null) {
+				con = dataSource.getConnection();
+			} else {
+				logger.warn("Couldn't load the data source to create a connection.");
+			}
 		}
 		return con;
 	}
@@ -682,7 +688,7 @@ public class PoolDBUtils {
 	                if(id==null){
 	                	id=item.getProperty(sf.getXMLPathString(item.getGenericSchemaElement().getXSIType()));
 	                }
-	                
+
 	                if (count++>0)ids+=",";
 					ids+=DBAction.ValueParser(id, sf,true);
 				} catch (Exception e) {
@@ -855,10 +861,10 @@ public class PoolDBUtils {
     	}
     		return false;
     }
-    
+
     public static void CheckSpecialSQLChars(final String s){
     	if(s==null)return;
-    	
+
 		if(s.contains("'")){
 			throw new IllegalArgumentException(s);
 		}
@@ -867,7 +873,7 @@ public class PoolDBUtils {
     private Statement getStatement() throws DBPoolException, SQLException{
     	return getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
     }
-    
+
     public PreparedStatement getPreparedStatement(String db, String sql) throws SQLException, DBPoolException {
     	return getConnection().prepareStatement(sql);
     }
@@ -925,7 +931,7 @@ public class PoolDBUtils {
 				throw e;
 			}
 		}
-		
+
 		if(getTimeDiff(start,Calendar.getInstance().getTime())>1000){
 			logger.error(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 		}
@@ -949,30 +955,30 @@ public class PoolDBUtils {
 	public static Transaction getTransaction(){
 		return new Transaction();
 	}
-	
-	
+
+
 	/**
 	 * @author tim@deck5consulting.com
 	 *
 	 * The transaction class is used to process db transactions which cannot be passed as a batch (include SELECTs).
 	 * It maintains a single open connection (locked) until the close method is called.
 	 */
-	public static class Transaction {	
+	public static class Transaction {
 		PoolDBUtils pooledConnection=new PoolDBUtils();//pooled connection manager
 		Connection con;
 		Statement st;
-		
+
 		public void start() throws SQLException, DBPoolException{
 			con=pooledConnection.getConnection();
 	    	con.setAutoCommit(false);
-	    	
+
 	    	st=pooledConnection.getStatement();
 		}
-		
+
 		public void execute(String query) throws SQLException{
 			st.execute(query);
 		}
-		
+
 		public void execute(Collection<String> statements) throws SQLException {
 			for (final String statement : statements) {
 				try {
@@ -982,24 +988,24 @@ public class PoolDBUtils {
 				}
 			}
 		}
-		
+
 		public void commit() throws SQLException{
 	    	con.commit();
 		}
-		
+
 		public void rollback() throws SQLException{
 			con.rollback();
 		}
-		
+
 		public void close() {
 			try {
 				con.setAutoCommit(true);//reset pooled connection to auto-commit for next consumer
 			} catch (SQLException e) {}
-			
+
 	    	pooledConnection.closeConnection(null);//use the pool manager to close the connection
 		}
 	}
-	
+
 	private static final String EXPR_COLUMN_NOT_FOUND = "column \"([A-z0-9_-]+)\" does not exist";
 	private static final Pattern PATTERN_COLUMN_NOT_FOUND = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
 }

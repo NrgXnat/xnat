@@ -15,6 +15,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
@@ -35,10 +36,8 @@ import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
@@ -82,7 +81,9 @@ import java.util.*;
 /**
  * @author Tim
  */
-public class XDAT implements Initializable,Configurable{
+// TODO: Remove all @SuppressWarnings() annotations.
+@SuppressWarnings("unused")
+public class XDAT implements Initializable, Configurable{
 
     public static final String IP_WHITELIST_TOOL = "ipWhitelist";
     public static final String IP_WHITELIST_PATH = "/system/ipWhitelist";
@@ -163,29 +164,52 @@ public class XDAT implements Initializable,Configurable{
 	public static UserI getUserDetails() {
 		final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Attempted to retrieve user object, but found " + (authentication == null ? "no stored authentication object" : "an anonymous auth token") + ".");
+			}
 			return null;
 		}
 
 		final Object principal = authentication.getPrincipal();
 		if (principal == null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Attempted to retrieve user object and found an authentication object of type " + authentication.getClass().getName() + ", but it had no associated principal");
+			}
 			return null;
 		}
 
 		if (principal instanceof UserI) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Found authenticated user object for user " + ((UserI) principal).getLogin());
+			}
 			return (UserI) principal;
 		}
 
 		if (principal instanceof String) {
 			if (StringUtils.isBlank((String) principal)) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Found principal object of type String but it was empty.");
+				}
 				return null;
 			}
 			try {
-				return Users.getUser((String) principal);
+				final UserI user = Users.getUser((String) principal);
+				if (logger.isDebugEnabled()) {
+					logger.debug("Found principal object of type String and successfully retrieved the user: " + principal);
+				}
+				return user;
 			} catch (UserInitException e) {
 				throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the user with login: " + principal, e);
 			} catch (UserNotFoundException e) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Found principal object of type String with value \"" + principal + "\", but couldn't find the corresponding user object.");
+				}
 				return null;
 			}
+		}
+
+		if (logger.isEnabledFor(Level.WARN)) {
+			logger.warn("This is weird. Found principal object of type " + principal.getClass().getName() + ". I don't really know what to do with this. Its value was: " + principal);
 		}
 
 		return null;
@@ -196,33 +220,23 @@ public class XDAT implements Initializable,Configurable{
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
 
-	public static void setNewUserDetails(UserI userDetails, RunData data, Context context) {
-		//SecurityContextHolder.getContext().setAuthentication(null);
-		String username = userDetails.getLogin();
-		String password = userDetails.getPassword();
-		UserI user;
+	public static void setNewUserDetails(final UserI user, final RunData data, final Context context) {
 		try {
-			user = Authenticator.Authenticate(new Authenticator.Credentials(username, password));
-
 			XDAT.setUserDetails(user);
 
-			XFTItem item = XFTItem.NewItem("xdat:user_login", user);
-			Date today = java.util.Calendar.getInstance(TimeZone.getDefault()).getTime();
+			final XFTItem item = XFTItem.NewItem("xdat:user_login", user);
 			item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
-			item.setProperty("xdat:user_login.login_date", today);
+			item.setProperty("xdat:user_login.login_date", Calendar.getInstance(TimeZone.getDefault()).getTime());
 			item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
 	        item.setProperty("xdat:user_login.session_id", data.getSession().getId());
 			SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI)null);
 
-			HttpSession session = data.getSession();
-
 			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getUsername());
-
 		} catch (Exception exception) {
             logger.error("Error performing su operation", exception);
 		}
 		try {
-            new XDATLoginUser().doRedirect(data, context, userDetails);
+            new XDATLoginUser().doRedirect(data, context, user);
 		} catch (Exception exception) {
 			logger.error("Error performing su redirect", exception);
 		}
@@ -485,7 +499,7 @@ public class XDAT implements Initializable,Configurable{
 	 * @return An instance of the {@link SiteConfigurationService} service.
 	 */
 	private static SiteConfigurationService getSiteConfigurationService() {
-	    if (_siteConfigurationService == null || _siteConfigurationService instanceof InitializerSiteConfiguration) {
+	    if (_siteConfigurationService == null) {
 	    	_siteConfigurationService = getContextService().getBean(SiteConfigurationService.class);
 	    }
 	    return _siteConfigurationService;
@@ -635,7 +649,7 @@ public class XDAT implements Initializable,Configurable{
 		}
 
 		List<Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriptionsForDefinition(definition);
-		List<String> emails = new ArrayList<String>();
+		List<String> emails = new ArrayList<>();
 		if (subscriptions != null && subscriptions.size() > 0) {
 			// There are subscribers! Return them.
 			for(Subscription sub : subscriptions){
@@ -656,7 +670,6 @@ public class XDAT implements Initializable,Configurable{
      * @param event    				The site-wide event to replace subscribers for.
 	 */
 	public static void replaceSubscriberList(String newSubscriberEmails, NotificationType event, boolean allowNonUserSubscribers) {
-		final String adminEmail = getSiteConfigPreferences().getAdminEmail();
 		final Channel channel = getHtmlMailChannel();
 		boolean created = false;
 
@@ -693,7 +706,7 @@ public class XDAT implements Initializable,Configurable{
 		}
 
 		// If we made it this far, there are no subscribers to the indicated site-wide event, so create the requested subscribers
-		List<String> newSubscriberEmailList = (List)(StringUtils.isBlank(newSubscriberEmails)?new ArrayList():Arrays.asList(newSubscriberEmails.split("[\\s]*,[\\s]*")));
+		final List<String> newSubscriberEmailList = StringUtils.isBlank(newSubscriberEmails) ? new ArrayList<String>() : Arrays.asList(newSubscriberEmails.split("[\\s]*,[\\s]*"));
 		for(String newSubscriberEmailString : newSubscriberEmailList){
 			List<UserI> users = Users.getUsersByEmail(newSubscriberEmailString);
 			if(users!=null && users.size()>0){
@@ -745,36 +758,32 @@ public class XDAT implements Initializable,Configurable{
         return channel;
     }
 
-    public static boolean loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception{
-    	PopulateItem populator = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
-    	ItemI found = populator.getItem();
-    	String tempPass = data.getParameters().getString("xdat:user.primary_password");
+	public static boolean loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception {
+		final PopulateItem populator = PopulateItem.Populate(data, XFT.PREFIX + ":user", true);
+		final ItemI found = populator.getItem();
+		final String tempPass = data.getParameters().getString("xdat:user.primary_password");
 
-		setUserDetails(user);
+		final HttpSession session = data.getSession();
+		session.setAttribute("forcePasswordChange", forcePasswordChange);
 
-        HttpSession session = data.getSession();
-        session.setAttribute("forcePasswordChange",forcePasswordChange);
-        XFTItem item = XFTItem.NewItem("xdat:user_login",user);
-        Date today = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-        item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
-        item.setProperty("xdat:user_login.login_date",today);
-        item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
-        item.setProperty("xdat:user_login.session_id", data.getSession().getId());
-        SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
+		final XFTItem item = XFTItem.NewItem("xdat:user_login", user);
+		item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
+		item.setProperty("xdat:user_login.login_date", Calendar.getInstance(TimeZone.getDefault()).getTime());
+		item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
+		item.setProperty("xdat:user_login.session_id", data.getSession().getId());
+		SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
 
-		Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-        grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        if (Roles.isSiteAdmin(user)) {
-            grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        }
-		Object username = found.getProperty("login");
-		if(username==null){
-			username = user.getLogin();
+		final Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
+		grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+		if (Roles.isSiteAdmin(user)) {
+			grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
 		}
-    	Authentication authentication = new UsernamePasswordAuthenticationToken(username, tempPass, grantedAuthorities);
-    	SecurityContext securityContext = SecurityContextHolder.getContext();
-    	securityContext.setAuthentication(authentication);
-        return true;
+
+		final Object username = found.getProperty("login");
+		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, tempPass, grantedAuthorities);
+		final SecurityContext securityContext = SecurityContextHolder.getContext();
+		securityContext.setAuthentication(authentication);
+		return true;
     }
 
     public static void sendJmsRequest(final Object request) {

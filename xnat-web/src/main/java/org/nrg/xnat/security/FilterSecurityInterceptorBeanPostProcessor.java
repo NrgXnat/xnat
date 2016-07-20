@@ -12,8 +12,9 @@ package org.nrg.xnat.security;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.SecurityConfig;
@@ -24,13 +25,17 @@ import org.springframework.security.web.access.intercept.FilterSecurityIntercept
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProcessor {
+    @Autowired
+    public FilterSecurityInterceptorBeanPostProcessor(final SiteConfigPreferences preferences) {
+        _preferences = preferences;
+    }
+
     public void setOpenUrls(List<String> openUrls) {
         _openUrls.clear();
         _openUrls.addAll(openUrls);
@@ -48,8 +53,8 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
         }
 
         if (bean instanceof FilterSecurityInterceptor) {
-            FilterSecurityInterceptor interceptor = (FilterSecurityInterceptor) bean;
-            final ExpressionBasedFilterInvocationSecurityMetadataSource metadataSource = getMetadataSource(_service.getRequireLogin());
+            final FilterSecurityInterceptor interceptor = (FilterSecurityInterceptor) bean;
+            final ExpressionBasedFilterInvocationSecurityMetadataSource metadataSource = getMetadataSource(_preferences.getRequireLogin());
             if (_log.isDebugEnabled()) {
                 _log.debug("Found a FilterSecurityInterceptor bean with the following metadata configuration:");
                 displayMetadataSource(interceptor.getSecurityMetadataSource());
@@ -109,8 +114,7 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
     private static final String ADMIN_EXPRESSION = "hasRole('ROLE_ADMIN')";
     private static final String DEFAULT_EXPRESSION = "hasRole('ROLE_USER')";
 
-    @Inject
-    private InitializerSiteConfiguration _service;
+    private final SiteConfigPreferences _preferences;
 
     private final List<String> _openUrls = new ArrayList<>();
     private final List<String> _adminUrls = new ArrayList<>();

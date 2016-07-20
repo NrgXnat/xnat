@@ -60,7 +60,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     @Bean
     public MessageSource messageSource() {
         return new ResourceBundleMessageSource() {{
-            setBasename("messages");
+            setBasename("org/nrg/xnat/messages/system.properties");
         }};
     }
 

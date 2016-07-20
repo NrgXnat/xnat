@@ -3,16 +3,17 @@ package org.nrg.xnat.configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
+import org.nrg.mail.services.MailService;
 import org.nrg.notify.entities.ChannelRendererProvider;
 import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.renderers.NrgMailChannelRenderer;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.NotificationsPreferences;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,8 +25,8 @@ import java.util.Properties;
 public class NotificationsConfig {
 
     @Bean
-    public JavaMailSenderImpl mailSender() throws IOException, SiteConfigurationException {
-        final Map<String, String> smtp = _preferences.getSmtpServer();
+    public JavaMailSenderImpl mailSender(final NotificationsPreferences preferences) throws IOException, SiteConfigurationException {
+        final Map<String, String> smtp = preferences.getSmtpServer();
         final JavaMailSenderImpl sender = new JavaMailSenderImpl();
         if(smtp!=null) {
             sender.setHost(StringUtils.defaultIfBlank(smtp.remove("host"), "localhost"));
@@ -50,28 +51,20 @@ public class NotificationsConfig {
     }
 
     @Bean
-    public ChannelRenderer mailChannelRenderer() throws SiteConfigurationException {
-        final NrgMailChannelRenderer renderer = new NrgMailChannelRenderer();
-        renderer.setFromAddress(_preferences.getAdminEmail());
-        renderer.setSubjectPrefix(_preferences.getEmailPrefix());
+    public NrgMailChannelRenderer mailChannelRenderer(final SiteConfigPreferences siteConfigPreferences, final NotificationsPreferences notificationsPreferences, final MailService mailService) throws SiteConfigurationException {
+        final NrgMailChannelRenderer renderer = new NrgMailChannelRenderer(mailService);
+        renderer.setFromAddress(siteConfigPreferences.getAdminEmail());
+        renderer.setSubjectPrefix(notificationsPreferences.getEmailPrefix());
         return renderer;
     }
 
     @Bean
-    public Map<String, ChannelRenderer> renderers() throws SiteConfigurationException {
-        final Map<String, ChannelRenderer> renderers = new HashMap<>();
-        renderers.put("htmlMail", mailChannelRenderer());
-        renderers.put("textMail", mailChannelRenderer());
-        return renderers;
-    }
-
-    @Bean
-    public ChannelRendererProvider rendererProvider() throws SiteConfigurationException {
+    public ChannelRendererProvider rendererProvider(final NrgMailChannelRenderer renderer) throws SiteConfigurationException {
         final ChannelRendererProvider provider = new ChannelRendererProvider();
-        provider.setRenderers(renderers());
+        final Map<String, ChannelRenderer> renderers = new HashMap<>();
+        renderers.put("htmlMail", renderer);
+        renderers.put("textMail", renderer);
+        provider.setRenderers(renderers);
         return provider;
     }
-
-    @Inject
-    private InitializerSiteConfiguration _preferences;
 }

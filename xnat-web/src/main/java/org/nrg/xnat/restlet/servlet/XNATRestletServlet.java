@@ -24,7 +24,7 @@ import javax.servlet.ServletException;
 public class XNATRestletServlet extends ServerServlet {
     private static final long serialVersionUID = -4149339105144231596L;
 
-    public static ServletConfig REST_CONFIG=null;
+    public static ServletConfig REST_CONFIG = null;
 
     private final Logger logger = LoggerFactory.getLogger(XNATRestletServlet.class);
 
@@ -32,13 +32,17 @@ public class XNATRestletServlet extends ServerServlet {
     public void init() throws ServletException {
         super.init();
 
-        XNATRestletServlet.REST_CONFIG=this.getServletConfig();
+        XNATRestletServlet.REST_CONFIG = getServletConfig();
 
-        PrearcConfig prearcConfig = XDAT.getContextService().getBean(PrearcConfig.class);
-        try {
-            PrearcDatabase.initDatabase(prearcConfig.isReloadPrearcDatabaseOnApplicationStartup());
-        } catch (Throwable e) {
-            logger.error("Unable to initialize prearchive database", e);
+        final PrearcConfig prearcConfig = XDAT.getContextService().getBean(PrearcConfig.class);
+        if (prearcConfig != null) {
+            try {
+                PrearcDatabase.initDatabase(prearcConfig.isReloadPrearcDatabaseOnApplicationStartup());
+            } catch (Throwable e) {
+                logger.error("Unable to initialize prearchive database", e);
+            }
+        } else {
+            logger.error("The prearc config wasn't found!");
         }
 
         XDAT.getContextService().getBean(DicomSCPManager.class).startOrStopDicomSCPAsDictatedByConfiguration();

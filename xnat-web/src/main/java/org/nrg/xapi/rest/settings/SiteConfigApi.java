@@ -8,13 +8,14 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,13 @@ import java.util.Properties;
 @XapiRestController
 @RequestMapping(value = "/siteConfig")
 public class SiteConfigApi extends AbstractXapiRestController {
+    @Autowired
+    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo) {
+        super(userManagementService, roleHolder);
+        _preferences = preferences;
+        _appInfo = appInfo;
+    }
+
     @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Application build properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "buildInfo", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
@@ -149,14 +157,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
             return new ResponseEntity<>(status);
         }
 
-        if (_log.isInfoEnabled()) {
-            final StringBuilder message = new StringBuilder("User ").append(getSessionUser().getUsername()).append(" is setting the values for the following properties:\n");
-            for (final String name : properties.keySet()) {
-                message.append(" * ").append(name).append(": ").append(properties.get(name)).append("\n");
-            }
-            _log.info(message.toString());
-        }
-
         // Is this call initializing the system?
         final boolean isInitializing = properties.containsKey("initialized") && StringUtils.equals("true", properties.get("initialized"));
         for (final String name : properties.keySet()) {
@@ -227,11 +227,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
 
     private static final Logger _log = LoggerFactory.getLogger(SiteConfigApi.class);
 
-    @Autowired
-    @Lazy
-    private SiteConfigPreferences _preferences;
-
-    @Autowired
-    @Lazy
-    private XnatAppInfo _appInfo;
+    private final SiteConfigPreferences _preferences;
+    private final XnatAppInfo _appInfo;
 }

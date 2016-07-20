@@ -13,8 +13,7 @@ package org.nrg.xnat.security;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nrg.config.exceptions.SiteConfigurationException;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -30,9 +29,9 @@ import java.util.regex.Pattern;
 
 public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoint {
 
-    public XnatAuthenticationEntryPoint(final String loginFormUrl, final InitializerSiteConfiguration configuration) {
+    public XnatAuthenticationEntryPoint(final String loginFormUrl, final SiteConfigPreferences preferences) {
         super(loginFormUrl);
-        _configuration = configuration;
+        _preferences = preferences;
     }
 
     /**
@@ -70,14 +69,8 @@ public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoi
         }
 
         if (isDataPath(request) && !isInteractiveAgent(userAgent)) {
-            try {
-                response.setHeader("WWW-Authenticate", "Basic realm=\"" + _configuration.getSiteId() + "\"");
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-            } catch (SiteConfigurationException e) {
-                _log.error("An error occurred trying to access system resources: siteId", e);
-                response.setHeader("WWW-Authenticate", "Basic");
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-            }
+            response.setHeader("WWW-Authenticate", "Basic realm=\"" + _preferences.getSiteId() + "\"");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         } else {
             super.commence(request, response, authException);
         }
@@ -156,7 +149,7 @@ public class XnatAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPoi
         return false;
     }
 
-    private final InitializerSiteConfiguration _configuration;
+    private final SiteConfigPreferences _preferences;
 
     private static final Log _log = LogFactory.getLog(XnatAuthenticationEntryPoint.class);
 

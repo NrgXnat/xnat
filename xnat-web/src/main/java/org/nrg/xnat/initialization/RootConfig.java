@@ -12,7 +12,6 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.beans.PreferenceBeanMixIn;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.helpers.prearchive.PrearcConfig;
@@ -23,6 +22,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import javax.servlet.ServletContext;
@@ -40,20 +40,15 @@ import java.util.Map;
  * for standard XNAT components should be added in the {@link ApplicationConfig application configuration class}.
  */
 @Configuration
-@Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class})
+@Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class})
 public class RootConfig {
     @Bean
-    public XnatAppInfo appInfo(final ServletContext context) throws IOException {
-        return new XnatAppInfo(context);
+    public XnatAppInfo appInfo(final ServletContext context, final JdbcTemplate template) throws IOException {
+        return new XnatAppInfo(context, template);
     }
 
     @Bean
-    public InitializerSiteConfiguration initializerSiteConfiguration() {
-        return new InitializerSiteConfiguration();
-    }
-
-    @Bean
-    public ContextService rootContextService() throws NrgServiceException {
+    public ContextService contextService() throws NrgServiceException {
         return ContextService.getInstance();
     }
 

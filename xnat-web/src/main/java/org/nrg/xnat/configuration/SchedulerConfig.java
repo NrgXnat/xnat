@@ -1,17 +1,14 @@
 package org.nrg.xnat.configuration;
 
-import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.services.EmailRequestLogService;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.PreferenceEvent;
-import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.ResetEmailRequests;
-import org.nrg.xnat.utils.XnatUserProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -19,15 +16,14 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
-import javax.inject.Inject;
 import java.util.List;
 
 @Configuration
 @EnableScheduling
 public class SchedulerConfig implements SchedulingConfigurer {
     @Bean
-    public TriggerTask resetEmailRequests() {
-        return new TriggerTask(new ResetEmailRequests(_emailRequestLogService), new PeriodicTrigger(900000));
+    public TriggerTask resetEmailRequests(final EmailRequestLogService service) {
+        return new TriggerTask(new ResetEmailRequests(service), new PeriodicTrigger(900000));
     }
 
     @Bean(destroyMethod = "shutdown")
@@ -37,43 +33,51 @@ public class SchedulerConfig implements SchedulingConfigurer {
         return scheduler;
     }
 
+    @Autowired
+    public void setNrgEventService(final NrgEventService service) {
+        _service = service;
+    }
+
+    @Autowired
+    public void setSiteConfigPreferences(final SiteConfigPreferences siteConfigPreferences) {
+        _siteConfigPreferences = siteConfigPreferences;
+    }
+
+    @Autowired
+    public void setNotificationsPreferences(final NotificationsPreferences notificationsPreferences) {
+        _notificationsPreferences = notificationsPreferences;
+    }
+
+    @Autowired
+    public void setTriggerTasks(final List<TriggerTask> tasks) {
+        _tasks = tasks;
+    }
+
     @Override
     public void configureTasks(final ScheduledTaskRegistrar taskRegistrar) {
         taskRegistrar.setScheduler(taskScheduler());
-        _eventService.triggerEvent(new PreferenceEvent("sessionXmlRebuilderRepeat", String.valueOf(XDAT.getSiteConfigPreferences().getSessionXmlRebuilderRepeat())));
-        _eventService.triggerEvent(new PreferenceEvent("aliasTokenTimeout", String.valueOf(XDAT.getSiteConfigPreferences().getAliasTokenTimeout())));
-        _eventService.triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(XDAT.getSiteConfigPreferences().getInactivityBeforeLockout())));
-        _eventService.triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
-        _eventService.triggerEvent(new PreferenceEvent("emailPrefix", String.valueOf(XDAT.getNotificationsPreferences().getEmailPrefix())));
-        _eventService.triggerEvent(new PreferenceEvent("host", String.valueOf(XDAT.getNotificationsPreferences().getHostname())));
-        _eventService.triggerEvent(new PreferenceEvent("requireLogin", String.valueOf(XDAT.getSiteConfigPreferences().getRequireLogin())));
-        _eventService.triggerEvent(new PreferenceEvent("security.channel", String.valueOf(XDAT.getSiteConfigPreferences().getSecurityChannel())));
-        _eventService.triggerEvent(new PreferenceEvent("passwordExpirationType", String.valueOf(XDAT.getSiteConfigPreferences().getPasswordExpirationType())));
-        _eventService.triggerEvent(new PreferenceEvent("archivePath", String.valueOf(XDAT.getSiteConfigPreferences().getArchivePath())));
-        _eventService.triggerEvent(new PreferenceEvent("security.services.role.default", String.valueOf(XDAT.getSiteConfigPreferences().getRoleService())));
-        _eventService.triggerEvent(new PreferenceEvent("checksums", String.valueOf(XDAT.getSiteConfigPreferences().getChecksums())));
-        _eventService.triggerEvent(new PreferenceEvent("sitewidePetTracers", String.valueOf(XDAT.getSiteConfigPreferences().getSitewidePetTracers())));
-        for (final TriggerTask triggerTask : _triggerTasks) {
+
+        _service.triggerEvent(new PreferenceEvent("sessionXmlRebuilderRepeat", String.valueOf(_siteConfigPreferences.getSessionXmlRebuilderRepeat())));
+        _service.triggerEvent(new PreferenceEvent("aliasTokenTimeout", String.valueOf(_siteConfigPreferences.getAliasTokenTimeout())));
+        _service.triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(_siteConfigPreferences.getInactivityBeforeLockout())));
+        _service.triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(_siteConfigPreferences.getMaxFailedLoginsLockoutDuration())));
+        _service.triggerEvent(new PreferenceEvent("emailPrefix", String.valueOf(_notificationsPreferences.getEmailPrefix())));
+        _service.triggerEvent(new PreferenceEvent("host", String.valueOf(_notificationsPreferences.getHostname())));
+        _service.triggerEvent(new PreferenceEvent("requireLogin", String.valueOf(_siteConfigPreferences.getRequireLogin())));
+        _service.triggerEvent(new PreferenceEvent("security.channel", String.valueOf(_siteConfigPreferences.getSecurityChannel())));
+        _service.triggerEvent(new PreferenceEvent("passwordExpirationType", String.valueOf(_siteConfigPreferences.getPasswordExpirationType())));
+        _service.triggerEvent(new PreferenceEvent("archivePath", String.valueOf(_siteConfigPreferences.getArchivePath())));
+        _service.triggerEvent(new PreferenceEvent("security.services.role.default", String.valueOf(_siteConfigPreferences.getRoleService())));
+        _service.triggerEvent(new PreferenceEvent("checksums", String.valueOf(_siteConfigPreferences.getChecksums())));
+        _service.triggerEvent(new PreferenceEvent("sitewidePetTracers", String.valueOf(_siteConfigPreferences.getSitewidePetTracers())));
+
+        for (final TriggerTask triggerTask : _tasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }
     }
 
-    @Inject
-    private EmailRequestLogService _emailRequestLogService;
-
-    @Inject
-    private XnatUserProvider _provider;
-
-    @Inject
-    private JmsTemplate _jmsTemplate;
-
-    @Inject
-    private InitializerSiteConfiguration _preferences;
-
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-    @Inject
-    private List<TriggerTask> _triggerTasks;
-
-    @Inject
-    private NrgEventService _eventService;
+    private SiteConfigPreferences    _siteConfigPreferences;
+    private NotificationsPreferences _notificationsPreferences;
+    private List<TriggerTask>        _tasks;
+    private NrgEventService          _service;
 }

@@ -9,7 +9,6 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.processors.XnatPluginBean;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
-import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
@@ -76,7 +75,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     @Override
     protected Class<?>[] getServletConfigClasses() {
         final List<Class<?>> configClasses = new ArrayList<>();
-        configClasses.add(ApplicationConfig.class);
+        // configClasses.add(ApplicationConfig.class);
         configClasses.addAll(getPluginConfigs());
         return configClasses.toArray(new Class[configClasses.size()]);
     }

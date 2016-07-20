@@ -11,6 +11,6 @@ import java.util.List;
 public abstract class AbstractSiteConfigNotificationsPreferenceHandlerMethod implements PreferenceHandlerMethod {
     @Override
     public List<String> getToolIds() {
-        return new ArrayList<String>(Arrays.asList(NotificationsPreferences.NOTIFICATIONS_TOOL_ID, SiteConfigPreferences.SITE_CONFIG_TOOL_ID));
+        return new ArrayList<>(Arrays.asList(NotificationsPreferences.NOTIFICATIONS_TOOL_ID, SiteConfigPreferences.SITE_CONFIG_TOOL_ID));
     }
 }

@@ -17,18 +17,17 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 
-import javax.inject.Inject;
 import java.util.Collection;
 
 public class XnatLdapContextMapper implements UserDetailsContextMapper {
 
-    public XnatLdapContextMapper() {
-        super();
-        _authMethodId = "";
+    public XnatLdapContextMapper(final XdatUserAuthService service) {
+        this(service, "");
     }
 
-    public XnatLdapContextMapper(String authMethodId) {
+    public XnatLdapContextMapper(final XdatUserAuthService service, final String authMethodId) {
         super();
+        _service = service;
         _authMethodId = authMethodId;
     }
 
@@ -43,8 +42,7 @@ public class XnatLdapContextMapper implements UserDetailsContextMapper {
         throw new UnsupportedOperationException("LdapUserDetailsMapper only supports reading from a context.");
     }
 
-    @Inject
-    private XdatUserAuthService _service;
+    private final XdatUserAuthService _service;
 
     private final String _authMethodId;
 }

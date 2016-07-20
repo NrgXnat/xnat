@@ -19,7 +19,6 @@ import org.nrg.xnat.security.XnatLdapAuthoritiesPopulator;
 import org.nrg.xnat.security.XnatLdapUserDetailsMapper;
 import org.nrg.xnat.security.provider.XnatLdapAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
@@ -30,8 +29,12 @@ import java.util.List;
 import java.util.Map;
 
 public class LdapAuthenticationProviderConfigurator extends AbstractAuthenticationProviderConfigurator {
-    public LdapAuthenticationProviderConfigurator() {
+    @Autowired
+    public LdapAuthenticationProviderConfigurator(final XdatUserAuthService userAuthService, final SiteConfigPreferences preferences) {
+        super();
         setConfiguratorId("ldap");
+        _userAuthService = userAuthService;
+        _preferences = preferences;
     }
 
     @Override
@@ -69,11 +72,6 @@ public class LdapAuthenticationProviderConfigurator extends AbstractAuthenticati
 
     private static final Log _log = LogFactory.getLog(LdapAuthenticationProviderConfigurator.class);
 
-    @Autowired
-    @Lazy
-    private XdatUserAuthService _userAuthService;
-
-    @Autowired
-    @Lazy
-    private SiteConfigPreferences _preferences;
+    private final XdatUserAuthService _userAuthService;
+    private final SiteConfigPreferences _preferences;
 }

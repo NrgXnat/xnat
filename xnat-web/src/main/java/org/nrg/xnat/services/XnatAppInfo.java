@@ -1,6 +1,5 @@
 package org.nrg.xnat.services;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,7 +26,8 @@ public class XnatAppInfo {
     public static final String        MINUTES                  = "minutes";
     public static final String        SECONDS                  = "seconds";
 
-    public XnatAppInfo(final ServletContext context) throws IOException {
+    @Inject
+    public XnatAppInfo(final ServletContext context, final JdbcTemplate template) throws IOException {
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
             final Manifest manifest = new Manifest(input);
             final Attributes attributes = manifest.getMainAttributes();
@@ -59,6 +59,7 @@ public class XnatAppInfo {
                 }
             }
         }
+        _template = template;
     }
 
     /**
@@ -175,8 +176,7 @@ public class XnatAppInfo {
 
     private static final List<String> PRIMARY_MANIFEST_ATTRIBUTES = Arrays.asList("Build-Number", "Build-Date", "Implementation-Version", "Implementation-Sha");
 
-    @Inject
-    private JdbcTemplate _template;
+    private final JdbcTemplate _template;
 
     private final Date                             _startTime   = new Date();
     private final Properties                       _properties  = new Properties();

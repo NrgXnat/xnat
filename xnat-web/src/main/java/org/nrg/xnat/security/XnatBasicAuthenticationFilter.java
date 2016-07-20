@@ -19,8 +19,8 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,11 +29,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-import javax.inject.Inject;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -44,19 +42,24 @@ import java.util.Date;
 import java.util.Map;
 
 public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
-
-    @Inject
-    private XnatProviderManager _providerManager;
-
-    private AuthenticationDetailsSource authenticationDetailsSource = new WebAuthenticationDetailsSource();
-    private SessionAuthenticationStrategy sessionStrategy = new NullAuthenticatedSessionStrategy();
-
-    public XnatBasicAuthenticationFilter(AuthenticationManager manager, AuthenticationEntryPoint entryPoint) {
+    @Autowired
+    public XnatBasicAuthenticationFilter(final AuthenticationManager manager, final AuthenticationEntryPoint entryPoint) {
         super(manager, entryPoint);
+        _authenticationDetailsSource = new WebAuthenticationDetailsSource();
+    }
+
+    @Autowired
+    public void setXnatProviderManager(final XnatProviderManager providerManager) {
+        _providerManager = providerManager;
+    }
+
+    @Autowired
+    public void setSessionAuthenticationStrategy(final SessionAuthenticationStrategy strategy) {
+        _authenticationStrategy = strategy;
     }
 
     private boolean authenticationIsRequired(String username) {
-        // Only reauthenticate if username doesn't match SecurityContextHolder and user isn't authenticated
+        // Only re-authenticate if username doesn't match SecurityContextHolder and user isn't authenticated
         // (see SEC-53)
         Authentication existingAuth = SecurityContextHolder.getContext().getAuthentication();
 
@@ -74,7 +77,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
         // Handle unusual condition where an AnonymousAuthenticationToken is already present
         // This shouldn't happen very often, as BasicProcessingFilter is meant to be earlier in the filter
         // chain than AnonymousAuthenticationFilter. Nevertheless, presence of both an AnonymousAuthenticationToken
-        // together with a BASIC authentication request header should indicate reauthentication using the
+        // together with a BASIC authentication request header should indicate re-authentication using the
         // BASIC protocol is desirable. This behaviour is also consistent with that provided by form and digest,
         // both of which force re-authentication if the respective header is detected (and in doing so replace
         // any existing AnonymousAuthenticationToken). See SEC-610.
@@ -89,15 +92,15 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
 
         if ((header != null) && header.startsWith("Basic ")) {
             byte[] base64Token = header.substring(6).getBytes("UTF-8");
-            String token = new String(Base64.decode(base64Token), getCredentialsCharset(request));
+            String token       = new String(Base64.decode(base64Token), getCredentialsCharset(request));
 
             String username = "";
             String password = "";
-            int delim = token.indexOf(":");
+            int    position = token.indexOf(":");
 
-            if (delim != -1) {
-                username = token.substring(0, delim);
-                password = token.substring(delim + 1);
+            if (position != -1) {
+                username = token.substring(0, position);
+                password = token.substring(position + 1);
             }
 
             if (debug) {
@@ -105,16 +108,15 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
             }
 
             if (authenticationIsRequired(username)) {
-                UsernamePasswordAuthenticationToken authRequest =
-                        _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);
-                authRequest.setDetails(authenticationDetailsSource.buildDetails(request));
+                UsernamePasswordAuthenticationToken authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);
+                authRequest.setDetails(_authenticationDetailsSource.buildDetails(request));
 
                 Authentication authResult;
 
                 try {
                     authResult = getAuthenticationManager().authenticate(authRequest);
 
-                    sessionStrategy.onAuthentication(authResult, request, response);
+                    _authenticationStrategy.onAuthentication(authResult, request, response);
 
 
                 } catch (AuthenticationException failed) {
@@ -160,9 +162,10 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
                     lock = locks.get(user.getID());
                 }
 
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (lock) {
-                    Date today = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-                    XFTItem item = XFTItem.NewItem("xdat:user_login", user);
+                    Date    today = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+                    XFTItem item  = XFTItem.NewItem("xdat:user_login", user);
                     item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
                     item.setProperty("xdat:user_login.login_date", today);
                     item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
@@ -178,14 +181,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
         super.onSuccessfulAuthentication(request, response, authResult);
     }
 
-    /**
-     * The session handling strategy which will be invoked immediately after an authentication request is successfully
-     * processed by the <tt>AuthenticationManager</tt>. Used, for example, to handle changing of the session identifier
-     * to prevent session fixation attacks.
-     *
-     * @param sessionStrategy the implementation to use. If not set a null implementation is used.
-     */
-    public void setSessionAuthenticationStrategy(SessionAuthenticationStrategy sessionStrategy) {
-        this.sessionStrategy = sessionStrategy;
-    }
+    private final WebAuthenticationDetailsSource _authenticationDetailsSource;
+    private       XnatProviderManager            _providerManager;
+    private       SessionAuthenticationStrategy  _authenticationStrategy;
 }

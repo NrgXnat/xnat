@@ -653,7 +653,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			return;
 		}
 		eventService.triggerEvent(automationEvent, automationCompletionEvent);
-		final AutomationCompletionEventListener completionService = AutomationCompletionEventListener.getService();
+		final AutomationCompletionEventListener completionService = XDAT.getContextService().getBeanSafely(AutomationCompletionEventListener.class);
 		List<ScriptOutput> scriptOutputs = null;
 		for (int i = 1; i < TIMEOUT_SECONDS; i++) {
 			try {
@@ -795,8 +795,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		// Do we need to handle scope differently?  I don't think site configured uploads will pass through this method.
 		// It's really only for configured resources, which should always be scoped at the project level, I think.
 		final Scope scope = (exp != null) ? Scope.Project : (subj != null) ? Scope.Project : (proj != null ) ? Scope.Project : Scope.Site;
-		final String crConfig = XDAT.getConfigService().getConfigContents(CONFIG_TOOL, CONFIG_SCRIPT_PATH, scope,
-				proj.getId());
+		final String crConfig = XDAT.getConfigService().getConfigContents(CONFIG_TOOL, CONFIG_SCRIPT_PATH, scope, proj.getId());
 		if (crConfig != null && crConfig.length() > 0) {
 			try {
 				final JSONArray jsonArray = new JSONArray(new JSONTokener(crConfig));

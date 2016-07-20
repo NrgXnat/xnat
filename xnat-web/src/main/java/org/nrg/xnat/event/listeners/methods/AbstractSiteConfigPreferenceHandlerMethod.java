@@ -1,16 +1,35 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import org.nrg.prefs.events.PreferenceHandlerMethod;
-import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xft.security.UserI;
+import org.nrg.xnat.utils.XnatUserProvider;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class AbstractSiteConfigPreferenceHandlerMethod implements PreferenceHandlerMethod {
+    protected AbstractSiteConfigPreferenceHandlerMethod() {
+        _userProvider = null;
+    }
+
+    protected AbstractSiteConfigPreferenceHandlerMethod(final XnatUserProvider userProvider) {
+        _userProvider = userProvider;
+    }
+
     @Override
     public List<String> getToolIds() {
-        return new ArrayList<String>(Arrays.asList(SiteConfigPreferences.SITE_CONFIG_TOOL_ID));
+        return new ArrayList<>(Collections.singletonList(SiteConfigPreferences.SITE_CONFIG_TOOL_ID));
     }
+
+    protected UserI getAdminUser() {
+        return _userProvider != null ? _userProvider.get() : null;
+    }
+
+    protected String getAdminUsername() {
+        return _userProvider != null ? _userProvider.getLogin() : "";
+    }
+
+    private final XnatUserProvider _userProvider;
 }

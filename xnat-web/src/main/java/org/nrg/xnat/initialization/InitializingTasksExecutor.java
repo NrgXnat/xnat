@@ -12,6 +12,12 @@ import java.util.List;
 
 @Component
 public class InitializingTasksExecutor {
+    @Autowired
+    @Lazy
+    public InitializingTasksExecutor(final List<InitializingTask> tasks) {
+        _tasks = tasks;
+    }
+
     @EventListener
     public void executeOnContextRefresh(final ContextRefreshedEvent event) {
         if (_log.isDebugEnabled()) {
@@ -32,7 +38,5 @@ public class InitializingTasksExecutor {
 
     private static final Logger _log = LoggerFactory.getLogger(InitializingTasksExecutor.class);
 
-    @Autowired
-    @Lazy
-    private List<InitializingTask> _tasks;
+    private final List<InitializingTask> _tasks;
 }

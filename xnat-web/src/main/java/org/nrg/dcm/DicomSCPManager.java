@@ -39,15 +39,23 @@ public class DicomSCPManager {
     }
 
     public DicomSCP create(final DicomSCPInstance instance) throws NrgServiceException {
+        final DicomSCPInstance atPort = _dicomScpPreferences.getDicomSCPAtPort(instance.getPort());
+        if (atPort != null) {
+            throw new NrgServiceException(NrgServiceError.AlreadyInitialized, "Unable to create DICOM SCP [" + instance.toString() + "]: there is an existing enabled receiver already using the same port.");
+        }
         instance.setId(getNextKey());
         try {
             _dicomScpPreferences.setDicomSCPInstance(instance);
             if (_log.isDebugEnabled()) {
                 _log.debug("Created new DICOM SCP: " + instance.toString());
             }
-            return _dicomScpPreferences.getDicomSCP(instance.getId());
+            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(instance.getId());
+            if (instance.isEnabled()) {
+                dicomSCP.start();
+            }
+            return dicomSCP;
         } catch (IOException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to create DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
+            throw new NrgServiceException(NrgServiceError.Unknown, "Unable to create DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
         }
     }
 

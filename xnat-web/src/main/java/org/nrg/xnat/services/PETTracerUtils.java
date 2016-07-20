@@ -1,39 +1,35 @@
-package org.nrg.xnat.services;/*
+/*
  * org.nrg.xnat.services.PETTracerUtils.java
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Created 8/7/14 12:50 PM
  */
+package org.nrg.xnat.services;
 
+import org.apache.commons.io.IOUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
-import org.nrg.xft.XFT;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-import javax.inject.Inject;
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 
 @Service
 public class PETTracerUtils {
-    public PETTracerUtils() throws Exception {
-        if (_instance != null) {
-            throw new Exception("The PETTracerUtils service is already initialized, try calling getInstance() instead.");
-        }
-        _instance = this;
-    }
-
-    public static PETTracerUtils getService() {
-        return _instance;
+    @Autowired
+    public PETTracerUtils(final ConfigService configService) {
+        _configService = configService;
     }
 
     public Configuration getTracerList(final String path, final Long project) {
@@ -60,13 +56,15 @@ public class PETTracerUtils {
         _configService.replaceConfig(login, "", TOOL_NAME, path, tracerList);
     }
 
-    public static File getDefaultTracerList() throws FileNotFoundException {
-        final File def = new File(XFT.GetConfDir(), DEFAULT_TRACER_LIST);
-        if (def.exists()) {
-            return def;
-        } else {
-            throw new FileNotFoundException("Default tracer list: " + DEFAULT_TRACER_LIST + " not found in " + XFT.GetConfDir());
+    public static String getDefaultTracerList() throws IOException {
+        final StringBuilder tracers = new StringBuilder();
+        final List<Resource> resources = BasicXnatResourceLocator.getResources(DEFAULT_TRACER_LIST);
+        for (final Resource resource : resources) {
+            try (final InputStream input = resource.getInputStream()) {
+                tracers.append(IOUtils.readLines(input, "UTF-8"));
+            }
         }
+        return tracers.toString();
     }
 
     // flat out stolen from DicomEdit.java
@@ -90,10 +88,7 @@ public class PETTracerUtils {
 
     private static final String TOOL_NAME = "tracers";
 
-    private static final String DEFAULT_TRACER_LIST = "PET-tracers.txt";
+    private static final String DEFAULT_TRACER_LIST = "classpath*:META-INF/xnat/defaults/**/PET-tracers.txt";
 
-    private static PETTracerUtils _instance;
-
-    @Inject
-    private ConfigService _configService;
+    private final ConfigService _configService;
 }

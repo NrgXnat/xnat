@@ -5,11 +5,16 @@ import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UpdateNewSecureDefinitions extends AbstractInitializingTask {
+    @Autowired
+    public UpdateNewSecureDefinitions(final FeatureRepositoryServiceI featureRepositoryService) {
+        super();
+        _featureRepositoryService = featureRepositoryService;
+    }
+
     @Override
     public String getTaskName() {
         return "Update new secure definitions";
@@ -30,7 +35,5 @@ public class UpdateNewSecureDefinitions extends AbstractInitializingTask {
 
     private static final Logger _log = LoggerFactory.getLogger(UpdateNewSecureDefinitions.class);
 
-    @Autowired
-    @Lazy
-    private FeatureRepositoryServiceI _featureRepositoryService;
+    private final FeatureRepositoryServiceI _featureRepositoryService;
 }

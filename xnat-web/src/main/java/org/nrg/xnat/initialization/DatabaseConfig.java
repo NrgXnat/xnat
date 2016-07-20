@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
@@ -34,8 +33,8 @@ public class DatabaseConfig {
     public static final String DEFAULT_DATASOURCE_MAX_IDLE     = "10";
 
     @Bean
-    public DataSource dataSource() throws NrgServiceException {
-        final Properties properties = Beans.getNamespacedProperties(_environment, "datasource", true);
+    public DataSource dataSource(final Environment environment) throws NrgServiceException {
+        final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
         setDefaultDatasourceProperties(properties);
         final String dataSourceClassName = properties.getProperty("class");
         try {
@@ -57,8 +56,8 @@ public class DatabaseConfig {
     }
 
     @Bean
-    public JdbcTemplate jdbcTemplate() throws NrgServiceException {
-        return new JdbcTemplate(dataSource());
+    public JdbcTemplate jdbcTemplate(final DataSource dataSource) throws NrgServiceException {
+        return new JdbcTemplate(dataSource);
     }
 
     private static Properties setDefaultDatasourceProperties(final Properties properties) {
@@ -118,7 +117,4 @@ public class DatabaseConfig {
     }
 
     private static final Logger _log = LoggerFactory.getLogger(DatabaseConfig.class);
-
-    @Inject
-    private Environment _environment;
 }

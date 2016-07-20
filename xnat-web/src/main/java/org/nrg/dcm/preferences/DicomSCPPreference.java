@@ -27,13 +27,44 @@ import java.util.concurrent.Executors;
 @NrgPreferenceBean(toolId = "dicomScpManager", toolName = "DICOM SCP Manager", description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.")
 public class DicomSCPPreference extends AbstractPreferenceBean {
     @Autowired
-    public DicomSCPPreference(final XnatUserProvider provider, final ApplicationContext context) {
-        _provider = provider;
+    public DicomSCPPreference(final XnatUserProvider primaryAdminUserProvider, final ApplicationContext context) {
+        _provider = primaryAdminUserProvider;
         _context = context;
     }
 
     public boolean hasDicomSCPInstance(final int id) {
         return getDicomSCPInstances().containsKey(Integer.toString(id));
+    }
+
+    @SuppressWarnings("unused")
+    public List<DicomSCPInstance> getDicomSCPAtAETitle(final String aeTitle) {
+        final List<DicomSCPInstance> found = new ArrayList<>();
+        for (final DicomSCPInstance instance : getDicomSCPInstances().values()) {
+            if (StringUtils.equals(aeTitle, instance.getAeTitle())) {
+                found.add(instance);
+            }
+        }
+        return found;
+    }
+
+    public DicomSCPInstance getDicomSCPAtPort(final int port) {
+        for (final DicomSCPInstance instance : getDicomSCPInstances().values()) {
+            if (port == instance.getPort() && instance.isEnabled()) {
+                return instance;
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unused")
+    public List<DicomSCPInstance> getAllDicomSCPsAtPort(final int port) {
+        final List<DicomSCPInstance> found = new ArrayList<>();
+        for (final DicomSCPInstance instance : getDicomSCPInstances().values()) {
+            if (port == instance.getPort() && instance.isEnabled()) {
+                found.add(instance);
+            }
+        }
+        return found;
     }
 
     @NrgPreference(defaultValue = "{'1': {'id': '1', 'aeTitle': 'XNAT', 'port': 8104, 'enabled': true}}", key = "id")

@@ -11,17 +11,14 @@
 package org.nrg.xnat.security.alias;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xdat.services.impl.hibernate.HibernateAliasTokenService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,31 +29,27 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider implements XnatAuthenticationProvider {
-
-    public AliasTokenAuthenticationProvider() {
-        this("token");
-    }
-
-    public AliasTokenAuthenticationProvider(final String name) {
-        _name = name;
+    @Autowired
+    public AliasTokenAuthenticationProvider(final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService) {
+        super();
+        _aliasTokenService = aliasTokenService;
+        _userAuthService = userAuthService;
     }
 
     /**
-     * Performs authentication with the same contract as {@link
-     * org.springframework.security.authentication.AuthenticationManager#authenticate(org.springframework.security.core.Authentication)}.
+     * Performs authentication with the same contract as {@link AuthenticationManager#authenticate(Authentication)}.
      *
      * @param authentication the authentication request object.
      * @return a fully authenticated object including credentials. May return <code>null</code> if the
-     *         <code>AuthenticationProvider</code> is unable to support authentication of the passed
-     *         <code>Authentication</code> object. In such a case, the next <code>AuthenticationProvider</code> that
-     *         supports the presented <code>Authentication</code> class will be tried.
-     * @throws org.springframework.security.core.AuthenticationException
-     *          if authentication fails.
+     * <code>AuthenticationProvider</code> is unable to support authentication of the passed
+     * <code>Authentication</code> object. In such a case, the next <code>AuthenticationProvider</code> that
+     * supports the presented <code>Authentication</code> class will be tried.
+     * @throws AuthenticationException if authentication fails.
      */
     @Override
     public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
-        final String alias = (String) authentication.getPrincipal();
-        final AliasToken token = getAliasTokenService().locateToken(alias);
+        final String     alias = (String) authentication.getPrincipal();
+        final AliasToken token = _aliasTokenService.locateToken(alias);
         if (token == null) {
             throw new BadCredentialsException("No valid alias token found for alias: " + alias);
         }
@@ -79,7 +72,7 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      *
      * @param authentication DOCUMENT ME!
      * @return <code>true</code> if the implementation can more closely evaluate the <code>Authentication</code> class
-     *         presented
+     * presented
      */
     @Override
     public boolean supports(final Class<?> authentication) {
@@ -99,16 +92,12 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
 
     @Override
     public String getName() {
-        return StringUtils.isBlank(_name) ? getClass().toString() : _name;
+        return XdatUserAuthService.TOKEN;
     }
 
     @Override
     public String getProviderId() {
-        return _providerId;
-    }
-
-    public void setProviderId(final String id) {
-        _providerId = id;
+        return XdatUserAuthService.TOKEN;
     }
 
     @Override
@@ -134,9 +123,9 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
         final UserI xdatUserDetails = (UserI) userDetails;
         Users.validateUserLogin(xdatUserDetails);
 
-        String alias = ((AliasTokenAuthenticationToken) authentication).getAlias();
+        String alias  = ((AliasTokenAuthenticationToken) authentication).getAlias();
         String secret = ((AliasTokenAuthenticationToken) authentication).getSecret();
-        String userId = getAliasTokenService().validateToken(alias, secret);
+        String userId = _aliasTokenService.validateToken(alias, secret);
         if (StringUtils.isBlank(userId) || !userId.equals(userDetails.getUsername())) {
             throw new BadCredentialsException("The submitted alias token was invalid: " + alias);
         }
@@ -164,14 +153,13 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      * @param authentication The authentication request, which subclasses <em>may</em> need to perform a binding-based
      *                       retrieval of the <code>UserDetails</code>
      * @return the user information (never <code>null</code> - instead an exception should the thrown)
-     * @throws org.springframework.security.core.AuthenticationException
-     *          if the credentials could not be validated (generally a
-     *          <code>BadCredentialsException</code>, an <code>AuthenticationServiceException</code> or
-     *          <code>UsernameNotFoundException</code>)
+     * @throws AuthenticationException If the credentials could not be validated (generally a
+     *                                 <code>BadCredentialsException</code>, an <code>AuthenticationServiceException</code> or
+     *                                 <code>UsernameNotFoundException</code>)
      */
     @Override
     protected UserDetails retrieveUser(final String username, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
-        AliasToken token = getAliasTokenService().locateToken(username);
+        AliasToken token = _aliasTokenService.locateToken(username);
         if (token == null) {
             throw new UsernameNotFoundException("Unable to locate token with alias: " + username);
         }
@@ -180,32 +168,9 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
          * The hack is to return the user details for the most recent successful login of the user, as that is likely the provider that was used.
          * Not perfect, but better than just hard-coding to localdb provider (cause then it won't work for a token created by an LDAP-authenticated user).
          */
-        return getUserAuthService().getUserDetailsByUsernameAndMostRecentSuccessfulLogin(token.getXdatUserId());
+        return _userAuthService.getUserDetailsByUsernameAndMostRecentSuccessfulLogin(token.getXdatUserId());
     }
 
-    private XdatUserAuthService getUserAuthService() {
-        if (_userAuthService == null) {
-            _userAuthService = _contextService.getBean(XdatUserAuthService.class);
-        }
-        return _userAuthService;
-    }
-
-    private AliasTokenService getAliasTokenService() {
-        if (_aliasTokenService == null) {
-            _aliasTokenService = _contextService.getBean(HibernateAliasTokenService.class);
-        }
-        return _aliasTokenService;
-    }
-
-    @Autowired
-    @Qualifier("rootContextService")
-    @Lazy
-    private ContextService _contextService;
-
-    private AliasTokenService _aliasTokenService;
-
-    private XdatUserAuthService _userAuthService;
-
-    private final String _name;
-    private String _providerId;
+    private final AliasTokenService   _aliasTokenService;
+    private final XdatUserAuthService _userAuthService;
 }

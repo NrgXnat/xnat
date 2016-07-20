@@ -5,7 +5,6 @@ import org.nrg.xnat.security.XnatExpiredPasswordFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -15,6 +14,11 @@ import java.util.Map;
 
 @Component
 public class PasswordExpirationHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+    @Autowired
+    public PasswordExpirationHandlerMethod(final XnatExpiredPasswordFilter filter) {
+        _filter = filter;
+    }
+
     @Override
     public List<String> getHandledPreferences() {
         return PREFERENCES;
@@ -41,7 +45,5 @@ public class PasswordExpirationHandlerMethod extends AbstractSiteConfigPreferenc
     private static final Logger       _log        = LoggerFactory.getLogger(PasswordExpirationHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("passwordExpirationType", "passwordExpirationInterval", "passwordExpirationDate"));
 
-    @Autowired
-    @Qualifier("expiredPasswordFilter")
-    private XnatExpiredPasswordFilter _filter;
+    private final XnatExpiredPasswordFilter _filter;
 }

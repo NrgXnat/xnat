@@ -16,17 +16,16 @@ import org.apache.commons.io.FileUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.entities.ThemeConfig;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.ThemeService;
-import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -41,27 +40,28 @@ import java.util.List;
 @Api(description = "XNAT Theme Management API")
 @XapiRestController
 @RequestMapping(value = "/theme")
-public class ThemeApi {
-    private static final Logger _log = LoggerFactory.getLogger(ThemeApi.class);
-
+public class ThemeApi extends AbstractXapiRestController {
     @Autowired
-    private ThemeService themeService;
+    public ThemeApi(final ThemeService themeService, final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
+        super(userManagementService, roleHolder);
+        _themeService = themeService;
+    }
 
     @ApiOperation(value = "Get the currently selected global theme or a role based theme if specified.", notes = "Use this to get the theme selected by the system administrator on the Theme Management page.", response = ThemeConfig.class, responseContainer = "ThemeConfig")
     @ApiResponses({@ApiResponse(code = 200, message = "Reports the currently selected global theme (if there is one) and whether or not it's enabled."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/{role}"}, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.GET)
     public ResponseEntity<ThemeConfig> themeGet(@ApiParam(value = "\"global\" or role name of currently set theme", required = true) @PathVariable("role") String role) {
-        if("global".equalsIgnoreCase(role)){
-            return new ResponseEntity<>(themeService.getTheme(), HttpStatus.OK);
+        if ("global".equalsIgnoreCase(role)) {
+            return new ResponseEntity<>(_themeService.getTheme(), HttpStatus.OK);
         }
-        return new ResponseEntity<>(themeService.getTheme(role), HttpStatus.OK);
+        return new ResponseEntity<>(_themeService.getTheme(role), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get list of available themes.", notes = "Use this to get a list of all available themes on the XNAT system.", response = ThemeService.TypeOption.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Reports the currently selected global theme (if there is one), whether or not it's enabled, and a list of available themes on the system in a JSON string."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.GET)
     public ResponseEntity<List<ThemeService.TypeOption>> themesGet() {
-        return new ResponseEntity<>(themeService.loadExistingThemes(), HttpStatus.OK);
+        return new ResponseEntity<>(_themeService.loadExistingThemes(), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Deletes the theme with the specified name.", notes = "Returns success on deletion. ", response = String.class)
@@ -73,20 +73,20 @@ public class ThemeApi {
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-        if("null".equals(theme)){
+        if ("null".equals(theme)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        if(!themeService.themeExists(theme)) {
+        if (!_themeService.themeExists(theme)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         try {
-            File f = new File(themeService.getThemesPath() + File.separator + theme);
+            File f = new File(_themeService.getThemesPath() + File.separator + theme);
             FileUtils.deleteDirectory(f);
-            if(!f.exists()) {
-                themeConfig = themeService.getTheme();
+            if (!f.exists()) {
+                themeConfig = _themeService.getTheme();
                 String themeName = (themeConfig != null) ? themeConfig.getName() : null;
                 if (theme.equals(themeName)) {
-                    themeService.setTheme((ThemeConfig) null);
+                    _themeService.setTheme((ThemeConfig) null);
                 }
             }
         } catch (Exception e) {
@@ -99,7 +99,7 @@ public class ThemeApi {
     @ApiOperation(value = "Sets the current global theme to the one specified.", notes = "Returns the updated serialized theme object.", response = ThemeConfig.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully updated the current global theme."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to create or update this user."), @ApiResponse(code = 404, message = "Theme not found."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/{theme}"}, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_HTML_VALUE}, method = {RequestMethod.PUT})
-    public ResponseEntity<ThemeConfig> themePut(@ApiParam(value = "The name of the theme to select.", required = true) @PathVariable("theme") String theme, @RequestParam(value = "enabled", required=false, defaultValue="true") String enabled) throws NotFoundException {
+    public ResponseEntity<ThemeConfig> themePut(@ApiParam(value = "The name of the theme to select.", required = true) @PathVariable("theme") String theme, @RequestParam(value = "enabled", required = false, defaultValue = "true") String enabled) throws NotFoundException {
         HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -107,15 +107,15 @@ public class ThemeApi {
         ThemeConfig themeConfig;
         try {
             boolean themeEnabled = true;
-            if("false".equalsIgnoreCase(enabled)){
+            if ("false".equalsIgnoreCase(enabled)) {
                 themeEnabled = false;
             }
-            if("null".equals(theme)){
+            if ("null".equals(theme)) {
                 theme = null;
             }
-            themeConfig = themeService.setTheme(theme, themeEnabled);
+            themeConfig = _themeService.setTheme(theme, themeEnabled);
         } catch (ThemeService.ThemeNotFoundException e) {
-            _log.error(e.getInvalidTheme()+" not found.");
+            _log.error(e.getInvalidTheme() + " not found.");
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             _log.error("An error occurred setting the theme " + theme, e);
@@ -127,19 +127,19 @@ public class ThemeApi {
     @ApiOperation(value = "Accepts a multipart form with a zip file upload and extracts its contents in the theme system folder. If successful, the first (root) directory name (or theme name) unzipped is returned in the response. This will overwrite any other directories already existing with the same name without warning.", notes = "The structure of the zipped package must have only directories at it's root.", response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Theme package successfully uploaded and extracted."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to upload a theme package."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
-    public ResponseEntity<List<ThemeService.TypeOption>> themePostUpload(@ApiParam(value = "Multipart file object being uploaded", required = true) @RequestParam(value="themePackage", required=false) MultipartFile themePackage) {
+    public ResponseEntity<List<ThemeService.TypeOption>> themePostUpload(@ApiParam(value = "Multipart file object being uploaded", required = true) @RequestParam(value = "themePackage", required = false) MultipartFile themePackage) {
         HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
         }
         List<ThemeService.TypeOption> themeOptions = new ArrayList<>();
         try {
-            if(!themePackage.getContentType().contains("zip")) {
+            if (!themePackage.getContentType().contains("zip")) {
                 String error = "No valid files were uploaded. Theme package must be of type: application/x-zip-compressed";
                 _log.error(error);
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            List<String> dirs = themeService.extractTheme(themePackage.getInputStream());
+            List<String> dirs = _themeService.extractTheme(themePackage.getInputStream());
             for (String dir : dirs) {
                 themeOptions.add(new ThemeService.TypeOption(dir, dir));
             }
@@ -157,22 +157,7 @@ public class ThemeApi {
         return new ResponseEntity<>(themeOptions, HttpStatus.OK);
     }
 
-    private UserI getSessionUser() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if ((principal instanceof UserI)) {
-            return (UserI) principal;
-        }
-        return null;
-    }
+    private static final Logger _log = LoggerFactory.getLogger(ThemeApi.class);
 
-    private HttpStatus isPermitted() {
-        UserI sessionUser = getSessionUser();
-        if ((sessionUser instanceof XDATUser)) {
-            return _roleHolder.isSiteAdmin(sessionUser) ? null : HttpStatus.FORBIDDEN;
-        }
-        return null;
-    }
-
-    @Autowired
-    private RoleHolder _roleHolder;
+    private final ThemeService _themeService;
 }

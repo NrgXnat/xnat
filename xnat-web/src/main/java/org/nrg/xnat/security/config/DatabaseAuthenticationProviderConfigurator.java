@@ -10,11 +10,10 @@
  */
 package org.nrg.xnat.security.config;
 
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.ReflectionSaltSource;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
@@ -24,7 +23,11 @@ import java.util.List;
 import java.util.Map;
 
 public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenticationProviderConfigurator {
-    public DatabaseAuthenticationProviderConfigurator() {
+    @Autowired
+    public DatabaseAuthenticationProviderConfigurator(final XnatDatabaseUserDetailsService userDetailsService, final SiteConfigPreferences preferences) {
+        super();
+        _userDetailsService = userDetailsService;
+        _preferences = preferences;
         setConfiguratorId("db");
     }
 
@@ -36,7 +39,7 @@ public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenti
         saltSource.setUserPropertyToUse("salt");
 
         XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(_preferences.getEmailVerification());
-        sha2DatabaseAuthProvider.setUserDetailsService(_detailsService);
+        sha2DatabaseAuthProvider.setUserDetailsService(_userDetailsService);
         sha2DatabaseAuthProvider.setPasswordEncoder(new ShaPasswordEncoder(256));
         sha2DatabaseAuthProvider.setName(name);
         sha2DatabaseAuthProvider.setProviderId(id);
@@ -51,10 +54,6 @@ public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenti
         return getAuthenticationProviders(id, name);
     }
 
-    @Autowired
-    @Lazy
-    private XnatDatabaseUserDetailsService _detailsService;
-
-    @Autowired
-    private InitializerSiteConfiguration _preferences;
+    private final XnatDatabaseUserDetailsService _userDetailsService;
+    private final SiteConfigPreferences          _preferences;
 }

@@ -21,9 +21,9 @@ import java.util.List;
 @ComponentScan("org.nrg.dcm.preferences")
 public class DicomImportConfig {
     @Bean
-    public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final XnatUserProvider provider) {
+    public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final XnatUserProvider receivedFileUserProvider) {
         final ClassicDicomObjectIdentifier identifier = new ClassicDicomObjectIdentifier();
-        identifier.setUserProvider(provider);
+        identifier.setUserProvider(receivedFileUserProvider);
         return identifier;
     }
 

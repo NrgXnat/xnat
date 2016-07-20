@@ -1,47 +1,32 @@
 package org.nrg.xnat.event.listeners;
 
 import com.google.common.collect.Maps;
-
-import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.WrkWorkflowdata;
+import org.nrg.xdat.preferences.NotificationsPreferences;
+import org.nrg.xft.event.entities.WorkflowStatusEvent;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
-import org.apache.log4j.Logger;
-import org.nrg.xdat.om.WrkWorkflowdata;
-import org.nrg.xft.event.entities.WorkflowStatusEvent;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.springframework.stereotype.Service;
+import javax.inject.Inject;
+import java.util.Map;
 
 import static reactor.bus.selector.Selectors.R;
 
-import java.util.Map;
-
-import javax.inject.Inject;
-
-/**
- * Created by flavin on 3/2/15.
- */
 @Service
 public class DicomToNiftiEmailHandler extends PipelineEmailHandlerAbst implements Consumer<Event<WorkflowStatusEvent>> {
-    
-    /** The Constant logger. */
-    final static Logger logger = Logger.getLogger(DicomToNiftiEmailHandler.class);
-
-    /** The pipeline name. */
-    private final String PIPELINE_NAME = "mricron/DicomToNifti.xml";
-    
-    /** The pipeline name pretty. */
-    private final String PIPELINE_NAME_PRETTY = "DicomToNifti";
-	
 	/**
 	 * Instantiates a new dicom to nifti email handler.
-	 *
-	 * @param eventBus the event bus
+	 *  @param eventBus the event bus
+	 * @param preferences The site configuration preferences.
 	 */
-	@Inject public DicomToNiftiEmailHandler( EventBus eventBus ){
-		eventBus.on(R(WorkflowStatusEvent.class.getName() + "[.]("
-				+ PersistentWorkflowUtils.COMPLETE + "|" + PersistentWorkflowUtils.FAILED + ")"), this);
+	@Autowired
+	public DicomToNiftiEmailHandler(EventBus eventBus, final NotificationsPreferences preferences){
+		_preferences = preferences;
+		eventBus.on(R(WorkflowStatusEvent.class.getName() + "[.](" + PersistentWorkflowUtils.COMPLETE + "|" + PersistentWorkflowUtils.FAILED + ")"), this);
 	}
 	
 	/* (non-Javadoc)
@@ -49,12 +34,10 @@ public class DicomToNiftiEmailHandler extends PipelineEmailHandlerAbst implement
 	 */
 	@Override
 	public void accept(Event<WorkflowStatusEvent> event) {
-		
 		final WorkflowStatusEvent wfsEvent = event.getData();
 		if (wfsEvent.getWorkflow() instanceof WrkWorkflowdata) {
 			handleEvent(wfsEvent);
 		}
-		
 	}
 
     /* (non-Javadoc)
@@ -66,12 +49,18 @@ public class DicomToNiftiEmailHandler extends PipelineEmailHandlerAbst implement
     	}
     	WrkWorkflowdata wrk = (WrkWorkflowdata)e.getWorkflow();
         Map<String,Object> params = Maps.newHashMap();
-        params.put("pipelineName",PIPELINE_NAME_PRETTY);
-		params.put("contactEmail", XDAT.getNotificationsPreferences().getHelpContactInfo());
-        if (completed(e)) {
+        /* The pipeline name pretty. */
+		final String PIPELINE_NAME_PRETTY = "DicomToNifti";
+		params.put("pipelineName", PIPELINE_NAME_PRETTY);
+		params.put("contactEmail", _preferences.getHelpContactInfo());
+        /* The pipeline name. */
+		final String PIPELINE_NAME = "mricron/DicomToNifti.xml";
+		if (completed(e)) {
             standardPipelineEmailImpl(e, wrk, PIPELINE_NAME, DEFAULT_TEMPLATE_SUCCESS, DEFAULT_SUBJECT_SUCCESS, "processed.lst", params);
         } else if (failed(e)) {
             standardPipelineEmailImpl(e, wrk, PIPELINE_NAME, DEFAULT_TEMPLATE_FAILURE, DEFAULT_SUBJECT_FAILURE, "processed.lst", params);
         }
     }
+
+    private final NotificationsPreferences _preferences;
 }

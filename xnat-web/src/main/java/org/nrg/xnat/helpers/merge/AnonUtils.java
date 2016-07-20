@@ -10,59 +10,62 @@
  */
 package org.nrg.xnat.helpers.merge;
 
+import com.google.common.base.Joiner;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.PersistenceConfiguration;
-
+import org.apache.commons.io.IOUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.XDAT;
-import org.nrg.xft.XFT;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
-
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 @Service
 public class AnonUtils {
-	public AnonUtils() throws Exception {
+    public AnonUtils() throws Exception {
         if (_instance != null) {
             throw new Exception("The AnonUtils service is already initialized, try calling getInstance() instead.");
         }
         _instance = this;
     }
-	
-	public static AnonUtils getService() {
-	    if (_instance == null) {
-	    	_instance = XDAT.getContextService().getBean(AnonUtils.class);
-	    }
-	    return _instance;
-	}
-	
-	public Configuration getScript(String path, Long project) {
+
+    public static AnonUtils getService() {
+        if (_instance == null) {
+            _instance = XDAT.getContextService().getBean(AnonUtils.class);
+        }
+        return _instance;
+    }
+
+    public Configuration getScript(String path, Long project) {
         if (logger.isDebugEnabled()) {
             logger.debug("Retrieving script for {}, {} for project: {}", DicomEdit.ToolName, path, project);
         }
 
         return project == null
-                ? _configService.getConfig(DicomEdit.ToolName, path)
-                : _configService.getConfig(DicomEdit.ToolName, path, Scope.Project, project.toString());
-	}
-	
-	public boolean isEnabled(String path, Long project) {
+               ? _configService.getConfig(DicomEdit.ToolName, path)
+               : _configService.getConfig(DicomEdit.ToolName, path, Scope.Project, project.toString());
+    }
+
+    public boolean isEnabled(String path, Long project) {
         final Configuration config = project == null
-                ? _configService.getConfig(DicomEdit.ToolName, path)
-                : _configService.getConfig(DicomEdit.ToolName, path, Scope.Project, project.toString());
+                                     ? _configService.getConfig(DicomEdit.ToolName, path)
+                                     : _configService.getConfig(DicomEdit.ToolName, path, Scope.Project, project.toString());
 
         final boolean enabled = config.getStatus().equals(Configuration.ENABLED_STRING);
         if (logger.isDebugEnabled()) {
@@ -73,12 +76,12 @@ public class AnonUtils {
             }
         }
         return enabled;
-	}
-	
-	public List<Configuration> getAllScripts (Long project) {
+    }
+
+    public List<Configuration> getAllScripts(Long project) {
         final List<Configuration> scripts = project == null
-                ? _configService.getConfigsByTool(DicomEdit.ToolName)
-                : _configService.getConfigsByTool(DicomEdit.ToolName, Scope.Project, project.toString());
+                                            ? _configService.getConfigsByTool(DicomEdit.ToolName)
+                                            : _configService.getConfigsByTool(DicomEdit.ToolName, Scope.Project, project.toString());
 
         if (logger.isDebugEnabled()) {
             final String identifier = project == null ? "the site" : "project: " + project.toString();
@@ -91,10 +94,10 @@ public class AnonUtils {
             }
         }
 
-		return scripts;
-	}
-	
-	public void setProjectScript (String login, String path, String script, Long project) throws ConfigServiceException {
+        return scripts;
+    }
+
+    public void setProjectScript(String login, String path, String script, Long project) throws ConfigServiceException {
         if (logger.isDebugEnabled()) {
             logger.debug("Setting script for {}, {} for project: {}", DicomEdit.ToolName, path, project);
         }
@@ -103,63 +106,75 @@ public class AnonUtils {
         } else {
             _configService.replaceConfig(login, "", DicomEdit.ToolName, path, script, Scope.Project, project.toString());
         }
-	}
-	
-	public void setSiteWideScript(String login, String path, String script) throws ConfigServiceException {
+    }
+
+    public void setSiteWideScript(String login, String path, String script) throws ConfigServiceException {
         _configService.replaceConfig(login, "", DicomEdit.ToolName, path, script);
         AnonUtils.invalidateSitewideAnonCache();
-	}
-	
-	public void enableSiteWide (String login, String path ) throws ConfigServiceException {
+    }
+
+    public void enableSiteWide(String login, String path) throws ConfigServiceException {
         _configService.enable(login, "", DicomEdit.ToolName, path);
         AnonUtils.invalidateSitewideAnonCache();
-	}
-	
-	public void enableProjectSpecific(String login, String path, Long project) throws ConfigServiceException {
+    }
+
+    public void enableProjectSpecific(String login, String path, Long project) throws ConfigServiceException {
         if (project == null) {
             _configService.enable(login, "", DicomEdit.ToolName, path);
         } else {
             _configService.enable(login, "", DicomEdit.ToolName, path, Scope.Project, project.toString());
         }
-	}
-	
-	public void disableSiteWide(String login, String path) throws ConfigServiceException {
+    }
+
+    public void disableSiteWide(String login, String path) throws ConfigServiceException {
         _configService.disable(login, "", DicomEdit.ToolName, path);
         AnonUtils.invalidateSitewideAnonCache();
-	}
-	
-	public void disableProjectSpecific(String login, String path, Long project) throws ConfigServiceException {
+    }
+
+    public void disableProjectSpecific(String login, String path, Long project) throws ConfigServiceException {
         if (project == null) {
             _configService.disable(login, "", DicomEdit.ToolName, path);
         } else {
             _configService.disable(login, "", DicomEdit.ToolName, path, Scope.Project, project.toString());
         }
-	}
-	
-	public static File getDefaultScript () throws FileNotFoundException {
-		final File def = new File (XFT.GetConfDir(), DEFAULT_ANON_SCRIPT);
-		if (def.exists()) {
-			return def;
-		}
-		else {
-			throw new FileNotFoundException("Default anon script: " + DEFAULT_ANON_SCRIPT + " not found in " + XFT.GetConfDir());
-		}
-	}
+    }
 
+    public static String getDefaultScript() throws IOException {
+        final List<Resource> resources = BasicXnatResourceLocator.getResources(DEFAULT_ANON_SCRIPT);
+        if (resources.size() == 0) {
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Didn't find any default anonymization scripts at: " + DEFAULT_ANON_SCRIPT);
+        } else if (resources.size() > 1) {
+            boolean             isFirst    = true;
+            final StringBuilder duplicates = new StringBuilder();
+            for (final Resource resource : resources) {
+                if (!isFirst) {
+                    duplicates.append(", ");
+                } else {
+                    isFirst = false;
+                }
+                duplicates.append(resource.getURI());
+            }
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Found more than one \"default\" anonymization script: " + duplicates.toString());
+        }
+        try (final InputStream input = resources.get(0).getInputStream()) {
+            return Joiner.on("\n").join(IOUtils.readLines(input, "UTF-8"));
+        }
+    }
 
-	/**
-	 * Adds a cache of site wide anon scripts.  This is currently used by GradualDicomImporter.
-	 * @return The site anonymization script cache.
-	 */
-	public static Cache getSiteAnonCache() {
+    /**
+     * Adds a cache of site wide anon scripts.  This is currently used by GradualDicomImporter.
+     *
+     * @return The site anonymization script cache.
+     */
+    public static Cache getSiteAnonCache() {
         synchronized (cacheManager) {
             if (!cacheManager.cacheExists(cacheName)) {
                 final CacheConfiguration config = new CacheConfiguration(cacheName, 0)
-                .copyOnRead(false).copyOnWrite(false)
-                .eternal(false)
-                .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
-                .timeToLiveSeconds(ANON_CACHE_EXPIRY_SECONDS)
-                .maxEntriesLocalHeap(MAX_ENTRIES_LOCAL_HEAP);
+                        .copyOnRead(false).copyOnWrite(false)
+                        .eternal(false)
+                        .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
+                        .timeToLiveSeconds(ANON_CACHE_EXPIRY_SECONDS)
+                        .maxEntriesLocalHeap(MAX_ENTRIES_LOCAL_HEAP);
                 final Cache cache = new Cache(config);
                 cacheManager.addCache(cache);
                 return cache;
@@ -168,35 +183,35 @@ public class AnonUtils {
             }
         }
     }
-	
-	public static void invalidateSitewideAnonCache(){
-		getSiteAnonCache().removeAndReturnElement(SITE_WIDE);
-	}
-    
+
+    public static void invalidateSitewideAnonCache() {
+        getSiteAnonCache().removeAndReturnElement(SITE_WIDE);
+    }
+
     public static Configuration getCachedSitewideAnon() throws Exception {
-        final Cache anonCache=getSiteAnonCache();
-        
-        Element cached= anonCache.get(SITE_WIDE);
-        if(null!=cached){
-        	return (Configuration)cached.getObjectValue();
-        }else{
+        final Cache anonCache = getSiteAnonCache();
+
+        Element cached = anonCache.get(SITE_WIDE);
+        if (null != cached) {
+            return (Configuration) cached.getObjectValue();
+        } else {
             Configuration c = AnonUtils.getService().getScript(path, null);
             anonCache.put(new Element(SITE_WIDE, c));
             return c;
         }
     }
 
-    private static String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null);
+    private static       String path      = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null);
     private static final String cacheName = "scripts-anon";
-    
-    private static final CacheManager cacheManager = CacheManager.getInstance();
-    private static final String SITE_WIDE = "site-wide";
-    private static final long ANON_CACHE_EXPIRY_SECONDS = 120;
-    private static final int MAX_ENTRIES_LOCAL_HEAP = 5000;
+
+    private static final CacheManager cacheManager              = CacheManager.getInstance();
+    private static final String       SITE_WIDE                 = "site-wide";
+    private static final long         ANON_CACHE_EXPIRY_SECONDS = 120;
+    private static final int          MAX_ENTRIES_LOCAL_HEAP    = 5000;
 
     private static final Logger logger = LoggerFactory.getLogger(AnonUtils.class);
 
-    private static final String DEFAULT_ANON_SCRIPT = "id.das";
+    private static final String DEFAULT_ANON_SCRIPT = "classpath*:META-INF/xnat/defaults/**/id.das";
 
     private static AnonUtils _instance;
 

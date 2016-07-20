@@ -1,10 +1,14 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
-import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,12 @@ import java.util.Map;
 
 @Component
 public class PathHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+    @Autowired
+    public PathHandlerMethod(final XnatUserProvider primaryAdminUserProvider, final XnatAppInfo appInfo) {
+        super(primaryAdminUserProvider);
+        _appInfo = appInfo;
+    }
+
     @Override
     public List<String> getHandledPreferences() {
         return PREFERENCES;
@@ -37,31 +47,31 @@ public class PathHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod
     }
 
     private void updateArchivePath() {
+        if (!_appInfo.isInitialized()) {
+            _log.warn("Application is not yet initialized, update archive path operation aborted.");
+            return;
+        }
+
         try {
-            ArcSpecManager.initialize(getAdminUser());
-        } catch (Exception e) {
-            _log.error("",e);
-        }
-    }
-
-    private UserI getAdminUser() {
-        for (String login : Users.getAllLogins()) {
-            try {
-                final UserI user = Users.getUser(login);
-                if (_roleHolder.isSiteAdmin(user)) {
-                    return user;
-                }
+            final UserI adminUser = getAdminUser();
+            if (adminUser == null) {
+                _log.error("No error occurred but failed to retrieve admin user, can't proceed with archive path update.");
+            } else {
+                ArcSpecManager.initialize(adminUser);
             }
-            catch(Exception e){
-
+        } catch (final ElementNotFoundException | UserInitException | NrgServiceRuntimeException e) {
+            if (!(e instanceof NrgServiceRuntimeException) || ((NrgServiceRuntimeException) e).getServiceError() == NrgServiceError.UserServiceError) {
+                _log.warn("The user for initializing the arcspec could not be initialized. This probably means the system is still initializing. Check the database if this is not the case.");
+            } else {
+                _log.error("An unknown error occurred trying to update the archive path.", e);
             }
+        } catch (final Exception e) {
+            _log.error("An unknown error occurred trying to update the archive path.", e);
         }
-        return null;
     }
 
     private static final Logger       _log        = LoggerFactory.getLogger(PathHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("archivePath","prearchivePath","cachePath","ftpPath","buildPath","pipelinePath"));
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("archivePath", "prearchivePath", "cachePath", "ftpPath", "buildPath", "pipelinePath"));
 
-    @Autowired
-    private RoleHolder _roleHolder;
+    private final XnatAppInfo _appInfo;
 }

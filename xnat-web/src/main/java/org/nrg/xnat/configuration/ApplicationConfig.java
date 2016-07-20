@@ -1,8 +1,8 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.config.exceptions.SiteConfigurationException;
-import org.nrg.framework.services.ContextService;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.config.services.ConfigService;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.HistoricPasswordValidator;
@@ -12,6 +12,7 @@ import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
+import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
@@ -19,7 +20,6 @@ import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.annotation.*;
 
-import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -41,29 +41,23 @@ public class ApplicationConfig {
     }
 
     @Bean
-    @Primary
-    public ContextService contextService() {
-        return ContextService.getInstance();
+    public InitializingTasksExecutor initializingTasksExecutor(final List<InitializingTask> tasks) {
+        return new InitializingTasksExecutor(tasks);
     }
 
     @Bean
-    public InitializingTasksExecutor initializingTasksExecutor() {
-        return new InitializingTasksExecutor();
+    public SiteConfigPreferences siteConfigPreferences(final NrgEventService service) {
+        return new SiteConfigPreferences(service);
     }
 
     @Bean
-    public SiteConfigPreferences siteConfigPreferences() {
-        return new SiteConfigPreferences();
+    public NotificationsPreferences notificationsPreferences(final NrgEventService service) {
+        return new NotificationsPreferences(service);
     }
 
     @Bean
-    public NotificationsPreferences notificationsPreferences() {
-        return new NotificationsPreferences();
-    }
-
-    @Bean
-    public PETTracerUtils petTracerUtils() throws Exception {
-        return new PETTracerUtils();
+    public PETTracerUtils petTracerUtils(final ConfigService configService) throws Exception {
+        return new PETTracerUtils(configService);
     }
 
     @Bean
@@ -94,9 +88,13 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public XnatUserProvider receivedFileUserProvider() throws SiteConfigurationException {
-        final String receivedFileUser = _preferences.getReceivedFileUser();
-        return new XnatUserProvider(receivedFileUser);
+    public XnatUserProvider primaryAdminUserProvider(final SiteConfigPreferences preferences) throws SiteConfigurationException {
+        return new XnatUserProvider(preferences.getPrimaryAdminUsername());
+    }
+
+    @Bean
+    public XnatUserProvider receivedFileUserProvider(final SiteConfigPreferences preferences) throws SiteConfigurationException {
+        return new XnatUserProvider(preferences.getReceivedFileUser());
     }
 
     @Bean
@@ -108,7 +106,4 @@ public class ApplicationConfig {
     public ImporterHandlerPackages importerHandlerPackages() {
         return new ImporterHandlerPackages(new HashSet<>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive"})));
     }
-
-    @Inject
-    private InitializerSiteConfiguration _preferences;
 }

@@ -44,11 +44,10 @@ public class AutomationEventIdsIds extends AbstractHibernateEntity implements Se
 			autoEventIds = idsList.get(0); 
 		} else {
 			autoEventIds = new AutomationEventIds(externalId, srcEventClass);
-			autoEventIds.setCreated(new Date());
 		}
 		this.setParentAutomationEventIds(autoEventIds);
 		this.setEventId(eventId);
-		this.setCounter(Long.valueOf(1));
+		this.setCounter(1L);
 	}
     
 	/**

@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.config.configuration.NrgConfigTestConfiguration;
 import org.nrg.config.exceptions.DuplicateConfigurationDetectedException;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.config.exceptions.SiteConfigurationFileNotFoundException;
@@ -44,7 +45,7 @@ import static org.junit.Assert.*;
  * different implementation.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = NrgConfigTestConfiguration.class)
 @Rollback
 @Transactional
 public class DefaultSiteConfigurationServiceTests {

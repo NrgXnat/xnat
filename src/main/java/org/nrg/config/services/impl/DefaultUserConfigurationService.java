@@ -17,12 +17,15 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.UserConfigurationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.inject.Inject;
 
 @Service
 public class DefaultUserConfigurationService implements UserConfigurationService {
+    @Autowired
+    public DefaultUserConfigurationService(final ConfigService service) {
+        _service = service;
+    }
 
     /**
      * Gets the user configuration
@@ -45,7 +48,7 @@ public class DefaultUserConfigurationService implements UserConfigurationService
      * @param configId         The primary configuration identifier.
      * @param configuration    The content to set for the requested configuration for the indicated user.
      * @param keys             Zero to N keys that can be used to drill into the retrieved configuration.
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      */
     @Override
     public void setUserConfiguration(final String username, final String configId, final String configuration, String... keys) throws ConfigServiceException {
@@ -70,6 +73,5 @@ public class DefaultUserConfigurationService implements UserConfigurationService
     private static final String USER_CONFIG_TOOL = "userConfigs";
     private static final Logger _log = LoggerFactory.getLogger(DefaultUserConfigurationService.class);
 
-    @Inject
-    private ConfigService _service;
+    private final ConfigService _service;
 }

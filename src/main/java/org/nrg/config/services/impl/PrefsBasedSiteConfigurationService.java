@@ -1,11 +1,9 @@
-/**
+/*
  * SiteConfiguration
- * (C) 2012 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on 9/18/12 by rherri01
  */
 package org.nrg.config.services.impl;
 
@@ -15,16 +13,23 @@ import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import javax.inject.Inject;
 import java.util.Properties;
 import java.util.Set;
 
 @Primary
 @Service
 public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfigurationService  {
+    @Autowired
+    public PrefsBasedSiteConfigurationService(final NrgPreferenceService service, final Environment environment) {
+        setEnvironment(environment);
+        _service = service;
+    }
+
     @Override
     protected void setPreferenceValue(final String username, final String property, final String value) {
         // TODO: Do we need to add auditing or change logging here?
@@ -81,6 +86,5 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
     private static final Logger _log = LoggerFactory.getLogger(PrefsBasedSiteConfigurationService.class);
     private static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
-    @Inject
-    private NrgPreferenceService _service;
+    private final NrgPreferenceService _service;
 }

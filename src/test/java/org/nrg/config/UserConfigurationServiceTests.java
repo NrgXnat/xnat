@@ -14,6 +14,7 @@ package org.nrg.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.config.configuration.NrgConfigTestConfiguration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.UserConfigurationService;
 import org.springframework.test.context.ContextConfiguration;
@@ -28,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = NrgConfigTestConfiguration.class)
 public class UserConfigurationServiceTests {
     @Test
     public void testCreateUserConfiguration() throws IOException, ConfigServiceException {

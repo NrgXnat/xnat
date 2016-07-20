@@ -1,11 +1,9 @@
-/**
+/*
  * SiteConfigurationService
- * (C) 2012 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
- * <p/>
+ *
  * Released under the Simplified BSD License
- * <p/>
- * Created on 9/18/12 by rherri01
  */
 package org.nrg.config.services;
 
@@ -18,10 +16,13 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("unused")
 public interface SiteConfigurationService extends NrgService {
 
     /**
      * Initialized the site configuration from whatever persistent stores the service implementation uses.
+     *
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     void initSiteConfiguration() throws SiteConfigurationException;
 
@@ -31,8 +32,8 @@ public interface SiteConfigurationService extends NrgService {
      * from any properties files} found in the submitted list.
      *
      * @param configFilesLocationsRoot The root location to search for configuration files.
-     *
      * @return The resulting site configuration properties.
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     Properties updateSiteConfiguration(final String configFilesLocationsRoot) throws SiteConfigurationException;
 
@@ -42,8 +43,8 @@ public interface SiteConfigurationService extends NrgService {
      * from any properties files} found in the submitted list.
      *
      * @param configFilesLocations The list of locations where configuration files can be found.
-     *
      * @return The resulting site configuration properties.
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     Properties updateSiteConfiguration(final List<String> configFilesLocations) throws SiteConfigurationException;
 
@@ -55,8 +56,8 @@ public interface SiteConfigurationService extends NrgService {
      *
      * @param configFilesLocationsRoot The root location to search for configuration files.
      * @param configFilesLocations     The list of locations where configuration files can be found.
-     *
      * @return The resulting site configuration properties.
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     Properties updateSiteConfiguration(final String configFilesLocationsRoot, final List<String> configFilesLocations) throws SiteConfigurationException;
 
@@ -67,10 +68,9 @@ public interface SiteConfigurationService extends NrgService {
     void resetSiteConfiguration();
 
     /**
-     * Gets the site configuration as a Java {@link java.util.Properties} object.
+     * Gets the site configuration as a Java {@link Properties} object.
      *
-     * @return The initialized Java {@link java.util.Properties} object.
-     *
+     * @return The initialized Java {@link Properties} object.
      * @throws SiteConfigurationException Thrown when an error occurs resolving or accessing the configuration service.
      */
     Properties getSiteConfiguration() throws SiteConfigurationException;
@@ -79,20 +79,18 @@ public interface SiteConfigurationService extends NrgService {
      * Gets the value of the indicated property from the site configuration.
      *
      * @param property The name of the property to be retrieved.
-     *
      * @return The value of the property.
-     *
-     * @throws SiteConfigurationException
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
-    String getSiteConfigurationProperty(String property) throws SiteConfigurationException;
+    String getSiteConfigurationProperty(final String property) throws SiteConfigurationException;
 
     /**
      * Sets the value of the indicated property to the submitted value.
      *
+     * @param username The name of the user setting the property.
      * @param property The name of the property to be set.
      * @param value    The value to set for the property.
-     *
-     * @throws SiteConfigurationException
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     void setSiteConfigurationProperty(String username, String property, String value) throws SiteConfigurationException;
 
@@ -100,19 +98,18 @@ public interface SiteConfigurationService extends NrgService {
      * Gets the boolean value of the indicated property. If the property isn't found, the indicated default value is
      * returned instead.
      *
-     * @param property The name of the property to be retrieved.
-     * @param _default The default value to be returned if the property isn't found.
-     *
-     * @return The boolean value requested.
+     * @param property     The name of the property to be retrieved.
+     * @param defaultValue The default value to be returned if the property isn't found.
+     * @return
      */
-    boolean getBoolSiteConfigurationProperty(final String property, final boolean _default);
+    boolean getBoolSiteConfigurationProperty(final String property, final boolean defaultValue);
 
     /**
      * Gets the integer value of the indicated property. If the property isn't found, null is returned instead.
      *
      * @param property The name of the property to be retrieved.
-     *
      * @return The integer value requested.
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     Integer getIntegerSiteConfigurationProperty(final String property) throws SiteConfigurationException;
 
@@ -120,8 +117,8 @@ public interface SiteConfigurationService extends NrgService {
      * Gets the long value of the indicated property. If the property isn't found, null is returned instead.
      *
      * @param property The name of the property to be retrieved.
-     *
      * @return The long value requested.
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     Long getLongSiteConfigurationProperty(final String property) throws SiteConfigurationException;
 
@@ -129,8 +126,8 @@ public interface SiteConfigurationService extends NrgService {
      * Gets the float value of the indicated property. If the property isn't found, null is returned instead.
      *
      * @param property The name of the property to be retrieved.
-     *
      * @return The float value requested.
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     Float getFloatSiteConfigurationProperty(final String property) throws SiteConfigurationException;
 
@@ -138,8 +135,8 @@ public interface SiteConfigurationService extends NrgService {
      * Gets the double value of the indicated property. If the property isn't found, null is returned instead.
      *
      * @param property The name of the property to be retrieved.
-     *
      * @return The double value requested.
+     * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     Double getDoubleSiteConfigurationProperty(final String property) throws SiteConfigurationException;
 
@@ -184,12 +181,16 @@ public interface SiteConfigurationService extends NrgService {
 
     /**
      * Gets the pattern for matching file names for custom properties files.
+     *
+     * @return The pattern used for matching file names.
      */
     String getCustomPropertiesNamePattern();
 
     /**
      * Sets the pattern for matching file names for custom properties files. By default, this is set to {@link
      * #CUSTOM_PROPERTIES_NAME}.
+     *
+     * @param pattern The pattern to use when locating custom properties files.
      */
     void setCustomPropertiesNamePattern(final String pattern);
 

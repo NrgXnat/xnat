@@ -15,6 +15,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.config.configuration.NrgConfigTestConfiguration;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.extensions.postChange.Separatepetmr.Bool.PETMRSettingChange;
@@ -40,7 +41,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = NrgConfigTestConfiguration.class)
 public class ConfigPlatformTests {
 
     static final String contents = "yellow=#FFFF00";
@@ -69,7 +70,7 @@ public class ConfigPlatformTests {
     /**
      * This runs some basic sanity checks on the data source to make certain that simple database transactions are working properly before moving onto more complex operations.
      *
-     * @throws SQLException
+     * @throws SQLException When an error occurs running SQL.
      */
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection"})
 	@Test

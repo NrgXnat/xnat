@@ -64,6 +64,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      * Gets all of the tools associated with the indicated entity.
      *
      * @param entityId The ID of the entity with which the configuration is associated.
+     * @param scope    The {@link Scope scope} of the specified entity ID.
      *
      * @return The tools associated with the indicated entity.
      */
@@ -237,7 +238,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      *
      * @return The updated configuration object.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      * @deprecated Call {@link #replaceConfig(String, String, String, String, String, Scope, String)} instead.
      */
     @Deprecated
@@ -257,7 +258,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      *
      * @return The updated configuration object.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      */
     Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Scope scope, String entityId) throws ConfigServiceException;
 
@@ -274,7 +275,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      *
      * @return The updated configuration object.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      */
     Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents) throws ConfigServiceException;
 
@@ -292,7 +293,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      *
      * @return The updated configuration object.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      * @deprecated Call {@link #replaceConfig(String, String, String, String, Boolean, String, Scope, String)} instead.
      */
     @Deprecated
@@ -313,7 +314,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      *
      * @return The updated configuration object.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      */
     Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Scope scope, String entityId) throws ConfigServiceException;
 
@@ -361,7 +362,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      * @param toolName    The name of the tool for which you wish to retrieve configurations.
      * @param path        The path for which you wish to retrieve configurations.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      */
     void enable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
 
@@ -374,7 +375,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      * @param path        The path for which you wish to retrieve configurations.
      * @param projectID   The project ID of the associated project.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      *
      * @deprecated Call {@link #enable(String, String, String, String, Scope, String)} instead.
      */
@@ -391,7 +392,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      * @param scope       The {@link Scope scope} of the specified entity ID.
      * @param entityId    The ID of the target entity. The ID is understood in relation to the scope.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      */
     void enable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
 
@@ -403,7 +404,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      * @param toolName    The name of the tool for which you wish to retrieve configurations.
      * @param path        The path for which you wish to retrieve configurations.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      */
     void disable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
 
@@ -416,7 +417,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      * @param path        The path for which you wish to retrieve configurations.
      * @param projectID   The project ID of the associated project.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      *
      * @deprecated Call {@link #disable(String, String, String, String, Scope, String)} instead.
      */
@@ -433,7 +434,7 @@ public interface ConfigService extends BaseHibernateService<Configuration> {
      * @param scope       The {@link Scope scope} of the specified entity ID.
      * @param entityId    The ID of the target entity. The ID is understood in relation to the scope.
      *
-     * @throws ConfigServiceException
+     * @throws ConfigServiceException When an error occurs accessing or updating the configuration service.
      */
     void disable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
 

@@ -26,6 +26,9 @@ import java.util.Properties;
 @Configuration
 @EnableTransactionManagement(proxyTargetClass = true)
 public class OrmConfig {
+
+    public static final String XNAT_ENTITIES_PACKAGES = "META-INF/xnat/entities/**/*-entity-packages.txt";
+
     @Bean
     public ImprovedNamingStrategy namingStrategy() {
         return new PrefixedTableNamingStrategy("xhbm");
@@ -61,7 +64,7 @@ public class OrmConfig {
     @Bean
     public LocalSessionFactoryBean sessionFactory(final Environment environment, final DataSource dataSource) throws NrgServiceException {
         try {
-            final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean();
+            final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean(XNAT_ENTITIES_PACKAGES);
             bean.setDataSource(dataSource);
             bean.setCacheRegionFactory(regionFactory(environment));
             bean.setHibernateProperties(hibernateProperties(environment).getObject());

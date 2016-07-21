@@ -13,16 +13,15 @@ package org.nrg.xnat.initialization.tasks;
 
 import org.nrg.mail.services.MailService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import javax.mail.MessagingException;
 import java.io.File;
 import java.sql.ResultSet;
@@ -33,52 +32,62 @@ import java.util.Map;
 
 @Component
 public class SystemPathVerification extends AbstractInitializingTask {
+    @Autowired
+    public SystemPathVerification(final JdbcTemplate template, final MailService mailService, final SiteConfigPreferences config, final XnatAppInfo appInfo) {
+        _template = template;
+        _mailService = mailService;
+        _config = config;
+        _appInfo = appInfo;
+    }
+
     @Override
     public String getTaskName() {
         return "System Path Verification";
     }
 
-    private final static ArrayList<String> pathErrors = new ArrayList<>();
-    public static String pathErrorWarning = null;
+    private final static ArrayList<String> pathErrors       = new ArrayList<>();
+    public static        String            pathErrorWarning = null;
 
     @Override
     public void run() {
-        try {
-            validatePath(_config.getArchivePath(), "Archive", true);
-            validatePath(_config.getCachePath(), "Archive", false);
-            validatePath(_config.getPipelinePath(), "Archive", false);
-            validatePath(_config.getPrearchivePath(), "Archive", false);
+        if (_appInfo.isInitialized()) {
+            try {
+                validatePath(_config.getArchivePath(), "Archive", true);
+                validatePath(_config.getCachePath(), "Archive", false);
+                validatePath(_config.getPipelinePath(), "Archive", false);
+                validatePath(_config.getPrearchivePath(), "Archive", false);
 
-            final ProjectExtractor pe = new ProjectExtractor();
-            final Map<String, String> projects = _template.query("SELECT id, name FROM xnat_projectdata", pe);
-            if(pathErrors.size() > 0) {
-                // Send warning email to admin and issue browser notification
-                notifyOfPathErrors(projects.size());
-            } else {
-                _config.setPathErrorWarning("");
+                final ProjectExtractor pe = new ProjectExtractor();
+                final Map<String, String> projects = _template.query("SELECT id, name FROM xnat_projectdata", pe);
+                if (pathErrors.size() > 0) {
+                    // Send warning email to admin and issue browser notification
+                    notifyOfPathErrors(projects.size());
+                } else {
+                    _config.setPathErrorWarning("");
+                }
+                complete();
+            } catch (SQLException e) {
+                logger.error("An error occurred trying to retrieve the values for the system paths.", e);
             }
-            complete();
-        } catch (Exception e) {
-            logger.error("", e);
         }
     }
 
     private boolean validatePath(final String path, final String displayName, final boolean checkForFiles) throws SQLException {
         File filePath = new File(path);
         if (!filePath.exists()) {
-            pathErrors.add(displayName+" path \""+path+"\" does not exist.");
+            pathErrors.add(displayName + " path \"" + path + "\" does not exist.");
             return false;
-        } else if (!filePath.isDirectory()){
-            pathErrors.add(displayName+" path \""+path+"\" is not a directory.");
+        } else if (!filePath.isDirectory()) {
+            pathErrors.add(displayName + " path \"" + path + "\" is not a directory.");
             return false;
         } else if (checkForFiles) {
             File[] files = filePath.listFiles();
             final String noFiles = displayName + " files do not exist under \"" + path + "\".";
-            if(files == null) {
+            if (files == null) {
                 pathErrors.add(noFiles);
                 return false;
             }
-            if(files.length < 1) {
+            if (files.length < 1) {
                 pathErrors.add(noFiles);
                 return false;
             }
@@ -98,12 +107,12 @@ public class SystemPathVerification extends AbstractInitializingTask {
     }
 
     private void notifyOfPathErrors(int numProjects) {
-        if(numProjects > 0) {
+        if (numProjects > 0) {
             int i = 1;
             String adminEmail = _config.getAdminEmail();
             String sysName = _config.getSiteId();
             String emailSubj = sysName + " " + this.getTaskName() + " Failure";
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             String singPlurl = " has";
             if (numProjects > 1) {
                 singPlurl = "s have";
@@ -117,8 +126,8 @@ public class SystemPathVerification extends AbstractInitializingTask {
                 sb.append(". ");
                 sb.append(err);
             }
-            _config.setPathErrorWarning(sb.toString().replace("\n","<br>"));
-            pathErrorWarning = sb.insert(0, emailSubj+": ").toString();
+            _config.setPathErrorWarning(sb.toString().replace("\n", "<br>"));
+            pathErrorWarning = sb.insert(0, emailSubj + ": ").toString();
             logger.error(pathErrorWarning);
             try {
                 _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, pathErrorWarning);
@@ -130,14 +139,8 @@ public class SystemPathVerification extends AbstractInitializingTask {
 
     private static Logger logger = LoggerFactory.getLogger(SystemPathVerification.class);
 
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
-
-    @Inject
-    private MailService _mailService;
-
-    @Autowired
-    @Lazy
-    private SiteConfigPreferences _config;
+    private final JdbcTemplate          _template;
+    private final MailService           _mailService;
+    private final SiteConfigPreferences _config;
+    private final XnatAppInfo           _appInfo;
 }

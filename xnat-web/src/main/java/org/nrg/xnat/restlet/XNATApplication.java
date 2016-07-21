@@ -366,22 +366,31 @@ public class XNATApplication extends Application {
      */
     @SuppressWarnings("unchecked")
     private List<Class<? extends Resource>> addExtensionRoutes(Router router) {
-        Set<String> packages = new HashSet<>();
+        final Set<String> packages = new HashSet<>();
         final Map<String, XnatRestletExtensions> pkgLists = XDAT.getContextService().getBeansOfType(XnatRestletExtensions.class);
+        if (pkgLists.size() == 0) {
+            final XnatRestletExtensions extensions = XDAT.getContextService().getBean("defaultXnatRestletExtensions", XnatRestletExtensions.class);
+            if (extensions != null) {
+                pkgLists.put("defaultXnatRestletExtensions", extensions);
+            }
+        }
         for (XnatRestletExtensions pkgList : pkgLists.values()) {
             packages.addAll(pkgList);
         }
+        if (packages.size() == 0) {
+            packages.add("org.nrg.xnat.restlet.extensions");
+        }
 
-        List<Class<? extends Resource>> classes = new ArrayList<>();
-        List<Class<? extends Resource>> publicClasses = new ArrayList<>();
+        final List<Class<? extends Resource>> classes = new ArrayList<>();
+        final List<Class<? extends Resource>> publicClasses = new ArrayList<>();
 
-        for (String pkg : packages) {
+        for (final String pkg : packages) {
             try {
                 final List<Class<?>> classesForPackage = Reflection.getClassesForPackage(pkg);
                 if (_log.isDebugEnabled()) {
                     _log.debug("Found " + classesForPackage.size() + " classes for package: " + pkg);
                 }
-                for (Class<?> clazz : classesForPackage) {
+                for (final Class<?> clazz : classesForPackage) {
                     if (Resource.class.isAssignableFrom(clazz)) {
                         if (_log.isDebugEnabled()) {
                             _log.debug("Found resource class: " + clazz.getName());

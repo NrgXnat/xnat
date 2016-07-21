@@ -98,7 +98,7 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public XnatRestletExtensions xnatRestletExtensions() {
+    public XnatRestletExtensions defaultXnatRestletExtensions() {
         return new XnatRestletExtensions(new HashSet<>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.extensions"})));
     }
 

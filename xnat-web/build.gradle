@@ -41,7 +41,7 @@ buildscript {
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.2"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.2.4"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.5.1"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.5.2"
     }
 }
 

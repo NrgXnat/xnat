@@ -69,15 +69,15 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class<?>[]{RootConfig.class};
+        final List<Class<?>> configClasses = new ArrayList<>();
+        configClasses.add(RootConfig.class);
+        configClasses.addAll(getPluginConfigs());
+        return configClasses.toArray(new Class[configClasses.size()]);
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        final List<Class<?>> configClasses = new ArrayList<>();
-        // configClasses.add(ApplicationConfig.class);
-        configClasses.addAll(getPluginConfigs());
-        return configClasses.toArray(new Class[configClasses.size()]);
+        return new Class[0];
     }
 
     @Override
@@ -117,12 +117,19 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final List<Class<?>> configs = new ArrayList<>();
         try {
             for (final XnatPluginBean plugin : XnatPluginBean.findAllXnatPluginBeans()) {
+                if (_log.isInfoEnabled()) {
+                    _log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
+                }
                 configs.add(Class.forName(plugin.getPluginClass()));
             }
         } catch (IOException e) {
             throw new RuntimeException("An error occurred trying to locate XNAT plugin definitions.");
         } catch (ClassNotFoundException e) {
             _log.error("Did not find a class specified in a plugin definition.", e);
+        }
+
+        if (_log.isInfoEnabled()) {
+            _log.info("Found a total of {} plugins", configs.size());
         }
 
         return configs;

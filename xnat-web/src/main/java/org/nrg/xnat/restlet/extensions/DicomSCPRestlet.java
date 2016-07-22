@@ -14,6 +14,7 @@ package org.nrg.xnat.restlet.extensions;
 import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.DicomSCPManager;
+import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
@@ -150,7 +151,11 @@ public class DicomSCPRestlet extends SecureResource {
             if (_scpId == null) {
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to enable.");
             } else {
-                _dicomSCPManager.enableDicomSCP(_scpId);
+                try {
+                    _dicomSCPManager.enableDicomSCP(_scpId);
+                } catch (EnabledDICOMReceiverWithDuplicatePortException e) {
+                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "There is already another DICOM SCP instance enabled with the same port: " + e.getExisting().toString());
+                }
                 returnDefaultRepresentation();
             }
         } else if (_action.equalsIgnoreCase("disable")) {

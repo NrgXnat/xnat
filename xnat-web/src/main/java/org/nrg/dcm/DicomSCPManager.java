@@ -10,6 +10,7 @@
  */
 package org.nrg.dcm;
 
+import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.dcm.preferences.DicomSCPPreference;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -25,7 +26,6 @@ import java.io.IOException;
 import java.util.*;
 
 public class DicomSCPManager {
-
     @Autowired
     public DicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences) {
         _dicomScpPreferences = dicomScpPreferences;
@@ -38,25 +38,17 @@ public class DicomSCPManager {
         stopDicomSCPs();
     }
 
-    public DicomSCP create(final DicomSCPInstance instance) throws NrgServiceException {
-        final DicomSCPInstance atPort = _dicomScpPreferences.getDicomSCPAtPort(instance.getPort());
-        if (atPort != null) {
-            throw new NrgServiceException(NrgServiceError.AlreadyInitialized, "Unable to create DICOM SCP [" + instance.toString() + "]: there is an existing enabled receiver already using the same port.");
-        }
+    public DicomSCP create(final DicomSCPInstance instance) throws IOException, EnabledDICOMReceiverWithDuplicatePortException {
         instance.setId(getNextKey());
-        try {
-            _dicomScpPreferences.setDicomSCPInstance(instance);
-            if (_log.isDebugEnabled()) {
-                _log.debug("Created new DICOM SCP: " + instance.toString());
-            }
-            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(instance.getId());
-            if (instance.isEnabled()) {
-                dicomSCP.start();
-            }
-            return dicomSCP;
-        } catch (IOException e) {
-            throw new NrgServiceException(NrgServiceError.Unknown, "Unable to create DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
+        _dicomScpPreferences.setDicomSCPInstance(instance);
+        if (_log.isDebugEnabled()) {
+            _log.debug("Created new DICOM SCP: " + instance.toString());
         }
+        final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(instance.getId());
+        if (instance.isEnabled()) {
+            dicomSCP.start();
+        }
+        return dicomSCP;
     }
 
     public void delete(final int id) throws NrgServiceException {
@@ -69,11 +61,27 @@ public class DicomSCPManager {
         _dicomScpPreferences.deleteDicomSCPInstance(id);
     }
 
+    public boolean hasDicomSCP(final int id) {
+        return _dicomScpPreferences.hasDicomSCPInstance(id);
+    }
+
+    public Map<DicomSCP, Boolean> areDicomSCPsStarted() {
+        final Map<DicomSCP, Boolean> statuses = new HashMap<>();
+        for (final DicomSCP dicomSCP : _dicomScpPreferences.getDicomSCPs()) {
+            statuses.put(dicomSCP, dicomSCP.isStarted());
+        }
+        return statuses;
+    }
+
     public List<DicomSCPInstance> getDicomSCPInstances() {
         return new ArrayList<>(_dicomScpPreferences.getDicomSCPInstances().values());
     }
 
-    public void setDicomSCPInstance(final DicomSCPInstance instance) {
+    public DicomSCPInstance getDicomSCPInstance(final int id) {
+        return _dicomScpPreferences.getDicomSCPInstance(id);
+    }
+
+    public void setDicomSCPInstance(final DicomSCPInstance instance) throws EnabledDICOMReceiverWithDuplicatePortException {
         try {
             _dicomScpPreferences.setDicomSCPInstance(instance);
         } catch (IOException e) {
@@ -90,21 +98,41 @@ public class DicomSCPManager {
         final List<DicomSCP> started = new ArrayList<>();
         for (final DicomSCPInstance instance : _dicomScpPreferences.getDicomSCPInstances().values()) {
             if (instance.isEnabled()) {
-                started.add(startDicomSCP(instance));
+                final DicomSCP dicomSCP = startDicomSCP(instance);
+                if (dicomSCP != null) {
+                    started.add(dicomSCP);
+                }
             }
         }
         return started;
     }
 
-    public void startDicomSCP(final int id) {
-        startDicomSCP(_dicomScpPreferences.getDicomSCPInstance(id));
+    public DicomSCP startDicomSCP(final int id) {
+        final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(id);
+        if (instance == null) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UnknownEntity, "Couldn't find the DICOM SCP instance identified by " + id);
+        }
+        return startDicomSCP(instance);
+    }
+
+    public DicomSCP startDicomSCP(final DicomSCPInstance instance) {
+        try {
+            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(instance.getId());
+            if (!dicomSCP.isStarted()) {
+                dicomSCP.start();
+                return dicomSCP;
+            }
+            return null;
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to start DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
+        }
     }
 
     public List<DicomSCP> stopDicomSCPs() {
         final List<DicomSCP> stopped = new ArrayList<>();
-        for (final DicomSCP dicomSCP : _dicomScpPreferences.getDicomSCPs()) {
-            if (dicomSCP.isStarted()) {
-                dicomSCP.stop();
+        for (final DicomSCPInstance instance : _dicomScpPreferences.getDicomSCPInstances().values()) {
+            final DicomSCP dicomSCP = stopDicomSCP(instance);
+            if (dicomSCP != null) {
                 stopped.add(dicomSCP);
             }
         }
@@ -116,19 +144,25 @@ public class DicomSCPManager {
         if (instance == null) {
             throw new NrgServiceRuntimeException(NrgServiceError.UnknownEntity, "Couldn't find the DICOM SCP instance identified by " + id);
         }
+        stopDicomSCP(instance);
+    }
+
+    public DicomSCP stopDicomSCP(final DicomSCPInstance instance) {
         try {
-            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(id);
+            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(instance.getId());
             if (dicomSCP != null) {
                 if (dicomSCP.isStarted()) {
                     dicomSCP.stop();
+                    return dicomSCP;
                 }
             }
+            return null;
         } catch (IOException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to stop DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
         }
     }
 
-    public void enableDicomSCP(final int id) {
+    public void enableDicomSCP(final int id) throws EnabledDICOMReceiverWithDuplicatePortException {
         final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(id);
         try {
             if (!instance.isEnabled()) {
@@ -157,34 +191,13 @@ public class DicomSCPManager {
             }
         } catch (IOException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to disable DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
+        } catch (EnabledDICOMReceiverWithDuplicatePortException ignored) {
+            // We can ignore this: the exception comes when an enabled instance is inserted with the same port as
+            // another enabled instance. Since we're explicitly disabling this instance, we won't actually get this
+            // error.
         }
     }
 
-    public Map<DicomSCP, Boolean> areDicomSCPsStarted() {
-        final Map<DicomSCP, Boolean> statuses = new HashMap<>();
-        for (final DicomSCP dicomSCP : _dicomScpPreferences.getDicomSCPs()) {
-            statuses.put(dicomSCP, dicomSCP.isStarted());
-        }
-        return statuses;
-    }
-
-    public boolean hasDicomSCP(final int id) {
-        return _dicomScpPreferences.hasDicomSCPInstance(id);
-    }
-
-    public DicomSCPInstance getDicomSCPInstance(final int id) {
-        return _dicomScpPreferences.getDicomSCPInstance(id);
-    }
-
-    private DicomSCP startDicomSCP(final DicomSCPInstance instance) {
-        try {
-            final DicomSCP dicomSCP = _dicomScpPreferences.getDicomSCP(instance.getId());
-            dicomSCP.start();
-            return dicomSCP;
-        } catch (IOException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to start DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
-        }
-    }
 
     private int getNextKey() {
         final Set<String> keys = _dicomScpPreferences.getDicomSCPInstances().keySet();

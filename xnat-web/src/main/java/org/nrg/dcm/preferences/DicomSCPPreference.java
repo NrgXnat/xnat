@@ -3,6 +3,7 @@ package org.nrg.dcm.preferences;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.DicomSCP;
+import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.annotations.NrgPreference;
@@ -76,9 +77,18 @@ public class DicomSCPPreference extends AbstractPreferenceBean {
         return getDicomSCPInstances().get(Integer.toString(id));
     }
 
-    public void setDicomSCPInstance(final DicomSCPInstance instance) throws IOException {
+    public void setDicomSCPInstance(final DicomSCPInstance instance) throws IOException, EnabledDICOMReceiverWithDuplicatePortException {
         final int id = instance.getId();
-        deleteDicomSCP(id);
+
+        final DicomSCPInstance atPort = getDicomSCPAtPort(instance.getPort());
+        if (atPort != null && atPort.getId() != id) {
+            throw new EnabledDICOMReceiverWithDuplicatePortException(atPort, instance);
+        }
+
+        if (hasDicomSCPInstance(id)) {
+            deleteDicomSCP(id);
+        }
+
         try {
             set(serialize(instance), PREF_ID, Integer.toString(id));
         } catch (InvalidPreferenceName invalidPreferenceName) {

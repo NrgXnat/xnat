@@ -1173,11 +1173,10 @@ dicomScpReceivers:
                     contentType: json
                     contents:
                         scpId:
-                            kind: panel.input.text
+                            kind: panel.input.hidden
                             id: scp-id
-                            name: scpId
-                            label: SCP ID
-                            validation: required
+                            name: id
+                            className: hidden
                         aeTitle:
                             kind: panel.input.text
                             id: scp-title

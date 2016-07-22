@@ -229,7 +229,7 @@ var XNAT = getObject(XNAT || {});
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
-                    dicomScpManager.dialog(item);
+                    dicomScpManager.dialog(item, false);
                 }
             }, [['b', text]]);
         }
@@ -238,7 +238,7 @@ var XNAT = getObject(XNAT || {});
             return spawn('button.btn.sm.edit', {
                 onclick: function(e){
                     e.preventDefault();
-                    dicomScpManager.dialog(item);
+                    dicomScpManager.dialog(item, false);
                 }
             }, 'Edit');
         }
@@ -258,7 +258,7 @@ var XNAT = getObject(XNAT || {});
                                 url: scpUrl(item.id),
                                 success: function(){
                                     console.log('"'+ item.aeTitle + '" deleted');
-                                    XNAT.ui.banner.top(2000, '<b>"'+ item.aeTitle + '"</b> deleted.', 'success');
+                                    XNAT.ui.banner.top(1000, '<b>"'+ item.aeTitle + '"</b> deleted.', 'success');
                                     refreshTable();
                                 }
                             });

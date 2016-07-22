@@ -746,12 +746,13 @@ var XNAT = getObject(XNAT || {});
         opts.type = 'hidden';
         opts.element = extend(true, {
             type: 'hidden',
-            className: opts.className || opts.classes,
-            addClass: 'hidden',
+            className: opts.className || opts.classes || '',
             name: opts.name,
             id: opts.id || toDashed(opts.name),
             value: opts.value || ''
         }, opts.element);
+
+        addClassName(opts.element, 'hidden');
 
         if (opts.validation || opts.validate) {
             extend(true, opts.element, {

@@ -105,6 +105,7 @@ var XNAT = getObject(XNAT || {});
     dicomScpManager.dialog = function(item, isNew){
         var tmpl = $('#dicom-scp-editor-template');
         var doWhat = !item ? 'New' : 'Edit';
+        var oldPort = item && item.port ? item.port : null;
         isNew = firstDefined(isNew, doWhat === 'New');
         console.log(isNew);
         item = item || {};
@@ -148,17 +149,18 @@ var XNAT = getObject(XNAT || {});
                             }
                         });
 
-                        var portNumber = $port.val();
+                        var newPort = $port.val();
 
-                        console.log(portNumber);
+                        console.log(newPort);
 
-                        if (isNew){
-                            dicomScpManager.usedPorts.forEach(function(port){
-                                if (port+'' === portNumber+''){
+                        // only check for port conflicts if we're changing the port
+                        if (newPort+'' !== oldPort+''){
+                            dicomScpManager.usedPorts.forEach(function(usedPort){
+                                if (usedPort+'' === newPort+''){
                                     errors++;
-                                    errorMsg += '<li>Port <b>' + portNumber + '</b> is already in use. Please use another port number.</li>';
+                                    errorMsg += '<li>Port <b>' + newPort + '</b> is already in use. Please use another port number.</li>';
                                     $port.addClass('invalid');
-                                return false;
+                                    return false;
                                 }
                             });
                         }

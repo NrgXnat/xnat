@@ -102,7 +102,7 @@ var XNAT = getObject(XNAT);
         _templ = [
             'div|data-name='+(opts.name||''),
             { className: opts.className },
-            content
+            [].concat(content, spawn('br.clear'))
         ];
         _spawn = function(){
             return spawn.apply(null, _templ);
@@ -262,6 +262,7 @@ var XNAT = getObject(XNAT);
             
             // add a class for easy selection
             addClassName(element, 'controller');
+            addClassName(opts, 'controller');
 
             // add the hidden input
             inner.push(hiddenInput);

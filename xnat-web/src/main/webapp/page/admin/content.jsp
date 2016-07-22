@@ -45,6 +45,9 @@
                 <c:import url="/xapi/siteConfig" var="siteConfig"/>
                 <c:import url="/xapi/notifications" var="notifications"/>
 
+                <script src="${sessionScope.siteRoot}/scripts/lib/ace/ace.js"></script>
+                <script src="${sessionScope.siteRoot}/scripts/xnat/app/codeEditor.js"></script>
+
                 <script>
                     (function(){
 

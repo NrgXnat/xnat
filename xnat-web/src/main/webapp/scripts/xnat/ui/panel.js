@@ -629,6 +629,9 @@ var XNAT = getObject(XNAT || {});
             _inner.push(['div.description', opts.description||opts.body||opts.html]);
         }
 
+        // add element to clear floats
+        _inner.push(['br.clear']);
+
         _element = spawn('div', opts.element, _inner);
 
         return {
@@ -684,12 +687,12 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
-
-    panel.input = {};
-
+    
     panel.display = function(opts){
         return XNAT.ui.template.panelDisplay(opts).spawned;
     };
+
+    panel.input = {};
 
     panel.input.text = function(opts){
         return XNAT.ui.template.panelInput(opts).spawned;
@@ -698,35 +701,75 @@ var XNAT = getObject(XNAT || {});
     panel.input.number = function panelInputNumber(opts){
         opts = cloneObject(opts);
         opts.type = 'number';
+        addClassName(opts, 'input-text number');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.email = function panelInputEmail(opts){
         opts = cloneObject(opts);
         opts.type = 'text';
-        addClassName(opts, 'email');
+        addClassName(opts, 'input-text email');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.password = function panelInputPassword(opts){
         opts = cloneObject(opts);
         opts.type = 'password';
-        addClassName(opts, 'password');
+        addClassName(opts, 'input-text password');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.date = function panelInputDate(opts){
         opts = cloneObject(opts);
         opts.type = 'date';
-        addClassName(opts, 'date');
+        addClassName(opts, 'input-text date');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.checkbox = function panelInputCheckbox(opts){
         opts = cloneObject(opts);
         opts.type = 'checkbox';
+        addClassName(opts, 'checkbox');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
+
+    panel.input.radio = function panelInputCheckbox(opts){
+        opts = cloneObject(opts);
+        opts.type = 'radio';
+        addClassName(opts, 'radio');
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+
+
+    panel.input.hidden = function panelInputHidden(opts){
+        opts = cloneObject(opts);
+        opts.type = 'hidden';
+        opts.element = extend(true, {
+            type: 'hidden',
+            className: opts.className || opts.classes,
+            addClass: 'hidden',
+            name: opts.name,
+            id: opts.id || toDashed(opts.name),
+            value: opts.value || ''
+        }, opts.element);
+
+        if (opts.validation || opts.validate) {
+            extend(true, opts.element, {
+                data: {
+                    validate: opts.validation || opts.validate
+                }
+            })
+        }
+
+        return spawn('input', opts.element);
+    };
+
+
+    // add event handlers for setting values of
+    // hidden inputs controlled by checkboxes
+    // $('body').on('change', 'input.checkbox.controller', function(){
+    //     $(this).next('input.hidden').val(this.checked);
+    // });
 
     panel.input.upload = function panelInputUpload(opts){
         opts = cloneObject(opts);
@@ -780,8 +823,22 @@ var XNAT = getObject(XNAT || {});
             opts.html || '';
     
         opts.element.html = lookupValue(opts.element.html);
+        opts.element.title = 'Double-click to open in code editor.';
 
-        opts.element.rows = 6;
+        if (opts.code || opts.codeLanguage) {
+            opts.code = opts.code || opts.codeLanguage;
+            addDataObjects(opts.element, {
+                codeLanguage: opts.code
+            });
+        }
+
+        // open code editor on double-click
+        opts.element.ondblclick = function(){
+            var panelTextarea = XNAT.app.codeEditor.init(this, { language: opts.code || 'html' });
+            panelTextarea.openEditor();
+        };
+
+        opts.element.rows = 10;
         
         var textarea = spawn('textarea', opts.element);
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
@@ -845,16 +902,19 @@ var XNAT = getObject(XNAT || {});
     
     panel.dataTable = function(opts){
 
+        opts = cloneObject(opts);
+
         // initialize the table
         var dataTable = XNAT.table.dataTable(opts.data||[], opts);
 
-        return {
-            element: dataTable.table,
-            spawned: dataTable.table,
-            get: function(){
-                return dataTable.table
-            }
-        };
+        var panelElement = panel.element({
+            label: opts.label,
+            description: opts.description
+        });
+
+        panelElement.target.appendChild(dataTable.table);
+
+        return panelElement;
         
     };
 
@@ -1267,3 +1327,4 @@ var XNAT = getObject(XNAT || {});
     });
 
 })(XNAT, jQuery, window);
+

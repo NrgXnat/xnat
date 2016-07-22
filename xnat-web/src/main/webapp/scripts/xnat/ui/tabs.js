@@ -32,6 +32,9 @@ var XNAT = getObject(XNAT || {});
         getObject(XNAT.page || {});
 
 
+    // by default there are no groups
+    tabs.hasGroups = false;
+
     // ==================================================
     // SET UP ONE TAB GROUP
     // add a single tab group to the groups
@@ -134,7 +137,7 @@ var XNAT = getObject(XNAT || {});
             groupId = toDashed(obj.group||'other');
             // un-hide the group that this tab is in
             // (groups are hidden until there is a tab for them)
-            $group = $('#' + groupId + '.tab-group');
+            $group = $$(tabs.navTabs).find('#' + groupId + '.tab-group');
         }
         else {
             $group = $$(tabs.navTabs).find('ul.tab-group').first();

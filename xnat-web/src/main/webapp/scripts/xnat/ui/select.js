@@ -26,10 +26,11 @@ var XNAT = getObject(XNAT);
     select = getObject(XNAT.ui.select || {});
 
     function addOption(el, opt){
-        el.appendChild(spawn('option', {
+        el.appendChild(spawn('option', extend(true, {
             value: opt.value || '',
-            html: opt.html || opt.text || opt.value
-        }));
+            html: opt.html || opt.text || opt.value,
+            selected: opt.selected || false
+        }, opt.element )));
     }
     
     // generate JUST the options
@@ -40,6 +41,7 @@ var XNAT = getObject(XNAT);
         });      
     };
     
+    
     // ========================================
     // MAIN FUNCTION
     select.menu = function(config){
@@ -47,7 +49,7 @@ var XNAT = getObject(XNAT);
         var frag = document.createDocumentFragment(),
             menu, label;
 
-        config = getObject(config);
+        config = cloneObject(config);
 
         // show the label on the left by default
         config.layout = config.layout || 'left';
@@ -61,7 +63,7 @@ var XNAT = getObject(XNAT);
 
         menu = spawn('select', config.element);
 
-        addOption(menu, { html: 'Select' });
+        addOption(menu, { html: 'Select...' });
         
         if (config.options){
             if (Array.isArray(config.options)) {
@@ -121,11 +123,18 @@ var XNAT = getObject(XNAT);
     
     
     select.multiple = function(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.element = opts.element || {};
         opts.element.multiple = true;
         return select.menu(opts);
     };
+
+
+    // load data and add it to a container
+    //select.loadMenu = function(opts){
+    //
+    //};
+    
     
     // this script has loaded
     select.loaded = true;

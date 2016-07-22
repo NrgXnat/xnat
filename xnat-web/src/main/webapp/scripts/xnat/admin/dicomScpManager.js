@@ -52,7 +52,12 @@ var XNAT = getObject(XNAT || {});
             }
         })
     }
-    
+
+    function scpUrl(appended){
+        appended = isDefined(appended) ? '/' + appended : '';
+        return rootUrl('/xapi/dicomscp' + appended);
+    }
+
     // keep track of used ports to help prevent port conflicts
     dicomScpManager.usedPorts = [];
 
@@ -65,14 +70,14 @@ var XNAT = getObject(XNAT || {});
         dicomScpManager.usedPorts = [];
         dicomScpManager.ids = [];
         return XNAT.xhr.get({
-            url: rootUrl('/xapi/dicomscp'),
+            url: scpUrl(),
             dataType: 'json',
             success: function(data){
                 dicomScpManager.receivers = data;
                 // refresh the 'usedPorts' array every time this function is called
                 data.forEach(function(item){
                     dicomScpManager.usedPorts.push(item.port);
-                    dicomScpManager.ids.push(item.scpId);
+                    dicomScpManager.ids.push(item.id);
                 });
                 callback.apply(this, arguments);
             }
@@ -83,7 +88,7 @@ var XNAT = getObject(XNAT || {});
         if (!id) return null;
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
-            url: rootUrl('/xapi/dicomscp/' + id),
+            url: scpUrl(id),
             dataType: 'json',
             success: callback
         });
@@ -97,52 +102,44 @@ var XNAT = getObject(XNAT || {});
     };
 
     // dialog to create/edit receivers
-    dicomScpManager.dialog = function(item, opts){
+    dicomScpManager.dialog = function(item, isNew){
         var tmpl = $('#dicom-scp-editor-template');
         var doWhat = !item ? 'New' : 'Edit';
-        var isNew = doWhat === 'New';
+        isNew = firstDefined(isNew, doWhat === 'New');
+        console.log(isNew);
         item = item || {};
         xmodal.open({
             title: doWhat + ' DICOM SCP Receiver',
             template: tmpl.clone(),
-            height: 400,
+            width: 350,
+            height: 300,
+            scroll: false,
             padding: '0',
             beforeShow: function(obj){
                 var $form = obj.$modal.find('#dicom-scp-editor-panel');
-                if (item && item.scpId) {
-                    // check the 'enabled' checkbox for new items
+                if (item && isDefined(item.id)) {
                     $form.setValues(item);
-                    // forOwn(item, function(prop, val){
-                    //     $form.find('[name="'+prop+'"]').val(val);
-                    // });
                 }
-                //if (isNew) {
-                //    $form.find('#scp-enabled').prop('checked', true);
-                //    // $$('?enabled')[0].checked = true;
-                //}
             },
             okClose: false,
             okLabel: 'Save',
             okAction: function(obj){
                 // the form panel is 'dicomScpEditorTemplate' in site-admin-element.yaml
                 var $form = obj.$modal.find('#dicom-scp-editor-panel');
-                var id = $form.find('#scp-id').val();
-                if (!id) {
-                    xmodal.message('SCP ID is required');
-                    return false;
-                }
+                var $title = $form.find('#scp-title');
+                var $port = $form.find('#scp-port');
+                console.log(item.id);
                 $form.submitJSON({
-                    method: 'PUT',
-                    url: '/xapi/dicomscp/' + id,
+                    method: isNew ? 'POST' : 'PUT',
+                    url: isNew ? scpUrl() : scpUrl(item.id),
                     validate: function(){
+
                         $form.find(':input').removeClass('invalid');
-                        var $id = $form.find('#scp-id');
-                        var $port = $form.find('#scp-port');
-                        var $title = $form.find('#scp-title');
+
                         var errors = 0;
                         var errorMsg = 'Errors were found with the following fields: <ul>';
 
-                        [$id, $port, $title].forEach(function($el){
+                        [$port, $title].forEach(function($el){
                             var el = $el[0];
                             if (!el.value) {
                                 errors++;
@@ -151,23 +148,25 @@ var XNAT = getObject(XNAT || {});
                             }
                         });
 
-                        if (isNew) {
-                            if (dicomScpManager.ids.indexOf($id.val()) > -1) {
-                                errors++;
-                                errorMsg += '<li><b>SCP ID</b> already exists. Please use a different ID value.</li>';
-                                $id.addClass('invalid');
-                            }
-                            if (dicomScpManager.usedPorts.indexOf($port.val()) > -1) {
-                                errors++;
-                                errorMsg += '<li><b>Port</b> is already in use. Please use another port number.</li>';
-                                $port.addClass('invalid');
-                            }
+                        var portNumber = $port.val();
+
+                        console.log(portNumber);
+
+                        if (isNew){
+                            dicomScpManager.usedPorts.forEach(function(port){
+                                if (port+'' === portNumber+''){
+                                    errors++;
+                                    errorMsg += '<li>Port <b>' + portNumber + '</b> is already in use. Please use another port number.</li>';
+                                    $port.addClass('invalid');
+                                return false;
+                                }
+                            });
                         }
 
                         errorMsg += '</ul>';
 
                         if (errors > 0) {
-                            xmodal.message('Errors Found', errorMsg);
+                            xmodal.message('Errors Found', errorMsg, { height: 300 });
                         }
 
                         return errors === 0;
@@ -199,10 +198,8 @@ var XNAT = getObject(XNAT || {});
         // add table header row
         scpTable.tr()
                 .th({ addClass: 'left', html: '<b>AE Title</b>' })
-                .th({ addClass: 'left', html: '<b>SCP ID</b>' })
                 .th('<b>Port</b>')
                 .th('<b>Enabled</b>')
-                //.th('<b>Default?</b>')  // if this is enabled, enable the radio button(s) too (below)
                 .th('<b>Actions</b>');
 
         // TODO: move event listeners to parent elements - events will bubble up
@@ -216,9 +213,11 @@ var XNAT = getObject(XNAT || {});
                         // save the status when clicked
                         var enabled = this.checked;
                         XNAT.xhr.put({
-                            url: rootUrl('/xapi/dicomscp/' + item.scpId + '/enabled/' + enabled),
+                            url: scpUrl(item.id + '/enabled/' + enabled),
                             success: function(){
-                                console.log(item.scpId + (enabled ? ' enabled' : ' disabled'))
+                                var status = (enabled ? ' enabled' : ' disabled');
+                                XNAT.ui.banner.top(1000, '<b>' + item.aeTitle + '</b> ' + status, 'success');
+                                console.log(item.id + (enabled ? ' enabled' : ' disabled'))
                             }
                         });
                     }
@@ -235,19 +234,31 @@ var XNAT = getObject(XNAT || {});
             }, [['b', text]]);
         }
 
+        function editButton(item) {
+            return spawn('button.btn.sm.edit', {
+                onclick: function(e){
+                    e.preventDefault();
+                    dicomScpManager.dialog(item);
+                }
+            }, 'Edit');
+        }
+
         function deleteButton(item){
             return spawn('button.btn.sm.delete', {
                 onclick: function(){
                     xmodal.confirm({
+                        height: 220,
+                        scroll: false,
                         content: "" +
-                        "<p>Are you sure you'd like to delete the '" + item.aeTitle + "' DICOM Receiver?</p>" +
+                        "<p>Are you sure you'd like to delete the '<b>" + item.aeTitle + "</b>' DICOM Receiver?</p>" +
                         "<p><b>This action cannot be undone.</b></p>",
                         okAction: function(){
+                            console.log('delete id ' + item.id);
                             XNAT.xhr.delete({
-                                url: rootUrl('/xapi/dicomscp/' + item.scpId),
+                                url: scpUrl(item.id),
                                 success: function(){
-                                    console.log('"'+ item.scpId + '" deleted');
-                                    XNAT.ui.banner.top(2000, '<b>"'+ item.scpId + '"</b> deleted.', 'success');
+                                    console.log('"'+ item.aeTitle + '" deleted');
+                                    XNAT.ui.banner.top(2000, '<b>"'+ item.aeTitle + '"</b> deleted.', 'success');
                                     refreshTable();
                                 }
                             });
@@ -259,19 +270,11 @@ var XNAT = getObject(XNAT || {});
         
         dicomScpManager.getAll().done(function(data){
             data.forEach(function(item){
-                scpTable.tr({title:item.scpId})
+                scpTable.tr({ title: item.aeTitle, data: { id: item.id, port: item.port }})
                         .td([editLink(item, item.aeTitle)])
-                        .td(item.scpId)
                         .td([['div.mono.center', item.port]])
                         .td([enabledCheckbox(item)])
-                        .td([['div.center', [deleteButton(item)]]]);
-                // scpTable.row([
-                //     item.aeTitle,
-                //     [['div.mono.center', item.port]],
-                //     [enabledCheckbox(item)],
-                //     //[['div.center', [['input|type=radio;name=defaultReceiver']] ]], // how do we know which one is 'default'
-                //     [['div.center', [editButton(item), spacer(10), deleteButton(item)]]]
-                // ]);
+                        .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });
 
             if (container){
@@ -287,7 +290,6 @@ var XNAT = getObject(XNAT || {});
         dicomScpManager.$table = $(scpTable.table);
         
         return scpTable.table;
-
     };
 
     dicomScpManager.init = function(container){
@@ -302,7 +304,7 @@ var XNAT = getObject(XNAT || {});
         var newReceiver = spawn('button.new-dicomscp-receiver.btn.btn-sm.submit', {
             html: 'New DICOM SCP Receiver',
             onclick: function(){
-                dicomScpManager.dialog();
+                dicomScpManager.dialog(null, true);
             }
         });
 
@@ -310,7 +312,7 @@ var XNAT = getObject(XNAT || {});
             html: 'Start All',
             onclick: function(){
                 XNAT.xhr.put({
-                    url: XNAT.url.rootUrl('/xapi/dicomscp/start'),
+                    url: scpUrl('start'),
                     success: function(){
                         console.log('DICOM SCP Receivers started')
                     }
@@ -322,7 +324,7 @@ var XNAT = getObject(XNAT || {});
             html: 'Stop All',
             onclick: function(){
                 XNAT.xhr.put({
-                    url: XNAT.url.rootUrl('/xapi/dicomscp/stop'),
+                    url: scpUrl('stop'),
                     success: function(){
                         console.log('DICOM SCP Receivers stopped')
                     }
@@ -354,8 +356,8 @@ var XNAT = getObject(XNAT || {});
             dicomScpManager.$container.prepend(table);
         });
     }
-    dicomScpManager.refresh = refreshTable;
 
+    dicomScpManager.refresh = refreshTable;
 
     dicomScpManager.init();
 

@@ -12,14 +12,19 @@
 
 package org.nrg.xnat.restlet;
 
+import org.springframework.stereotype.Component;
+
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-public class XnatRestletExtensions {
-    public XnatRestletExtensions(final Set<String> packages) {
-        super();
-        _packages.addAll(packages);
+@Component
+public class XnatRestletExtensionsBean {
+    public XnatRestletExtensionsBean(final List<XnatRestletExtensions> extensions) {
+        for (final XnatRestletExtensions extension : extensions) {
+            _packages.addAll(extension.getPackages());
+        }
     }
 
     public int size() {

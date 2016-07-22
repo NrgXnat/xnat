@@ -46,10 +46,10 @@ public class XNATApplication extends Application {
     public static final String PREARC_PROJECT_URI = "/prearchive/projects/{PROJECT_ID}";
     public static final String PREARC_SESSION_URI = PREARC_PROJECT_URI + "/{SESSION_TIMESTAMP}/{SESSION_LABEL}";
 
+    @SuppressWarnings("WeakerAccess")
     @JsonIgnore
     public XNATApplication(Context parentContext) {
         super(parentContext);
-
     }
 
     @Override
@@ -364,18 +364,17 @@ public class XNATApplication extends Application {
      * @param router The URL router for the restlet servlet.
      * @return A list of classes that should be attached unprotected, i.e. publicly accessible.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "Duplicates"})
     private List<Class<? extends Resource>> addExtensionRoutes(Router router) {
-        final Set<String> packages = new HashSet<>();
-        final Map<String, XnatRestletExtensions> pkgLists = XDAT.getContextService().getBeansOfType(XnatRestletExtensions.class);
-        if (pkgLists.size() == 0) {
-            final XnatRestletExtensions extensions = XDAT.getContextService().getBean("defaultXnatRestletExtensions", XnatRestletExtensions.class);
-            if (extensions != null) {
-                pkgLists.put("defaultXnatRestletExtensions", extensions);
+        final Set<String>               packages   = new HashSet<>();
+        final XnatRestletExtensionsBean extensions = XDAT.getContextService().getBean(XnatRestletExtensionsBean.class);
+        if (extensions.size() > 0) {
+            packages.addAll(extensions.getPackages());
+        } else {
+            final XnatRestletExtensions extension = XDAT.getContextService().getBean("defaultXnatRestletExtensions", XnatRestletExtensions.class);
+            if (extension != null) {
+                packages.addAll(extension.getPackages());
             }
-        }
-        for (XnatRestletExtensions pkgList : pkgLists.values()) {
-            packages.addAll(pkgList);
         }
         if (packages.size() == 0) {
             packages.add("org.nrg.xnat.restlet.extensions");

@@ -14,7 +14,9 @@ import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
 import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
+import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
+import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.utils.XnatUserProvider;
@@ -98,8 +100,18 @@ public class ApplicationConfig {
     }
 
     @Bean
+    public XnatRestletExtensionsBean xnatRestletExtensionsBean(final List<XnatRestletExtensions> extensions) {
+        return new XnatRestletExtensionsBean(extensions);
+    }
+
+    @Bean
     public XnatRestletExtensions defaultXnatRestletExtensions() {
         return new XnatRestletExtensions(new HashSet<>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.extensions"})));
+    }
+
+    @Bean
+    public XnatRestletExtensions extraXnatRestletExtensions() {
+        return new XnatRestletExtensions(new HashSet<>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.actions"})));
     }
 
     @Bean

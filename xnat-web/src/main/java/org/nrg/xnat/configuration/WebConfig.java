@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
@@ -59,8 +59,8 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public MessageSource messageSource() {
-        return new ResourceBundleMessageSource() {{
-            setBasename("org/nrg/xnat/messages/system.properties");
+        return new ReloadableResourceBundleMessageSource() {{
+            setBasename("classpath:org/nrg/xnat/messages/system");
         }};
     }
 
@@ -71,6 +71,8 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     }
 
     private ApiInfo apiInfo() {
+        // TODO: The deprecated class is ApiInfo(). There's no documentation on how to use the replacement Contact class instead, so migrate this when that's explained.
+        //noinspection deprecation
         return new ApiInfo("XNAT REST API", "The XNAT REST API (XAPI) functions provide access to XNAT internal functions for remote clients.", "1.7.0", "http://www.xnat.org", "info@xnat.org", "Simplified 2-Clause BSD", "API license URL");
     }
 

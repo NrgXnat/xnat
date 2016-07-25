@@ -70,7 +70,7 @@ public class EventHandlerApi extends AbstractXapiRestController {
      *
      * @return the response entity
      */
-    @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = List.class)
+    @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = EventClassInfo.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/projects/{project_id}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
@@ -92,7 +92,7 @@ public class EventHandlerApi extends AbstractXapiRestController {
      *
      * @return the response entity
      */
-    @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = List.class)
+    @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = EventClassInfo.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
@@ -107,6 +107,33 @@ public class EventHandlerApi extends AbstractXapiRestController {
             _log.error("EventHandlerApi exception:  " + t.toString());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Checks if is permitted.
+     *
+     * @param projectId the project ID
+     *
+     * @return the http status
+     */
+    // TODO: Migrate this to the abstract superclass. Can't right now because XDAT doesn't know about XnatProjectdata, etc.
+    protected HttpStatus canEditProject(String projectId) {
+        final UserI sessionUser = getSessionUser();
+        if ((sessionUser instanceof XDATUser)) {
+            if (projectId != null) {
+                final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, sessionUser, false);
+                try {
+                    return Permissions.canEdit(sessionUser, project) ? null : HttpStatus.FORBIDDEN;
+                } catch (Exception e) {
+                    _log.error("Error checking read status for project", e);
+                    return HttpStatus.INTERNAL_SERVER_ERROR;
+                }
+            } else {
+                return isPermitted() == null ? null : HttpStatus.FORBIDDEN;
+            }
+        }
+        _log.error("Error checking read status for project");
+        return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
     /**
@@ -249,33 +276,6 @@ public class EventHandlerApi extends AbstractXapiRestController {
             }
         }
         return classList;
-    }
-
-    /**
-     * Checks if is permitted.
-     *
-     * @param projectId the project ID
-     *
-     * @return the http status
-     */
-    // TODO: Migrate this to the abstract superclass. Can't right now because XDAT doesn't know about XnatProjectdata, etc.
-    protected HttpStatus canEditProject(String projectId) {
-        final UserI sessionUser = getSessionUser();
-        if ((sessionUser instanceof XDATUser)) {
-            if (projectId != null) {
-                final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, sessionUser, false);
-                try {
-                    return Permissions.canEdit(sessionUser, project) ? null : HttpStatus.FORBIDDEN;
-                } catch (Exception e) {
-                    _log.error("Error checking read status for project", e);
-                    return HttpStatus.INTERNAL_SERVER_ERROR;
-                }
-            } else {
-                return isPermitted() == null ? null : HttpStatus.FORBIDDEN;
-            }
-        }
-        _log.error("Error checking read status for project");
-        return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
     /**

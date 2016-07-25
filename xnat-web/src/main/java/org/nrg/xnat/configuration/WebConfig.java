@@ -1,6 +1,7 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.spawner.configuration.SpawnerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,9 +23,12 @@ import org.springframework.web.servlet.view.JstlView;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+import java.util.Locale;
 
 @Configuration
 @EnableWebMvc
@@ -65,15 +69,25 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     }
 
     @Bean
-    public Docket api() {
+    public Docket api(final XnatAppInfo info, final MessageSource messageSource) {
         _log.debug("Initializing the Swagger Docket object");
-        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class)).paths(PathSelectors.any()).build().apiInfo(apiInfo()).pathMapping("/xapi");
+        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class)).paths(PathSelectors.any()).build().apiInfo(apiInfo(info, messageSource)).pathMapping("/xapi");
     }
 
-    private ApiInfo apiInfo() {
-        // TODO: The deprecated class is ApiInfo(). There's no documentation on how to use the replacement Contact class instead, so migrate this when that's explained.
-        //noinspection deprecation
-        return new ApiInfo("XNAT REST API", "The XNAT REST API (XAPI) functions provide access to XNAT internal functions for remote clients.", "1.7.0", "http://www.xnat.org", "info@xnat.org", "Simplified 2-Clause BSD", "API license URL");
+    private ApiInfo apiInfo(final XnatAppInfo info, final MessageSource messageSource) {
+        return new ApiInfo(getMessage(messageSource, "apiInfo.title"),
+                           getMessage(messageSource, "apiInfo.description"),
+                           info.getVersion(),
+                           getMessage(messageSource, "apiInfo.termsOfServiceUrl"),
+                           new Contact(getMessage(messageSource, "apiInfo.contactName"),
+                                       getMessage(messageSource, "apiInfo.contactUrl"),
+                                       getMessage(messageSource, "apiInfo.contactEmail")),
+                           getMessage(messageSource, "apiInfo.license"),
+                           getMessage(messageSource, "apiInfo.licenseUrl"));
+    }
+
+    private String getMessage(final MessageSource messageSource, final String messageId) {
+        return messageSource.getMessage(messageId, null, Locale.getDefault());
     }
 
     private static final Logger _log = LoggerFactory.getLogger(WebConfig.class);

@@ -88,12 +88,12 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                // NEW USER
                         found.setPassword(tempPass);
 
-		                boolean autoApproval = XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar();
+                        boolean autoApproval = XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar();
 
-                        if(XDAT.getSiteConfigPreferences().getPar() && hasPAR(data)){
+                        if((XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar()) && hasPAR(data)){
                             found.setEnabled(Boolean.TRUE);
                         }
-		                else if (autoApproval) {
+		                else if (XDAT.getSiteConfigPreferences().getUserRegistration()) {
 		                	if (XDAT.getSiteConfigPreferences().getEmailVerification()) {
 		                		found.setEnabled(Boolean.FALSE);
 		                	} else {
@@ -272,7 +272,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
         data.setScreenTemplate("Index.vm");
 
-        if ((XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar()) && !XDAT.getSiteConfigPreferences().getEmailVerification()){
+        if ((XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.getSiteConfigPreferences().getEmailVerification()) || ((XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar()) && hasPAR(data))){
          if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
             VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);

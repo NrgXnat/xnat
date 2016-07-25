@@ -14,10 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Provides basic functions for integrating Spring REST controllers with XNAT.
@@ -155,6 +152,21 @@ public abstract class AbstractXapiRestController {
         if (_log.isInfoEnabled()) {
             final StringBuilder message = new StringBuilder("User ").append(getSessionUser().getUsername()).append(" is setting the values for the following properties:\n");
             for (final String name : properties.keySet()) {
+                message.append(" * ").append(name).append(": ").append(properties.get(name)).append("\n");
+            }
+            _log.info(message.toString());
+        }
+    }
+
+    /**
+     * Writes out the properties and values that are being set by the current user.
+     *
+     * @param properties The properties and values being set.
+     */
+    protected void logSetProperties(final Properties properties) {
+        if (_log.isInfoEnabled()) {
+            final StringBuilder message = new StringBuilder("User ").append(getSessionUser().getUsername()).append(" is setting the values for the following properties:\n");
+            for (final String name : properties.stringPropertyNames()) {
                 message.append(" * ").append(name).append(": ").append(properties.get(name)).append("\n");
             }
             _log.info(message.toString());

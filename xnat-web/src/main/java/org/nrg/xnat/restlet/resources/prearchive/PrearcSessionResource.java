@@ -404,7 +404,7 @@ public final class PrearcSessionResource extends SecureResource {
             return new FileRepresentation(sessionXML, variant.getMediaType(), 0);
         } else if (MediaType.APPLICATION_JSON.equals(mt)) {
             List<SessionDataTriple> l = new ArrayList<SessionDataTriple>();
-            l.add(new SessionDataTriple().setFolderName(sessionDir.getName()).setProject(project).setTimestamp(timestamp));
+            l.add(new SessionDataTriple(sessionDir.getName(), project, timestamp));
             XFTTable table = null;
             try {
                 table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(l));

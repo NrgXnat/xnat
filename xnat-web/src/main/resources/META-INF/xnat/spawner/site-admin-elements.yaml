@@ -984,6 +984,37 @@ manageDataTypes:
             name: displayNameForGenericImageSession.plural
             label: "Plural Display Name For Generic Image Session Singular"
 
+sessionBuilder:
+    kind: panel.form
+    name: sessionBuilder
+    label: "Session Builder"
+    method: POST
+    contentType: json
+    action: /xapi/siteConfig/batch
+    load: XNAT.data.siteConfig
+    refresh: /xapi/siteConfig
+    contents:
+        sessionXmlRebuilderRepeat:
+            kind: panel.input.number
+            id: sessionXmlRebuilderRepeat
+            name: sessionXmlRebuilderRepeat
+            label: Session Idle Check Interval
+            placeholder: Interval in milliseconds
+            description: >
+                This controls how often the system checks to see if any incoming DICOM sessions in the prearchive have
+                been idle for longer than the configured session idle time. This value should be specified in
+                milliseconds and defaults to 60,000 ms or one minute.
+        sessionXmlRebuilderInterval:
+            kind: panel.input.number
+            id: sessionXmlRebuilderInterval
+            name: sessionXmlRebuilderInterval
+            label: Session Idle Time
+            placeholder: Time in minutes
+            description: >
+                This tells the system how long a DICOM session should sit idle—that is, with no new data added to the
+                session—before attempting to build a session document from the DICOM data. This value is specified in
+                minutes and defaults to 5 minutes.
+
 anonymization:
     kind: panel.form
     name: Anonymization
@@ -1137,16 +1168,6 @@ sessionUploadMethod:
             description: >
                 Details on how to configure an Upload Applet script may be found
                 <a href="https://wiki.xnat.org/display/XKB/Adding+parameters+and+launch+requirements+for+the+upload+applet" target="_blank">here</a>.
-        sessionXmlRebuilderRepeat:
-            kind: panel.input.number
-            id: sessionXmlRebuilderRepeat
-            name: sessionXmlRebuilderRepeat
-            label: Session Xml Rebuilder Repeat
-        sessionXmlRebuilderInterval:
-            kind: panel.input.number
-            id: sessionXmlRebuilderInterval
-            name: sessionXmlRebuilderInterval
-            label: Session Xml Rebuilder Interval
 
 dicomScpReceivers:
     kind: panel
@@ -1415,6 +1436,7 @@ adminPage:
             label: "Session Upload, Import & Anonymization"
             group: manageData
             contents:
+                ${sessionBuilder}
                 ${anonymization}
                 ${seriesImportFilter}
                 ${petTracers}

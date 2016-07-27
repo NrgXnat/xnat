@@ -301,9 +301,28 @@ public class Importer extends SecureResource {
 	}
 
     protected void respondToException(Exception e, Status status) {
-		logger.error("",e);
+    	final Throwable cause = e.getCause();
+		if (cause != null && cause instanceof ExceptionInInitializerError && ((ExceptionInInitializerError) cause).getException() != null) {
+			final ExceptionInInitializerError error = (ExceptionInInitializerError) cause;
+			final StringBuilder buffer = new StringBuilder("An error occurred initializing an object during the import operation: ");
+			buffer.append(error.getException().getMessage());
+			final StackTraceElement[] stackTrace = error.getException().getStackTrace();
+			if (stackTrace != null) {
+				int lines = 0;
+				for (final StackTraceElement element : stackTrace) {
+					buffer.append(System.lineSeparator()).append("    ").append(element.toString());
+					lines++;
+					if (lines > 5) {
+						break;
+					}
+				}
+			}
+			logger.error(buffer.toString());
+		} else {
+			logger.error("", e);
+		}
 		if (this.requested_format!=null && this.requested_format.equalsIgnoreCase("HTML")) {
-			response = new ArrayList<String>();
+			response = new ArrayList<>();
 			response.add(e.getMessage());
 			returnDefaultRepresentation();
 		} else {

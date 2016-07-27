@@ -1197,13 +1197,14 @@ public class TurbineUtils {
 
     @SuppressWarnings("unused")
     public boolean validateClasspathTemplate(String screen){
-        String forwardSlashScreen = screen;
-        if(forwardSlashScreen!=null){
-            forwardSlashScreen = forwardSlashScreen.replace("\\", "/");
-            forwardSlashScreen = forwardSlashScreen.substring(0, forwardSlashScreen.lastIndexOf('/'));
+        if(screen!=null){
+            final String modScreen = screen.replace("\\", "/");
+            final String templateFileName = screen.substring(modScreen.lastIndexOf('/')+1);
+            final String forwardSlashDir = modScreen.substring(0, modScreen.lastIndexOf('/'));
+            final List<URL> uris = CustomClasspathResourceLoader.findVMByClasspathDirectoryAndFileName(forwardSlashDir, templateFileName);
+            return uris.size() > 0;
         }
-        List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory(forwardSlashScreen);
-        return uris.size() > 0;
+        return false;
     }
 
     @SuppressWarnings("unchecked")

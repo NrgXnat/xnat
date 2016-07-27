@@ -219,6 +219,27 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
         return matches;
     }
 
+	/**
+	 * Find vm by classpath directory and file name.
+	 *
+	 * @param dir the dir
+	 * @param templateFileName the template file name
+	 * @return the list
+	 */
+	public static List<URL> findVMByClasspathDirectoryAndFileName(String dir, String templateFileName) {
+        final List<URL> matches = Lists.newArrayList();
+        for (final String folder : paths) {
+            for (final URL vmURL : findVMsByClasspathDirectory(folder, dir)) {
+            	final String vmFile = vmURL.getPath();
+                final String vmFileName = vmFile.substring(vmFile.replace("\\",  "/").lastIndexOf('/')+1);
+                if (vmFileName.equals(templateFileName)) {
+                	matches.add(vmURL);
+                }
+            };
+        }
+        return matches;
+	}
+
     /**
      * Identifies all of the VM files in the specified directory
      * Adds META-INF/resources to the package.

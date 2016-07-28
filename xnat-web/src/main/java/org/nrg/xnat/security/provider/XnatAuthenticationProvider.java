@@ -40,4 +40,13 @@ public interface XnatAuthenticationProvider extends AuthenticationProvider {
      * @return The authentication method for this provider.
      */
     String getAuthMethod();
+
+    /**
+     * Indicates the order associated with this provider. This is used to determine the order in which the providers
+     * show up in the login dropdown and the order in which they are checked when a login is attempted.
+     * @return The order for this provider.
+     */
+    int getOrder();
+
+    void setOrder(int order);
 }

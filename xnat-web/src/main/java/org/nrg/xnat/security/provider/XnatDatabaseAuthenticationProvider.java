@@ -75,6 +75,16 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     }
 
     @Override
+    public int getOrder() {
+        return _order;
+    }
+
+    @Override
+    public void setOrder(int order) {
+        _order = order;
+    }
+
+    @Override
     protected void additionalAuthenticationChecks(final UserDetails userDetails, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
         if (!UserI.class.isAssignableFrom(userDetails.getClass())) {
             throw new AuthenticationServiceException("User details class is not of a type I know how to handle: " + userDetails.getClass());
@@ -143,4 +153,5 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     }
 
     private final boolean _requireEmailVerification;
+    private int _order = -1;
 }

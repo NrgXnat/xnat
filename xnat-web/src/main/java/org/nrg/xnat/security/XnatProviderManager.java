@@ -253,9 +253,11 @@ public class XnatProviderManager extends ProviderManager {
     private XnatAuthenticationProvider findAuthenticationProvider(XnatAuthenticationProviderMatcher matcher) {
         List<AuthenticationProvider> prov = getProviders();
         for (AuthenticationProvider ap : prov) {
-            XnatAuthenticationProvider xap = (XnatAuthenticationProvider) ap;
-            if (matcher.matches(xap)) {
-                return xap;
+            if(XnatAuthenticationProvider.class.isAssignableFrom(ap.getClass())) {
+                XnatAuthenticationProvider xap = (XnatAuthenticationProvider) ap;
+                if (matcher.matches(xap)) {
+                    return xap;
+                }
             }
         }
         return null;

@@ -11,6 +11,7 @@
 package org.nrg.xnat.security.config;
 
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,15 @@ public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenti
 
     @Override
     public List<AuthenticationProvider> getAuthenticationProviders(String id, String name, Map<String, String> properties) {
-        return getAuthenticationProviders(id, name);
+        List<AuthenticationProvider> provs = getAuthenticationProviders(id, name);
+        for(AuthenticationProvider prov : provs){
+            if(XnatAuthenticationProvider.class.isAssignableFrom(prov.getClass())){
+                if (properties.get("order") != null) {
+                    ((XnatAuthenticationProvider)prov).setOrder(Integer.parseInt(properties.get("order")));
+                }
+            }
+        }
+        return provs;
     }
 
     private final XnatDatabaseUserDetailsService _userDetailsService;

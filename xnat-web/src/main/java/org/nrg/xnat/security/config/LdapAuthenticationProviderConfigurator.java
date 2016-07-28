@@ -49,6 +49,9 @@ public class LdapAuthenticationProviderConfigurator extends AbstractAuthenticati
             ldapAuthProvider.setUserDetailsContextMapper(new XnatLdapUserDetailsMapper(id, properties, _userAuthService, _preferences));
             ldapAuthProvider.setName(name);
             ldapAuthProvider.setProviderId(id);
+            if (properties.get("order") != null) {
+                ldapAuthProvider.setOrder(Integer.parseInt(properties.get("order")));
+            }
             return Arrays.asList(new AuthenticationProvider[] { ldapAuthProvider });
         } catch (Exception exception) {
             _log.error("Something went wrong when configuring the LDAP authentication provider", exception);

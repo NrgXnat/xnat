@@ -111,6 +111,16 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
     }
 
     @Override
+    public int getOrder() {
+        return _order;
+    }
+
+    @Override
+    public void setOrder(int order) {
+        _order = order;
+    }
+
+    @Override
     protected void additionalAuthenticationChecks(final UserDetails userDetails, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
         if (authentication.getCredentials() == null) {
             logger.debug("Authentication failed: no credentials provided");
@@ -173,4 +183,5 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
 
     private final AliasTokenService   _aliasTokenService;
     private final XdatUserAuthService _userAuthService;
+    private int _order = -1;
 }

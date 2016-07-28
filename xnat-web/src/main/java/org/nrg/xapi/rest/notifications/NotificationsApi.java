@@ -64,7 +64,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<Properties> getAllSiteConfigProperties(@ApiParam(hidden = true) @RequestParam final HttpServletRequest request) throws IOException {
+    public ResponseEntity<Properties> getAllSiteConfigProperties(@ApiParam(hidden = true) final HttpServletRequest request) throws IOException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -762,7 +762,16 @@ public class NotificationsApi extends AbstractXapiRestController {
         final Properties properties = new Properties();
         for (final String key : preferenceMap.keySet()) {
             final Object object = preferenceMap.get(key);
-            final String value  = object != null ? _serializer.toJson(object) : "";
+            String tempVal = "";
+            if(object!=null){
+                if(String.class.isAssignableFrom(object.getClass())){
+                    tempVal = (String)object;
+                }
+                else{
+                    tempVal = _serializer.toJson(object);
+                }
+            }
+            final String value  = tempVal;
             properties.setProperty(key, value);
         }
         return properties;

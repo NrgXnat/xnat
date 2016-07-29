@@ -190,6 +190,7 @@ var XNAT = getObject(XNAT || {});
         var lang = json.language || 'groovy';
 
         $dialog.find('.id').val(json.id || '');
+       	$dialog.find("input.language").val(lang);
 
         // version menu
         var $versionMenu = $dialog.find('select.script-version');
@@ -321,6 +322,7 @@ var XNAT = getObject(XNAT || {});
         opts.afterShow = function(obj){
             if (!scriptId) {
                 obj.$modal.find('.script-id-input').focus().select();
+        	obj.$modal.find("input.language").val(lang);
             }
             // TODO: prompt user to save if they could lose unsaved changes
         };

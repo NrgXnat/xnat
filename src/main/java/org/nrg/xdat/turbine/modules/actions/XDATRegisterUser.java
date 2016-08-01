@@ -170,7 +170,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
 		                    try {
                                 cacheRegistrationData(found, comments, phone, lab);
-                                if (XDAT.getSiteConfigPreferences().getEmailVerification()) {
+                                if (!hasPAR(data) && XDAT.getSiteConfigPreferences().getEmailVerification()) {
                                     sendNewUserVerificationEmail(data, context, found);
                                 } else {
                                 	AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);

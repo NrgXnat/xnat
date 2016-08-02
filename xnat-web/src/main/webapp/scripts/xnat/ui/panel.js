@@ -329,7 +329,7 @@ var XNAT = getObject(XNAT || {});
         // custom event for reloading data (refresh)
         $formPanel.on('reload-data', function(){
             loadData(this, {
-                refresh: opts.refresh || opts.load || opts.url
+                load: opts.refresh || opts.load || opts.url
             });
         });
 
@@ -1064,28 +1064,6 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
-
-    function footerButton(text, type, disabled, classes){
-        var button = {
-            type: type || 'button',
-            html: text || 'Submit'
-        };
-        button.classes = [classes || '', 'btn btn-sm'];
-        if (type === 'link') {
-            button.classes.push('btn-link')
-        }
-        else if (/submit|primary/.test(type)) {
-            button.classes.push('btn-primary')
-        }
-        else {
-            button.classes.push('btn-default')
-        }
-        if (disabled) {
-            button.classes.push('disabled');
-            button.disabled = 'disabled'
-        }
-        return spawn('button', button);
-    }
 
     // return a single 'toggle' element
     function radioToggle(item){

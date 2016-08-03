@@ -11,9 +11,9 @@
 
 <head>
 
-    <c:if test="${empty hasInit}">
+    <c:if test="${empty requestScope.hasInit}">
         <pg:init>
-            <c:if test="${empty hasVars}">
+            <c:if test="${empty requestScope.hasVars}">
                 <pg:jsvars/>
             </c:if>
         </pg:init>
@@ -77,6 +77,7 @@
     <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/js.cookie.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.js"></script>
 
     <!-- XNAT utility functions -->
     <script src="${SITE_ROOT}/scripts/utils.js"></script>

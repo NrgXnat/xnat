@@ -44,8 +44,9 @@
     <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/js.cookie.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.js"></script>
 
-    <!-- XNAT utility functions -->
+<!-- XNAT utility functions -->
     <script src="$content.getURI('scripts/utils.js')"></script>
 
     #set ($baseJS = true)

@@ -12,9 +12,9 @@
 
     <title>${title}</title>
 
-        <c:if test="${empty hasInit}">
+        <c:if test="${empty requestScope.hasInit}">
             <pg:init>
-                <c:if test="${empty hasVars}">
+                <c:if test="${empty requestScope.hasVars}">
                     <pg:jsvars/>
                 </c:if>
             </pg:init>

@@ -332,9 +332,9 @@
             }
 
             // special handling of 'append' property
-            if (opts.append){
+            if (opts.append || opts.insert){
                 try {
-                    appendChildren(el, opts.append, spawn)
+                    appendChildren(el, opts.append || opts.insert, spawn)
                 }
                 catch(e){
                     // write error to console
@@ -394,9 +394,9 @@
             // don't append element twice if 
             // there's 'before' AND 'after'
             if (!opts.before) {
+                appendChildren(frag, opts.after, spawn);
                 frag.appendChild(el);
             }
-            appendChildren(frag, opts.after, spawn);
             el = frag;
         }
         

@@ -6,16 +6,16 @@
 
 <%-- restricts access to only admin users --%>
 
-<c:if test="${empty hasInit}">
+<c:if test="${empty requestScope.hasInit}">
     <pg:init>
-        <c:if test="${empty hasVars}">
+        <c:if test="${empty requestScope.hasVars}">
             <pg:jsvars/>
         </c:if>
     </pg:init>
 </c:if>
 
 <c:choose>
-    <c:when test="${isAdmin == true}">
+    <c:when test="${sessionScope.isAdmin == true}">
 
         <jsp:doBody/>
 

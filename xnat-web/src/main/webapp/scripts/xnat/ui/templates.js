@@ -132,21 +132,26 @@ var XNAT = getObject(XNAT);
         
         // pass in an element or create a new 'div' element
         element = 
-            element || spawn('div', {
+            element || spawn('div', extend(true, {
                 id: opts.id,
                 className: opts.className||'',
                 title: opts.title||opts.name||opts.id,
                 html: opts.value||opts.html||opts.text||opts.body||''
-            });
+            }, opts.element));
         
         return template.panelElement(opts, [
             ['label.element-label|for='+element.id||opts.id, opts.label],
-            ['div.element-wrapper', [
+            ['div.element-wrapper', [].concat(
                 
+                (opts.beforeElement ? opts.beforeElement : []),
+
                 element ,
-                
-                ['div.description', opts.description]
-            ]]
+
+                (opts.afterElement ? opts.afterElement : []),
+
+                ['div.description', opts.description||'']
+
+            )]
         ]);
     };
     // ========================================    
@@ -233,7 +238,20 @@ var XNAT = getObject(XNAT);
             $element.not('textarea').dataAttr('value', element.value);
         }
 
-        var inner = [element];
+        var inner = [];
+
+        // add 'before' content before the core element
+        if (opts.beforeElement) {
+            opts.beforeElement = stringable(opts.beforeElement) ? [opts.beforeElement] : 
+            inner.push(spawn('span.before', opts.beforeElement));
+        }
+
+        inner.push(element);
+
+        // add 'after' content after the core element
+        if (opts.afterElement) {
+            inner.push(spawn('span.after', opts.afterElement));
+        }
 
         var hiddenInput;
 

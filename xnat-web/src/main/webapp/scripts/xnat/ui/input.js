@@ -80,11 +80,14 @@ var XNAT = getObject(XNAT);
 
 
     function setupType(type, className, opts){
-        var config = cloneObject(opts);
-        // var config = getObject(opts.config || opts.element || {});
-        config.addClass = className;
-        config.data = extend({validate: opts.validation||opts.validate}, config.data);
+        var config = extend(true, {}, opts, opts.element, {
+            data: {},
+            $: { addClass: className }
+        });
+        config.data.validate = opts.validation||opts.validate;
         if (!config.data.validate) delete config.data.validate;
+        delete config.validation; // don't pass these to the spawn() function
+        delete config.validate;   // ^^
         return input(type, config);
     }
 
@@ -120,12 +123,20 @@ var XNAT = getObject(XNAT);
     // checkboxes are special
     input.checkbox = function(config){
         otherTypes.push('checkbox');
-        config = getObject(config);
-        config = config.element || config || {};
-        config.onchange = function(){
-            this.value = this.checked;
-        };
+        config = extend(true, {}, config, config.element);
+        // config.onchange = function(){
+        //     this.value = this.checked || $(this).data('uncheckedValue') || '';
+        // };
         return setupType('checkbox', '', config);
+    };
+    
+    // create an input with display: block style
+    input.text.block = function(config){
+        config = extend(true, {}, config, config.element, {
+            $: { addClass: 'text block' },
+            style: { display: 'block' }
+        });
+        return input.text(config);
     };
 
     // save a list of all available input types

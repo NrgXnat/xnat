@@ -178,7 +178,7 @@ var XNAT = getObject(XNAT || {});
             // find all form inputs with a name attribute
             $$(form).find(':input').each(function(){
 
-                var val = dataObj[this.name||this.title];
+                var val = lookupObjectValue(dataObj, this.name||this.title);
 
                 if (!val) return;
 
@@ -852,7 +852,7 @@ var XNAT = getObject(XNAT || {});
     
     panel.select = {};
 
-    panel.select.menu = function panelSelectSingle(opts, multi){
+    panel.select.menu = function panelSelectMenu(opts, multi){
 
         var _menu;
 
@@ -872,17 +872,11 @@ var XNAT = getObject(XNAT || {});
             opts.element.multiple = true;
         }
 
-        _menu = spawn('select', opts.element, [['option', 'Select']]);
+        // set label: false so it's not created in XNAT.ui.select.menu()
+        //opts.label = false;
 
-        if (opts.options){
-            forOwn(opts.options, function(name, prop){
-                _menu.appendChild(spawn('option', {
-                    html: prop.html || prop.text || prop.label || prop.value || prop,
-                    value: prop.value || name,
-                    selected: prop.selected || (prop.value === opts.value)
-                }));
-            });
-        }
+        // use XNAT.ui.select.menu() to normalize rendering
+        _menu = XNAT.ui.select.menu(extend({}, opts, { label: false })).element;
 
         return XNAT.ui.template.panelInput(opts, _menu).spawned;
 
@@ -894,6 +888,7 @@ var XNAT = getObject(XNAT || {});
         return panel.select.menu(opts, true)
     };
     panel.select.multi.init = panel.select.multi;
+    panel.select.multiple   = panel.select.multi;
 
 
 

@@ -144,14 +144,14 @@ var XNAT = getObject(XNAT || {});
             ],
 
             // TODO: use opts.element for the panel itself
-            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
+            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', extend(true, {
                 id: toDashed(opts.id || opts.element.id || opts.name) + '-panel',
                 name: opts.name,
                 method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
                 addClass: opts.classes || '',
                 data: opts.data
-            }, [
+            }, opts.element), [
 
                 (hideHeader ? ['div.hidden'] : ['div.panel-heading', [
                     ['h3.panel-title', opts.title]

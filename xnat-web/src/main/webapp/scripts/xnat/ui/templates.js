@@ -149,7 +149,7 @@ var XNAT = getObject(XNAT);
 
                 (opts.afterElement ? opts.afterElement : []),
 
-                ['div.description', opts.description||'']
+                spawn('div.description', opts.description||'')
 
             )]
         ]);
@@ -288,7 +288,7 @@ var XNAT = getObject(XNAT);
         }
 
         // add the description after the input
-        inner.push(['div.description', opts.description||opts.body||opts.html]);
+        inner.push(spawn('div.description', opts.description||opts.body||opts.html));
 
         return template.panelElement(opts, [
             ['label.element-label|for='+element.id||opts.id, opts.label],

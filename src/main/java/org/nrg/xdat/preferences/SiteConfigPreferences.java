@@ -1064,7 +1064,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "1 day")
+    @NrgPreference(defaultValue = "1 hour")
     public String getMaxFailedLoginsLockoutDuration() {
         return getValue("maxFailedLoginsLockoutDuration");
     }

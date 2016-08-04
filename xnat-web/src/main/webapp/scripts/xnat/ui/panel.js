@@ -66,7 +66,19 @@ var XNAT = getObject(XNAT || {});
                 },
                 closeAll: xmodal.loading.closeAll
             }
-        }
+        } else {
+            return {
+                open: function(){
+                    // Do nothing
+                },
+                close: function(){
+                    // Do nothing
+                },
+                closeAll: function(){
+                    // Do nothing
+                }
+            }
+        } 
     }
 
     /**

@@ -14,11 +14,16 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -115,11 +120,33 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
 
         try {
             AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "SUCCESS");
-            return getAuthenticationManager().authenticate(authRequest);
+            Authentication auth =  getAuthenticationManager().authenticate(authRequest);
+
+            //Fixed XNAT-4409 by adding a check for a par parameter on login. If a PAR is present and valid, then grant the user that just logged in the appropriate project permissions.
+            if(StringUtils.isNotBlank(request.getParameter("par"))){
+                String parId = request.getParameter("par");
+                request.getSession().setAttribute("par", parId);
+                ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parId, null);
+                if (par.getApproved() != null || par.getApprovalDate() != null) {
+                    logger.debug("PAR not approved or already accepted: " + par.getGuid());
+                } else {
+                    XDATUser user = new XDATUser(username);
+                    par.process(user, true, EventUtils.TYPE.WEB_FORM, "", "");
+                }
+            }
+
+            return auth;
         } catch (AuthenticationException e) {
             logFailedAttempt(username, request);
             throw e;
+        } catch (UserNotFoundException e) {
+            _log.error("",e);
+        } catch (UserInitException e) {
+            _log.error("",e);
+        } catch (Exception e) {
+            _log.error("",e);
         }
+        return null;
     }
 
     public static void logFailedAttempt(String username, HttpServletRequest req) {

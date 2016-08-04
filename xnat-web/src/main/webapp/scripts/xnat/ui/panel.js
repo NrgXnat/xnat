@@ -48,6 +48,27 @@ var XNAT = getObject(XNAT || {});
         return input;
     }
 
+    function loadingDialog(id){
+        id = id ? '#'+id : '#loading';
+        // make sure xmodal script is loaded
+        if (xmodal && xmodal.loading) {
+            return {
+                open: function(){
+                    return xmodal.loading.open(id);
+                },
+                close: function(){
+                    if (id === '#*') {
+                        xmodal.loading.closeAll();
+                    }
+                    else {
+                        xmodal.loading.close(id);
+                    }
+                },
+                closeAll: xmodal.loading.closeAll
+            }
+        }
+    }
+
     /**
      * Initialize panel.
      * @param [opts] {Object} Config object
@@ -180,7 +201,7 @@ var XNAT = getObject(XNAT || {});
 
                 var val = lookupObjectValue(dataObj, this.name||this.title);
 
-                if (!val) return;
+                //if (!val) return;
 
                 if (Array.isArray(val)) {
                     val = val.join(', ');
@@ -196,9 +217,9 @@ var XNAT = getObject(XNAT || {});
                 }
 
             });
-            if (xmodal && xmodal.loading && xmodal.loading.closeAll){
-                xmodal.loading.closeAll();
-            }
+
+            loadingDialog().closeAll();
+
         }
 
 
@@ -211,11 +232,9 @@ var XNAT = getObject(XNAT || {});
             // need a form to put the data into!
             // and a 'load' property too
             if (!form || !obj.load) {
-                xmodal.loading.close('#load-data');
+                loadingDialog().close();
                 return;
             }
-
-            //xmodal.loading.open('#load-data');
 
             obj.load = (obj.load+'').trim();
 
@@ -237,7 +256,7 @@ var XNAT = getObject(XNAT || {});
                     obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
                     obj.prop = obj.prop || obj.load.split('|')[1] || '';
                     setValues(form, lookupObjectValue(window, obj.load, obj.prop));
-                    xmodal.loading.close('#load-data');
+                    loadingDialog().close();
                     return form;
                 }
 
@@ -254,7 +273,7 @@ var XNAT = getObject(XNAT || {});
                     console.log(e);
                 }
 
-                xmodal.loading.close('#load-data');
+                loadingDialog().close();
                 return form;
                 
             }
@@ -278,7 +297,7 @@ var XNAT = getObject(XNAT || {});
 
             // need a url to get the data
             if (!ajaxUrl || !stringable(ajaxUrl)) {
-                xmodal.loading.close('#load-data');
+                loadingDialog().close();
                 return form;
             }
 
@@ -307,7 +326,7 @@ var XNAT = getObject(XNAT || {});
 
 
             obj.ajax.complete = function(){
-                xmodal.loading.close('#load-data');
+                loadingDialog().close();
             };
 
             // return the ajax thing for method chaining
@@ -355,6 +374,7 @@ var XNAT = getObject(XNAT || {});
         $formPanel.on('submit', function(e){
 
             e.preventDefault();
+            e.stopImmediatePropagation();
 
             var $form = $(this).removeClass('error'),
                 errors = 0,
@@ -415,11 +435,13 @@ var XNAT = getObject(XNAT || {});
             function formToJSON(form){
                 var json = {};
                 $$(form).serializeArray().forEach(function(item) {
-                    if (typeof json[item.name] == 'undefined') {
-                        json[item.name] = item.value || '';
+                    if (!item.name) return;
+                    var name = item.name.replace(/^:/,'');
+                    if (typeof json[name] == 'undefined') {
+                        json[name] = item.value || '';
                     }
                     else {
-                        json[item.name] = [].concat(json[item.name], item.value||[]) ;
+                        json[name] = [].concat(json[name], item.value||[]) ;
                     }
                 });
                 return json;
@@ -435,20 +457,16 @@ var XNAT = getObject(XNAT || {});
                     // ALWAYS reload from the server
                     obj.refresh = opts.refresh || opts.reload || opts.url || opts.load;
                     if (!silent){
-                        //xmodal.loading.close(saveLoader.$modal);
                         XNAT.ui.banner.top(2000, 'Data saved successfully.', 'success');
                         loadData($form, obj);
-                        // xmodal.message('Data saved successfully.', {
-                        //     action: function(){
-                        //         loadData($form, obj);
-                        //     }
-                        // });
                     }
                 }
             };
 
             if (/json/i.test(opts.contentType||'')){
-                ajaxConfig.data = JSON.stringify(formToJSON(this));
+                // ajaxConfig.data = JSON.stringify(formToJSON(this));
+                // ajaxConfig.data = JSON.stringify(form2js(this, /[:\[\]]/));
+                ajaxConfig.data = JSON.stringify(form2js(this, ':'));
                 ajaxConfig.processData = false;
                 ajaxConfig.contentType = 'application/json';
                 $.ajax(ajaxConfig);
@@ -529,7 +547,7 @@ var XNAT = getObject(XNAT || {});
                     e.preventDefault();
                     var $forms = $(this).find('form');
 
-                    var loader = xmodal.loading.open('#multi-save');
+                    var loader = loadingDialog('multi-save').open();
 
                     // reset error count on new submission
                     multiform.errors = 0;
@@ -551,7 +569,7 @@ var XNAT = getObject(XNAT || {});
                     // multiform.errors = 0;
                     // multiform.count = 0;
 
-                    xmodal.loading.close(loader.$modal);
+                    loader.close();
 
                     // fire the callback function after all forms are submitted error-free
 

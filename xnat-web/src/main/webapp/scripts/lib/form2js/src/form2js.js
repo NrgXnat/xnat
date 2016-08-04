@@ -107,18 +107,23 @@
 
 		for (i = 0; i < nameValues.length; i++)
 		{
-			value = nameValues[i].value;
+
+			value = realValue(nameValues[i].value);
 
 			if (skipEmpty && (value === '' || value === null)) continue;
 
 			name = nameValues[i].name;
 			_nameParts = name.split(delimiter);
+
 			nameParts = [];
 			currResult = result;
 			arrNameFull = '';
 
 			for(j = 0; j < _nameParts.length; j++)
 			{
+				/* Skip first part if empty - effectively stripping the delimiter if used as a prefix */
+				if (j === 0 && _nameParts[j] === '') continue;
+
 				namePart = _nameParts[j].split('][');
 				if (namePart.length > 1)
 				{
@@ -342,6 +347,38 @@
 		}
 
 		return result;
+	}
+
+	function isNumeric( num ) {
+		// parseFloat NaNs numeric-cast false positives (null|true|false|"")
+		// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
+		// subtraction forces infinities to NaN
+		// adding 1 corrects loss of precision from parseFloat (jQuery issue #15100)
+		return !Array.isArray( num ) && (num - parseFloat( num ) + 1) >= 0;
+	}
+
+	function realValue(val, bool){
+		var undefined;
+		// only evaluate strings
+		if (typeof val != 'string') return val;
+		if (bool){
+			if (val === '0'){
+				return false;
+			}
+			if (val === '1'){
+				return true;
+			}
+		}
+		if (isNumeric(val)){
+			return +val;
+		}
+		switch(val) {
+			case 'true': return true;
+			case 'false': return false;
+			case 'undefined': return undefined;
+			case 'null': return null;
+			default: return val;
+		}
 	}
 
 	return form2js;

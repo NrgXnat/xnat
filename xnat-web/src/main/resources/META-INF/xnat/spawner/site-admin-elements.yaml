@@ -273,7 +273,7 @@ generalSecuritySettings:
         securityChannel:
             kind: panel.select.single
             id: securityChannel
-            name: security.channel
+            name: ":security.channel"
             label: Security Channel
             options:
                 any:
@@ -298,13 +298,13 @@ generalSecuritySettings:
             kind: panel.input.checkbox
             id: restrictUserListAccessToAdmins
             name: restrictUserListAccessToAdmins
-            label: "Restrict user list access to site administrators?"
+            label: "Restrict user list access <br>to site administrators?"
             description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
         uiAllowNonAdminProjectCreation:
             kind: panel.input.checkbox
             id: uiAllowNonAdminProjectCreation
-            name: UI.allow-non-admin-project-creation
-            label: "Allow non-administrators to create projects?"
+            name: ":UI.allow-non-admin-project-creation"
+            label: "Allow non-administrators <br>to create projects?"
             description: "Should this site allow non-administrator users to create new projects? If turned on, the site is more secure, but this can make it more difficult for regular users to create new projects for their research efforts."
 
 userLoginsSessionControls:
@@ -356,16 +356,16 @@ userLoginsSessionControls:
         maximumConcurrentSessions:
             kind: panel.input.number
             id: maximumConcurrentSessions
-            name: sessions.concurrent_max
+            name: ":sessions.concurrent_max"
             label: Maximum Concurrent Sessions
             description: The maximum number of permitted sessions a user can have open simultaneously
         loginFailureMessage:
             kind: panel.textarea
             id: loginFailureMessage
-            name: UI.login_failure_message
+            name: ":UI.login_failure_message"
             label: Login Failure Message
             description: Text to show when a user fails to login
-            value: "?? XNAT:data:siteConfig:UI.login_failure_message"
+#            value: "?? XNAT:data:siteConfig:UI.login_failure_message"
         maximumFailedLogins:
             kind: panel.input.number
             id: maximumFailedLogins
@@ -547,22 +547,22 @@ securityServices:
         securityServicesFeatureDefault:
             kind: panel.input.text
             id: securityServicesFeatureDefault
-            name: security.services.feature.default
+            name: ":security.services.feature.default"
             label: Feature Default
         securityServicesFeatureRepoDefault:
             kind: panel.input.text
             id: securityServicesFeatureRepoDefault
-            name: security.services.featureRepository.default
+            name: ":security.services.featureRepository.default"
             label: Feature Repository Default
         securityServicesRoleDefault:
             kind: panel.input.text
             id: securityServicesRoleDefault
-            name: security.services.role.default
+            name: ":security.services.role.default"
             label: Role Default
         securityServicesRoleRepositoryDefault:
             kind: panel.input.text
             id: securityServicesRoleRepositoryDefault
-            name: security.services.roleRepository.default
+            name: ":security.services.roleRepository.default"
             label: Role Repository Default
 
 emailServerSettings:
@@ -578,7 +578,7 @@ emailServerSettings:
         smtpEnabled:
             kind: panel.input.checkbox
             id: smtpEnabled
-            name: smtp.enabled
+            name: ":smtp.enabled"
             label: "Enable SMTP?"
         hostname:
             kind: panel.input.text
@@ -611,15 +611,15 @@ emailServerSettings:
             label: Properties
         smtpAuth:
             kind: panel.input.checkbox
-            name: mail.smtp.auth
+            name: ":mail.smtp.auth"
             label: SMTP Auth?
         smtpStartTls:
             kind: panel.input.checkbox
-            name: mail.smtp.starttls.enable
+            name: ":mail.smtp.starttls.enable"
             label: Start TLS?
         smtpSSLTrust:
             kind: panel.input.text
-            name: mail.smtp.ssl.trust
+            name: ":mail.smtp.ssl.trust"
             label: SSL Trust
             placeholder: localhost
         emailPrefix:
@@ -641,9 +641,9 @@ notifications:
         helpContactInfo:
             kind: panel.input.email
             id: helpContactInfo
-            name: notifications.helpContactInfo
+            name: ":notifications.helpContactInfo"
             label: "Help Contact Info"
-            value: "!? XNAT.data.notifications['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
+#            value: "!? XNAT.data.notifications['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
 
         emailMessageSubhead:
             kind: panel.subhead
@@ -652,19 +652,19 @@ notifications:
         emailMessageUserRegistration:
             kind: panel.textarea
             id: emailMessageUserRegistration
-            name: notifications.emailMessageUserRegistration
+            name: ":notifications.emailMessageUserRegistration"
             label: "User Registration"
             description: "Text of message emailed to users upon registration. Link for email validation is auto-populated."
         emailMessageForgotUsernameRequest:
             kind: panel.textarea
             id: emailMessageForgotUsernameRequest
-            name: notifications.emailMessageForgotUsernameRequest
+            name: ":notifications.emailMessageForgotUsernameRequest"
             label: "Forgot Username Request"
             description: "Text of message emailed to users upon lost username request."
         emailMessageForgotPasswordReset:
             kind: panel.textarea
             id: emailMessageForgotPasswordReset
-            name: notifications.emailMessageForgotPasswordReset
+            name: ":notifications.emailMessageForgotPasswordReset"
             label: "Password Reset"
             description: "Text of message emailed to users upon lost password reset. Link for password reset is auto-populated"
 
@@ -708,28 +708,28 @@ notifications:
         emailRecipientErrorMessages:
             kind: panel.input.email
             id: emailRecipientErrorMessages
-            name: notifications.emailRecipientErrorMessages
+            name: ":notifications.emailRecipientErrorMessages"
             label: "Error Messages"
             description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             id: emailRecipientIssueReports
-            name: notifications.emailRecipientIssueReports
+            name: ":notifications.emailRecipientIssueReports"
             label: "Issue Reports"
             description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             id: emailRecipientNewUserAlert
-            name: notifications.emailRecipientNewUserAlert
+            name: ":notifications.emailRecipientNewUserAlert"
             label: "New User Alert"
             description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             id: emailRecipientUpdate
-            name: notifications.emailRecipientUpdate
+            name: ":notifications.emailRecipientUpdate"
             label: "Updates"
             description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
@@ -788,7 +788,7 @@ themeManagement:
         uploadTheme:
             kind: panel.input.upload
             id: themeFileUpload
-            name: xnat.theme.upload
+            name: ":xnat.theme.upload"
             label: Upload a theme package
             description: Upload a zipped theme package for selection above.
             className: themeUploader
@@ -806,17 +806,17 @@ authenticationMethods:
         xnatInternal:
             kind: panel.input.checkbox
             id: xnatInternal
-            name: provider.providers.xnatInternal
+            name: ":provider.providers.xnatInternal"
             label: XNAT (Internal)
         ldapProvider:
             kind: panel.input.checkbox
             id: ldapProvider
-            name: provider.providers.ldap
+            name: ":provider.providers.ldap"
             label: LDAP
 #        oauthProvider:
 #            kind: panel.input.checkbox
 #            id: oauthProvider
-#            name: provider.providers.oauth
+#            name: ":provider.providers.oauth"
 #            label: OAuth
 genericAuthenticationProvider:
     kind: panel.form
@@ -921,7 +921,7 @@ registrationOptions:
             kind: panel.input.checkbox
             id: requireEmailVerificationToRegister
             name: emailVerification
-            label: "Require Email Verification To Register?"
+            label: "Require Email Verification <br>to Register?"
             description: >
                 If true, users will receive an email after registering for an account and must click a
                 link in the email to verify their email address before they are able to use their account.
@@ -942,7 +942,7 @@ registrationOptions:
             kind: panel.input.checkbox
             id: autoEnableUserRegistration
             name: userRegistration
-            label: "Auto-enable User Registration?"
+            label: "Auto-enable <br>User Registration?"
             description: >
                 If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
                 projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
@@ -951,7 +951,7 @@ registrationOptions:
             kind: panel.input.checkbox
             id: autoEnablePar
             name: par
-            label: "Auto-enable with Project Access Request?"
+            label: "Auto-enable with <br>Project Access Request?"
             description: >
                 If true, user accounts created when accepting project access requests will always be enabled (and verified) automatically. If false,
                 user accounts will only be enabled automatically if "Auto-enable User Registration?" is true. So this setting determines whether project
@@ -960,8 +960,8 @@ registrationOptions:
         uiAllowNewUserComments:
             kind: panel.input.checkbox
             id: uiAllowNewUserComments
-            name: UI.allow-new-user-comments
-            label: "Allow User Comments on Registration?"
+            name: ":UI.allow-new-user-comments"
+            label: "Allow User Comments <br>on Registration?"
 
 manageDataTypes:
     kind: panel.form
@@ -976,12 +976,12 @@ manageDataTypes:
         displayNameForGenericImageSessionSingular:
             kind: panel.input.text
             id: displayNameForGenericImageSessionSingular
-            name: displayNameForGenericImageSession.singular
+            name: ":displayNameForGenericImageSession.singular"
             label: "Singular Display Name For Generic Image Session Singular"
         displayNameForGenericImageSessionPlural:
             kind: panel.input.text
             id: displayNameForGenericImageSessionPlural
-            name: displayNameForGenericImageSession.plural
+            name: ":displayNameForGenericImageSession.plural"
             label: "Plural Display Name For Generic Image Session Singular"
 
 sessionBuilder:
@@ -1029,7 +1029,7 @@ anonymization:
             kind: panel.input.checkbox
             id: enableSitewideAnonymizationScript
             name: enableSitewideAnonymizationScript
-            label: "Enable Site-wide Anonymization Script"
+            label: "Enable Site-wide <br>Anonymization Script?"
         sitewideAnonymizationScript:
             kind: panel.textarea
             id: sitewideAnonymizationScript
@@ -1052,7 +1052,7 @@ seriesImportFilter:
             kind: panel.input.checkbox
             id: enableSitewideSeriesImportFilter
             name: enableSitewideSeriesImportFilter
-            label: "Enable Site-wide Series Import Filter"
+            label: "Enable Site-wide <br>Series Import Filter?"
         sitewideSeriesImportFilterMode:
             kind: panel.select.single
             id: sitewideSeriesImportFilterMode
@@ -1272,7 +1272,7 @@ dicomScpReceiversOld:
         defaultDicomReceiver:
             kind: panel.select.single
             id: defaultDicomReceiver
-            name: services.dicom.scp.aetitle
+            name: ":services.dicom.scp.aetitle"
             label: Default DICOM Receiver
             description: "AE Title for default DICOM receiver"
         receivedFileUser:
@@ -1290,6 +1290,7 @@ fileSystem:
     contentType: json
     action: /xapi/siteConfig/batch
     load: XNAT.data.siteConfig
+    refresh: /xapi/siteConfig
     contents:
         ${archivePath}
         ${cachePath}
@@ -1305,6 +1306,7 @@ misc:
     kind: panel.form
     name: misc
     label: Miscellaneous
+    footer: false
     method: POST
     contentType: json
     action: /xapi/siteConfig/batch
@@ -1321,7 +1323,8 @@ misc:
             label: Development Utilities
         spawner:
             kind: panel.element
-            description: Manage spawner elements.
+            label: Spawner
+#            description: Manage spawner elements.
             contents:
                 link:
                     tag: a.link
@@ -1331,14 +1334,15 @@ misc:
                         html: Manage Spawner Elements
         swagger:
             kind: panel.element
-            description: View the Swagger page.
+            label: Swagger
+#            description: View the Swagger page.
             contents:
                 link:
                     tag: a.link
                     element:
                         href: ~/xapi/swagger-ui.html
                         target: _blank
-                        html: Swagger
+                        html: View the Swagger page
 
 
 #################################################

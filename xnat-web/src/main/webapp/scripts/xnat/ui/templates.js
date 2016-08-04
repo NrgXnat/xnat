@@ -264,12 +264,12 @@ var XNAT = getObject(XNAT);
             hiddenInput = spawn('input', {
                 type: 'hidden',
                 name: element.name,
-                value: element.checked
+                value: element.checked ? element.value || opts.value || element.checked : false
             });
 
             // change the value of the hidden input onclick
             element.onclick = function(){
-                element.value = hiddenInput.value = this.checked.toString();
+                hiddenInput.value = this.checked ? this.value || this.checked.toString() : false;
             };
             
             // copy name to title

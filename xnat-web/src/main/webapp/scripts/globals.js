@@ -316,22 +316,47 @@ function setExtendedObject(obj, str, val){
 // --> myVal == 'myXnatSiteId'
 function lookupObjectValue(root, objStr, prop){
     
-    var val = '', delim = '.';
+    var val = '',
+        delim = '.',
+        brackets = /[\]\[]/,
+        hasBrackets = false,
+        parts = [];
     
     if (!objStr) {
-        objStr = root;
+        objStr = root+'';
         root = window;
     }
     
     if (!objStr) return '';
     
     root = root || window;
-    
-    // if 'objStr' contains colons, use those as the path delimeter
-    if (/:/.test(objStr)) { delim = ':' }
-    
+
+    // if 'objStr' contains brackets, use bracket notation
+    if (objStr.indexOf('[') > -1) {
+        delim = brackets;
+        // remove leading and trailing brackets
+        //objStr = objStr.replace(/^\[|]$/g, '')
+        hasBrackets = true;
+    }
+    // if 'objStr' contains colons, use those as the path delimiter
+    else if (/:/.test(objStr)) {
+        delim = ':';
+    }
+    // otherwise we're probably using dot notation
+
     objStr.toString().trim().split(delim).forEach(function(part, i){
-        part = part.trim();
+        part = (part+'').trim();
+        // if using brackets, trim quotes
+        if (hasBrackets) {
+            part = part.replace(/^[\['"]|['"\]]$/g, '');
+        }
+        // only push non-empty parts
+        // this should filter items that
+        // start or end with a delimiter
+        if (part > '') parts.push(part);
+    });
+
+    parts.forEach(function(part, i){
         // start at the root object
         if (i === 0) {
             val = root[part] || '';

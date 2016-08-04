@@ -55,6 +55,7 @@ div.xmodal .title .close:hover,
 div.xmodal .title .maximize:hover { color: #606060; background: #fafafa; border-color: #a0a0a0; cursor: pointer; }
 
 div.xmodal .body { width: 100% ; height: 100% ; position: absolute ; overflow: hidden ; }
+div.xmodal .body.scroll,
 div.xmodal .body.scroll > .inner { overflow: auto ; }
 div.xmodal .body > .inner > iframe {
     width: 100%; height: 100%; position: absolute;

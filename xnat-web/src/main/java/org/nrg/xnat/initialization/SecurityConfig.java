@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.services.SerializerService;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xnat.security.*;
 import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
 import org.nrg.xnat.security.config.AuthenticationProviderAggregator;
@@ -13,19 +15,23 @@ import org.nrg.xnat.security.config.AuthenticationProviderConfigurator;
 import org.nrg.xnat.security.config.DatabaseAuthenticationProviderConfigurator;
 import org.nrg.xnat.security.config.LdapAuthenticationProviderConfigurator;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.vote.AuthenticatedVoter;
 import org.springframework.security.access.vote.RoleVoter;
 import org.springframework.security.access.vote.UnanimousBased;
+import org.springframework.security.authentication.AnonymousAuthenticationProvider;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -33,7 +39,6 @@ import org.springframework.security.web.access.channel.ChannelDecisionManagerImp
 import org.springframework.security.web.access.channel.InsecureChannelProcessor;
 import org.springframework.security.web.access.channel.SecureChannelProcessor;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.*;
@@ -45,6 +50,7 @@ import java.io.InputStream;
 import java.util.*;
 
 @Configuration
+@EnableWebSecurity
 @ImportResource("WEB-INF/conf/xnat-security.xml")
 public class SecurityConfig {
     @Bean
@@ -68,8 +74,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatAuthenticationEntryPoint loginUrlAuthenticationEntryPoint() {
-        final XnatAuthenticationEntryPoint entryPoint = new XnatAuthenticationEntryPoint("/app/template/Login.vm", _configuration);
+    public XnatAuthenticationEntryPoint loginUrlAuthenticationEntryPoint(final SiteConfigPreferences preferences) {
+        final XnatAuthenticationEntryPoint entryPoint = new XnatAuthenticationEntryPoint("/app/template/Login.vm", preferences);
         entryPoint.setDataPaths(Arrays.asList("/xapi/**", "/data/**", "/REST/**", "/fs/**"));
         entryPoint.setInteractiveAgents(Arrays.asList(".*MSIE.*", ".*Mozilla.*", ".*AppleWebKit.*", ".*Opera.*"));
         return entryPoint;
@@ -86,11 +92,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CompositeSessionAuthenticationStrategy sas(final SessionRegistry sessionRegistry) throws SiteConfigurationException {
+    @Primary
+    public CompositeSessionAuthenticationStrategy sas(final SessionRegistry sessionRegistry, final SiteConfigPreferences preferences) throws SiteConfigurationException {
         ArrayList<SessionAuthenticationStrategy> authStrategies = new ArrayList<>();
 
         final ConcurrentSessionControlAuthenticationStrategy strategy = new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
-        strategy.setMaximumSessions(_configuration.getConcurrentMaxSessions());
+        strategy.setMaximumSessions(preferences.getConcurrentMaxSessions());
         strategy.setExceptionIfMaximumExceeded(true);
         authStrategies.add(strategy);
 
@@ -104,24 +111,24 @@ public class SecurityConfig {
     }
 
     @Bean
-    public LogoutFilter logoutFilter() {
+    public LogoutFilter logoutFilter(final SessionRegistry sessionRegistry) {
         final XnatLogoutSuccessHandler logoutSuccessHandler = new XnatLogoutSuccessHandler();
         logoutSuccessHandler.setOpenXnatLogoutSuccessUrl("/");
         logoutSuccessHandler.setSecuredXnatLogoutSuccessUrl("/app/template/Login.vm");
         final SecurityContextLogoutHandler securityContextLogoutHandler = new SecurityContextLogoutHandler();
         securityContextLogoutHandler.setInvalidateHttpSession(true);
-        final XnatLogoutHandler xnatLogoutHandler = new XnatLogoutHandler();
-        final LogoutFilter filter = new LogoutFilter(logoutSuccessHandler, securityContextLogoutHandler, xnatLogoutHandler);
+        final XnatLogoutHandler xnatLogoutHandler = new XnatLogoutHandler(sessionRegistry);
+        final LogoutFilter      filter            = new LogoutFilter(logoutSuccessHandler, securityContextLogoutHandler, xnatLogoutHandler);
         filter.setFilterProcessesUrl("/app/action/LogoutUser");
         return filter;
     }
 
     @Bean
-    public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor() throws IOException {
+    public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor(final SerializerService serializer, final SiteConfigPreferences preferences) throws IOException {
         final Resource resource = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         try (final InputStream inputStream = resource.getInputStream()) {
-            final HashMap<String, ArrayList<String>> urlMap = _serializer.deserializeYaml(inputStream, TYPE_REFERENCE);
-            final FilterSecurityInterceptorBeanPostProcessor postProcessor = new FilterSecurityInterceptorBeanPostProcessor();
+            final HashMap<String, ArrayList<String>>         urlMap        = serializer.deserializeYaml(inputStream, TYPE_REFERENCE);
+            final FilterSecurityInterceptorBeanPostProcessor postProcessor = new FilterSecurityInterceptorBeanPostProcessor(preferences);
             postProcessor.setOpenUrls(urlMap.get("openUrls"));
             postProcessor.setAdminUrls(urlMap.get("adminUrls"));
             return postProcessor;
@@ -129,28 +136,28 @@ public class SecurityConfig {
     }
 
     @Bean
-    public TranslatingChannelProcessingFilter channelProcessingFilter() throws SiteConfigurationException {
+    public TranslatingChannelProcessingFilter channelProcessingFilter(final SiteConfigPreferences preferences) throws SiteConfigurationException {
         final ChannelDecisionManagerImpl decisionManager = new ChannelDecisionManagerImpl();
         decisionManager.setChannelProcessors(Arrays.asList(new SecureChannelProcessor(), new InsecureChannelProcessor()));
         final TranslatingChannelProcessingFilter filter = new TranslatingChannelProcessingFilter();
         filter.setChannelDecisionManager(decisionManager);
-        filter.setRequiredChannel(_configuration.getSecurityChannel());
+        filter.setRequiredChannel(preferences.getSecurityChannel());
         return filter;
     }
 
     @Bean
-    public AliasTokenAuthenticationProvider aliasTokenAuthenticationProvider() {
-        return new AliasTokenAuthenticationProvider();
+    public AliasTokenAuthenticationProvider aliasTokenAuthenticationProvider(final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService) {
+        return new AliasTokenAuthenticationProvider(aliasTokenService, userAuthService);
     }
 
     @Bean
-    public DatabaseAuthenticationProviderConfigurator dbConfigurator() {
-        return new DatabaseAuthenticationProviderConfigurator();
+    public DatabaseAuthenticationProviderConfigurator dbConfigurator(final XnatDatabaseUserDetailsService userDetailsService, final SiteConfigPreferences preferences) {
+        return new DatabaseAuthenticationProviderConfigurator(userDetailsService, preferences);
     }
 
     @Bean
-    public LdapAuthenticationProviderConfigurator ldapConfigurator() {
-        return new LdapAuthenticationProviderConfigurator();
+    public LdapAuthenticationProviderConfigurator ldapConfigurator(final XdatUserAuthService service, final SiteConfigPreferences preferences) {
+        return new LdapAuthenticationProviderConfigurator(service, preferences);
     }
 
     @Bean
@@ -163,54 +170,44 @@ public class SecurityConfig {
         return new AuthenticationProviderAggregator(providers, configuratorMap);
     }
 
-    @Bean(name = {"org.springframework.security.authenticationManager", "customAuthenticationManager"})
-    public XnatProviderManager customAuthenticationManager(final AuthenticationProviderAggregator aggregator) {
-        return new XnatProviderManager(aggregator);
+    @Bean
+    @Primary
+    public XnatProviderManager customAuthenticationManager(final AuthenticationProviderAggregator aggregator, final XdatUserAuthService userAuthService, @SuppressWarnings("SpringJavaAutowiringInspection") final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource) {
+        return new XnatProviderManager(aggregator, userAuthService, anonymousAuthenticationProvider, dataSource);
     }
 
     @Bean
-    public XnatAuthenticationFilter customAuthenticationFilter(final XnatProviderManager providerManager,
-                                                               final AuthenticationSuccessHandler successHandler,
-                                                               final AuthenticationFailureHandler failureHandler,
-                                                               final SessionAuthenticationStrategy sas) {
-        final XnatAuthenticationFilter filter = new XnatAuthenticationFilter();
-        filter.setAuthenticationManager(providerManager);
-        filter.setAuthenticationSuccessHandler(successHandler);
-        filter.setAuthenticationFailureHandler(failureHandler);
-        filter.setSessionAuthenticationStrategy(sas);
-        return filter;
+    public XnatAuthenticationFilter customAuthenticationFilter() {
+        return new XnatAuthenticationFilter();
     }
 
     @Bean
-    public XnatBasicAuthenticationFilter customBasicAuthenticationFilter(final XnatProviderManager providerManager,
-                                                                         final AuthenticationEntryPoint entryPoint,
-                                                                         final SessionAuthenticationStrategy sas) {
-        final XnatBasicAuthenticationFilter filter = new XnatBasicAuthenticationFilter(providerManager, entryPoint);
-        filter.setSessionAuthenticationStrategy(sas);
-        return filter;
+    public XnatBasicAuthenticationFilter customBasicAuthenticationFilter(final AuthenticationManager authenticationManager,
+                                                                         final AuthenticationEntryPoint entryPoint) {
+        return new XnatBasicAuthenticationFilter(authenticationManager, entryPoint);
     }
 
     @Bean
-    public XnatExpiredPasswordFilter expiredPasswordFilter() {
-        final XnatExpiredPasswordFilter filter = new XnatExpiredPasswordFilter();
-        filter.setChangePasswordPath("/app/template/XDATScreen_UpdateUser.vm");
-        filter.setChangePasswordDestination("/app/action/ModifyPassword");
-        filter.setLogoutDestination("/app/action/LogoutUser");
-        filter.setLoginPath("/app/template/Login.vm");
-        filter.setLoginDestination("/app/action/XDATLoginUser");
-        filter.setInactiveAccountPath("/app/template/InactiveAccount.vm");
-        filter.setInactiveAccountDestination("/app/action/XnatInactiveAccount");
-        filter.setEmailVerificationPath("/app/template/VerifyEmail.vm");
-        filter.setEmailVerificationDestination("/data/services/sendEmailVerification");
-        return filter;
+    public XnatExpiredPasswordFilter expiredPasswordFilter(final SiteConfigPreferences preferences, final JdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService) {
+        return new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService) {{
+            setChangePasswordPath("/app/template/XDATScreen_UpdateUser.vm");
+            setChangePasswordDestination("/app/action/ModifyPassword");
+            setLogoutDestination("/app/action/LogoutUser");
+            setLoginPath("/app/template/Login.vm");
+            setLoginDestination("/app/action/XDATLoginUser");
+            setInactiveAccountPath("/app/template/InactiveAccount.vm");
+            setInactiveAccountDestination("/app/action/XnatInactiveAccount");
+            setEmailVerificationPath("/app/template/VerifyEmail.vm");
+            setEmailVerificationDestination("/data/services/sendEmailVerification");
+        }};
     }
 
     @Bean
-    public XnatInitCheckFilter xnatInitCheckFilter() throws IOException {
+    public XnatInitCheckFilter xnatInitCheckFilter(final SerializerService serializer, final XnatAppInfo appInfo) throws IOException {
         final Resource resource = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/initialization-urls.yaml");
         try (final InputStream inputStream = resource.getInputStream()) {
-            final XnatInitCheckFilter filter = new XnatInitCheckFilter();
-            final JsonNode paths = _serializer.deserializeYaml(inputStream);
+            final XnatInitCheckFilter filter = new XnatInitCheckFilter(appInfo);
+            final JsonNode            paths  = serializer.deserializeYaml(inputStream);
             filter.setConfigurationPath(paths.get("configPath").asText());
             filter.setNonAdminErrorPath(paths.get("nonAdminErrorPath").asText());
             filter.setInitializationPaths(nodeToList(paths.get("initPaths")));
@@ -220,10 +217,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatDatabaseUserDetailsService customDatabaseService(final DataSource dataSource) {
-        final XnatDatabaseUserDetailsService service = new XnatDatabaseUserDetailsService();
-        service.setDataSource(dataSource);
-        return service;
+    public XnatDatabaseUserDetailsService customDatabaseService(final XdatUserAuthService userAuthService, final DataSource dataSource) {
+        return new XnatDatabaseUserDetailsService(userAuthService, dataSource);
     }
 
     protected List<String> nodeToList(final JsonNode node) {
@@ -244,12 +239,4 @@ public class SecurityConfig {
     private static final ResourceLoader                                    RESOURCE_LOADER = new DefaultResourceLoader();
     private static final TypeReference<HashMap<String, ArrayList<String>>> TYPE_REFERENCE  = new TypeReference<HashMap<String, ArrayList<String>>>() {
     };
-
-    @Autowired
-    @Lazy
-    private InitializerSiteConfiguration _configuration;
-
-    @Autowired
-    @Lazy
-    private SerializerService _serializer;
 }

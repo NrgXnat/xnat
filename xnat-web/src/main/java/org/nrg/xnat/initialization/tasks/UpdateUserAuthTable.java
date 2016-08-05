@@ -5,7 +5,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -15,8 +15,22 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Adds users from /old xdat_user table to new user authentication table if they are not already there. New local
+ * database users now get added to both automatically, but this is necessary so that those who upgrade from an earlier
+ * version still have their users be able to log in. Password expiry times are also added so that pre-existing users
+ * still have their passwords expire.
+ */
+@SuppressWarnings("SqlDialectInspection")
 @Component
 public class UpdateUserAuthTable extends AbstractInitializingTask {
+    @Autowired
+    public UpdateUserAuthTable(final JdbcTemplate template, final XdatUserAuthService xdatUserAuthService) {
+        super();
+        _template = template;
+        _xdatUserAuthService = xdatUserAuthService;
+    }
+
     @Override
     public String getTaskName() {
         return "Update the user authentication table";
@@ -24,39 +38,34 @@ public class UpdateUserAuthTable extends AbstractInitializingTask {
 
     @Override
     public void run() {
-        /**
-         * Adds users from /old xdat_user table to new user authentication table if they are not already there. New local database users now get added to both automatically, but this is necessary
-         * so that those who upgrade from an earlier version will still have their users be able to log in. Password expiry times are also added so that pre-existing users still have their passwords expire.
-         */
-        final List<XdatUserAuth> unmapped = _template.query("SELECT login, enabled FROM xdat_user WHERE login NOT IN (SELECT xdat_username FROM xhbm_xdat_user_auth)", new RowMapper<XdatUserAuth>() {
-            @Override
-            public XdatUserAuth mapRow(final ResultSet resultSet, final int i) throws SQLException {
-                final String login = resultSet.getString("login");
-                final boolean enabled = resultSet.getInt("enabled") == 1;
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Creating new user auth object for user {}, authentication is {}", login, enabled ? "enabled" : "disabled");
+        try {
+            final List<XdatUserAuth> unmapped = _template.query("SELECT login, enabled FROM xdat_user WHERE login NOT IN (SELECT xdat_username FROM xhbm_xdat_user_auth)", new RowMapper<XdatUserAuth>() {
+                @Override
+                public XdatUserAuth mapRow(final ResultSet resultSet, final int i) throws SQLException {
+                    final String login = resultSet.getString("login");
+                    final boolean enabled = resultSet.getInt("enabled") == 1;
+                    if (_log.isDebugEnabled()) {
+                        _log.debug("Creating new user auth object for user {}, authentication is {}", login, enabled ? "enabled" : "disabled");
+                    }
+                    return new XdatUserAuth(login, XdatUserAuthService.LOCALDB, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, login, 0);
                 }
-                return new XdatUserAuth(login, XdatUserAuthService.LOCALDB, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, login, 0);
+            });
+            for (XdatUserAuth userAuth : unmapped) {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Persisting user auth object for user {}", userAuth.getXdatUsername());
+                }
+                _xdatUserAuthService.create(userAuth);
             }
-        });
-        for (XdatUserAuth userAuth : unmapped) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Persisting user auth object for user {}", userAuth.getXdatUsername());
-            }
-            _xdatUserAuthService.create(userAuth);
+            _log.debug("Updating the user auth table to set password updated to the current time for local users");
+            _template.execute("UPDATE xhbm_xdat_user_auth SET password_updated=current_timestamp WHERE auth_method='" + XdatUserAuthService.LOCALDB + "' AND password_updated IS NULL");
+            complete();
+        } catch (BadSqlGrammarException e) {
+            _log.info("Unable to execute user auth table update, maybe the table doesn't exist yet?", e);
         }
-        _log.debug("Updating the user auth table to set password updated to the current time for local users");
-        _template.execute("UPDATE xhbm_xdat_user_auth SET password_updated=current_timestamp WHERE auth_method='" + XdatUserAuthService.LOCALDB + "' AND password_updated IS NULL");
-        complete();
     }
 
     private static final Logger _log = LoggerFactory.getLogger(UpdateUserAuthTable.class);
 
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
-
-    @Autowired
-    @Lazy
-    private XdatUserAuthService _xdatUserAuthService;
+    private final JdbcTemplate _template;
+    private final XdatUserAuthService _xdatUserAuthService;
 }

@@ -1,13 +1,9 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
-import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.ResetFailedLogins;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
@@ -18,6 +14,13 @@ import java.util.concurrent.ScheduledFuture;
 
 @Component
 public class ResetFailedLoginsHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+    @Autowired
+    public ResetFailedLoginsHandlerMethod(final SiteConfigPreferences preferences, final JdbcTemplate template, final ThreadPoolTaskScheduler scheduler) {
+        _preferences = preferences;
+        _template = template;
+        _scheduler = scheduler;
+    }
+
     @Override
     public List<String> getHandledPreferences() {
         return PREFERENCES;
@@ -32,37 +35,26 @@ public class ResetFailedLoginsHandlerMethod extends AbstractSiteConfigPreference
 
     @Override
     public void handlePreference(final String preference, final String value) {
-        if(PREFERENCES.contains(preference)){
+        if (PREFERENCES.contains(preference)) {
             updateResetFailedLogins();
         }
     }
 
-    private void updateResetFailedLogins(){
-		try {
-            _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-            _scheduler.getScheduledThreadPoolExecutor().getQueue().iterator();
+    private void updateResetFailedLogins() {
+        _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
+        _scheduler.getScheduledThreadPoolExecutor().getQueue().iterator();
+        for (ScheduledFuture temp : scheduledResetFailedLogins) {
+            temp.cancel(false);
+        }
+        scheduledResetFailedLogins.clear();
+        scheduledResetFailedLogins.add(_scheduler.schedule(new ResetFailedLogins(_template, _preferences.getMaxFailedLoginsLockoutDuration()), new CronTrigger(_preferences.getResetFailedLoginsSchedule())));
+    }
 
-			for(ScheduledFuture temp: scheduledResetFailedLogins){
-				temp.cancel(false);
-			}
-            scheduledResetFailedLogins.clear();
-			scheduledResetFailedLogins.add(_scheduler.schedule(new ResetFailedLogins(_template,XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration()),new CronTrigger(XDAT.getSiteConfigPreferences().getResetFailedLoginsSchedule())));
-
-		} catch (Exception e1) {
-			_log.error("", e1);
-		}
-	}
-
-    private static final Logger       _log        = LoggerFactory.getLogger(ResetFailedLoginsHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("maxFailedLoginsLockoutDuration", "resetFailedLoginsSchedule"));
 
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
+    private final ArrayList<ScheduledFuture> scheduledResetFailedLogins = new ArrayList<>();
 
-    private              ArrayList<ScheduledFuture> scheduledResetFailedLogins = new ArrayList<>();
-
-    @Autowired
-    @Qualifier("taskScheduler")
-    private ThreadPoolTaskScheduler _scheduler;
+    private final SiteConfigPreferences   _preferences;
+    private final JdbcTemplate            _template;
+    private final ThreadPoolTaskScheduler _scheduler;
 }

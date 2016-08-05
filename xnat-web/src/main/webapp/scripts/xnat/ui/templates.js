@@ -102,7 +102,7 @@ var XNAT = getObject(XNAT);
         _templ = [
             'div|data-name='+(opts.name||''),
             { className: opts.className },
-            content
+            [].concat(content, spawn('br.clear'))
         ];
         _spawn = function(){
             return spawn.apply(null, _templ);
@@ -132,21 +132,26 @@ var XNAT = getObject(XNAT);
         
         // pass in an element or create a new 'div' element
         element = 
-            element || spawn('div', {
+            element || spawn('div', extend(true, {
                 id: opts.id,
                 className: opts.className||'',
                 title: opts.title||opts.name||opts.id,
                 html: opts.value||opts.html||opts.text||opts.body||''
-            });
+            }, opts.element));
         
         return template.panelElement(opts, [
             ['label.element-label|for='+element.id||opts.id, opts.label],
-            ['div.element-wrapper', [
+            ['div.element-wrapper', [].concat(
                 
+                (opts.beforeElement ? opts.beforeElement : []),
+
                 element ,
-                
-                ['div.description', opts.description]
-            ]]
+
+                (opts.afterElement ? opts.afterElement : []),
+
+                spawn('div.description', opts.description||'')
+
+            )]
         ]);
     };
     // ========================================    
@@ -233,7 +238,20 @@ var XNAT = getObject(XNAT);
             $element.not('textarea').dataAttr('value', element.value);
         }
 
-        var inner = [element];
+        var inner = [];
+
+        // add 'before' content before the core element
+        if (opts.beforeElement) {
+            opts.beforeElement = stringable(opts.beforeElement) ? [opts.beforeElement] : 
+            inner.push(spawn('span.before', opts.beforeElement));
+        }
+
+        inner.push(element);
+
+        // add 'after' content after the core element
+        if (opts.afterElement) {
+            inner.push(spawn('span.after', opts.afterElement));
+        }
 
         var hiddenInput;
 
@@ -246,12 +264,12 @@ var XNAT = getObject(XNAT);
             hiddenInput = spawn('input', {
                 type: 'hidden',
                 name: element.name,
-                value: element.checked
+                value: element.checked ? element.value || opts.value || element.checked : false
             });
 
             // change the value of the hidden input onclick
             element.onclick = function(){
-                element.value = hiddenInput.value = this.checked.toString();
+                hiddenInput.value = this.checked ? this.value || this.checked.toString() : false;
             };
             
             // copy name to title
@@ -262,6 +280,7 @@ var XNAT = getObject(XNAT);
             
             // add a class for easy selection
             addClassName(element, 'controller');
+            addClassName(opts, 'controller');
 
             // add the hidden input
             inner.push(hiddenInput);
@@ -269,7 +288,7 @@ var XNAT = getObject(XNAT);
         }
 
         // add the description after the input
-        inner.push(['div.description', opts.description||opts.body||opts.html]);
+        inner.push(spawn('div.description', opts.description||opts.body||opts.html));
 
         return template.panelElement(opts, [
             ['label.element-label|for='+element.id||opts.id, opts.label],

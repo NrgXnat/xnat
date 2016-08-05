@@ -8,13 +8,14 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +36,8 @@ import java.util.Properties;
 @RequestMapping(value = "/siteConfig")
 public class SiteConfigApi extends AbstractXapiRestController {
     @Autowired
-    @Lazy
-    public SiteConfigApi(final SiteConfigPreferences preferences, final XnatAppInfo appInfo) {
+    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo) {
+        super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
     }
@@ -167,14 +168,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
-        }
-
-        if (_log.isInfoEnabled()) {
-            final StringBuilder message = new StringBuilder("User ").append(getSessionUser().getUsername()).append(" is setting the values for the following properties:\n");
-            for (final String name : properties.keySet()) {
-                message.append(" * ").append(name).append(": ").append(properties.get(name)).append("\n");
-            }
-            _log.info(message.toString());
         }
 
         // Is this call initializing the system?

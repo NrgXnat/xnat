@@ -48,6 +48,39 @@ var XNAT = getObject(XNAT || {});
         return input;
     }
 
+    function loadingDialog(id){
+        id = id ? '#'+id : '#loading';
+        // make sure xmodal script is loaded
+        if (xmodal && xmodal.loading) {
+            return {
+                open: function(){
+                    return xmodal.loading.open(id);
+                },
+                close: function(){
+                    if (id === '#*') {
+                        xmodal.loading.closeAll();
+                    }
+                    else {
+                        xmodal.loading.close(id);
+                    }
+                },
+                closeAll: xmodal.loading.closeAll
+            }
+        } else {
+            return {
+                open: function(){
+                    // Do nothing
+                },
+                close: function(){
+                    // Do nothing
+                },
+                closeAll: function(){
+                    // Do nothing
+                }
+            }
+        } 
+    }
+
     /**
      * Initialize panel.
      * @param [opts] {Object} Config object
@@ -144,14 +177,14 @@ var XNAT = getObject(XNAT || {});
             ],
 
             // TODO: use opts.element for the panel itself
-            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
+            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', extend(true, {
                 id: toDashed(opts.id || opts.element.id || opts.name) + '-panel',
                 name: opts.name,
                 method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
                 addClass: opts.classes || '',
                 data: opts.data
-            }, [
+            }, opts.element), [
 
                 (hideHeader ? ['div.hidden'] : ['div.panel-heading', [
                     ['h3.panel-title', opts.title]
@@ -178,9 +211,9 @@ var XNAT = getObject(XNAT || {});
             // find all form inputs with a name attribute
             $$(form).find(':input').each(function(){
 
-                var val = dataObj[this.name||this.title];
+                var val = lookupObjectValue(dataObj, this.name||this.title);
 
-                if (!val) return;
+                //if (!val) return;
 
                 if (Array.isArray(val)) {
                     val = val.join(', ');
@@ -196,9 +229,9 @@ var XNAT = getObject(XNAT || {});
                 }
 
             });
-            if (xmodal && xmodal.loading && xmodal.loading.closeAll){
-                xmodal.loading.closeAll();
-            }
+
+            loadingDialog().closeAll();
+
         }
 
 
@@ -211,11 +244,9 @@ var XNAT = getObject(XNAT || {});
             // need a form to put the data into!
             // and a 'load' property too
             if (!form || !obj.load) {
-                xmodal.loading.close('#load-data');
+                loadingDialog().close();
                 return;
             }
-
-            //xmodal.loading.open('#load-data');
 
             obj.load = (obj.load+'').trim();
 
@@ -237,7 +268,7 @@ var XNAT = getObject(XNAT || {});
                     obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
                     obj.prop = obj.prop || obj.load.split('|')[1] || '';
                     setValues(form, lookupObjectValue(window, obj.load, obj.prop));
-                    xmodal.loading.close('#load-data');
+                    loadingDialog().close();
                     return form;
                 }
 
@@ -254,7 +285,7 @@ var XNAT = getObject(XNAT || {});
                     console.log(e);
                 }
 
-                xmodal.loading.close('#load-data');
+                loadingDialog().close();
                 return form;
                 
             }
@@ -278,7 +309,7 @@ var XNAT = getObject(XNAT || {});
 
             // need a url to get the data
             if (!ajaxUrl || !stringable(ajaxUrl)) {
-                xmodal.loading.close('#load-data');
+                loadingDialog().close();
                 return form;
             }
 
@@ -307,7 +338,7 @@ var XNAT = getObject(XNAT || {});
 
 
             obj.ajax.complete = function(){
-                xmodal.loading.close('#load-data');
+                loadingDialog().close();
             };
 
             // return the ajax thing for method chaining
@@ -329,7 +360,7 @@ var XNAT = getObject(XNAT || {});
         // custom event for reloading data (refresh)
         $formPanel.on('reload-data', function(){
             loadData(this, {
-                refresh: opts.refresh || opts.load || opts.url
+                load: opts.refresh || opts.load || opts.url
             });
         });
 
@@ -355,6 +386,7 @@ var XNAT = getObject(XNAT || {});
         $formPanel.on('submit', function(e){
 
             e.preventDefault();
+            e.stopImmediatePropagation();
 
             var $form = $(this).removeClass('error'),
                 errors = 0,
@@ -415,11 +447,13 @@ var XNAT = getObject(XNAT || {});
             function formToJSON(form){
                 var json = {};
                 $$(form).serializeArray().forEach(function(item) {
-                    if (typeof json[item.name] == 'undefined') {
-                        json[item.name] = item.value || '';
+                    if (!item.name) return;
+                    var name = item.name.replace(/^:/,'');
+                    if (typeof json[name] == 'undefined') {
+                        json[name] = item.value || '';
                     }
                     else {
-                        json[item.name] = [].concat(json[item.name], item.value||[]) ;
+                        json[name] = [].concat(json[name], item.value||[]) ;
                     }
                 });
                 return json;
@@ -435,20 +469,16 @@ var XNAT = getObject(XNAT || {});
                     // ALWAYS reload from the server
                     obj.refresh = opts.refresh || opts.reload || opts.url || opts.load;
                     if (!silent){
-                        //xmodal.loading.close(saveLoader.$modal);
                         XNAT.ui.banner.top(2000, 'Data saved successfully.', 'success');
                         loadData($form, obj);
-                        // xmodal.message('Data saved successfully.', {
-                        //     action: function(){
-                        //         loadData($form, obj);
-                        //     }
-                        // });
                     }
                 }
             };
 
             if (/json/i.test(opts.contentType||'')){
-                ajaxConfig.data = JSON.stringify(formToJSON(this));
+                // ajaxConfig.data = JSON.stringify(formToJSON(this));
+                // ajaxConfig.data = JSON.stringify(form2js(this, /[:\[\]]/));
+                ajaxConfig.data = JSON.stringify(form2js(this, ':'));
                 ajaxConfig.processData = false;
                 ajaxConfig.contentType = 'application/json';
                 $.ajax(ajaxConfig);
@@ -529,7 +559,7 @@ var XNAT = getObject(XNAT || {});
                     e.preventDefault();
                     var $forms = $(this).find('form');
 
-                    var loader = xmodal.loading.open('#multi-save');
+                    var loader = loadingDialog('multi-save').open();
 
                     // reset error count on new submission
                     multiform.errors = 0;
@@ -551,7 +581,7 @@ var XNAT = getObject(XNAT || {});
                     // multiform.errors = 0;
                     // multiform.count = 0;
 
-                    xmodal.loading.close(loader.$modal);
+                    loader.close();
 
                     // fire the callback function after all forms are submitted error-free
 
@@ -629,6 +659,9 @@ var XNAT = getObject(XNAT || {});
             _inner.push(['div.description', opts.description||opts.body||opts.html]);
         }
 
+        // add element to clear floats
+        _inner.push(['br.clear']);
+
         _element = spawn('div', opts.element, _inner);
 
         return {
@@ -684,12 +717,12 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
-
-    panel.input = {};
-
+    
     panel.display = function(opts){
         return XNAT.ui.template.panelDisplay(opts).spawned;
     };
+
+    panel.input = {};
 
     panel.input.text = function(opts){
         return XNAT.ui.template.panelInput(opts).spawned;
@@ -698,35 +731,76 @@ var XNAT = getObject(XNAT || {});
     panel.input.number = function panelInputNumber(opts){
         opts = cloneObject(opts);
         opts.type = 'number';
+        addClassName(opts, 'input-text number');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.email = function panelInputEmail(opts){
         opts = cloneObject(opts);
         opts.type = 'text';
-        addClassName(opts, 'email');
+        addClassName(opts, 'input-text email');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.password = function panelInputPassword(opts){
         opts = cloneObject(opts);
         opts.type = 'password';
-        addClassName(opts, 'password');
+        addClassName(opts, 'input-text password');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.date = function panelInputDate(opts){
         opts = cloneObject(opts);
         opts.type = 'date';
-        addClassName(opts, 'date');
+        addClassName(opts, 'input-text date');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.checkbox = function panelInputCheckbox(opts){
         opts = cloneObject(opts);
         opts.type = 'checkbox';
+        addClassName(opts, 'checkbox');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
+
+    panel.input.radio = function panelInputCheckbox(opts){
+        opts = cloneObject(opts);
+        opts.type = 'radio';
+        addClassName(opts, 'radio');
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+
+
+    panel.input.hidden = function panelInputHidden(opts){
+        opts = cloneObject(opts);
+        opts.type = 'hidden';
+        opts.element = extend(true, {
+            type: 'hidden',
+            className: opts.className || opts.classes || '',
+            name: opts.name,
+            id: opts.id || toDashed(opts.name),
+            value: opts.value || ''
+        }, opts.element);
+
+        addClassName(opts.element, 'hidden');
+
+        if (opts.validation || opts.validate) {
+            extend(true, opts.element, {
+                data: {
+                    validate: opts.validation || opts.validate
+                }
+            })
+        }
+
+        return spawn('input', opts.element);
+    };
+
+
+    // add event handlers for setting values of
+    // hidden inputs controlled by checkboxes
+    // $('body').on('change', 'input.checkbox.controller', function(){
+    //     $(this).next('input.hidden').val(this.checked);
+    // });
 
     panel.input.upload = function panelInputUpload(opts){
         opts = cloneObject(opts);
@@ -780,8 +854,22 @@ var XNAT = getObject(XNAT || {});
             opts.html || '';
     
         opts.element.html = lookupValue(opts.element.html);
+        opts.element.title = 'Double-click to open in code editor.';
 
-        opts.element.rows = 6;
+        if (opts.code || opts.codeLanguage) {
+            opts.code = opts.code || opts.codeLanguage;
+            addDataObjects(opts.element, {
+                codeLanguage: opts.code
+            });
+        }
+
+        // open code editor on double-click
+        opts.element.ondblclick = function(){
+            var panelTextarea = XNAT.app.codeEditor.init(this, { language: opts.code || 'html' });
+            panelTextarea.openEditor();
+        };
+
+        opts.element.rows = 10;
         
         var textarea = spawn('textarea', opts.element);
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
@@ -794,7 +882,7 @@ var XNAT = getObject(XNAT || {});
     
     panel.select = {};
 
-    panel.select.menu = function panelSelectSingle(opts, multi){
+    panel.select.menu = function panelSelectMenu(opts, multi){
 
         var _menu;
 
@@ -814,17 +902,11 @@ var XNAT = getObject(XNAT || {});
             opts.element.multiple = true;
         }
 
-        _menu = spawn('select', opts.element, [['option', 'Select']]);
+        // set label: false so it's not created in XNAT.ui.select.menu()
+        //opts.label = false;
 
-        if (opts.options){
-            forOwn(opts.options, function(name, prop){
-                _menu.appendChild(spawn('option', {
-                    html: prop.html || prop.text || prop.label || prop.value || prop,
-                    value: prop.value || name,
-                    selected: prop.selected || (prop.value === opts.value)
-                }));
-            });
-        }
+        // use XNAT.ui.select.menu() to normalize rendering
+        _menu = XNAT.ui.select.menu(extend({}, opts, { label: false })).element;
 
         return XNAT.ui.template.panelInput(opts, _menu).spawned;
 
@@ -836,31 +918,33 @@ var XNAT = getObject(XNAT || {});
         return panel.select.menu(opts, true)
     };
     panel.select.multi.init = panel.select.multi;
+    panel.select.multiple   = panel.select.multi;
 
 
 
     //////////////////////////////////////////////////
     // DATA PANELS - RETRIEVE/DISPLAY DATA
     //////////////////////////////////////////////////
+    
+    panel.dataTable = function(opts){
 
-    panel.data = {};
-
-    panel.data.table = function(opts){
+        opts = cloneObject(opts);
 
         // initialize the table
         var dataTable = XNAT.table.dataTable(opts.data||[], opts);
 
-        return {
-            element: dataTable.table,
-            spawned: dataTable.table,
-            get: function(){
-                return dataTable.table
-            }
-        };
+        var panelElement = panel.element({
+            label: opts.label,
+            description: opts.description
+        });
+
+        panelElement.target.appendChild(dataTable.table);
+
+        return panelElement;
         
     };
 
-    panel.data.list = function(opts){
+    panel.dataList = function(opts){
         // initialize the table
         opts = cloneObject(opts);
         opts.element = opts.element || {};
@@ -1005,28 +1089,6 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
-
-    function footerButton(text, type, disabled, classes){
-        var button = {
-            type: type || 'button',
-            html: text || 'Submit'
-        };
-        button.classes = [classes || '', 'btn btn-sm'];
-        if (type === 'link') {
-            button.classes.push('btn-link')
-        }
-        else if (/submit|primary/.test(type)) {
-            button.classes.push('btn-primary')
-        }
-        else {
-            button.classes.push('btn-default')
-        }
-        if (disabled) {
-            button.classes.push('disabled');
-            button.disabled = 'disabled'
-        }
-        return spawn('button', button);
-    }
 
     // return a single 'toggle' element
     function radioToggle(item){
@@ -1269,3 +1331,4 @@ var XNAT = getObject(XNAT || {});
     });
 
 })(XNAT, jQuery, window);
+

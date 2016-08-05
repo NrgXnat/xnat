@@ -36,13 +36,13 @@ var XNAT = getObject(XNAT);
     spawner.notSpawned = [];
 
     function setRoot(url){
-        url = url.replace(/^([*~.]\/+)/, '/');
+        url = url.replace(/^([*~.]\/*)/, '/');
         return XNAT.url.rootUrl(url)
     }
 
     // ==================================================
     // MAIN FUNCTION
-    spawner.spawn = function _spawn(obj){
+    spawner.spawn = spawner.init = function _spawn(obj){
 
         var frag  = document.createDocumentFragment(),
             $frag = $(frag),
@@ -225,7 +225,7 @@ var XNAT = getObject(XNAT);
         _spawn.get = function(){
             return frag;
         };
-        
+
         _spawn.getContents = function(){
             return $frag.contents();    
         };
@@ -274,6 +274,47 @@ var XNAT = getObject(XNAT);
     // ==================================================
 
 
+    // given a container and spawner object,
+    // spawn the elements into the container
+    spawner.render = function(container, obj){
+        return spawner.spawn(obj).render($$(container))
+    };
+
+
+    // spawn elements with only the namespace/element path,
+    // container/selector, and an optional AJAX config object
+    // XNAT.spawner.resolve('siteAdmin/adminPage').render('#page-container');
+    // or assign it to a variable and render later.
+    // var adminPage = XNAT.spawner.resolve('siteAdmin/adminPage');
+    // adminPage.render('#page-container');
+    // and methods from the AJAX request will be in .get.done(), .get.fail(), etc.
+    spawner.resolve = function(nsPath, opts) {
+
+        // you can pass a config object as the only argument
+        opts = cloneObject(firstDefined(opts, getObject(nsPath)));
+
+        console.log(opts);
+
+        var url = opts.url || XNAT.url.restUrl('/xapi/spawner/resolve/' + nsPath);
+
+        var request = XNAT.xhr.getJSON(extend(true, {
+            url: url
+        }, opts));
+
+        function spawnRender(container){
+            return request.done(function(obj){
+                spawner.spawn(obj).render($$(container))
+            });
+        }
+
+        return {
+            done: request.done,
+            spawn: spawnRender,
+            render: spawnRender
+        };
+
+    };
+
     spawner.testSpawn = function(){
         var jsonUrl =
                 XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.json');
@@ -292,4 +333,3 @@ var XNAT = getObject(XNAT);
     return XNAT.spawner = spawner;
 
 }));
-

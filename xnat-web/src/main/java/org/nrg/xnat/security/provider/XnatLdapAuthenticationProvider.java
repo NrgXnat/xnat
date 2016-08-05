@@ -94,6 +94,16 @@ public class XnatLdapAuthenticationProvider extends LdapAuthenticationProvider i
         return XdatUserAuthService.LDAP;
     }
 
+	@Override
+	public int getOrder() {
+		return _order;
+	}
+
+	@Override
+	public void setOrder(int order) {
+		_order = order;
+	}
+
     /**
      * Indicates whether the provider should be visible to and selectable by users. <b>false</b> usually indicates an
      * internal authentication provider, e.g. token authentication.
@@ -109,4 +119,5 @@ public class XnatLdapAuthenticationProvider extends LdapAuthenticationProvider i
 
     private String _displayName = "";
     private String _providerId = "";
+	private int _order = -1;
 }

@@ -17,8 +17,8 @@ import java.util.HashSet;
 @Configuration
 public class ReactorConfig {
     @Bean
-    public NrgEventService xftEventService() {
-        return new NrgEventService();
+    public NrgEventService eventService(final EventBus eventBus) {
+        return new NrgEventService(eventBus);
     }
 
     @Bean

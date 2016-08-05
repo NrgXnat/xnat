@@ -208,6 +208,7 @@
                 <td class="edit" data-action="editScript">
                     <a href="#!" class="edit"><b>__SCRIPT_ID__</b></a>
                 </td>
+                <td class="edit" data-action="editScript">__SCRIPT_LABEL__</td>
                 <td class="edit" data-action="editScript">__SCRIPT_DESCRIPTION__</td>
                 <td class="actions" style="text-align:center;white-space:nowrap;">
                     <a href="#!" data-action="editScript" title="edit existing script">edit</a>
@@ -298,14 +299,17 @@
 
                             <p id="no-scripts-installed" style="display:none;">No scripts are currently installed on this system.</p>
 
-                            <table id="scripts-table" class="xnat-table" style="display:none;width:100%;">
+                            <table id="scripts-table" class="sortable xnat-table" style="display:none;width:100%;">
                                 <thead>
-                                <th>Script ID</th>
+                                <tr>
+                                <th class="sort index">Script ID</th>
+                                <th class="sort">Script Label</th>
                                 <th width="50%">Description</th>
                                 ##<th>Version</th>
                                 <th>&nbsp;</th>
                                 ##                <th>&nbsp;</th>
                                 ##                <th>&nbsp;</th>
+                                </tr>
                                 </thead>
                                 <tbody>
 
@@ -412,7 +416,6 @@
         </div>
 
 
-
         <!-- SCRIPT EDITOR TEMPLATE -->
         <div id="script-editor-template" class="html-template">
             <input type="hidden" name="id" class="id" value="">
@@ -440,21 +443,24 @@
                 </tr>
                 <tr>
                     <td><b>Script Version: </b>&nbsp;</td>
-                    <td><select id="script-version" class="script-version">
-                        <option value="!">Select a Version</option>
-                    </select></td>
+                    <td>
+                        <select id="script-version" class="script-version">
+##                          <option value="!">Select a Version</option>
+                        </select>
+                    </td>
                 </tr>
             </table>
             <br>
-            <div class="editor-wrapper" style="width:840px;height:482px;position:relative;">
+            <div class="editor-wrapper" style="width:840px;height:440px;position:relative;">
                 <!-- the '.editor-content' div gets replaced when the script content is loaded -->
                 <div class="editor-content" style="position:absolute;top:0;right:0;bottom:0;left:0;border:1px solid #ccc;"></div>
             </div>
         </div><!-- /#script-editor-template -->
 
+
         <script type="text/javascript" src="$content.getURI("scripts/lib/ace/ace.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/xnat/app/automation.js")"></script>
-        <script type="text/javascript" src="$content.getURI("scripts/xnat/app/scriptEditor.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/xnat/app/scriptEditor.js")"></script>
 
     #else
         <div id="congratsContainer" class="container" style="width:98%;margin:5px;background-color:#797979;">
@@ -466,3 +472,4 @@
     #end
 
     <!-- END plugin-resources/webapp/xnat-templates/screens/Scripts.vm -->
+

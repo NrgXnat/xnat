@@ -40,7 +40,7 @@ div.xmodal .title {
     height: 40px; padding: 0 ; overflow: hidden ;
     color: #303030 ; background: #f0f0f0 ; border-bottom: 1px solid #e0e0e0 ; }
 div.xmodal .title .inner {
-    display: inline-block; padding-left: 10px ; overflow: hidden; white-space: nowrap;
+    display: inline-block; padding-left: 15px ; overflow: hidden; white-space: nowrap;
     font-size: 15px ; font-weight: normal ; line-height: 42px ; vertical-align: middle ; }
 div.xmodal .title .inner > i { color: #505050; font-weight: normal; font-style: normal; }
 div.xmodal .title .close,
@@ -55,7 +55,11 @@ div.xmodal .title .close:hover,
 div.xmodal .title .maximize:hover { color: #606060; background: #fafafa; border-color: #a0a0a0; cursor: pointer; }
 
 div.xmodal .body { width: 100% ; height: 100% ; position: absolute ; overflow: hidden ; }
-div.xmodal .body.scroll { overflow-y: auto ; }
+div.xmodal .body.scroll,
+div.xmodal .body.scroll > .inner { overflow: auto ; }
+div.xmodal .body > .inner > iframe {
+    width: 100%; height: 100%; position: absolute;
+    top: 0; bottom: 0; right: 0; left: 0; }
 div.xmodal .body .inner { display: none ; padding: 20px ; font-size: 13px ; line-height: 17px ; }
 div.xmodal.nopad .body .inner { padding: 0 ; }
 div.xmodal.open .body .inner { display: block ; }

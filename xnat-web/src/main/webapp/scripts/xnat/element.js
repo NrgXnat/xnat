@@ -87,7 +87,8 @@ var XNAT = getObject(XNAT||{});
     };
 
     Element.p.get$ = function(i){
-        return $(this.get(i))
+        this.$element = this.element$ = $(this.get(i));
+        return this.$element;
     };
 
     // return last element in the chain

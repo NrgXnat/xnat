@@ -1,13 +1,11 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
-import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.alias.ClearExpiredAliasTokens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
@@ -18,6 +16,13 @@ import java.util.concurrent.ScheduledFuture;
 
 @Component
 public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+    @Autowired
+    public AliasTokenPreferenceHandlerMethod(final SiteConfigPreferences preferences, final JdbcTemplate template, final ThreadPoolTaskScheduler scheduler) {
+        _preferences = preferences;
+        _template = template;
+        _scheduler = scheduler;
+    }
+
     @Override
     public List<String> getHandledPreferences() {
         return PREFERENCES;
@@ -44,7 +49,7 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPrefere
                 future.cancel(false);
             }
             _timeouts.clear();
-            _timeouts.add(_scheduler.schedule(new ClearExpiredAliasTokens(_template), new CronTrigger(XDAT.getSiteConfigPreferences().getAliasTokenTimeoutSchedule())));
+            _timeouts.add(_scheduler.schedule(new ClearExpiredAliasTokens(_template), new CronTrigger(_preferences.getAliasTokenTimeoutSchedule())));
         } catch (Exception e1) {
             _log.error("", e1);
         }
@@ -53,13 +58,8 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPrefere
     private static final Logger       _log        = LoggerFactory.getLogger(AliasTokenPreferenceHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("aliasTokenTimeout", "aliasTokenTimeoutSchedule"));
 
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
-
+    private final SiteConfigPreferences   _preferences;
+    private final JdbcTemplate            _template;
+    private final ThreadPoolTaskScheduler _scheduler;
     private ArrayList<ScheduledFuture> _timeouts = new ArrayList<>();
-
-    @Autowired
-    @Qualifier("taskScheduler")
-    private ThreadPoolTaskScheduler _scheduler;
 }

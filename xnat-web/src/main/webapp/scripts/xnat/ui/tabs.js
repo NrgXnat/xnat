@@ -32,6 +32,9 @@ var XNAT = getObject(XNAT || {});
         getObject(XNAT.page || {});
 
 
+    // by default there are no groups
+    tabs.hasGroups = false;
+
     // ==================================================
     // SET UP ONE TAB GROUP
     // add a single tab group to the groups
@@ -81,7 +84,7 @@ var XNAT = getObject(XNAT || {});
         var $group, groupId, tabId, tabIdHash, _flipper, _pane;
 
         obj = cloneObject(obj);
-        obj.config = cloneObject(obj.config);
+        obj.element = getObject(obj.element || obj.config);
 
         tabId = toDashed(obj.id || obj.name || randomID('t', false));
 
@@ -108,13 +111,13 @@ var XNAT = getObject(XNAT || {});
         }
         tab.paneFooter = paneFooter;
 
-        obj.config.data =
-            extend(true, {}, obj.config.data, {
+        obj.element.data =
+            extend(true, {}, obj.element.data, {
                 name: obj.name||'',
                 tab: tabId
             });
 
-        _pane = spawn('div.tab-pane', obj.config);
+        _pane = spawn('div.tab-pane', obj.element);
 
         // if 'active' is explicitly set, use the tabId value
         obj.active = (obj.active) ? tabId : '';
@@ -130,16 +133,18 @@ var XNAT = getObject(XNAT || {});
             tabs.active = tab.active = tabId;
         }
 
-        groupId = toDashed(obj.group||'other');
+        if (tabs.hasGroups) {
+            groupId = toDashed(obj.group||'other');
+            // un-hide the group that this tab is in
+            // (groups are hidden until there is a tab for them)
+            $group = $$(tabs.navTabs).find('#' + groupId + '.tab-group');
+        }
+        else {
+            $group = $$(tabs.navTabs).find('ul.tab-group').first();
+        }
 
-        // un-hide the group that this tab is in
-        // (groups are hidden until there is a tab for them)
-        $group = $('#' + groupId + '.tab-group');
-
-        $group.show();
-        
         // add all the flippers
-        $group.append(_flipper);
+        $group.append(_flipper).show();
 
         function onRender(){
             console.log('tab: ' + tabId)
@@ -178,6 +183,11 @@ var XNAT = getObject(XNAT || {});
         navTabs = spawn('div.xnat-nav-tabs');
         tabContent = spawn('div.xnat-tab-content');
 
+        // copy values to XNAT.tabs object for use elsewhere
+        tabs.container = container;
+        tabs.layout = layout;
+        tabs.navTabs = navTabs;
+
         if (layout === 'left') {
             navTabs.className += ' side pull-left';
             tabContent.className += ' side pull-right';
@@ -188,8 +198,15 @@ var XNAT = getObject(XNAT || {});
         $container.append(navTabs);
         $container.append(tabContent);
 
-        // set up the group elements
-        $(navTabs).append(tab.groups(obj.meta.tabGroups));
+        // set up the group elements, if present
+        if (obj.meta && obj.meta.tabGroups){
+            tabs.hasGroups = true;
+            $(navTabs).append(tab.groups(obj.meta.tabGroups));
+        }
+        else {
+            tabs.hasGroups = false;
+            $(navTabs).spawn('ul.tab-group');
+        }
 
         // bind tab click events
         $container.on('click', 'li.tab', function(e){

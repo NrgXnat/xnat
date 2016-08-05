@@ -18,12 +18,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.VelocityContext;
 import org.hibernate.exception.DataException;
 import org.nrg.config.exceptions.SiteConfigurationException;
-import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
@@ -37,10 +35,6 @@ import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatLdapAuthenticationProvider;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.nrg.xnat.security.tokens.XnatLdapUsernamePasswordAuthenticationToken;
-import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -48,28 +42,30 @@ import org.springframework.security.authentication.*;
 import org.springframework.security.core.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
 public class XnatProviderManager extends ProviderManager {
-    public XnatProviderManager(final List<AuthenticationProvider> providers) {
+    public XnatProviderManager(final List<AuthenticationProvider> providers, final XdatUserAuthService userAuthService, final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource) {
         super(providers);
+        _userAuthService = userAuthService;
+        _anonymousAuthenticationProvider = anonymousAuthenticationProvider;
+        _dataSource = dataSource;
     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        Class<? extends Authentication> toTest        = authentication.getClass();
-        AuthenticationException         lastException = null;
-        Authentication                  result        = null;
-        List<AuthenticationProvider>    providers     = new ArrayList<>();
+        Class<? extends Authentication> toTest = authentication.getClass();
+        AuthenticationException lastException = null;
+        Authentication result = null;
+        List<AuthenticationProvider> providers = new ArrayList<>();
 
         // HACK: This is a hack to work around open XNAT auth issue. If this is a bare un/pw auth token, use anon auth.
         if (authentication.getClass() == UsernamePasswordAuthenticationToken.class && authentication.getName().equalsIgnoreCase("guest")) {
-            providers.add(getAnonymousAuthenticationProvider());
-            authentication = new AnonymousAuthenticationToken(getAnonymousAuthenticationProvider().getKey(), authentication.getPrincipal(), Collections.<GrantedAuthority> singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+            providers.add(_anonymousAuthenticationProvider);
+            authentication = new AnonymousAuthenticationToken(_anonymousAuthenticationProvider.getKey(), authentication.getPrincipal(), Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
         } else {
             for (AuthenticationProvider candidate : getProviders()) {
                 if (!candidate.supports(toTest)) {
@@ -89,7 +85,7 @@ public class XnatProviderManager extends ProviderManager {
                     if (((XnatDatabaseAuthenticationProvider) candidate).isPlainText()) {
                         String username = authentication.getPrincipal().toString();
                         @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-                        final Boolean encrypted = new JdbcTemplate(_dataSource).query("SELECT primary_password_encrypt<>0 OR (primary_password_encrypt IS NULL AND CHAR_LENGTH(primary_password)=64) FROM xdat_user WHERE login=? LIMIT 1", new String[] {username}, new RowMapper<Boolean>() {
+                        final Boolean encrypted = new JdbcTemplate(_dataSource).query("SELECT primary_password_encrypt<>0 OR (primary_password_encrypt IS NULL AND CHAR_LENGTH(primary_password)=64) FROM xdat_user WHERE login=? LIMIT 1", new String[]{username}, new RowMapper<Boolean>() {
                             public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                                 return rs.getBoolean(1);
                             }
@@ -142,24 +138,20 @@ public class XnatProviderManager extends ProviderManager {
                 ((CredentialsContainer) result).eraseCredentials();
             }
 
-            eventPublisher.publishAuthenticationSuccess(authentication);
+            _eventPublisher.publishAuthenticationSuccess(authentication);
 
             return result;
 
         } else {
             // Parent was null, or didn't authenticate (or throw an exception).
             if (lastException == null) {
-                lastException = new ProviderNotFoundException(messages.getMessage("ProviderManager.providerNotFound",
-                                                                                  new Object[] {toTest.getName()}, "No AuthenticationProvider found for {0}"));
+                final String message = messages.getMessage("providerManager.providerNotFound", new Object[]{toTest.getName()}, "No authentication provider found for {0}");
+                lastException = new ProviderNotFoundException(message);
             }
 
-            eventPublisher.publishAuthenticationFailure(lastException, authentication);
+            _eventPublisher.publishAuthenticationFailure(lastException, authentication);
             throw lastException;
         }
-    }
-
-    private AnonymousAuthenticationProvider getAnonymousAuthenticationProvider() {
-        return _contextService.getBean(AnonymousAuthenticationProvider.class);
     }
 
     public XdatUserAuth getUserByAuth(Authentication authentication) {
@@ -179,12 +171,12 @@ public class XnatProviderManager extends ProviderManager {
             provider = ((XnatLdapUsernamePasswordAuthenticationToken) authentication).getProviderId();
             method = XdatUserAuthService.LDAP;
         } else {
-            provider = XnatDatabaseUserDetailsService.DB_PROVIDER;
+            provider = "";
             method = XdatUserAuthService.LOCALDB;
         }
 
         try {
-            return getUserAuthService().getUserByNameAndAuth(u, method, provider);
+            return _userAuthService.getUserByNameAndAuth(u, method, provider);
         } catch (DataException exception) {
             _log.error("An error occurred trying to retrieve the auth method", exception);
             throw new RuntimeException("An error occurred trying to validate the given information. Please check your username and password. If this problem persists, please contact your system administrator.");
@@ -205,7 +197,7 @@ public class XnatProviderManager extends ProviderManager {
         String auth = cached_methods.get(username);
         if (auth == null) {
             try {
-                List<XdatUserAuth> userAuths = getUserAuthService().getUsersByName(username);
+                List<XdatUserAuth> userAuths = _userAuthService.getUsersByName(username);
                 if (userAuths.size() == 1) {
                     auth = userAuths.get(0).getAuthMethod();
                     cached_methods.put(username.intern(), auth.intern());
@@ -228,13 +220,6 @@ public class XnatProviderManager extends ProviderManager {
             }
         }
         return auth;
-    }
-
-    private XdatUserAuthService getUserAuthService() {
-        if (_userAuthService == null) {
-            _userAuthService = _contextService.getBean(XdatUserAuthService.class);
-        }
-        return _userAuthService;
     }
 
     private static UsernamePasswordAuthenticationToken buildUPToken(XnatAuthenticationProvider provider, String username, String password) {
@@ -268,9 +253,11 @@ public class XnatProviderManager extends ProviderManager {
     private XnatAuthenticationProvider findAuthenticationProvider(XnatAuthenticationProviderMatcher matcher) {
         List<AuthenticationProvider> prov = getProviders();
         for (AuthenticationProvider ap : prov) {
-            XnatAuthenticationProvider xap = (XnatAuthenticationProvider) ap;
-            if (matcher.matches(xap)) {
-                return xap;
+            if(XnatAuthenticationProvider.class.isAssignableFrom(ap.getClass())) {
+                XnatAuthenticationProvider xap = (XnatAuthenticationProvider) ap;
+                if (matcher.matches(xap)) {
+                    return xap;
+                }
             }
         }
         return null;
@@ -390,19 +377,9 @@ public class XnatProviderManager extends ProviderManager {
 
     protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
 
-    @Inject
-    private DataSource _dataSource;
+    private final AuthenticationEventPublisher _eventPublisher = new AuthenticationAttemptEventPublisher(this);
 
-    @Autowired
-    @Qualifier("rootContextService")
-    @Lazy
-    private ContextService _contextService;
-
-    @Autowired
-    @Lazy
-    private InitializerSiteConfiguration _preferences;
-
-    private XdatUserAuthService _userAuthService;
-
-    private final AuthenticationEventPublisher eventPublisher = new AuthenticationAttemptEventPublisher(this);
+    private final XdatUserAuthService             _userAuthService;
+    private final AnonymousAuthenticationProvider _anonymousAuthenticationProvider;
+    private final DataSource                      _dataSource;
 }

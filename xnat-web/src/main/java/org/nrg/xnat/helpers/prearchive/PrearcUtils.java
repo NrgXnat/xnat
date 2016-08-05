@@ -92,38 +92,48 @@ public class PrearcUtils {
 
     public enum PrearcStatus {
         ARCHIVING,
-        BUILDING,
-        CONFLICT,
+        BUILDING(true),
+        CONFLICT(true),
         DELETING,
-        ERROR,
+        ERROR(true),
         MOVING,
-        READY,
-        RECEIVING,
+        READY(true),
+        RECEIVING(true),
+        RECEIVING_INTERRUPT(true),
         SEPARATING,
 
         QUEUED_ARCHIVING,
-        QUEUED_BUILDING,
+        QUEUED_BUILDING(true),
         QUEUED_DELETING,
         QUEUED_MOVING,
         QUEUED_SEPARATING,
 
         _ARCHIVING,
-        _BUILDING,
-        _CONFLICT,
+        _BUILDING(true),
+        _CONFLICT(true),
         _DELETING,
         _MOVING,
-        _RECEIVING,
-        _SEPARATING,
-
-        _QUEUED_ARCHIVING,
-        _QUEUED_BUILDING,
-        _QUEUED_DELETING,
-        _QUEUED_MOVING,
-        _QUEUED_SEPARATING;
+        _RECEIVING(true),
+        _RECEIVING_INTERRUPT(true),
+        _SEPARATING;
 
         public static boolean potentiallyReady(PrearcStatus status) {
             return (status == null || status.equals(READY));
         }
+
+        public boolean isInterruptable() {
+            return _interruptable;
+        }
+
+        PrearcStatus() {
+            this(true);
+        }
+
+        PrearcStatus(final boolean interruptable) {
+            _interruptable = interruptable;
+        }
+
+        private final boolean _interruptable;
     }
 
     private static Logger logger() {
@@ -135,7 +145,7 @@ public class PrearcUtils {
     public static Map<PrearcStatus, PrearcStatus> createInProcessMap() {
         Map<PrearcStatus, PrearcStatus> map = new HashMap<>();
         for (PrearcStatus s : PrearcStatus.values()) {
-            if (s != PrearcStatus.READY && s != PrearcStatus.ERROR && s.toString().charAt(0) != '_') {
+            if (s != PrearcStatus.READY && s != PrearcStatus.ERROR && s.toString().charAt(0) != '_' && !s.toString().startsWith("QUEUED_")) {
                 map.put(s, PrearcStatus.valueOf("_" + s.name()));
             }
         }

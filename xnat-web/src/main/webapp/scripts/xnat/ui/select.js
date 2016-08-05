@@ -26,10 +26,11 @@ var XNAT = getObject(XNAT);
     select = getObject(XNAT.ui.select || {});
 
     function addOption(el, opt){
-        el.appendChild(spawn('option', {
+        el.appendChild(spawn('option', extend(true, {
             value: opt.value || '',
-            html: opt.html || opt.text || opt.value
-        }));
+            html: opt.html || opt.text || opt.label || opt.value,
+            selected: opt.selected || false
+        }, opt.element )));
     }
     
     // generate JUST the options
@@ -40,6 +41,7 @@ var XNAT = getObject(XNAT);
         });      
     };
     
+    
     // ========================================
     // MAIN FUNCTION
     select.menu = function(config){
@@ -47,16 +49,19 @@ var XNAT = getObject(XNAT);
         var frag = document.createDocumentFragment(),
             menu, label;
 
-        config = getObject(config);
+        config = cloneObject(config);
 
         // show the label on the left by default
-        config.layout = config.layout || 'left';
+        config.layout = firstDefined(config.layout, 'left');
 
-        config.id = config.id || config.name || randomID('menu-', false);
+        config.id = config.id || toDashed(config.name) || randomID('menu-', false);
+        config.name = config.name || toCamelCase(config.id) || '';
 
         config.element = extend(true, {
             id: config.id,
-            name: config.name || config.id
+            name: config.name,
+            value: config.value || '',
+            title: config.title || config.name || config.id || ''
         }, config.element);
 
         menu = spawn('select', config.element);
@@ -70,19 +75,22 @@ var XNAT = getObject(XNAT);
                 })    
             }
             else {
-                forOwn(config.options, function(txt, val){
+                forOwn(config.options, function(val, txt){
                     var opt = {};
-                    if (stringable(val)) {
+                    if (stringable(txt)) {
                         opt.value = val;
                         opt.html = txt;
                     }
                     else {
-                        opt = val;
+                        opt = txt;
                     }
                     addOption(menu, opt);
                 });
             }
         }
+        
+        // force menu change event to select 'selected' option
+        $(menu).change();
         
         // if there's no label, wrap the 
         // <select> inside a <label> element
@@ -121,11 +129,18 @@ var XNAT = getObject(XNAT);
     
     
     select.multiple = function(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.element = opts.element || {};
         opts.element.multiple = true;
         return select.menu(opts);
     };
+
+
+    // load data and add it to a container
+    //select.loadMenu = function(opts){
+    //
+    //};
+    
     
     // this script has loaded
     select.loaded = true;

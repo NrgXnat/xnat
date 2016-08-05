@@ -299,9 +299,9 @@ jQuery.fn.tableSort = function(){
         if ($tr.find('> th, > td').first().hasClass('index')) return;
         $tr.prepend('<td class="index hidden" style="display:none;">' + i + '</td>');
     });
-    $table.find('th').not('.sort').filter(function(){
-        return this.innerHTML.trim() > '';
-    }).addClass('sort');
+    // $table.find('th').not('.sort').filter(function(){
+    //     return this.innerHTML.trim() > '';
+    // }).addClass('sort');
     $table.find('th.sort')
           .append('<i>&nbsp;</i>')
           // wrapInner('<a href="#" class="nolink" title="click to sort on this column"/>').
@@ -309,14 +309,14 @@ jQuery.fn.tableSort = function(){
               // don't overwrite existing title
               this.title += ' (click to sort) ';
               $(this).on('click.sort', function(){
-                  var $this = $(this),
-                      thIndex = $this.index(),
-                      sorted = $this.hasAnyClass('asc desc'),
+                  var $th = $(this),
+                      thIndex = $th.index(),
+                      sorted = $th.hasAnyClass('asc desc'),
                       sortOrder = 1,
                       sortClass = 'asc';
                   if (sorted) {
                       // if already sorted, switch to descending order
-                      if ($this.hasClass('asc')) {
+                      if ($th.hasClass('asc')) {
                           sortClass = 'desc';
                       }
                       else {
@@ -325,7 +325,7 @@ jQuery.fn.tableSort = function(){
                       }
                   }
                   $table.find('th.sort').removeClass('asc desc');
-                  $this.addClass(sortClass);
+                  $th.addClass(sortClass);
                   sortOrder = (sortClass === 'desc') ? -1 : 1;
                   sorted = !!sortClass;
                   $table.find('td').filter(function(){

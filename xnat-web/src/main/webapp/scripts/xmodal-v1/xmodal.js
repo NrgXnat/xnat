@@ -901,6 +901,7 @@ if (typeof jQuery == 'undefined') {
             if ( isDefined(modal.padding||undefined) ) {
                 modal.style = getObject(modal.style||{});
                 modal.style.padding = modal.padding + 'px';
+                modal.$modal.find('> .body').css(modal.style);
             }
             if ( isDefined(modal.style||undefined) ) {
                 modal.css = getObject(modal.css||{});

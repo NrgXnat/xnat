@@ -17,9 +17,9 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.filter.GenericFilterBean;
 
-import javax.inject.Inject;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -32,6 +32,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class XnatInitCheckFilter extends GenericFilterBean {
+    @Autowired
+    public XnatInitCheckFilter(final XnatAppInfo appInfo) {
+        super();
+        _appInfo = appInfo;
+    }
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
@@ -136,8 +141,7 @@ public class XnatInitCheckFilter extends GenericFilterBean {
 
     private static Logger _log = LoggerFactory.getLogger(XnatInitCheckFilter.class);
 
-    @Inject
-    private XnatAppInfo _appInfo;
+    private final XnatAppInfo _appInfo;
 
     private String  _configurationPath;
     private String  _nonAdminErrorPath;

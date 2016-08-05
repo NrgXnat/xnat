@@ -25,19 +25,19 @@ import java.util.jar.Manifest;
 @Component
 public class XnatAppInfo {
 
-    public static final int           MILLISECONDS_IN_A_DAY    = (24 * 60 * 60 * 1000);
-    public static final int           MILLISECONDS_IN_AN_HOUR  = (60 * 60 * 1000);
-    public static final int           MILLISECONDS_IN_A_MINUTE = (60 * 1000);
-    public static final DecimalFormat SECONDS_FORMAT           = new DecimalFormat("##.000");
-    public static final String        DAYS                     = "days";
-    public static final String        HOURS                    = "hours";
-    public static final String        MINUTES                  = "minutes";
-    public static final String        SECONDS                  = "seconds";
+    private static final int           MILLISECONDS_IN_A_DAY    = (24 * 60 * 60 * 1000);
+    private static final int           MILLISECONDS_IN_AN_HOUR  = (60 * 60 * 1000);
+    private static final int           MILLISECONDS_IN_A_MINUTE = (60 * 1000);
+    private static final DecimalFormat SECONDS_FORMAT           = new DecimalFormat("##.000");
+    private static final String        DAYS                     = "days";
+    private static final String        HOURS                    = "hours";
+    private static final String        MINUTES                  = "minutes";
+    private static final String        SECONDS                  = "seconds";
 
-    @Autowired
+    @Inject
     public XnatAppInfo(final ServletContext context, final JdbcTemplate template) throws IOException {
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
-            final Manifest manifest = new Manifest(input);
+            final Manifest   manifest   = new Manifest(input);
             final Attributes attributes = manifest.getMainAttributes();
             _properties.setProperty("buildNumber", attributes.getValue("Build-Number"));
             _properties.setProperty("buildDate", attributes.getValue("Build-Date"));
@@ -97,6 +97,7 @@ public class XnatAppInfo {
                 }
             }
         }
+		_template = template;
     }
 
     public Map<String, String> getFoundPreferences() {
@@ -152,14 +153,14 @@ public class XnatAppInfo {
     /**
      * Returns the primary XNAT system properties extracted from the installed application's manifest file. These
      * properties are guaranteed to include the following:
-     *
+     * <p>
      * <ul>
      * <li>version</li>
      * <li>buildNumber</li>
      * <li>buildDate</li>
      * <li>commit</li>
      * </ul>
-     *
+     * <p>
      * There may be other properties available in the system properties and even more available through the {@link
      * #getSystemAttributes()} method.
      *
@@ -167,6 +168,42 @@ public class XnatAppInfo {
      */
     public Properties getSystemProperties() {
         return (Properties) _properties.clone();
+    }
+
+    /**
+     * Gets the version of the application.
+     *
+     * @return The version of the application.
+     */
+    public String getVersion() {
+        return _properties.getProperty("version");
+    }
+
+    /**
+     * Gets the build number of the application.
+     *
+     * @return The build number of the application.
+     */
+    public String getBuildNumber() {
+        return _properties.getProperty("buildNumber");
+    }
+
+    /**
+     * Gets the date the application was built.
+     *
+     * @return The date the application was built.
+     */
+    public String getBuildDate() {
+        return _properties.getProperty("buildDate");
+    }
+
+    /**
+     * Gets the commit number in the source repository from which the application was built.
+     *
+     * @return The commit number of the application.
+     */
+    public String getCommit() {
+        return _properties.getProperty("commit");
     }
 
     /**
@@ -196,12 +233,12 @@ public class XnatAppInfo {
      * @return A map of values indicating the system uptime.
      */
     public Map<String, String> getUptime() {
-        final long diff = new Date().getTime() - _startTime.getTime();
-        final int days = (int) (diff / MILLISECONDS_IN_A_DAY);
-        final long daysRemainder = diff % MILLISECONDS_IN_A_DAY;
-        final int hours = (int) (daysRemainder / MILLISECONDS_IN_AN_HOUR);
-        final long hoursRemainder = daysRemainder % MILLISECONDS_IN_AN_HOUR;
-        final int minutes = (int) (hoursRemainder / MILLISECONDS_IN_A_MINUTE);
+        final long diff             = new Date().getTime() - _startTime.getTime();
+        final int  days             = (int) (diff / MILLISECONDS_IN_A_DAY);
+        final long daysRemainder    = diff % MILLISECONDS_IN_A_DAY;
+        final int  hours            = (int) (daysRemainder / MILLISECONDS_IN_AN_HOUR);
+        final long hoursRemainder   = daysRemainder % MILLISECONDS_IN_AN_HOUR;
+        final int  minutes          = (int) (hoursRemainder / MILLISECONDS_IN_A_MINUTE);
         final long minutesRemainder = hoursRemainder % MILLISECONDS_IN_A_MINUTE;
 
         final Map<String, String> uptime = new HashMap<>();
@@ -226,7 +263,7 @@ public class XnatAppInfo {
      */
     public String getFormattedUptime() {
         final Map<String, String> uptime = getUptime();
-        final StringBuilder buffer = new StringBuilder();
+        final StringBuilder       buffer = new StringBuilder();
         if (uptime.containsKey(DAYS)) {
             buffer.append(uptime.get(DAYS)).append(" days, ");
         }
@@ -245,6 +282,7 @@ public class XnatAppInfo {
     private static final List<String> PRIMARY_MANIFEST_ATTRIBUTES = Arrays.asList("Build-Number", "Build-Date", "Implementation-Version", "Implementation-Sha");
 
     private final JdbcTemplate _template;
+
     private final Map<String, String> _foundPreferences = new HashMap<>();
 
     private final Date                             _startTime   = new Date();

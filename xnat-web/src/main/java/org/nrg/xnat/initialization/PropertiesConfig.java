@@ -12,7 +12,6 @@ import org.springframework.context.annotation.PropertySources;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.env.Environment;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,12 +55,12 @@ public class PropertiesConfig {
     }
 
     @Bean
-    public Path xnatHome() {
+    public Path xnatHome(final Environment environment) {
         if (_xnatHome == null) {
             // We just get the parent of the first folder in the list of configuration folders XNAT_HOME. This won't be
             // null because, if there are no valid configuration folders, the config folders method will have already
             // thrown an exception.
-            _xnatHome = configFolderPaths().get(0).getParent();
+            _xnatHome = configFolderPaths(environment).get(0).getParent();
             if (_log.isInfoEnabled()) {
                 _log.info("Set path {} as the XNAT home folder.", _xnatHome);
             }
@@ -70,22 +69,22 @@ public class PropertiesConfig {
     }
 
     @Bean
-    public List<String> configFilesLocations() {
+    public List<String> configFilesLocations(final Environment environment) {
         // The configuration service should be converted to use List<Path> instead of List<String> and this bean should
         // be deprecated and removed.
         if (_configFolderLocations.size() == 0) {
-            configFolderPaths();
+            configFolderPaths(environment);
         }
         return _configFolderLocations;
     }
 
     @Bean
-    public List<Path> configFolderPaths() {
+    public List<Path> configFolderPaths(final Environment environment) {
         if (_configFolderPaths.size() == 0) {
             final Map<String, String> paths = new HashMap<>();
             for (int index = 0; index < CONFIG_LOCATIONS.size(); index++) {
                 paths.put(CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index));
-                final Path path = getConfigFolder(_environment, CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index));
+                final Path path = getConfigFolder(environment, CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index));
                 if (path != null) {
                     if (_log.isInfoEnabled()) {
                         _log.info("Adding path {} to the list of available configuration folders.", path.toString());
@@ -98,7 +97,7 @@ public class PropertiesConfig {
                 final StringBuilder writer = new StringBuilder("No XNAT home specified in any of the accepted locations:\n");
                 for (final String variable : paths.keySet()) {
                     writer.append(" * ");
-                    final String value = _environment.getProperty(variable);
+                    final String value = environment.getProperty(variable);
                     if (StringUtils.isBlank(value)) {
                         writer.append(variable).append(": Not defined");
                     } else {
@@ -173,7 +172,7 @@ public class PropertiesConfig {
         }
 
         final Path candidate = Paths.get(value, relative);
-        final File file      = candidate.toFile();
+        final File file = candidate.toFile();
         if (file.exists()) {
             // If it's a directory...
             if (file.isDirectory()) {
@@ -207,9 +206,6 @@ public class PropertiesConfig {
     private static final Logger _log = LoggerFactory.getLogger(PropertiesConfig.class);
 
     private static final List<String> CONFIG_URLS = new ArrayList<>();
-
-    @Inject
-    private Environment _environment;
 
     private final List<Path>   _configFolderPaths     = new ArrayList<>();
     private final List<String> _configFolderLocations = new ArrayList<>();

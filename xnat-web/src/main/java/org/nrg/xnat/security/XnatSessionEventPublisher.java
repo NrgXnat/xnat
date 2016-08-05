@@ -15,6 +15,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -25,7 +26,6 @@ import org.springframework.security.web.session.HttpSessionCreatedEvent;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -46,6 +46,7 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
      *
      * @param event HttpSessionEvent passed in by the container
      */
+    @Override
     public void sessionCreated(HttpSessionEvent event) {
         HttpSession             session = event.getSession();
         HttpSessionCreatedEvent e       = new HttpSessionCreatedEvent(session);
@@ -69,6 +70,7 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
      *
      * @param event The HttpSessionEvent pass in by the container
      */
+    @Override
     public void sessionDestroyed(final HttpSessionEvent event) {
         final String sessionId = event.getSession().getId();
         final Date   today     = Calendar.getInstance(TimeZone.getDefault()).getTime();
@@ -115,12 +117,16 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         }
     }
 
+    @Autowired
+    public void setJdbcTemplate(final JdbcTemplate template) {
+        _template = template;
+    }
+
     private ApplicationContext getContext(ServletContext servletContext) {
         return WebApplicationContextUtils.findWebApplicationContext(servletContext);  // contextAttribute in xnat's case will always be "org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring-mvc");
     }
 
     private static final Logger _log = LoggerFactory.getLogger(XnatSessionEventPublisher.class);
 
-    @Inject
     private JdbcTemplate _template;
 }

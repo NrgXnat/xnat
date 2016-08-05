@@ -24,4 +24,4 @@
     console.log(PAGE);
 </script>
 
-<c:set var="hasVars" value="true"/>
+<c:set var="hasVars" value="true" scope="request"/>

@@ -41,7 +41,6 @@ public class DicomSCPInstance {
         setEnabled(enabled);
     }
 
-
     public int getId() {
         return _id;
     }
@@ -92,14 +91,7 @@ public class DicomSCPInstance {
 
     @Override
     public String toString() {
-        return "DicomSCPInstance{" +
-               "_id='" + _id + '\'' +
-               ", _port=" + _port +
-               ", _aeTitle='" + _aeTitle + '\'' +
-               ", _identifier='" + _identifier + '\'' +
-               ", _fileNamer='" + _fileNamer + '\'' +
-               ", _enabled='" + _enabled + '\'' +
-               '}';
+        return _aeTitle + ":" + _port;
     }
 
     private int    _id;

@@ -8,11 +8,18 @@ import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import java.io.FileNotFoundException;
 
 @Component
 public class GetSiteWideAnonScript extends AbstractInitializingTask {
+    @Autowired
+    public GetSiteWideAnonScript(final SiteConfigPreferences preferences) {
+        super();
+        _preferences = preferences;
+    }
+
     @Override
     public String getTaskName() {
         return "Get site-wide anon script";
@@ -25,7 +32,7 @@ public class GetSiteWideAnonScript extends AbstractInitializingTask {
             final Configuration initConfig = AnonUtils.getService().getScript(path, null);
             if (initConfig == null) {
                 _log.info("Creating Script Table.");
-                final String siteWideScript = FileUtils.readFileToString(AnonUtils.getDefaultScript());
+                final String siteWideScript = AnonUtils.getDefaultScript();
                 final String adminUser = _preferences.getReceivedFileUser();
                 if (adminUser != null) {
                     AnonUtils.getService().setSiteWideScript(adminUser, path, siteWideScript);
@@ -35,6 +42,8 @@ public class GetSiteWideAnonScript extends AbstractInitializingTask {
             }
             // there is a default site-wide script, so nothing to do here for the else.
             complete();
+        } catch (FileNotFoundException e) {
+            _log.info("Couldn't find default anonymization script, waiting", e);
         } catch (Throwable e) {
             _log.error("Unable to either find or initialize script database", e);
         }
@@ -42,7 +51,5 @@ public class GetSiteWideAnonScript extends AbstractInitializingTask {
 
     private static final Logger _log = LoggerFactory.getLogger(GetSiteWideAnonScript.class);
 
-    @Autowired
-    @Lazy
-    private SiteConfigPreferences _preferences;
+    private final SiteConfigPreferences _preferences;
 }

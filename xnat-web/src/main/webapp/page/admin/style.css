@@ -83,19 +83,39 @@ body.xnat .xmodal .panel { border: none; }
 .panel-title { font-weight: normal; font-size: 18px; line-height: inherit; }
 
 /* PANEL ELEMENTS */
-.panel .panel-element { clear: both; overflow: auto; margin: 0 0 30px;}
+.panel .panel-element { margin: 15px 0; clear: both; overflow: visible; }
+.panel .panel-element.stacked { margin: 0 0 30px;}
 .panel .panel-element:last-child { margin: 0; }
 .panel .panel-element > * { box-sizing: border-box; }
 .panel .panel-element .element-label {
-    color: #222; font-weight: bold; text-align: left;
-    line-height: 24px; vertical-align: middle;
-    display: block;
+    width: 30%; padding-right: 10px; float: left;
+    color: #222; font-weight: bold; text-align: right;
 }
-.panel .panel-element .element-wrapper { display: block; }
-.panel .panel-element .element-wrapper .description { margin: 3px 0; font-size: 12px; color: #848484;}
+.panel .panel-element.stacked .element-label {
+    width: inherit; display: block; float: none;
+    text-align: left;
+}
+.panel .panel-element .element-wrapper { display: inline-block; width: 70%; float: right; }
+.panel .panel-element.stacked .element-wrapper { display: block; width: inherit; float: none; }
+.panel .panel-element .element-wrapper .description { margin: 3px 0 5px; color: #848484; }
+.panel .panel-element.stacked .element-wrapper .description { font-size: 12px; }
 .panel .panel-element span.before { right: 10px; }
 .panel .panel-element span.after { margin-left: 10px; }
 .panel .panel-element label.small { font-weight: normal; }
+.panel .panel-element input {
+    /* inputs shouldn't be wider than textareas */
+    max-width: 100%; box-sizing: border-box;
+    margin-top: -6px;
+}
+.panel .panel-element input[type="checkbox"],
+.panel .panel-element input[type="radio"] {
+    margin-top: 0;
+}
+/* */
+.panel .panel-element textarea {
+    width: 100%; margin-top: -6px; padding: 5px 7px; box-sizing: border-box;
+    font-family: Courier, monospace; font-weight: normal;
+}
 
 .panel .input-bundle { margin-top: 5px; }
 
@@ -105,14 +125,6 @@ body.xnat .xmodal .panel { border: none; }
     margin: 40px 0 20px;
     text-transform: uppercase;
 }
-
-.panel .panel-element textarea {
-    width: 80%; padding: 5px 7px;
-    font-family: Courier, monospace; font-weight: normal;
-}
-
-/* inputs shouldn't be wider than textareas */
-.panel .panel-element input { max-width: 80%; }
 
 /* ELEMENT GROUP ITEMS */
 .panel .panel-element-group .group-item .element-label { width: auto; }

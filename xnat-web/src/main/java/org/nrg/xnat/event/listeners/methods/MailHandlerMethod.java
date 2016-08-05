@@ -3,12 +3,13 @@ package org.nrg.xnat.event.listeners.methods;
 import com.google.common.collect.ImmutableList;
 import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.renderers.NrgMailChannelRenderer;
-import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.NotificationsPreferences;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -16,6 +17,13 @@ import java.util.Map;
 
 @Component
 public class MailHandlerMethod extends AbstractSiteConfigNotificationsPreferenceHandlerMethod {
+    @Autowired
+    public MailHandlerMethod(final SiteConfigPreferences siteConfigPreferences, final NotificationsPreferences notificationsPreferences, final ChannelRenderer mailRenderer) {
+        _siteConfigPreferences = siteConfigPreferences;
+        _notificationsPreferences = notificationsPreferences;
+        _mailRenderer = mailRenderer;
+    }
+
     @Override
     public List<String> getHandledPreferences() {
         return PREFERENCES;
@@ -37,9 +45,8 @@ public class MailHandlerMethod extends AbstractSiteConfigNotificationsPreference
 
     private void updateMail(){
 		try {
-            ((NrgMailChannelRenderer)_mailRenderer).setFromAddress(XDAT.getSiteConfigPreferences().getAdminEmail());
-            ((NrgMailChannelRenderer)_mailRenderer).setSubjectPrefix(XDAT.getNotificationsPreferences().getEmailPrefix());
-
+            ((NrgMailChannelRenderer)_mailRenderer).setFromAddress(_siteConfigPreferences.getAdminEmail());
+            ((NrgMailChannelRenderer)_mailRenderer).setSubjectPrefix(_notificationsPreferences.getEmailPrefix());
 		} catch (Exception e1) {
 			_log.error("", e1);
 		}
@@ -48,7 +55,7 @@ public class MailHandlerMethod extends AbstractSiteConfigNotificationsPreference
     private static final Logger       _log        = LoggerFactory.getLogger(MailHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("emailPrefix", "adminEmail"));
 
-    @Inject
-    private ChannelRenderer _mailRenderer;
-
+    private final SiteConfigPreferences _siteConfigPreferences;
+    private final NotificationsPreferences _notificationsPreferences;
+    private final ChannelRenderer _mailRenderer;
 }

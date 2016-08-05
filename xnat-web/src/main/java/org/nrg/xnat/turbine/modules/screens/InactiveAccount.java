@@ -19,8 +19,6 @@ package org.nrg.xnat.turbine.modules.screens;/*
  * Created 10/29/13 12:00 PM
  */
 
-import java.sql.SQLException;
-
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
@@ -35,6 +33,8 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+
+import java.sql.SQLException;
 
 public class InactiveAccount extends VelocitySecureScreen {
 
@@ -53,7 +53,7 @@ public class InactiveAccount extends VelocitySecureScreen {
                     !TurbineUtils.getUser(data).getUsername().equalsIgnoreCase("guest") &&
                     !TurbineUtils.HasPassedParameter("a", data) && !TurbineUtils.HasPassedParameter("s", data)) {
                 context.put("login", TurbineUtils.getUser(data).getUsername());
-                context.put("topMessage", "Your account has been disabled due to inactivity.<br>" +
+                context.put("topMessage", "Your account is not currently enabled, possibly due to inactivity.<br>" +
                         "Enter your email address to send a reactivation email.");
             } else {
             	UserI user = XDAT.getUserDetails();
@@ -103,7 +103,7 @@ public class InactiveAccount extends VelocitySecureScreen {
                         }
                     }
                 }
-                context.put("topMessage", "Your account has been disabled due to inactivity.<br>" +
+                context.put("topMessage", "Your account is not currently enabled, possibly due to inactivity.<br>" +
                         "Enter your email address to resend the verification email.");
             }
         } catch (Exception e) {

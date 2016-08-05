@@ -46,10 +46,10 @@ public class XNATApplication extends Application {
     public static final String PREARC_PROJECT_URI = "/prearchive/projects/{PROJECT_ID}";
     public static final String PREARC_SESSION_URI = PREARC_PROJECT_URI + "/{SESSION_TIMESTAMP}/{SESSION_LABEL}";
 
+    @SuppressWarnings("WeakerAccess")
     @JsonIgnore
     public XNATApplication(Context parentContext) {
         super(parentContext);
-
     }
 
     @Override
@@ -364,24 +364,32 @@ public class XNATApplication extends Application {
      * @param router The URL router for the restlet servlet.
      * @return A list of classes that should be attached unprotected, i.e. publicly accessible.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "Duplicates"})
     private List<Class<? extends Resource>> addExtensionRoutes(Router router) {
-        Set<String> packages = new HashSet<>();
-        final Map<String, XnatRestletExtensions> pkgLists = XDAT.getContextService().getBeansOfType(XnatRestletExtensions.class);
-        for (XnatRestletExtensions pkgList : pkgLists.values()) {
-            packages.addAll(pkgList);
+        final Set<String>               packages   = new HashSet<>();
+        final XnatRestletExtensionsBean extensions = XDAT.getContextService().getBean(XnatRestletExtensionsBean.class);
+        if (extensions.size() > 0) {
+            packages.addAll(extensions.getPackages());
+        } else {
+            final XnatRestletExtensions extension = XDAT.getContextService().getBean("defaultXnatRestletExtensions", XnatRestletExtensions.class);
+            if (extension != null) {
+                packages.addAll(extension.getPackages());
+            }
+        }
+        if (packages.size() == 0) {
+            packages.add("org.nrg.xnat.restlet.extensions");
         }
 
-        List<Class<? extends Resource>> classes = new ArrayList<>();
-        List<Class<? extends Resource>> publicClasses = new ArrayList<>();
+        final List<Class<? extends Resource>> classes = new ArrayList<>();
+        final List<Class<? extends Resource>> publicClasses = new ArrayList<>();
 
-        for (String pkg : packages) {
+        for (final String pkg : packages) {
             try {
                 final List<Class<?>> classesForPackage = Reflection.getClassesForPackage(pkg);
                 if (_log.isDebugEnabled()) {
                     _log.debug("Found " + classesForPackage.size() + " classes for package: " + pkg);
                 }
-                for (Class<?> clazz : classesForPackage) {
+                for (final Class<?> clazz : classesForPackage) {
                     if (Resource.class.isAssignableFrom(clazz)) {
                         if (_log.isDebugEnabled()) {
                             _log.debug("Found resource class: " + clazz.getName());

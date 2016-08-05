@@ -349,7 +349,7 @@ function ScanEditor(_sessionID,_scanID,_options){
             var sel = document.createElement("select");
             sel.name = modality + "/quality";
             sel.options[0] = new Option("(SELECT)", "");
-            populateScanQualitySelector(serverRoot, this.options && this.options.project, sel, 1, this.scan.extension.Quality);
+            populateScanQualitySelector(serverRoot, window.projectScope, sel, 1, this.scan.extension.Quality);
             td2.appendChild(sel);
             tr.appendChild(td1);
             tr.appendChild(td2);
@@ -1121,7 +1121,7 @@ function scanListingEditor(_tbody,_scanSet,_options){
 				if(scan.qual_input==undefined){
 				    scan.qual_input=document.createElement("select");
 				    scan.qual_input.options[0]=new Option("(SELECT)", "");
-                    populateScanQualitySelector(serverRoot, null, scan.qual_input, 1, scan.extension.Quality);
+                    populateScanQualitySelector(serverRoot, window.projectScope, scan.qual_input, 1, scan.extension.Quality);
 				}
 				td.appendChild(scan.qual_input);
 				tr.appendChild(td);

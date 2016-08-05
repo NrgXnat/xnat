@@ -832,7 +832,6 @@ public final class PrearcDatabase {
         }
     }
 
-
     private static void pruneDatabase() throws Exception {
         // construct list of timestamps with extant folders
         Set<String> timestamps = PrearcDatabase.getPrearchiveFolderTimestamps();
@@ -1793,6 +1792,19 @@ public final class PrearcDatabase {
     }
 
     /**
+     * Gets the session from a given triple.
+     *
+     * @param triple The triple containing the session name, timestamp, and project.
+     *
+     * @return The corresponding session data.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    public static SessionData getSession(final SessionDataTriple triple) throws Exception {
+        return getSession(triple.getFolderName(), triple.getTimestamp(), triple.getProject());
+    }
+
+    /**
      * Set the prearchive row that corresponds to the given session, timestamp, project triple to the given autoArchive setting.
      *
      * @param sess
@@ -1936,37 +1948,6 @@ public final class PrearcDatabase {
     }
 
     /**
-     * Either retrieve and existing session or create a new one and return it.
-     * <p/>
-     * This function is useful if the caller does not care which operation was performed.
-     *
-     * @param project
-     * @param suid
-     * @param s
-     * @param tsFile
-     * @param autoArchive
-     *
-     * @return
-     *
-     * @throws SQLException
-     * @throws SessionException
-     * @throws Exception
-     */
-    public static SessionData getOrCreateSession(final String project,
-                                                 final String suid,
-                                                 final SessionData s,
-                                                 final File tsFile,
-                                                 final PrearchiveCode autoArchive)
-            throws SQLException, SessionException, Exception {
-        Either<SessionData, SessionData> result = PrearcDatabase.eitherGetOrCreateSession(s, tsFile, autoArchive);
-        if (result.isLeft()) {
-            return result.getLeft();
-        } else {
-            return result.getRight();
-        }
-    }
-
-    /**
      * Either retrieve and existing session or create a new one. If a session is created an Either object with the "Right" branch set is returned. If we just retrieve one that is already in the prearchive table an Either object with the "Left" branch set is returned.
      * <p/>
      * This is useful in case the caller needs to know which operation was performed.
@@ -1982,7 +1963,7 @@ public final class PrearcDatabase {
      */
     public static synchronized Either<SessionData, SessionData> eitherGetOrCreateSession(final SessionData sessionData, final File tsFile, final PrearchiveCode autoArchive) throws SQLException, SessionException, Exception {
         return new PredicatedOp<SessionData, SessionData>() {
-            SessionData ss;
+            SessionData _sessionData;
 
             /**
              * Return the found session
@@ -1991,7 +1972,7 @@ public final class PrearcDatabase {
              */
             Either<SessionData, SessionData> trueOp() throws SQLException, SessionException, Exception {
                 return new Either<SessionData, SessionData>() {
-                }.setRight(ss);
+                }.setRight(_sessionData);
             }
 
             /**
@@ -2033,7 +2014,7 @@ public final class PrearcDatabase {
             }
 
             /**
-             * Test whether session exists. If it find the session the instance variable "SessionData ss"
+             * Test whether session exists. If it find the session the instance variable "SessionData _sessionData"
              * is initialized here.
              *
              * Originally this function initialized a "ResultSet r" instance variable and the "trueOp()" above
@@ -2049,12 +2030,54 @@ public final class PrearcDatabase {
                         constraints.add(DatabaseSession.TAG.searchSql(sessionData.getTag()));
                         constraints.add(DatabaseSession.NAME.searchSql(sessionData.getName()));
 
-                        ResultSet rs = pdb.executeQuery(null, DatabaseSession.findSessionSql(constraints.toArray(new String[constraints.size()])), null);
-                        boolean found = rs.next();
-                        if (found) {
-                            ss = DatabaseSession.fillSession(rs);
+                        final ResultSet rs = pdb.executeQuery(null, DatabaseSession.findSessionSql(constraints.toArray(new String[constraints.size()])), null);
+                        if (!rs.next()) {
+                            if(logger.isDebugEnabled()) {
+                                logger.debug("Found no existing session for " + sessionData.getSessionDataTriple().toString() + ". A new session data object will be created for data reception.");
+                            }
+                            return false;
                         }
-                        return found;
+
+                        final SessionData sessionData = DatabaseSession.fillSession(rs);
+
+                        final PrearcStatus status = sessionData.getStatus();
+                        if (PrearcStatus.RECEIVING.equals(status)|| PrearcStatus.RECEIVING_INTERRUPT.equals(status)) {
+                            // Obviously if we're receiving we're fine.
+                            if(logger.isDebugEnabled()) {
+                                logger.debug("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in " + status + " state, which is totally fine.");
+                            }
+                            _sessionData = sessionData;
+                            return true;
+                        }
+                        if (status == PrearcStatus.BUILDING) {
+                            // If the session is currently building, then set this session to RECEIVING_INTERRUPT,
+                            // which will allow it to continue receiving but prevent autoarchiving or session
+                            // splitting afterwards.
+                            if(logger.isWarnEnabled()) {
+                                logger.warn("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + " in BUILDING state, setting status to RECEIVING_INTERRUPT to block autoarchive and other operations and allow continuation of data reception.");
+                            }
+                            PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionStatusSQL(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcStatus.RECEIVING_INTERRUPT), null, null);
+                            _sessionData = sessionData;
+                            return true;
+                        }
+                        if (status.isInterruptable()) {
+                            // If the session is interruptable, which means it's not receiving but it's OK to set it to
+                            // receiving (ready, in error, or in conflict), that's OK. Set to RECEIVING and return the
+                            // session. Any other issues will be worked out (or re-occur) later.
+                            if (logger.isInfoEnabled()) {
+                                logger.info("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in the interruptable " + status + " state. Setting status to RECEIVING to allow continuation of data reception.");
+                            }
+                            PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionStatusSQL(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcStatus.RECEIVING), null, null);
+                            _sessionData = sessionData;
+                            return true;
+                        }
+                        // If the status isn't interruptable, e.g. we're archiving or moving or deleting or whatever,
+                        // then return false: we'll create a new session to receive the incoming data. This may require
+                        // a merge later, but should prevent data loss.
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in the non-interruptable " + status + " state. Creating a new RECEIVING session to allow continuation of data reception.");
+                        }
+                        return false;
                     }
                 }.run();
             }
@@ -2293,6 +2316,19 @@ public final class PrearcDatabase {
     /**
      * Update the last modified time of the session to the current time.
      *
+     * @param triple    The triple containing the session name, timestamp, and project.
+     *
+     * @throws SQLException
+     * @throws SessionException
+     * @throws Exception
+     */
+    public static void updateTimestamp(final SessionDataTriple triple) throws SQLException, SessionException, Exception {
+        updateTimestamp(triple.getFolderName(), triple.getTimestamp(), triple.getProject());
+    }
+
+    /**
+     * Update the last modified time of the session to the current time.
+     *
      * @param sess      Session label
      * @param timestamp Timestamp directory
      * @param proj      Project name
@@ -2301,8 +2337,7 @@ public final class PrearcDatabase {
      * @throws SessionException
      * @throws Exception
      */
-
-    public static void setLastModifiedTime(String sess, String timestamp, String proj) throws SQLException, SessionException, Exception {
+    public static void updateTimestamp(String sess, String timestamp, String proj) throws SQLException, SessionException, Exception {
         modifySession(sess, timestamp, proj, new SessionOp<java.lang.Void>() {
             public Void op() throws SQLException, Exception {
                 return null;

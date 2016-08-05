@@ -11,8 +11,8 @@ package org.nrg.xnat.initialization.tasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
@@ -26,6 +26,12 @@ import java.util.Map;
 
 @Component
 public class EncryptXnatPasswords extends AbstractInitializingTask {
+    @Autowired
+    public EncryptXnatPasswords(final JdbcTemplate template) {
+        super();
+        _template = template;
+    }
+
     @Override
     public String getTaskName() {
         return "Encrypt XNAT passwords";
@@ -51,6 +57,8 @@ public class EncryptXnatPasswords extends AbstractInitializingTask {
             }
 
             complete();
+        } catch (BadSqlGrammarException e) {
+            logger.info("Unable to execute user table password encryption, maybe the table doesn't exist yet?", e);
         } catch (Exception e) {
             logger.error("", e);
         }
@@ -80,7 +88,5 @@ public class EncryptXnatPasswords extends AbstractInitializingTask {
 
     private static Logger logger = LoggerFactory.getLogger(EncryptXnatPasswords.class);
 
-    @Autowired
-    @Lazy
-    private JdbcTemplate _template;
+    private final JdbcTemplate _template;
 }

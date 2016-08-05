@@ -1,21 +1,25 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
-import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.FilterSecurityInterceptorBeanPostProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 @Component
 public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+    @Autowired
+    public UpdateSecurityFilterHandlerMethod(final SiteConfigPreferences preferences, @SuppressWarnings("SpringJavaAutowiringInspection") final FilterSecurityInterceptor interceptor, final FilterSecurityInterceptorBeanPostProcessor postProcessor) {
+        _preferences = preferences;
+        _interceptor = interceptor;
+        _postProcessor = postProcessor;
+    }
+
     @Override
     public List<String> getHandledPreferences() {
         return PREFERENCES;
@@ -37,17 +41,14 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPrefere
 
     private void updateSecurityFilter(){
         if(_interceptor!=null && _postProcessor!=null){
-            _interceptor.setSecurityMetadataSource(_postProcessor.getMetadataSource(XDAT.getSiteConfigPreferences().getRequireLogin()));
+            _interceptor.setSecurityMetadataSource(_postProcessor.getMetadataSource(_preferences.getRequireLogin()));
         }
 	}
 
-    private static final Logger       _log        = LoggerFactory.getLogger(UpdateSecurityFilterHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("requireLogin"));
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList("requireLogin"));
 
-    @Inject
-    private FilterSecurityInterceptor _interceptor;
-
-    @Inject
-    private FilterSecurityInterceptorBeanPostProcessor _postProcessor;
+    private final SiteConfigPreferences _preferences;
+    private final FilterSecurityInterceptor _interceptor;
+    private final FilterSecurityInterceptorBeanPostProcessor _postProcessor;
 
 }

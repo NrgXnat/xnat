@@ -651,6 +651,12 @@ var XNAT = getObject(XNAT || {});
         // 'contents' will be inserted into the 'target' element
         _target = spawn('div.element-wrapper');
 
+        // add a help info icon if one is specified
+        if (opts.info){
+            _inner.push(['span#infolink-'+infoId+'.infolink.icon.icon-sm.icon-status.icon-qm','']);
+            infoContent[infoId++] = {label:opts.label, content:opts.info};
+        }
+
         // add the target to the content array
         _inner.push(_target);
 
@@ -1332,3 +1338,4 @@ var XNAT = getObject(XNAT || {});
 
 })(XNAT, jQuery, window);
 
+var infoId = 0, infoContent = [];

@@ -68,6 +68,8 @@ siteDescriptionType:
     #id: siteDescriptionType
     #name: siteDescriptionType
     label: Site Description
+    info: >
+        <p>The site description will show up on the login page and can be utilized to describe the purpose of this site, or notify users of important application status messages (ie. "The system is down for maintenance").</p><p>Administrators can opt to display a simple text message, or specify a velocity template reference containing the content to be displayed.</p>
     contents:
         info:
             tag: p
@@ -429,6 +431,8 @@ passwords:
         passwordExpiration:
             kind: panel.element
             label: Password Expiration
+            info: >
+                <p>A <b>password expiration interval</b> specifies the length of time users have before they must change their passwords (Specified in <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>)</p><p>Alternatively, a <b>password expiration date</b> can be configured to expire passwords that were last changed before it. This is useful for purging access to obsolete accounts.</p>
             contents:
                 info:
                     tag: p

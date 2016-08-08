@@ -63,7 +63,7 @@ var XNAT = getObject(XNAT || {});
         //
         this.getSourceCode();
 
-    };
+    }
 
     Editor.fn = Editor.prototype;
 

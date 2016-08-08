@@ -105,7 +105,12 @@ public class UserGroupManager implements UserGroupServiceI{
 	@Override
 	public void updateUserForGroup(UserI user, String groupId, UserGroupI group) {
 	    ((XDATUser)user).getGroups().put(groupId,group);
-	    ((XDATUser)user).resetCriteria();
+		try {
+			((XDATUser)user).init();
+		} catch (Exception e) {
+			logger.error("",e);
+		}
+		((XDATUser)user).resetCriteria();
 	}
 
 	@Override

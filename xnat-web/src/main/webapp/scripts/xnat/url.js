@@ -352,10 +352,12 @@ var XNAT = getObject(XNAT||{});
         // ['format=json','sort=asc'], or
         // { format: 'json', sort: 'asc' }
 
+        var urlParts = XNAT.url.splitUrl(url);
+
         // need to get a query object first
         // so we can add the XNAT_CSRF and
         // XNAT_XHR params to the end
-        params = (params) ? XNAT.url.toQueryObject(params) : {};
+        params = extend(urlParts.params, XNAT.url.toQueryObject(params));
 
         if ((window.csrfToken || XNAT.csrfToken) && (isTrue(csrf))) {
             params.XNAT_CSRF = (window.csrfToken || XNAT.csrfToken);
@@ -369,7 +371,7 @@ var XNAT = getObject(XNAT||{});
             }
         }
 
-        return urlSetup(url, '', params);
+        return urlSetup(urlParts.base, '', params, urlParts.hash);
 
     };
 

@@ -5,6 +5,7 @@
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+<!-- BEGIN NoMenuTop.vm -->
 $page.setBgColor($ui.bgcolor)
 
 <div id="user_bar" class="no_menu">
@@ -18,7 +19,10 @@ $page.setBgColor($ui.bgcolor)
         #elseif($username)
         ## use default timout value from web.xml as the starting text in the "timeLeft" element
             <span id="user_info">Logged in as: &nbsp;<a href="$link.setPage("XDATScreen_UpdateUser.vm")">$!username</a> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
-		#end
+            <script>
+                window.loggedIn = true;
+            </script>
+        #end
 	#end
     <div class="clear"></div>
 </div><!-- /user_bar -->
@@ -30,3 +34,4 @@ $page.setBgColor($ui.bgcolor)
         #parse("/screens/Logo.vm")
     </a>
 </div></div>
+<!-- END NoMenuTop.vm -->

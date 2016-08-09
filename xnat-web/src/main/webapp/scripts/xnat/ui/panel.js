@@ -228,7 +228,7 @@ var XNAT = getObject(XNAT || {});
                 $this.not(':radio').changeVal(val);
 
                 if (/checkbox/i.test(this.type)) {
-                    this.checked = !!this.value;
+                    this.checked = (this.value === val || !!this.value);
                 }
 
                 if (/radio/i.test(this.type)) {
@@ -875,13 +875,12 @@ var XNAT = getObject(XNAT || {});
             addDataObjects(opts.element, {
                 codeLanguage: opts.code
             });
+            // open code editor on double-click
+            opts.element.ondblclick = function(){
+                var panelTextarea = XNAT.app.codeEditor.init(this, { language: opts.code || 'html' });
+                panelTextarea.openEditor();
+            };
         }
-
-        // open code editor on double-click
-        opts.element.ondblclick = function(){
-            var panelTextarea = XNAT.app.codeEditor.init(this, { language: opts.code || 'html' });
-            panelTextarea.openEditor();
-        };
 
         opts.element.rows = opts.rows || opts.element.rows || 10;
         

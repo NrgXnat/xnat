@@ -39,7 +39,9 @@ var XNAT = getObject(XNAT || {});
 
         this.isInput = (function(){ return _this.$source.is(':input') })();
 
-        this.isUrl = !this.source && this.opts.url;
+        this.isUrl = !this.source && (this.opts.loadUrl || this.opts.load || this.opts.url);
+
+        this.loadUrl = this.isUrl ? (this.opts.loadUrl || this.opts.load || this.opts.url) : null;
 
         // set default language for editor
         // add [data-code-language="javascript"] to source code element
@@ -51,13 +53,18 @@ var XNAT = getObject(XNAT || {});
                 // set source to null or empty string
                 // and opts.url = '/url/to/data' to
                 // pull code from a REST call
-                this.code = '';
+                return XNAT.xhr.get(this.loadUrl);
             }
             else {
                 // extract code from the source
                 this.code = this.isInput ? this.$source.val() : this.$source.html();
             }
-            return this.code
+            return this.code;
+            // return {
+            //     done: function(callback){
+            //         callback.call(_this, _this.code);
+            //     }
+            // }
         };
 
         //
@@ -83,8 +90,8 @@ var XNAT = getObject(XNAT || {});
         if (this.isUrl){
             // save via ajax
             return xhr.request(extend(true, {
-                method: method,
-                url: url,
+                method: method || _this.opts.submitMethod || _this.opts.method,
+                url: url || _this.opts.submitUrl || _this.opts.url,
                 success: function(){
                     _this.dialog.close()
                 }
@@ -158,16 +165,18 @@ var XNAT = getObject(XNAT || {});
         opts = cloneObject(opts);
 
         // insert additional content above editor
-        if (opts.before || opts.contentTop) {
-            modal.content += opts.before || opts.contentTop;
+        if (opts.before) {
+            modal.content += '<div class="before-editor">' + opts.before + '</div>';
+            delete opts.before; // don't pass this to xmodal.open()
         }
         
         // div container for code editor
         modal.content += '<div class="code-editor" style="width:840px;height:440px;position:relative;"></div>';
         
         // insert additional content BELOW editor
-        if (opts.after || opts.contentBottom) {
-            modal.content += opts.after || opts.contentBottom;
+        if (opts.after) {
+            modal.content += '<div class="after-editor">' + opts.after + '</div>';
+            delete opts.after; // don't pass this to xmodal.open()
         }
         
         modal.title = 'XNAT Code Editor';

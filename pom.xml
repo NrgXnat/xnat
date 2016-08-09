@@ -148,7 +148,7 @@
         <jython.version>2.7.0</jython.version>
         <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
-        <log4j2.version>2.5</log4j2.version>
+        <log4j2.version>2.6.2</log4j2.version>
         <mockito.version>1.8.5</mockito.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
@@ -158,7 +158,7 @@
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
-        <slf4j.version>1.7.7</slf4j.version>
+        <slf4j.version>1.7.21</slf4j.version>
         <spring-framework.version>4.2.7.RELEASE</spring-framework.version>
         <spring-ldap.version>2.0.4.RELEASE</spring-ldap.version>
         <spring-security.version>4.0.4.RELEASE</spring-security.version>

@@ -366,6 +366,7 @@ dependencies {
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${vJackson}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4:${vJackson}"
     compile "org.json:json:20151123"
+    compile "com.thoughtworks.xstream:xstream:1.4.9"
     compile "xerces:xercesImpl:2.11.0"
 
     compile "commons-beanutils:commons-beanutils:1.9.2"

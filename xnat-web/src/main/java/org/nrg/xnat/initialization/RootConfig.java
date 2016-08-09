@@ -24,6 +24,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.oxm.xstream.XStreamMarshaller;
 
 import javax.servlet.ServletContext;
 import javax.xml.bind.Marshaller;

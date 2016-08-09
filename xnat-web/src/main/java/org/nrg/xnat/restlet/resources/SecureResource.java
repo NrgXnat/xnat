@@ -151,8 +151,7 @@ public abstract class SecureResource extends Resource {
         user = XDAT.getUserDetails();
         if(user==null && !XDAT.getSiteConfigPreferences().getRequireLogin()){
             try {
-                user = Users.getGuest();
-                XDAT.setUserDetails(user);
+                XDAT.setGuestUserDetails();
             } catch (Exception e) {
                 logger.error("",e);
             }

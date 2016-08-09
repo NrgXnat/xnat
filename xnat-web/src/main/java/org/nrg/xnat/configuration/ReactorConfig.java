@@ -2,14 +2,10 @@ package org.nrg.xnat.configuration;
 
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xft.event.listeners.XftItemEventListener;
-import org.nrg.xnat.event.conf.EventPackages;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import reactor.Environment;
 import reactor.bus.EventBus;
-
-import java.util.Arrays;
-import java.util.HashSet;
 
 /**
  * The Class ReactorConfig.

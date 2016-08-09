@@ -128,7 +128,7 @@ var XNAT = getObject(XNAT);
         
         opts = cloneObject(opts);
         opts.id = opts.id||toDashed(opts.name||'');
-        opts.label = opts.label||opts.title||opts.name||'';
+        opts.label = opts.label||'';
         
         // pass in an element or create a new 'div' element
         element = 
@@ -140,7 +140,10 @@ var XNAT = getObject(XNAT);
             }, opts.element));
         
         return template.panelElement(opts, [
-            ['label.element-label|for='+element.id||opts.id, opts.label],
+
+            // only add a label if specified
+            (opts.label ? ['label.element-label|for='+element.id||opts.id, opts.label] : ''),
+
             ['div.element-wrapper', [].concat(
                 
                 (opts.beforeElement ? opts.beforeElement : []),

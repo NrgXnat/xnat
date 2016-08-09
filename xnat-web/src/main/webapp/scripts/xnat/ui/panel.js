@@ -146,6 +146,7 @@ var XNAT = getObject(XNAT || {});
     }
 
     // creates a panel that's a form that can be submitted
+    // TODO: REFACTOR THIS BEAST
     panel.form = function panelForm(opts, callback){
 
         opts = cloneObject(opts);
@@ -211,21 +212,28 @@ var XNAT = getObject(XNAT || {});
             // find all form inputs with a name attribute
             $$(form).find(':input').each(function(){
 
+                var $this = $(this);
                 var val = lookupObjectValue(dataObj, this.name||this.title);
 
                 //if (!val) return;
 
                 if (Array.isArray(val)) {
                     val = val.join(', ');
+                    $this.addClass('array-list')
                 }
                 else {
                     val = stringable(val) ? val : JSON.stringify(val);
                 }
 
-                $(this).changeVal(val);
+                $this.not(':radio').changeVal(val);
 
-                if (/checkbox|radio/i.test(this.type)) {
+                if (/checkbox/i.test(this.type)) {
                     this.checked = !!this.value;
+                }
+
+                if (/radio/i.test(this.type)) {
+                    this.checked = (this.value === val);
+                    //$this.trigger('change');
                 }
 
             });
@@ -875,12 +883,19 @@ var XNAT = getObject(XNAT || {});
             panelTextarea.openEditor();
         };
 
-        opts.element.rows = 10;
+        opts.element.rows = opts.rows || opts.element.rows || 10;
         
         var textarea = spawn('textarea', opts.element);
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
     };
     panel.input.textarea = panel.textarea;
+
+    panel.textarea.arrayList = function(opts){
+        opts = extend(true, {}, {
+            element: { $: { addClass: 'array-list' } }
+        }, opts);
+        return panel.textarea(opts);
+    };
 
     //////////////////////////////////////////////////
     // SELECT MENU PANEL ELEMENTS

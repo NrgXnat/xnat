@@ -2,15 +2,6 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Calendar;
-import java.util.Date;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.RawScreen;
@@ -32,6 +23,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Calendar;
+import java.util.Date;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class CSVScreen extends RawScreen {
@@ -100,17 +99,22 @@ public class CSVScreen extends RawScreen {
         search.setPagingOn(false);
         XFTTableI table = search.execute(new CSVPresenter(), TurbineUtils.getUser(data).getLogin());
         search.setPagingOn(true);
-        String sb = table.toString(",");
-        if (sb != null) {
-            Date today = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+        final String sb = table.toString(",");
+        if (StringUtils.isNotBlank(sb)) {
+            Date   today    = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
             String fileName = TurbineUtils.getUser(data).getUsername() + "_" + (today.getMonth() + 1) + "_" + today.getDate() + "_" + (today.getYear() + 1900) + "_" + today.getHours() + "_" + today.getMinutes() + "_" + today.getSeconds() + ".csv";
 
             try {
-                File f = new File(AccessLogger.getAccessLogDirectory() + "history");
-                if (!f.exists()) {
-                    f.mkdir();
+                final String directory = AccessLogger.getAccessLogDirectory();
+                if (StringUtils.isNotBlank(directory)) {
+                    final File file = new File(directory + "history");
+                    if (!file.exists()) {
+                        file.mkdir();
+                    }
+                    FileUtils.OutputToFile(sb, directory + "history" + File.separator + fileName);
+                } else {
+                    logger.error("Couldn't find the access log directory! Message is orphaned: " + sb);
                 }
-                FileUtils.OutputToFile(sb, AccessLogger.getAccessLogDirectory() + "history" + File.separator + fileName);
             } catch (RuntimeException e) {
                 logger.error("Something went wrong trying to write out the data", e);
             }

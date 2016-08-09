@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
 
+import com.google.common.base.Joiner;
 import org.junit.Test;
 
 /**
@@ -62,7 +63,7 @@ public class XFTTableSortTest {
 		final Object[] o2=t.rows().get(0);
 		
 		if(o1==o2){
-			fail("Objects should not be equal.");
+			fail("Objects should not be equal:" + System.lineSeparator() + System.lineSeparator() + " * o1: [" + Joiner.on(", ").join(o1) + "]" + System.lineSeparator() + " * o2: [" + Joiner.on(", ").join(o2) + "]");
 		}
 	}
 	

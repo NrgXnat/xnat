@@ -41,7 +41,6 @@ import org.springframework.security.core.session.SessionRegistryImpl;
 
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -54,7 +53,7 @@ import java.util.regex.Pattern;
 public abstract class SecureScreen extends VelocitySecureScreen {
     protected final static Logger  logger   = LoggerFactory.getLogger(SecureScreen.class);
     private static      Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
-    List<String> _whitelistedIPs;
+    private List<String> _whitelistedIPs;
     protected ThemeService themeService = XDAT.getThemeService();
 
     @SuppressWarnings("unused")
@@ -144,11 +143,14 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 if (sessionRegistry != null) {
                     List<String> uniqueIPs = new ArrayList<>();
                     List<String> sessionIds = new ArrayList<>();
-                    for (SessionInformation session : sessionRegistry.getAllSessions(XDAT.getUserDetails(), false)) {
-                        sessionIds.add(session.getSessionId());
+
+                    final UserI user = XDAT.getUserDetails();
+                    if (user != null && !user.isGuest()) {
+                        for (SessionInformation session : sessionRegistry.getAllSessions(user, false)) {
+                            sessionIds.add(session.getSessionId());
+                        }
                     }
 
-                    UserI user = XDAT.getUserDetails();
                     assert user != null;
 
                     if (sessionIds.size() > 0) {
@@ -182,18 +184,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                         }
                     }
                     //if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest"))){
-                    if (!user.getLogin().equals("guest")) {
-                        StringBuilder sessionWarning = new StringBuilder(); //"WARNING: Your account currently has ").append(sessionCount).append(" login sessions open from ").append(ip.size()).append(" distinct IP addresses. If you believe this is incorrect, please take corrective action. The IP addresses are:");
-                        for (String i : uniqueIPs) {
-                            sessionWarning.append(i).append(", ");
-                        }
-                        //trim that last comma
-                        if (sessionWarning.length() > 2) {
-                            sessionWarning.delete(sessionWarning.length() - 2, sessionWarning.length());
-                        }
+                    if (!user.isGuest()) {
                         c.put("sessionCount", sessionIds.size());
                         c.put("sessionIpCount", uniqueIPs.size());
-                        c.put("sessionIpCsv", sessionWarning.toString());
+                        c.put("sessionIpCsv", Joiner.on(", ").join(uniqueIPs));
                     }
                 }
                 doBuildTemplate(data, c);
@@ -275,17 +269,12 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     isAuthorized = false;
                 }
 
-                UserI guest = Users.getGuest();
-                if (guest != null) {
-                    XDAT.setUserDetails(guest);
-                    data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());
-                    if (!data.getAction().equalsIgnoreCase("")) {
-                        data.getParameters().add("nextAction", data.getAction());
-                    } else {
-                        data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
-                    }
-                    //System.out.println("nextPage::" + ((String)TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
-
+                XDAT.setGuestUserDetails();
+                data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());
+                if (!data.getAction().equalsIgnoreCase("")) {
+                    data.getParameters().add("nextAction", data.getAction());
+                } else {
+                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
                 }
             } else {
                 if (!allowGuestAccess() && user.getLogin().equals("guest")) {

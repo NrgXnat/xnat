@@ -15,6 +15,7 @@ package org.nrg.xdat.turbine.modules.actions;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -59,7 +60,7 @@ public class ActivateAction extends SecureAction{
 			o = TurbineUtils.GetItemBySearch(data,true);
 			if (o != null)
 			{		  
-				Authorizer.getInstance().authorizeSave(o.getItem().getGenericSchemaElement(), TurbineUtils.getUser(data));
+				Authorizer.getInstance().authorizeSave(o.getItem().getGenericSchemaElement(), XDAT.getUserDetails());
 				
 				o.activate(TurbineUtils.getUser(data));
 				SchemaElementI se = SchemaElement.GetElement(o.getXSIType());

@@ -34,7 +34,6 @@ import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
@@ -1355,17 +1354,14 @@ public class TurbineUtils {
     }
 
     public static boolean isAuthorized(final RunData data, final UserI user, final boolean allowGuestAccess) throws Exception {
-        if (user ==null) {
-            UserI guest= Users.getGuest();
-            if (guest!=null) {
-                XDAT.setUserDetails(guest);
-                final String destination = data.getTemplateInfo().getScreenTemplate();
-                data.getParameters().add("nextPage", destination);
-                if (!data.getAction().equalsIgnoreCase("")) {
-                    data.getParameters().add("nextAction", data.getAction());
-                } else {
-                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
-                }
+        if (user == null) {
+            XDAT.setGuestUserDetails();
+            final String destination = data.getTemplateInfo().getScreenTemplate();
+            data.getParameters().add("nextPage", destination);
+            if (!data.getAction().equalsIgnoreCase("")) {
+                data.getParameters().add("nextAction", data.getAction());
+            } else {
+                data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
             }
             return allowGuestAccess;
         } else {

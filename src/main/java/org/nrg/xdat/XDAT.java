@@ -62,6 +62,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationProvider;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -163,49 +164,51 @@ public class XDAT implements Initializable, Configurable{
 
 	public static UserI getUserDetails() {
 		final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+		final boolean isAnonymous = authentication == null || authentication instanceof AnonymousAuthenticationToken;
+
+		final Object principal = isAnonymous ? "guest" : authentication.getPrincipal();
+		try {
+			if (isAnonymous) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Attempted to retrieve user object, but found " + (authentication == null ? "no stored authentication object" : "an anonymous auth token") + ". Returning guest user.");
+                }
+                return Users.getGuest();
+            }
+
+			if (principal == null) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Attempted to retrieve user object and found an authentication object of type " + authentication.getClass().getName() + ", but it had no associated principal");
+                }
+                return null;
+            }
+
+			if (principal instanceof UserI) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Found authenticated user object for user " + ((UserI) principal).getLogin());
+                }
+                return (UserI) principal;
+            }
+
+			if (principal instanceof String) {
+                if (StringUtils.isBlank((String) principal)) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Found principal object of type String but it was empty.");
+                    }
+                    return null;
+                }
+                final UserI user = Users.getUser((String) principal);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Found principal object of type String and successfully retrieved the user: " + principal);
+                }
+                return user;
+            }
+		} catch (UserInitException e) {
+			throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the user with login: " + principal, e);
+		} catch (UserNotFoundException e) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("Attempted to retrieve user object, but found " + (authentication == null ? "no stored authentication object" : "an anonymous auth token") + ".");
+				logger.debug("Found principal object of type String with value \"" + principal + "\", but couldn't find the corresponding user object.");
 			}
 			return null;
-		}
-
-		final Object principal = authentication.getPrincipal();
-		if (principal == null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Attempted to retrieve user object and found an authentication object of type " + authentication.getClass().getName() + ", but it had no associated principal");
-			}
-			return null;
-		}
-
-		if (principal instanceof UserI) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Found authenticated user object for user " + ((UserI) principal).getLogin());
-			}
-			return (UserI) principal;
-		}
-
-		if (principal instanceof String) {
-			if (StringUtils.isBlank((String) principal)) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Found principal object of type String but it was empty.");
-				}
-				return null;
-			}
-			try {
-				final UserI user = Users.getUser((String) principal);
-				if (logger.isDebugEnabled()) {
-					logger.debug("Found principal object of type String and successfully retrieved the user: " + principal);
-				}
-				return user;
-			} catch (UserInitException e) {
-				throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the user with login: " + principal, e);
-			} catch (UserNotFoundException e) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Found principal object of type String with value \"" + principal + "\", but couldn't find the corresponding user object.");
-				}
-				return null;
-			}
 		}
 
 		if (logger.isEnabledFor(Level.WARN)) {
@@ -215,9 +218,22 @@ public class XDAT implements Initializable, Configurable{
 		return null;
 	}
 
-	public static void setUserDetails(UserI userDetails) {
-		Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null);
+	public static void setGuestUserDetails() throws UserNotFoundException, UserInitException {
+		final AnonymousAuthenticationProvider provider = getContextService().getBean(AnonymousAuthenticationProvider.class);
+		final UserI                           guest    = Users.getGuest();
+		assert guest != null : "Didn't find the guest user.";
+
+		final Authentication authentication = new AnonymousAuthenticationToken(provider.getKey(), guest, Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
 		SecurityContextHolder.getContext().setAuthentication(authentication);
+	}
+
+	public static void setUserDetails(UserI userDetails) throws UserNotFoundException, UserInitException {
+		if (userDetails.isGuest()) {
+			setGuestUserDetails();
+		} else {
+			final Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null);
+			SecurityContextHolder.getContext().setAuthentication(authentication);
+		}
 	}
 
 	public static void setNewUserDetails(final UserI user, final RunData data, final Context context) {

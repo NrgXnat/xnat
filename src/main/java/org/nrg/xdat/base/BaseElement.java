@@ -12,20 +12,6 @@
 
 package org.nrg.xdat.base;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -44,14 +30,19 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.JavaFileGenerator;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.ResourceFile;
 import org.nrg.xft.utils.VelocityUtils;
 import org.w3c.dom.Document;
+
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
  * @author Tim
@@ -80,21 +71,38 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
 
     }
 
-	public BaseElement(UserI user)
-	{
-		try{setItem(XFTItem.NewItem(getSchemaElementName(),user));}catch(Exception e){logger.error("",e);}
-	}
+    public BaseElement(UserI user) {
+        try {
+            setItem(XFTItem.NewItem(getSchemaElementName(), user));
+        } catch (ElementNotFoundException e) {
+            logger.warn("Element not found: " + e.ELEMENT + ". This may be because the system is still initializing. Check for the corresponding table in the database.");
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+    }
 
-	public BaseElement(Map properties, UserI user)
-	{
-		try{setItem(XFTItem.NewItem(getSchemaElementName(),properties,false,user));}catch(Exception e){logger.error("",e);}
-	}
+    public BaseElement(Map properties, UserI user) {
+        try {
+            setItem(XFTItem.NewItem(getSchemaElementName(), properties, false, user));
+        } catch (ElementNotFoundException e) {
+            logger.warn("Element not found: " + e.ELEMENT + ". This may be because the system is still initializing. Check for the corresponding table in the database.");
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+    }
 
-	public SchemaElement getSchemaElement(){
-		if(schemaElement==null)
-			try{schemaElement=SchemaElement.GetElement(getSchemaElementName());}catch(Exception e){logger.error("",e);}
-		return schemaElement;
-	}
+    public SchemaElement getSchemaElement() {
+        if (schemaElement == null) {
+            try {
+                schemaElement = SchemaElement.GetElement(getSchemaElementName());
+            } catch (ElementNotFoundException e) {
+                logger.warn("Element not found: " + e.ELEMENT + ". This may be because the system is still initializing. Check for the corresponding table in the database.");
+            } catch (Exception e) {
+                logger.error("", e);
+            }
+        }
+        return schemaElement;
+    }
 
 	public void setBooleanProperty(String xmlPath,boolean value) throws Exception
 	{

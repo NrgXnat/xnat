@@ -308,11 +308,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         if (StringUtils.isBlank(value)) {
             return null;
         }
-        final Long date = Long.getLong(value);
-        if (date == null) {
-            _log.error("The value for the date preference {} is a non-blank but invalid value: {}. It should be stored as a long that can be translated into a date object.", getNamespacedPropertyId(key, subkeys), value);
-            return null;
-        }
+        final Long date = Long.parseLong(value);
         return new Date(date);
     }
 

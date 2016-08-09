@@ -151,10 +151,12 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                 Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
 			                    grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 			    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getLogin(), tempPass, grantedAuthorities);
-			    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
-			    		    	securityContext.setAuthentication(authentication);
 
-			                    try{
+                                if (!found.isGuest()) {
+                                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                                }
+
+                                try{
 			                    	directRequest(data,context,found);
 			                    }catch(Exception e){
 			                        logger.error(e);

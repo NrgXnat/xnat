@@ -14,6 +14,7 @@ package org.nrg.xdat.turbine.modules.screens;
 import com.google.common.base.Joiner;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
@@ -152,7 +153,6 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     }
 
                     assert user != null;
-
                     if (sessionIds.size() > 0) {
                         String query = "SELECT session_id, ip_address FROM xdat_user_login WHERE session_id in ('" + Joiner.on("','").join(sessionIds) + "')";
 
@@ -231,21 +231,19 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             data.getParameters().setString("logout", "true");
             boolean isAuthorized = false;
 
-            UserI user = XDAT.getUserDetails();
-            if (user == null) {
+            final UserI user = XDAT.getUserDetails();
+            if (user == null || user.isGuest()) {
                 //logger.debug("isAuthorized() Login Required:true user:null");
                 String Destination = data.getTemplateInfo().getScreenTemplate();
                 data.getParameters().add("nextPage", Destination);
                 if (!data.getAction().equalsIgnoreCase("")) {
                     data.getParameters().add("nextAction", data.getAction());
                 } else {
-                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
                 }
                 //System.out.println("nextPage::" + ((String)TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
-                doRedirect(data, org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
-
+                doRedirect(data, Turbine.getConfiguration().getString("template.login"));
             } else {
-
                 //logger.debug("isAuthorized() Login Required:true user:found");
                 isAuthorized = true;
                 if (TurbineUtils.GetPassedParameter("popup", data) != null) {
@@ -263,18 +261,19 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         } else {
             boolean isAuthorized = true;
             logger.debug("isAuthorized() Login Required:false");
-            UserI user = XDAT.getUserDetails();
-            if (user == null) {
+            final UserI user = XDAT.getUserDetails();
+            if (user == null || user.isGuest()) {
                 if (!allowGuestAccess()) {
                     isAuthorized = false;
                 }
 
                 XDAT.setGuestUserDetails();
+
                 data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());
                 if (!data.getAction().equalsIgnoreCase("")) {
                     data.getParameters().add("nextAction", data.getAction());
                 } else {
-                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
                 }
             } else {
                 if (!allowGuestAccess() && user.getLogin().equals("guest")) {
@@ -298,10 +297,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 if (!data.getAction().equalsIgnoreCase("")) {
                     data.getParameters().add("nextAction", data.getAction());
                 } else {
-                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
                 }
                 //System.out.println("nextPage::" + ((String)TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
-                doRedirect(data, org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
+                doRedirect(data, Turbine.getConfiguration().getString("template.login"));
 
             }
             return isAuthorized;

@@ -65,8 +65,8 @@ public class Authenticator {
         } catch (Exception e) {
             user = null;
         }
-        if (user == null && AliasToken.isAliasFormat(cred.username)) {
-            AliasToken token = getAliasTokenService().locateToken(cred.username);
+        if ((user == null || user.isGuest()) && AliasToken.isAliasFormat(cred.username)) {
+            final AliasToken token = getAliasTokenService().locateToken(cred.username);
             try {
                 user = Users.getUser(token.getXdatUserId());
             } catch (Exception exception) {

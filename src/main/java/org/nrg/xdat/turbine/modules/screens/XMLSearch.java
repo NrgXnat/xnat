@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
@@ -43,7 +44,7 @@ public class XMLSearch extends XDATRawScreen {
     protected final void doOutput(RunData data) throws Exception {
         final String username = ((String) TurbineUtils.GetPassedParameter("username", data));
         final String password = ((String) TurbineUtils.GetPassedParameter("password", data));
-        UserI  user     = TurbineUtils.getUser(data);
+        UserI user = XDAT.getUserDetails();
         if (user == null) {
             if (username != null && password != null) {
                 user = Authenticator.Authenticate(new Authenticator.Credentials(username, password));

@@ -1,6 +1,8 @@
 package org.nrg.xdat.security.helpers;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -48,6 +51,7 @@ public class Users {
      *
      * @return The service.
      */
+    @Nonnull
     public static UserManagementServiceI getUserManagementService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
         if (singleton == null) {
@@ -83,6 +87,9 @@ public class Users {
                     logger.error("", e);
                 }
             }
+            if (singleton == null) {
+                throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "Couldn't create an instance of the user management service.");
+            }
         }
         return singleton;
     }
@@ -94,7 +101,7 @@ public class Users {
      */
     public static UserI createUser() {
         final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.createUser() : null;
+        return service.createUser();
     }
 
     /**
@@ -106,7 +113,7 @@ public class Users {
      */
     public static UserI createUser(Map<String, ? extends Object> params) throws UserFieldMappingException, UserInitException {
         final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.createUser(params) : null;
+        return service.createUser(params);
     }
 
     /**
@@ -118,7 +125,7 @@ public class Users {
      */
     public static UserI getUser(String username) throws UserInitException, UserNotFoundException {
         final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.getUser(username) : null;
+        return service.getUser(username);
     }
 
     /**
@@ -128,7 +135,7 @@ public class Users {
      */
     public static UserI getUser(Integer user_id) throws UserNotFoundException, UserInitException {
         final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.getUser(user_id) : null;
+        return service.getUser(user_id);
     }
 
     /**
@@ -138,7 +145,7 @@ public class Users {
      */
     public static List<UserI> getUsersByEmail(String email) {
         final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.getUsersByEmail(email) : null;
+        return service.getUsersByEmail(email);
     }
 
     /**
@@ -171,7 +178,7 @@ public class Users {
      */
     public static List<UserI> getUsers() {
         final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.getUsers() : null;
+        return service.getUsers();
     }
 
     /**
@@ -182,9 +189,9 @@ public class Users {
      * @throws UserNotFoundException
      * @throws UserInitException
      */
+    @Nonnull
     public static UserI getGuest() throws UserNotFoundException, UserInitException {
-        final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.getGuestUser() : null;
+        return getUserManagementService().getGuestUser();
     }
 
     /**
@@ -194,7 +201,7 @@ public class Users {
      */
     public static String getUserDataType() {
         final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.getUserDataType() : null;
+        return service.getUserDataType();
     }
 
     /**
@@ -204,11 +211,7 @@ public class Users {
      */
     public static void clearCache(UserI user) {
         final UserManagementServiceI service = getUserManagementService();
-        if (service != null) {
-            service.clearCache(user);
-        } else {
-            logger.warn("Didn't find the user management service.");
-        }
+        service.clearCache(user);
     }
 
     /**
@@ -223,11 +226,7 @@ public class Users {
      */
     public static void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventMetaI c) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        if (service != null) {
-            service.save(user, authenticatedUser, overrideSecurity, c);
-        } else {
-            logger.warn("Didn't find the user management service.");
-        }
+        service.save(user, authenticatedUser, overrideSecurity, c);
     }
 
     /**
@@ -242,11 +241,7 @@ public class Users {
      */
     public static void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails c) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        if (service != null) {
-            service.save(user, authenticatedUser, overrideSecurity, c);
-        } else {
-            logger.warn("Didn't find the user management service.");
-        }
+        service.save(user, authenticatedUser, overrideSecurity, c);
     }
 
     /**
@@ -260,7 +255,7 @@ public class Users {
      */
     public static ValidationResultsI validate(UserI user) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        return service != null ? service.validate(user) : null;
+        return service.validate(user);
     }
 
     /**
@@ -275,11 +270,7 @@ public class Users {
      */
     public static void enableUser(UserI user, UserI authenticatedUser, EventDetails ci) throws InvalidPermissionException, Exception {
         final UserManagementServiceI service = getUserManagementService();
-        if (service != null) {
-            service.enableUser(user, authenticatedUser, ci);
-        } else {
-            logger.warn("Didn't find the user management service.");
-        }
+        service.enableUser(user, authenticatedUser, ci);
     }
 
     /**
@@ -294,11 +285,7 @@ public class Users {
      */
     public static void disableUser(UserI user, UserI authenticatedUser, EventDetails ci) throws InvalidPermissionException, Exception {
         final UserManagementServiceI service = getUserManagementService();
-        if (service != null) {
-            service.disableUser(user, authenticatedUser, ci);
-        } else {
-            logger.warn("Didn't find the user management service.");
-        }
+        service.disableUser(user, authenticatedUser, ci);
     }
 
     /**
@@ -314,11 +301,7 @@ public class Users {
      */
     public static boolean authenticate(UserI u, Credentials cred) throws PasswordAuthenticationException, Exception {
         final UserManagementServiceI service = getUserManagementService();
-        if (service != null) {
-            return service.authenticate(u, cred);
-        }
-        logger.warn("Didn't find the user management service, so not authenticating the user {}. This may not mean that the login is invalid.", u.getLogin());
-        return false;
+        return service.authenticate(u, cred);
     }
 
     /**

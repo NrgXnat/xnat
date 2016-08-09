@@ -1,12 +1,10 @@
 /*
  * org.nrg.xdat.security.XDATUser
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/11/14 3:42 PM
  */
 package org.nrg.xdat.security;
 
@@ -75,7 +73,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     long startTime = Calendar.getInstance().getTimeInMillis();
 
     private UserAuthI _authorization;
-    private List<GrantedAuthority> _authorities;
+    private final Set<GrantedAuthority> _authorities = new HashSet<>();
     /**
      * DO NOT USE THIS.  IT is only for use in unit testings.  Use XDATUser(login).
      */
@@ -277,8 +275,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return <b>true</b> if the user is a guest, <b>false</b> otherwise.
      */
     public boolean isGuest() {
-        final String login = getLogin();
-        return StringUtils.isBlank(login) || login.equalsIgnoreCase("guest");
+        return getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
     }
 
     /**
@@ -1085,11 +1082,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public Collection<GrantedAuthority> getAuthorities() {
-        if (_authorities == null) {
-            _authorities = new ArrayList<>();
-            _authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-            if (isSiteAdmin()) {
-                _authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        if (_authorities.size() == 0) {
+            final String username = getUsername();
+            if (StringUtils.isBlank(username) || StringUtils.equalsIgnoreCase("guest", username)) {
+                _authorities.add(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
+            } else {
+                if (isSiteAdmin()) {
+                    _authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                }
+                _authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
             }
             List<String> groups = Groups.getGroupIdsForUser(this);
             if (groups != null && groups.size() > 0) {
@@ -1101,7 +1102,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 logger.debug("Created granted authorities list for user " + getLogin() + ": " + Joiner.on(", ").join(_authorities));
             }
         }
-        return _authorities;
+        return new HashSet<>(_authorities);
     }
 
     public boolean isAccountNonExpired() {

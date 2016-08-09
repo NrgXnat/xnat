@@ -25,10 +25,12 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
-public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
+@SuppressWarnings("unused")
+public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
     private static final Logger logger = Logger.getLogger(XDATUserMgmtServiceImpl.class);
 
 	@Override
@@ -42,12 +44,12 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 	}
 
 	@Override
-	public UserI getUser(Integer user_id) throws UserNotFoundException, UserInitException {
-		XdatUser u=XdatUser.getXdatUsersByXdatUserId(user_id, null, false);
+	public UserI getUser(Integer userId) throws UserNotFoundException, UserInitException {
+		XdatUser u=XdatUser.getXdatUsersByXdatUserId(userId, null, false);
 		if(u!=null){
 			return new XDATUser(u.getItem());
 		}else{
-			throw new UserNotFoundException(user_id);
+			throw new UserNotFoundException(userId);
 		}
 	}
     
@@ -65,15 +67,14 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 	}
 
 	@Override
+	@Nonnull
 	public UserI getGuestUser() throws UserNotFoundException, UserInitException {
-		String guestName;
 		try {
-			guestName = XDAT.getSiteConfigurationProperty("security.user.guestName", "guest");
+			return getUser(XDAT.getSiteConfigurationProperty("security.user.guestName", "guest"));
 		} catch (ConfigServiceException e) {
 			logger.error("",e);
-			guestName="guest";
+			return getUser("guest");
 		}
-		return getUser(guestName);
 	}
 
 	@Override
@@ -95,9 +96,9 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 	}
 
 	@Override
-	public UserI createUser(Map<String, ?> params) throws UserFieldMappingException, UserInitException{
+	public UserI createUser(Map<String, ?> properties) throws UserFieldMappingException, UserInitException{
         try {
-			PopulateItem populater = new PopulateItem(params,null,org.nrg.xft.XFT.PREFIX + ":user",true);
+			PopulateItem populater = new PopulateItem(properties, null, org.nrg.xft.XFT.PREFIX + ":user", true);
 			ItemI found = populater.getItem();
 			return new XDATUser(found);
 		} catch (Exception e) {
@@ -115,29 +116,17 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.security.services.UserManagementServiceI#save(org.nrg.xft.security.UserI, org.nrg.xft.security.UserI, boolean, org.nrg.xft.event.EventDetails)
 	 */
-	public void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails ci) throws InvalidPermissionException, Exception{
+	public void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event) throws Exception {
 		//this calls the other save method, but also takes care of creating the workflow entry for this change.
 		if(user.getLogin()==null){
 			throw new NullPointerException();
 		}
-		
-		Object id;
-		UserI existing;
-    	try {
-			if(user.getID()!=null){
-				id=user.getID();
-				existing=Users.getUser(user.getID());
-			}else{
-				id=user.getLogin();
-				existing=Users.getUser(user.getLogin());
-			}			
-		} catch (Exception e1) {
-			id=user.getLogin();
-	    }
-		
-    	PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, Users.getUserDataType(),id.toString(),PersistentWorkflowUtils.getExternalId(user), ci);
-         
-    	try {
+
+		final Object id = user.getID() != null ? user.getID() : user.getLogin();
+
+		PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, Users.getUserDataType(), id.toString(), PersistentWorkflowUtils.getExternalId(user), event);
+
+		try {
 	    	save(user,authenticatedUser,overrideSecurity,wrk.buildEvent());
 	    	 
 	    	if(id.equals(user.getLogin())) {
@@ -160,7 +149,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 	}
 
 	@Override
-	public void save(UserI user, UserI authenticatedUser,boolean overrideSecurity, EventMetaI c)  throws Exception{
+	public void save(UserI user, UserI authenticatedUser,boolean overrideSecurity, EventMetaI event) throws Exception{
 		if(user.getLogin()==null){
 			throw new NullPointerException();
 		}
@@ -168,7 +157,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		UserI existing=null;
 		try {
 			existing = Users.getUser(user.getLogin());
-		} catch (Exception e) {
+		} catch (Exception ignored) {
 		}
 		
 		if (existing == null) {
@@ -193,7 +182,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		        	}
 		        }
 		        // newUser.initializePermissions();
-		        SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, true, false,c);
+		        SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, true, false, event);
 		        XdatUserAuth newUserAuth = new XdatUserAuth(user.getLogin(), XdatUserAuthService.LOCALDB);
 		        XDAT.getXdatUserAuthService().create(newUserAuth);
 		    } else {
@@ -229,7 +218,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
             }
 
 		    if (Roles.isSiteAdmin(authenticatedUser) || overrideSecurity) {
-		        SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, false, false,c);
+		        SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, false, false, event);
 		    } else if (user.getLogin().equals(authenticatedUser.getLogin())) {
 		    	//not-admin user is modifying his own account.
 		    	//we only allow him to modify specific fields.
@@ -249,7 +238,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		        	toSave.setVerified(false);
 		        }
 		        
-		        SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false,c);
+		        SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false, event);
 
 		        authenticatedUser.setPassword(user.getPassword());
 		        authenticatedUser.setSalt(user.getSalt());
@@ -277,21 +266,19 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 
 
 	@Override
-	public void enableUser(UserI user, UserI authenticatedUser, EventDetails ci)
-			throws InvalidPermissionException, Exception {
+	public void enableUser(UserI user, UserI authenticatedUser, EventDetails event) throws Exception {
 		user.setEnabled(true);
-		Users.save(user, authenticatedUser,false, ci);
+		Users.save(user, authenticatedUser, false, event);
 	}
 
 	@Override
-	public void disableUser(UserI user, UserI authenticatedUser, EventDetails ci)
-			throws InvalidPermissionException, Exception {
+	public void disableUser(UserI user, UserI authenticatedUser, EventDetails event) throws Exception {
 		user.setEnabled(false);
-		Users.save(user, authenticatedUser,false, ci);
+		Users.save(user, authenticatedUser, false, event);
 	}
 
 	@Override
-	public boolean authenticate(UserI u, Credentials cred) throws PasswordAuthenticationException, Exception {
-        return ((XDATUser)u).login(cred.password);
+	public boolean authenticate(UserI user, Credentials credentials) throws Exception {
+        return ((XDATUser) user).login(credentials.password);
 	}
 }

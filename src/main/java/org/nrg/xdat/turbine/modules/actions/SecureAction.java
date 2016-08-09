@@ -211,7 +211,7 @@ public abstract class SecureAction extends VelocitySecureAction {
             boolean isAuthorized = false;
 
             UserI user = XDAT.getUserDetails();
-            if (user == null) {
+            if (user == null || user.isGuest()) {
                 data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());
                 if (!data.getAction().equalsIgnoreCase("")) {
                     data.getParameters().add("nextAction", data.getAction());

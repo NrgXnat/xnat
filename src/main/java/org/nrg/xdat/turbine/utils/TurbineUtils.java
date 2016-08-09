@@ -1365,7 +1365,7 @@ public class TurbineUtils {
             }
             return allowGuestAccess;
         } else {
-            return !(!allowGuestAccess && user.getLogin().equals("guest"));
+            return !(!allowGuestAccess && user.isGuest());
         }
     }
 

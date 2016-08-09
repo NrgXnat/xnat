@@ -78,7 +78,7 @@ public class UserCacheResource extends SecureResource {
 		
 		try {
 			
-			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(user);
+			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(getUser());
 	        String pXNAME = (String)getParameter(getRequest(),"XNAME");
 	        String pFILE = (String)getParameter(getRequest(),"FILE");
 	        
@@ -115,7 +115,7 @@ public class UserCacheResource extends SecureResource {
 		
 		try {
 			
-			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(user);
+			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(getUser());
 	        String pXNAME = (String)getParameter(getRequest(),"XNAME");
 	        String pFILE = (String)getParameter(getRequest(),"FILE");
 	        
@@ -142,7 +142,7 @@ public class UserCacheResource extends SecureResource {
 	@Override
 	public void handlePost() {
 		
-		String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(user);
+		String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(getUser());
 	    String pXNAME = (String)getParameter(getRequest(),"XNAME");
 	    String pFILE = (String)getParameter(getRequest(),"FILE");
 	        
@@ -198,7 +198,7 @@ public class UserCacheResource extends SecureResource {
 		
 		try {
 			
-			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(user);
+			String userPath = org.nrg.xdat.security.helpers.Users.getUserCacheUploadsPath(getUser());
 	        String pXNAME = (String)getParameter(getRequest(),"XNAME");
 	        String pFILE = (String)getParameter(getRequest(),"FILE");
 	        
@@ -210,7 +210,7 @@ public class UserCacheResource extends SecureResource {
 	        	
 	        	createUserResource(userPath,pXNAME);
 	        	
-	        } else if (pXNAME != null && pFILE != null) {
+	        } else if (pXNAME != null) {
 //	        	commenting this out because we currently need this feature.
 //	        	if (this.isQueryVariableTrue("extract")) {
 //	        		// PUT Specification wants to enable a GET request on the same URL.  Wouldn't want to put extracted files without the 
@@ -232,7 +232,7 @@ public class UserCacheResource extends SecureResource {
 	private void returnXnameList(String userPath) {
 	
         File[] fileArray = new File(userPath).listFiles();
-        ArrayList<String> columns=new ArrayList<String>();
+        ArrayList<String> columns= new ArrayList<>();
         columns.add("Resource");
         columns.add("URI");
         XFTTable table=new XFTTable();
@@ -257,22 +257,20 @@ public class UserCacheResource extends SecureResource {
 		
 		if (dir.exists() && dir.isDirectory()) {
 			
-			ArrayList<File> fileList = new ArrayList<File>();
+			ArrayList<File> fileList = new ArrayList<>();
 			fileList.addAll(FileUtils.listFiles(dir,null,true));
 			//Implement a sorting comparator on file list: Unnecessary, it is sorted by the representTable method.
-	        ArrayList<String> columns=new ArrayList<String>();
+	        ArrayList<String> columns= new ArrayList<>();
 	        columns.add("Name");
 	        columns.add("Size");
 	        columns.add("URI");
 	        
 	        XFTTable table=new XFTTable();
 	        table.initTable(columns);
-	        
-	        Iterator<File> i = fileList.iterator();
-	        while (i.hasNext()) {
-	        	File f = i.next();
-	        	String path=constructPath(f);
-	        	Object[] oarray = new Object[] { path.substring(1), f.length(), constructURI(path) };
+
+			for (final File file : fileList) {
+	        	String path=constructPath(file);
+	        	Object[] oarray = new Object[] { path.substring(1), file.length(), constructURI(path) };
 	        	table.insertRow(oarray);
 	        }
 		
@@ -316,7 +314,7 @@ public class UserCacheResource extends SecureResource {
 	}
 	
 	private void deleteUserFiles(String userPath, String pXNAME, String pFILE) {
-		ArrayList<File> fileList=new ArrayList<File>();
+		ArrayList<File> fileList= new ArrayList<>();
 		String fileString = pFILE + getRequest().getResourceRef().getRemainingPart().replaceFirst("\\?.*$", "");
 		
 		if (fileString.contains(",")) {
@@ -387,7 +385,7 @@ public class UserCacheResource extends SecureResource {
 	private boolean uploadUserFile(String userPath,String pXNAME,String pFILE) {
 		
 		// Create any subdirectories requested as well
-		String dirString=null;
+		String dirString;
 		String fileName=null;
 		String remainingPart = getRequest().getResourceRef().getRemainingPart().replaceFirst("\\?.*$", "");
 		if ((pFILE == null || pFILE.length()<1) && !remainingPart.equals("files")) {

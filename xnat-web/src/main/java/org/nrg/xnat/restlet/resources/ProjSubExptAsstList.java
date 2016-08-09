@@ -21,14 +21,13 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -38,7 +37,6 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -51,7 +49,9 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 	public ProjSubExptAsstList(Context context, Request request, Response response) {
 		super(context, request, response);
 
-		String pID= (String)getParameter(request,"PROJECT_ID");
+		final UserI user = getUser();
+
+		final String pID= (String)getParameter(request,"PROJECT_ID");
 		if(pID!=null){
 			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 
@@ -126,10 +126,9 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 
 	@Override
 	public void handlePost() {
-	        XFTItem item = null;			
-
-			try {
-			item=this.loadItem(null,true);
+		final UserI user = getUser();
+		try {
+			XFTItem item = loadItem(null,true);
 			
 				if(item==null){
 					String xsiType=this.getQueryVariable("xsiType");
@@ -296,10 +295,11 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
+		final UserI user = getUser();
 		XFTTable table = null;
 		if(assessed!=null){
-			Representation rep=super.getRepresentation(variant);
+			Representation rep=super.represent(variant);
 			if(rep!=null)return rep;
 			
 			try {
@@ -351,25 +351,20 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 						}
 					}
 				}
-			} catch (SQLException e) {
-				logger.error("", e);
-			} catch (DBPoolException e) {
-				logger.error("", e);
 			} catch (Exception e) {
 				logger.error("", e);
 			}
 
-			Hashtable<String, Object> params = new Hashtable<String, Object>();
-			if (table != null)
+			Hashtable<String, Object> params = new Hashtable<>();
+			if (table != null) {
 				params.put("totalRecords", table.size());
+			}
 			return this.representTable(table, overrideVariant(variant), params);
-			
 		}
 		
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params= new Hashtable<>();
 		params.put("title", "Project Subject Experiment Assessors");
 
-		if(table!=null)params.put("totalRecords", table.size());
-		return this.representTable(table,  overrideVariant(variant), params);
+		return representTable(null, overrideVariant(variant), params);
 	}
 }

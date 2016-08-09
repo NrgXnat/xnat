@@ -25,6 +25,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
@@ -46,46 +47,46 @@ public class ReconResource extends ItemResource {
 	XnatReconstructedimagedata recon=null;
 	
 	String exptID=null;
-	
+
 	public ReconResource(Context context, Request request, Response response) {
 		super(context, request, response);
-		
-			String pID= (String)getParameter(request,"PROJECT_ID");
-			if(pID!=null){
-				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
-			}
-			
-			String assessedID= (String)getParameter(request,"ASSESSED_ID");
-			if(assessedID!=null){
-				if(session==null&& assessedID!=null){
+
+		String      pID  = (String) getParameter(request, "PROJECT_ID");
+		final UserI user = getUser();
+		if (pID != null) {
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+		}
+
+		String assessedID = (String) getParameter(request, "ASSESSED_ID");
+		if (assessedID != null) {
+			if (session == null && assessedID != null) {
 				session = (XnatImagesessiondata) XnatExperimentdata
 						.getXnatExperimentdatasById(assessedID, user, false);
 				if (session != null
-						&& (proj != null && !session.hasProject(proj.getId()))) {
+					&& (proj != null && !session.hasProject(proj.getId()))) {
 					session = null;
 				}
-					
-					if(session==null && this.proj!=null){
+
+				if (session == null && this.proj != null) {
 					session = (XnatImagesessiondata) XnatExperimentdata
 							.GetExptByProjectIdentifier(this.proj.getId(),
-									assessedID, user, false);
-					}
+														assessedID, user, false);
 				}
+			}
 
-				exptID= (String)getParameter(request,"RECON_ID");
-				if(exptID!=null){
+			exptID = (String) getParameter(request, "RECON_ID");
+			if (exptID != null) {
 				this.getVariants().add(new Variant(MediaType.TEXT_HTML));
-					this.getVariants().add(new Variant(MediaType.TEXT_XML));
-				}
-				
-			}else{
-			response.setStatus(Status.CLIENT_ERROR_GONE,
-					"Unable to find session '" + assessedID + "'");
-		}
-		
-		this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.RECON_DATA,false));
-	}
+				this.getVariants().add(new Variant(MediaType.TEXT_XML));
+			}
 
+		} else {
+			response.setStatus(Status.CLIENT_ERROR_GONE,
+							   "Unable to find session '" + assessedID + "'");
+		}
+
+		this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.RECON_DATA, false));
+	}
 
 	@Override
 	public boolean allowPut() {
@@ -99,7 +100,8 @@ public class ReconResource extends ItemResource {
 		try {
 			item=this.loadItem("xnat:reconstructedImageData",true);
 
-			if(item==null){
+			final UserI user = getUser();
+			if(item == null){
 				String xsiType=this.getQueryVariable("xsiType");
 				if(xsiType!=null){
 					item=XFTItem.NewItem(xsiType, user);
@@ -126,7 +128,7 @@ public class ReconResource extends ItemResource {
 						this.session=(XnatImagesessiondata)XnatExperimentdata.getXnatExperimentdatasById(recon.getImageSessionId(), user, false);
 
 						if(this.session==null && this.proj!=null){
-							this.session=(XnatImagesessiondata)XnatExperimentdata.GetExptByProjectIdentifier(this.proj.getId(), recon.getImageSessionId(),user, false);
+							this.session=(XnatImagesessiondata)XnatExperimentdata.GetExptByProjectIdentifier(this.proj.getId(), recon.getImageSessionId(), user, false);
 						}
 						if(this.session!=null){
 							recon.setImageSessionId(this.session.getId());
@@ -164,7 +166,7 @@ public class ReconResource extends ItemResource {
 				}		
 
 				if(existing==null){
-					if(!Permissions.canEdit(user,this.session)){
+					if(!Permissions.canEdit(user, this.session)){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient create privileges for sessions in this project.");
 						return;
 					}
@@ -173,8 +175,8 @@ public class ReconResource extends ItemResource {
 						String query = "SELECT count(id) AS id_count FROM xnat_reconstructedimagedata WHERE id='";
 
 						String login = null;
-						if (user!=null){
-							login=user.getUsername();
+						if (user != null){
+							login= user.getUsername();
 						}
 						try {
 							int i=1;
@@ -190,7 +192,7 @@ public class ReconResource extends ItemResource {
 						}
 					}
 				}else{
-					if(!Permissions.canEdit(user,session)){
+					if(!Permissions.canEdit(user, session)){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient edit privileges for sessions in this project.");
 						return;
 					}
@@ -234,63 +236,63 @@ public class ReconResource extends ItemResource {
 	}
 
 	@Override
-	public void handleDelete(){
-			if(recon==null&& exptID!=null){
-					recon=(XnatReconstructedimagedata)XnatReconstructedimagedata.getXnatReconstructedimagedatasById(exptID, user, completeDocument);
-				}	
-			
-			if(recon==null){
-			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find the specified reconstruction.");
+	public void handleDelete() {
+		final UserI user = getUser();
+		if (recon == null && exptID != null) {
+			recon = XnatReconstructedimagedata.getXnatReconstructedimagedatasById(exptID, user, completeDocument);
+		}
+
+		if (recon == null) {
+			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified reconstruction.");
+			return;
+		}
+
+		if (filepath != null && !filepath.equals("")) {
+			this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return;
+		}
+		try {
+
+			if (!Permissions.canDelete(user, session) || XDAT.getBoolSiteConfigurationProperty("security.prevent-data-deletion", false)) {
+				this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to modify this session.");
 				return;
 			}
-			
-			if(filepath!=null && !filepath.equals("")){
-				this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-				return;
-			}
+
+			final PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, session.getXSIType(), session.getId(), (proj == null) ? session.getProject() : proj.getId(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getDeleteAction(recon.getXSIType())));
+			final EventMetaI          ci       = workflow.buildEvent();
+			PersistentWorkflowUtils.save(workflow, ci);
+
 			try {
-			
-			if(!Permissions.canDelete(user,session) || XDAT.getBoolSiteConfigurationProperty("security.prevent-data-deletion", false)){
-				this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"User account doesn't have permission to modify this session.");
-				return;
-			}
-
-				final PersistentWorkflowI workflow=WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, session.getXSIType(), session.getId(), (proj==null)?session.getProject():proj.getId(),newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getDeleteAction(recon.getXSIType())));
-				final EventMetaI ci=workflow.buildEvent();
-	            PersistentWorkflowUtils.save(workflow,ci);
-				
-				try {
-					String removeFiles=this.getQueryVariable("removeFiles");
-					if (removeFiles!=null){
-					    for (XnatAbstractresourceI om : recon.getOut_file()){
-					        XnatAbstractresource resourceA = (XnatAbstractresource)om;
-					        resourceA.deleteWithBackup(session.getArchiveRootPath(),user,ci);
-					    }
-					}	            
-					SaveItemHelper.authorizedDelete(recon.getItem().getCurrentDBVersion(), user,ci);
-
-					WorkflowUtils.complete(workflow, ci);
-
-					Users.clearCache(user);
-					MaterializedView.deleteByUser(user);
-				} catch (Exception e) {
-					WorkflowUtils.fail(workflow, ci);
-					throw e;
+				String removeFiles = this.getQueryVariable("removeFiles");
+				if (removeFiles != null) {
+					for (XnatAbstractresourceI om : recon.getOut_file()) {
+						XnatAbstractresource resourceA = (XnatAbstractresource) om;
+						resourceA.deleteWithBackup(session.getArchiveRootPath(), user, ci);
+					}
 				}
+				SaveItemHelper.authorizedDelete(recon.getItem().getCurrentDBVersion(), user, ci);
+
+				WorkflowUtils.complete(workflow, ci);
+
+				Users.clearCache(user);
+				MaterializedView.deleteByUser(user);
+			} catch (Exception e) {
+				WorkflowUtils.fail(workflow, ci);
+				throw e;
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
+			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
 		} catch (Exception e) {
 			e.printStackTrace();
-			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
+			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
 		}
 	}
 	
-
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		if(recon==null&& exptID!=null){
-				recon=(XnatReconstructedimagedata)XnatReconstructedimagedata.getXnatReconstructedimagedatasById(exptID, user, completeDocument);
+				recon= XnatReconstructedimagedata.getXnatReconstructedimagedatasById(exptID, getUser(), completeDocument);
 			}
 		
 		if(recon!=null){

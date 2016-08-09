@@ -206,7 +206,7 @@ ${bodyTop}
 <div id="user_bar">
     <div class="inner">
 
-        <c:if test="${_user != '-'}">
+        <c:if test="${_user != '-' || sessionScope.isGuest}">
 
             <img id="attention_icon" src="${SITE_ROOT}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
             <span id="user_info">Logged in as: &nbsp;<a href="${SITE_ROOT}/app/template/XDATScreen_UpdateUser.vm">${_user}</a> <b>|</b>

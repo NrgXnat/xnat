@@ -1,5 +1,7 @@
 package org.nrg.xnat.restlet.resources;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -10,6 +12,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.python.google.common.collect.Sets;
 import org.restlet.Context;
 import org.restlet.data.*;
@@ -19,9 +22,6 @@ import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 import java.util.*;
@@ -87,6 +87,7 @@ public class ScriptTriggerResource extends AutomationResource {
         }
 
         final Method method = request.getMethod();
+        final UserI  user   = getUser();
 
         if (StringUtils.isNotBlank(projectId)) {
             validateProjectAccess(projectId);
@@ -307,8 +308,7 @@ public class ScriptTriggerResource extends AutomationResource {
         //final Properties properties;
         JsonResults jsonResults;
         try {
-            final String text = entity.getText();
-            final String jsonString = text;
+            final String jsonString = entity.getText();
             final GsonBuilder builder = new GsonBuilder(); 
             final Gson gson = builder.create();
             jsonResults = gson.fromJson(jsonString,JsonResults.class);

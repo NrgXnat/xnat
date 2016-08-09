@@ -16,6 +16,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.framework.services.SerializerService;
 import org.restlet.Context;
@@ -59,6 +60,7 @@ public class AliasTokenRestlet extends SecureResource {
     @Override
     public Representation represent() throws ResourceException {
         if (OP_ISSUE.equals(_operation)) {
+            final UserI user = getUser();
             if (!StringUtils.isBlank(_username) && !Roles.isSiteAdmin(user)) {
                 throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, "Only admins can create proxy tokens.");
             }

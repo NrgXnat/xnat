@@ -21,7 +21,6 @@ import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
@@ -31,8 +30,8 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
@@ -55,6 +54,8 @@ public class ExptAssessmentResource extends ItemResource {
 
 	public ExptAssessmentResource(Context context, Request request, Response response) {
 		super(context, request, response);
+
+		final UserI user = getUser();
 
 		String pID= (String)getParameter(request,"PROJECT_ID");
 		if(pID!=null){
@@ -108,6 +109,7 @@ public class ExptAssessmentResource extends ItemResource {
 
 	@Override
 	public void handlePut() {
+		final UserI user = getUser();
 		try {
 			XFTItem template=null;
 			if (existing!=null && !this.isQueryVariableTrue("allowDataDeletion")){
@@ -233,7 +235,7 @@ public class ExptAssessmentResource extends ItemResource {
 							}
 
 							if(!matched){
-								XnatExperimentdataShare pp= new XnatExperimentdataShare((UserI)user);
+								XnatExperimentdataShare pp= new XnatExperimentdataShare(user);
 								pp.setProject(this.proj.getId());
 								assessor.setSharing_share(pp);
 							}
@@ -371,6 +373,7 @@ public class ExptAssessmentResource extends ItemResource {
 
 	@Override
 	public void handleDelete(){
+		final UserI user = getUser();
 
 		if(assessor==null&& exptID!=null){
 			assessor=(XnatImageassessordata)XnatExperimentdata.getXnatExperimentdatasById(exptID, user, false);
@@ -441,8 +444,9 @@ public class ExptAssessmentResource extends ItemResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {
+	public Representation represent(Variant variant) {
 		MediaType mt = overrideVariant(variant);
+		final UserI user = getUser();
 
 		if(assessor==null&& exptID!=null){
 			assessor=(XnatImageassessordata)XnatExperimentdata.getXnatExperimentdatasById(exptID, user, false);
@@ -489,7 +493,7 @@ public class ExptAssessmentResource extends ItemResource {
 					t.rows().add(row);
 				}
 
-				Hashtable<String, Object> params = new Hashtable<String, Object>();
+				Hashtable<String, Object> params = new Hashtable<>();
 				params.put("totalRecords", t.size());
 				return representTable(t, mt, params);
 			} else {

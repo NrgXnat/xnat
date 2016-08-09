@@ -69,7 +69,7 @@ public class UserSettingsRestlet extends SecureResource {
             }
         }
 
-        if (!Roles.isSiteAdmin(user)) {
+        if (!Roles.isSiteAdmin(getUser())) {
             getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User does not have privileges to access this project.");
             _action = null;
             _auths = null;
@@ -175,7 +175,7 @@ public class UserSettingsRestlet extends SecureResource {
             // Find all auths before saving primary record. This way, if there are any format errors, we'll error out before committing the new user record.
             List<Map<UserProperty, String>> auths = translateAuths();
 
-            Users.save(xdatUser, user, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Registered User"));
+            Users.save(xdatUser, getUser(), false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Registered User"));
 
             // If there are no auths specified...
             if (auths == null || auths.size() == 0) {

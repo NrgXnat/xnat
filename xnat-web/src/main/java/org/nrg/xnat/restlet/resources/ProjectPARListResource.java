@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.resources;
 
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -31,9 +32,11 @@ public class ProjectPARListResource extends SecureResource {
 	XnatProjectdata proj=null;
 
 	public ProjectPARListResource(Context context, Request request, Response response) throws Exception {
-
 		super(context, request, response);
-		String pID = (String) getParameter(request,"PROJECT_ID");
+
+		final UserI  user = getUser();
+		final String pID  = (String) getParameter(request, "PROJECT_ID");
+
 		if (pID != null) {
 			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 		}
@@ -53,9 +56,10 @@ public class ProjectPARListResource extends SecureResource {
 	@Override
 	public Representation represent(Variant variant) {
 		XFTTable table = new XFTTable();
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params= new Hashtable<>();
 		if (ProjectAccessRequest.CREATED_PAR_TABLE) {
 			try {
+				final UserI user = getUser();
 				table = XFTTable
 						.Execute(
 								"SELECT par.par_id,par.proj_id,par.level,par.create_date,par.email,u.login,p.secondary_id,par.approved, par.approval_date FROM xs_par_table par LEFT JOIN xnat_projectData p ON par.proj_id=p.id LEFT JOIN xdat_user u ON par.approver_id=u.xdat_user_id WHERE par.proj_id='"

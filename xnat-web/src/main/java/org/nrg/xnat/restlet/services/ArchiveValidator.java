@@ -15,6 +15,7 @@ import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.PrearcSessionValidator;
 import org.nrg.xnat.archive.PrearcSessionValidator.Notice;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
@@ -61,20 +62,20 @@ public class ArchiveValidator extends SecureResource {
 	protected List<String> srcs = new ArrayList<String>();
 			
 	@Override
-	public void handleParam(final String key,final Object value) throws ClientException {
-			if(value !=null){
-				if(key.equals(PROJECT)){
-				additionalValues.put("project",value);
-				}else if(key.equals(PrearcUtils.PREARC_TIMESTAMP)){
-				timestamp=(String)value;
-				}else if(key.equals(PrearcUtils.PREARC_SESSION_FOLDER)){
-				sessionFolder.add((String)value);
-				}else if(key.equals(DEST)){
-				dest=(String)value;
-				}else if(key.equals(BatchPrearchiveActionsA.SRC)){
-				srcs.add((String)value);
-				}else{
-				additionalValues.put(key,value);
+	public void handleParam(final String key, final Object value) throws ClientException {
+		if (value != null) {
+			if (key.equals(PROJECT)) {
+				additionalValues.put("project", value);
+			} else if (key.equals(PrearcUtils.PREARC_TIMESTAMP)) {
+				timestamp = (String) value;
+			} else if (key.equals(PrearcUtils.PREARC_SESSION_FOLDER)) {
+				sessionFolder.add((String) value);
+			} else if (key.equals(DEST)) {
+				dest = (String) value;
+			} else if (key.equals(BatchPrearchiveActionsA.SRC)) {
+				srcs.add((String) value);
+			} else {
+				additionalValues.put(key, value);
 			}
 		}
 	}
@@ -91,13 +92,14 @@ public class ArchiveValidator extends SecureResource {
 
 	@Override
 	public void handlePost() {		
-		
 		//build fileWriters
-		try {					
+		try {
+			final UserI user = getUser();
+
 			loadQueryVariables();
 			loadBodyVariables();
 						
-			final List<PrearcSession> sessions=new ArrayList<PrearcSession>();
+			final List<PrearcSession> sessions= new ArrayList<>();
 						
 			project_id=PrearcImporterHelper.identifyProject(additionalValues);
 			
@@ -186,10 +188,7 @@ public class ArchiveValidator extends SecureResource {
 				}
 
 				getResponse().setEntity(representTable(t,overrideVariant(getPreferredVariant()),new Hashtable<String, Object>()));
-				
-				return;
-				
-			}else{				
+			}else{
 				throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "Cannot validate multiple sessions in one request.");
 			}
 		} catch (ActionException e) {
@@ -199,11 +198,9 @@ public class ArchiveValidator extends SecureResource {
 			if(e.cause!=null && e.cause instanceof ActionException){
 				logger.error("",e.cause);
 				this.getResponse().setStatus(((ActionException)e.cause).getStatus(), e.cause.getMessage());
-				return;
 			}else{
 				logger.error("",e);
 				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
-				return;
 			}
 		} catch (ResourceException e) {
 			logger.error("",e);
@@ -214,7 +211,6 @@ public class ArchiveValidator extends SecureResource {
 		} catch (Exception e) {
 			logger.error("",e);
 			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
-			return;
 		}
 	}
 }

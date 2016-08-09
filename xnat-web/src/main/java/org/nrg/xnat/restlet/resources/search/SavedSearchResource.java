@@ -32,6 +32,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.restlet.presentation.RESTHTMLPresenter;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
@@ -88,7 +89,8 @@ public class SavedSearchResource extends ItemResource {
 
     @Override
     public Representation represent(Variant variant) {
-        MediaType mt = overrideVariant(variant);
+        MediaType   mt   = overrideVariant(variant);
+        final UserI user = getUser();
 
         if (xss == null && sID != null) {
             if (sID.startsWith("@")) {
@@ -248,6 +250,7 @@ public class SavedSearchResource extends ItemResource {
     @Override
     public void handlePut() {
         try {
+            final UserI user = getUser();
             Reader sax = this.getRequest().getEntity().getReader();
 
             SAXReader reader = new SAXReader(user);
@@ -365,6 +368,7 @@ public class SavedSearchResource extends ItemResource {
     @Override
     public void handleDelete() {
         if (sID != null) {
+            final UserI user = getUser();
             try {
                 XdatStoredSearch search = XdatStoredSearch.getXdatStoredSearchsById(sID, user, false);
 

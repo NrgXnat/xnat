@@ -133,6 +133,7 @@ public final class DicomEdit extends SecureResource {
         final MediaType mt = overrideVariant(variant);
         final boolean all = this.getQueryVariable("all") != null;
         XFTTable table = null;
+        final UserI     user = getUser();
         try {
             table =
                     new ScriptOp<>(this.project,
@@ -140,7 +141,7 @@ public final class DicomEdit extends SecureResource {
                             this.scope,
                             this.rType,
                             this.access,
-                            this.user,
+                                   user,
                             new Callable<XFTTable>() {
                                 @Override
                                 public XFTTable call() throws Exception {
@@ -222,23 +223,24 @@ public final class DicomEdit extends SecureResource {
                     this.scope,
                     this.rType,
                     this.access,
-                    this.user,
+                    this.getUser(),
                     new Callable<java.lang.Void>() {
                         @Override
                         public java.lang.Void call() throws Exception {
                             try {
+                                final UserI user = getUser();
                                 if (rType == ResourceType.SCRIPT) {
                                     String script = getFile();
                                     if (script != null) {
                                         if (scope == ResourceScope.SITE_WIDE) {
                                             AnonUtils.getService().setSiteWideScript(user.getLogin(),
-                                                    DicomEdit.buildScriptPath(scope, project),
-                                                    script);
+                                                                                     DicomEdit.buildScriptPath(scope, project),
+                                                                                     script);
                                         } else { // project specific
                                             AnonUtils.getService().setProjectScript(user.getLogin(),
-                                                    DicomEdit.buildScriptPath(scope, project),
-                                                    script,
-                                                    DicomEdit.getDBId(project));
+                                                                                    DicomEdit.buildScriptPath(scope, project),
+                                                                                    script,
+                                                                                    DicomEdit.getDBId(project));
                                         }
                                     } else {
                                         // something went wrong, but the error response status should have
@@ -255,20 +257,20 @@ public final class DicomEdit extends SecureResource {
                                             if (scope == ResourceScope.SITE_WIDE) {
                                                 if (activate) {
                                                     AnonUtils.getService().enableSiteWide(user.getLogin(),
-                                                            DicomEdit.buildScriptPath(scope, project));
+                                                                                          DicomEdit.buildScriptPath(scope, project));
                                                 } else {
                                                     AnonUtils.getService().disableSiteWide(user.getLogin(),
-                                                            DicomEdit.buildScriptPath(scope, project));
+                                                                                           DicomEdit.buildScriptPath(scope, project));
                                                 }
                                             } else { // project -specific
                                                 if (activate) {
                                                     AnonUtils.getService().enableProjectSpecific(user.getLogin(),
-                                                            DicomEdit.buildScriptPath(scope, project),
-                                                            DicomEdit.getDBId(project));
+                                                                                                 DicomEdit.buildScriptPath(scope, project),
+                                                                                                 DicomEdit.getDBId(project));
                                                 } else {
                                                     AnonUtils.getService().disableProjectSpecific(user.getLogin(),
-                                                            DicomEdit.buildScriptPath(scope, project),
-                                                            DicomEdit.getDBId(project));
+                                                                                                  DicomEdit.buildScriptPath(scope, project),
+                                                                                                  DicomEdit.getDBId(project));
                                                 }
                                             }
                                         } else {
@@ -289,7 +291,7 @@ public final class DicomEdit extends SecureResource {
                         }
                     }).run();
         } catch (Exception exception) {
-            logger.error("Internal server error for user " + user.getUsername(), exception);
+            logger.error("Internal server error for user " + getUser().getUsername(), exception);
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, exception.getMessage());
         }
     }

@@ -19,6 +19,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -48,6 +49,7 @@ public class ProjectUserListResource extends SecureResource {
         getVariants().add(new Variant(MediaType.TEXT_XML));
 
         final String projectId = (String) getParameter(request, "PROJECT_ID");
+        final UserI  user      = getUser();
         _project = org.apache.commons.lang3.StringUtils.isNotBlank(projectId) ? XnatProjectdata.getProjectByIDorAlias(projectId, user, false) : null;
         if (_project == null) {
             _displayHiddenUsers = false;
@@ -75,6 +77,7 @@ public class ProjectUserListResource extends SecureResource {
                     query.append(" and enabled = 1 ");
                 }
                 query.append(" ORDER BY g.id DESC;");
+                final UserI user = getUser();
                 table = XFTTable.Execute(query.toString(), user.getDBName(), user.getLogin());
             } catch (SQLException | DBPoolException e) {
                 throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to run the following query: " + query.toString(), e);
@@ -100,7 +103,7 @@ public class ProjectUserListResource extends SecureResource {
             try {
                 List<String> projectUserResourceWhitelist = getSerializer().deserializeJson(config, TYPE_REFERENCE_LIST_STRING);
                 if (projectUserResourceWhitelist != null) {
-                    return projectUserResourceWhitelist.contains(user.getUsername());
+                    return projectUserResourceWhitelist.contains(getUser().getUsername());
                 }
             } catch (IOException e) {
                 logger.error("", e);

@@ -33,8 +33,8 @@ import org.xml.sax.SAXException;
 import java.io.Reader;
 
 public class ProjectSearchResource extends ItemResource {
-	XdatStoredSearch xss = null;
-	String sID=null;
+	private XdatStoredSearch xss = null;
+	private String           sID =null;
 	XnatProjectdata proj=null;
 	
 	public ProjectSearchResource(Context context, Request request, Response response) {
@@ -45,7 +45,7 @@ public class ProjectSearchResource extends ItemResource {
 				
 				String pID= (String)getParameter(request,"PROJECT_ID");
 				if(pID!=null){
-					proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+					proj = XnatProjectdata.getProjectByIDorAlias(pID, getUser(), false);
 					
 					if(proj!=null){
 						this.getVariants().add(new Variant(MediaType.TEXT_XML));				
@@ -64,14 +64,14 @@ public class ProjectSearchResource extends ItemResource {
 	}
 	
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		MediaType mt = overrideVariant(variant);
 
 		if(xss==null && sID!=null){
 			if(sID.startsWith("@")){
 				xss=proj.getDefaultSearch(sID.substring(1));
 			}else{
-				xss= XdatStoredSearch.getXdatStoredSearchsById(sID, user, true);
+				xss= XdatStoredSearch.getXdatStoredSearchsById(sID, getUser(), true);
 			}
 		}
 		
@@ -107,59 +107,59 @@ public class ProjectSearchResource extends ItemResource {
 
 	@Override
 	public void handlePut() {
-			try {
-				Reader sax=this.getRequest().getEntity().getReader();
-				
-				SAXReader reader = new SAXReader(user);
-				XFTItem item = reader.parse(sax);
-				
-				if(!item.instanceOf("xdat:stored_search")){
-					this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
-					return;
-				}
-				XdatStoredSearch search = new XdatStoredSearch(item);
-				
-				if(search.getId()==null || !search.getId().equals(sID)){
-					search.setId(sID);
-				}
-				
-				boolean found=false;
-				for(XdatStoredSearchAllowedUser au : search.getAllowedUser()){
-					if(au.getLogin().equals(user.getLogin())){
-						found=true;
-					}
-				}
-				if(!found){
-					XdatStoredSearchAllowedUser au = new XdatStoredSearchAllowedUser((UserI)user);
-					au.setLogin(user.getLogin());
-					search.setAllowedUser(au);
-				}
-				
-				PersistentWorkflowI wrk= PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, search.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Modified Project stored search"));
-				try {
-					SaveItemHelper.authorizedSave(search,user, false, true,wrk.buildEvent());
-					PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-				} catch (Exception e) {
-					PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
-					throw e;
-				}
-			} catch (SAXException e) {
-				logger.error("",e);
+		try {
+			final UserI user = getUser();
+			Reader sax=this.getRequest().getEntity().getReader();
+
+			SAXReader reader = new SAXReader(user);
+			XFTItem item = reader.parse(sax);
+
+			if(!item.instanceOf("xdat:stored_search")){
 				this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				return;
+			}
+			XdatStoredSearch search = new XdatStoredSearch(item);
+
+			if(search.getId()==null || !search.getId().equals(sID)){
+				search.setId(sID);
+			}
+
+			boolean found=false;
+			for(XdatStoredSearchAllowedUser au : search.getAllowedUser()){
+				if(au.getLogin().equals(user.getLogin())){
+					found=true;
+				}
+			}
+			if(!found){
+				XdatStoredSearchAllowedUser au = new XdatStoredSearchAllowedUser(user);
+				au.setLogin(user.getLogin());
+				search.setAllowedUser(au);
+			}
+
+			PersistentWorkflowI wrk= PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, search.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Modified Project stored search"));
+			try {
+				SaveItemHelper.authorizedSave(search,user, false, true,wrk.buildEvent());
+				PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
 			} catch (Exception e) {
-				logger.error("",e);
-				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
-			} 
+				PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
+				throw e;
+			}
+		} catch (SAXException e) {
+			logger.error("",e);
+			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+		} catch (Exception e) {
+			logger.error("",e);
+			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 		}
+	}
 	
-
-
 	@Override
 	public void handleDelete() {
 		if(sID!=null){
 			try {
+				final UserI user = getUser();
 				XdatStoredSearch search = XdatStoredSearch.getXdatStoredSearchsById(sID, user, false);
-				
+
 				if(search!=null){
 					XdatStoredSearchAllowedUser mine=null;
 					for(XdatStoredSearchAllowedUser au : search.getAllowedUser()){

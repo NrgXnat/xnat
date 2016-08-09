@@ -49,7 +49,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 		
 			String pID= (String)getParameter(request,"PROJECT_ID");
 			if(pID!=null){
-				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+				proj = XnatProjectdata.getProjectByIDorAlias(pID, getUser(), false);
 				
 
 				if(proj!=null){
@@ -77,8 +77,9 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 
 			try {
 			item=this.loadItem("xnat:subjectData",true);
-			
-				if(item==null){
+
+				final UserI user = getUser();
+				if(item == null){
 					item=XFTItem.NewItem("xnat:subjectData", user);
 				}
 				
@@ -108,7 +109,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 							}
 							
 							if(!matched){
-								XnatProjectparticipantI pp= new XnatProjectparticipant((UserI)user);
+								XnatProjectparticipantI pp= new XnatProjectparticipant(user);
 								((XnatProjectparticipant)pp).setProject(this.proj.getId());
 								sub.setSharing_share((XnatProjectparticipant)pp);
 							}
@@ -124,12 +125,12 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 					}
 					
 					if(existing==null && sub.getProject()!=null && sub.getLabel()!=null){
-					existing=XnatSubjectdata.GetSubjectByProjectIdentifier(sub.getProject(), sub.getLabel(),user, completeDocument);
+					existing=XnatSubjectdata.GetSubjectByProjectIdentifier(sub.getProject(), sub.getLabel(), user, completeDocument);
 					}
 					
 					if(existing==null){
 						for(XnatProjectparticipantI pp : sub.getSharing_share()){
-						existing=XnatSubjectdata.GetSubjectByProjectIdentifier(pp.getProject(), pp.getLabel(),user, completeDocument);
+						existing=XnatSubjectdata.GetSubjectByProjectIdentifier(pp.getProject(), pp.getLabel(), user, completeDocument);
 							if(existing!=null){
 								break;
 							}
@@ -137,7 +138,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 					}
 					
 					if(existing==null){
-						if(!Permissions.canCreate(user,sub)){
+						if(!Permissions.canCreate(user, sub)){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient create privileges for subjects in this project.");
 						return;
 						}
@@ -207,15 +208,16 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		XFTTable table = null;
 		if(proj!=null){
-			final Representation rep=super.getRepresentation(variant);
+			final Representation rep=super.represent(variant);
 			if(rep!=null)return rep;
 			
 			try {
+				final UserI user = getUser();
 				final QueryOrganizer qo = new QueryOrganizer(this.getRootElementName(), user,
-						ViewManager.ALL);
+															 ViewManager.ALL);
 	            
 				this.populateQuery(qo);
 

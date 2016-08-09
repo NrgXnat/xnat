@@ -14,6 +14,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -30,8 +31,10 @@ public class UserListResource extends SecureResource {
 
 	public UserListResource(Context context, Request request, Response response) {
 		super(context, request, response);
-		
+
         getVariants().addAll(STANDARD_VARIANTS);
+
+        final UserI user = getUser();
 
         if (user.isGuest() || restrictUserListAccessToAdmins() && !(Roles.isSiteAdmin(user) || isWhitelisted())) {
                 logger.error("Unauthorized Access to site-level user resources. User: " + userName);
@@ -54,19 +57,20 @@ public class UserListResource extends SecureResource {
 
 	@Override
 	public Representation represent(Variant variant) {
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params= new Hashtable<>();
 		params.put("title", "Projects");
 
 		MediaType mt = overrideVariant(variant);
 
         String query = "SELECT xdat_user_id,login,firstname,lastname,email FROM xdat_user WHERE enabled=1 ORDER BY lastname;";
-            try {
-                table = XFTTable.Execute(query, user.getDBName(), user.getLogin());
-            } catch (SQLException e) {
+        try {
+            final UserI user = getUser();
+            table = XFTTable.Execute(query, user.getDBName(), user.getLogin());
+        } catch (SQLException e) {
             logger.error("Error running SQL " + query, e);
-            } catch (DBPoolException e) {
+        } catch (DBPoolException e) {
             logger.error("Connection pooling error occurred", e);
-            }
+        }
 
 		if(table!=null)params.put("totalRecords", table.size());
 		return this.representTable(table, mt, params);
@@ -82,5 +86,5 @@ public class UserListResource extends SecureResource {
      */
     private boolean restrictUserListAccessToAdmins() {
         return XDAT.getSiteConfigPreferences().getRestrictUserListAccessToAdmins();
-        }
-        }
+    }
+}

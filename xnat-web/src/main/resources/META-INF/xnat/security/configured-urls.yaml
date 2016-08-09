@@ -22,6 +22,7 @@ openUrls:
   - /REST/services/auth*
   - /data/services/sendemailverification*
   - /REST/services/sendemailverification*
+  - /xapi/siteConfig/buildInfo
   - /images/**
   - /scripts/**
   - /style/**

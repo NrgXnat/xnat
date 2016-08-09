@@ -34,6 +34,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.services.messaging.file.MoveStoredFileRequest;
@@ -84,8 +85,9 @@ public class FileList extends XNATCatalogTemplate {
         async = isQueryVariableTrue("async", request);
         notifyList = isQueryVariableTrue("notify", request) ? getQueryVariable("notify").split(",") : new String[0];
         try {
+            final UserI user = getUser();
             if (resource_ids != null) {
-                List<Integer> alreadyAdded = new ArrayList<Integer>();
+                List<Integer> alreadyAdded = new ArrayList<>();
                 if (catalogs != null && catalogs.size() > 0) {
                     for (Object[] row : catalogs.rows()) {
                         Integer id = (Integer) row[0];
@@ -205,7 +207,7 @@ public class FileList extends XNATCatalogTemplate {
                 catalogs.resetRowCursor();
                 for (Hashtable<String, Object> rowHash : catalogs.rowHashs()) {
                     Object o = rowHash.get("xnat_abstractresource_id");
-                    XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(o, user, false);
+                    XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(o, getUser(), false);
                     if (rowHash.containsKey("resource_path")) res.setBaseURI((String) rowHash.get("resource_path"));
                     resources.add(res);
                 }
@@ -228,6 +230,7 @@ public class FileList extends XNATCatalogTemplate {
     public void handlePost() {
         if (parent != null && security != null) {
             try {
+                final UserI user = getUser();
                 if (Permissions.canEdit(user,security)) {
                     if (proj == null) {
                         if (parent.getItem().instanceOf("xnat:experimentData")) {
@@ -350,6 +353,7 @@ public class FileList extends XNATCatalogTemplate {
     public void handleDelete() {
         if (resource != null && parent != null && security != null) {
             try {
+                final UserI user = getUser();
                 if (Permissions.canDelete(user,security)) {
                     if (!((security).getItem().isActive() || (security).getItem().isQuarantine())) {
                         //cannot modify it if it isn't active
@@ -365,7 +369,7 @@ public class FileList extends XNATCatalogTemplate {
                     }
 
                     if (resource instanceof XnatResourcecatalog) {
-                        Collection<CatEntryI> entries = new ArrayList<CatEntryI>();
+                        Collection<CatEntryI> entries = new ArrayList<>();
 
                         final XnatResourcecatalog catResource = (XnatResourcecatalog) resource;
 
@@ -522,7 +526,7 @@ public class FileList extends XNATCatalogTemplate {
 
             final Map<String, String> valuesToReplace;
             if (structure.equalsIgnoreCase("legacy") || structure.equalsIgnoreCase("simplified")) {
-                valuesToReplace = new Hashtable<String, String>();
+                valuesToReplace = new Hashtable<>();
             } else {
                 valuesToReplace = getReMaps();
             }
@@ -543,12 +547,15 @@ public class FileList extends XNATCatalogTemplate {
                     }
 
                     final String relative;
-                    if (structure.equals("improved")) {
-                        relative = pathForZip;
-                    } else if (structure.equals("simplified")) {
-                        relative = RestFileUtils.buildRelativePath(pathForZip, session_mapping, valuesToReplace, row[cat_IDIndex], (String) row[collectionIndex]).replace("/resources", "").replace("/files", "");
-                    } else {
-                        relative = RestFileUtils.buildRelativePath(pathForZip, session_mapping, valuesToReplace, row[cat_IDIndex], (String) row[collectionIndex]);
+                    switch (structure) {
+                        case "improved":
+                            relative = pathForZip;
+                            break;
+                        case "simplified":
+                            relative = RestFileUtils.buildRelativePath(pathForZip, session_mapping, valuesToReplace, row[cat_IDIndex], (String) row[collectionIndex]).replace("/resources", "").replace("/files", "");
+                            break;
+                        default:
+                            relative = RestFileUtils.buildRelativePath(pathForZip, session_mapping, valuesToReplace, row[cat_IDIndex], (String) row[collectionIndex]);
                     }
 
                     rep.addEntry(relative, child);
@@ -1153,7 +1160,7 @@ public class FileList extends XNATCatalogTemplate {
                     String replacing = session.getArchiveDirectoryName();
                     if (subjectIncludedInPath) {
                         if (session instanceof XnatImagesessiondata) {
-                            XnatSubjectdata subject = XnatSubjectdata.getXnatSubjectdatasById(((XnatImagesessiondata) session).getSubjectId(), user, false);
+                            XnatSubjectdata subject = XnatSubjectdata.getXnatSubjectdatasById(((XnatImagesessiondata) session).getSubjectId(), getUser(), false);
                             replacing = subject.getLabel() + "/" + replacing;
                         }
                     }
@@ -1178,7 +1185,7 @@ public class FileList extends XNATCatalogTemplate {
     }
 
     private ArrayList<String> getSessionIds() {
-        ArrayList<String> session_ids = new ArrayList<String>();
+        ArrayList<String> session_ids = new ArrayList<>();
         if (assesseds.size() > 0) {
             for (XnatExperimentdata session : assesseds) {
                 session_ids.add(session.getArchiveDirectoryName());

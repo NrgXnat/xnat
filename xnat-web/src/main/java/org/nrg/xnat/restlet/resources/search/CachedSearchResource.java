@@ -11,9 +11,7 @@
 package org.nrg.xnat.restlet.resources.search;
 
 import com.noelios.restlet.ext.servlet.ServletCall;
-
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -21,7 +19,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.utils.XftStringUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.presentation.RESTHTMLPresenter;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
@@ -31,67 +29,69 @@ import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Hashtable;
 
 public class CachedSearchResource extends SecureResource {
-	static org.apache.log4j.Logger logger = Logger.getLogger(CachedSearchResource.class);
+	private static final Logger logger = LoggerFactory.getLogger(CachedSearchResource.class);
 	String tableName=null;
 	
 	Integer offset=null;
 	Integer rowsPerPage=null;
 	String sortBy=null;
 	String sortOrder="ASC";
-	
+
 	public CachedSearchResource(Context context, Request request, Response response) {
 		super(context, request, response);
-			tableName=(String)getParameter(request,"CACHED_SEARCH_ID");
-			
-			if (this.getQueryVariable("offset")!=null){
-				try {
-					offset=Integer.valueOf(this.getQueryVariable("offset"));
-				} catch (NumberFormatException e) {
-					response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
-					return;
-				}
+		tableName = (String) getParameter(request, "CACHED_SEARCH_ID");
+
+		final UserI user = getUser();
+
+		if (this.getQueryVariable("offset") != null) {
+			try {
+				offset = Integer.valueOf(this.getQueryVariable("offset"));
+			} catch (NumberFormatException e) {
+				response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				return;
 			}
-			
-			if (this.getQueryVariable("limit")!=null){
-				try {
-					rowsPerPage=Integer.valueOf(this.getQueryVariable("limit"));
-				} catch (NumberFormatException e) {
-					response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
-					return;
-				}
+		}
+
+		if (this.getQueryVariable("limit") != null) {
+			try {
+				rowsPerPage = Integer.valueOf(this.getQueryVariable("limit"));
+			} catch (NumberFormatException e) {
+				response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				return;
 			}
-			
-			if (this.getQueryVariable("sortBy")!=null){
-				sortBy=this.getQueryVariable("sortBy");
-				if(PoolDBUtils.HackCheck(sortBy)){
-			     AdminUtils.sendAdminEmail(user,"Possible SQL Injection Attempt", "SORT BY:" + sortOrder);
-					response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
-					return;
-				}
-				sortBy= StringUtils.replace(sortBy, " ", "");
+		}
+
+		if (this.getQueryVariable("sortBy") != null) {
+			sortBy = this.getQueryVariable("sortBy");
+			if (PoolDBUtils.HackCheck(sortBy)) {
+				AdminUtils.sendAdminEmail(user, "Possible SQL Injection Attempt", "SORT BY:" + sortOrder);
+				response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				return;
 			}
-			
-			if (this.getQueryVariable("sortOrder")!=null){
-				sortOrder=this.getQueryVariable("sortOrder");
-				if(PoolDBUtils.HackCheck(sortOrder)){
-			     AdminUtils.sendAdminEmail(user,"Possible SQL Injection Attempt", "SORT ORDER:" + sortOrder);
-					response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
-					return;
-				}
-				sortOrder=StringUtils.replace(sortOrder, " ", "");
+			sortBy = StringUtils.replace(sortBy, " ", "");
+		}
+
+		if (this.getQueryVariable("sortOrder") != null) {
+			sortOrder = this.getQueryVariable("sortOrder");
+			if (PoolDBUtils.HackCheck(sortOrder)) {
+				AdminUtils.sendAdminEmail(user, "Possible SQL Injection Attempt", "SORT ORDER:" + sortOrder);
+				response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				return;
 			}
-			
-			this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
-			this.getVariants().add(new Variant(MediaType.TEXT_HTML));
-			this.getVariants().add(new Variant(MediaType.TEXT_XML));
+			sortOrder = StringUtils.replace(sortOrder, " ", "");
+		}
+
+		this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
+		this.getVariants().add(new Variant(MediaType.TEXT_HTML));
+		this.getVariants().add(new Variant(MediaType.TEXT_XML));
 	}
-
-
 
 	@Override
 	public Representation getRepresentation(Variant variant) {	
@@ -102,12 +102,12 @@ public class CachedSearchResource extends SecureResource {
 		XFTTable table=null;
 		
 		try {
-		
+			final UserI user = getUser();
 			MaterializedViewI mv = MaterializedView.retrieveView(tableName, user);
 			if(mv.getUser_name().equals(user.getLogin())){
 				MediaType mt = this.getRequestedMediaType();
 				if (mt!=null && (mt.equals(SecureResource.APPLICATION_XLIST))){
-					DisplaySearch ds = mv.getDisplaySearch(this.user);
+					DisplaySearch ds = mv.getDisplaySearch(user);
 			    	
 					//table=(XFTTable)ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletCall.getRequest(this.getRequest())),null),user.getLogin());
 			    	table=mv.getData((sortBy!=null)?sortBy + " " + sortOrder:null, offset, rowsPerPage);

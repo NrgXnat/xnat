@@ -10,8 +10,8 @@
  */
 package org.nrg.xnat.restlet.services.mail;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.action.ClientException;
@@ -20,7 +20,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
@@ -40,12 +39,12 @@ import java.util.List;
 import java.util.Map;
 
 public class MailRestlet extends SecureResource {
-    public static final String PARAM_BCC = "bcc";
-    public static final String PARAM_CC = "cc";
-    public static final String PARAM_TO = "to";
-    public static final String PARAM_HTML = "html";
-    public static final String PARAM_SUBJECT = "subject";
-    public static final String PARAM_TEXT = "text";
+    private static final String PARAM_BCC     = "bcc";
+    private static final String PARAM_CC      = "cc";
+    private static final String PARAM_TO      = "to";
+    private static final String PARAM_HTML    = "html";
+    private static final String PARAM_SUBJECT = "subject";
+    private static final String PARAM_TEXT    = "text";
 
     public MailRestlet(Context context, Request request, Response response) {
         super(context, request, response);
@@ -79,7 +78,7 @@ public class MailRestlet extends SecureResource {
 
             // When receiving email send requests through the REST service, the from address is always the admin, with the mail sent on behalf of the validating user.
             message.setFrom(XDAT.getSiteConfigPreferences().getAdminEmail());
-            message.setOnBehalfOf(user.getEmail());
+            message.setOnBehalfOf(getUser().getEmail());
 
             // Handle all the addresses.
             String[] tos = getAddresses(PARAM_TO);
@@ -196,7 +195,7 @@ public class MailRestlet extends SecureResource {
                 } catch (NumberFormatException | UserNotFoundException exception) {
                     // If not an integer, we'll try it as an email address. It has to match an existing email address in the system!
                     List<UserI> users = Users.getUsersByEmail(id);
-                    if (users.size() == 0) {
+                    if (users == null || users.size() == 0) {
                         addIssue(String.format("The user email %s was not found in the system and was not included on the email.", id));
                     } else {
                         addresses.add(id);

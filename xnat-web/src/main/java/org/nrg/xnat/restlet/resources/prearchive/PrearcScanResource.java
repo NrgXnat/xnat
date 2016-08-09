@@ -76,7 +76,7 @@ public class PrearcScanResource extends PrearcSessionResourceA {
 		File srcXML;
 		try {
 			try {
-				sessionDIR = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session,false);
+				sessionDIR = PrearcUtils.getPrearcSessionDir(getUser(), project, timestamp, session,false);
 				srcXML=new File(sessionDIR.getAbsolutePath()+".xml");
 			} catch (InvalidPermissionException e) {
 				logger.error("",e);
@@ -160,7 +160,7 @@ public class PrearcScanResource extends PrearcSessionResourceA {
 				final File sessionDIR;
 				final File srcXML;
 				try {
-					sessionDIR = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session,false);
+					sessionDIR = PrearcUtils.getPrearcSessionDir(getUser(), project, timestamp, session,false);
 					srcXML=new File(sessionDIR.getAbsolutePath()+".xml");
 				} catch (InvalidPermissionException e) {
 					logger.error("",e);

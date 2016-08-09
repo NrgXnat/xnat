@@ -29,6 +29,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
@@ -73,6 +74,7 @@ public class ExperimentResource extends ItemResource {
 
         final String projectId = (String) getParameter(request, "PROJECT_ID");
         if (StringUtils.isNotBlank(projectId)) {
+            final UserI user = getUser();
             _project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
             _existing = XnatExperimentdata.GetExptByProjectIdentifier(projectId, _experimentId, user, false);
         } else {
@@ -90,6 +92,7 @@ public class ExperimentResource extends ItemResource {
         final MediaType mt = overrideVariant(variant);
 
         if (_experiment == null && _experimentId != null) {
+            final UserI user = getUser();
             _experiment = XnatExperimentdata.getXnatExperimentdatasById(_experimentId, user, false);
 
             if (_project != null) {
@@ -159,6 +162,7 @@ public class ExperimentResource extends ItemResource {
 
             XFTItem item = loadItem(null, true, template);
 
+            final UserI user = getUser();
             if (item == null) {
                 String xsiType = getQueryVariable("xsiType");
                 if (xsiType != null) {
@@ -516,6 +520,7 @@ public class ExperimentResource extends ItemResource {
 
     @Override
     public void handleDelete() {
+        final UserI user = getUser();
         if (_experiment == null && _experimentId != null) {
             _experiment = XnatExperimentdata.getXnatExperimentdatasById(_experimentId, user, false);
 
@@ -596,6 +601,7 @@ public class ExperimentResource extends ItemResource {
                 }
 
                 if (subject == null) {
+                    final UserI user = getUser();
                     subject = new XnatSubjectdata(user);
                     subject.setProject(_project.getId());
                     subject.setLabel(assessor.getSubjectId());
@@ -612,6 +618,7 @@ public class ExperimentResource extends ItemResource {
     }
 
     private XnatSubjectdata getSubject(XnatSubjectassessordata assessor) {
+        final UserI     user    = getUser();
         XnatSubjectdata subject = XnatSubjectdata.getXnatSubjectdatasById(assessor.getSubjectId(), user, false);
         if (subject != null) {
             return subject;
@@ -650,6 +657,7 @@ public class ExperimentResource extends ItemResource {
             retExp = XnatExperimentdata.getXnatExperimentdatasById(currExp.getId(), null, completeDocument);
         }
 
+        final UserI user = getUser();
         if (retExp == null && currExp.getProject() != null && currExp.getLabel() != null) {
             retExp = XnatExperimentdata.GetExptByProjectIdentifier(currExp.getProject(), currExp.getLabel(), user, completeDocument);
         }

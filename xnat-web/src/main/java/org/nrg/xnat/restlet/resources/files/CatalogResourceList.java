@@ -21,6 +21,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.resources.ScanList;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
@@ -75,6 +76,8 @@ public class CatalogResourceList extends XNATTemplate {
         XFTItem item;
 
         try {
+            final UserI user = getUser();
+
             item=loadItem("xnat:resourceCatalog", true);
 
             if(item==null){
@@ -182,6 +185,7 @@ public class CatalogResourceList extends XNATTemplate {
 
     @Override
     public Representation represent(Variant variant) {
+        final UserI user = getUser();
         XFTTable table = null;
 
         if(recons.size()>0 || scans.size()>0 || expts.size()>0 || sub!=null || proj!=null){

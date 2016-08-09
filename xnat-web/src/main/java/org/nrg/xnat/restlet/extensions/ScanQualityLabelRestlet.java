@@ -49,7 +49,7 @@ public class ScanQualityLabelRestlet extends SecureResource {
         }
 
         try {
-            List<String> labels = ScanQualityUtils.getQualityLabels(_projectId, user);
+            List<String> labels = ScanQualityUtils.getQualityLabels(_projectId, getUser());
             JSONObject json = new JSONObject();
             json.put(StringUtils.isBlank(_projectId) ? "site" : _projectId, labels);
             return new JSONObjectRepresentation(MediaType.APPLICATION_JSON, json);

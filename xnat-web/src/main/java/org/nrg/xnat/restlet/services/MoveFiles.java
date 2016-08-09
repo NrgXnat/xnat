@@ -20,6 +20,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.move.FileMover;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -139,16 +140,17 @@ public class MoveFiles extends SecureResource {
 			}
 			
 
-			EventMetaI ci;
-			PersistentWorkflowI work=PersistentWorkflowUtils.getWorkflowByEventId(user, getEventId());
+			EventMetaI          ci;
+			final UserI         user = getUser();
+			PersistentWorkflowI work =PersistentWorkflowUtils.getWorkflowByEventId(user, getEventId());
 			if(work!=null){
 				ci=work.buildEvent();
 			}else{
-				ci = EventUtils.DEFAULT_EVENT(user,null);
+				ci = EventUtils.DEFAULT_EVENT(user, null);
 			}
 			
 			//this should allow injection of a different implementation- TO
-			final FileMover mover =new FileMover(overwrite,user,otherParams);
+			final FileMover mover =new FileMover(overwrite, user, otherParams);
 			
 			for(Map.Entry<URIManager.UserCacheURI,ResourceURII> entry: moves.entrySet()){
 				mover.call(entry.getKey(),entry.getValue(),ci);

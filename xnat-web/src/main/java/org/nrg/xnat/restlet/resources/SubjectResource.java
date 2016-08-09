@@ -67,7 +67,8 @@ public class SubjectResource extends ItemResource {
     public SubjectResource(Context context, Request request, Response response) {
         super(context, request, response);
 
-        String pID = (String) getParameter(request, "PROJECT_ID");
+        final UserI  user = getUser();
+        final String pID  = (String) getParameter(request, "PROJECT_ID");
         if (pID != null) {
             proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
         }
@@ -99,6 +100,7 @@ public class SubjectResource extends ItemResource {
     @Override
     public void handlePut() {
         try {
+            final UserI user = getUser();
             XFTItem template = null;
             if (existing != null) {
                 template = existing.getItem().getCurrentDBVersion();
@@ -179,7 +181,7 @@ public class SubjectResource extends ItemResource {
                                         }
                                     }
                                     if (Permissions.canCreate(user,sub.getXSIType() + "/project", newProject.getId())) {
-                                        XnatProjectparticipant pp = new XnatProjectparticipant((UserI) user);
+                                        XnatProjectparticipant pp = new XnatProjectparticipant(user);
                                         pp.setProject(newProject.getId());
                                         if (newLabel != null) pp.setLabel(newLabel);
                                         pp.setSubjectId(sub.getId());
@@ -214,27 +216,29 @@ public class SubjectResource extends ItemResource {
                             if (sub.getLabel() == null || sub.getLabel().equals("")) {
                                 sub.setLabel(this.subID);
                             }
-                        } else if (sub.getProject().equals(this.proj.getId())) {
-                            if (sub.getLabel() == null || sub.getLabel().equals("")) {
-                                sub.setLabel(this.subID);
-                            }
                         } else {
-                            boolean matched = false;
-                            for (XnatProjectparticipantI pp : sub.getSharing_share()) {
-                                if (pp.getProject().equals(this.proj.getId())) {
-                                    matched = true;
-
-                                    if (pp.getLabel() == null || pp.getLabel().equals("")) {
-                                        pp.setLabel(this.subID);
-                                    }
-                                    break;
+                            if (sub.getProject().equals(this.proj.getId())) {
+                                if (sub.getLabel() == null || sub.getLabel().equals("")) {
+                                    sub.setLabel(this.subID);
                                 }
-                            }
+                            } else {
+                                boolean matched = false;
+                                for (XnatProjectparticipantI pp : sub.getSharing_share()) {
+                                    if (pp.getProject().equals(this.proj.getId())) {
+                                        matched = true;
 
-                            if (!matched) {
-                                XnatProjectparticipant pp = new XnatProjectparticipant((UserI) user);
-                                pp.setProject(this.proj.getId());
-                                pp.setLabel(this.subID);
+                                        if (pp.getLabel() == null || pp.getLabel().equals("")) {
+                                            pp.setLabel(this.subID);
+                                        }
+                                        break;
+                                    }
+                                }
+
+                                if (!matched) {
+                                    XnatProjectparticipant pp = new XnatProjectparticipant(user);
+                                    pp.setProject(this.proj.getId());
+                                    pp.setLabel(this.subID);
+                                }
                             }
                         }
                     } else {
@@ -413,7 +417,6 @@ public class SubjectResource extends ItemResource {
             logger.error("", e);
         } catch (ActionException e) {
 			this.getResponse().setStatus(e.getStatus(),e.getMessage());
-			return;
 		} catch (Exception e) {
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
             logger.error("", e);
@@ -427,6 +430,7 @@ public class SubjectResource extends ItemResource {
 
     @Override
     public void handleDelete() {
+        final UserI user = getUser();
         if (sub == null && subID != null) {
             sub = XnatSubjectdata.getXnatSubjectdatasById(subID, user, false);
 
@@ -489,6 +493,8 @@ public class SubjectResource extends ItemResource {
     public Representation represent(Variant variant) {
         MediaType mt = overrideVariant(variant);
 
+        final UserI user = getUser();
+
         if (sub == null && subID != null) {
             sub = XnatSubjectdata.getXnatSubjectdatasById(subID, user, false);
 
@@ -510,7 +516,7 @@ public class SubjectResource extends ItemResource {
                 return returnStatus(sub, mt);
             } else if (filepath != null && filepath.startsWith("projects")) {
                 XFTTable t = new XFTTable();
-                ArrayList<String> al = new ArrayList<String>();
+                ArrayList<String> al = new ArrayList<>();
                 al.add("label");
                 al.add("ID");
                 al.add("Secondary_ID");

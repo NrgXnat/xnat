@@ -174,7 +174,7 @@ public class XNATCatalogTemplate extends XNATTemplate {
 	    }
         
 	    Date d=EventUtils.getEventDate(ci, false);
-		return XnatResourceInfo.buildResourceInfo(description, format, content, tags,user,d,d,EventUtils.getEventId(ci));
+		return XnatResourceInfo.buildResourceInfo(description, format, content, tags,getUser(),d,d,EventUtils.getEventId(ci));
 	}
 			
 	protected ResourceModifierA buildResourceModifier(final boolean overwrite,EventMetaI ci) throws Exception{
@@ -212,6 +212,6 @@ public class XNATCatalogTemplate extends XNATTemplate {
 			throw new Exception("Unknown resource");
 		}
 		
-		return builder.buildResourceModifier(overwrite,user,ci);
+		return builder.buildResourceModifier(overwrite,getUser(),ci);
 	}
 }

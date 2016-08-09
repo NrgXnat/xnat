@@ -1,3 +1,4 @@
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 #if ($expired || $forgot)
 $!data.getTemplateInfo().setLayoutTemplate("Noninteractive.vm")
@@ -7,7 +8,7 @@ $page.setTitle("My XNAT")
 <DIV class="error">$data.message</DIV><br>
 #end
 
-#if(!$turbineUtils.isGuest($user))
+#if(!$user.isGuest())
 #if (!$expired && !$forgot)
 #parse("screens/XDATScreen_change_email.vm")
 <br /><br />

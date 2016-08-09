@@ -39,6 +39,7 @@ public class UserSessionId extends SecureResource {
 	public UserSessionId(Context context, Request request, Response response) throws Exception {
 		super(context, request, response);
 
+        final UserI user = getUser();
 		userID = (String) getParameter(request, "USER_ID");
         if (!Roles.isSiteAdmin(user) && !user.getLogin().equals(userID)) {
             _log.error("User " + user.getLogin() + " attempted to access session list for user " + userID);

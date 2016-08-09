@@ -1,24 +1,16 @@
 package org.nrg.xnat.restlet.resources;
 
-import java.sql.SQLException;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.lang3.math.NumberUtils;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.PermissionCriteria;
-import org.nrg.xdat.security.PermissionCriteriaI;
-import org.nrg.xdat.security.UserGroup;
-import org.nrg.xdat.security.UserGroupI;
+import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.UserHelper;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -36,8 +28,10 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.sql.SQLException;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 public class ProjectGroupResource extends SecureResource {
     public static Logger logger = Logger.getLogger(ProjectGroupResource.class);
@@ -61,7 +55,7 @@ public class ProjectGroupResource extends SecureResource {
 		
 		String pID= (String)getParameter(request,"PROJECT_ID");
 		if(pID!=null){
-			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, getUser(), false);
 		} 
 	
 		gID =(String)getParameter(request,"GROUP_ID");
@@ -119,6 +113,7 @@ public class ProjectGroupResource extends SecureResource {
 			getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
 			return;
 		}else{
+			final UserI user = getUser();
 			try {
 				if(UserHelper.getUserHelperService(user).canDelete(proj)){
 					final PersistentWorkflowI workflow=WorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, proj.getId(),proj.getId(),EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN,EventUtils.TYPE.WEB_SERVICE,"Remove Group"));
@@ -152,6 +147,7 @@ public class ProjectGroupResource extends SecureResource {
 			getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 		}else{
 			try {
+				final UserI user = getUser();
 				if(Permissions.canDelete(user,proj)){
 						boolean isNew = false;				
 					Map<String,Object> props = Maps.newHashMap();
@@ -281,19 +277,21 @@ public class ProjectGroupResource extends SecureResource {
 
 	@Override
 	public Representation represent(Variant variant) {
-		XFTTable table=null;
 		if(proj!=null){
 			if(group==null){
 				//return a list of groups
 				try {
 	                StringBuffer query = new StringBuffer("SELECT ug.id, ug.displayname,ug.tag,ug.xdat_usergroup_id, COUNT(map.groups_groupid_xdat_user_xdat_user_id) AS users FROM xdat_userGroup ug LEFT JOIN xdat_user_groupid map ON ug.id=map.groupid WHERE tag='").append(proj.getId()).append("' ");
 	                query.append(" GROUP BY ug.id, ug.displayname,ug.tag,ug.xdat_usergroup_id  ORDER BY ug.displayname DESC;");
-	                table = XFTTable.Execute(query.toString(), user.getDBName(), user.getLogin());
+					final UserI user = getUser();
+	                final XFTTable table = XFTTable.Execute(query.toString(), user.getDBName(), user.getLogin());
 	                
-	                Hashtable<String,Object> params=new Hashtable<String,Object>();
+	                Hashtable<String,Object> params= new Hashtable<>();
 	        		params.put("title", "Projects");
 	        		
-	        		if(table!=null)params.put("totalRecords", table.size());
+	        		if(table!=null) {
+	        			params.put("totalRecords", table.size());
+					}
 	        		return this.representTable(table, overrideVariant(variant), params);
 				} catch (SQLException e) {
 					logger.error("",e);

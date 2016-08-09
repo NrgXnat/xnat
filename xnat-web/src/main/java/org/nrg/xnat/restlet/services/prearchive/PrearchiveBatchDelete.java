@@ -1,22 +1,17 @@
 /*
  * org.nrg.xnat.restlet.services.prearchive.PrearchiveBatchDelete
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 12/19/13 3:01 PM
  */
 
-/**
- * 
- */
 package org.nrg.xnat.restlet.services.prearchive;
 
-import org.apache.log4j.Logger;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -26,6 +21,8 @@ import org.restlet.Context;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,7 +33,7 @@ import java.util.List;
  *
  */
 public class PrearchiveBatchDelete extends BatchPrearchiveActionsA {
-    static org.apache.log4j.Logger logger = Logger.getLogger(PrearchiveBatchDelete.class);
+    private static final Logger logger = LoggerFactory.getLogger(PrearchiveBatchDelete.class);
     
 	public PrearchiveBatchDelete(Context context, Request request, Response response) {
 		super(context, request, response);
@@ -55,12 +52,13 @@ public class PrearchiveBatchDelete extends BatchPrearchiveActionsA {
 			return;
 		}
 		
-		List<SessionDataTriple> ss=new ArrayList<SessionDataTriple>();
+		List<SessionDataTriple> ss= new ArrayList<>();
 		
 		for(final String src:srcs){
             File sessionDir;
 			try {
 				SessionDataTriple s=buildSessionDataTriple(src);
+				final UserI       user = getUser();
 				if (!PrearcUtils.canModify(user, s.getProject())) {
 					this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Invalid permissions for new project.");
 					return;
@@ -83,8 +81,7 @@ public class PrearchiveBatchDelete extends BatchPrearchiveActionsA {
 			response.setEntity(updatedStatusRepresentation(ss,overrideVariant(getPreferredVariant())));
 		} catch (Exception e) {
 			logger.error("",e);
-			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
-			return;
+			getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e);
 		}
 	}
 }

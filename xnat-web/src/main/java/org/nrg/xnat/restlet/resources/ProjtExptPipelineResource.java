@@ -30,6 +30,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.ValidationException;
 import org.nrg.xnat.restlet.actions.FixScanTypes;
 import org.nrg.xnat.restlet.actions.PullSessionDataFromHeaders;
@@ -60,8 +61,9 @@ public class ProjtExptPipelineResource extends SecureResource {
 
 		String pID = (String) getParameter(request,"PROJECT_ID");
 		if (pID != null) {
-			proj = XnatProjectdata.getXnatProjectdatasById(pID, user, false);
+			final UserI user = getUser();
 
+			proj = XnatProjectdata.getXnatProjectdatasById(pID, user, false);
 			step = (String) getParameter(request,"STEP_ID");
 			if (step != null) {
 				String exptID = (String) getParameter(request,"EXPT_ID");
@@ -122,17 +124,18 @@ public class ProjtExptPipelineResource extends SecureResource {
 	public void handlePost() {
 		if(proj!=null && step!=null && expt != null){
 			try {
+				final UserI user = getUser();
 				if(step.equals(XNATRestConstants.TRIGGER_PIPELINES)){
-					if(Permissions.canEdit(user,expt)){
+					if(Permissions.canEdit(user, expt)){
 
-						PersistentWorkflowI wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(),newEventInstance(EventUtils.CATEGORY.DATA,EventUtils.TRIGGER_PIPELINES));
+						PersistentWorkflowI wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TRIGGER_PIPELINES));
 						EventMetaI c=wrk.buildEvent();
 
 						try {
-							FixScanTypes fst=new FixScanTypes(expt,user,proj,true,c);
+							FixScanTypes fst=new FixScanTypes(expt, user, proj, true, c);
 							fst.call();
 
-							TriggerPipelines tp = new TriggerPipelines(expt,this.isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL),user);
+							TriggerPipelines tp = new TriggerPipelines(expt, this.isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
 							tp.call();
 							PersistentWorkflowUtils.complete(wrk,c);
 						} catch (Exception e) {
@@ -141,12 +144,12 @@ public class ProjtExptPipelineResource extends SecureResource {
 						}
 					}
 				}else if(step.equals(XNATRestConstants.PULL_DATA_FROM_HEADERS) && expt instanceof XnatImagesessiondata){
-					if(Permissions.canEdit(user,expt)){
+					if(Permissions.canEdit(user, expt)){
 						try {
-							PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(),newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.DICOM_PULL));
+							PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.DICOM_PULL));
 							EventMetaI c=wrk.buildEvent();
 							try {
-								PullSessionDataFromHeaders pull=new PullSessionDataFromHeaders((XnatImagesessiondata)expt, user, this.isQueryVariableTrue("allowDataDeletion"), this.isQueryVariableTrue("overwrite"),false,c);
+								PullSessionDataFromHeaders pull=new PullSessionDataFromHeaders((XnatImagesessiondata)expt, user, this.isQueryVariableTrue("allowDataDeletion"), this.isQueryVariableTrue("overwrite"), false, c);
 								pull.call();
 								WorkflowUtils.complete(wrk, c);
 							} catch (Exception e) {
@@ -168,14 +171,14 @@ public class ProjtExptPipelineResource extends SecureResource {
 						getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
 					}
 				}else if(step.equals(XNATRestConstants.FIX_SCAN_TYPES) && expt instanceof XnatImagesessiondata){
-					if(Permissions.canEdit(user,expt)){
+					if(Permissions.canEdit(user, expt)){
 
-						PersistentWorkflowI wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(),newEventInstance(EventUtils.CATEGORY.DATA,EventUtils.TRIGGER_PIPELINES));
+						PersistentWorkflowI wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TRIGGER_PIPELINES));
 						EventMetaI c=wrk.buildEvent();
 						PersistentWorkflowUtils.save(wrk,c);
 
 						try {
-							FixScanTypes fst=new FixScanTypes(expt,user,proj,true,c);
+							FixScanTypes fst=new FixScanTypes(expt, user, proj, true, c);
 							fst.call();
 							WorkflowUtils.complete(wrk, c);
 						} catch (Exception e) {
@@ -266,7 +269,9 @@ public class ProjtExptPipelineResource extends SecureResource {
 	}
 
     private void launch(ArcPipelinedataI arcPipeline, Map<String,String> paramsMap) throws Exception {
-        XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(user);
+		final UserI user = getUser();
+
+		XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(user);
         xnatPipelineLauncher.setSupressNotification(true);
 
         List<String> hasParams = new ArrayList<String>();
@@ -384,6 +389,8 @@ public class ProjtExptPipelineResource extends SecureResource {
     }
 
 	private boolean launch(ArcPipelinedataI arcPipeline) throws Exception {
+		final UserI user = getUser();
+
 		XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(user);
 		xnatPipelineLauncher.setSupressNotification(true);
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());

@@ -10,16 +10,11 @@
  */
 package org.nrg.xnat.restlet.extensions;
 
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.security.user.exceptions.UserInitException;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -39,6 +34,8 @@ import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 
+import java.util.List;
+
 @XnatRestlet({"/services/sessions", "/services/sessions/{USERNAME}"})
 public class SessionCountRestlet extends SecureResource {
     public static final String PARAM_USERNAME = "USERNAME";
@@ -52,6 +49,8 @@ public class SessionCountRestlet extends SecureResource {
         this.getVariants().add(new Variant(MediaType.ALL));
 
         final String username = (String) getRequest().getAttributes().get(PARAM_USERNAME);
+
+        final UserI user = getUser();
 
         // You can't request another user's session count unless you're a site admin.
         if (!StringUtils.isBlank(username)) {
@@ -67,9 +66,7 @@ public class SessionCountRestlet extends SecureResource {
 				UserI xdatUser=null;
 				try {
 					xdatUser = Users.getUser(username);
-				} catch (UserNotFoundException e) {
-					
-				} catch (UserInitException e) {
+				} catch (UserNotFoundException | UserInitException e) {
 					logger.error("",e);
 				}
 				

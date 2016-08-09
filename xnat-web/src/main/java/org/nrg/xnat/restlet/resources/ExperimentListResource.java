@@ -29,6 +29,7 @@ import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.QueryOrganizer;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -55,7 +56,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
     
     @Override
     public ArrayList<String> getDefaultFields(GenericWrapperElement e) {
-        ArrayList<String> al=new ArrayList<String>();
+        ArrayList<String> al= new ArrayList<>();
         
         al.add("ID");
         al.add("project");
@@ -82,8 +83,8 @@ public class ExperimentListResource  extends QueryOrganizerResource {
 
     @SuppressWarnings("ConstantConditions")
     @Override
-    public Representation getRepresentation(Variant variant) {  
-        Representation rep=super.getRepresentation(variant);
+    public Representation represent(Variant variant) {
+        Representation rep=super.represent(variant);
         if(rep!=null) {
             return rep;
         }
@@ -97,13 +98,11 @@ public class ExperimentListResource  extends QueryOrganizerResource {
 					handler=filter;
 				}
 			}
-		} catch (InstantiationException e1) {
-			logger.error("",e1);
-		} catch (IllegalAccessException e1) {
+		} catch (InstantiationException | IllegalAccessException e1) {
 			logger.error("",e1);
 		}
 		
-        Hashtable<String,Object> params=new Hashtable<String,Object>();
+        Hashtable<String,Object> params= new Hashtable<>();
 
         try {
 	        if(handler!=null){
@@ -142,9 +141,9 @@ public class ExperimentListResource  extends QueryOrganizerResource {
     
     /**
      * Get a list of the possible experiment handlers.  This allows additional handlers to be injected at a later date or via a module.
-     * @return
-     * @throws InstantiationException
-     * @throws IllegalAccessException
+     * @return The list of handlers.
+     * @throws InstantiationException When an error occurs creating an object.
+     * @throws IllegalAccessException When an error occurs accessing an object.
      */
     public static List<FilteredExptListHandlerI> getHandlers() throws InstantiationException, IllegalAccessException{
     	if(handlers==null){
@@ -171,13 +170,13 @@ public class ExperimentListResource  extends QueryOrganizerResource {
     }
     
     //FilteredExptListHandlerI allows additional experiment list handlers to be added via modules
-    public static interface FilteredExptListHandlerI{
-    	public boolean canHandle(SecureResource resource);
-    	public XFTTable build(ExperimentListResource resource,Hashtable<String,Object> params) throws Exception;
+    interface FilteredExptListHandlerI {
+    	boolean canHandle(SecureResource resource);
+    	XFTTable build(ExperimentListResource resource,Hashtable<String,Object> params) throws Exception;
     }
 
     //handles requests where ?recent=something
-    public static class RecentExperiments implements FilteredExptListHandlerI{
+    private static class RecentExperiments implements FilteredExptListHandlerI {
 
 		@Override
 		public boolean canHandle(SecureResource resource) {
@@ -205,31 +204,33 @@ public class ExperimentListResource  extends QueryOrganizerResource {
             //experiments
             VelocityContext context= new VelocityContext();
             context.put("time", Calendar.getInstance().getTime());
-   
+
+            final UserI user = resource.getUser();
+
             StringBuilder builder=new StringBuilder();
-            builder.append("SELECT * FROM (SELECT DISTINCT ON (expt.id) expt.id,perm.label,perm.project,date,status, workflow_status, xme.element_name, COALESCE(es.code,es.singular,es.element_name) AS TYPE_DESC,insert_date,activation_date,last_modified,workflow_date,pipeline_name, COALESCE(workflow_date,last_modified,insert_date)  AS action_date FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id LEFT JOIN xnat_experimentData_meta_data emd ON expt.experimentData_info=emd.meta_data_id LEFT JOIN xdat_element_security es ON xme.element_name=es.element_name LEFT JOIN (   SELECT DISTINCT ON (id) id,launch_time AS workflow_date,CASE pipeline_name WHEN 'Transferred'::text THEN 'Archived'::text ELSE CASE xs_lastposition('/'::text, pipeline_name::text) WHEN 0 THEN pipeline_name ELSE substring(substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1), 1, xs_lastposition('.'::text, substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1)) - 1) END END AS pipeline_name,status AS workflow_status FROM wrk_workflowdata WHERE category!='SIDE_ADMIN' AND launch_time > (NOW() - interval '" + days +" day') AND status!='Failed (Dismissed)' AND pipeline_name NOT LIKE 'xnat_tools%AutoRun.xml' ORDER BY id,launch_time DESC ) wrkflw ON expt.id=wrkflw.id RIGHT JOIN (");
-            if(Groups.isMember(resource.user, "ALL_DATA_ACCESS") || Groups.isMember(resource.user, "ALL_DATA_ADMIN")){
+            builder.append("SELECT * FROM (SELECT DISTINCT ON (expt.id) expt.id,perm.label,perm.project,date,status, workflow_status, xme.element_name, COALESCE(es.code,es.singular,es.element_name) AS TYPE_DESC,insert_date,activation_date,last_modified,workflow_date,pipeline_name, COALESCE(workflow_date,last_modified,insert_date)  AS action_date FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id LEFT JOIN xnat_experimentData_meta_data emd ON expt.experimentData_info=emd.meta_data_id LEFT JOIN xdat_element_security es ON xme.element_name=es.element_name LEFT JOIN (   SELECT DISTINCT ON (id) id,launch_time AS workflow_date,CASE pipeline_name WHEN 'Transferred'::text THEN 'Archived'::text ELSE CASE xs_lastposition('/'::text, pipeline_name::text) WHEN 0 THEN pipeline_name ELSE substring(substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1), 1, xs_lastposition('.'::text, substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1)) - 1) END END AS pipeline_name,status AS workflow_status FROM wrk_workflowdata WHERE category!='SIDE_ADMIN' AND launch_time > (NOW() - interval '").append(days).append(" day') AND status!='Failed (Dismissed)' AND pipeline_name NOT LIKE 'xnat_tools%AutoRun.xml' ORDER BY id,launch_time DESC ) wrkflw ON expt.id=wrkflw.id RIGHT JOIN (");
+            if(Groups.isMember(user, "ALL_DATA_ACCESS") || Groups.isMember(user, "ALL_DATA_ADMIN")){
             	 builder.append("SELECT DISTINCT ON (isd.ID) isd.ID, label, project FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.ID=expt.ID");
             }else{
-            	builder.append("SELECT DISTINCT ON (ID) ID, label, project FROM (" + Permissions.getUserPermissionsSQL(resource.user) + ") perms INNER JOIN (SELECT isd.id, element_name || '/project' as field, expt.project, expt.label FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id UNION SELECT expt.id,xme.element_name || '/sharing/share/project', shr.project, shr.label  FROM xnat_experimentData_share shr LEFT JOIN xnat_experimentData expt ON expt.id=shr.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id) expts ON perms.field=expts.field AND perms.field_value=expts.project");
+            	builder.append("SELECT DISTINCT ON (ID) ID, label, project FROM (").append(Permissions.getUserPermissionsSQL(user)).append(") perms INNER JOIN (SELECT isd.id, element_name || '/project' as field, expt.project, expt.label FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id UNION SELECT expt.id,xme.element_name || '/sharing/share/project', shr.project, shr.label  FROM xnat_experimentData_share shr LEFT JOIN xnat_experimentData expt ON expt.id=shr.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id) expts ON perms.field=expts.field AND perms.field_value=expts.project");
             }
             builder.append(") perm ON expt.id=perm.id ");
 
             builder.append(" RIGHT JOIN xnat_imageSessionData isd ON perm.id=isd.id  ");
-            builder.append(" WHERE (insert_date > (NOW() - interval '" + days +" day') OR activation_date > (NOW() - interval '" + days +" day') OR last_modified > (NOW() - interval '" + days +" day') OR workflow_date > (NOW() - interval '" + days +" day')) ");
+            builder.append(" WHERE (insert_date > (NOW() - interval '").append(days).append(" day') OR activation_date > (NOW() - interval '").append(days).append(" day') OR last_modified > (NOW() - interval '").append(days).append(" day') OR workflow_date > (NOW() - interval '").append(days).append(" day')) ");
             builder.append(" )SEARCH ORDER BY action_date DESC");
             if(limit) {
             	 builder.append(" LIMIT 60");
             }
 
-            table=XFTTable.Execute(builder.toString(), resource.user.getDBName(), resource.userName);
+            table=XFTTable.Execute(builder.toString(), user.getDBName(), resource.userName);
 
             return table;
 		}
     	
     }
     //handles everything else
-    public static class DefaultExperimentHandler implements FilteredExptListHandlerI{
+    private static class DefaultExperimentHandler implements FilteredExptListHandlerI {
 
 		@Override
 		public boolean canHandle(SecureResource resource) {
@@ -238,10 +239,11 @@ public class ExperimentListResource  extends QueryOrganizerResource {
 
 		@Override
 		public XFTTable build(ExperimentListResource resource,Hashtable<String, Object> params) throws Exception {
-			XFTTable table=null;
+            final UserI user = resource.getUser();
+			XFTTable table;
 			params.put("title", "Matching experiments");
             String rootElementName=resource.getRootElementName();
-            QueryOrganizer qo = new QueryOrganizer(rootElementName,resource.user,ViewManager.ALL);
+            QueryOrganizer qo = new QueryOrganizer(rootElementName,user,ViewManager.ALL);
 
             resource.populateQuery(qo);
 
@@ -252,11 +254,11 @@ public class ExperimentListResource  extends QueryOrganizerResource {
 
             String query=qo.buildQuery();
 
-            table=XFTTable.Execute(query, resource.user.getDBName(), resource.userName);
+            table=XFTTable.Execute(query, user.getDBName(), resource.userName);
 
             if(!ElementSecurity.IsSecureElement(rootElementName)){
-                List<Object[]> remove=new ArrayList<Object[]>();
-                Hashtable<String, Boolean> checked = new Hashtable<String,Boolean>();
+                List<Object[]> remove= new ArrayList<>();
+                Hashtable<String, Boolean> checked = new Hashtable<>();
 
                 String enS=qo.getFieldAlias("xnat:experimentData/extension_item/element_name");
                 if(enS==null) {
@@ -282,7 +284,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
                                 SecurityValues values = new SecurityValues();
                                 values.put(element_name + "/project",project);
 
-                                if (Permissions.canRead(resource.user,secureElement,values)) {
+                                if (Permissions.canRead(user,secureElement,values)) {
                                     checked.put(element_name+project, Boolean.TRUE);
                                 }else{
                                     checked.put(element_name+project, Boolean.FALSE);

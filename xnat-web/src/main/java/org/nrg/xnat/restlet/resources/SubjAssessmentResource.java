@@ -32,8 +32,8 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.archive.Rename.DuplicateLabelException;
 import org.nrg.xnat.archive.Rename.FolderConflictException;
@@ -57,6 +57,7 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.xml.sax.SAXException;
+
 import java.net.URISyntaxException;
 import java.util.*;
 
@@ -70,16 +71,17 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 	
 	public SubjAssessmentResource(Context context, Request request, Response response) {
 		super(context, request, response);
-		
-			String pID= (String)getParameter(request,"PROJECT_ID");
-			if(pID!=null){
-				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+
+		final UserI  user = getUser();
+		final String pID  = (String) getParameter(request, "PROJECT_ID");
+		if (pID != null) {
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 		}
 		
 		if(proj==null){
 			response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 			return;
-			}
+		}
 
 			subID= (String)getParameter(request,"SUBJECT_ID");
 			if(subID!=null){
@@ -129,6 +131,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 	}
 	
 	private XnatSubjectdata getExistingSubject(XnatProjectdata proj, String subjectId){
+		final UserI user = getUser();
 		// First check if the subject is associated with the project,
 		// if that fails check the global pool.
 		XnatSubjectdata s = XnatSubjectdata.GetSubjectByProjectIdentifier(proj.getId(), subjectId, user, false);
@@ -139,6 +142,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 	}
 	
 	private XnatSubjectassessordata getExistingExperiment(XnatSubjectassessordata currExp){
+		final UserI user = getUser();
 		XnatSubjectassessordata retExp = null;
 		if(currExp.getId()!=null){
 			retExp = (XnatSubjectassessordata)XnatExperimentdata.getXnatExperimentdatasById(currExp.getId(), null, completeDocument);
@@ -161,8 +165,9 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
 	@Override
 	public void handlePut() {
-        XFTItem item = null;			
+        XFTItem item = null;
 
+		final UserI user = getUser();
 		try {
 			XFTItem template=null;
 			if (existing!=null){
@@ -630,6 +635,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 	@Override
 	public void handleDelete(){
 
+		final UserI user = getUser();
 			if(expt==null&& exptID!=null){
 				expt=(XnatSubjectassessordata)XnatExperimentdata.getXnatExperimentdatasById(exptID, user, false);
 				
@@ -694,9 +700,10 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		MediaType mt = overrideVariant(variant);
 
+		final UserI user = getUser();
 		if(expt==null&& exptID!=null){
 			expt=(XnatSubjectassessordata)XnatExperimentdata.getXnatExperimentdatasById(exptID, user, false);
 			

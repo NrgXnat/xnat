@@ -26,6 +26,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
@@ -61,7 +62,7 @@ public class ProjectResource extends ItemResource {
 
         projectId = (String) getParameter(request, "PROJECT_ID");
         if (projectId != null) {
-            project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
+            project = XnatProjectdata.getProjectByIDorAlias(projectId, getUser(), false);
         }
 
         if (project != null) {
@@ -84,6 +85,8 @@ public class ProjectResource extends ItemResource {
 
     @Override
     public void handleDelete() {
+        final UserI user = getUser();
+
         if (user == null || user.isGuest()) {
             getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
         } else {
@@ -125,6 +128,7 @@ public class ProjectResource extends ItemResource {
 
     @Override
     public void handlePut() {
+        final UserI user = getUser();
         if (user == null || user.isGuest()) {
             getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
         } else {

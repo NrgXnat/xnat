@@ -8,14 +8,11 @@
  *
  * Last modified 12/19/13 3:01 PM
  */
-
-/**
- *
- */
 package org.nrg.xnat.restlet.services.prearchive;
 
 import org.nrg.action.ClientException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -82,6 +79,7 @@ public class PrearchiveBatchMove extends BatchPrearchiveActionsA {
             return;
         }
 
+        final UserI user = getUser();
         if (newProject == null) {
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Move operation requires 'newProject'");
             return;

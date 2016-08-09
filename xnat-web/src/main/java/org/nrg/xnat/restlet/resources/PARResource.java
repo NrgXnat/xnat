@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.restlet.Context;
 import org.restlet.data.Request;
@@ -32,12 +33,13 @@ import java.util.Objects;
  * @author timo
  */
 public class PARResource extends SecureResource {
-    private static final Logger _log = LoggerFactory.getLogger(PARResource.class);
-    ProjectAccessRequest par = null;
+    private static final Logger               _log = LoggerFactory.getLogger(PARResource.class);
+    private              ProjectAccessRequest par  = null;
 
     public PARResource(Context context, Request request, Response response) throws Exception {
         super(context, request, response);
-        String par_id = (String) getParameter(request, "PAR_ID");
+        final UserI user   = getUser();
+        String      par_id = (String) getParameter(request, "PAR_ID");
         par = ProjectAccessRequest.RequestPARByGUID(par_id, user);
         if (par == null) {
             par = ProjectAccessRequest.RequestPARById(Integer.parseInt(par_id), user);
@@ -83,6 +85,7 @@ public class PARResource extends SecureResource {
                 return;
             } else {
                 try {
+                    final UserI user = getUser();
                     if (getQueryVariable("accept") != null) {
                         par.process(user, true, getEventType(), getReason(), getComment());
                     } else if (getQueryVariable("decline") != null) {
@@ -105,6 +108,7 @@ public class PARResource extends SecureResource {
         table.initTable(new String[]{"id", "proj_id", "create_date", "level"});
         Hashtable<String, Object> params = new Hashtable<>();
         try {
+            final UserI user = getUser();
             ArrayList<ProjectAccessRequest> pars = ProjectAccessRequest.RequestPARsByUserEmail(user.getEmail(), user);
             for (ProjectAccessRequest par : pars) {
                 Object[] row = new Object[4];
@@ -123,6 +127,7 @@ public class PARResource extends SecureResource {
     }
 
     private boolean isParUser() {
+        final UserI user = getUser();
         return Objects.equals(par.getUserId(), user.getID()) || (par.getUserId() == null && StringUtils.equalsIgnoreCase(par.getEmail(), user.getEmail()));
     }
 }

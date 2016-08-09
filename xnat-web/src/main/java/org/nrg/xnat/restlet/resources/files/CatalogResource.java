@@ -61,7 +61,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 						
 						for(String resourceID:this.resource_ids){
 							if(id.toString().equals(resourceID) || (label!=null && label.equals(resourceID))){
-								resources.add(XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(row[0], user, false));
+								resources.add(XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(row[0], getUser(), false));
 							}
 						}
 					
@@ -113,13 +113,14 @@ public class CatalogResource extends XNATCatalogTemplate {
 
     @Override
     public void handlePost() {
-	    	if(failFastDueToNonEmptyFilePath()) {
-	    	    return;
-	    	}
+		if(failFastDueToNonEmptyFilePath()) {
+			return;
+		}
 
-	    	if(this.parent!=null && this.security!=null){
-			XFTItem item = null;	
-			try {	
+		if(this.parent!=null && this.security!=null){
+			XFTItem item;
+			final UserI user = getUser();
+			try {
 				if(Permissions.canEdit(user,this.security)){
 					if(this.resources.size()>0){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified resource already exists.");
@@ -244,11 +245,12 @@ public class CatalogResource extends XNATCatalogTemplate {
 
 	@Override
 	public void handleDelete(){
-	    	if(failFastDueToNonEmptyFilePath()) {
-	    	    return;
-	    	}
+		if(failFastDueToNonEmptyFilePath()) {
+			return;
+		}
 
-	    	if(resources.size()>0 && this.parent!=null && this.security!=null){
+		if(resources.size()>0 && this.parent!=null && this.security!=null){
+			final UserI user = getUser();
 			for(XnatAbstractresource resource:resources){
 				try {
 					if(Permissions.canDelete(user,this.security)){
@@ -328,7 +330,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 				
 				for(String resourceID:this.resource_ids){
 					if(id.toString().equals(resourceID) || (label!=null && label.equals(resourceID))){
-						resources.add(XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(row[0], user, false));
+						resources.add(XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(row[0], getUser(), false));
 					}
 				}
 				
@@ -338,7 +340,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 	
 
 	@Override
-	public Representation getRepresentation(Variant variant) {
+	public Representation represent(Variant variant) {
 	    	if(failFastDueToNonEmptyFilePath()) {
 	    	    return null;
 	    	}

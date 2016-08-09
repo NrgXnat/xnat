@@ -44,8 +44,10 @@ public class ProtocolResource extends ItemResource {
 	
 	public ProtocolResource(Context context, Request request, Response response) {
 		super(context, request, response);
-		
-		String pID = (String) getParameter(request,"PROJECT_ID");
+
+		final UserI user = getUser();
+
+		final String pID = (String) getParameter(request,"PROJECT_ID");
 		if (pID != null) {
 			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 		}
@@ -67,6 +69,7 @@ public class ProtocolResource extends ItemResource {
 	@Override
 	public void handlePut() {
 		try {
+			final UserI user = getUser();
 			XFTItem template=null;
 			if (existing!=null){
 				template=existing.getItem().getCurrentDBVersion();
@@ -148,7 +151,9 @@ public class ProtocolResource extends ItemResource {
 		if(existing!=null){
 			protocol=existing;
 		}
-		
+
+		final UserI user = getUser();
+
 		try {
 		
 			if(!Permissions.canEdit(user,proj)){
@@ -177,9 +182,10 @@ public class ProtocolResource extends ItemResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		MediaType mt = overrideVariant(variant);
-			
+		final UserI user = getUser();
+
 		if(protocol!=null){
 			return this.representItem(protocol.getItem(),mt);
 		}else{
@@ -192,7 +198,7 @@ public class ProtocolResource extends ItemResource {
 					
 					if(temp==null && ess!=null){
 						GenericWrapperElement e=GenericWrapperElement.GetElement(dataType);
-						temp=new XnatDatatypeprotocol((UserI)user);
+						temp=new XnatDatatypeprotocol(user);
 						temp.setProperty("xnat_projectdata_id", proj.getId());
 						temp.setDataType(e.getXSIType());
 						

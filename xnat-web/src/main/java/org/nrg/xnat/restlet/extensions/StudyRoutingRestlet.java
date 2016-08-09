@@ -20,6 +20,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.services.StudyRoutingService;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
@@ -98,6 +99,7 @@ public class StudyRoutingRestlet extends SecureResource {
     @Override
     public Representation represent(final Variant variant) {
         final MediaType mediaType = overrideVariant(variant);
+        final UserI     user      = getUser();
         if (StringUtils.isNotBlank(_studyInstanceUid)) {
             final Map<String, String> routing = _routingService.findStudyRouting(_studyInstanceUid);
             if (routing == null || routing.size() == 0) {
@@ -155,6 +157,7 @@ public class StudyRoutingRestlet extends SecureResource {
     @Override
     public void handlePut() {
         try {
+            final UserI user = getUser();
             if (!Permissions.can(user,"xnat:mrSessionData/project", _projectId, SecurityManager.EDIT)) {
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "You do not have sufficient privileges to modify study routings for this project.");
                 return;
@@ -185,6 +188,7 @@ public class StudyRoutingRestlet extends SecureResource {
 
     @Override
     public void handleDelete() {
+        final UserI user = getUser();
         if (StringUtils.isBlank(_studyInstanceUid)) {
             if (!Roles.isSiteAdmin(user)) {
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "You must be a site administrator to delete all study routings for this site.");

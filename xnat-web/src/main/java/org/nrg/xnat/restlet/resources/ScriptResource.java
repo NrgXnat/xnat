@@ -10,6 +10,7 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.restlet.Context;
 import org.restlet.data.*;
@@ -44,6 +45,7 @@ public class ScriptResource extends AutomationResource {
         _version = (String) getRequest().getAttributes().get(VERSION);
 
         // If the user isn't a site admin, there's a limited set of operations they are permitted to perform.
+        final UserI user = getUser();
         if (!Roles.isSiteAdmin(user)) {
             // You can't put or post or delete a script and you can't retrieve a specific script OTHER THAN the split
             // PET/MR script, which is used by the upload applet.

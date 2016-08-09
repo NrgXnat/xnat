@@ -13,7 +13,7 @@ package org.nrg.xnat.restlet.resources;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -22,7 +22,6 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
-import java.sql.SQLException;
 import java.util.Hashtable;
 
 public class ScannerListing  extends SecureResource {
@@ -33,7 +32,7 @@ public class ScannerListing  extends SecureResource {
 		
 		String pID = (String) getParameter(request,"PROJECT_ID");
 		if (pID != null) {
-			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, getUser(), false);
 
 			if (proj == null) {
 				response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
@@ -46,9 +45,9 @@ public class ScannerListing  extends SecureResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
-		XFTTable table = null;
-			
+	public Representation represent(Variant variant) {
+		final UserI user  = getUser();
+
 		String scan_table=this.getQueryVariable("table");
 		if(scan_table==null){
 			scan_table="xnat_mrSessionData";
@@ -59,22 +58,19 @@ public class ScannerListing  extends SecureResource {
         		return null;
             }
 		}
-		
+
+		XFTTable table = null;
 		try {
 			String query="SELECT DISTINCT isd.scanner FROM " + scan_table + " mod LEFT JOIN xnat_imageSessionData isd ON mod.id=isd.id LEFT JOIN xnat_experimentData expt ON isd.id=expt.id WHERE isd.scanner IS NOT NULL";
 
 			if(proj!=null)query+=" WHERE expt.project='" + proj.getId() + "'";
-			
-			table=(XFTTable)XFTTable.Execute(query,user.getDBName(),user.getLogin());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (DBPoolException e) {
-			e.printStackTrace();
+
+			table=XFTTable.Execute(query,user.getDBName(),user.getLogin());
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("", e);
 		}
-		
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+
+		Hashtable<String,Object> params= new Hashtable<>();
 		params.put("title", "Scanners");
 
 		MediaType mt = overrideVariant(variant);

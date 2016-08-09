@@ -79,6 +79,7 @@ public class ProjectListResource extends QueryOrganizerResource {
         try {
             item = this.loadItem("xnat:projectData", true);
 
+            final UserI user = getUser();
             if (item == null) {
                 String xsiType = this.getQueryVariable("xsiType");
                 if (xsiType != null) {
@@ -208,7 +209,7 @@ public class ProjectListResource extends QueryOrganizerResource {
         public Representation handle(SecureResource resource, Variant variant) throws Exception {
 
             DisplaySearch ds = new DisplaySearch();
-            UserI user = resource.user;
+            UserI user = resource.getUser();
             XFTTable table = null;
             try {
                 ds.setUser(user);
@@ -511,15 +512,16 @@ public class ProjectListResource extends QueryOrganizerResource {
                 throw new Exception("You must specify one of the following values for the permissions parameter: " + Joiner.on(", ").join(PERMISSIONS));
             }
 
-            final String dataType = resource.getQueryVariable("dataType");
-            final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(resource.user);
+            final String             dataType          = resource.getQueryVariable("dataType");
+            final UserI              user              = resource.getUser();
+            final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
             if (userHelperService != null) {
                 final Map<Object, Object> projects = userHelperService.getCachedItemValuesHash("xnat:projectData", null, false, "xnat:projectData/ID", "xnat:projectData/secondary_ID");
                 for (final Object key : projects.keySet()) {
                     final String projectId = (String) key;
                     // If no data type is specified, we check both MR and PET session data permissions. This is basically
                     // tailored for checking for projects to which the user can upload imaging data.
-                    final boolean canEdit = StringUtils.isBlank(dataType) ? userHelperService.hasEditAccessToSessionDataByTag(projectId) : Permissions.can(resource.user, dataType + "/project", projectId, permissions);
+                    final boolean canEdit = StringUtils.isBlank(dataType) ? userHelperService.hasEditAccessToSessionDataByTag(projectId) : Permissions.can(user, dataType + "/project", projectId, permissions);
                     if (canEdit) {
                         table.insertRowItems(projectId, projects.get(projectId));
                     }
@@ -541,7 +543,7 @@ public class ProjectListResource extends QueryOrganizerResource {
         public Representation handle(SecureResource resource, Variant variant) throws Exception {
             ProjectListResource projResource = (ProjectListResource) resource;
             XFTTable table;
-            UserI user = resource.user;
+            UserI user = resource.getUser();
             try {
                 final String re = projResource.getRootElementName();
 

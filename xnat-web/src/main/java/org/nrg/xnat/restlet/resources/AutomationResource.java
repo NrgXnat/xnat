@@ -11,6 +11,7 @@ import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -80,6 +81,7 @@ public abstract class AutomationResource extends SecureResource {
     }
 
     protected void validateProjectAccess(final String projectId) throws ResourceException {
+        final UserI           user    = getUser();
         final XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
         if (project == null) {
             throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Can't find project with ID: " + getProjectId());
@@ -129,7 +131,7 @@ public abstract class AutomationResource extends SecureResource {
     protected void recordAutomationEvent(final String automationId, final String containerId, final String operation, final Class<?> type) {
         try {
             final EventDetails instance = EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, operation, "", operation + " " + type + " with ID " + automationId);
-            PersistentWorkflowI workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, type.getName(), automationId, containerId, instance);
+            PersistentWorkflowI workflow = PersistentWorkflowUtils.buildOpenWorkflow(getUser(), type.getName(), automationId, containerId, instance);
             assert workflow != null;
             workflow.setStatus(PersistentWorkflowUtils.COMPLETE);
             WorkflowUtils.save(workflow, workflow.buildEvent());
@@ -207,7 +209,7 @@ public abstract class AutomationResource extends SecureResource {
                 }
                 else {
                     try {
-                        XFTTable table = XFTTable.Execute("SELECT id FROM xnat_projectdata WHERE projectdata_info = " + entityId, user.getDBName(), userName);
+                        XFTTable table = XFTTable.Execute("SELECT id FROM xnat_projectdata WHERE projectdata_info = " + entityId, getUser().getDBName(), userName);
                         if (table.size() != 1) {
                             throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Couldn't find a project with the ID or alias of " + entityId);
                         }

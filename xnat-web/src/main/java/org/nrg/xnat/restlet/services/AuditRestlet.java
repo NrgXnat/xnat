@@ -67,7 +67,7 @@ public class AuditRestlet extends SecureResource {
 			cc.addClause(xsiType+"/"+pks.get(i), ids.get(i));
 		}
 		
-		return ItemSearch.GetItems(xsiType, cc, this.user, false).getFirst();
+		return ItemSearch.GetItems(xsiType, cc, getUser(), false).getFirst();
 	}
 	
 	public ItemI retrieveItemByIds(final String xsiType, List<String> ids) throws ActionException{		
@@ -88,7 +88,7 @@ public class AuditRestlet extends SecureResource {
 			}
 			
 			if(i!=null){
-				Authorizer.getInstance().authorizeRead(i.getItem(), user);
+				Authorizer.getInstance().authorizeRead(i.getItem(), getUser());
 			}
 			
 			return i;
@@ -133,7 +133,7 @@ public class AuditRestlet extends SecureResource {
 				
 				params.put("hideTopBar",isQueryVariableTrue("hideTopBar"));
 				
-				return new ItemHTMLRepresentation(item.getItem(), MediaType.TEXT_HTML, getRequest(), user,screen,params);
+				return new ItemHTMLRepresentation(item.getItem(), MediaType.TEXT_HTML, getRequest(), getUser(),screen,params);
 			}else{
 				return buildChangesets(item.getItem(), key, mt);
 			}

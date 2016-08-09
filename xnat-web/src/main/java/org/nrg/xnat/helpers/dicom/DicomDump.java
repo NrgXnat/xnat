@@ -580,7 +580,7 @@ public final class DicomDump extends SecureResource {
     public Representation represent(final Variant variant) {
         final MediaType mt = overrideVariant(variant);
         try {
-            String file = this.env.h.retrieve(this.env, this.user);
+            String file = this.env.h.retrieve(this.env, getUser());
             DicomHeaderDump d = new DicomHeaderDump(file, env.fields);
             final XFTTable t = d.render();
             return this.representTable(t, mt, new Hashtable<String, Object>());

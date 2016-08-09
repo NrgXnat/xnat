@@ -1,12 +1,7 @@
 package org.nrg.xnat.restlet.extensions;
 
-import java.util.Collection;
-import java.util.Hashtable;
-import java.util.List;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.nrg.xdat.om.XdatRoleType;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI.RoleDefinitionI;
@@ -23,8 +18,13 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.List;
 
 /**
  * @author tim@deck5consulting.com
@@ -33,7 +33,7 @@ import com.google.common.collect.Lists;
  */
 @XnatRestlet("/user/{USER_ID}/roles")
 public class UserRolesRestlet extends SecureResource {
-    static Logger logger = Logger.getLogger(UserRolesRestlet.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserRolesRestlet.class);
 	UserI other=null;
 	String userId=null;
 	/**
@@ -44,7 +44,7 @@ public class UserRolesRestlet extends SecureResource {
 	public UserRolesRestlet(Context context, Request request, Response response) {
 		super(context, request, response);
 		
-		if (!Roles.isSiteAdmin(user)) {
+		if (!Roles.isSiteAdmin(getUser())) {
             getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User does not have privileges to access this project.");
         } else {
             userId = (String) getRequest().getAttributes().get("USER_ID");
@@ -72,11 +72,7 @@ public class UserRolesRestlet extends SecureResource {
 		final List<String> roles=Lists.newArrayList();
 		
 		if(hasQueryVariable("roles")){
-			final String roleS=getQueryVariable("roles");
-			
-			for(String role: roleS.split(",")){
-				roles.add(role);
-			}
+			Collections.addAll(roles, getQueryVariable("roles").split(","));
 		}
 		
 		try {
@@ -87,7 +83,8 @@ public class UserRolesRestlet extends SecureResource {
 			for(RoleDefinitionI def:defined){
 				allDefinedRoles.add(def.getKey());
 			}
-			
+
+			final UserI user = getUser();
 	        //remove roles and save one at a time so that there is a separate workflow entry for each one
 			for(String dRole:allDefinedRoles){
 				if(!roles.contains(dRole)){
@@ -117,7 +114,6 @@ public class UserRolesRestlet extends SecureResource {
 		} catch (Throwable e) {
 			logger.error("",e);
 			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-			return;
 		}
 	}
 	
@@ -126,15 +122,15 @@ public class UserRolesRestlet extends SecureResource {
 	@Override
 	public Representation represent(Variant variant) throws ResourceException {	
 		MediaType mt = overrideVariant(variant);
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params= new Hashtable<>();
 		
 		XFTTable table=new XFTTable();
 		table.initTable(new String[]{"role"});
-		for(String role: Roles.getRoles(user)){
+		for(String role: Roles.getRoles(getUser())){
 			table.rows().add(new Object[]{role});
 		}
-		
-		if(table!=null)params.put("totalRecords", table.size());
+
+		params.put("totalRecords", table.size());
 		return this.representTable(table, mt, params);
 	}
 }

@@ -20,10 +20,10 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
-import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.restlet.Context;
@@ -65,7 +65,8 @@ public class XNATTemplate extends SecureResource {
 		super(context, request, response);
 
 			String pID= (String)getParameter(request,"PROJECT_ID");
-			if(pID!=null){
+		final UserI user = getUser();
+		if(pID != null){
 				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 
 				if(proj==null){
@@ -79,11 +80,11 @@ public class XNATTemplate extends SecureResource {
 			if(subID!=null){
 				if(this.proj!=null)
 				sub = XnatSubjectdata.GetSubjectByProjectIdentifier(proj
-						.getId(), subID,user, false);
+						.getId(), subID, user, false);
 
 				if(sub==null){
 				sub = XnatSubjectdata.getXnatSubjectdatasById(subID, user,
-						false);
+															  false);
 				if(sub!=null && (proj!=null && !sub.hasProject(proj.getId()))){
 				    sub=null;
 				}
@@ -101,7 +102,7 @@ public class XNATTemplate extends SecureResource {
 			if(assessid!=null){
 			for(String s: XftStringUtils.CommaDelimitedStringToArrayList(assessid)){
 				XnatExperimentdata assessed = XnatImagesessiondata.getXnatImagesessiondatasById(
-					s, user, false);
+						s, user, false);
 
 				if(assessed!=null && (proj!=null && !assessed.hasProject(proj.getId()))){
 				    assessed=null;
@@ -110,7 +111,7 @@ public class XNATTemplate extends SecureResource {
 				if (assessed == null && proj!=null) {
 					assessed = (XnatImagesessiondata) XnatImagesessiondata
 							.GetExptByProjectIdentifier(proj.getId(), s,
-									user, false);
+														user, false);
 				}
 
 				if(assessed!=null){
@@ -135,12 +136,12 @@ public class XNATTemplate extends SecureResource {
 			if(exptID!=null){
 			for(String s: XftStringUtils.CommaDelimitedStringToArrayList(exptID)){
 				XnatExperimentdata expt = XnatExperimentdata.getXnatExperimentdatasById(s,
-						user, false);
+																						user, false);
 
 				if (expt == null && proj!=null) {
 					expt = (XnatExperimentdata) XnatExperimentdata
 							.GetExptByProjectIdentifier(proj.getId(), s,
-									user, false);
+														user, false);
 				}
 
 				if (expt != null && assesseds.size()>0) {
@@ -242,7 +243,7 @@ public class XNATTemplate extends SecureResource {
 
 			scans = XnatImagescandata
 					.getXnatImagescandatasByField(cc, user,
-							completeDocument);
+												  completeDocument);
 
 			if (scans.size() != 1 && !this.getRequest().getMethod().equals(Method.GET)) {
 				response.setStatus(Status.CLIENT_ERROR_NOT_FOUND,
@@ -303,7 +304,7 @@ public class XNATTemplate extends SecureResource {
 
 			recons = XnatReconstructedimagedata
 					.getXnatReconstructedimagedatasByField(cc, user,
-							completeDocument);
+														   completeDocument);
 			if (recons.size() > 0) {
 					if(type==null){
 						type="out";
@@ -355,7 +356,8 @@ public class XNATTemplate extends SecureResource {
 		XnatExperimentdata assessed=null;
 		if(this.assesseds.size()==1)assessed=assesseds.get(0);
 
-		if (recons.size()>0) {
+		final UserI user = getUser();
+		if (recons.size() > 0) {
 			//reconstruction
 			if (assessed == null) {
 				this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,
@@ -410,7 +412,7 @@ public class XNATTemplate extends SecureResource {
 				recon.setOut_file(catResource);
 			}
 
-			SaveItemHelper.authorizedSave(recon,user, false, false,ci);
+			SaveItemHelper.authorizedSave(recon, user, false, false, ci);
 			return true;
 		} else if (scans.size()>0) {
 			XnatImagescandata scan=scans.get(0);
@@ -463,7 +465,7 @@ public class XNATTemplate extends SecureResource {
 
 			scan.setFile(catResource);
 
-			SaveItemHelper.authorizedSave(scan,user, false, false,ci);
+			SaveItemHelper.authorizedSave(scan, user, false, false, ci);
 			return true;
 		} else if (expts.size()>0) {
 //			experiment
@@ -527,13 +529,13 @@ public class XNATTemplate extends SecureResource {
 					iad.setOut_file(catResource);
 				}
 
-				SaveItemHelper.authorizedSave(iad,user, false, false,ci);
+				SaveItemHelper.authorizedSave(iad, user, false, false, ci);
 
 			}else{
 				XnatExperimentdata copy=session.getLightCopy();
 				copy.setResources_resource(catResource);
 
-				SaveItemHelper.authorizedSave(copy,user, false, false,ci);
+				SaveItemHelper.authorizedSave(copy, user, false, false, ci);
 			}
 			return true;
 		}else if(sub!=null){
@@ -573,7 +575,7 @@ public class XNATTemplate extends SecureResource {
 			XnatSubjectdata copy=sub.getLightCopy();
 			copy.setResources_resource(catResource);
 
-			SaveItemHelper.authorizedSave(copy,user, false, false,ci);
+			SaveItemHelper.authorizedSave(copy, user, false, false, ci);
 			return true;
 		}else if(proj!=null){
 			String dest_path=null;
@@ -609,7 +611,7 @@ public class XNATTemplate extends SecureResource {
 			catResource.setUri(dest.getAbsolutePath());
 			proj.setResources_resource(catResource);
 
-			SaveItemHelper.authorizedSave(proj,user, false, false,ci);
+			SaveItemHelper.authorizedSave(proj, user, false, false, ci);
 			return true;
 		}
 		return true;
@@ -1178,6 +1180,6 @@ public class XNATTemplate extends SecureResource {
 			query.append(" WHERE xnat_abstractresource_id IS NULL");
 		}
 
-		return XFTTable.Execute(query.toString(), user.getDBName(), userName);
+		return XFTTable.Execute(query.toString(), getUser().getDBName(), userName);
 	}
 }

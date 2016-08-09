@@ -15,6 +15,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -34,7 +35,7 @@ public class ProjectAccessibilityResource extends SecureResource {
 		
 			String pID= (String)getParameter(request,"PROJECT_ID");
 			if(pID!=null){
-				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+				proj = XnatProjectdata.getProjectByIDorAlias(pID, getUser(), false);
 			}
 			access=(String)getParameter(request,"ACCESS_LEVEL");
 
@@ -61,16 +62,17 @@ public class ProjectAccessibilityResource extends SecureResource {
 	public void handlePut() {
 		if(proj!=null && access!=null){
             try {
-				if (!Permissions.canDelete(user,proj)){
+				final UserI user = getUser();
+				if (!Permissions.canDelete(user, proj)){
 					getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
 					return;
 				}
 			
 				String currentAccess = proj.getPublicAccessibility();
 				if (!currentAccess.equals(access)){
-					PersistentWorkflowI wrk=WorkflowUtils.buildProjectWorkflow(user, proj,newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS,EventUtils.MODIFY_PROJECT_ACCESS));
+					PersistentWorkflowI wrk=WorkflowUtils.buildProjectWorkflow(user, proj, newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.MODIFY_PROJECT_ACCESS));
                     EventMetaI c=wrk.buildEvent();
-                    if(Permissions.setDefaultAccessibility(proj.getId(),access, true,user,c)){
+                    if(Permissions.setDefaultAccessibility(proj.getId(), access, true, user, c)){
                     	WorkflowUtils.complete(wrk, c);
                     }
 				}

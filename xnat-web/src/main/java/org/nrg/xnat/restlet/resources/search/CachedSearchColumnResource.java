@@ -10,10 +10,10 @@
  */
 package org.nrg.xnat.restlet.resources.search;
 
-import org.apache.log4j.Logger;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.MaterializedViewI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -22,12 +22,14 @@ import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Hashtable;
 
 public class CachedSearchColumnResource extends SecureResource {
-	static org.apache.log4j.Logger logger = Logger.getLogger(CachedSearchResource.class);
+	private static final Logger logger = LoggerFactory.getLogger(CachedSearchResource.class);
 	String tableName=null;
 	String columnName=null;
 	
@@ -45,8 +47,8 @@ public class CachedSearchColumnResource extends SecureResource {
 
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+	public Representation represent(Variant variant) {
+		Hashtable<String,Object> params= new Hashtable<>();
 		if(tableName!=null){
 			params.put("ID", tableName);
 		}
@@ -56,8 +58,8 @@ public class CachedSearchColumnResource extends SecureResource {
 		XFTTable table=null;
 		
 		try {
-		
-			MaterializedViewI mv = MaterializedView.retrieveView(tableName, user);
+			final UserI user = getUser();
+			final MaterializedViewI mv = MaterializedView.retrieveView(tableName, user);
 			if(mv.getUser_name().equals(user.getLogin())){
 				table=mv.getColumnValues(columnName);
 			}

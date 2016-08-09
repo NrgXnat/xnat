@@ -122,8 +122,8 @@ public class RecentPrearchiveSessions extends SecureResource {
 
 			ArrayList<ArrayList<Object>> rows = new ArrayList<ArrayList<Object>>();
 			for (SessionData s: mostRecent) {
-				if (UserHelper.getUserHelperService(user).hasEditAccessToSessionDataByTag(s.getProject())){
-					ArrayList<Object> row= new ArrayList<Object>();					
+				if (UserHelper.getUserHelperService(getUser()).hasEditAccessToSessionDataByTag(s.getProject())){
+					ArrayList<Object> row= new ArrayList<>();
 					for (DatabaseSession v : DatabaseSession.values()) {
 						// replace internal url with the external one that doesn't have
 						// local filesystem information.

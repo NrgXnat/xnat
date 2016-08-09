@@ -7,6 +7,7 @@ import org.nrg.automation.services.ScriptService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -39,6 +40,8 @@ public class ScriptVersionsResource extends AutomationResource {
         _runnerService = XDAT.getContextService().getBean(ScriptRunnerService.class);
 
         _scriptId = (String) getRequest().getAttributes().get(SCRIPT_ID);
+
+        final UserI user = getUser();
 
         // If the user isn't a site admin, there's a limited set of operations they are permitted to perform.
         if (!Roles.isSiteAdmin(user)) {

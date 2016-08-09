@@ -91,7 +91,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
             //If the arc spec has not yet been set, have the user configure the arc spec before changing their password. This prevents a negative interaction with the arc spec filter.
             chain.doFilter(request, response);
         } else {
-            if (user == null) {
+            if (user == null || user.isGuest()) {
                 //If the user is not logged in, do not send them to the expired password page.
 
                 String header = request.getHeader("Authorization");

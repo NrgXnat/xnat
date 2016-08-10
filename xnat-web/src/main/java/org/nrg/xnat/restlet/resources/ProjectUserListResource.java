@@ -67,6 +67,9 @@ public class ProjectUserListResource extends SecureResource {
         final XFTTable table;
         if (_project != null) {
             final StringBuilder query = new StringBuilder("SELECT g.id AS \"GROUP_ID\", displayname,login,firstname,lastname,email FROM xdat_userGroup g RIGHT JOIN xdat_user_Groupid map ON g.id=map.groupid RIGHT JOIN xdat_user u ON map.groups_groupid_xdat_user_xdat_user_id=u.xdat_user_id WHERE tag='").append(_project.getId()).append("' ");
+            if(this.getQueryVariable("includeAllDataAccess")!=null && this.getQueryVariable("includeAllDataAccess").equalsIgnoreCase("true")){
+                query.append(" OR g.id ='ALL_DATA_ADMIN' ");
+            }
             try {
                 if(!_displayHiddenUsers){
                     query.append(" and enabled = 1 ");

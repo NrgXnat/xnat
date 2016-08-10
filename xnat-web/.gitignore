@@ -13,3 +13,4 @@ gradle.properties
 InstanceSettings.xml
 src/main/resources/META-INF/xnat/auth
 MANIFEST.MF
+/ide-bin/

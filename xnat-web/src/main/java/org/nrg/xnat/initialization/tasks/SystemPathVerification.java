@@ -51,13 +51,14 @@ public class SystemPathVerification extends AbstractInitializingTask {
     public void run() {
         if (_appInfo.isInitialized()) {
             try {
-                validatePath(_config.getArchivePath(), "Archive", true);
+            	final Integer resourceCount = _template.queryForObject("SELECT COUNT(xnat_abstractresource_id) AS COUNT FROM xnat_abstractresource", Integer.class);
+                
+            	validatePath(_config.getArchivePath(), "Archive", (resourceCount>0));
                 validatePath(_config.getCachePath(), "Cache", false);
                 validatePath(_config.getPipelinePath(), "Pipeline", false);
                 validatePath(_config.getBuildPath(), "Build", false);
                 validatePath(_config.getPrearchivePath(), "Prearchive", false);
 
-                final Integer resourceCount = _template.queryForObject("SELECT COUNT(xnat_abstractresource_id) AS COUNT FROM xnat_abstractresource", Integer.class);
                 if (pathErrors.size() > 0) {
                     // Send warning email to admin and issue browser notification
                     notifyOfPathErrors(resourceCount);

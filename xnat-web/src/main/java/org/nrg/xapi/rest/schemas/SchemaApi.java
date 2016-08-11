@@ -43,7 +43,7 @@ public class SchemaApi extends AbstractXapiRestController {
     public ResponseEntity<List<String>> getAllDataTypeSchemas() throws IOException {
         final List<String> schemas = new ArrayList<>();
         for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:schemas/*/*.xsd")) {
-            final Set<String> schemaPath = new HashSet<>(Arrays.asList(FilenameUtils.removeExtension(resource.getURI().toString().replaceAll("^.*/schemas/", "")).split("/")));
+            final Set<String> schemaPath = new LinkedHashSet<>(Arrays.asList(FilenameUtils.removeExtension(resource.getURI().toString().replaceAll("^.*/schemas/", "")).split("/")));
             schemas.add(Joiner.on("/").join(schemaPath));
         }
         return new ResponseEntity<>(schemas, HttpStatus.OK);
@@ -68,8 +68,11 @@ public class SchemaApi extends AbstractXapiRestController {
     // TODO: Eventually these should return XML Document objects that are appropriately converted. Spring doesn't have a converter for that by default.
     public ResponseEntity<String> getRequestedDataTypeSchema(@PathVariable("namespace") final String namespace, @PathVariable("schema") final String schema) throws IOException, ParserConfigurationException, SAXException {
         final Resource resource = BasicXnatResourceLocator.getResource("classpath:schemas/" + namespace + "/" + schema + ".xsd");
-        if (resource == null) {
+        if (resource == null || !resource.exists()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        if (!resource.isReadable()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         try (final InputStream input = resource.getInputStream()) {
             return new ResponseEntity<>(new Scanner(input, "UTF-8").useDelimiter("\\A").next(), HttpStatus.OK);

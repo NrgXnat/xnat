@@ -134,6 +134,7 @@ var XNAT = getObject(XNAT);
     input.radio = function(config){
         otherTypes.push('radio');
         config = extend(true, {}, config, config.element);
+        return setupType('radio', '', config);
     };
 
     // save a list of all available input types

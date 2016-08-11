@@ -225,10 +225,10 @@ var XNAT = getObject(XNAT || {});
                     val = stringable(val) ? val : JSON.stringify(val);
                 }
 
-                $this.not(':radio').changeVal(val);
+                $this.changeVal(val);
 
                 if (/checkbox/i.test(this.type)) {
-                    this.checked = (this.value === val || !!this.value);
+                    this.checked = realValue(val);
                 }
 
                 if (/radio/i.test(this.type)) {
@@ -856,10 +856,13 @@ var XNAT = getObject(XNAT || {});
     };
 
     panel.textarea = function(opts){
+
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
+
         if (opts.id) opts.element.id = opts.id;
         if (opts.name) opts.element.name = opts.name;
+
         opts.element.html =
             opts.element.html ||
             opts.element.value ||
@@ -873,19 +876,22 @@ var XNAT = getObject(XNAT || {});
         if (opts.code || opts.codeLanguage) {
             opts.code = opts.code || opts.codeLanguage;
             addDataObjects(opts.element, {
-                codeLanguage: opts.code
+                codeEditor: opts.code,
+                codeLanguage: opts.codeLanguage || opts.code
             });
             // open code editor on double-click
-            opts.element.ondblclick = function(){
-                var panelTextarea = XNAT.app.codeEditor.init(this, { language: opts.code || 'html' });
-                panelTextarea.openEditor();
-            };
+            // opts.element.ondblclick = function(){
+            //     var panelTextarea = XNAT.app.codeEditor.init(this, { language: opts.code || 'html' });
+            //     panelTextarea.openEditor();
+            // };
         }
 
         opts.element.rows = opts.rows || opts.element.rows || 10;
         
         var textarea = spawn('textarea', opts.element);
+
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
+
     };
     panel.input.textarea = panel.textarea;
 

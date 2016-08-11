@@ -10,10 +10,6 @@
  */
 package org.nrg.xnat.turbine.modules.screens;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Hashtable;
-
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
@@ -22,6 +18,10 @@ import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
 
 public class BulkDeleteActionScreen extends SecureScreen {
 
@@ -81,6 +81,7 @@ public class BulkDeleteActionScreen extends SecureScreen {
        }else{
           context.put("errMsg", "There is nothing to delete.");
        }
+        context.put("turbineUtils", TurbineUtils.GetInstance());
     }
 
     /**
@@ -225,7 +226,7 @@ public class BulkDeleteActionScreen extends SecureScreen {
        public String canDelete(UserI u, String searchType){
           try{
              // Is the user allowed to delete this item
-             boolean canDelete = Permissions.canAny(u,this.xsi + "/project", this.project, "delete");
+             boolean canDelete = Permissions.canAny(u,this.xsi, this.project, "delete");
              
              // The search type determines which items a user is allowed to delete.
              if(searchType.equals("subject")){

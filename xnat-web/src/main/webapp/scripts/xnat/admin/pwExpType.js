@@ -1,4 +1,7 @@
 // interactions with 'Security Passwords' section of admin ui
+
+console.log('pwExpType.js');
+
 (function(){
     var fieldInterval, fieldDate, sdtDisabled, sdtInterval, sdtDate, openCal;
     setTimeout(function(){

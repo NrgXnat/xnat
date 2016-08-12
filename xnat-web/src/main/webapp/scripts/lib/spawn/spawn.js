@@ -102,6 +102,39 @@
         });
     }
 
+    function hasClassName(el, className){
+        var elClasses = el.className.split(/\s+/);
+        return elClasses.indexOf(className.trim()) > -1;
+    }
+
+
+    // add new element class without destroying existing class
+    function addClassName(el, newClass){
+        el.className = el.className || '';
+        var classes = el.className.split(/\s+/); // existing classes
+        var newClasses = [].concat(newClass||[]).join(' ').split(/\s+/);
+        // don't add duplicate classes
+        newClasses.forEach(function(cls){
+            if (!cls) return;
+            if (!hasClassName(el, cls)) {
+                classes.push(cls);
+            }
+        });
+        // set the className and return the string
+        return el.className = classes.join(' ').trim();
+    }
+
+
+    // add new data object item to be used for [data-] attribute(s)
+    function addDataObjects(el, attrs){
+        el.data = el.data || {};
+        forOwn(attrs, function(name, prop){
+            el.data[name] = prop;
+        });
+        // set the data attributes and return the new data object
+        return el.data;
+    }
+
 
     function appendChildren(el, children, fn){
         [].concat(children).forEach(function(child){
@@ -258,9 +291,7 @@
         }
 
         // allow use of 'classes' property for classNames
-        if (opts.className || opts.classes || opts.addClass){
-            el.className = [].concat(opts.className||[], opts.classes||[], opts.addClass||[]).join(' ').trim();
-        }
+        addClassName(el, [].concat(opts.className||[], opts.classes||[], opts.addClass||[]));
 
         // IE *REALLY* hates method="PUT" on forms
         var methodPut = (opts.method && /put/i.test(opts.method));

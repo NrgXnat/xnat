@@ -21,19 +21,34 @@ var XNAT = getObject(XNAT || {});
     XNAT.ui.panel = panel =
         getObject(XNAT.ui.panel || {});
 
+    function hasClassName(el, className){
+        var elClasses = el.className.split(/\s+/);
+        return elClasses.indexOf(className.trim()) > -1;
+    }
+
     // add new element class without destroying existing class
     function addClassName(el, newClass){
-        el.className = [].concat(el.className||[], newClass).join(' ').trim();
-        return el.className;
+        el.className = el.className || '';
+        var classes = el.className.split(/\s+/); // existing classes
+        var newClasses = newClass.split(/\s+/);
+        // don't add duplicate classes
+        newClasses.forEach(function(cls){
+            if (!hasClassName(el, cls)) {
+                classes.push(cls);
+            }
+        });
+        // set the className and return the string
+        return el.className = classes.join(' ').trim();
     }
 
     // add new data object item to be used for [data-] attribute(s)
-    function addDataObjects(obj, attrs){
-        obj.data = obj.data || {};
+    function addDataObjects(el, attrs){
+        el.data = el.data || {};
         forOwn(attrs, function(name, prop){
-            obj.data[name] = prop;
+            el.data[name] = prop;
         });
-        return obj.data;
+        // set the data attributes and return the new data object
+        return el.data;
     }
     
     // string that indicates to look for a namespaced object value
@@ -225,15 +240,17 @@ var XNAT = getObject(XNAT || {});
                     val = stringable(val) ? val : JSON.stringify(val);
                 }
 
-                $this.changeVal(val);
+                $this.not(':checkbox, :radio').changeVal(val);
 
                 if (/checkbox/i.test(this.type)) {
                     this.checked = realValue(val);
                 }
 
                 if (/radio/i.test(this.type)) {
-                    this.checked = (this.value === val);
-                    //$this.trigger('change');
+                    this.checked = isEqual(this.value, val);
+                    if (this.checked) {
+                        $this.trigger('change');
+                    }
                 }
 
             });
@@ -486,7 +503,7 @@ var XNAT = getObject(XNAT || {});
             if (/json/i.test(opts.contentType||'')){
                 // ajaxConfig.data = JSON.stringify(formToJSON(this));
                 // ajaxConfig.data = JSON.stringify(form2js(this, /[:\[\]]/));
-                ajaxConfig.data = JSON.stringify(form2js(this, ':'));
+                ajaxConfig.data = JSON.stringify(form2js(this, ':', false));
                 ajaxConfig.processData = false;
                 ajaxConfig.contentType = 'application/json';
                 $.ajax(ajaxConfig);
@@ -777,17 +794,15 @@ var XNAT = getObject(XNAT || {});
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.radio = function panelInputCheckbox(opts){
+    panel.input.radio = function panelInputRadio(opts){
         opts = cloneObject(opts);
         opts.type = 'radio';
         addClassName(opts, 'radio');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-
     panel.input.hidden = function panelInputHidden(opts){
         opts = cloneObject(opts);
-        opts.type = 'hidden';
         opts.element = extend(true, {
             type: 'hidden',
             className: opts.className || opts.classes || '',
@@ -795,17 +810,13 @@ var XNAT = getObject(XNAT || {});
             id: opts.id || toDashed(opts.name),
             value: opts.value || ''
         }, opts.element);
-
         addClassName(opts.element, 'hidden');
-
         if (opts.validation || opts.validate) {
-            extend(true, opts.element, {
-                data: {
-                    validate: opts.validation || opts.validate
-                }
-            })
+            addDataObjects(opts.element, {
+                validate: opts.validation || opts.validate
+            });
         }
-
+        // no need to wrap this in panel-specific elements
         return spawn('input', opts.element);
     };
 

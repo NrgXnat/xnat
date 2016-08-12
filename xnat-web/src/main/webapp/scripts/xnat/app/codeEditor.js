@@ -230,5 +230,25 @@ var XNAT = getObject(XNAT || {});
         return new Editor(source, opts);
     };
 
-})(XNAT);
+    // bind codeEditor to elements with [data-code-editor] attribute
+    // <textarea name="foo" data-code-editor="language:html;" data-code-dialog="title:Edit The Code;width:500;height:300;"></textarea>
+    $('body').on('dblclick', '[data-code-editor]', function(){
 
+        var $source = $(this),
+            opts = parseOptions($source.dataAttr('codeEditor')),
+            dialog = parseOptions($source.dataAttr('codeDialog'));
+
+        var editor = codeEditor.init(this, opts);
+
+        // if there's no title specified in [data-code-dialog]
+        // and there IS a [title] on the source element,
+        // use that title for the dialog
+        if (!dialog.title && opts.title) {
+            dialog.title = opts.title;
+        }
+
+        editor.openEditor(dialog);
+
+    });
+
+})(XNAT);

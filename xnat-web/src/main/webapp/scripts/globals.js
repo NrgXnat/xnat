@@ -656,27 +656,21 @@ autoID = randomID;
 
 // set 'forceLower' === true (or omit argument)
 // to ensure output is lowercase
-function toDashed(name){
-    return name.replace(/([A-Z])/g, function(u) {
-        return '-' + u.toLowerCase();
-    });
+function toDashed(str){
+    return str.replace(/[A-Z]/g, function(u) {
+        return '-' + u;
+    }).replace(/[A-Z]-/g, function(c){
+        return c.replace(/-$/, '');
+    }).toLowerCase().replace(/\W+|_+/g, '-').replace(/^-*|-*$/g, '');
 }
 //hyphenate = toDashed;
 //dashify   = toDashed;
 
-function toDashedLower(name){
-    return name.replace(/([A-Z])/g, function(u) {
-        return '-' + u.toLowerCase();
-    });
-}
-
 // set 'forceLower' === true (or omit argument)
 // to ensure *only* 'cameled' letters are uppercase
-function toCamelCase(name, forceLower) {
-    if (isUndefined(forceLower) || isTrue(forceLower)){
-        name = name.toLowerCase();
-    }
-    return name.replace(/\-./g, function(u){
+function toCamelCase(str) {
+    // 'sanitize' by running str through toDashed()
+    return toDashed(str).replace(/-./g, function(u){
         return u.substr(1).toUpperCase();
     });
 }
@@ -686,18 +680,10 @@ function toCamelCase(name, forceLower) {
 //camelify    = toCamelCase;
 //camelfy     = toCamelCase;
 
-function toCamelLower(name){
-    return toCamelCase(name, true);
-}
-
 // put on the String prototype just for kicks
 // or don't
 //String.prototype.toDashed = function(forceLower){
 //    return toDashed(this, forceLower);
-//};
-//
-//String.prototype.toDashedLower = function(){
-//    return toDashedLower(this);
 //};
 //
 //String.prototype.toCamel = function(forceLower){
@@ -784,8 +770,8 @@ function parseOptions(obj_or_str, str, delim, sep){
         obj = obj_or_str;
     }
 
-    delim = delim || /,|;|\|/; // default delimiters ( , ; | - comma or semicolon or pipe)
-    sep   = sep   || /:|=/; // default key:value separators ( : = - colon or equals)
+    delim = delim || /[,;|]/; // default delimiters ( , ; | - comma or semicolon or pipe)
+    sep   = sep   || /[:=]/; // default key:value separators ( : = - colon or equals)
 
     var parts = isString(str) ? str.split(delim) : [];
 

@@ -26,7 +26,7 @@ public class DicomToNiftiEmailHandler extends PipelineEmailHandlerAbst implement
 	@Autowired
 	public DicomToNiftiEmailHandler(EventBus eventBus, final NotificationsPreferences preferences){
 		_preferences = preferences;
-		eventBus.on(R(WorkflowStatusEvent.class.getName() + "[.](" + PersistentWorkflowUtils.COMPLETE + "|" + PersistentWorkflowUtils.FAILED + ")"), this);
+		eventBus.on(R(WorkflowStatusEvent.class.getName() + "[.]?(" + PersistentWorkflowUtils.COMPLETE + "|" + PersistentWorkflowUtils.FAILED + ")"), this);
 	}
 	
 	/* (non-Javadoc)

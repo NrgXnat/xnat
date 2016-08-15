@@ -85,7 +85,7 @@
         <ant.version>1.9.3</ant.version>
         <antlr.version>3.5.2</antlr.version>
         <aopalliance.version>1.0</aopalliance.version>
-        <avalon.version>4.1.4</avalon.version>
+        <avalon.version>4.3</avalon.version>
         <axis.version>1.4</axis.version>
         <cglib.version>2.2.2</cglib.version>
         <com-noelios-restlet.version>1.1.10</com-noelios-restlet.version>
@@ -171,8 +171,9 @@
         <velocity-tools.version>2.0</velocity-tools.version>
         <velocity.version>1.7</velocity.version>
         <wizard.version>1.1</wizard.version>
-        <xbean.version>3.17</xbean.version>
         <xalan.version>2.7.2</xalan.version>
+        <xbean.version>3.17</xbean.version>
+        <xerces.version>2.11.0</xerces.version>
         <xmlbeans.version>2.6.0</xmlbeans.version>
 
         <!-- Plugin versions -->
@@ -553,6 +554,12 @@
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
                 <version>${hibernate.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
@@ -613,6 +620,12 @@
                 <groupId>dom4j</groupId>
                 <artifactId>dom4j</artifactId>
                 <version>${dom4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>aopalliance</groupId>
@@ -785,6 +798,11 @@
                 <groupId>org.apache.xmlbeans</groupId>
                 <artifactId>xmlbeans-xpath</artifactId>
                 <version>${xmlbeans.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xerces</groupId>
+                <artifactId>xercesImpl</artifactId>
+                <version>${xerces.version}</version>
             </dependency>
             <dependency>
                 <groupId>xalan</groupId>
@@ -1013,8 +1031,16 @@
                 <version>${turbine.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>velocity</groupId>
-                        <artifactId>texen</artifactId>
+                        <groupId>avalon-logkit</groupId>
+                        <artifactId>avalon-logkit</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-dbcp</groupId>
+                        <artifactId>commons-dbcp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-pool</groupId>
+                        <artifactId>commons-pool</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>com.metaparadigm</groupId>
@@ -1025,12 +1051,12 @@
                         <artifactId>jamon</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>commons-dbcp</groupId>
-                        <artifactId>commons-dbcp</artifactId>
+                        <groupId>velocity</groupId>
+                        <artifactId>texen</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>commons-pool</groupId>
-                        <artifactId>commons-pool</artifactId>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1049,6 +1075,12 @@
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity-tools</artifactId>
                 <version>${velocity-tools.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.struts</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>ecs</groupId>
@@ -1066,16 +1098,48 @@
                 <version>${stratum.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>javax.jms</groupId>
-                        <artifactId>jms</artifactId>
+                        <groupId>commons-betwixt</groupId>
+                        <artifactId>commons-betwixt</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>commons-configuration</artifactId>
+                        <groupId>commons-configuration</groupId>
                     </exclusion>
                     <exclusion>
                         <artifactId>commons-lang</artifactId>
                         <groupId>commons-lang</groupId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>commons-configuration</artifactId>
-                        <groupId>commons-configuration</groupId>
+                        <groupId>commons-messenger</groupId>
+                        <artifactId>commons-messenger</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.jms</groupId>
+                        <artifactId>jms</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>mockobjects</groupId>
+                        <artifactId>mockobjects</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ojb</groupId>
+                        <artifactId>ojb</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>quartz</groupId>
+                        <artifactId>quartz</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>xerces</artifactId>
+                        <groupId>xerces</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1111,8 +1175,26 @@
             </dependency>
             <dependency>
                 <groupId>avalon-framework</groupId>
-                <artifactId>avalon-framework</artifactId>
+                <artifactId>avalon-framework-impl</artifactId>
                 <version>${avalon.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xmlParserAPIs</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jmock</groupId>
+                        <artifactId>jmock</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.dspace</groupId>

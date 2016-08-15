@@ -277,7 +277,8 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 		} else {
 			this.setFormDisabled(false);
 			document.getElementById("popup_all_users_button").disabled = true;
-			document.getElementById("popup_all_users_button_container").title = "Access to the system user list is restricted to administrators only. You can add users by username or email in the Add/Invite User control above."
+			document.getElementById("popup_all_users_button_container1").style.visibility = "hidden";
+			document.getElementById("popup_all_users_button_container2").style.visibility = "hidden";
 		}
 		this.allLoader.close();
 	};

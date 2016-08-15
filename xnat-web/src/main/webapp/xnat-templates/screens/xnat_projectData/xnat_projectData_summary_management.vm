@@ -31,13 +31,13 @@
                         <TD COLSPAN="3">&nbsp;</TD>
                     </TR>
                     #if($showUserList)
-                        <TR>
+                        <TR id="popup_all_users_button_container1">
                             <TD COLSPAN="3"><h4 id="user_list_header" style="margin-bottom:0px">Add Users from List</h4>
                             </TD>
                         </TR>
-                        <TR>
+                        <TR id="popup_all_users_button_container2">
                             <TD COLSPAN="3" NOWRAP>
-                                <div id="popup_all_users_button_container"><input type="button" id="popup_all_users_button" disabled="true" value="Show List" ONCLICK="window.userManager.popupAllUsersBox();"/></div>
+                                <input type="button" id="popup_all_users_button" disabled="true" value="Show List" ONCLICK="window.userManager.popupAllUsersBox();"/>
                             </TD>
                         </TR>
                     #end

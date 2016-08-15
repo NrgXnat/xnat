@@ -1078,7 +1078,23 @@
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.struts</groupId>
-                        <artifactId>*</artifactId>
+                        <artifactId>struts-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.struts</groupId>
+                        <artifactId>struts-master</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.struts</groupId>
+                        <artifactId>struts-parent</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.struts</groupId>
+                        <artifactId>struts-taglib</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.struts</groupId>
+                        <artifactId>struts-tiles</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

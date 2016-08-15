@@ -1,7 +1,11 @@
 package org.nrg.xnat.services;
 
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.python.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -58,6 +62,10 @@ public class XnatAppInfo {
                     keyedAttributes.put(property, attributes.getValue(property));
                 }
             }
+        }
+        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
+            final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+            _plugins.put(properties.getProperty("name"), properties);
         }
         _template = template;
     }
@@ -208,15 +216,26 @@ public class XnatAppInfo {
         return buffer.toString();
     }
 
+    /**
+     * Returns the properties for all of the installed and active plugins in the deployed XNAT server.
+     *
+     * @return A map of all of the plugins installed on the server.
+     */
+    public Map<String, Properties> getPluginProperties() throws IOException {
+        return ImmutableMap.copyOf(_plugins);
+    }
+
     private static final Logger _log = LoggerFactory.getLogger(XnatAppInfo.class);
 
     private static final List<String> PRIMARY_MANIFEST_ATTRIBUTES = Arrays.asList("Build-Number", "Build-Date", "Implementation-Version", "Implementation-Sha");
 
     private final JdbcTemplate _template;
 
-    private final Date                             _startTime   = new Date();
-    private final Properties                       _properties  = new Properties();
-    private final Map<String, Map<String, String>> _attributes  = new HashMap<>();
-    private       boolean                          _initialized = false;
+    private final Date                             _startTime  = new Date();
+    private final Properties                       _properties = new Properties();
+    private final Map<String, Map<String, String>> _attributes = new HashMap<>();
+    private final Map<String, Properties>          _plugins    = new HashMap<>();
+
+    private boolean _initialized = false;
 }
 

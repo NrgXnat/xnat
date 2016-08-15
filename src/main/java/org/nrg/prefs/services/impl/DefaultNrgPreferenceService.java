@@ -191,13 +191,29 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
     public Tool getTool(final String toolId) {
         return _toolService.getByToolId(toolId);
     }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<String> getToolPropertyNames(final String toolId, final Scope scope, final String entityId) {
+        return _preferenceService.getToolProperties(toolId, scope, entityId).stringPropertyNames();
+    }
 
     /**
      * {@inheritDoc}
      */
     @Override
     public Set<String> getToolPropertyNames(final String toolId) {
-        return _preferenceService.getToolProperties(toolId, DEFAULT_SCOPE, DEFAULT_ENTITY_ID).stringPropertyNames();
+        return getToolPropertyNames(toolId, DEFAULT_SCOPE, DEFAULT_ENTITY_ID);
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Properties getToolProperties(final String toolId, final Scope scope, final String entityId) {
+        return _preferenceService.getToolProperties(toolId, scope, entityId);
     }
 
     /**
@@ -205,7 +221,15 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
      */
     @Override
     public Properties getToolProperties(final String toolId) {
-        return _preferenceService.getToolProperties(toolId, DEFAULT_SCOPE, DEFAULT_ENTITY_ID);
+        return getToolProperties(toolId, DEFAULT_SCOPE, DEFAULT_ENTITY_ID);
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Properties getToolProperties(final String toolId, final Scope scope, final String entityId, final List<String> preferenceNames) {
+        return _preferenceService.getToolProperties(toolId, scope, entityId, preferenceNames);
     }
 
     /**
@@ -218,7 +242,7 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
      */
     @Override
     public Properties getToolProperties(final String toolId, final List<String> preferenceNames) {
-        return _preferenceService.getToolProperties(toolId, DEFAULT_SCOPE, DEFAULT_ENTITY_ID, preferenceNames);
+        return getToolProperties(toolId, DEFAULT_SCOPE, DEFAULT_ENTITY_ID, preferenceNames);
     }
 
     /**

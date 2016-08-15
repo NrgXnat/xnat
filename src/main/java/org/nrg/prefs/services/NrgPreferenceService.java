@@ -195,6 +195,16 @@ public interface NrgPreferenceService extends NrgService {
      * @return The requested tool if available, null otherwise.
      */
     Tool getTool(final String toolId);
+    
+	/**
+	 * Gets a list of all of the property names associated with the indicated {@link Tool tool} at the indicated scope and entityId.
+	 *
+	 * @param toolId the tool id
+	 * @param scope the scope
+	 * @param entityId the entity id
+	 * @return the tool property names
+	 */
+	Set<String> getToolPropertyNames(String toolId, Scope scope, String entityId);
 
     /**
      * Gets a list of all of the property names associated with the indicated {@link Tool tool}.
@@ -203,6 +213,17 @@ public interface NrgPreferenceService extends NrgService {
      * @return A list of all of the property names for the indicated tool.
      */
     Set<String> getToolPropertyNames(final String toolId);
+    
+	/**
+     * Gets all of the properties associated with the indicated {@link Tool tool} at the indicated scope and entityId
+     * in the form of a standard Java properties object.
+	 *
+	 * @param toolId the tool id
+	 * @param scope the scope
+	 * @param entityId the entity id
+	 * @return the tool properties
+	 */
+	Properties getToolProperties(String toolId, Scope scope, String entityId);
 
     /**
      * Gets all of the properties associated with the indicated {@link Tool tool} in the form of a standard Java
@@ -213,6 +234,18 @@ public interface NrgPreferenceService extends NrgService {
      */
     Properties getToolProperties(final String toolId);
 
+	/**
+     * Gets all of the properties associated with the indicated {@link Tool tool} at the indicated scope and entityId
+     * in the form of a standard Java properties object.
+	 *
+	 * @param toolId the tool id
+	 * @param scope the scope
+	 * @param entityId the entity id
+	 * @param preferenceNames the preference names
+	 * @return the tool properties
+	 */
+	Properties getToolProperties(String toolId, Scope scope, String entityId, List<String> preferenceNames);
+
     /**
      * Gets the properties with the names specified in the <b>preferences</b> list and associated with the indicated
      * {@link Tool tool} in the form of a standard Java properties object.
@@ -222,4 +255,5 @@ public interface NrgPreferenceService extends NrgService {
      * @return All of the properties for the indicated tool.
      */
     Properties getToolProperties(final String toolId, final List<String> preferenceNames);
+
 }

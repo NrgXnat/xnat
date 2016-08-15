@@ -254,6 +254,7 @@ configurations {
     all*.exclude group: 'servletapi'
     all*.exclude group: 'velocity'
     all*.exclude group: 'xmlrpc'
+    all*.exclude group: 'quartz'
     all*.exclude group: 'ant', module: 'ant'
     all*.exclude group: 'commons-email', module: 'commons-email'
     all*.exclude group: 'edu.ucar', module: 'netcdf'

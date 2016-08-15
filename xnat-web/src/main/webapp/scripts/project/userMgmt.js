@@ -271,7 +271,14 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 	};
 
 	this.allUsersFailure=function(o){
-		this.displayError("ERROR " + o.status+ ": Failed to load complete user list.");
+		// We'll make note of non-403 errors. 403 is OK if the system is set to restrict non-admin access to the user list.
+		if (o.status != 403) {
+			this.displayError("ERROR " + o.status+ ": Failed to load complete user list.");
+		} else {
+			this.setFormDisabled(false);
+			document.getElementById("popup_all_users_button").disabled = true;
+			document.getElementById("popup_all_users_button_container").title = "Access to the system user list is restricted to administrators only. You can add users by username or email in the Add/Invite User control above."
+		}
 		this.allLoader.close();
 	};
 

@@ -17,7 +17,7 @@
                 <TABLE>
                     <TR>
                         <TD COLSPAN="3"><h4 id="add_invite_user_header" style="margin-bottom:0px">Add/Invite User</h4>
-                            Enter the email address of the user to add.
+                            Enter the username or email address of the user to add.
                         </TD>
                     </TR>
                     <TR>
@@ -37,7 +37,7 @@
                         </TR>
                         <TR>
                             <TD COLSPAN="3" NOWRAP>
-                                <input type="button" id="popup_all_users_button" disabled="true" value="Show List" ONCLICK="window.userManager.popupAllUsersBox();"/>
+                                <div id="popup_all_users_button_container"><input type="button" id="popup_all_users_button" disabled="true" value="Show List" ONCLICK="window.userManager.popupAllUsersBox();"/></div>
                             </TD>
                         </TR>
                     #end

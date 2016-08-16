@@ -11,9 +11,9 @@
 package org.nrg.xnat.restlet.resources.search;
 
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -22,13 +22,15 @@ import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Hashtable;
 import java.util.List;
 
 public class SavedSearchListResource extends SecureResource {
-	static org.apache.log4j.Logger logger = Logger.getLogger(SavedSearchListResource.class);
+	private static final Logger logger = LoggerFactory.getLogger(SavedSearchListResource.class);
 
 	public SavedSearchListResource(Context context, Request request, Response response) {
 		super(context, request, response);
@@ -38,6 +40,7 @@ public class SavedSearchListResource extends SecureResource {
 	}
 	
 	public List<String> retrieveAllTags(){
+		final UserI user = getUser();
 		try {
 			return (List<String>)(XFTTable.Execute("SELECT tag from xdat_stored_search", user.getDBName(), user.getLogin()).convertColumnToArrayList("tag"));
 		} catch (SQLException e) {
@@ -54,6 +57,7 @@ public class SavedSearchListResource extends SecureResource {
 		MediaType mt = overrideVariant(variant);
 		XFTTable table=null;
 		try {
+			final UserI user = getUser();
 			String query="SELECT DISTINCT xss.* FROM xdat_stored_search xss LEFT JOIN xdat_stored_search_allowed_user xssau ON xss.id=xssau.xdat_stored_search_id LEFT JOIN xdat_stored_search_groupid xssag ON xss.id=xssag.allowed_groups_groupid_xdat_sto_id LEFT JOIN xdat_user_groupid ON xssag.groupid=xdat_user_groupid.groupid WHERE (xss.secure=0 OR xssau.login='" + user.getLogin() +"' OR groups_groupid_xdat_user_xdat_user_id="+ user.getID() + ")";
 			String includeTagged = this.getQueryVariable("includeTag");
 			if(includeTagged!=null){
@@ -82,7 +86,7 @@ public class SavedSearchListResource extends SecureResource {
 			return null;
 		}
 		
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params= new Hashtable<>();
 		params.put("title", "Stored Searches");
 		
 		return this.representTable(table, mt, params);

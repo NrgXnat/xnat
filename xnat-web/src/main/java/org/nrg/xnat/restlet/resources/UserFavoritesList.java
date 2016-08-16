@@ -37,11 +37,11 @@ public class UserFavoritesList extends SecureResource {
 		}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		XFTTable table = null;
 		if(dataType!=null){
 			try {	            
-				 table=FavEntries.GetFavoriteEntries(dataType, user);
+				 table=FavEntries.GetFavoriteEntries(dataType, getUser());
 			} catch (SQLException e) {
 				e.printStackTrace();
 			} catch (DBPoolException e) {

@@ -49,12 +49,8 @@ public class XDATScreen_UpdateUser extends SecureScreen {
         c.put("displayManager", DisplayManager.GetInstance());
         c.put("systemName", TurbineUtils.GetSystemName());
         c.put("esc", new EscapeTool());
-
         c.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
         c.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
-
-        c.put("siteConfig", XDAT.getSiteConfigPreferences());
-
 
         doBuildTemplate(data, c);
     }

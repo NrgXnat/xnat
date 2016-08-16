@@ -35,7 +35,7 @@ var XNAT = getObject(XNAT||{});
 
             if (i === len-1){
                 last = true;
-                html += ' class="nolink last"'
+                html += ' class="last"'
             }
 
             if (crumb.id){

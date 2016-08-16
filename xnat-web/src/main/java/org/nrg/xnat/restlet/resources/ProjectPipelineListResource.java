@@ -38,7 +38,7 @@ public class ProjectPipelineListResource extends SecureResource  {
 
 		pID= (String)getParameter(request,"PROJECT_ID");
 		if(pID!=null){
-			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, getUser(), false);
 		}
 	}
 
@@ -67,7 +67,7 @@ public class ProjectPipelineListResource extends SecureResource  {
 				if (isUserAuthorized) {
 					try {
 						ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(proj.getId());
-						boolean success = PipelineRepositoryManager.GetInstance().delete(arcProject, pathToPipeline, datatype, user);
+						boolean success = PipelineRepositoryManager.GetInstance().delete(arcProject, pathToPipeline, datatype, getUser());
 						if (!success) {
 							getLogger().log(getLogger().getLevel(), "Couldnt delete the pipeline " + pathToPipeline + " for the project " + proj.getId());
 							getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, " Couldnt succesfully save Project Specification" );
@@ -108,7 +108,7 @@ public class ProjectPipelineListResource extends SecureResource  {
 	private boolean isUserAuthorized() {
 		boolean isUserAuthorized = false;
 		try {
-			isUserAuthorized = Permissions.canDelete(user,proj);
+			isUserAuthorized = Permissions.canDelete(getUser(),proj);
 		}catch(Exception e) {
 			e.printStackTrace();
 			getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);

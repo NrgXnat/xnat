@@ -33,7 +33,7 @@ public class ScriptRunnerResource extends AutomationResource {
 
         // Technically this shouldn't happen because the URL has language first then version, but why not?
         if (_log.isDebugEnabled()) {
-            _log.debug(getRequestContext("Servicing script runner request for user " + user.getLogin()) + (StringUtils.isBlank(_language) ? " to get a list of available script runners" : " to get information about " + _language));
+            _log.debug(getRequestContext("Servicing script runner request for user " + getUser().getLogin()) + (StringUtils.isBlank(_language) ? " to get a list of available script runners" : " to get information about " + _language));
         }
     }
 

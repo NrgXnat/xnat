@@ -82,6 +82,7 @@
                                 var adminTabs = XNAT.spawner.spawn(data);
 
                                 adminTabs.render(XNAT.tabs.container, 500, function(){
+                                    initInfoLinks();
                                     //if (window.location.hash) {
                                     //    XNAT.ui.tab.select(getUrlHashValue());
                                     //}
@@ -94,6 +95,14 @@
                         });
 
                     })();
+                    
+                    function initInfoLinks(){
+                      $('.infolink').click(function(e){
+                        var idx = this.id.substr(9);
+                        var help = infoContent[idx];
+                        xmodal.message(help.title, help.content);
+                      });
+                    };
                 </script>
 
             </div>

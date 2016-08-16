@@ -141,8 +141,9 @@ public class Archiver extends BatchPrearchiveActionsA  {
 			final List<PrearcSession> sessions=new ArrayList<PrearcSession>();
 						
 			project_id=PrearcImporterHelper.identifyProject(additionalValues);
-			
-			if((project_id==null || timestamp==null || sessionFolder==null) && (srcs==null)){
+
+			final UserI user = getUser();
+			if((project_id == null || timestamp == null || sessionFolder == null) && (srcs == null)){
 				this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unknown prearchive session.");
 				return;
 			}else if(srcs!=null){
@@ -160,7 +161,7 @@ public class Archiver extends BatchPrearchiveActionsA  {
 					}
 					
 					try {
-						sessions.add(new PrearcSession((URIManager.PrearchiveURI)data,additionalValues,user));
+						sessions.add(new PrearcSession((URIManager.PrearchiveURI)data, additionalValues, user));
 					} catch (InvalidPermissionException e) {
 						throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, data.getUri());
 					} catch (Exception e) {
@@ -183,7 +184,7 @@ public class Archiver extends BatchPrearchiveActionsA  {
 			}else{
 				for(final String s:sessionFolder){
 					try {
-						sessions.add(new PrearcSession(project_id, timestamp, s, additionalValues,user));
+						sessions.add(new PrearcSession(project_id, timestamp, s, additionalValues, user));
 					} catch (InvalidPermissionException e) {
 						throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, String.format("/prearchive/projects/%s/%s/%s not found.",project_id, timestamp, s));
 					} catch (Exception e) {
@@ -217,7 +218,7 @@ public class Archiver extends BatchPrearchiveActionsA  {
 				
 				if(PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcStatus.ARCHIVING)){
 					FinishImageUpload.setArchiveReason(session, false);
-					_return = "/data" +PrearcDatabase.archive(session, allowDataDeletion, overwrite,overwrite_files, user, listeners);
+					_return = "/data" +PrearcDatabase.archive(session, allowDataDeletion, overwrite, overwrite_files, user, listeners);
 				}else{
 					this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Operation already in progress on this prearchive entry.");
 					return;
@@ -243,7 +244,7 @@ public class Archiver extends BatchPrearchiveActionsA  {
 						ps.getAdditionalValues().put(EventUtils.EVENT_REASON, "Batch archive");
 				}
 				
-				m=PrearcDatabase.archive(sessions, allowDataDeletion, overwrite,overwrite_files, user, listeners);
+				m=PrearcDatabase.archive(sessions, allowDataDeletion, overwrite, overwrite_files, user, listeners);
 
 								
 				getResponse().setEntity(updatedStatusRepresentation(m.keySet(),overrideVariant(getPreferredVariant())));

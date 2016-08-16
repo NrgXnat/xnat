@@ -1,11 +1,10 @@
-##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-##
-## Default Macro file for cnda4
-##
-## Put your Application macros in this file.
-##
-## patch test
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="tipText" type="java.util.List" *#
+##Copyright 2016 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+##
+## Default macro file for XNAT
+##
 
 #macro(insertPipelineNotification)
    <br/>
@@ -1640,7 +1639,7 @@ $!turbineUtils.escapeJS($s)
 	#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.debug-extension-points","false")))document.write("<div class='extension_js'>/templates/screens/$subFolder</div>")#end
 	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
-		#if($turbineUtils.isGuest($user))
+		#if($user.isGuest())
 			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
 				#parse("/screens/$templateFileName")
 			#end
@@ -1659,7 +1658,7 @@ $!turbineUtils.escapeJS($s)
 	#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.debug-extension-points","false")))document.write("<div class='extension_js'>/templates/screens/$dataType/$subFolder</div>")#end
 	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
-		#if($turbineUtils.isGuest($user))
+		#if($user.isGuest())
 			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
 				#parse("/screens/$templateFileName")
 			#end
@@ -1678,7 +1677,7 @@ $!turbineUtils.escapeJS($s)
 	#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.debug-extension-points","false")))<div class="extension">/templates/screens/$subFolder</div>#end
 	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
-		#if($turbineUtils.isGuest($user))
+		#if($user.isGuest())
 			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
 				#parse("/screens/$templateFileName")
 			#end
@@ -1697,7 +1696,7 @@ $!turbineUtils.escapeJS($s)
 	#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.debug-extension-points","false")))<div class="extension">/templates/screens/$dataType/$subFolder</div>#end
 	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
-		#if($turbineUtils.isGuest($user))
+		#if($user.isGuest())
 			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
 				#parse("/screens/$templateFileName")
 			#end
@@ -1715,7 +1714,7 @@ $!turbineUtils.escapeJS($s)
     #set($hasCustomScreens = false)
     #foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
         #set($templateFileName=$screenProps.getProperty("path"))
-        #if($turbineUtils.isGuest($user))
+        #if($user.isGuest())
             #if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
                 #set($hasCustomScreens = true)
             #end

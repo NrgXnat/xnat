@@ -27,6 +27,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.search.CriteriaCollection;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.PullScanDataFromHeaders;
@@ -56,7 +57,9 @@ public class ScanResource extends ItemResource {
     public ScanResource(Context context, Request request, Response response) {
         super(context, request, response);
 
-        String pID = (String) getParameter(request, "PROJECT_ID");
+        final UserI user = getUser();
+
+        final String pID = (String) getParameter(request, "PROJECT_ID");
         if (pID != null) {
             proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
         }
@@ -92,7 +95,8 @@ public class ScanResource extends ItemResource {
 
     @Override
     public void handlePut() {
-        if (user == null) {
+        final UserI user = getUser();
+        if (user.isGuest()) {
             getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "No authenticated user found.");
         }
 
@@ -270,7 +274,7 @@ public class ScanResource extends ItemResource {
         }
         try {
 
-            if (!Permissions.canDelete(user,session) || XDAT.getBoolSiteConfigurationProperty("security.prevent-data-deletion", false)) {
+            if (!Permissions.canDelete(getUser(), session) || XDAT.getBoolSiteConfigurationProperty("security.prevent-data-deletion", false)) {
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to modify this session.");
                 return;
             }
@@ -305,7 +309,7 @@ public class ScanResource extends ItemResource {
                 CriteriaCollection cc = new CriteriaCollection("AND");
                 cc.addClause("xnat:imageScanData/ID", scanID);
                 cc.addClause("xnat:imageScanData/image_session_ID", session.getId());
-                ArrayList<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(cc, user, completeDocument);
+                ArrayList<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(cc, getUser(), completeDocument);
                 if (scans.size() > 0) {
                     scan = scans.get(0);
                 }

@@ -258,7 +258,7 @@
     function extractNodeValues(node, nodeCallback, useIdIfEmptyName, getDisabled) {
         if (node.disabled && !getDisabled) return [];
 
-        var callbackResult, fieldValue, result, fieldName = getFieldName(node, useIdIfEmptyName);
+        var callbackResult, hasValue, fieldValue, result, fieldName = getFieldName(node, useIdIfEmptyName);
 
         callbackResult = nodeCallback && nodeCallback(node);
 
@@ -267,7 +267,17 @@
         }
         else if (fieldName != '' && node.nodeName.match(/INPUT|TEXTAREA/i)) {
             fieldValue = getFieldValue(node, getDisabled);
-            if (null === fieldValue) {
+
+			hasValue = !!fieldValue;
+
+			// convert items with 'array-list' class to an actual array
+			if (hasValue && /array-list|list-array/i.test(node.className)) {
+				fieldValue = fieldValue.split(',').map(function(item, i){
+					return item.trim();
+				});
+			}
+
+            if (!hasValue) {
                 result = [];
             } else {
                 result = [ { name: fieldName, value: fieldValue} ];

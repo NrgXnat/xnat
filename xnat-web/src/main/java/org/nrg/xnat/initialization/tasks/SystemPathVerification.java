@@ -11,24 +11,23 @@
  */
 package org.nrg.xnat.initialization.tasks;
 
+import java.io.File;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.mail.MessagingException;
+
 import org.nrg.mail.services.MailService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Component;
 
-import javax.mail.MessagingException;
-import java.io.File;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.collect.Lists;
 
 @Component
 public class SystemPathVerification extends AbstractInitializingTask {
@@ -45,28 +44,29 @@ public class SystemPathVerification extends AbstractInitializingTask {
         return "System Path Verification";
     }
 
-    private final static ArrayList<String> pathErrors       = new ArrayList<>();
-    public static        String            pathErrorWarning = null;
+    private final static List<String> pathErrors       = Lists.newArrayList();
+    public static String pathErrorWarning = null;
 
     @Override
     public void run() {
         if (_appInfo.isInitialized()) {
             try {
-                validatePath(_config.getArchivePath(), "Archive", true);
-                validatePath(_config.getCachePath(), "Archive", false);
-                validatePath(_config.getPipelinePath(), "Archive", false);
-                validatePath(_config.getPrearchivePath(), "Archive", false);
+            	final Integer resourceCount = _template.queryForObject("SELECT COUNT(xnat_abstractresource_id) AS COUNT FROM xnat_abstractresource", Integer.class);
+                
+            	validatePath(_config.getArchivePath(), "Archive", (resourceCount>0));
+                validatePath(_config.getCachePath(), "Cache", false);
+                validatePath(_config.getPipelinePath(), "Pipeline", false);
+                validatePath(_config.getBuildPath(), "Build", false);
+                validatePath(_config.getPrearchivePath(), "Prearchive", false);
 
-                final ProjectExtractor pe = new ProjectExtractor();
-                final Map<String, String> projects = _template.query("SELECT id, name FROM xnat_projectdata", pe);
                 if (pathErrors.size() > 0) {
                     // Send warning email to admin and issue browser notification
-                    notifyOfPathErrors(projects.size());
+                    notifyOfPathErrors(resourceCount);
                 } else {
                     _config.setPathErrorWarning("");
                 }
                 complete();
-            } catch (SQLException e) {
+            } catch (Throwable e) {
                 logger.error("An error occurred trying to retrieve the values for the system paths.", e);
             }
         }
@@ -95,43 +95,34 @@ public class SystemPathVerification extends AbstractInitializingTask {
         return true;
     }
 
-    private static class ProjectExtractor implements ResultSetExtractor<Map<String, String>> {
-        @Override
-        public Map<String, String> extractData(final ResultSet results) throws SQLException, DataAccessException {
-            final Map<String, String> projects = new HashMap<>();
-            while (results.next()) {
-                projects.put(results.getString(1), results.getString(2));
-            }
-            return projects;
+    private void notifyOfPathErrors(int numResources) {
+        int i = 1;
+        String adminEmail = _config.getAdminEmail();
+        String sysName = _config.getSiteId();
+        String emailSubj = sysName + " " + this.getTaskName() + " Failure";
+        StringBuilder sb = new StringBuilder();
+        String singPlurl = " has";
+        if (pathErrors.size() > 1) {
+            singPlurl = "s have";
         }
-    }
-
-    private void notifyOfPathErrors(int numProjects) {
-        if (numProjects > 0) {
-            int i = 1;
-            String adminEmail = _config.getAdminEmail();
-            String sysName = _config.getSiteId();
-            String emailSubj = sysName + " " + this.getTaskName() + " Failure";
-            StringBuilder sb = new StringBuilder();
-            String singPlurl = " has";
-            if (numProjects > 1) {
-                singPlurl = "s have";
-            }
-            sb.append("The following system path error");
-            sb.append(singPlurl);
-            sb.append(" been discovered:");
-            for (String err : pathErrors) {
-                sb.append("\n\t");
-                sb.append(i++);
-                sb.append(". ");
-                sb.append(err);
-            }
-            _config.setPathErrorWarning(sb.toString().replace("\n", "<br>"));
-            pathErrorWarning = sb.insert(0, emailSubj + ": ").toString();
-            logger.error(pathErrorWarning);
+        sb.append("The following system path error");
+        sb.append(singPlurl);
+        sb.append(" been discovered:");
+        for (String err : pathErrors) {
+            sb.append("\n\t");
+            sb.append(i++);
+            sb.append(". ");
+            sb.append(err);
+        }
+        _config.setPathErrorWarning(sb.toString().replace("\n", "<br>"));
+        pathErrorWarning = sb.insert(0, emailSubj + ": ").toString();
+        logger.error(pathErrorWarning);
+        
+        if (numResources > 0) {
+        	//only send an email if the system is supposed to have resources
             try {
                 _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, pathErrorWarning);
-            } catch (MessagingException e) {
+            } catch (Throwable e) {
                 logger.error("", e);
             }
         }

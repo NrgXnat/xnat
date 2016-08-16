@@ -1,10 +1,11 @@
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 $page.setTitle("My XNAT")
 #if ($data.message)
 <DIV class="error">$data.message</DIV><br>
 #end
 
-#if(!$turbineUtils.isGuest($user))
+#if(!$user.isGuest())
 #parse("screens/XDATScreen_change_email.vm")
 <br /><br />
 #parse("screens/XDATScreen_password.vm")

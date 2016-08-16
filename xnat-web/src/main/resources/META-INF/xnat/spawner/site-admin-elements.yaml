@@ -12,7 +12,6 @@ tabGroups:
 
 siteId:
     kind: panel.input.text
-    id: siteId
     name: siteId
     label: Site ID
     validation: required id onblur
@@ -26,24 +25,20 @@ siteDescriptionPage:
     tag: input
     element:
         type: text
-        id: siteDescriptionPage
         name: siteDescriptionPage
         size: 30
     after: "<p class='description'>Specify a velocity template file to display on the login page</p>"
 
 siteDescriptionText:
-    tag: textarea
+    tag: textarea|data-code-editor;data-code-language=html
     element:
-        id: siteDescriptionText
         name: siteDescriptionText
         rows: 8
     after: "<p class='description'>Specify a simple text description of this site.</p>"
 
 passwordExpirationInterval:
     tag: input
-    before:
-        label:
-            tag: br
+    before: '<br>'
     element:
         type: text
         id: passwordExpirationInterval
@@ -54,9 +49,7 @@ passwordExpirationInterval:
 
 passwordExpirationDate:
     tag: input
-    before:
-        label:
-            tag: br
+    before: '<br>'
     element:
         type: text
         id: passwordExpirationDate
@@ -68,6 +61,8 @@ siteDescriptionType:
     #id: siteDescriptionType
     #name: siteDescriptionType
     label: Site Description
+    info: >
+        <p>The site description will show up on the login page and can be utilized to describe the purpose of this site, or notify users of important application status messages (ie. "The system is down for maintenance").</p><p>Administrators can opt to display a simple text message, or specify a velocity template reference containing the content to be displayed.</p>
     contents:
         info:
             tag: p
@@ -79,7 +74,6 @@ siteDescriptionType:
             element:
                 type: radio
                 name: siteDescriptionType
-                id: siteDescriptionTypePage
                 value: Page
             after:
                 label:
@@ -90,7 +84,6 @@ siteDescriptionType:
             element:
                 type: radio
                 name: siteDescriptionType
-                id: siteDescriptionTypeText
                 value: Text
             after:
                 label:
@@ -111,33 +104,28 @@ siteDescriptionType:
 
 siteLoginLanding:
     kind: panel.input.text
-    id: siteLoginLanding
     name: siteLoginLanding
     label: Site Login Landing
     description: "The page users will land on immediately after logging in."
 
 siteLandingLayout:
     kind: panel.input.text
-    id: siteLandingLayout
     name: siteLandingLayout
     label: Site Landing Layout
 
 siteHome:
     kind: panel.input.text
-    id: siteHome
     name: siteHome
     label: Site Home
     description: "The page users will land on by clicking the XNAT logo in the menu bar."
 
 siteHomeLayout:
     kind: panel.input.text
-    id: siteHomeLayout
     name: siteHomeLayout
     label: Site Home Layout
 
 siteUrl:
     kind: panel.input.text
-    id: siteUrl
     name: siteUrl
     label: Site Url
     validation: required url
@@ -149,7 +137,6 @@ siteUrl:
 
 adminEmail:
     kind: panel.input.email
-    id: adminEmail
     name: adminEmail
     label: Site Admin Email
     description: >
@@ -168,7 +155,6 @@ fileSystemSettingsWarning:
                 fontWeight: bold
 archivePath:
     kind: panel.input.text
-    id: archivePath
     name: archivePath
     label: Archive Path
     validation: required path
@@ -177,47 +163,40 @@ archivePath:
         disabled: true
 cachePath:
     kind: panel.input.text
-    id: cachePath
     name: cachePath
     label: Cache Path
     validation: required path
     description: ""
 prearchivePath:
     kind: panel.input.text
-    id: prearchivePath
     name: prearchivePath
     label: Prearchive Path
     validation: required path
     description: ""
 ftpPath:
     kind: panel.input.text
-    id: ftpPath
     name: ftpPath
     label: FTP Path
     validation: required path
     description: ""
 buildPath:
     kind: panel.input.text
-    id: buildPath
     name: buildPath
     label: Build Path
     validation: required id onblur
     description: ""
 pipelinePath:
     kind: panel.input.text
-    id: pipelinePath
     name: pipelinePath
     label: Pipeline Path
     validation: required id onblur
     description: ""
 zipExtensions:
     kind: panel.input.text
-    id: zipExtensions
     name: zipExtensions
     label: Zip Extensions
 checksums:
     kind: panel.input.checkbox
-    id: checksums
     name: checksums
     label: Checksums?
     description: >
@@ -272,7 +251,6 @@ generalSecuritySettings:
     contents:
         securityChannel:
             kind: panel.select.single
-            id: securityChannel
             name: ":security.channel"
             label: Security Channel
             options:
@@ -286,23 +264,19 @@ generalSecuritySettings:
                     label: https
                     value: https
             element:
-                id: security-channel
                 title: Security Channel
         requireLogin:
             kind: panel.input.checkbox
-            id: requireLogin
             name: requireLogin
             label: Require User Login
             description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
         restrictUserListAccessToAdmins:
             kind: panel.input.checkbox
-            id: restrictUserListAccessToAdmins
             name: restrictUserListAccessToAdmins
             label: "Restrict user list access <br>to site administrators?"
             description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
         uiAllowNonAdminProjectCreation:
             kind: panel.input.checkbox
-            id: uiAllowNonAdminProjectCreation
             name: ":UI.allow-non-admin-project-creation"
             label: "Allow non-administrators <br>to create projects?"
             description: "Should this site allow non-administrator users to create new projects? If turned on, the site is more secure, but this can make it more difficult for regular users to create new projects for their research efforts."
@@ -319,7 +293,6 @@ userLoginsSessionControls:
     contents:
         sessionTimeout:
             kind: panel.input.text
-            id: sessionTimeout
             name: sessionTimeout
             label: Session Timeout
             description: >
@@ -327,7 +300,6 @@ userLoginsSessionControls:
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         aliasTokenTimeout:
             kind: panel.input.text
-            id: aliasTokenTimeout
             name: aliasTokenTimeout
             label: Alias Token Timeout
             description: >
@@ -335,7 +307,6 @@ userLoginsSessionControls:
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         aliasTokenTimeoutSchedule:
             kind: panel.input.text
-            id: aliasTokenTimeoutSchedule
             name: aliasTokenTimeoutSchedule
             label: Alias Token Timeout Schedule
             description: >
@@ -343,9 +314,9 @@ userLoginsSessionControls:
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
         sessionTimeoutMessage:
             kind: panel.textarea
-            id: sessionTimeoutMessage
             name: sessionTimeoutMessage
             label: Session Timeout Message
+            code: html
             description: Alert message provided to users after a session timeout. TIMEOUT_TIME will be replaced by the timeout time.
 #        allowResumeOnNextLogin:
 #            kind: panel.input.checkbox
@@ -355,26 +326,23 @@ userLoginsSessionControls:
 #            description: Allow user to resume where they left off, if logging back in after a session timeout?
         maximumConcurrentSessions:
             kind: panel.input.number
-            id: maximumConcurrentSessions
             name: ":sessions.concurrent_max"
             label: Maximum Concurrent Sessions
             description: The maximum number of permitted sessions a user can have open simultaneously
         loginFailureMessage:
             kind: panel.textarea
-            id: loginFailureMessage
             name: ":UI.login_failure_message"
             label: Login Failure Message
+            code: html
             description: Text to show when a user fails to login
 #            value: "?? XNAT:data:siteConfig:UI.login_failure_message"
         maximumFailedLogins:
             kind: panel.input.number
-            id: maximumFailedLogins
             name: maxFailedLogins
             label: Maximum Failed Logins
             description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
         failedLoginLockoutDuration:
             kind: panel.input.text
-            id: failedLoginLockoutDuration
             name: maxFailedLoginsLockoutDuration
             label: Failed Logins Lockout Duration
             description: >
@@ -382,7 +350,6 @@ userLoginsSessionControls:
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         resetFailedLoginsSchedule:
             kind: panel.input.text
-            id: resetFailedLoginsSchedule
             name: resetFailedLoginsSchedule
             label: Reset Failed Logins Schedule
             description: >
@@ -390,7 +357,6 @@ userLoginsSessionControls:
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
         userInactivityLockout:
             kind: panel.input.text
-            id: userInactivityLockout
             name: inactivityBeforeLockout
             label: User Inactivity Lockout
             description: >
@@ -398,7 +364,6 @@ userLoginsSessionControls:
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
         inactivityBeforeLockoutSchedule:
             kind: panel.input.text
-            id: inactivityBeforeLockoutSchedule
             name: inactivityBeforeLockoutSchedule
             label: Inactivity Lockout Schedule
             description: >
@@ -417,18 +382,19 @@ passwords:
     contents:
         passwordComplexity:
             kind: panel.input.text
-            id: passwordComplexity
             name: passwordComplexity
             label: Password Complexity
             description: Must be a valid regular expression.
         passwordComplexityMessage:
             kind: panel.textarea
-            id: passwordComplexityMessage
             name: passwordComplexityMessage
             label: Password Complexity Message
+            code: html
         passwordExpiration:
             kind: panel.element
             label: Password Expiration
+            info: >
+                <p>A <b>password expiration interval</b> specifies the length of time users have before they must change their passwords (Specified in <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>)</p><p>Alternatively, a <b>password expiration date</b> can be configured to expire passwords that were last changed before it. This is useful for purging access to obsolete accounts.</p>
             contents:
                 info:
                     tag: p
@@ -523,13 +489,11 @@ csrf:
     contents:
         enableCsrfToken:
             kind: panel.input.checkbox
-            id: enableCsrfToken
             name: enableCsrfToken
             label: Require CSRF Token?
             description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
         csrfEmailAlert:
             kind: panel.input.checkbox
-            id: csrfEmailAlert
             name: csrfEmailAlert
             label: CSRF Email Alert
             description: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
@@ -546,22 +510,22 @@ securityServices:
     contents:
         securityServicesFeatureDefault:
             kind: panel.input.text
-            id: securityServicesFeatureDefault
+#            id: securityServicesFeatureDefault
             name: ":security.services.feature.default"
             label: Feature Default
         securityServicesFeatureRepoDefault:
             kind: panel.input.text
-            id: securityServicesFeatureRepoDefault
+#            id: securityServicesFeatureRepoDefault
             name: ":security.services.featureRepository.default"
             label: Feature Repository Default
         securityServicesRoleDefault:
             kind: panel.input.text
-            id: securityServicesRoleDefault
+#            id: securityServicesRoleDefault
             name: ":security.services.role.default"
             label: Role Default
         securityServicesRoleRepositoryDefault:
             kind: panel.input.text
-            id: securityServicesRoleRepositoryDefault
+#            id: securityServicesRoleRepositoryDefault
             name: ":security.services.roleRepository.default"
             label: Role Repository Default
 
@@ -577,7 +541,6 @@ emailServerSettings:
     contents:
         smtpEnabled:
             kind: panel.input.checkbox
-            id: smtpEnabled
             name: ":smtp.enabled"
             label: "Enable SMTP?"
         hostname:
@@ -640,7 +603,6 @@ notifications:
     contents:
         helpContactInfo:
             kind: panel.input.email
-            id: helpContactInfo
             name: ":notifications.helpContactInfo"
             label: "Help Contact Info"
 #            value: "!? XNAT.data.notifications['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
@@ -651,21 +613,21 @@ notifications:
 
         emailMessageUserRegistration:
             kind: panel.textarea
-            id: emailMessageUserRegistration
             name: ":notifications.emailMessageUserRegistration"
             label: "User Registration"
+            code: html
             description: "Text of message emailed to users upon registration. Link for email validation is auto-populated."
         emailMessageForgotUsernameRequest:
             kind: panel.textarea
-            id: emailMessageForgotUsernameRequest
             name: ":notifications.emailMessageForgotUsernameRequest"
             label: "Forgot Username Request"
+            code: html
             description: "Text of message emailed to users upon lost username request."
         emailMessageForgotPasswordReset:
             kind: panel.textarea
-            id: emailMessageForgotPasswordReset
             name: ":notifications.emailMessageForgotPasswordReset"
             label: "Password Reset"
+            code: html
             description: "Text of message emailed to users upon lost password reset. Link for password reset is auto-populated"
 
 #        notifyAdminSubhead:
@@ -707,28 +669,24 @@ notifications:
 
         emailRecipientErrorMessages:
             kind: panel.input.email
-            id: emailRecipientErrorMessages
             name: ":notifications.emailRecipientErrorMessages"
             label: "Error Messages"
             description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
-            id: emailRecipientIssueReports
             name: ":notifications.emailRecipientIssueReports"
             label: "Issue Reports"
             description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
-            id: emailRecipientNewUserAlert
             name: ":notifications.emailRecipientNewUserAlert"
             label: "New User Alert"
             description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
-            id: emailRecipientUpdate
             name: ":notifications.emailRecipientUpdate"
             label: "Updates"
             description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
@@ -740,7 +698,6 @@ notifications:
 
         emailAllowNonuserSubscribers:
             kind: panel.input.checkbox
-            id: emailAllowNonuserSubscribers
             name: emailAllowNonuserSubscribers
             label: "Allow Nonuser Subscribers"
             description: "Indicates whether this site should restrict email addresses for site notifications to addresses that are associated with valid active users of the XNAT installation. If turned on, the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events."
@@ -805,12 +762,10 @@ authenticationMethods:
     contents:
         xnatInternal:
             kind: panel.input.checkbox
-            id: xnatInternal
             name: ":provider.providers.xnatInternal"
             label: XNAT (Internal)
         ldapProvider:
             kind: panel.input.checkbox
-            id: ldapProvider
             name: ":provider.providers.ldap"
             label: LDAP
 #        oauthProvider:
@@ -830,17 +785,14 @@ genericAuthenticationProvider:
     contents:
         providerDbName:
             kind: panel.input.text
-            id: providerDbName
             name: providerDbName
             label: "Provider DB Name"
         providerDbId:
             kind: panel.input.text
-            id: providerDbId
             name: providerDbId
             label: "Provider DB ID"
         providerDbType:
             kind: panel.input.text
-            id: providerDbType
             name: providerDbType
             label: "Provider DB Type"
 
@@ -856,42 +808,34 @@ ldapAuthentication:
     contents:
         ldapName:
             kind: panel.input.text
-            id: ldapName
             name: ldapName
             label: "LDAP Name"
         ldapId:
             kind: panel.input.text
-            id: ldapId
             name: ldapId
             label: "LDAP ID"
         ldapType:
             kind: panel.input.text
-            id: ldapType
             name: ldapType
             label: "LDAP Type"
         ldapAddress:
             kind: panel.input.text
-            id: ldapAddress
             name: ldapAddress
             label: "LDAP Address"
         ldapUserDomain:
             kind: panel.input.text
-            id: ldapUserDomain
             name: ldapUserDomain
             label: "LDAP User Domain"
         ldapPassword:
             kind: panel.input.text
-            id: ldapPassword
             name: ldapPassword
             label: "LDAP Password"
         ldapSearchBase:
             kind: panel.input.text
-            id: ldapSearchBase
             name: ldapSearchBase
             label: "LDAP Search Base"
         ldapSearchFilter:
             kind: panel.input.text
-            id: ldapSearchFilter
             name: ldapSearchFilter
             label: "LDAP Search Filter"
 
@@ -919,7 +863,6 @@ registrationOptions:
     contents:
         requireEmailVerificationToRegister:
             kind: panel.input.checkbox
-            id: requireEmailVerificationToRegister
             name: emailVerification
             label: "Require Email Verification <br>to Register?"
             description: >
@@ -929,18 +872,16 @@ registrationOptions:
                 before using their account. Either way the administrator receives an email notification when a user registers.
         emailVerificationMessage:
             kind: panel.textarea
-            id: emailVerificationMessage
             name: emailVerificationMessage
             label: "Email Verification Message"
+            code: html
             description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
         emailVerificationExpiration:
             kind: panel.input.number
-            id: emailVerificationExpiration
             name: emailVerificationExpiration
             label: "Email Verification Expiration"
         autoEnableUserRegistration:
             kind: panel.input.checkbox
-            id: autoEnableUserRegistration
             name: userRegistration
             label: "Auto-enable <br>User Registration?"
             description: >
@@ -949,7 +890,6 @@ registrationOptions:
                 receives an email notification when a user registers.
         autoEnablePar:
             kind: panel.input.checkbox
-            id: autoEnablePar
             name: par
             label: "Auto-enable with <br>Project Access Request?"
             description: >
@@ -959,7 +899,6 @@ registrationOptions:
                 when a user registers.
         uiAllowNewUserComments:
             kind: panel.input.checkbox
-            id: uiAllowNewUserComments
             name: ":UI.allow-new-user-comments"
             label: "Allow User Comments <br>on Registration?"
 
@@ -975,12 +914,10 @@ manageDataTypes:
     contents:
         displayNameForGenericImageSessionSingular:
             kind: panel.input.text
-            id: displayNameForGenericImageSessionSingular
             name: ":displayNameForGenericImageSession.singular"
             label: "Singular Display Name For Generic Image Session Singular"
         displayNameForGenericImageSessionPlural:
             kind: panel.input.text
-            id: displayNameForGenericImageSessionPlural
             name: ":displayNameForGenericImageSession.plural"
             label: "Plural Display Name For Generic Image Session Singular"
 
@@ -996,7 +933,6 @@ sessionBuilder:
     contents:
         sessionXmlRebuilderRepeat:
             kind: panel.input.number
-            id: sessionXmlRebuilderRepeat
             name: sessionXmlRebuilderRepeat
             label: Session Idle Check Interval
             placeholder: Interval in milliseconds
@@ -1006,7 +942,6 @@ sessionBuilder:
                 milliseconds and defaults to 60,000 ms or one minute.
         sessionXmlRebuilderInterval:
             kind: panel.input.number
-            id: sessionXmlRebuilderInterval
             name: sessionXmlRebuilderInterval
             label: Session Idle Time
             placeholder: Time in minutes
@@ -1027,14 +962,13 @@ anonymization:
     contents:
         enableSitewideAnonymizationScript:
             kind: panel.input.checkbox
-            id: enableSitewideAnonymizationScript
             name: enableSitewideAnonymizationScript
             label: "Enable Site-wide <br>Anonymization Script?"
         sitewideAnonymizationScript:
             kind: panel.textarea
-            id: sitewideAnonymizationScript
             name: sitewideAnonymizationScript
             label: "Edit Anonymization Script"
+            code: text
             description: >
                 This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="http://nrg.wustl.edu/software/dicomedit/dicomedit-reference/" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
 
@@ -1050,31 +984,24 @@ seriesImportFilter:
     contents:
         enableSitewideSeriesImportFilter:
             kind: panel.input.checkbox
-            id: enableSitewideSeriesImportFilter
             name: enableSitewideSeriesImportFilter
             label: "Enable Site-wide <br>Series Import Filter?"
         sitewideSeriesImportFilterMode:
             kind: panel.select.single
-            id: sitewideSeriesImportFilterMode
             name: sitewideSeriesImportFilterMode
             label: Filter Mode
             description: >
                 Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload applet. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
             options:
-                whitelist:
-                    label: Whitelist
-                    value: whitelist
-                blacklist:
-                    label: Blacklist
-                    value: blacklist
-                modalityMap:
-                    label: Modality Map
-                    value: modalityMap
+                #value: Label
+                whitelist: Whitelist
+                blacklist: Blacklist
+                modalityMap: Modality Map
         sitewideSeriesImportFilter:
             kind: panel.textarea
-            id: sitewideSeriesImportFilter
             name: sitewideSeriesImportFilter
             label: "Edit Series Import Filter"
+            code: text
             description: >
                 The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
                 <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive,
@@ -1092,9 +1019,9 @@ petTracers:
     contents:
         sitewidePetTracers:
             kind: panel.textarea
-            id: sitewidePetTracers
             name: sitewidePetTracers
             label: "Pet Tracers"
+            code: text
             description: >
                 This is the site-wide list of PET tracers. List entries should be separated by whitespace. This list can also be replaced at the project level.
 
@@ -1110,21 +1037,15 @@ petMr:
     contents:
         petMr:
             kind: panel.select.single
-            id: sitewidePetMr
             name: sitewidePetMr
             label: "Separate PET-MR?"
             description: >
                 Should data generated by PET-MR scanners be created as a single PET/MR imaging session, created as a single PET imaging session, or separated into PET and MR sessions?
             options:
-              petmr:
-                label: Create as PET/MR session
-                value: petmr
-              pet:
-                label: Create as PET session
-                value: pet
-              separate:
-                label: Separate into PET and MR sessions
-                value: separate
+                #value: Label
+                petmr: Create as PET/MR session
+                pet: Create as PET session
+                separate: Separate into PET and MR sessions
 
 sessionUploadMethod:
     kind: panel.form
@@ -1156,15 +1077,14 @@ sessionUploadMethod:
 #            description: "Enable to display link to Upload Applet on various XNAT pages."
         enableProjectAppletScript:
             kind: panel.input.checkbox
-            id: enableProjectAppletScript
             name: enableProjectAppletScript
             label: Enable Project Applet Script
             description: "The site-wide applet settings script can be supplemented by applet settings specified at the project level if this setting is enabled."
         appletScript:
             kind: panel.textarea
-            id: appletScript
             name: appletScript
             label: "Applet Script"
+            code: text
             description: >
                 Details on how to configure an Upload Applet script may be found
                 <a href="https://wiki.xnat.org/display/XKB/Adding+parameters+and+launch+requirements+for+the+upload+applet" target="_blank">here</a>.
@@ -1203,12 +1123,14 @@ dicomScpReceivers:
                             id: scp-title
                             name: aeTitle
                             label: AE Title
+#                            description: AE Title for DICOM Receiver
                             validation: required
                         port:
                             kind: panel.input.number
                             id: scp-port
                             name: port
                             label: Port
+#                            description: Port for DICOM Receiver
                             validation: required naturalNoZero
 #                        fileNamer:
 #                            kind: panel.input.text
@@ -1224,63 +1146,6 @@ dicomScpReceivers:
             tag: script
             element:
                 src: /scripts/xnat/admin/dicomScpManager.js
-
-dicomScpReceiversOld:
-    kind: panel.form
-    name: dicomScpReceiversOld
-    label: DICOM SCP Receivers
-    method: POST
-    action: /xapi/dicomscp
-    contentType: json
-    load: /xapi/dicomscp
-    contents:
-        enableDicomReceiver:
-            kind: panel.input.checkbox
-            id: enableDicomReceiver
-            name: enableDicomReceiver
-            label: DICOM Receiver Enabled?
-            description: "Should the DICOM receiver listen for connections?"
-        someInfo:
-            tag: div.message
-            element:
-                html: "Caution: Changes to this setting will take effect immediately. Before disabling the receiver, verify that there are no transmissions currently in progress."
-                style:
-                    fontWeight: bold
-        enableDicomReceiverPropertyChangedListener:   # Should this be a hidden form element??
-            kind: panel.input.text
-            id: enableDicomReceiverPropertyChangedListener
-            name: enableDicomReceiverPropertyChangedListener      #  Should this be "enableDicomReceiver.property.changed.listener"
-            label: "Enable Dicom Receiver Property Changed Listener"
-        dicomHost:
-            kind: panel.input.text
-            id: dicomHost
-            name: dicomHost
-            label: DICOM Host
-            description: "Hostname(s) for DICOM Receiver(s)"
-        dicomAeTitle:
-            kind: panel.input.text
-            id: dicomAeTitle
-            name: dicomAeTitle
-            label: DICOM AE Title
-            description: "AE Title(s) for DICOM Receiver(s)"
-        dicomPortNumber:
-            kind: panel.input.number
-            id: dicomPortNumber
-            name: dicomPortNumber
-            label: DICOM Port
-            description: "Port for DICOM Receiver(s)"
-        defaultDicomReceiver:
-            kind: panel.select.single
-            id: defaultDicomReceiver
-            name: ":services.dicom.scp.aetitle"
-            label: Default DICOM Receiver
-            description: "AE Title for default DICOM receiver"
-        receivedFileUser:
-            kind: panel.input.text
-            id: receivedFileUser
-            name: receivedFileUser
-            label: "Default DICOM Receiver: User"
-            description: "User account for default DICOM receiver"
 
 fileSystem:
     kind: panel.form
@@ -1315,7 +1180,6 @@ misc:
     contents:
         scanTypeMapping:
             kind: panel.input.checkbox
-            id: scanTypeMapping
             name: scanTypeMapping
             label: Scan Type Mapping?
         development:

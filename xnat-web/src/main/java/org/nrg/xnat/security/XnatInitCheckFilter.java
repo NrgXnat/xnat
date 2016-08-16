@@ -48,11 +48,12 @@ public class XnatInitCheckFilter extends GenericFilterBean {
             chain.doFilter(req, res);
         } else {
             // We're going to use the user for logging.
-            final UserI  user = XDAT.getUserDetails();
+            final UserI   user        = XDAT.getUserDetails();
+            final boolean isAnonymous = user == null || user.isGuest();
 
             final String uri  = request.getRequestURI();
 
-            if (user == null) {
+            if (isAnonymous) {
                 String header = request.getHeader("Authorization");
                 if (header != null && header.startsWith("Basic ") && !isInitializerPath(uri)) {
                     // Users that authenticated using basic authentication receive an error message informing
@@ -75,7 +76,7 @@ public class XnatInitCheckFilter extends GenericFilterBean {
                 // the request is not for another page (preventing the user from navigating away from the Configuration page via the menu bar).
                 chain.doFilter(req, res);
             } else {
-                if (user == null) {
+                if (isAnonymous) {
                     // user not authenticated, let another filter handle the redirect
                     // (NB: I tried putting this check up with the basic auth check,
                     // but you get this weird redirect with 2 login pages on the same screen.  Seems to work here).

@@ -14,6 +14,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -48,6 +49,8 @@ public class ScriptTriggerTemplateResource extends AutomationResource {
         getVariants().add(new Variant(MediaType.TEXT_PLAIN));
 
         _templateId = (String) getRequest().getAttributes().get(TEMPLATE_ID);
+
+        final UserI user = getUser();
 
         if (getScope() == Scope.Site) {
             if (!Roles.isSiteAdmin(user)) {

@@ -90,6 +90,7 @@ public class SearchResource extends SecureResource {
 
             XFTItem item = null;
             Representation entity = getRequest().getEntity();
+            final UserI user = getUser();
             if (entity != null && entity.getMediaType() != null && entity.getMediaType().getName().equals(MediaType.MULTIPART_FORM_DATA.getName())) {
                 try {
                     @SuppressWarnings("deprecation") org.apache.commons.fileupload.DefaultFileItemFactory factory = new org.apache.commons.fileupload.DefaultFileItemFactory();
@@ -468,6 +469,7 @@ public class SearchResource extends SecureResource {
         boolean allowed = false;
         if (StringUtils.isNotBlank(search.getId())) {
             //need to check against unmodified stored search
+            final UserI                            user   = getUser();
             final org.nrg.xdat.om.XdatStoredSearch stored = XdatStoredSearch.getXdatStoredSearchsById(search.getId(), user, true);
 
             //if the user was added to the search

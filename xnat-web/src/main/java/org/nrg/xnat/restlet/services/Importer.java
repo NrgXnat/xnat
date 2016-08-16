@@ -20,6 +20,7 @@ import org.nrg.status.StatusList;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.transactions.HTTPSessionStatusManagerQueue;
@@ -140,6 +141,7 @@ public class Importer extends SecureResource {
 	@Override
 	public void handlePost() {
 		//build fileWriters
+		final UserI user = getUser();
 		try {
 		    final Request request = getRequest();
 		    if (logger.isDebugEnabled()) {
@@ -481,7 +483,7 @@ public class Importer extends SecureResource {
 			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,"src uri is invalid.",new Exception());
 		}
 
-		File f=org.nrg.xdat.security.helpers.Users.getUserCacheFile(user, (String)map.get("XNAME"), (String)map.get("FILE"));
+		File f=org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser(), (String)map.get("XNAME"), (String)map.get("FILE"));
 
 		if(f.exists()){
 			return new StoredFile(f,true);
@@ -490,7 +492,7 @@ public class Importer extends SecureResource {
 		}
 	}
 
-	public String convertListToString(final List<String> response, boolean wrapPartialDataURI){
+	private String convertListToString(final List<String> response, boolean wrapPartialDataURI){
 		final StringBuffer sb = new StringBuffer();
 		for(final String s:response){
 			sb.append((wrapPartialDataURI) ? wrapPartialDataURI(s) : s).append(CRLF);

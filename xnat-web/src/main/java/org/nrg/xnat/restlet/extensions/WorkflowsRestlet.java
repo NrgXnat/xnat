@@ -19,6 +19,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.CriteriaCollection;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
@@ -78,8 +79,9 @@ public class WorkflowsRestlet extends SecureResource {
 	@Override
 	public Representation represent(Variant variant) {
 		MediaType mt = overrideVariant(variant);
-		if (workflow_primary_key !=null) {
-			PersistentWorkflowI wrkFlow = PersistentWorkflowUtils.getWorkflowByEventId(user,Integer.parseInt(workflow_primary_key));
+		final UserI user = getUser();
+		if (workflow_primary_key != null) {
+			PersistentWorkflowI wrkFlow = PersistentWorkflowUtils.getWorkflowByEventId(user, Integer.parseInt(workflow_primary_key));
 			return representItem(((WrkWorkflowdata)wrkFlow).getItem(),mt);
 		}else {
 			XnatExperimentdata expt = null;
@@ -87,7 +89,7 @@ public class WorkflowsRestlet extends SecureResource {
 				expt=XnatExperimentdata.getXnatExperimentdatasById(xnat_id, user, false);
 				if(project_id!=null){
 					if(expt==null){
-						expt = XnatExperimentdata.GetExptByProjectIdentifier(project_id, xnat_id,user, false);
+						expt = XnatExperimentdata.GetExptByProjectIdentifier(project_id, xnat_id, user, false);
 					}
 				}
 			}
@@ -125,7 +127,7 @@ public class WorkflowsRestlet extends SecureResource {
 						   PopulateItem populator = PopulateItem.Populate(rowHash, user, "wrk:workflowdata", true);
 						   return representItem(populator.getItem(), mt);
 					   }else {
-						   Hashtable<String, Object> params = new Hashtable<String, Object>();
+						   Hashtable<String, Object> params = new Hashtable<>();
 						   return representTable(table, mt, params);
 					   }
 				   }else {
@@ -143,7 +145,7 @@ public class WorkflowsRestlet extends SecureResource {
 			            }else {
 					        org.nrg.xft.search.ItemSearch itemSearch = new org.nrg.xft.search.ItemSearch(user, "wrk:workflowdata", cc);
 			            	XFTTable table = itemSearch.executeToTable(false);
-			        		Hashtable<String,Object> params=new Hashtable<String,Object>();
+			        		Hashtable<String,Object> params= new Hashtable<>();
 			            	params.put("title", "All workflows");
 			            	return representTable(table, mt, params);
 			            }
@@ -242,7 +244,7 @@ public class WorkflowsRestlet extends SecureResource {
 				   mt = overrideVariant(variant);
 		        try {
 					XFTTable table=XFTTable.Execute(query, user.getDBName(), userName);
-	        		Hashtable<String,Object> params=new Hashtable<String,Object>();
+	        		Hashtable<String,Object> params= new Hashtable<>();
 	            	params.put("title", "All " + status + " workflows");
 	            	return representTable(table, mt, params);
 		        }catch(Exception e) {

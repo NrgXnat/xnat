@@ -27,6 +27,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.Reflection;
@@ -35,6 +36,8 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -76,6 +79,7 @@ import org.restlet.util.Series;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -129,7 +133,7 @@ public abstract class SecureResource extends Resource {
 
     protected List<String> actions = null;
     public String userName = null;
-    public UserI user = null;
+    private UserI user = null;
     public String requested_format = null;
     public String filepath = null;
 
@@ -149,14 +153,6 @@ public abstract class SecureResource extends Resource {
         // expects that the user exists in the session (either via traditional
         // session or set via the XnatSecureGuard
         user = XDAT.getUserDetails();
-        if(user==null && !XDAT.getSiteConfigPreferences().getRequireLogin()){
-            try {
-                user = Users.getGuest();
-                XDAT.setUserDetails(user);
-            } catch (Exception e) {
-                logger.error("",e);
-            }
-        }
         filepath = getRequest().getResourceRef().getRemainingPart();
         if (filepath != null) {
             if (filepath.contains("?")) {
@@ -963,6 +959,15 @@ public abstract class SecureResource extends Resource {
         return value != null && Boolean.parseBoolean((String) value);
     }
 
+    @Nonnull
+    public UserI getUser() {
+        try {
+            return user == null ? Users.getGuest() : user;
+        } catch (UserNotFoundException | UserInitException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "An error occurred retrieving the guest user.", e);
+        }
+    }
+
     public String getLabelForFieldMapping(String xPath) {
         for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
             if (entry.getValue().equalsIgnoreCase(xPath)) {
@@ -1048,7 +1053,6 @@ public abstract class SecureResource extends Resource {
         return getFileWritersAndLoadParams(getRequest().getEntity(), false);
     }
 
-
     public void handleParam(final String key, final Object value) throws ClientException {
 
     }
@@ -1096,8 +1100,8 @@ public abstract class SecureResource extends Resource {
      * @param entity           The request entity.
      * @param useFileFieldName Indicates whether the form field name should be used to identify the extracted files.
      * @return A list of any {@link FileWriterWrapperI} objects found in the request.
-     * @throws FileUploadException
-     * @throws ClientException
+     * @throws FileUploadException When an error occurs uploading the file.
+     * @throws ClientException When an invalid request or data are submitted.
      */
     public List<FileWriterWrapperI> getFileWritersAndLoadParams(final Representation entity, boolean useFileFieldName) throws FileUploadException, ClientException {
         final List<FileWriterWrapperI> wrappers = new ArrayList<>();
@@ -1546,8 +1550,8 @@ public abstract class SecureResource extends Resource {
      * Get a list of the possible handlers.  This allows additional handlers to be injected at a later date or via a module.
      *
      * @return A list of possible handlers for the indicated package.
-     * @throws InstantiationException
-     * @throws IllegalAccessException
+     * @throws InstantiationException When an error occurs creating one of the handler objects.
+     * @throws IllegalAccessException When access levels are incorrect during access or creation.
      */
     public static List<FilteredResourceHandlerI> getHandlers(String _package, List<FilteredResourceHandlerI> _defaultHandlers) throws InstantiationException, IllegalAccessException {
         if (handlers.get(_package) == null) {

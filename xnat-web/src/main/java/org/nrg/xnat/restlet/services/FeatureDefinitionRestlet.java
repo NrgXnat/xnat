@@ -1,11 +1,6 @@
 package org.nrg.xnat.restlet.services;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.Hashtable;
-import java.util.List;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,20 +9,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
-import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.FeatureDefinitionI;
 import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI.RoleDefinitionI;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
-import org.restlet.data.MediaType;
-import org.restlet.data.Method;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.data.Status;
+import org.restlet.data.*;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
@@ -35,7 +26,11 @@ import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Hashtable;
+import java.util.List;
 
 public class FeatureDefinitionRestlet extends SecureResource {
     public FeatureDefinitionRestlet(Context context, Request request, Response response) {
@@ -68,10 +63,11 @@ public class FeatureDefinitionRestlet extends SecureResource {
         	
         	Collection<String> siteWideEnabled=Features.getEnabledFeatures();
         	Collection<String> siteWideBanned=Features.getBannedFeatures();
-        	
-        	
-        	JSONArray projects = new JSONArray();
-        	for(String tag:tags){
+
+
+			final UserI     user     = getUser();
+			final JSONArray projects = new JSONArray();
+			for(String tag:tags){
         		XnatProjectdata proj=XnatProjectdata.getProjectByIDorAlias(tag, user, false);
         		        		
         		try {
@@ -190,7 +186,8 @@ public class FeatureDefinitionRestlet extends SecureResource {
 			}
 			
 			String key = json.getString("key");
-			
+
+			final UserI user = getUser();
 
 			if(getQueryVariable("type")==null && getQueryVariable("group")==null){
 				if (!Roles.isSiteAdmin(user)) {

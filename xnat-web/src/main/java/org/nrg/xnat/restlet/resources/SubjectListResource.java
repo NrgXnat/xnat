@@ -14,6 +14,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.QueryOrganizer;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -40,7 +41,7 @@ public class SubjectListResource extends QueryOrganizerResource {
 	
 	@Override
 	public ArrayList<String> getDefaultFields(GenericWrapperElement e) {
-		ArrayList<String> al=new ArrayList<String>();
+		ArrayList<String> al= new ArrayList<>();
 		
 		al.add("ID");
 		al.add("project");
@@ -56,14 +57,14 @@ public class SubjectListResource extends QueryOrganizerResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {
-		Representation rep=super.getRepresentation(variant);
+	public Representation represent(Variant variant) {
+		Representation rep=super.represent(variant);
 		if(rep!=null)return rep;
 			
 		XFTTable table;
 		try {
-			QueryOrganizer qo = new QueryOrganizer(this.getRootElementName(), user,
-					ViewManager.ALL);
+			final UserI user = getUser();
+			QueryOrganizer qo = new QueryOrganizer(this.getRootElementName(), user, ViewManager.ALL);
 
 			this.populateQuery(qo);
 
@@ -80,7 +81,7 @@ public class SubjectListResource extends QueryOrganizerResource {
 		}
 
 		MediaType mt = overrideVariant(variant);
-		Hashtable<String, Object> params = new Hashtable<String, Object>();
+		Hashtable<String, Object> params = new Hashtable<>();
 		if (table != null)
 			params.put("totalRecords", table.size());
 		return this.representTable(table, mt, params);

@@ -16,6 +16,7 @@ import java.util.Map;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -64,8 +65,9 @@ public class SearchElementListResource extends SecureResource {
 			}
 			
 			Map counts = null;
-				
-			if(this.getQueryVariable("readable")!=null){
+
+			final UserI user = getUser();
+			if(this.getQueryVariable("readable") != null){
 				counts=UserHelper.getUserHelperService(user).getReadableCounts();
 			}else{		
 				counts=UserHelper.getUserHelperService(user).getTotalCounts();

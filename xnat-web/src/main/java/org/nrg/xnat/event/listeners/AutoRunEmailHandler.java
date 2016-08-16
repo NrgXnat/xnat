@@ -33,7 +33,7 @@ public class AutoRunEmailHandler extends PipelineEmailHandlerAbst implements Con
     @Inject
     public AutoRunEmailHandler(EventBus eventBus, final NotificationsPreferences preferences) {
         _preferences = preferences;
-        eventBus.on(R(WorkflowStatusEvent.class.getName() + "[.](" + PersistentWorkflowUtils.COMPLETE + "|" + PersistentWorkflowUtils.FAILED + ")"), this);
+        eventBus.on(R(WorkflowStatusEvent.class.getName() + "[.]?(" + PersistentWorkflowUtils.COMPLETE + "|" + PersistentWorkflowUtils.FAILED + ")"), this);
     }
 
     /* (non-Javadoc)

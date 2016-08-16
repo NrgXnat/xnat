@@ -23,6 +23,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.Context;
@@ -85,6 +86,7 @@ public class ConfigResource extends SecureResource {
     @Override
     public Representation represent(Variant variant) throws ResourceException {
 
+        final UserI user = getUser();
         try {
             final MediaType mt = overrideVariant(variant);
 
@@ -290,6 +292,7 @@ public class ConfigResource extends SecureResource {
 		 * it can just send it a second (or 100th) time, and it is guaranteed by the HTTP spec that this has exactly the 
 		 * same effect as sending once.
 		 */
+        final UserI user = getUser();
         try {
             //check access, almost copy-paste code in the GET method.
             if (!((StringUtils.isNotBlank(projectId) && Permissions.canEdit(user, "xnat:subjectData/project", projectId)) || Roles.isSiteAdmin(user))) {
@@ -382,6 +385,7 @@ public class ConfigResource extends SecureResource {
     @Override
     public void handleDelete() {
         //check access, almost copy-paste code in the GET method.
+        final UserI user = getUser();
         try {
             if (StringUtils.isBlank(projectId)) {
                 if (!Roles.isSiteAdmin(user)) {
@@ -410,13 +414,13 @@ public class ConfigResource extends SecureResource {
     private String getBodyContents() throws FileUploadException, ClientException, IOException {
         List<FileWriterWrapperI> fws = getFileWriters();
         if (fws.size() == 0) {
-            _log.warn("Unknown upload format", user.getUsername(), projectId);
+            _log.warn("Unknown upload format", getUser().getUsername(), projectId);
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to identify upload format.");
             return null;
         }
 
         if (fws.size() > 1) {
-            _log.info("Importer is limited to one uploaded resource at a time.", user.getUsername(), projectId);
+            _log.info("Importer is limited to one uploaded resource at a time.", getUser().getUsername(), projectId);
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Importer is limited to one uploaded resource at a time.");
             return null;
         }

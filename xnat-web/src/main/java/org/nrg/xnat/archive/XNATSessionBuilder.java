@@ -28,7 +28,10 @@ import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.XFT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -185,7 +188,7 @@ public class XNATSessionBuilder implements Callable<Boolean> {
      * <p/>
      * The iteration will stop once it successfully builds an xml (or runs out of builder configs).
      *
-     * @throws IOException
+     * @throws IOException When something goes wrong writing the session XML.
      */
     @SuppressWarnings("unchecked")
     public Boolean call() throws IOException {
@@ -293,13 +296,23 @@ public class XNATSessionBuilder implements Callable<Boolean> {
 
     private static ExecutorService _executorService = null;
 
-    public static ExecutorService getExecutor() {
+    private static ExecutorService getExecutor() {
         if (_executorService == null) {
-            PropertiesHelper.ImplLoader<ExecutorService> loader = new PropertiesHelper.ImplLoader<>(_executorFileName, _executorIdentifier);
             try {
-                _executorService = loader.buildNoArgs(Executors.newFixedThreadPool(PropertiesHelper.GetIntegerProperty(_executorFileName, _executorIdentifier + ".size", 2)));
-            } catch (IllegalArgumentException | SecurityException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException | ConfigurationException e) {
-                logger.error("An error occurred trying to build the executor based on the file name " + _executorFileName + " and identifier " + _executorIdentifier, e);
+                final ThreadPoolExecutorFactoryBean factory = XDAT.getContextService().getBean(ThreadPoolExecutorFactoryBean.class);
+                if (factory != null) {
+                    _executorService = factory.getObject();
+                }
+            } catch (NoSuchBeanDefinitionException ignored) {
+                // We can just ignore this since we have a fallback method.
+            }
+            if (_executorService == null) {
+                final PropertiesHelper.ImplLoader<ExecutorService> loader  = new PropertiesHelper.ImplLoader<>(_executorFileName, _executorIdentifier);
+                try {
+                    _executorService = loader.buildNoArgs(Executors.newFixedThreadPool(PropertiesHelper.GetIntegerProperty(_executorFileName, _executorIdentifier + ".size", 2)));
+                } catch (IllegalArgumentException | SecurityException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException | ConfigurationException e) {
+                    logger.error("An error occurred trying to build the executor based on the file name " + _executorFileName + " and identifier " + _executorIdentifier, e);
+                }
             }
         }
 
@@ -311,7 +324,7 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         protected Class c;
         protected Integer order;
 
-        public BuilderConfig(final String code, final Class c, final Integer order) {
+        BuilderConfig(final String code, final Class c, final Integer order) {
             if (code == null) throw new NullPointerException();
             if (c == null) throw new NullPointerException();
 
@@ -321,10 +334,7 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         }
 
         @Override
-        public int compareTo(Object object) {
-            if (object == null) {
-                throw new NullPointerException();
-            }
+        public int compareTo(@Nonnull final Object object) {
             if (!BuilderConfig.class.isAssignableFrom(object.getClass())) {
                 throw new ClassCastException("Can't cast from " + object.getClass().getName() + " to " + BuilderConfig.class.getName());
             }

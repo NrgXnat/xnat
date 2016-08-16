@@ -24,6 +24,7 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
@@ -49,8 +50,9 @@ public class ScanList extends QueryOrganizerResource {
 	public ScanList(Context context, Request request, Response response) {
 		super(context, request, response);
 
-			String pID= (String)getParameter(request,"PROJECT_ID");
-			if(pID!=null){
+		String pID= (String)getParameter(request,"PROJECT_ID");
+		final UserI user = getUser();
+		if(pID != null){
 				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 
 				String subID= (String)getParameter(request,"SUBJECT_ID");
@@ -60,7 +62,7 @@ public class ScanList extends QueryOrganizerResource {
 
 					if(sub==null){
 					sub = XnatSubjectdata.getXnatSubjectdatasById(subID, user,
-							false);
+																  false);
 					if (sub != null
 							&& (proj != null && !sub.hasProject(proj.getId()))) {
 						sub = null;
@@ -81,7 +83,7 @@ public class ScanList extends QueryOrganizerResource {
 						if(session==null){
 						session = (XnatImagesessiondata) XnatImagesessiondata
 								.GetExptByProjectIdentifier(proj.getId(),
-										exptID, user, false);
+															exptID, user, false);
 						}
 
 						if(session!=null){
@@ -102,12 +104,12 @@ public class ScanList extends QueryOrganizerResource {
 			}else{
 				String exptID= (String)getParameter(request,"ASSESSED_ID");
 			session = XnatImagesessiondata.getXnatImagesessiondatasById(exptID,
-					user, false);
+																		user, false);
 
 				if(session==null){
 				session = (XnatImagesessiondata) XnatImagesessiondata
 						.GetExptByProjectIdentifier(proj.getId(), exptID, user,
-								false);
+													false);
 				}
 
 				if(session!=null){
@@ -144,7 +146,8 @@ public class ScanList extends QueryOrganizerResource {
 			}
 			item=this.loadItem(dataType,true);
 
-			if(item==null){
+			final UserI user = getUser();
+			if(item == null){
 				String xsiType=this.getQueryVariable("xsiType");
 				if(xsiType!=null){
 					item=XFTItem.NewItem(xsiType, user);
@@ -167,7 +170,7 @@ public class ScanList extends QueryOrganizerResource {
 						this.session=(XnatImagesessiondata)XnatExperimentdata.getXnatExperimentdatasById(scan.getImageSessionId(), user, false);
 
 						if(this.session==null && this.proj!=null){
-							this.session=(XnatImagesessiondata)XnatExperimentdata.GetExptByProjectIdentifier(this.proj.getId(), scan.getImageSessionId(),user, false);
+							this.session=(XnatImagesessiondata)XnatExperimentdata.GetExptByProjectIdentifier(this.proj.getId(), scan.getImageSessionId(), user, false);
 						}
 						if(this.session!=null){
 							scan.setImageSessionId(this.session.getId());
@@ -207,7 +210,7 @@ public class ScanList extends QueryOrganizerResource {
 				}
 
 				if(existing==null){
-					if(!Permissions.canEdit(user,this.session)){
+					if(!Permissions.canEdit(user, this.session)){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient create privileges for sessions in this project.");
 						return;
 					}
@@ -216,8 +219,8 @@ public class ScanList extends QueryOrganizerResource {
 						String query = "SELECT count(id) AS id_count FROM xnat_imageScanData WHERE image_session_id='" + this.session.getId() + "' AND id='";
 
 						String login = null;
-						if (user!=null){
-							login=user.getUsername();
+						if (user != null){
+							login= user.getUsername();
 						}
 						try {
 							int i=1;
@@ -304,8 +307,8 @@ public class ScanList extends QueryOrganizerResource {
 			try {
 				final String re=this.getRootElementName();
 
-				final QueryOrganizer qo = new QueryOrganizer(re, user,
-						ViewManager.ALL);
+				final UserI user = getUser();
+				final QueryOrganizer qo = new QueryOrganizer(re, user, ViewManager.ALL);
 
 				this.populateQuery(qo);
 

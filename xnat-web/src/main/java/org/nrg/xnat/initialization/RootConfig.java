@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
+import org.apache.commons.beanutils.BeanUtils;
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.ContextService;
@@ -24,12 +25,19 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import javax.servlet.ServletContext;
 import javax.xml.bind.Marshaller;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Configuration for the XNAT root application context. This contains all of the basic infrastructure for initializing
@@ -50,6 +58,26 @@ public class RootConfig {
     @Bean
     public ContextService contextService() throws NrgServiceException {
         return ContextService.getInstance();
+    }
+
+    @Bean
+    public ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean(final Path xnatHome) throws IOException, InvocationTargetException, IllegalAccessException {
+        final ThreadPoolExecutorFactoryBean bean = new ThreadPoolExecutorFactoryBean();
+
+        final Path executor = xnatHome.resolve("../executor.properties");
+        if (executor.toFile().exists()) {
+            try (final BufferedReader reader = Files.newBufferedReader(executor, StandardCharsets.UTF_8)) {
+                final Properties properties = new Properties();
+                properties.load(reader);
+                final Map<String, String> converted = new HashMap<>();
+                for (final String key : properties.stringPropertyNames()) {
+                    converted.put(key, properties.getProperty(key));
+                }
+                BeanUtils.populate(bean, converted);
+            }
+        }
+
+        return bean;
     }
 
     @Bean

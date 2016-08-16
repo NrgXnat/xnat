@@ -56,6 +56,8 @@ public class WorkflowResource extends ItemResource {
 		WrkWorkflowdata workflow;
 		
 		try{
+			final UserI user = getUser();
+
 			// Create the new workflow item based on information from the user.
 			item=loadItem("wrk:workflowData", true);
 			String pipeline_name = item.getStringProperty("pipeline_name");
@@ -110,6 +112,7 @@ public class WorkflowResource extends ItemResource {
 	@Override 
 	public Representation represent(Variant variant) {
 		WrkWorkflowdata workflow = null;
+		final UserI user = getUser();
 		if(workflowId != null && !workflowId.isEmpty()){
 			// Lookup the workflow by the ID provided by the user.
 			workflow = (WrkWorkflowdata)WorkflowUtils.getUniqueWorkflow(user, workflowId);

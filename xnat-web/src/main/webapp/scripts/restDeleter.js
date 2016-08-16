@@ -20,22 +20,24 @@ RestDeleter = function(_array,_config) {
 		t.width="100%";
 		var tb=t.appendChild(document.createElement("tbody"));
   	    for(var aC=0;aC<this.a.length;aC++){
-  	    	if(this.a[aC].canRead && (this.a[aC].allowDelete==undefined||this.a[aC].allowDelete==true)){
-	  	   	  	var tr=tb.appendChild(document.createElement("tr"));
-	  	   	  	tr.entry=this.a[aC];
-	  	   	  	
-	  	   	  	var td1=tr.appendChild(document.createElement("td"));
-	  	   	  	var td2=tr.appendChild(document.createElement("td"));
-	  	   	  	tr.td1=td1;
-	  	   	  	tr.td2=td2;
-	  	   	  	
-	  	   	  	td1.innerHTML=this.a[aC].label;
-	  	   	  	tr.pDivColor=td2.appendChild(document.createElement("div"));
-	  	   	  	tr.pDivColor.style.width="100%";
-	  	   	  	tr.pDivColor.style.backgroundColor="gray";
-	  	   	  	tr.pDivColor.style.color="white";
-	  	   	  	tr.pDivColor.innerHTML="&nbsp;waiting...";
-	  	   	  	this.trArray.push(tr);
+  	    	if(this.a[aC].canRead && (this.a[aC].allowDelete==undefined||this.a[aC].allowDelete==true)) {
+				if (!(this.a[aC].label == "Select All" && this.a[aC].xsiType == null)) {
+					var tr = tb.appendChild(document.createElement("tr"));
+					tr.entry = this.a[aC];
+
+					var td1 = tr.appendChild(document.createElement("td"));
+					var td2 = tr.appendChild(document.createElement("td"));
+					tr.td1 = td1;
+					tr.td2 = td2;
+
+					td1.innerHTML = this.a[aC].label;
+					tr.pDivColor = td2.appendChild(document.createElement("div"));
+					tr.pDivColor.style.width = "100%";
+					tr.pDivColor.style.backgroundColor = "gray";
+					tr.pDivColor.style.color = "white";
+					tr.pDivColor.innerHTML = "&nbsp;waiting...";
+					this.trArray.push(tr);
+				}
   	    	}
   	    } 
 		var NUMSPACES=(this.config.defaultHeight/25)-4;

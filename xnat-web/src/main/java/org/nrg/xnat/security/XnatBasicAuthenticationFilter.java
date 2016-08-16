@@ -111,14 +111,11 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
                 UsernamePasswordAuthenticationToken authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);
                 authRequest.setDetails(_authenticationDetailsSource.buildDetails(request));
 
-                Authentication authResult;
+                final Authentication authResult;
 
                 try {
                     authResult = getAuthenticationManager().authenticate(authRequest);
-
                     _authenticationStrategy.onAuthentication(authResult, request, response);
-
-
                 } catch (AuthenticationException failed) {
                     // Authentication failed
                     if (debug) {

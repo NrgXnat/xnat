@@ -30,20 +30,19 @@ public class ProjectArchive extends ItemResource {
 		
 		String pID= (String)getParameter(request,"PROJECT_ID");
 		if(pID!=null){
-			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, getUser(), false);
 		}
 		
 		if(proj!=null){
 			this.getVariants().add(new Variant(MediaType.TEXT_XML));				
 		}else{
 			response.setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find project '"+ pID + "'");
-			return;
 		}
 	}
 	
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		MediaType mt = overrideVariant(variant);
 		
 		if(proj!=null){

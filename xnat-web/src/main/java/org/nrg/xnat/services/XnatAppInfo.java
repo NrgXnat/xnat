@@ -1,5 +1,6 @@
 package org.nrg.xnat.services;
 
+
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
@@ -7,6 +8,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
+
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.python.google.common.collect.ImmutableMap;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -104,7 +111,14 @@ public class XnatAppInfo {
         if (_foundPreferences.size() == 0) {
             return null;
         }
-        return new HashMap<>(_foundPreferences);
+
+        //return new HashMap<>(_foundPreferences);
+
+        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
+            final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+            _plugins.put(properties.getProperty("name"), properties);
+        }
+        _template = template;
     }
 
     /**
@@ -277,6 +291,15 @@ public class XnatAppInfo {
         return buffer.toString();
     }
 
+    /**
+     * Returns the properties for all of the installed and active plugins in the deployed XNAT server.
+     *
+     * @return A map of all of the plugins installed on the server.
+     */
+    public Map<String, Properties> getPluginProperties() throws IOException {
+        return ImmutableMap.copyOf(_plugins);
+    }
+
     private static final Logger _log = LoggerFactory.getLogger(XnatAppInfo.class);
 
     private static final List<String> PRIMARY_MANIFEST_ATTRIBUTES = Arrays.asList("Build-Number", "Build-Date", "Implementation-Version", "Implementation-Sha");
@@ -289,5 +312,6 @@ public class XnatAppInfo {
     private final Properties                       _properties  = new Properties();
     private final Map<String, Map<String, String>> _attributes  = new HashMap<>();
     private       boolean                          _initialized = false;
+    private final Map<String, Properties>          _plugins    = new HashMap<>();
 }
 

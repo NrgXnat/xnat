@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -29,6 +30,7 @@ public class WorkflowEventResource extends AutomationResource {
         _spec = (String) getRequest().getAttributes().get(SPEC);
 
         if (_log.isDebugEnabled()) {
+            final UserI user = getUser();
             if (StringUtils.isNotBlank(_spec)) {
                 _log.debug("Servicing event request for workflow event " + _spec + " for user " + user.getLogin());
             } else {
@@ -62,7 +64,7 @@ public class WorkflowEventResource extends AutomationResource {
         final String workflowQuery = XDAT.getContextService().getBean("populateEventsQuery", String.class);
         final String eventSpecCriteria = XDAT.getContextService().getBean("eventSpecCriteria", String.class);
         final String query = workflowQuery + (StringUtils.isBlank(_spec) ? "" : String.format(eventSpecCriteria, _spec));
-        final XFTTable table = XFTTable.Execute(query, user.getDBName(), userName);
+        final XFTTable table = XFTTable.Execute(query, getUser().getDBName(), userName);
         table.sort("event_label", "ASC");
         return table;
     }

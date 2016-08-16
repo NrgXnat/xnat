@@ -20,6 +20,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.search.CriteriaCollection;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.restlet.resources.ItemResource;
 import org.nrg.xnat.restlet.resources.ScanResource;
@@ -52,192 +53,193 @@ public class FileResource extends ItemResource {
 	
 	String index=null;
 	String filename=null;
-	
-	
-	
+
+
 	public FileResource(Context context, Request request, Response response) {
 		super(context, request, response);
-		
-			String pID= (String)getParameter(request,"PROJECT_ID");
-			if(pID!=null){
-				proj = XnatProjectdata.getXnatProjectdatasById(pID, user, false);
-			}
-			
-			String subID= (String)getParameter(request,"SUBJECT_ID");
-			if(subID!=null){
-				if(this.proj!=null)
-				sub=XnatSubjectdata.GetSubjectByProjectIdentifier(proj.getId(), subID,user, false);
-				
-				if(sub==null){
-					sub=XnatSubjectdata.getXnatSubjectdatasById(subID, user, false);
-				}
-			}
-					
-			String assessid= (String)getParameter(request,"ASSESSED_ID");
-			if(assessid!=null){
-				assessed=XnatImagesessiondata.getXnatImagesessiondatasById(assessid, user, false);
-				
-				if(assessed==null){
-				assessed=(XnatImagesessiondata)XnatImagesessiondata.GetExptByProjectIdentifier(proj.getId(), assessid,user, false);
-				}
-			}
-					
-			String exptID= (String)getParameter(request,"EXPT_ID");
-			if(exptID!=null){
-				expt=XnatImagesessiondata.getXnatImagesessiondatasById(exptID, user, false);
-				
-				if(expt==null){
-				expt=(XnatImagesessiondata)XnatImagesessiondata.GetExptByProjectIdentifier(proj.getId(), exptID,user, false);
-				}
+
+		final UserI user = getUser();
+
+		final String pID = (String) getParameter(request, "PROJECT_ID");
+		if (pID != null) {
+			proj = XnatProjectdata.getXnatProjectdatasById(pID, user, false);
+		}
+
+		String subID = (String) getParameter(request, "SUBJECT_ID");
+		if (subID != null) {
+			if (this.proj != null) {
+				sub = XnatSubjectdata.GetSubjectByProjectIdentifier(proj.getId(), subID, user, false);
 			}
 
-			String scanID= (String)getParameter(request,"SCAN_ID");
-			if(scanID!=null && this.assessed!=null){
-					CriteriaCollection cc= new CriteriaCollection("AND");
-					cc.addClause("xnat:imageScanData/ID", scanID);
-					cc.addClause("xnat:imageScanData/image_session_ID", assessed.getId());
-					ArrayList<XnatImagescandata> scans=XnatImagescandata.getXnatImagescandatasByField(cc, user, completeDocument);
-					if(scans.size()>0){
-						scan=scans.get(0);
-					}
-				}
-
-			type= (String)getParameter(request,"TYPE");
-
-			String reconID= (String)getParameter(request,"RECON_ID");
-			if(reconID!=null){
-				CriteriaCollection cc= new CriteriaCollection("AND");
-				cc.addClause("xnat:reconstructedImageData/ID", reconID);
-				cc.addClause("xnat:reconstructedImageData/image_session_ID", assessed.getId());
-				ArrayList<XnatReconstructedimagedata> scans=XnatReconstructedimagedata.getXnatReconstructedimagedatasByField(cc, user, completeDocument);
-				if(scans.size()>0){
-					recon=scans.get(0);
-				}
+			if (sub == null) {
+				sub = XnatSubjectdata.getXnatSubjectdatasById(subID, user, false);
 			}
-			
-			String resourceID= (String)getParameter(request,"RESOURCE_ID");
+		}
+
+		String assessid = (String) getParameter(request, "ASSESSED_ID");
+		if (assessid != null) {
+			assessed = XnatImagesessiondata.getXnatImagesessiondatasById(assessid, user, false);
+
+			if (assessed == null) {
+				assessed = (XnatImagesessiondata) XnatImagesessiondata.GetExptByProjectIdentifier(proj.getId(), assessid, user, false);
+			}
+		}
+
+		String exptID = (String) getParameter(request, "EXPT_ID");
+		if (exptID != null) {
+			expt = XnatImagesessiondata.getXnatImagesessiondatasById(exptID, user, false);
+
+			if (expt == null) {
+				expt = (XnatImagesessiondata) XnatImagesessiondata.GetExptByProjectIdentifier(proj.getId(), exptID, user, false);
+			}
+		}
+
+		String scanID = (String) getParameter(request, "SCAN_ID");
+		if (scanID != null && this.assessed != null) {
+			CriteriaCollection cc = new CriteriaCollection("AND");
+			cc.addClause("xnat:imageScanData/ID", scanID);
+			cc.addClause("xnat:imageScanData/image_session_ID", assessed.getId());
+			ArrayList<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(cc, user, completeDocument);
+			if (scans.size() > 0) {
+				scan = scans.get(0);
+			}
+		}
+
+		type = (String) getParameter(request, "TYPE");
+
+		String reconID = (String) getParameter(request, "RECON_ID");
+		if (reconID != null) {
+			CriteriaCollection cc = new CriteriaCollection("AND");
+			cc.addClause("xnat:reconstructedImageData/ID", reconID);
+			cc.addClause("xnat:reconstructedImageData/image_session_ID", assessed.getId());
+			ArrayList<XnatReconstructedimagedata> scans = XnatReconstructedimagedata.getXnatReconstructedimagedatasByField(cc, user, completeDocument);
+			if (scans.size() > 0) {
+				recon = scans.get(0);
+			}
+		}
+
+		String resourceID = (String) getParameter(request, "RESOURCE_ID");
+		try {
+			Integer.parseInt(resourceID);
+		} catch (NumberFormatException e1) {
+			//This should be a number, if not something shady is going on.
+			AdminUtils.sendAdminEmail(user, "Possible SQL Injection attempt.", "User passed " + resourceID + " as a resource identifier.");
+			this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+			return;
+		}
+
+		index = (String) getParameter(request, "INDEX");
+		filename = (String) getParameter(request, "FILENAME");
+
+		String query = "SELECT res.xnat_abstractresource_id,format,description,content,label,uri ";
+		if (recon != null) {
+			security = this.assessed;
+			parent = recon;
+			if (type != null) {
+				if (type.equals("in")) {
+					query += " FROM recon_in_resource map " +
+							 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+							 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+					query += " WHERE xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=" + recon.getXnatReconstructedimagedataId();
+					query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
+				} else {
+					query += " FROM recon_out_resource map " +
+							 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+							 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+					query += " WHERE xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=" + recon.getXnatReconstructedimagedataId() + "";
+					query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
+				}
+			} else {
+				//resources
+				query += " FROM recon_out_resource map " +
+						 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+						 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+				query += " WHERE xnat_imageassessordata_id='" + expt.getId() + "'";
+				query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
+			}
+		} else if (scan != null) {
+			security = this.assessed;
+			parent = scan;
+			query += " FROM xnat_abstractresource abst" +
+					 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+			query += " WHERE xnat_imagescandata_xnat_imagescandata_id=" + scan.getXnatImagescandataId() + "";
+			query += " AND abst.xnat_abstractresource_id=" + resourceID;
+		} else if (expt != null) {
+			security = this.expt;
+			parent = this.expt;
 			try {
-				Integer.parseInt(resourceID);
-			} catch (NumberFormatException e1) {
-				//This should be a number, if not something shady is going on.
-				AdminUtils.sendAdminEmail(user,"Possible SQL Injection attempt.", "User passed "+ resourceID+" as a resource identifier.");
-				this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
-        		return;
-			}
-			
-			index= (String)getParameter(request,"INDEX");
-			filename= (String)getParameter(request,"FILENAME");
-			
-			String query="SELECT res.xnat_abstractresource_id,format,description,content,label,uri ";
-			if(recon!=null){
-				security=this.assessed;
-				parent=recon;
-				if(type!=null){
-					if(type.equals("in")){
-						query+=" FROM recon_in_resource map " +
-								" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-								" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-						query+=" WHERE xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=" + recon.getXnatReconstructedimagedataId();
-						query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
-					}else{
-						query+=" FROM recon_out_resource map " +
-						" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-						" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-						query+=" WHERE xnat_reconstructedimagedata_xnat_reconstructedimagedata_id=" + recon.getXnatReconstructedimagedataId() + "";
-						query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
+				if (expt.getItem().instanceOf("xnat:imageAssessorData")) {
+					security = this.expt;
+					parent = this.expt;
+					if (type != null) {
+						if (type.equals("in")) {
+							query += " FROM img_assessor_in_resource map " +
+									 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+									 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+							query += " WHERE xnat_imageassessordata_id='" + expt.getId() + "'";
+							query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
+						} else {
+							query += " FROM img_assessor_out_resource map " +
+									 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+									 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+							query += " WHERE xnat_imageassessordata_id='" + expt.getId() + "'";
+							query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
 						}
-				}else{
-					//resources
-					query+=" FROM recon_out_resource map " +
-					" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-					" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-					query+=" WHERE xnat_imageassessordata_id='" + expt.getId() + "'";
-					query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
-				}
-			}else if(scan!=null){
-				security=this.assessed;
-				parent=scan;
-				query+=" FROM xnat_abstractresource abst" +
-				" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-				query+= " WHERE xnat_imagescandata_xnat_imagescandata_id="+scan.getXnatImagescandataId() + "";
-				query+=" AND abst.xnat_abstractresource_id="+resourceID;
-			}else if(expt!=null){
-				security=this.expt;
-				parent=this.expt;
-				try {
-					if(expt.getItem().instanceOf("xnat:imageAssessorData")){
-						security=this.expt;
-						parent=this.expt;
-						if(type!=null){
-							if(type.equals("in")){
-								query+=" FROM img_assessor_in_resource map " +
-								" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-								" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-								query+=" WHERE xnat_imageassessordata_id='" + expt.getId() + "'";
-								query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
-							}else{
-								query+=" FROM img_assessor_out_resource map " +
-								" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-								" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-								query+=" WHERE xnat_imageassessordata_id='" + expt.getId() + "'";
-								query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
-							}
-						}else{
-							//resources
-							query+=" FROM xnat_experimentdata_resource map " +
-							" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-							" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-							query+= " WHERE xnat_experimentdata_id='"+expt.getId() + "'";
-							query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
-						}
-					}else{
+					} else {
 						//resources
-						query+=" FROM xnat_experimentdata_resource map " +
-						" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-						" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-						query+= " WHERE xnat_experimentdata_id='"+expt.getId() + "'";
-						query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
+						query += " FROM xnat_experimentdata_resource map " +
+								 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+								 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+						query += " WHERE xnat_experimentdata_id='" + expt.getId() + "'";
+						query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
 					}
-				} catch (ElementNotFoundException e) {
-					e.printStackTrace();
+				} else {
+					//resources
+					query += " FROM xnat_experimentdata_resource map " +
+							 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+							 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+					query += " WHERE xnat_experimentdata_id='" + expt.getId() + "'";
+					query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
 				}
-			}else if(sub!=null){
-				security=this.sub;
-				parent=this.sub;
-				//resources
-				query+=" FROM xnat_subjectdata_resource map " +
-				" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-				" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-				query+=" WHERE xnat_subjectdata_id='" + sub.getId() + "'";
-				query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
-			}else if(proj!=null){
-				security=this.proj;
-				parent=this.proj;
-				//resources
-				query+=" FROM xnat_projectdata_resource map " +
-				" LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
-				" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-				query+=" WHERE xnat_projectdata_id='" + proj.getId() + "'";
-				query+=" AND map.xnat_abstractresource_xnat_abstractresource_id="+resourceID;
-			}else{
-				query+=" FROM xnat_abstractresource abst" +
-				" LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
-				query += " WHERE res.xnat_abstractresource_id IS NULL";
+			} catch (ElementNotFoundException e) {
+				e.printStackTrace();
 			}
-			
-			try {
-				XFTTable table=XFTTable.Execute(query, user.getDBName(), userName);
-				if(table.size()>0){
-					resource=XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(resourceID, user, false);
-					this.getVariants().add(new Variant(MediaType.ALL));
-				}else{
-					response.setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Invalid read permissions");
-				}
-			} catch (Exception e) {
-	            logger.error("",e);
-			}
-	}
+		} else if (sub != null) {
+			security = this.sub;
+			parent = this.sub;
+			//resources
+			query += " FROM xnat_subjectdata_resource map " +
+					 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+					 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+			query += " WHERE xnat_subjectdata_id='" + sub.getId() + "'";
+			query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
+		} else if (proj != null) {
+			security = this.proj;
+			parent = this.proj;
+			//resources
+			query += " FROM xnat_projectdata_resource map " +
+					 " LEFT JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id" +
+					 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+			query += " WHERE xnat_projectdata_id='" + proj.getId() + "'";
+			query += " AND map.xnat_abstractresource_xnat_abstractresource_id=" + resourceID;
+		} else {
+			query += " FROM xnat_abstractresource abst" +
+					 " LEFT JOIN xnat_resource res ON abst.xnat_abstractresource_id=res.xnat_abstractresource_id";
+			query += " WHERE res.xnat_abstractresource_id IS NULL";
+		}
 
+		try {
+			XFTTable table = XFTTable.Execute(query, user.getDBName(), userName);
+			if (table.size() > 0) {
+				resource = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(resourceID, user, false);
+				this.getVariants().add(new Variant(MediaType.ALL));
+			} else {
+				response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid read permissions");
+			}
+		} catch (Exception e) {
+			logger.error("", e);
+		}
+	}
 
 	@Override
 	public boolean allowDelete() {
@@ -248,7 +250,7 @@ public class FileResource extends ItemResource {
 	public void handleDelete(){
 			if(resource!=null && this.parent!=null && this.security!=null){
 				try {
-					if(Permissions.canEdit(user,this.security)){
+					if(Permissions.canEdit(getUser(),this.security)){
 						
 						if(proj==null){
 							if(parent.getItem().instanceOf("xnat:experimentData")){
@@ -292,15 +294,12 @@ public class FileResource extends ItemResource {
 							 }
 						}else{
 						this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"File missing");
-							return;
 						}
 					}else{
 						this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"User account doesn't have permission to modify this session.");
-						return;
 					}
 				} catch (Exception e) {
 					this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-					return;
 				}
 			}
 		}
@@ -342,7 +341,7 @@ public class FileResource extends ItemResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		MediaType mt = overrideVariant(variant);
 
 		if(resource!=null){

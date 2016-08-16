@@ -9,6 +9,7 @@
     <c:set var="loggedIn" value="false" scope="session"/>
     <c:set var="username" value="-" scope="session"/>
     <c:set var="isAdmin" value="false" scope="session"/>
+    <c:set var="isGuest" value="false" scope="session"/>
 
     <%-- set vars for user --%>
     <sec:authorize access="isAuthenticated()">
@@ -21,8 +22,12 @@
         <%--<c:redirect url="/app/template/Login.vm"/>--%>
     </c:if>
 
-    <sec:authorize access="hasAnyRole('Administrator', 'administrator', 'Admin', 'admin', 'ADMIN')">
+    <sec:authorize access="hasAnyRole('ADMIN')">
         <c:set var="isAdmin" value="true" scope="session"/>
+    </sec:authorize>
+
+    <sec:authorize access="hasAnyRole('ANONYMOUS')">
+        <c:set var="isGuest" value="true" scope="session"/>
     </sec:authorize>
 
     <c:set var="themeName" value="${cookie.THEME_NAME.value}" scope="session"/>

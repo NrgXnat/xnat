@@ -1,4 +1,7 @@
 // interactions with 'Security Passwords' section of admin ui
+
+console.log('pwExpType.js');
+
 (function(){
     var fieldInterval, fieldDate, sdtDisabled, sdtInterval, sdtDate, openCal;
     setTimeout(function(){
@@ -13,7 +16,7 @@
       fieldDate.datetimepicker({
         timepicker:false,
         format:'m/d/Y',
-        maxDate:'1970/01/01' // today is max date, disallow future date selection
+        maxDate:'+1970/01/01' // today is max date, disallow future date selection
       });
       sdtDisabled = $('#passwordExpirationTypeDisabled');
       sdtInterval = $('#passwordExpirationTypeInterval');
@@ -22,6 +25,11 @@
       sdtInterval.click(changePasswordExpirationType);
       sdtDate.click(changePasswordExpirationType);
       changePasswordExpirationType(XNAT.data.siteConfig.passwordExpirationType);
+      reuseDisabled = $('#passwordReuseTypeDisabled');
+      reuseHistorical = $('#passwordReuseTypeHistorical');
+      reuseDisabled.click(changePasswordReuseType);
+      reuseHistorical.click(changePasswordReuseType);
+      changePasswordReuseType(XNAT.data.siteConfig.passwordReuseRestriction);
     }, 1);
 
     function openCalendar(){
@@ -68,6 +76,28 @@
             datePicker.show();
             interval.hide();
             intervalUnits.hide();
+        }
+    }
+    
+    function changePasswordReuseType(eventOrValue){
+        var value = eventOrValue;
+        if (typeof eventOrValue === 'object') {
+            if (eventOrValue.target.id == "passwordReuseTypeHistorical") {
+                value = 'Historical';
+            } else {
+                value = 'Disabled';
+            }
+        }
+        reuseDisabled.val(value);
+        reuseHistorical.val(value);
+        var interval = $('div.input-bundle.reuseInterval');
+        if (value == 'Disabled') {
+            reuseDisabled.prop('checked', true);
+            interval.val(-1);
+            interval.hide();
+        } else if (value == 'Historical') {
+            reuseHistorical.prop('checked', true);
+            interval.show();
         }
     }
 })();

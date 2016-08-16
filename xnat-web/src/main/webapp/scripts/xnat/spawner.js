@@ -65,6 +65,8 @@ var XNAT = getObject(XNAT);
             // lastly use the object's own name
             prop.name = prop.name || item;
 
+            prop.id = prop.id || prop.element.id || toDashed(prop.name);
+
             // accept 'kind' or 'type' property name
             // but 'kind' will take priority
             // with a fallback to a generic div
@@ -146,7 +148,8 @@ var XNAT = getObject(XNAT);
 
                 }
                 else {
-                    spawner.notSpawned.push(item);
+                    if (hasConsole) console.log('not spawned: ' + prop);
+                    spawner.notSpawned.push(prop);
                 }
             }
 

@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.*;
 
 public class ScanDIRResource extends ScanResource {
@@ -49,38 +50,40 @@ public class ScanDIRResource extends ScanResource {
     }
 
     @Override
-    public Representation getRepresentation(Variant variant) {
+    public Representation represent(Variant variant) {
         final List<XnatImagescandata> scans;
-        if (null != scan) {
-            scans = Collections.singletonList(scan);
-        } else if (null == this.session) {
-            this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified session.");
-            return null;
-        } else if (!Strings.isNullOrEmpty(scanID)) {
-            scanID = URLDecoder.decode(scanID);
-            scans = XnatImagescandata.getScansByIdORType(scanID, session, user, completeDocument);
-            if (scans.isEmpty()){
-                this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified scan(s).");
+        try {
+            if (null != scan) {
+                scans = Collections.singletonList(scan);
+            } else if (null == this.session) {
+                this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified session.");
+                return null;
+            } else if (!Strings.isNullOrEmpty(scanID)) {
+                    scanID = URLDecoder.decode(scanID, Charset.defaultCharset().name());
+                scans = XnatImagescandata.getScansByIdORType(scanID, session, getUser(), completeDocument);
+                if (scans.isEmpty()){
+                    this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified scan(s).");
+                    return null;
+                }
+            } else {
+                // TODO: use all scans for the given session?
+                this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "No scan specified");
                 return null;
             }
-        } else {
-            // TODO: use all scans for the given session?
-            this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "No scan specified");
-            return null;
-        }
-        assert !scans.isEmpty();
 
-        ZipRepresentation rep;
-        try {
+            assert !scans.isEmpty();
+
             //prepare Maps for use in cleaning file paths and relativing them.
-            final Map<String,String> session_mapping=new Hashtable<String,String>();
+            final Map<String,String> session_mapping= new Hashtable<>();
             session_mapping.put(session.getId(),session.getArchiveDirectoryName());
             session_mapping.put(session.getArchiveDirectoryName(),session.getArchiveDirectoryName());
 
-            final ArrayList<String> session_ids=new ArrayList<String>();
+            final ArrayList<String> session_ids= new ArrayList<>();
             session_ids.add(session.getArchiveDirectoryName());
 
             Map<String,String> valuesToReplace=RestFileUtils.getReMaps(scans,null);
+
+            final ZipRepresentation rep;
             try{
                 rep = new ZipRepresentation(MediaType.APPLICATION_ZIP,session_ids,identifyCompression(null));
             } catch (ActionException e) {
@@ -91,7 +94,6 @@ public class ScanDIRResource extends ScanResource {
 
             //this is the expected path to the SESSION_DIR
             final String rootPath=session.getArchivePath();
-
 
             // create a directory in the temporary directory to hold our files
             File _tmp_working_dir = File.createTempFile("dicom_","",new File(System.getProperty("java.io.tmpdir")));
@@ -121,7 +123,7 @@ public class ScanDIRResource extends ScanResource {
                                 if (tmp_dicom_dir != null) {
                                     tmp_dicom_dir.mkdirs();
                                 }
-                                if(f!=null && f.exists()){
+                                if(f.exists()){
                                     rep.addEntry(relative, f);
                                     // copy file to the directory structure in the working temp directory.
                                     FileUtils.copyFileToDirectory(f,tmp_dicom_dir);
@@ -139,8 +141,7 @@ public class ScanDIRResource extends ScanResource {
                 rep.deleteDirectoryAfterWrite(tmp_working_dir);
                 this.setContentDisposition(rep.getDownloadName());
                 return rep;
-            }
-            finally {
+            } finally {
                 dicomdir.close();
             }
         }

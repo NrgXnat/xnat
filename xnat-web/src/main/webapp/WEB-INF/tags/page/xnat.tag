@@ -155,6 +155,9 @@
 
     <!-- YUI css -->
     <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">--%>
+    
+    <!-- Icon sets -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
 
     <!-- xdat.css and xnat.css loaded last to override YUI styles -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
@@ -203,7 +206,7 @@ ${bodyTop}
 <div id="user_bar">
     <div class="inner">
 
-        <c:if test="${_user != '-'}">
+        <c:if test="${_user != '-' || sessionScope.isGuest}">
 
             <img id="attention_icon" src="${SITE_ROOT}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
             <span id="user_info">Logged in as: &nbsp;<a href="${SITE_ROOT}/app/template/XDATScreen_UpdateUser.vm">${_user}</a> <b>|</b>

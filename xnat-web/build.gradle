@@ -254,6 +254,7 @@ configurations {
     all*.exclude group: 'servletapi'
     all*.exclude group: 'velocity'
     all*.exclude group: 'xmlrpc'
+    all*.exclude group: 'quartz'
     all*.exclude group: 'ant', module: 'ant'
     all*.exclude group: 'commons-email', module: 'commons-email'
     all*.exclude group: 'edu.ucar', module: 'netcdf'
@@ -366,6 +367,7 @@ dependencies {
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${vJackson}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4:${vJackson}"
     compile "org.json:json:20151123"
+    compile "com.thoughtworks.xstream:xstream:1.4.9"
     compile "xerces:xercesImpl:2.11.0"
 
     compile "commons-beanutils:commons-beanutils:1.9.2"

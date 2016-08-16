@@ -128,7 +128,7 @@ var XNAT = getObject(XNAT);
         
         opts = cloneObject(opts);
         opts.id = opts.id||toDashed(opts.name||'');
-        opts.label = opts.label||opts.title||opts.name||'';
+        opts.label = opts.label||'';
         
         // pass in an element or create a new 'div' element
         element = 
@@ -140,7 +140,10 @@ var XNAT = getObject(XNAT);
             }, opts.element));
         
         return template.panelElement(opts, [
-            ['label.element-label|for='+element.id||opts.id, opts.label],
+
+            // only add a label if specified
+            (opts.label ? ['label.element-label|for='+element.id||opts.id, opts.label] : ''),
+
             ['div.element-wrapper', [].concat(
                 
                 (opts.beforeElement ? opts.beforeElement : []),
@@ -256,7 +259,7 @@ var XNAT = getObject(XNAT);
         var hiddenInput;
 
         // check buttons if value is true
-        if (/checkbox|radio/i.test(element.type||'')) {
+        if (/checkbox/i.test(element.type||'')) {
 
             element.checked = /true|checked/i.test((opts.checked||element.value||'').toString());
 
@@ -295,44 +298,6 @@ var XNAT = getObject(XNAT);
             ['div.element-wrapper', inner]
         ]);
     };
-    // ========================================
-
-
-    // ========================================
-    // select element for form panels
-    // template.panelSelect = function(opts){
-    //    
-    //     opts = cloneObject(opts);
-    //    
-    //     opts.name = opts.name || opts.id || randomID('select-', false);
-    //     opts.id = opts.id || toDashed(opts.name||'');
-    //     opts.element = extend({
-    //         id: opts.id,
-    //         name: opts.name,
-    //         className: opts.className||'',
-    //         //size: 25,
-    //         title: opts.title||opts.name||opts.id||'',
-    //         value: opts.value||''
-    //     }, opts.element);
-    //
-    //     var _select = spawn('select', opts.element, [['option', 'Select']]);
-    //    
-    //     // add the options
-    //     $.each(opts.options||{}, function(name, prop){
-    //         var _option = spawn('option', extend(true, {
-    //             html: prop.html || prop.text || prop.label || prop.value || prop,
-    //             value: prop.value || name
-    //         }, prop.element));
-    //         // select the option if it's the select element's value
-    //         if (prop.value === opts.value){
-    //             _option.selected = true;
-    //         }
-    //         _select.appendChild(_option)    
-    //     });
-    //    
-    //     return template.panelInput(opts, _select);
-    //
-    // };
     // ========================================
 
 

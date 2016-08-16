@@ -102,23 +102,14 @@ public class XnatSecureGuard extends Filter {
             }
             return true;
         } else {
-			UserI user;
 			final ChallengeResponse challengeResponse = request.getChallengeResponse();
 			if (challengeResponse != null) {
-				user = authenticateBasic(challengeResponse);
+				UserI user = authenticateBasic(challengeResponse);
 				if (user != null) {
 					return true;
 				}
-			}
-			else if (!XDAT.getSiteConfigPreferences().getRequireLogin()) {
-				try {
-					user=Users.getGuest();
-					if (user!=null) {
-						return true;
-					}
-				} catch (Exception e) {
-					logger.error("",e);
-				}
+			} else {
+				return !XDAT.getSiteConfigPreferences().getRequireLogin();
 			}
 		}
 		return false;

@@ -21,6 +21,7 @@ import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase.SyncFailedException;
@@ -127,8 +128,9 @@ public final class PrearcSessionResource extends SecureResource {
         }
 
         final File sessionDir;
+        final UserI user = getUser();
         try {
-            sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session,true);
+            sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session, true);
         } catch (InvalidPermissionException e) {
             logger.error("",e);
             this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
@@ -145,7 +147,7 @@ public final class PrearcSessionResource extends SecureResource {
             try {
                 if (PrearcDatabase.setStatus(session, timestamp, project, PrearcUtils.PrearcStatus.BUILDING)) {
                     PrearcDatabase.buildSession(sessionDir, session, timestamp, project, (String) params.get(VISIT), (String) params.get(PROTOCOL), (String) params.get(TIMEZONE), (String) params.get(SOURCE));
-                    PrearcUtils.resetStatus(user, project, timestamp, session,true);
+                    PrearcUtils.resetStatus(user, project, timestamp, session, true);
                     returnString(wrapPartialDataURI(PrearcUtils.buildURI(project,timestamp,session)), MediaType.TEXT_URI_LIST,Status.SUCCESS_OK);
                 } else {
                     this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "session document locked");
@@ -162,7 +164,7 @@ public final class PrearcSessionResource extends SecureResource {
         } else if (POST_ACTION_RESET.equals(action)) {
             try {
                 final String tag= getQueryVariable("tag");
-                PrearcUtils.resetStatus(user, project, timestamp, session,tag,true);
+                PrearcUtils.resetStatus(user, project, timestamp, session, tag, true);
                 returnString(wrapPartialDataURI(PrearcUtils.buildURI(project,timestamp,session)), MediaType.TEXT_URI_LIST,Status.SUCCESS_OK);
             } catch (InvalidPermissionException e) {
                 logger.error("",e);
@@ -215,9 +217,9 @@ public final class PrearcSessionResource extends SecureResource {
                         PrearcDatabase.setAutoArchive(session, timestamp, project, PrearchiveCode.code(p.getArcSpecification().getPrearchiveCode()));
                     }
                     PrearcDatabase.buildSession(sessionDir, session, timestamp, project, (String) params.get(VISIT), (String) params.get(PROTOCOL), (String) params.get(TIMEZONE), (String) params.get(SOURCE));
-                    PrearcUtils.resetStatus(user, project, timestamp, session,true);
+                    PrearcUtils.resetStatus(user, project, timestamp, session, true);
 
-                    final FinishImageUpload uploader=new FinishImageUpload(null, user, new PrearcSession(project,timestamp,session,params,user), null, false, true, false);
+                    final FinishImageUpload uploader=new FinishImageUpload(null, user, new PrearcSession(project, timestamp, session, params, user), null, false, true, false);
                     try {
                         if(uploader.isAutoArchive()){
                             returnString(wrapPartialDataURI(uploader.call()),Status.REDIRECTION_PERMANENT);
@@ -266,10 +268,11 @@ public final class PrearcSessionResource extends SecureResource {
     		this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "");
     		return;
     	}
-    	
+
+        final UserI user = getUser();
         try {
             //checks if the user can access this session
-            PrearcUtils.getPrearcSessionDir(user, project, timestamp, session,false);
+            PrearcUtils.getPrearcSessionDir(user, project, timestamp, session, false);
         } catch (InvalidPermissionException e) {
             logger.error("",e);
             this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
@@ -307,8 +310,9 @@ public final class PrearcSessionResource extends SecureResource {
     @Override
     public Representation getRepresentation(final Variant variant){
         final File sessionDir;
+        final UserI user = getUser();
         try {
-            sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session,false);
+            sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session, false);
         } catch (InvalidPermissionException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
             return null;

@@ -19,6 +19,7 @@ import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
@@ -43,7 +44,8 @@ public class DIRResource extends SecureResource {
 	public DIRResource(Context context, Request request, Response response) {
 		super(context, request, response);
 
-		if(user==null){
+		final UserI user = getUser();
+		if(user==null || user.isGuest()){
 			response.setStatus(Status.CLIENT_ERROR_UNAUTHORIZED);
 			return;
 		}
@@ -83,10 +85,11 @@ public class DIRResource extends SecureResource {
 		} else {
 			mt=overrideVariant(variant);
 		}
-			
-		if(user==null){
-			this.getResponse().setStatus(Status.CLIENT_ERROR_UNAUTHORIZED);
-					return null;
+
+		final UserI user = getUser();
+		if (user == null || user.isGuest()) {
+			getResponse().setStatus(Status.CLIENT_ERROR_UNAUTHORIZED);
+			return null;
 		}
 		
 		if(expt instanceof XnatSubjectassessordata){
@@ -104,7 +107,7 @@ public class DIRResource extends SecureResource {
 			try {
 				final List<File> src;
 				if(filepath.equals("")){
-					src=new ArrayList<File>();
+					src= new ArrayList<>();
 					src.add(session_dir);
 				}else{
 					src=getFiles(session_dir,filepath,true);

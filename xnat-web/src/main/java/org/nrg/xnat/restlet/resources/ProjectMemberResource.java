@@ -54,92 +54,94 @@ public class ProjectMemberResource extends SecureResource {
 	ArrayList<String> unknown= new ArrayList<>();
 	String gID=null;
     boolean displayHiddenUsers = false;
-	
+
 	public ProjectMemberResource(Context context, Request request, Response response) {
 		super(context, request, response);
-		
-			this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
-			this.getVariants().add(new Variant(MediaType.TEXT_HTML));
-			this.getVariants().add(new Variant(MediaType.TEXT_XML));
-			
-			String pID= getUrlEncodedParameter(request, "PROJECT_ID");
-			if(pID!=null){
-				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
-			}
-			
-			gID = getUrlEncodedParameter(request, "GROUP_ID");
-			
-			group=Groups.getGroup(gID);
-			
-			if(group==null){
-				group=Groups.getGroup(pID + "_" +gID);
-			}
-			
-			if(group==null){
-				try {
-					for(UserGroupI gp: Groups.getGroupsByTag(pID)){
-						if(StringUtils.equals(gID, gp.getDisplayname())){
-							group=gp;
-							break;
-						}
-					}
-				} catch (Exception e) {
-					logger.error("",e);
-				}
-			}
-			
 
-			String tempValue =(String)getParameter(request,"USER_ID");
+		this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
+		this.getVariants().add(new Variant(MediaType.TEXT_HTML));
+		this.getVariants().add(new Variant(MediaType.TEXT_XML));
+
+		final UserI user = getUser();
+
+		String pID = getUrlEncodedParameter(request, "PROJECT_ID");
+		if (pID != null) {
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+		}
+
+		gID = getUrlEncodedParameter(request, "GROUP_ID");
+
+		group = Groups.getGroup(gID);
+
+		if (group == null) {
+			group = Groups.getGroup(pID + "_" + gID);
+		}
+
+		if (group == null) {
 			try {
-				String[] ids;
-				if(tempValue.contains(",")){
-					ids=tempValue.split(",");
-				}else{
-					ids=new String[]{tempValue};
-				}
-
-				for (final String id : ids) {
-					String  uID          = id.trim();
-					Integer xdat_user_id = null;
-					try {
-						xdat_user_id = Integer.parseInt(uID);
-					} catch (NumberFormatException ignored) {
-
-					}
-
-
-					if (xdat_user_id == null) {
-						//login or email
-						UserI newUser = null;
-						try {
-							newUser = Users.getUser(uID);
-						} catch (UserNotFoundException ignored) {
-						}
-						if (newUser == null) {
-							//by email
-							List<UserI> items = Users.getUsersByEmail(uID);
-							if (items.size() > 0) {
-								newUsers.addAll(items);
-							} else {
-								unknown.add(uID);
-							}
-						} else {
-							newUsers.add(newUser);
-						}
-					} else {
-						UserI tempUser = Users.getUser(xdat_user_id);
-						if (tempUser != null) {
-							newUsers.add(tempUser);
-						}
+				for (UserGroupI gp : Groups.getGroupsByTag(pID)) {
+					if (StringUtils.equals(gID, gp.getDisplayname())) {
+						group = gp;
+						break;
 					}
 				}
 			} catch (Exception e) {
-				logger.error("",e);
-				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+				logger.error("", e);
 			}
-        displayHiddenUsers = Boolean.parseBoolean((String)getParameter(request, "DISPLAY_HIDDEN_USERS"));
-
 		}
+
+
+		String tempValue = (String) getParameter(request, "USER_ID");
+		try {
+			String[] ids;
+			if (tempValue.contains(",")) {
+				ids = tempValue.split(",");
+			} else {
+				ids = new String[] {tempValue};
+			}
+
+			for (final String id : ids) {
+				String  uID          = id.trim();
+				Integer xdat_user_id = null;
+				try {
+					xdat_user_id = Integer.parseInt(uID);
+				} catch (NumberFormatException ignored) {
+
+				}
+
+
+				if (xdat_user_id == null) {
+					//login or email
+					UserI newUser = null;
+					try {
+						newUser = Users.getUser(uID);
+					} catch (UserNotFoundException ignored) {
+					}
+					if (newUser == null) {
+						//by email
+						List<UserI> items = Users.getUsersByEmail(uID);
+						if (items.size() > 0) {
+							newUsers.addAll(items);
+						} else {
+							unknown.add(uID);
+						}
+					} else {
+						newUsers.add(newUser);
+					}
+				} else {
+					UserI tempUser = Users.getUser(xdat_user_id);
+					if (tempUser != null) {
+						newUsers.add(tempUser);
+					}
+				}
+			}
+		} catch (Exception e) {
+			logger.error("", e);
+			getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+		}
+		displayHiddenUsers = Boolean.parseBoolean((String) getParameter(request, "DISPLAY_HIDDEN_USERS"));
+
+	}
 
 	@Override
 	public boolean allowPut() {
@@ -156,6 +158,7 @@ public class ProjectMemberResource extends SecureResource {
 		if(proj==null || group==null || newUsers.size()==0){
 			getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 		}else{
+			final UserI user = getUser();
 			try {
 				if(Permissions.canDelete(user,proj)){
 					try {
@@ -183,6 +186,7 @@ public class ProjectMemberResource extends SecureResource {
 			getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 		}else{
 			try {
+				final UserI user = getUser();
 				if(Permissions.canDelete(user,proj)){
 					if (unknown.size()>0){
 						//NEW USER                        
@@ -271,6 +275,7 @@ public class ProjectMemberResource extends SecureResource {
                     query.append(" and enabled = 1 ");
                 }
                 query.append(" ORDER BY g.id DESC;");
+				final UserI user = getUser();
                 table = XFTTable.Execute(query.toString(), user.getDBName(), user.getLogin());
 			} catch (SQLException | DBPoolException e) {
 				logger.error("",e);

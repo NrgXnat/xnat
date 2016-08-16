@@ -13,6 +13,7 @@ package org.nrg.xnat.restlet.resources;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -31,7 +32,7 @@ public class ScanTypeListing  extends SecureResource {
 		
 		String pID = (String) getParameter(request,"PROJECT_ID");
 		if (pID != null) {
-			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, getUser(), false);
 
 			if (proj == null) {
 				response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
@@ -44,8 +45,9 @@ public class ScanTypeListing  extends SecureResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
-		XFTTable table = null;
+	public Representation represent(Variant variant) {
+		final UserI user  = getUser();
+		XFTTable        table = null;
 
 		String scan_table = this.getQueryVariable("table");
 		if (scan_table == null) {
@@ -68,13 +70,13 @@ public class ScanTypeListing  extends SecureResource {
 
 			query += " GROUP BY scan.type ORDER BY scan.type";
 
-			table = (XFTTable) XFTTable.Execute(query, user.getDBName(), user
+			table = XFTTable.Execute(query, user.getDBName(), user
 					.getLogin());
 		} catch (Exception e) {
 			logger.error("",e);
 		}
 		
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params= new Hashtable<>();
 		params.put("title", "Scan Types");
 
 		MediaType mt = overrideVariant(variant);

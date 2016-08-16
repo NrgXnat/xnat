@@ -112,7 +112,7 @@ var XNAT = getObject(XNAT);
 
     otherTypes = [
         'password', 'date', 'file',
-        'radio', 'button', 'hidden'
+        'button', 'hidden'
     ];
     otherTypes.forEach(function(type){
         input[type] = function(config){
@@ -129,18 +129,32 @@ var XNAT = getObject(XNAT);
         // };
         return setupType('checkbox', '', config);
     };
-    
-    // create an input with display: block style
-    input.text.block = function(config){
-        config = extend(true, {}, config, config.element, {
-            $: { addClass: 'text block' },
-            style: { display: 'block' }
-        });
-        return input.text(config);
+
+    // radio buttons are special too
+    input.radio = function(config){
+        otherTypes.push('radio');
+        config = extend(true, {}, config, config.element);
+        return setupType('radio', '', config);
     };
 
     // save a list of all available input types
     input.types = [].concat(textTypes, numberTypes, otherTypes);
+
+    // create display: block versions of ALL input types
+    input.types.forEach(function(type, i){
+        input[type]['block'] = function(config){
+            config = extend(true, {}, config, config.element, {
+                $: { addClass: 'display-block' },
+                style: { display: 'block' }
+            });
+            return input[type](config);
+        }
+    });
+
+    // // not *technically* an <input> element, but a form input nonetheless
+    // input.textarea = function(config){
+    //
+    // };
 
     // after the page is finished loading, set empty
     // input values from [data-lookup] attribute

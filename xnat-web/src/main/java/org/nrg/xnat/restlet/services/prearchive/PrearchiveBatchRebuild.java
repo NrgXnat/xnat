@@ -9,14 +9,12 @@
  * Last modified 7/10/13 9:04 PM
  */
 
-/**
- * 
- */
 package org.nrg.xnat.restlet.services.prearchive;
 
 import org.apache.log4j.Logger;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -56,14 +54,15 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 		for(final String src:srcs){
             File sessionDir;
             try {
-                SessionDataTriple s=buildSessionDataTriple(src);
-                ss.add(s);
-                sessionDir = PrearcUtils.getPrearcSessionDir(user, s.getProject(), s.getTimestamp(), s.getFolderName(), false);
+				final UserI             user   = getUser();
+				final SessionDataTriple triple = buildSessionDataTriple(src);
+				ss.add(triple);
+                sessionDir = PrearcUtils.getPrearcSessionDir(user, triple.getProject(), triple.getTimestamp(), triple.getFolderName(), false);
 
                 final boolean overrideLock = hasQueryVariable("overrideLock") && Boolean.parseBoolean(getQueryVariable("overrideLock"));
 
-                if (PrearcDatabase.setStatus(s.getFolderName(), s.getTimestamp(), s.getProject(), PrearcUtils.PrearcStatus.QUEUED_BUILDING, overrideLock)) {
-                    SessionData sessionData = PrearcDatabase.getSession(s.getFolderName(), s.getTimestamp(), s.getProject());
+                if (PrearcDatabase.setStatus(triple.getFolderName(), triple.getTimestamp(), triple.getProject(), PrearcUtils.PrearcStatus.QUEUED_BUILDING, overrideLock)) {
+                    SessionData sessionData = PrearcDatabase.getSession(triple.getFolderName(), triple.getTimestamp(), triple.getProject());
                     PrearchiveOperationRequest request = new PrearchiveOperationRequest(user, sessionData, sessionDir, "Rebuild");
                     XDAT.sendJmsRequest(request);
                 }

@@ -172,40 +172,58 @@ var XNAT = getObject(XNAT || {});
     tabs.init = function tabsInit(obj){
 
         var layout, container, $container, 
-            navTabs, tabContent;
+            navTabs, $navTabs, tabContent, $tabContent,
+            NAV_TABS = 'div.xnat-nav-tabs',
+            TAB_CONTENT = 'div.xnat-tab-content';
 
         // set container and layout before spawning:
         // XNAT.tabs.container = 'div.foo';
         container = obj.container || tabs.container || 'div.xnat-tab-container';
 
+        // the main container - contains tabs and content
+        $container = $$(container).hide();
+
+        // use existing tabs if already present
+        if ($container.find(NAV_TABS).length) {
+            navTabs = $container.find(NAV_TABS)[0]
+        }
+        else {
+            navTabs = spawn(NAV_TABS);
+            $container.append(navTabs);
+        }
+
+        // use existing content container if already present
+        if ($container.find(TAB_CONTENT).length) {
+            tabContent = $container.find(TAB_CONTENT)[0];
+        }
+        else {
+            tabContent = spawn(TAB_CONTENT);
+            $container.append(tabContent);
+        }
+
+        $navTabs = $(navTabs);
+        $tabContent = $(tabContent);
+
         layout = obj.layout || tabs.layout || 'left';
 
-        navTabs = spawn('div.xnat-nav-tabs');
-        tabContent = spawn('div.xnat-tab-content');
+        if (layout === 'left') {
+            $navTabs.addClass('side pull-left');
+            $tabContent.addClass('side pull-right');
+        }
 
         // copy values to XNAT.tabs object for use elsewhere
         tabs.container = container;
         tabs.layout = layout;
         tabs.navTabs = navTabs;
 
-        if (layout === 'left') {
-            navTabs.className += ' side pull-left';
-            tabContent.className += ' side pull-right';
-        }
-
-        $container = $$(container).hide();
-
-        $container.append(navTabs);
-        $container.append(tabContent);
-
         // set up the group elements, if present
         if (obj.meta && obj.meta.tabGroups){
             tabs.hasGroups = true;
-            $(navTabs).append(tab.groups(obj.meta.tabGroups));
+            $navTabs.append(tab.groups(obj.meta.tabGroups));
         }
         else {
             tabs.hasGroups = false;
-            $(navTabs).spawn('ul.tab-group');
+            $navTabs.spawn('ul.tab-group');
         }
 
         // bind tab click events

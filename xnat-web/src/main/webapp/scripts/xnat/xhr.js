@@ -551,9 +551,9 @@ var XNAT = getObject(XNAT||{}),
 
     // intercept form submissions with 'ajax' or 'json' class
     // using namespaced event handler submit.json
-    $('body').on('submit.json, submit.ajax', 'form.ajax, form.json', function(){
-        return xhr.form(this);
-    });
+    //$('body').on('submit.json, submit.ajax', 'form.ajax, form.json', function(){
+    //    return xhr.form(this);
+    //});
 
     // special case for YUI 'GET' request
     xhr.get.yui = function( /* url, data/null, opts_or_callback, callback */ ){

@@ -5,12 +5,6 @@
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/30/13 2:58 PM
- */
-
-/**
- *
  */
 package org.nrg.xnat.restlet.services;
 
@@ -115,7 +109,7 @@ public class RefreshCatalog extends SecureResource {
                 ArchivableItem existenceCheck = resourceURI.getSecurityItem();
                 if (existenceCheck != null) {
                     //call refresh operation
-                    ResourceUtils.refreshResourceCatalog(resourceURI, user, this.newEventInstance(EventUtils.CATEGORY.DATA, "Catalog(s) Refreshed"), populateStats, checksum, delete, append);
+                    ResourceUtils.refreshResourceCatalog(resourceURI, getUser(), this.newEventInstance(EventUtils.CATEGORY.DATA, "Catalog(s) Refreshed"), populateStats, checksum, delete, append);
                 }
 			}
 

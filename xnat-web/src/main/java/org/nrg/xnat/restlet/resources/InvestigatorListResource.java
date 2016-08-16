@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.resources;
 
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -39,22 +40,23 @@ public class InvestigatorListResource extends SecureResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+	public Representation represent(Variant variant) {
+		Hashtable<String,Object> params= new Hashtable<>();
 		params.put("title", "Investigators");
 
 		MediaType mt = overrideVariant(variant);
 		
 		try {
-			String query = "SELECT DISTINCT ON ( inv.lastname,inv.firstname) inv.firstname,inv.lastname,inv.institution,inv.department,inv.email,inv.xnat_investigatorData_id,login FROM xnat_investigatorData inv LEFT JOIN xdat_user u ON ((lower(inv.firstname)=lower(u.firstname) AND lower(inv.lastname)=lower(u.lastname)) OR inv.email=u.email) ORDER BY inv.lastname,inv.firstname";
+			final UserI user  = getUser();
+			String  query = "SELECT DISTINCT ON ( inv.lastname,inv.firstname) inv.firstname,inv.lastname,inv.institution,inv.department,inv.email,inv.xnat_investigatorData_id,login FROM xnat_investigatorData inv LEFT JOIN xdat_user u ON ((lower(inv.firstname)=lower(u.firstname) AND lower(inv.lastname)=lower(u.lastname)) OR inv.email=u.email) ORDER BY inv.lastname,inv.firstname";
 			table = XFTTable.Execute(query, user.getDBName(), user.getLogin());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (DBPoolException e) {
-			e.printStackTrace();
+		} catch (SQLException | DBPoolException e) {
+			logger.error("An error occurred retrieving investigators", e);
 		}
 
-		if(table!=null)params.put("totalRecords", table.size());
-		return this.representTable(table, mt, params);
+		if(table!=null) {
+			params.put("totalRecords", table.size());
+		}
+		return representTable(table, mt, params);
 	}
 }

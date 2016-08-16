@@ -13,6 +13,7 @@ package org.nrg.xnat.restlet.resources.prearchive;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
@@ -54,7 +55,7 @@ public final class PrearcSessionListResource extends SecureResource {
 		getVariants().add(new Variant(MediaType.TEXT_HTML));
 		getVariants().add(new Variant(MediaType.TEXT_XML));
 		
-        if (request.getMethod() == Method.PUT && !Roles.isSiteAdmin(user)) {
+        if (request.getMethod() == Method.PUT && !Roles.isSiteAdmin(getUser())) {
             response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Only administrators can request a rebuild of the prearchive.");
         }
 	}
@@ -87,8 +88,9 @@ public final class PrearcSessionListResource extends SecureResource {
 		final MediaType mt = overrideVariant(variant);
 
 		XFTTable table;
-		
-		if(this.getQueryVariable("tag")!=null){
+
+		final UserI user = getUser();
+		if(this.getQueryVariable("tag") != null){
 			final String tag=getQueryVariable("tag");
 			try {
 				if(!Roles.isSiteAdmin(user)){

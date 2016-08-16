@@ -23,6 +23,7 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
@@ -44,84 +45,84 @@ public class ReconList extends QueryOrganizerResource {
 	XnatSubjectdata sub=null;
 	XnatImagesessiondata session=null;
 	XnatReconstructedimagedata recon=null;
-	
+
 	public ReconList(Context context, Request request, Response response) {
 		super(context, request, response);
-		
-			String pID= (String)getParameter(request,"PROJECT_ID");
-			if(pID!=null){
-				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+		final UserI user = getUser();
 
-				String subID= (String)getParameter(request,"SUBJECT_ID");
-				if(subID!=null){
+		String pID = (String) getParameter(request, "PROJECT_ID");
+		if (pID != null) {
+			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
+
+			String subID = (String) getParameter(request, "SUBJECT_ID");
+			if (subID != null) {
 				sub = XnatSubjectdata.GetSubjectByProjectIdentifier(proj
-						.getId(), subID, user, false);
-					
-					if(sub==null){
+																			.getId(), subID, user, false);
+
+				if (sub == null) {
 					sub = XnatSubjectdata.getXnatSubjectdatasById(subID, user,
-							false);
+																  false);
 					if (sub != null
-							&& (proj != null && !sub.hasProject(proj.getId()))) {
+						&& (proj != null && !sub.hasProject(proj.getId()))) {
 						sub = null;
 					}
-					}
-					
-					if(sub!=null){
+				}
+
+				if (sub != null) {
 					String exptID = (String) getParameter(request,
-							"ASSESSED_ID");
+														  "ASSESSED_ID");
 					session = XnatImagesessiondata
 							.getXnatImagesessiondatasById(exptID, user, false);
 					if (session != null
-							&& (proj != null && !session.hasProject(proj
-									.getId()))) {
+						&& (proj != null && !session.hasProject(proj
+																		.getId()))) {
 						session = null;
 					}
-						
-						if(session==null){
+
+					if (session == null) {
 						session = (XnatImagesessiondata) XnatImagesessiondata
 								.GetExptByProjectIdentifier(proj.getId(),
-										exptID, user, false);
-						}
-						
-						if(session!=null){
+															exptID, user, false);
+					}
+
+					if (session != null) {
 						this.getVariants().add(
 								new Variant(MediaType.APPLICATION_JSON));
 						this.getVariants()
-								.add(new Variant(MediaType.TEXT_HTML));
-							this.getVariants().add(new Variant(MediaType.TEXT_XML));
-						}else{
+							.add(new Variant(MediaType.TEXT_HTML));
+						this.getVariants().add(new Variant(MediaType.TEXT_XML));
+					} else {
 						response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
-						}
-					}else{
-					response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 					}
-				}else{
-				response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+				} else {
+					response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 				}
-			}else{
-				String exptID= (String)getParameter(request,"ASSESSED_ID");
+			} else {
+				response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+			}
+		} else {
+			String exptID = (String) getParameter(request, "ASSESSED_ID");
 			session = XnatImagesessiondata.getXnatImagesessiondatasById(exptID,
-					user, false);
-				
-				if(session==null){
+																		user, false);
+
+			if (session == null) {
 				session = (XnatImagesessiondata) XnatImagesessiondata
 						.GetExptByProjectIdentifier(proj.getId(), exptID, user,
-								false);
-				}
-				
-				if(session!=null){
-					this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
-					this.getVariants().add(new Variant(MediaType.TEXT_HTML));
-					this.getVariants().add(new Variant(MediaType.TEXT_XML));
-				}else{
-				response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
-				}
+													false);
 			}
 
-			this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.RECON_DATA,true));
-		
-	}
+			if (session != null) {
+				this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
+				this.getVariants().add(new Variant(MediaType.TEXT_HTML));
+				this.getVariants().add(new Variant(MediaType.TEXT_XML));
+			} else {
+				response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+			}
+		}
 
+		this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.RECON_DATA, true));
+
+	}
 
 	@Override
 	public boolean allowPost() {
@@ -130,10 +131,11 @@ public class ReconList extends QueryOrganizerResource {
 
 	@Override
 	public void handlePost() {
-	        XFTItem item = null;			
+		final UserI user = getUser();
 
 			try {
-			item=this.loadItem("xnat:reconstructedImageData",true);
+				XFTItem item = null;
+				item=this.loadItem("xnat:reconstructedImageData",true);
 			
 				if(item==null){
 					String xsiType=this.getQueryVariable("xsiType");
@@ -281,7 +283,8 @@ public class ReconList extends QueryOrganizerResource {
 			if(rep!=null)return rep;
 			
 			XFTTable table;
-				try {
+			try {
+				final UserI user = getUser();
 				final String re=this.getRootElementName();
 				
 				final QueryOrganizer qo = new QueryOrganizer(re, user,
@@ -300,13 +303,13 @@ public class ReconList extends QueryOrganizerResource {
 				table = formatHeaders(table, qo, "xnat:reconstructedImageData/ID",
 						String.format("/data/experiments/%s/reconstructions/",session.getId()));
 				} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("", e);
 				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 				return null;
 				}
 	
 			MediaType mt = overrideVariant(variant);
-			Hashtable<String, Object> params = new Hashtable<String, Object>();
+			Hashtable<String, Object> params = new Hashtable<>();
 			if (table != null)
 				params.put("totalRecords", table.size());
 			return this.representTable(table, mt, params);

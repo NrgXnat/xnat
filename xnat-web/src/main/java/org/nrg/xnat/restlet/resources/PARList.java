@@ -11,6 +11,7 @@
 package org.nrg.xnat.restlet.resources;
 
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
@@ -34,7 +35,8 @@ public class PARList extends SecureResource {
 
 	@Override
 	public Representation represent(Variant variant) {
-		Hashtable<String, Object> params = new Hashtable<>();
+		final UserI                     user   = getUser();
+		final Hashtable<String, Object> params = new Hashtable<>();
 		try {
 			final XFTTable table = XFTTable.Execute(String.format(PAR_QUERY, user.getEmail().toLowerCase()), user.getDBName(), user.getLogin());
 

@@ -1,45 +1,22 @@
 // interractions with 'Site Info' section of admin ui
 (function(){
 
-    var sdtPage, sdtText;
+    var $container = $('[data-name="siteDescriptionType"]');
+    var $bundles = $container.find('div.input-bundle');
 
-    setTimeout(function(){
-        sdtPage = $('#siteDescriptionTypePage');
-        sdtText = $('#siteDescriptionTypeText');
-        sdtPage.click(changeSiteDescriptionType);
-        sdtText.click(changeSiteDescriptionType);
-        changeSiteDescriptionType(XNAT.data.siteConfig.siteDescriptionType);
-    }, 1);
+    $container.find('input[name="siteDescriptionType"]').on('change', function(){
+        changeSiteDescriptionType(this.value);
+    });
 
-    function changeSiteDescriptionType(eventOrValue){
+    changeSiteDescriptionType(XNAT.data.siteConfig.siteDescriptionType);
 
-        var value = eventOrValue;
+    function changeSiteDescriptionType(value){
 
-        if (typeof eventOrValue === 'object') {
-            if (eventOrValue.target.id == "siteDescriptionTypeText") {
-                value = 'Text';
-            }
-            else {
-                value = 'Page';
-            }
-        }
+        value = (value || 'page').toLowerCase();
 
-        sdtText.val(value);
-        sdtPage.val(value);
+        $bundles.hide();
+        $bundles.filter('.' + value).show();
 
-        var text = $('div.input-bundle.text');
-        var page = $('div.input-bundle.page');
-
-        if (value == 'Text') {
-            sdtText.prop('checked', true);
-            text.show();
-            page.hide();
-        }
-        else {
-            sdtPage.prop('checked', true);
-            page.show();
-            text.hide();
-        }
     }
 
 })();

@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
@@ -5,6 +6,7 @@
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+<!-- BEGIN NoMenuTop.vm -->
 $page.setBgColor($ui.bgcolor)
 
 <div id="user_bar" class="no_menu">
@@ -12,13 +14,18 @@ $page.setBgColor($ui.bgcolor)
         <span id="last_login">Last login: $turbineUtils.formatDateTime($last_login)</span>
 	#end
 	#if($user)
-        #set($username = $user.getUsername())
-        #if($turbineUtils.isGuest($user))
+        #if(!$siteConfig.requireLogin && $user.isGuest())
             <span id="user_info">Logged in as: <span style="color:red;">Guest</span> <b>|</b> <a href="$link.setPage("Login.vm")">Login</a> <b>|</b> <a href="$link.setPage("Register.vm")">Register</a></span>
-        #elseif($username)
-        ## use default timout value from web.xml as the starting text in the "timeLeft" element
-            <span id="user_info">Logged in as: &nbsp;<a href="$link.setPage("XDATScreen_UpdateUser.vm")">$!username</a> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
-		#end
+        #else
+            #set($username = $user.getUsername())
+            #if($username)
+                ## use default timout value from web.xml as the starting text in the "timeLeft" element
+                <span id="user_info">Logged in as: &nbsp;<a href="$link.setPage("XDATScreen_UpdateUser.vm")">$!username</a> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+                <script>
+                    window.loggedIn = true;
+                </script>
+            #end
+        #end
 	#end
     <div class="clear"></div>
 </div><!-- /user_bar -->
@@ -30,3 +37,4 @@ $page.setBgColor($ui.bgcolor)
         #parse("/screens/Logo.vm")
     </a>
 </div></div>
+<!-- END NoMenuTop.vm -->

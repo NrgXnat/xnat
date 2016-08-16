@@ -10,10 +10,6 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
@@ -30,7 +26,6 @@ import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -40,6 +35,10 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.nrg.xnat.utils.WorkflowUtils;
+
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class ProcessAccessRequest extends SecureAction {
     static Logger logger = Logger.getLogger(ProcessAccessRequest.class);
@@ -110,7 +109,7 @@ public class ProcessAccessRequest extends SecureAction {
         //data.setScreenTemplate("XDATScreen_manage_xnat_projectData.vm");
         //data.setScreenTemplate("/xnat_projectData/xnat_projectData_summary_management.vm");        
         TurbineUtils.SetSearchProperties(data, project);
-        data.getParameters().setString("topTab", "Access");
+        //data.getParameters().setString("topTab", "Access");
         this.redirectToReportScreen("XDATScreen_report_xnat_projectData.vm", project, data);
     }
     
@@ -153,7 +152,7 @@ public class ProcessAccessRequest extends SecureAction {
 
 			try {				
 				for (Map.Entry<String, UserGroupI> entry:Groups.getGroupsForUser(user).entrySet()){
-				    if (entry.getValue().getTag().equals(project.getId())){
+				    if (entry.getValue()!=null && entry.getValue().getTag()!=null && entry.getValue().getTag().equals(project.getId())){
 				    	Groups.removeUserFromGroup(other, entry.getValue().getId(), c);
 				    }
 				}
@@ -183,7 +182,7 @@ public class ProcessAccessRequest extends SecureAction {
         //data.setScreenTemplate("XDATScreen_manage_xnat_projectData.vm");
         //data.setScreenTemplate("/xnat_projectData/xnat_projectData_summary_management.vm");
         TurbineUtils.SetSearchProperties(data, project);
-        data.getParameters().setString("topTab", "Access");
+        //data.getParameters().setString("topTab", "Access");
         this.redirectToReportScreen("XDATScreen_report_xnat_projectData.vm", project, data);
     }
     

@@ -118,16 +118,19 @@ $.fn.dataAttr = function(name, value){
         }
     }
 
-    function toCamelCase(str){
-        return str.toLowerCase().replace(/\-./g, function(u){
-            return u.substr(1).toUpperCase();
-        });
+    function toDashed(str){
+        return str.replace(/[A-Z]/g, function(u) {
+            return '-' + u;
+        }).replace(/[A-Z]-/g, function(c){
+            return c.replace(/-$/, '');
+        }).toLowerCase().replace(/\W+|_+/g, '-').replace(/^-*|-*$/g, '');
     }
 
-    function toDashed(str){
-        return str.replace(/([A-Z])/g, function(u){
-            return '-' + u;
-        }).toLowerCase();
+    function toCamelCase(str) {
+        // 'sanitize' by running str through toDashed()
+        return toDashed(str).replace(/-./g, function(u){
+            return u.substr(1).toUpperCase();
+        });
     }
 
     // return the jQuery object for chaining

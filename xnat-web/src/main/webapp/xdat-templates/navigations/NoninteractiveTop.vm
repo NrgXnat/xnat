@@ -1,4 +1,5 @@
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
 #* @vtlvariable name="last_login" type="java.util.Date" *#
@@ -13,15 +14,17 @@ $page.setBgColor($ui.bgcolor)
         <span id="last_login">Last login: $turbineUtils.formatDateTime($last_login)</span>
 	#end
 	#if($user)
-        #set($username = $user.getUsername())
-        #if($turbineUtils.isGuest($user))
+        #if(!$siteConfig.requireLogin && $user.isGuest())
             <span id="user_info">Logged in as: <span style="color:red;">Guest</span>
-        #elseif($username)
-        ## use default timout value from web.xml as the starting text in the "timeLeft" element
-            <span id="user_info">Logged in as: &nbsp;<i>$!username</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
-		    <script>
-                window.loggedIn = true;
-            </script>
+        #else
+            #set($username = $user.getUsername())
+            #if($username)
+                ## use default timout value from web.xml as the starting text in the "timeLeft" element
+                <span id="user_info">Logged in as: &nbsp;<i>$!username</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+                <script>
+                    window.loggedIn = true;
+                </script>
+            #end
         #end
 	#end
     <div class="clear"></div>

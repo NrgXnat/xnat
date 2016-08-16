@@ -13,6 +13,7 @@ package org.nrg.xnat.restlet.resources;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.FavEntries;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -72,7 +73,7 @@ public class UserFavoriteResource extends SecureResource {
 				FavEntries favEntry=new FavEntries();
 				favEntry.setId(pID);
 				favEntry.setDataType(dataType);
-				favEntry.setUser(user);
+				favEntry.setUser(getUser());
 				favEntry.save();
 			} catch (SQLException e) {
 				e.printStackTrace();
@@ -86,7 +87,8 @@ public class UserFavoriteResource extends SecureResource {
 	
 	@Override
 	public void handleDelete() {
-		if(pID==null || dataType==null || user==null){
+		final UserI user = getUser();
+		if(pID == null || dataType == null || user == null){
 			getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 		}else{
 			try {
@@ -106,7 +108,7 @@ public class UserFavoriteResource extends SecureResource {
 		XFTTable table = null;
 		if(dataType!=null){
 			try {	            
-				 table=FavEntries.GetFavoriteEntries(dataType, user);
+				 table=FavEntries.GetFavoriteEntries(dataType, getUser());
 			} catch (SQLException e) {
 				e.printStackTrace();
 			} catch (DBPoolException e) {

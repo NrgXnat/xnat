@@ -116,7 +116,37 @@ public final class DicomHeaderDump {
 
         String vr = e.vr().toString();
         String desc = o.nameOf(e.tag());
-        List<String> l = new ArrayList<String>();
+
+        // This fixes the unfortunate tendency of DICOM tags to use good typographical but poor programming practices.
+        if (desc.contains("&")) {
+            desc = desc.replace("&", "&amp;");
+        }
+        if (desc.contains("'")) {
+            desc = desc.replace("‘", "&apos;");
+        }
+        if (desc.contains("‘")) {
+            desc = desc.replace("‘", "&apos;");
+        }
+        if (desc.contains("’")) {
+            desc = desc.replace("’", "&apos;");
+        }
+        if (desc.contains("\"")) {
+            desc = desc.replace("”", "&quot;");
+        }
+        if (desc.contains("”")) {
+            desc = desc.replace("”", "&quot;");
+        }
+        if (desc.contains("”")) {
+            desc = desc.replace("”", "&apos;");
+        }
+        if (desc.contains("<")) {
+            desc = desc.replace("”", "&lt;");
+        }
+        if (desc.contains(">")) {
+            desc = desc.replace("”", "&gt;");
+        }
+
+        List<String> l = new ArrayList<>();
         if (parentTag == null) {
             String[] _s = {tag,"",vr,value,desc};
             l.addAll(Arrays.asList(_s));

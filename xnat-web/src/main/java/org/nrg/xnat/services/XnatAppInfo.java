@@ -3,21 +3,16 @@ package org.nrg.xnat.services;
 
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.XDAT;
+import org.python.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
-
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
-import org.python.google.common.collect.ImmutableMap;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +38,7 @@ public class XnatAppInfo {
 
     @Inject
     public XnatAppInfo(final ServletContext context, final JdbcTemplate template) throws IOException {
+        _template = template;
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
             final Manifest   manifest   = new Manifest(input);
             final Attributes attributes = manifest.getMainAttributes();
@@ -73,7 +69,6 @@ public class XnatAppInfo {
                     keyedAttributes.put(property, attributes.getValue(property));
                 }
             }
-            _template = template;
             if (!isInitialized()) {
                 try {
                     final int count = _template.queryForObject("select count(*) from arc_archivespecification", Integer.class);
@@ -104,7 +99,7 @@ public class XnatAppInfo {
                 }
             }
         }
-		_template = template;
+
     }
 
     public Map<String, String> getFoundPreferences() {
@@ -112,13 +107,12 @@ public class XnatAppInfo {
             return null;
         }
 
-        //return new HashMap<>(_foundPreferences);
+        return new HashMap<>(_foundPreferences);
 
-        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
-            final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
-            _plugins.put(properties.getProperty("name"), properties);
-        }
-        _template = template;
+//        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
+//            final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+//            _plugins.put(properties.getProperty("name"), properties);
+//        }
     }
 
     /**

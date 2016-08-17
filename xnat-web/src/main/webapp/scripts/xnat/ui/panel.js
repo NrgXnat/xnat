@@ -500,10 +500,12 @@ var XNAT = getObject(XNAT || {});
                 }
             };
 
+            var inputs = $form.find(':input').not('button, [type="submit"]').toArray();
+
             if (/json/i.test(opts.contentType||'')){
                 // ajaxConfig.data = JSON.stringify(formToJSON(this));
                 // ajaxConfig.data = JSON.stringify(form2js(this, /[:\[\]]/));
-                ajaxConfig.data = JSON.stringify(form2js(this, ':', false));
+                ajaxConfig.data = JSON.stringify(form2js(inputs, ':', false));
                 ajaxConfig.processData = false;
                 ajaxConfig.contentType = 'application/json';
                 $.ajax(ajaxConfig);

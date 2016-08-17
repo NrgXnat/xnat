@@ -1,4 +1,7 @@
 // interractions with 'Site Info' section of admin ui
+
+console.log('siteInfo.js');
+
 (function(){
 
     var $container = $('[data-name="siteDescriptionType"]');

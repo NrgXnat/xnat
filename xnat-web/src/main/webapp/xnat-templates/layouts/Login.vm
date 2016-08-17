@@ -6,6 +6,7 @@ $navigation.setTemplate("/bodyOpen.vm")
 
 <!-- path: xnat-templates/layouts/Login -->
 <div id="xnat-login">
+    <script> window.isLoginPage = true </script>
     $navigation.setTemplate("/NoMenuTop.vm")
     <div id="layout_content2" style="display:none;">Loading...</div>
     <div id="layout_content">$screen_placeholder</div>

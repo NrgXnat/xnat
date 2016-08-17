@@ -70,6 +70,10 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                     context.put("login", user.getUsername());
                     context.put("item", user);
                 }
+                if(XDAT.getSiteConfigPreferences().getRequireSaltedPasswords()
+                        && user.getSalt()==null){
+                    context.put("missingSalt", true);
+                }
             } else {
                 user = XDAT.getUserDetails();
 
@@ -88,6 +92,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                             if(userID!=null){
                                 user = Users.getUser(userID);
                                 XDAT.loginUser(data, user, true);
+                                context.put("user", user);
                             }
                             else{
                                 invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");

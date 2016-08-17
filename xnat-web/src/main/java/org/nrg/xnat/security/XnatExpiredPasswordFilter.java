@@ -75,7 +75,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 if (uri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination) || uri.endsWith(logoutDestination) || uri.endsWith(loginPath) || uri.endsWith(loginDestination)) {
                     //If you're already on the change password page, continue on without redirect.
                     chain.doFilter(req, res);
-                } else if (!StringUtils.isBlank(refererPath) && (changePasswordPath.equals(refererPath) || changePasswordDestination.equals(refererPath) || logoutDestination.equals(refererPath))) {
+                } else if (!StringUtils.isBlank(refererPath) && (refererPath.endsWith(changePasswordPath) || refererPath.endsWith(changePasswordDestination) || refererPath.endsWith(logoutDestination))) {
                     //If you're on a request within the change password page, continue on without redirect.
                     chain.doFilter(req, res);
                 } else {

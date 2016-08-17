@@ -9,7 +9,7 @@ $page.setTitle("My XNAT")
 #end
 
 #if(!$user.isGuest())
-#if (!$expired && !$forgot)
+#if (!$expired && !$forgot && !$missingSalt)
 #parse("screens/XDATScreen_change_email.vm")
 <br /><br />
 #end

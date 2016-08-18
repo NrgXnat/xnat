@@ -177,7 +177,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                         boolean isExpired = checkForExpiredPassword(user);
                         boolean requireSalted = useSiteConfigPrefs ? _preferences.getRequireSaltedPasswords() : _preferences.getRequireSaltedPasswords();
                         if ((!isUserNonExpiring(user) && isExpired) || (requireSalted && user.getSalt() == null)) {
-                            request.getSession().setAttribute("expired", isExpired);
+                            request.getSession().setAttribute("expired", true);
                             response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
                         } else {
                             chain.doFilter(request, response);
@@ -296,7 +296,9 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
             } else if (type.equals("Date")) {
                 passwordExpirationInterval = false;
                 passwordExpirationSetting = convertDateToLongString(_preferences.getPasswordExpirationDate());
-                passwordExpirationDisabled = passwordExpirationSetting.equals("0");
+                if(passwordExpirationSetting!=null){
+                    passwordExpirationDisabled = passwordExpirationSetting.equals("0");
+                }
             } else {
                 passwordExpirationDisabled = true;
             }
@@ -311,7 +313,9 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
             } else if (type.equals("Date")) {
                 passwordExpirationInterval = false;
                 passwordExpirationSetting = convertDateToLongString(_preferences.getPasswordExpirationDate());
-                passwordExpirationDisabled = StringUtils.equals(passwordExpirationSetting, "0");
+                if(passwordExpirationSetting!=null){
+                    passwordExpirationDisabled = StringUtils.equals(passwordExpirationSetting, "0");
+                }
             } else {
                 passwordExpirationDisabled = true;
             }
@@ -323,9 +327,13 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
 
     private String convertDateToLongString(final String date) throws SiteConfigurationException {
         try {
-            return Long.toString(FORMATTER.parse(date).getTime());
+            return Long.toString(SIMPLE_FORMATTER.parse(date).getTime());
         } catch (ParseException e) {
-            throw new SiteConfigurationException(NrgServiceError.ConfigurationError, "The password expiration date \"" + date + "\" is in an invalid format. This should use the format: " + FORMATTER.toString(), e);
+            try {
+                return Long.toString(FORMATTER.parse(date).getTime());
+            } catch (ParseException e2) {
+                throw new SiteConfigurationException(NrgServiceError.ConfigurationError, "The password expiration date \"" + date + "\" is in an invalid format. This should use the format: " + FORMATTER.toString() + " or " + SIMPLE_FORMATTER.toString(), e2);
+            }
         }
     }
 
@@ -352,6 +360,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
     }
 
     private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss a");
+    private static final SimpleDateFormat SIMPLE_FORMATTER = new SimpleDateFormat("MM/dd/yyyy");
 
     private boolean useSiteConfigPrefs = false;
 

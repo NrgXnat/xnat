@@ -145,9 +145,10 @@ public class EventUtils {
 	public static final String EVENT_TYPE = "event_type";
 	public static final String EVENT_ACTION = "event_action";
 	public static final String EVENT_COMMENT = "event_comment";
-	
-	public enum TYPE{WEB_FORM,WEB_SERVICE,PROCESS,STORE_XML,SOAP}
-	public enum CATEGORY{PROJECT_ADMIN,PROJECT_ACCESS,SIDE_ADMIN,DATA}
+
+	public enum TYPE {WEB_FORM, WEB_SERVICE, PROCESS, REST, STORE_XML, SOAP}
+
+	public enum CATEGORY {PROJECT_ADMIN, PROJECT_ACCESS, SIDE_ADMIN, DATA}
 	
 	//pipelines
 	public static final String ARCPUT="ArcPut";
@@ -161,6 +162,9 @@ public class EventUtils {
 	public final static String MODIFY_VIA_WEB_SERVICE="Modified via web service";
 	public final static String SHARE_VIA_WEB_SERVICE="Shared via web service";
 	public final static String CREATE_RESOURCE="Created resource";
+	public final static String CREATE_INVESTTGATOR = "Created investigator";
+	public final static String MODIFY_INVESTTGATOR = "Modified investigator";
+	public final static String REMOVE_INVESTTGATOR = "Removed investigator";
 	public final static String UPLOAD_FILE="Uploaded File";
 	public final static String REMOVE_FILE="Removed File";
 	public final static String CREATE_VIA_WEB_FORM="Added via web form";

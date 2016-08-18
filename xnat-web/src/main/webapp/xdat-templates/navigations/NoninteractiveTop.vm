@@ -18,7 +18,7 @@ $page.setBgColor($ui.bgcolor)
             <span id="user_info">Logged in as: <span style="color:red;">Guest</span>
         #else
             #set($username = $user.getUsername())
-            #if($username)
+            #if($username != "" && $username != "guest")
                 ## use default timout value from web.xml as the starting text in the "timeLeft" element
                 <span id="user_info">Logged in as: &nbsp;<i>$!username</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
                 <script>

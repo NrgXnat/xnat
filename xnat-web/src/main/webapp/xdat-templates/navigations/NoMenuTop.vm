@@ -23,7 +23,7 @@ $page.setBgColor($ui.bgcolor)
             </script>
         #else
             #set($username = $user.getUsername())
-            #if($username)
+            #if($username != "" && $username != "guest")
                 ## use default timout value from web.xml as the starting text in the "timeLeft" element
                 <span id="user_info">Logged in as: &nbsp;<a href="$link.setPage("XDATScreen_UpdateUser.vm")">$!username</a> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
                 <script>

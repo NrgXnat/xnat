@@ -1607,9 +1607,11 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 			{
 				GenericWrapperField key = (GenericWrapperField)iter.next();
 				try {
-                    SearchCriteria c = new SearchCriteria(key,this.getProperty(key.getXMLPathString(this.getGenericSchemaElement().getFullXMLName())));
-                    search.add(c);
-                } catch (Exception e) {
+					final Object value = getProperty(key.getXMLPathString(this.getGenericSchemaElement().getFullXMLName()));
+					if (value != null) {
+						search.add(new SearchCriteria(key, value));
+					}
+				} catch (Exception e) {
                     logger.error("",e);
                 }
 			}
@@ -6067,13 +6069,20 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    ItemSearch search = new ItemSearch();
 	    try {
             search.setElement(this.getGenericSchemaElement());
-            search.setCriteriaCollection(this.getPkSearch(allowMultiples));
-            ItemCollection items = search.exec(allowMultiples);
-            return (XFTItem)items.getFirst();
-        } catch (Exception e) {
-            logger.error("",e);
-            return null;
+			final CriteriaCollection pkSearch = getPkSearch(allowMultiples);
+			if (pkSearch.size() > 0) {
+				search.setCriteriaCollection(pkSearch);
+				ItemCollection items = search.exec(allowMultiples);
+				return (XFTItem)items.getFirst();
+			}
+		} catch (ElementNotFoundException e) {
+            logger.error("Couldn't find the specified element: " + e.ELEMENT, e);
+		} catch (XFTInitException e) {
+            logger.error("An error occurred accessing XFT", e);
+		} catch (Exception e) {
+            logger.error("An unknown error occurred while searching", e);
         }
+		return null;
 	}
 
 	/* (non-Javadoc)

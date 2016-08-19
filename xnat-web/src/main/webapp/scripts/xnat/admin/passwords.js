@@ -14,13 +14,19 @@ console.log('passwordExpirationType.js');
                 container$.find('#passwordExpirationInterval')
                     .css({ marginTop: '10px' });
 
+        var oldInterval = fieldInterval$.val();
+
         var fieldDate$ =
                 container$.find('#passwordExpirationDate')
-                    .attr('placeholder', 'MM/DD/YYYY')
+                    .attr({
+                        size: 10,
+                        placeholder: 'MM/DD/YYYY'
+                    })
                     .css({
                         marginTop: '10px',
-                        width:     '90px'
+                        fontFamily: 'Courier, monospace'
                     })
+                    .mask('99/99/9999', { placeholder: 'MM/DD/YYYY' })
                     .datetimepicker({
                         timepicker: false,
                         // today is max date, disallow future date selection
@@ -35,6 +41,16 @@ console.log('passwordExpirationType.js');
                     });
 
         container$.find('input[name="passwordExpirationType"]').on('change', function(){
+
+            // Does the interval need to be set to "-1" to disable expiration?
+
+            // var value = (this.value || 'interval').toLowerCase();
+            // if (value === 'disabled') {
+            //     fieldInterval$.val(-1);
+            // }
+            // else {
+            //     fieldInterval$.val(oldInterval)
+            // }
             changeExpirationType(this.value);
         });
 

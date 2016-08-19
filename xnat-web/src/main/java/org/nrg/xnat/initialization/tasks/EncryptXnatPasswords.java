@@ -83,10 +83,11 @@ public class EncryptXnatPasswords extends AbstractInitializingTask {
             }
             return passwords;
         }
+
         final ShaPasswordEncoder encoder = new ShaPasswordEncoder(256);
     }
 
-    private static Logger logger = LoggerFactory.getLogger(EncryptXnatPasswords.class);
+    private static final Logger logger = LoggerFactory.getLogger(EncryptXnatPasswords.class);
 
     private final JdbcTemplate _template;
 }

@@ -35,7 +35,7 @@ abu.FileUploader = function(o){
 				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input">' + 
 			'</div>' +
 			'<div id="abu-done-button" class="abu-done-button" style="position: relative; overflow: hidden; direction: ltr;">' + 
-				'<span id="abu-done-button-text">Cancel</span><input type="image" name="done" class="abu-button-input" style="width:105px">' +
+				'<span id="abu-done-button-text" class="abu-done-button-cancel">Cancel</span><input type="image" name="done" class="abu-button-input" style="width:105px">' +
 			'</div>' +
 			'<div id="abu-process-button" class="abu-process-button " style="position: relative; overflow: hidden; direction: ltr;">' +
 				'<span id="abu-process-button-text">Process Files</span>' +
@@ -187,6 +187,8 @@ abu.FileUploader = function(o){
 
 	this.processingComplete = function() {
 		$("#abu-done-button-text").html("Done");
+		$("#abu-done-button-text").addClass("abu-done-button-done");
+		$("#abu-done-button-text").removeClass("abu-done-button-cancel");
 		//$("#abu-upload-button").css("display","None");
 		$("#abu-process-button").addClass("abu-button-disabled");
 		//$("#abu-process-button-text").html("&nbsp;");
@@ -248,6 +250,34 @@ abu.FileUploader = function(o){
 		$(formSelector).on("submit",function(e, uploader) {
 			 $(this).ajaxSubmit({
 				beforeSend: function(arr, $form, options) {
+					var formURL = $form.url;
+					if (typeof formURL !== 'undefined' && formURL.toLowerCase().indexOf("overwrite=true")>=0 && formURL.indexOf("/files")>0) {
+						// See if file already exists
+						var dupURL = formURL.substring(0,formURL.indexOf("/files")+6) + "?format=json";
+						this.fileName = formURL.substring(formURL.indexOf("/files")+7);
+						if (this.fileName.indexOf("?")>0) {
+							this.fileName = this.fileName.substring(0,this.fileName.indexOf("?"))
+						}
+						this.isOverwrite = false;
+						$.ajax({
+							type: "GET",
+							url: dupURL,
+							async: false,
+							dataType: 'json',
+						}).done(function(data, textStatus, jqXHR) {
+							//console.log(data);
+							if (typeof data.ResultSet !== 'undefined' && typeof data.ResultSet.Result !== 'undefined' && Array.isArray(data.ResultSet.Result)) {
+								var resultArr = data.ResultSet.Result;
+								for (var i=0; i<resultArr.length; i++) {
+									if (typeof resultArr[i].Name !== 'undefined' && (resultArr[i].Name == this.fileName  ||
+										(typeof resultArr[i].URI !== 'undefined' && resultArr[i].URI.endsWith('/' + this.fileName)))) {
+										this.isOverwrite = true;
+										break;
+									}
+								}
+							}
+						}.bind(this));
+					}
 					$form.data = formData;
 					$form.processData=false;
 					$form.contentType=false;
@@ -288,10 +318,13 @@ abu.FileUploader = function(o){
 					} 
 					if (!isDuplicate) {
 						if (typeof result.status !== 'undefined' || result.length > 150) {
-				 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-complete abu-upload-complete-text">Upload complete</a>');
+				 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-complete abu-upload-complete-text">Upload complete' + 
+								((this.isOverwrite) ? ' (Existing file overwritten) ' : '') + '</a>');
 						} else {
-				 			status.html('<span class="abu-upload-complete abu-upload-complete-text">Upload complete</span>');
+				 			status.html('<span class="abu-upload-complete abu-upload-complete-text">Upload complete' + 
+								((this.isOverwrite) ? ' (Existing file overwritten) ' : '') + '</span>');
 						}
+						$("#abu-done-button-text").addClass("abu-done-button-file-uploaded");
 					} else {
 			 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Duplicate file and overwrite=false.  Not uploaded.</a>');
 					}

@@ -93,6 +93,25 @@ if(typeof XNAT.app.abu.abuConfigs === 'undefined'){
 				}
 			}
 			
+			// NOTE: $.inArray didn't work here
+			var alreadyContains = function(array, val){
+				outer:
+				for (var i=0; i<array.length; i++) {
+					if (Object.keys(val).length !== Object.keys(array[i]).length) {
+						continue;
+					}
+					for (var j=0; j<Object.keys(val).length; j++) {
+						var key = (Object.keys(val))[j];
+						var tval = val[key];
+						var cval = (array[i])[key];
+						if (tval !== cval) {
+							continue outer;
+						}
+					}
+					return true;
+				}
+				return false;
+			};
 			var tempConfigs2=new Array();
 			//allow filtering of links
 			jq.each(tmpConfigs,function(i1,v1){
@@ -106,15 +125,15 @@ if(typeof XNAT.app.abu.abuConfigs === 'undefined'){
 							}
 						}
 					});
-					if(matched){
+					if(matched && (!alreadyContains(tempConfigs2,v1))){
 						tempConfigs2.push(v1);
 					}
-				}else{
+				}else if (!alreadyContains(tempConfigs2,v1)){
 					tempConfigs2.push(v1);
 				}
 			});
 			return tempConfigs2;
-		}
+		},
 
 
 	}
@@ -452,7 +471,15 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 								}
 								if (doAssign) {
 									$('#whatToDoSelect').append('<option value="resource- ' + resourceConfigs[h].name + ':launch-' + currEvent.triggerId + '" class="' + currEvent.scope + '">' + 
-				                                                ((typeof resourceConfigs[h].description !== 'undefined' && resourceConfigs[h].description.length>0) ? resourceConfigs[h].description : resourceConfigs[h].name) + " --> " + 
+				                                                (
+											(typeof currEvent == 'undefined' || typeof currEvent.description == 'undefined' || currEvent.description.indexOf("-->")<0)
+											/*
+											Per XNAT-4333, Use name rather than description
+ 											? (((typeof resourceConfigs[h].description !== 'undefined' && resourceConfigs[h].description.length>0) ? resourceConfigs[h].description : resourceConfigs[h].name) + " --> ") : ""
+											*/
+ 											? (resourceConfigs[h].name + " --> ") : ""
+										) +
+
 									 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
 									resourceMatch = true;
 								}
@@ -468,7 +495,11 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 				}
 			} 
 			if (!resourceMatch) {
+				/*
+				Per XNAT-4333, Use name rather than description
 				$("#whatToDoSelect").append('<option value="resource-' + resourceConfigs[h].name + '">' + ((typeof resourceConfigs[h].description !== 'undefined' && resourceConfigs[h].description.length>0) ? resourceConfigs[h].description : resourceConfigs[h].name) + '</option>');
+				*/
+				$("#whatToDoSelect").append('<option value="resource-' + resourceConfigs[h].name + '">' + resourceConfigs[h].name + '</option>');
 			}
 		}
 	} 
@@ -571,10 +602,15 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 							XNAT.app.abu.sendWorkflowWhenDone();
 						}
 					}
+					var isCancel = ($(".abu-done-button-cancel").length>0);
+					var fileUploaded = ($(".abu-done-button-file-uploaded").length>0);
 					xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
-					//if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
-					//	window.location.reload(true);
-					//}
+					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0 && !isCancel && fileUploaded) {
+						setTimeout(function(){
+							window.location.reload(true);
+						},20);
+						xmodal.message('Please Wait','Reloading page.  Please wait.');
+					}
 				},
 			uploadStartedFunction:function(){
 					if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)>=0 && (typeof(XNAT.app.abu.buildPath) == 'undefined' || XNAT.app.abu.buildPath == '')) {
@@ -594,11 +630,18 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			uploadCompletedFunction:function(){
 					var eventHandler = $('#eventHandlerSelect').val();
 					if (typeof eventHandler !== 'undefined' && eventHandler != null && eventHandler.length>0) {
+						if ($(".abu-upload-complete-text").length==0) {
+							$("#abu-done-button").removeClass("abu-button-disabled");
+						} else {
+							$("#abu-done-button").addClass("abu-button-disabled");
+						}
 						$("#abu-process-button").removeClass("abu-button-disabled");
 						$("#abu-process-button-text").html("Process Files");
 						$("#abu-process-button").css("visibility","visible");
 					} else {
 						$("#abu-done-button-text").html("Done");
+						$("#abu-done-button-text").addClass("abu-done-button-done");
+						$("#abu-done-button-text").removeClass("abu-done-button-cancel");
 						$("#abu-done-button").removeClass("abu-button-disabled");
 					}
 				},
@@ -625,6 +668,8 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 				} else {
 					$("#abu-done-button").removeClass("abu-button-disabled");
 					$("#abu-done-button-text").html("Done");
+					$("#abu-done-button-text").addClass("abu-done-button-done");
+					$("#abu-done-button-text").removeClass("abu-done-button-cancel");
 				}
 				$(".upload-area").css("display","none");
 				$(".whattodo-area").css("display","none");
@@ -633,6 +678,8 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 				$("#abu-upload-button").css("display","none");
 				$("#abu-process-button-text").html("Run script");
 				$("#abu-done-button-text").html("Cancel");
+				$("#abu-done-button-text").addClass("abu-done-button-cancel");
+				$("#abu-done-button-text").removeClass("abu-done-button-done");
 				if ($('#eventHandlerSelect option').size()>1 && $('#eventHandlerSelect').val()=="") {
 					$("#abu-process-button").addClass("abu-button-disabled");
 					//$("#abu-process-button-text").html("&nbsp;");
@@ -797,7 +844,7 @@ XNAT.app.abu.updateResourceStats=function() {
 		if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)<0) {
 			var updateStatsUrl = "/data/services/refresh/catalog?resource=" + 
 				abu._fileUploader._currentAction.replace(/\/files[\/?].*$/i,'').replace(/^\/data\//i,"/archive/").replace(/^\/REST\//i,"/archive/" +
-				"&options=populateStats") + "&XNAT_CSRF=" + window.csrfToken;
+				"&options=populateStats") + "&options=populateStats,append,delete,checksum&XNAT_CSRF=" + window.csrfToken;
 			var updateStatsAjax = $.ajax({
 				type : "POST",
 				url:serverRoot+updateStatsUrl,

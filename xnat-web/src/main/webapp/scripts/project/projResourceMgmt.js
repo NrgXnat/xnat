@@ -157,7 +157,8 @@ XNAT.app.pResources={
 					      			scriptId: scriptToRun,
 					      			eventClass: "org.nrg.xft.event.entities.WorkflowStatusEvent",
 					      			filters: { "status":["Complete"] },
-					      			description: "Run " + scriptToRun + " upon " + props.name + " upload." };
+					      			//description: "Run " + scriptToRun + " upon " + props.name + " upload." };
+					      			description: props.name + " --> " + scriptToRun };
 					var eventHandlerAjax = $.ajax({
 						type : "PUT",
 						url:serverRoot+"/data/projects/" + this.id + "/automation/handlers?XNAT_CSRF=" + window.csrfToken,

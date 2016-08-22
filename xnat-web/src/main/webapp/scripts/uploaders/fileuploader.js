@@ -21,6 +21,8 @@ abu.FileUploader = function(o){
 	this.DRAG_AND_DROP_ON = true;
 	this.uploadsInProgress = 0;
 	this.uploadsStarted = 0;
+	this.overwriteConfirmIssued = false;
+	this.doOverwrite = false;
 	$(this._options.element).html(""); 
 
 	this.buildUploaderDiv = function() {
@@ -80,6 +82,7 @@ abu.FileUploader = function(o){
 		); 
 		$("#abu-upload-button").mouseenter(function() { $(this).addClass("abu-upload-button-hover"); });
 		$("#abu-upload-button").mouseleave(function() { $(this).removeClass("abu-upload-button-hover"); });
+		$("#abu-upload-button").click(function() { $("#abu-done-button").removeClass("abu-button-disabled"); });
 		$("#abu-done-button").click(this._options.doneFunction);
 		$("#abu-done-button").mouseenter(function() { $(this).addClass("abu-done-button-hover"); });
 		$("#abu-done-button").mouseleave(function() { $(this).removeClass("abu-done-button-hover"); });
@@ -177,9 +180,12 @@ abu.FileUploader = function(o){
 		}	
 		$("#file-upload-input").change(function(eventData) {
 			this._options.uploadStartedFunction();
-			var fileA = eventData.target.files;
+			this.overwriteConfirmIssued = false;
 			if (typeof eventData.target.files !== 'undefined') {
 				var fileA = eventData.target.files;
+				if (fileA.length==0) {
+					$("#abu-done-button").removeClass("abu-button-disabled");
+				} 
 				this.doFileUpload(fileA);
 			}
 		}.bind(this));
@@ -259,6 +265,7 @@ abu.FileUploader = function(o){
 							this.fileName = this.fileName.substring(0,this.fileName.indexOf("?"))
 						}
 						this.isOverwrite = false;
+						this.doOverwrite = false;
 						$.ajax({
 							type: "GET",
 							url: dupURL,
@@ -272,6 +279,16 @@ abu.FileUploader = function(o){
 									if (typeof resultArr[i].Name !== 'undefined' && (resultArr[i].Name == this.fileName  ||
 										(typeof resultArr[i].URI !== 'undefined' && resultArr[i].URI.endsWith('/' + this.fileName)))) {
 										this.isOverwrite = true;
+										if (!uploader.overwriteConfirmIssued) {
+											this.doOverwrite = confirm("\nDo you want to overwrite existing files?\n\n" +
+													"One or more files you are uploading already exist on the sever.  Press 'OK' to overwrite files or 'Cancel' " +
+													"to leave existing files in place.\n\nNOTE:  New files will still be uploaded if you choose not to " + 	
+													"overwrite existing files.\n");
+											uploader.doOverwrite = this.doOverwrite;
+											uploader.overwriteConfirmIssued = true;
+										} else {
+											this.doOverwrite = uploader.doOverwrite;
+										}
 										break;
 									}
 								}
@@ -287,6 +304,18 @@ abu.FileUploader = function(o){
 					percent.html(percentVal);
 					uploader.uploadsInProgress++;
 					uploader.uploadsStarted++;
+					if (this.isOverwrite && !this.doOverwrite) {
+			 			status.html('<span class="abu-upload-fail">File exists.  Upload cancelled at user request.</a>');
+			 			status.css("display","inline-block");
+			 			$(infoSelector).find(".abu-progress").css("display","none");
+						uploader.uploadsInProgress--;
+						if (uploader.uploadsInProgress==0) {
+							uploader._options.uploadCompletedFunction();
+						}
+						arr.abort();
+						return false;
+					} 
+					return true;
 				},
 				uploadProgress: function(event, position, total, percentComplete) {
 					var percentVal = percentComplete + '%';

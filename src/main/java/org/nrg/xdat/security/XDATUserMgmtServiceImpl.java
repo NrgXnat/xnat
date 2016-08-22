@@ -202,7 +202,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 	                    String salt = Users.createNewSalt();
 		                user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
 		                user.setSalt(salt);
-		                
+
 		                XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
 	                    auth.setPasswordUpdated(new java.util.Date());
 	                    auth.setFailedLoginAttempts(0);

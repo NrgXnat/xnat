@@ -2,10 +2,12 @@ package org.nrg.xdat.preferences;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
@@ -27,8 +29,8 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
     @Autowired
-    public SiteConfigPreferences(final NrgEventService eventService) {
-        super(eventService);
+    public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
+        super(preferenceService, eventService, configFolderPaths);
     }
 
     @NrgPreference(defaultValue = "false")

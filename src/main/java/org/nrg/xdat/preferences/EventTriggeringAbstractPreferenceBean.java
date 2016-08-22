@@ -8,9 +8,19 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
+import org.nrg.prefs.services.NrgPreferenceService;
+
+import java.nio.file.Path;
+import java.util.List;
+import org.nrg.framework.configuration.ConfigPaths;
 
 public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPreferenceBean {
-    protected EventTriggeringAbstractPreferenceBean(final NrgEventService eventService) {
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
+        this(preferenceService,eventService,null);
+    }
+
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
+        super(preferenceService,configFolderPaths);
         _eventService = eventService;
     }
 

@@ -1,10 +1,12 @@
 package org.nrg.xdat.preferences;
 
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +25,8 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     public static final String NOTIFICATIONS_TOOL_ID = "notifications";
 
     @Autowired
-    public NotificationsPreferences(final NrgEventService eventService) {
-        super(eventService);
+    public NotificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
+        super(preferenceService, eventService, configFolderPaths);
     }
 
     @NrgPreference(property = "notifications.helpContactInfo")

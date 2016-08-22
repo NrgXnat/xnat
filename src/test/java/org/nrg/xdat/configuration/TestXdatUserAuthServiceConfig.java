@@ -6,6 +6,7 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.framework.test.OrmTestConfiguration;
 import org.nrg.prefs.configuration.NrgPrefsConfiguration;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.daos.XdatUserAuthDAO;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.resolvers.SimplePrefsEntityResolver;
@@ -52,7 +53,7 @@ public class TestXdatUserAuthServiceConfig {
     }
 
     @Bean
-    public SiteConfigPreferences siteConfigPreferences(final NrgEventService service) {
-        return new SiteConfigPreferences(service);
+    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
+        return new SiteConfigPreferences(preferenceService, eventService, null);
     }
 }

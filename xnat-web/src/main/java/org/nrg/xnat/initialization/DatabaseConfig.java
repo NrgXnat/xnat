@@ -22,16 +22,6 @@ import java.util.Properties;
  */
 @Configuration
 public class DatabaseConfig {
-
-    public static final String DEFAULT_DATASOURCE_URL          = "jdbc:postgresql://localhost/xnat";
-    public static final String DEFAULT_DATASOURCE_USERNAME     = "xnat";
-    public static final String DEFAULT_DATASOURCE_PASSWORD     = "xnat";
-    public static final String DEFAULT_DATASOURCE_CLASS        = BasicDataSource.class.getName();
-    public static final String DEFAULT_DATASOURCE_DRIVER       = Driver.class.getName();
-    public static final String DEFAULT_DATASOURCE_INITIAL_SIZE = "20";
-    public static final String DEFAULT_DATASOURCE_MAX_TOTAL    = "40";
-    public static final String DEFAULT_DATASOURCE_MAX_IDLE     = "10";
-
     @Bean
     public DataSource dataSource(final Environment environment) throws NrgServiceException {
         final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
@@ -117,4 +107,13 @@ public class DatabaseConfig {
     }
 
     private static final Logger _log = LoggerFactory.getLogger(DatabaseConfig.class);
+
+    private static final String DEFAULT_DATASOURCE_URL          = "jdbc:postgresql://localhost/xnat";
+    private static final String DEFAULT_DATASOURCE_USERNAME     = "xnat";
+    private static final String DEFAULT_DATASOURCE_PASSWORD     = "xnat";
+    private static final String DEFAULT_DATASOURCE_CLASS        = BasicDataSource.class.getName();
+    private static final String DEFAULT_DATASOURCE_DRIVER       = Driver.class.getName();
+    private static final String DEFAULT_DATASOURCE_INITIAL_SIZE = "20";
+    private static final String DEFAULT_DATASOURCE_MAX_TOTAL    = "40";
+    private static final String DEFAULT_DATASOURCE_MAX_IDLE     = "10";
 }

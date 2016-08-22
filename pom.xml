@@ -152,7 +152,7 @@
         <mockito.version>1.8.5</mockito.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
-        <org.postgresql.version>9.4.1208.jre7</org.postgresql.version>
+        <org.postgresql.version>9.4.1209.jre7</org.postgresql.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.10</reflections.version>
         <restlet.version>1.1.10</restlet.version>
@@ -181,7 +181,7 @@
         <!-- TODO: Remove Emma, which is unsupported. Probably just replace with Cobertura. -->
         <emma-maven-plugin.version>1.0-alpha-3</emma-maven-plugin.version>
         <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
-        <maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
         <maven-war-plugin.version>2.6</maven-war-plugin.version>
         <maven-resources-plugin.version>2.7</maven-resources-plugin.version>
         <maven-source-plugin.version>2.4</maven-source-plugin.version>

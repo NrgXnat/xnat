@@ -190,27 +190,25 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 		    }
 		} else {
 		    // OLD USER
-		    String tempPass = user.getPassword();
-		    String savedPass = existing.getPassword();
-		 
-		    // check if the password is being updated
-		    if (StringUtils.isNotBlank(tempPass) && !StringUtils.equals(tempPass, savedPass) && !StringUtils.equals(new ShaPasswordEncoder(256).encodePassword(tempPass, user.getSalt()), savedPass)) {
-		        String encrypted=(new ShaPasswordEncoder(256).encodePassword(tempPass, existing.getSalt()));
-			    if(!StringUtils.equals(encrypted, savedPass)){
-		    		PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-		        	if(validator.isValid(tempPass, user)){
-	                    String salt = Users.createNewSalt();
-		                user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
-		                user.setSalt(salt);
-		                
-		                XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
-	                    auth.setPasswordUpdated(new java.util.Date());
-	                    auth.setFailedLoginAttempts(0);
-	                    XDAT.getXdatUserAuthService().update(auth);
-	                } else {
-		        		throw new PasswordComplexityException(validator.getMessage());
-		        	}
-			    }
+			String tempPass = user.getPassword();
+			String savedPass = existing.getPassword();
+
+			// check if the password is being updated (also do this if password remains the same but salt is empty)
+			if ( (StringUtils.isNotBlank(tempPass)) && (user.getSalt()==null || (!StringUtils.equals(tempPass, savedPass) && !StringUtils.equals(new ShaPasswordEncoder(256).encodePassword(tempPass, user.getSalt()), savedPass)))) {
+				String encrypted=(new ShaPasswordEncoder(256).encodePassword(tempPass, existing.getSalt()));
+				PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
+				if(validator.isValid(tempPass, user)){
+					String salt = Users.createNewSalt();
+					user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+					user.setSalt(salt);
+
+					XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
+					auth.setPasswordUpdated(new java.util.Date());
+					auth.setFailedLoginAttempts(0);
+					XDAT.getXdatUserAuthService().update(auth);
+				} else {
+					throw new PasswordComplexityException(validator.getMessage());
+				}
 	        }
             // if not updated, may have been passed unencrypted and needs to be changed to its already saved encrypted form
             else {

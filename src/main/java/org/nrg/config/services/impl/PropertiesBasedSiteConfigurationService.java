@@ -11,7 +11,7 @@ import org.nrg.config.interfaces.SiteConfigurationPropertyChangedListener;
 import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.utilities.Reflection;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,12 +35,18 @@ import java.util.regex.Pattern;
  * Manages all of the implementation around retrieving properties files and converting them into properties that can be used in the site configuration service. The abstract methods defined by this class can be implemented to control how the persistent store is implemented.
  */
 public abstract class PropertiesBasedSiteConfigurationService implements InitializingBean, ServletContextAware, SiteConfigurationService {
+    private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME = "site-config.properties";
+    private static final String SITE_CONFIGURATION_PROPERTIES_PACKAGE  = "classpath*:META-INF/xnat/preferences/";
+
+    public static final String SITE_CONFIGURATION_PROPERTIES_RESOURCE = SITE_CONFIGURATION_PROPERTIES_PACKAGE + SITE_CONFIGURATION_PROPERTIES_FILENAME;
+
     /**
      * Sets a preference value in the implemented persistent store.
      *
      * @param username The name of the user requesting the changed preference value.
      * @param property The name of the site configuration property.
      * @param value    The value to be set for the site configuration property.
+     *
      * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     abstract protected void setPreferenceValue(final String username, final String property, final String value) throws SiteConfigurationException;
@@ -54,6 +60,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * store are added to the persistent store and initialized with the value found in the discovered properties bundle.
      *
      * @param properties All properties found during property discovery.
+     *
      * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     abstract protected void getPreferenceValuesFromPersistentStore(final Properties properties) throws SiteConfigurationException;
@@ -93,7 +100,9 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * from any properties files} found in the submitted list.
      *
      * @param configFilesLocationsRoot The root location to search for configuration files.
+     *
      * @return The resulting site configuration properties.
+     *
      * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     @Override
@@ -107,7 +116,9 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * from any properties files} found in the submitted list.
      *
      * @param configFilesLocations The list of locations where configuration files can be found.
+     *
      * @return The resulting site configuration properties.
+     *
      * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     @Override
@@ -123,7 +134,9 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      *
      * @param configFilesLocationsRoot The root location to search for configuration files.
      * @param configFilesLocations     The list of locations where configuration files can be found.
+     *
      * @return The resulting site configuration properties.
+     *
      * @throws SiteConfigurationException When an error occurs accessing or updating the site configuration.
      */
     @Override
@@ -153,7 +166,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     @Override
     public Properties getSiteConfiguration() throws SiteConfigurationException {
         checkSiteConfigurationInit();
-        Properties siteConfigurationCopy = new Properties();
+        final Properties siteConfigurationCopy = new Properties();
         siteConfigurationCopy.putAll(_siteConfiguration);
         return siteConfigurationCopy;
     }
@@ -164,8 +177,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     @Override
     public String getSiteConfigurationProperty(String property) throws SiteConfigurationException {
         checkSiteConfigurationInit();
-        Properties properties = getSiteConfiguration();
-        return properties.getProperty(property);
+        return getSiteConfiguration().getProperty(property);
     }
 
     /**
@@ -259,7 +271,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     /**
      * Provided to allow for configuration file location overrides or additions.
      *
-     * @param configFilesLocations    The locations where site configuration property files can be found.
+     * @param configFilesLocations The locations where site configuration property files can be found.
      */
     @SuppressWarnings("SpringJavaAutowiringInspection")
     @Resource(name = "configFilesLocations")
@@ -313,7 +325,8 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
 
     /**
      * Sets the JDBC template.
-     * @param jdbcTemplate    The template to set.
+     *
+     * @param jdbcTemplate The template to set.
      */
     @Autowired(required = false)
     public void setJdbcTemplate(final JdbcTemplate jdbcTemplate) {
@@ -365,10 +378,9 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     private void prependConfigFilesLocationsRootToAllConfigFilesLocations() {
         if (StringUtils.isNotBlank(getConfigFilesLocationsRoot())) {
             for (int i = 0; i < _configFilesLocations.size(); ++i) {
-                File configFilesLocation = new File(_configFilesLocations.get(i));
+                final File configFilesLocation = new File(_configFilesLocations.get(i));
                 if (!configFilesLocation.isAbsolute()) {
-                    String absoluteConfigFilesLocation = Paths.get(getConfigFilesLocationsRoot(), _configFilesLocations.get(i)).toString();
-                    _configFilesLocations.set(i, absoluteConfigFilesLocation);
+                    _configFilesLocations.set(i, Paths.get(getConfigFilesLocationsRoot(), _configFilesLocations.get(i)).toString());
                 }
             }
         }
@@ -395,8 +407,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     private void notifyNamespaceLevelListener(String property, String value) {
-        String namespace = getNamespaceForCustomProperty(property);
-        notifyNamespaceLevelListener(namespace, property, value);
+        notifyNamespaceLevelListener(getNamespaceForCustomProperty(property), property, value);
     }
 
     private void notifyNamespaceLevelListener(String namespace, String property, String value) {
@@ -410,7 +421,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     private void notifyListener(String listenerPropertyName, String property, String value) {
-        String listenerClassName = _siteConfiguration.getProperty(listenerPropertyName);
+        final String listenerClassName = _siteConfiguration.getProperty(listenerPropertyName);
         if (!StringUtils.isBlank(listenerClassName)) {
             Class<?> listenerClass = null;
             try {
@@ -445,8 +456,8 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     private synchronized void processSiteConfiguration() throws SiteConfigurationException {
         prependConfigFilesLocationsRootToAllConfigFilesLocations();
 
-        Properties persistentProperties = getPropertiesFromStream(findSiteConfiguration());
-        Properties transientProperties  = new Properties();
+        final Properties persistentProperties = getPropertiesFromStream(findSiteConfiguration());
+        final Properties transientProperties = new Properties();
 
         try {
             processCustomProperties(persistentProperties, transientProperties);
@@ -461,10 +472,10 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     private void processCustomProperties(final Properties persistentProperties, final Properties transientProperties) throws FileNotFoundException {
-        Map<String, File> customConfigPropertiesFileNames = new HashMap<>();
-        File              overrideConfigFile              = null;
+        final Map<String, File> customConfigPropertiesFileNames = new HashMap<>();
+        File overrideConfigFile = null;
         for (String configFilesLocationPath : _configFilesLocations) {
-            File configFilesLocation = new File(configFilesLocationPath);
+            final File configFilesLocation = new File(configFilesLocationPath);
             if (configFilesLocation.exists() && configFilesLocation.isDirectory()) {
 
                 final File[] files = configFilesLocation.listFiles(_fileFilter);
@@ -491,7 +502,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     private void processSingleCustomPropertyFile(final Properties persistentProperties, final Properties transientProperties, File file) throws FileNotFoundException {
-        final String     namespace        = getNamespaceForCustomPropertyFile(file);
+        final String namespace = getNamespaceForCustomPropertyFile(file);
         final Properties customProperties = getPropertiesFromStream(new FileInputStream(file));
         for (final String rawPropertyName : customProperties.stringPropertyNames()) {
             final String polishedPropertyName = !rawPropertyName.startsWith(namespace) ? qualifyPropertyName(namespace, rawPropertyName) : rawPropertyName;
@@ -524,15 +535,8 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * You really shouldn't have both in the same file, but if you do, the namespaced one will take precedence.
      */
     private boolean propertiesArePersistent(String namespace, Properties props) {
-        boolean persistent = true;
-
-        if (propertyExistsAndIsFalse(props, qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME))) {
-            persistent = false;
-        } else if (propertyExistsAndIsFalse(props, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME)) {
-            persistent = false;
-        }
-
-        return persistent;
+        return !propertyExistsAndIsFalse(props, qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME)) &&
+               !propertyExistsAndIsFalse(props, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME);
     }
 
     private String getNamespaceForCustomPropertyFile(File f) {
@@ -540,11 +544,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     private String getNamespaceForCustomProperty(String propertyName) {
-        if (!propertyName.contains(".")) {
-            return null;
-        } else {
-            return propertyName.substring(0, propertyName.indexOf("."));
-        }
+        return propertyName.contains(".") ? propertyName.substring(0, propertyName.indexOf(".")) : null;
     }
 
     private String qualifyPropertyName(String namespace, String unqualifiedPropertyName) {
@@ -556,17 +556,15 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     private InputStream findSiteConfiguration() throws SiteConfigurationFileNotFoundException {
-        File siteConfigFile               = null;
-        int  numberOfSiteConfigFilesFound = 0;
-
-        Map<String, File> notFoundLocations = new HashMap<>();
-        for (String configFilesLocationPath : _configFilesLocations) {
-            File potentialSiteConfigFile = new File(configFilesLocationPath, SITE_CONFIGURATION_PROPERTIES_FILENAME);
+        final List<File> siteConfigFiles = new ArrayList<>();
+        final Map<String, File> notFoundLocations = new HashMap<>();
+        for (final String configFilesLocationPath : _configFilesLocations) {
+            final File potentialSiteConfigFile = new File(configFilesLocationPath, SITE_CONFIGURATION_PROPERTIES_FILENAME);
             if (potentialSiteConfigFile.exists()) {
-                if (++numberOfSiteConfigFilesFound > 1) {
-                    throw new DuplicateConfigurationDetectedException(siteConfigFile, potentialSiteConfigFile);
+                if (siteConfigFiles.size() > 1) {
+                    throw new DuplicateConfigurationDetectedException(siteConfigFiles.get(0), potentialSiteConfigFile);
                 } else {
-                    siteConfigFile = potentialSiteConfigFile;
+                    siteConfigFiles.add(potentialSiteConfigFile);
                 }
             } else {
                 notFoundLocations.put(configFilesLocationPath, potentialSiteConfigFile);
@@ -577,15 +575,20 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
             _log.info("Found {} locations that didn't exist: {}", notFoundLocations.size(), Joiner.on(", ").join(notFoundLocations.keySet()));
         }
 
-        if (0 == numberOfSiteConfigFilesFound) {
-            final Set<String> resources = Reflection.findResources(SITE_CONFIGURATION_PROPERTIES_PACKAGE, SITE_CONFIGURATION_PROPERTIES_FILENAME);
-            if (resources.size() == 0) {
-                throw new SiteConfigurationFileNotFoundException(SITE_CONFIGURATION_PROPERTIES_FILENAME, _configFilesLocations);
-            } else if (resources.size() > 1) {
-                _log.warn("I somehow managed to find more than one site configuration file, {} to be exact: {}", resources.size(), Joiner.on(", ").join(resources));
+        if (siteConfigFiles.size() == 0) {
+            try {
+                final List<org.springframework.core.io.Resource> resources = BasicXnatResourceLocator.getResources(SITE_CONFIGURATION_PROPERTIES_RESOURCE);
+                if (resources.size() == 0) {
+                    throw new SiteConfigurationFileNotFoundException(SITE_CONFIGURATION_PROPERTIES_FILENAME, _configFilesLocations);
+                } else if (resources.size() > 1) {
+                    _log.warn("I somehow managed to find more than one site configuration file, {} to be exact: {}", resources.size(), Joiner.on(", ").join(resources));
+                }
+                return resources.get(0).getInputStream();
+            } catch (IOException e) {
+                throw new SiteConfigurationFileNotFoundException(SITE_CONFIGURATION_PROPERTIES_FILENAME, Collections.singletonList(SITE_CONFIGURATION_PROPERTIES_PACKAGE));
             }
-            return Thread.currentThread().getContextClassLoader().getResourceAsStream((String) resources.toArray()[0]);
         } else {
+            final File siteConfigFile = siteConfigFiles.get(0);
             try {
                 return new FileInputStream(siteConfigFile);
             } catch (FileNotFoundException e) {
@@ -596,7 +599,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
 
     private static Properties getPropertiesFromStream(final InputStream stream) {
         try {
-            Properties props = new Properties();
+            final Properties props = new Properties();
             props.load(stream);
             return props;
         } catch (IOException e) {
@@ -607,12 +610,9 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     private static final Logger _log = LoggerFactory.getLogger(PropertiesBasedSiteConfigurationService.class);
 
     private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME = "persist";
-    private static final String SITE_CONFIGURATION_PROPERTIES_PACKAGE      = "config.site";
-    private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME     = "siteConfiguration.properties";
     private static final String PROPERTY_CHANGED_LISTENER_PROPERTY         = "property.changed.listener";
 
-    private Environment _environment;
-
+    private Environment    _environment;
     private JdbcTemplate   _jdbcTemplate;
     private ServletContext _context;
     private String         _configFilesLocationsRoot;

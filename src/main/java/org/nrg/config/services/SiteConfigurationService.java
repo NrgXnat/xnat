@@ -100,7 +100,7 @@ public interface SiteConfigurationService extends NrgService {
      *
      * @param property     The name of the property to be retrieved.
      * @param defaultValue The default value to be returned if the property isn't found.
-     * @return
+     * @return The boolean value requested.
      */
     boolean getBoolSiteConfigurationProperty(final String property, final boolean defaultValue);
 

@@ -33,9 +33,9 @@ import org.nrg.prefs.services.PreferenceBeanHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -50,6 +50,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
      */
     protected AbstractPreferenceBean() {
         _preferences.putAll(PreferenceBeanHelper.getPreferenceInfoMap(getClass()));
+    }
+
+    @Autowired
+    public void setNrgPreferenceService(final NrgPreferenceService service) {
+        _service = service;
     }
 
     @PostConstruct
@@ -638,7 +643,27 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
-    protected Properties convertValueForPreference(final PreferenceInfo info, final String value) throws IOException, IllegalAccessException, InvocationTargetException {
+    protected String getNamespacedPropertyId(final String key, final String... names) {
+        return Joiner.on(NAMESPACE_DELIMITER).join(Lists.asList(key, names));
+    }
+
+    private static String getPreferencePrimaryKey(final String preferenceName) {
+        if (StringUtils.isBlank(preferenceName)) {
+            return "";
+        }
+        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
+        return atoms[0];
+    }
+
+    private static String getPreferenceSubkey(final String preferenceName) {
+        if (StringUtils.isBlank(preferenceName)) {
+            return "";
+        }
+        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
+        return atoms.length == 1 ? "" : atoms[1];
+    }
+
+    private Properties convertValueForPreference(final PreferenceInfo info, final String value) throws IOException, IllegalAccessException, InvocationTargetException {
         final Properties properties = new Properties();
 
         // TODO: For now creates a site-wide preference only.
@@ -698,26 +723,6 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return properties;
     }
 
-    protected String getNamespacedPropertyId(final String key, final String... names) {
-        return Joiner.on(NAMESPACE_DELIMITER).join(Lists.asList(key, names));
-    }
-
-    private static String getPreferencePrimaryKey(final String preferenceName) {
-        if (StringUtils.isBlank(preferenceName)) {
-            return "";
-        }
-        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
-        return atoms[0];
-    }
-
-    private static String getPreferenceSubkey(final String preferenceName) {
-        if (StringUtils.isBlank(preferenceName)) {
-            return "";
-        }
-        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
-        return atoms.length == 1 ? "" : atoms[1];
-    }
-
     private static final Logger       _log    = LoggerFactory.getLogger(AbstractPreferenceBean.class);
     private static final ObjectMapper _mapper = new ObjectMapper() {{
         configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
@@ -726,7 +731,6 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     private static final TypeFactory _typeFactory = _mapper.getTypeFactory();
 
-    @Inject
     private NrgPreferenceService _service;
 
     private final Map<String, PreferenceInfo> _preferences = new HashMap<>();

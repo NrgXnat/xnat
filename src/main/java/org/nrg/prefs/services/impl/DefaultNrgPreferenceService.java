@@ -22,15 +22,23 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import java.util.*;
 
-@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 @Service
 public class DefaultNrgPreferenceService implements NrgPreferenceService, ApplicationContextAware {
+    @Autowired
+    public void setToolService(final ToolService toolService) {
+        _toolService = toolService;
+    }
+
+    @Autowired
+    public void setPreferenceService(final PreferenceService preferenceService) {
+        _preferenceService = preferenceService;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -344,11 +352,7 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
 
     private static final Logger _log = LoggerFactory.getLogger(DefaultNrgPreferenceService.class);
 
-    @Autowired
-    @Lazy
     private ToolService       _toolService;
-    @Autowired
-    @Lazy
     private PreferenceService _preferenceService;
 
     private final Map<String, PreferenceEntityResolver>                                    _resolversByToolId = new HashMap<>();

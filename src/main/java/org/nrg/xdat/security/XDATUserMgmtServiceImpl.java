@@ -192,9 +192,9 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 		    // OLD USER
 			String tempPass = user.getPassword();
 			String savedPass = existing.getPassword();
-
+			String savedSalt = existing.getSalt();
 			// check if the password is being updated (also do this if password remains the same but salt is empty)
-			if ( (StringUtils.isNotBlank(tempPass)) && (user.getSalt()==null || (!StringUtils.equals(tempPass, savedPass) && !StringUtils.equals(new ShaPasswordEncoder(256).encodePassword(tempPass, user.getSalt()), savedPass)))) {
+			if ( (StringUtils.isNotBlank(tempPass) && tempPass.length()!=64) && (user.getSalt()==null || (!StringUtils.equals(tempPass, savedPass) && !StringUtils.equals(new ShaPasswordEncoder(256).encodePassword(tempPass, user.getSalt()), savedPass)))) {
 				String encrypted=(new ShaPasswordEncoder(256).encodePassword(tempPass, existing.getSalt()));
 				PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 				if(validator.isValid(tempPass, user)){
@@ -210,9 +210,11 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 					throw new PasswordComplexityException(validator.getMessage());
 				}
 	        }
-            // if not updated, may have been passed unencrypted and needs to be changed to its already saved encrypted form
             else {
             	user.setPassword(savedPass);
+				if(StringUtils.isNotBlank(savedSalt)){
+					user.setSalt(savedSalt);
+				}
             }
 
 		    if (Roles.isSiteAdmin(authenticatedUser) || overrideSecurity) {

@@ -815,7 +815,7 @@ XNAT.app.abu.validatePassedParameters=function() {
 			if (this.paramsToPass[j].name==paramText) {
 				var paramVal = $($(".passParamInput").get(i)).val();
 				paramData[paramText] = paramVal;
-				var paramRequired = (this.paramsToPass[j].required==undefined || this.paramsToPass[j].required.toString().toLowerCase() != 'false') ? true : false;
+				var paramRequired = (this.paramsToPass[j].required==undefined || this.paramsToPass[j].required.toString().toLowerCase() != 'false');
 				if (paramRequired && (typeof(paramVal)=='undefined' || paramVal.length<1)) {
 					errorText+="ERROR:  " + paramText + " is required;  ";
 				}
@@ -1075,7 +1075,8 @@ XNAT.app.abu.continueProcessing=function() {
 
 }
 XNAT.app.abu.processReturnedText = function(ins,returnToBr){
-	return ins.replace(/[\r\n]+/g,((returnToBr) ? "<br>" : '')).replace(/\/$/,'').replace(/<\/?script>/,"script");
+	return (typeof ins !== "undefined" && ins != null) ?
+		ins.toString().replace(/[\r\n]+/g,((returnToBr) ? "<br>" : '')).replace(/\/$/,'').replace(/<\/?script>/,"script") : "";
 }
 
 XNAT.app.abu.removeUploaderConfiguration=function(configEvent,scope) {

@@ -1170,6 +1170,21 @@ fileSystem:
         ${checksums}
 #        ${checksumsPropertyChangedListener}
 
+automationSettings:
+    kind: panel.form
+    name: automationSettings
+    label: Automation
+    method: POST
+    contentType: json
+    action: /xapi/automation
+    load: /xapi/automation
+    contents:
+        internalScriptingEnabled:
+            kind: panel.input.checkbox
+            name: internalScriptingEnabled
+            label: Internal Scripting Enabled
+            description: "When enabled, administrators can create and edit scripts that run internally to the XNAT process. This can be a powerful feature, but also can pose security hazards that may be unacceptable for certain deployments. For these situations, configurable internal scripting can be disabled (XNAT itself may still use some scripting for feature implementation, but these scripts can not be modified or updated by users)."
+
 misc:
     kind: panel.form
     name: misc
@@ -1327,6 +1342,13 @@ adminPage:
             group: advanced
             contents:
                 ${fileSystem}
+        automationTab:
+            kind: tab
+            name: automationTab
+            label: Automation
+            group: advanced
+            contents:
+                ${automationSettings}
         misc:
             kind: tab
             name: misc

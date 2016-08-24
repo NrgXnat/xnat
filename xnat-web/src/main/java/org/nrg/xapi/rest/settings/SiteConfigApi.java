@@ -45,7 +45,10 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @PostConstruct
     public void checkForFoundPreferences() {
         if (!_appInfo.isInitialized()) {
-            _found.putAll(_appInfo.getFoundPreferences());
+            Map<String, String> tempPrefs = _appInfo.getFoundPreferences();
+            if(tempPrefs!=null){
+                _found.putAll(tempPrefs);
+            }
             if (_found.size() > 0) {
                 _hasFoundPreferences = true;
             }

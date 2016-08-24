@@ -62,8 +62,8 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public AutomationPreferences automationPreferences(final NrgEventService service) {
-        return new AutomationPreferences(service);
+    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final NrgEventService service) {
+        return new AutomationPreferences(preferenceService, service);
     }
 
     @Bean

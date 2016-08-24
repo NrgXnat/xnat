@@ -14,6 +14,7 @@ def vCargo = '1.4.18'
 def vSlf4j = '1.7.15'
 def vLog4j = '1.2.17'
 def vJunit = '4.12'
+// def vSaxon = '9.7.0-7'
 def vSaxon = '9.1.0.8'
 def vGroovy = '2.4.6'
 def vJython = '2.7.0'
@@ -271,6 +272,9 @@ configurations {
     all*.exclude group: 'org.nrg.xdat', module: 'beans'
     all*.exclude group: 'org.nrg.xnat', module: 'web'
     all*.exclude group: 'net.sf.saxon', module: 'saxon'
+    all*.exclude group: 'net.sf.saxon', module: 'saxon-dom'
+    all*.exclude group: 'net.sf.saxon', module: 'saxon-xpath'
+    all*.exclude group: 'net.sf.saxon', module: 'Saxon-B'
     all*.exclude group: 'stax', module: 'stax-api'
     all*.exclude group: 'xml-apis', module: 'xml-apis'
     all*.exclude module: 'commons-beanutils-core'
@@ -389,6 +393,7 @@ dependencies {
     compile "org.codehaus.groovy:groovy-all:${vGroovy}"
     compile "org.python:jython-standalone:${vJython}"
 
+    // compile "net.sf.saxon:Saxon-HE:${vSaxon}"
     compile "net.sourceforge.saxon:saxon:${vSaxon}"
     compile "xalan:xalan:2.7.2"
 

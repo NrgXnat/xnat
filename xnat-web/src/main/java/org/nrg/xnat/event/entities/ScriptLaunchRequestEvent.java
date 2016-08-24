@@ -6,8 +6,8 @@ import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Transient;
 
+import org.nrg.automation.event.AutomationCompletionEventI;
 import org.nrg.automation.event.AutomationEventImplementerI;
-import org.nrg.automation.event.entities.AutomationCompletionEvent;
 import org.nrg.automation.event.entities.PersistentEvent;
 import org.nrg.framework.event.EventClass;
 
@@ -25,8 +25,9 @@ public class ScriptLaunchRequestEvent extends PersistentEvent implements Automat
 	private static final long serialVersionUID = 7465778737330635218L;
 	
 	/** The automation completion event. */
-	private AutomationCompletionEvent automationCompletionEvent;
+	private AutomationCompletionEventI automationCompletionEvent;
 	
+	/** The parameter map. */
 	private Map<String,Object> parameterMap = Maps.newHashMap();
 	
 	/**
@@ -41,7 +42,7 @@ public class ScriptLaunchRequestEvent extends PersistentEvent implements Automat
 	 */
 	@Override
 	@Transient
-	public AutomationCompletionEvent getAutomationCompletionEvent() {
+	public AutomationCompletionEventI getAutomationCompletionEvent() {
 		return automationCompletionEvent;
 	}
 
@@ -49,21 +50,30 @@ public class ScriptLaunchRequestEvent extends PersistentEvent implements Automat
 	 * @see org.nrg.xft.event.AutomationEventImplementerI#setAutomationCompletionEvent(org.nrg.xft.event.entities.AutomationCompletionEvent)
 	 */
 	@Override
-	public void setAutomationCompletionEvent(AutomationCompletionEvent automationCompletionEvent) {
+	public void setAutomationCompletionEvent(AutomationCompletionEventI automationCompletionEvent) {
 		this.automationCompletionEvent = automationCompletionEvent;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.automation.event.AutomationEventImplementerI#getParameterMap()
+	 */
 	@Override
 	@Transient
 	public Map<String, Object> getParameterMap() {
 		return this.parameterMap;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.automation.event.AutomationEventImplementerI#setParameterMap(java.util.Map)
+	 */
 	@Override
 	public void setParameterMap(Map<String, Object> parameterMap) {
 		this.parameterMap = parameterMap;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.automation.event.AutomationEventImplementerI#addParameterToParameterMap(java.lang.String, java.lang.Object)
+	 */
 	@Override
 	public void addParameterToParameterMap(String parameter, Object value) {
 		this.parameterMap.put(parameter, value);

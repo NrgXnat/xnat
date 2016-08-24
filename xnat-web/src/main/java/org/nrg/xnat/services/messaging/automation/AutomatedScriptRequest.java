@@ -1,6 +1,7 @@
 package org.nrg.xnat.services.messaging.automation;
 
 import org.json.JSONObject;
+import org.nrg.automation.event.AutomationCompletionEventI;
 import org.nrg.xft.security.UserI;
 
 import com.google.common.collect.Maps;
@@ -46,6 +47,41 @@ public class AutomatedScriptRequest implements Serializable {
 	/** The _argument map. */
 	private final Map<String,Object> _argumentMap = Maps.newHashMap();
 	
+	private final AutomationCompletionEventI _automationCompletionEvent;
+
+	/**
+	 * Instantiates a new automated script request.
+	 *
+	 * @param srcEventId the src event id
+	 * @param srcEventClass the src event class
+	 * @param user the user
+	 * @param scriptId the script id
+	 * @param event the event
+	 * @param scriptWorkflow the script workflow
+	 * @param dataType the data type
+	 * @param dataId the data id
+	 * @param externalId the external id
+	 * @param argumentMap the argument map
+	 * @param automationCompletionEvent the automation completion event
+	 */
+	public AutomatedScriptRequest(String srcEventId, String srcEventClass, UserI user, String scriptId,
+			String event, String scriptWorkflow, String dataType, String dataId, String externalId,
+			Map<String, Object> argumentMap, AutomationCompletionEventI automationCompletionEvent) {
+		_srcEventId = srcEventId;
+		_srcEventClass = srcEventClass;
+		_user = user;
+		_scriptId = scriptId;
+		_event = event;
+		_scriptWorkflowId = scriptWorkflow;
+		_dataType = dataType;
+		_dataId = dataId;
+		_externalId = externalId;
+		_automationCompletionEvent = automationCompletionEvent;
+		if (argumentMap != null) {
+			_argumentMap.putAll(argumentMap);
+		}
+	}
+	
 	/**
 	 * Instantiates a new automated script request.
 	 *
@@ -60,15 +96,7 @@ public class AutomatedScriptRequest implements Serializable {
 	 * @param externalId the external id
 	 */
 	public AutomatedScriptRequest(final String srcEventId, final String srcEventClass, final UserI user, final String scriptId, final String event, final String scriptWorkflow, final String dataType, final String dataId, final String externalId) {
-		_srcEventId = srcEventId;
-		_srcEventClass = srcEventClass;
-		_user = user;
-		_scriptId = scriptId;
-		_event = event;
-		_scriptWorkflowId = scriptWorkflow;
-		_dataType = dataType;
-		_dataId = dataId;
-		_externalId = externalId;
+		this(srcEventId, srcEventClass, user, scriptId, event, scriptWorkflow, dataType, dataId, externalId, null, null);
 	}
 	
 	/**
@@ -86,10 +114,7 @@ public class AutomatedScriptRequest implements Serializable {
 	 * @param argumentMap the argument map
 	 */
 	public AutomatedScriptRequest(final String srcEventId, final String srcEventClass, final UserI user, final String scriptId, final String event, final String scriptWorkflow, final String dataType, final String dataId, final String externalId, Map<String,Object> argumentMap) {
-		this(srcEventId, srcEventClass, user, scriptId, event, scriptWorkflow, dataType, dataId, externalId);
-		if (argumentMap != null) {
-			_argumentMap.putAll(argumentMap);
-		}
+		this(srcEventId, srcEventClass, user, scriptId, event, scriptWorkflow, dataType, dataId, externalId, argumentMap, null);
 	}	
 
 	/**
@@ -180,6 +205,16 @@ public class AutomatedScriptRequest implements Serializable {
 	 */
 	public Map<String,Object> getArgumentMap() {
 		return _argumentMap;
+	}
+	
+	
+	/**
+	 * Gets the automation completion event.
+	 *
+	 * @return the automation completion event
+	 */
+	public AutomationCompletionEventI getAutomationCompletionEvent() {
+		return _automationCompletionEvent;
 	}
 
 	/**

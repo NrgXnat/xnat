@@ -7,6 +7,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
+import org.nrg.automation.event.AutomationCompletionEventI;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationCompletionEvent;
 import org.nrg.automation.event.entities.AutomationEventIds;
@@ -76,57 +77,58 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
     /**
      * The _service.
      */
-    @Autowired
-    @Lazy
     private ScriptRunnerService _service;
     
     /**
-     * The _eventService.
-     */
-    @Autowired
- 	private NrgEventService _eventService;
-
-    /**
      * The _script trigger service.
      */
-    @Autowired
-    @Lazy
     private ScriptTriggerService _scriptTriggerService;
 
     /**
      * The _data source.
      */
-    @Inject
     private DataSource _dataSource;
 
     /**
      * Automation filters service.
      */
-    @Inject
     private AutomationFiltersService _filtersService;
 
     /**
      * Persistent event service.
      */
-    @Inject
     private PersistentEventService _persistentEventService;
     
     /** The _ids service. */
-    @Inject
     private AutomationEventIdsService _idsService;
     
     /** The _ids ids service. */
-    @Inject
     private AutomationEventIdsIdsService _idsIdsService;
 
     /**
-     * Instantiates a new automated script handler.
+     * Instantiates a new automation event script handler.
      *
      * @param eventBus the event bus
+     * @param service the service
+     * @param scriptTriggerService the script trigger service
+     * @param dataSource the data source
+     * @param filtersService the filters service
+     * @param persistentEventService the persistent event service
+     * @param idsService the ids service
+     * @param idsIdsService the ids ids service
      */
-    @Inject
-    public AutomationEventScriptHandler(EventBus eventBus) {
+    @Autowired
+    public AutomationEventScriptHandler(EventBus eventBus, ScriptRunnerService service, ScriptTriggerService scriptTriggerService,
+    		DataSource dataSource, AutomationFiltersService filtersService, PersistentEventService persistentEventService,
+    		AutomationEventIdsService idsService, AutomationEventIdsIdsService idsIdsService) {
         eventBus.on(type(AutomationEventImplementerI.class), this);
+        this._service = service;
+        this._scriptTriggerService = scriptTriggerService;
+        this._dataSource = dataSource;
+        this._filtersService = filtersService;
+        this._persistentEventService = persistentEventService;
+        this._idsService = idsService;
+        this._idsIdsService = idsIdsService;
     }
 
     /**
@@ -137,7 +139,7 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
         /** Update script trigger table for XNAT 1.7.  Drop constraints on any columns other than id and trigger_id */
         if (_scriptTriggerService instanceof HibernateScriptTriggerService) {
 
-            List<String> cleanUpQuery = (new JdbcTemplate(_dataSource)).query(
+            final List<String> cleanUpQuery = (new JdbcTemplate(_dataSource)).query(
                     "SELECT DISTINCT 'ALTER TABLE '||tc.table_name||' DROP CONSTRAINT '||tc.constraint_name||';'" +
                     "  FROM information_schema.table_constraints tc " +
                     "  LEFT JOIN information_schema.constraint_column_usage cu " +
@@ -150,7 +152,7 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
                     });
             if (!cleanUpQuery.isEmpty()) {
                 logger.info("Cleaning up pre XNAT 1.7 constraints on the xhbm_script_trigger and xhbm_event tables");
-                for (String query : cleanUpQuery) {
+                for (final String query : cleanUpQuery) {
                     if (query.contains("xhbm_script_trigger")) {
                         logger.info("Execute clean-up query (" + query + ")");
                         new JdbcTemplate(_dataSource).execute(query);
@@ -299,7 +301,7 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
         }
         final String eventName = eventID.replaceAll("\\*OPEN\\*", "(").replaceAll("\\*CLOSE\\*", ")");
         //check to see if this has been handled before
-        final AutomationCompletionEvent automationCompletionEvent = automationEvent.getAutomationCompletionEvent();
+        final AutomationCompletionEventI automationCompletionEvent = automationEvent.getAutomationCompletionEvent();
         for (final Script script : getScripts(automationEvent.getExternalId(), eventClass, eventID, filterMap)) {
             try {
                 final String action = "Executed script " + script.getScriptId();
@@ -320,63 +322,14 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
                 WorkflowUtils.save(scriptWrk, scriptWrk.buildEvent());
 
                 final AutomatedScriptRequest request = new AutomatedScriptRequest(automationEvent.getSrcStringifiedId(), automationEvent.getSrcEventClass(), user, script.getScriptId(), eventName,
-                                                                                  scriptWrk.getWorkflowId().toString(), automationEvent.getEntityType(), automationEvent.getSrcStringifiedId(), automationEvent.getExternalId(), automationEvent.getParameterMap());
+                                                                                  scriptWrk.getWorkflowId().toString(), automationEvent.getEntityType(), automationEvent.getSrcStringifiedId(), automationEvent.getExternalId(),
+                                                                                  automationEvent.getParameterMap(), automationCompletionEvent);
 
-                // We're running this here now, so we can return script output
-                //XDAT.sendJmsRequest(request);
-                final ScriptOutput scriptOut = executeScriptRequest(request);
-                if (automationCompletionEvent != null && scriptOut != null) {
-                    automationCompletionEvent.getScriptOutputs().add(scriptOut);
-                }
+                XDAT.sendJmsRequest(request);
             } catch (Exception e1) {
                 logger.error("Script launch exception", e1);
             }
         }
-        if (automationCompletionEvent != null) { 
-            if (_eventService != null) {
-                automationCompletionEvent.setEventCompletionTime(System.currentTimeMillis());
-                _eventService.triggerEvent(automationCompletionEvent);
-                List<String> notifyList = automationCompletionEvent.getNotificationList();
-                if (notifyList != null && !notifyList.isEmpty()) {
-                	final String scriptOut = 
-                	(automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
-                			scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
-                				"<h3>No output was returned from the script run</h3>";	
-                    final String EMAIL_SUBJECT = "Automation Results";
-                    AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOut, false, notifyList.toArray(new String[0]));
-                }
-            }
-        }
-    }
-
-    /**
-     * Script output to html string.
-     *
-     * @param scriptOutputs the script outputs
-     * @return the string
-     */
-    private String scriptOutputToHtmlString(List<ScriptOutput> scriptOutputs) {
-        if (scriptOutputs == null) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        for (ScriptOutput scriptOut : scriptOutputs) {
-            sb.append("<br><b>SCRIPT EXECUTION RESULTS</b><br>");
-            sb.append("<br><b>FINAL STATUS:  ").append(scriptOut.getStatus()).append("</b><br>");
-            if (scriptOut.getStatus().equals(Status.ERROR) && scriptOut.getResults() != null && scriptOut.getResults().toString().length() > 0) {
-                sb.append("<br><b>SCRIPT RESULTS</b><br>");
-                sb.append(scriptOut.getResults().toString().replace("\n", "<br>"));
-            }
-            if (scriptOut.getOutput() != null && scriptOut.getOutput().length() > 0) {
-                sb.append("<br><b>SCRIPT STDOUT</b><br>");
-                sb.append(scriptOut.getOutput().replace("\n", "<br>"));
-            }
-            if (scriptOut.getErrorOutput() != null && scriptOut.getErrorOutput().length() > 0) {
-                sb.append("<br><b>SCRIPT STDERR/EXCEPTION</b><br>");
-                sb.append(scriptOut.getErrorOutput().replace("\n", "<br>"));
-            }
-        }
-        return sb.toString();
     }
 
     /**
@@ -411,70 +364,4 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
         return scripts;
     }
 
-    /**
-     * Execute script request.
-     *
-     * @param request the request
-     *
-     * @return the script output
-     *
-     * @throws Exception the exception
-     */
-    private ScriptOutput executeScriptRequest(AutomatedScriptRequest request) throws Exception {
-        final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(request.getUser(), request.getScriptWorkflowId());
-        if (workflow == null) {
-            logger.warn("Didn't find the workflow indicated by an automated script request: " + request.getScriptWorkflowId() + " (requested by " + request.getUser().getUsername() + ")");
-            return null;
-        }
-
-        workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
-        WorkflowUtils.save(workflow, workflow.buildEvent());
-
-        final Map<String, Object> parameters = Maps.newHashMap();
-        parameters.put("user", request.getUser());
-        parameters.put("scriptId", request.getScriptId());
-        parameters.put("event", request.getEvent());
-        parameters.put("srcEventId", request.getSrcEventId());
-        parameters.put("srcEventClass", request.getSrcEventClass());
-        parameters.put("srcWorkflowId", request.getSrcEventId());
-        parameters.put("scriptWorkflowId", request.getScriptWorkflowId());
-        parameters.put("dataType", request.getDataType());
-        parameters.put("dataId", request.getDataId());
-        parameters.put("externalId", request.getExternalId());
-        parameters.put("workflow", workflow);
-        if (request.getArgumentMap() != null && !request.getArgumentMap().isEmpty()) {
-            parameters.putAll(request.getArgumentMap());
-        }
-
-        ScriptOutput scriptOut = null;
-        try {
-            scriptOut = _service.runScript(_service.getScript(request.getScriptId()), null, parameters, false);
-            if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
-                WorkflowUtils.complete(workflow, workflow.buildEvent());
-            }
-        } catch (NrgServiceException | NrgServiceRuntimeException e) {
-            final String message = String.format("Failed running the script %s by user %s for event %s on data type %s instance %s from project %s  (Exception=%s)",
-                                                 request.getScriptId(),
-                                                 request.getUser().getLogin(),
-                                                 request.getEvent(),
-                                                 request.getDataType(),
-                                                 request.getDataId(),
-                                                 request.getExternalId(),
-                                                 e.toString());
-            if (scriptOut==null) {
-            	scriptOut = new ScriptOutput();
-            	scriptOut.setStatus(Status.ERROR);
-            	scriptOut.setOutput(message);
-            }
-            if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
-                WorkflowUtils.fail(workflow, workflow.buildEvent());
-            }
-            AdminUtils.sendAdminEmail("Script execution failure", message);
-            logger.error(message, e);
-            if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
-                WorkflowUtils.fail(workflow, workflow.buildEvent());
-            }
-        }
-        return scriptOut;
-    }
 }

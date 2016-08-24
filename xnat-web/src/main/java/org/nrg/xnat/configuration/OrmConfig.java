@@ -18,6 +18,7 @@ import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -26,9 +27,6 @@ import java.util.Properties;
 @Configuration
 @EnableTransactionManagement(proxyTargetClass = true)
 public class OrmConfig {
-
-    public static final String XNAT_ENTITIES_PACKAGES = "META-INF/xnat/entities/**/*-entity-packages.txt";
-
     @Bean
     public ImprovedNamingStrategy namingStrategy() {
         return new PrefixedTableNamingStrategy("xhbm");
@@ -80,6 +78,12 @@ public class OrmConfig {
         return new HibernateTransactionManager(sessionFactory(environment, dataSource).getObject());
     }
 
+    @Bean
+    public TransactionTemplate transactionTemplate(final PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
+    }
+
+    private static final String     XNAT_ENTITIES_PACKAGES       = "META-INF/xnat/entities/**/*-entity-packages.txt";
     private static final Properties DEFAULT_HIBERNATE_PROPERTIES = new Properties() {{
         setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect");
         setProperty("hibernate.hbm2ddl.auto", "update");

@@ -1544,7 +1544,7 @@ public abstract class SecureResource extends Resource {
 
     protected final static TypeReference<ArrayList<String>> TYPE_REFERENCE_LIST_STRING = new TypeReference<ArrayList<String>>() {};
 
-    private static Map<String, List<FilteredResourceHandlerI>> handlers = Maps.newConcurrentMap();
+    private static final Map<String, List<FilteredResourceHandlerI>> handlers = Maps.newConcurrentMap();
 
     /**
      * Get a list of the possible handlers.  This allows additional handlers to be injected at a later date or via a module.
@@ -1555,19 +1555,21 @@ public abstract class SecureResource extends Resource {
      */
     public static List<FilteredResourceHandlerI> getHandlers(String _package, List<FilteredResourceHandlerI> _defaultHandlers) throws InstantiationException, IllegalAccessException {
         if (handlers.get(_package) == null) {
-            handlers.put(_package, _defaultHandlers);
+            synchronized (handlers) {
+                handlers.put(_package, _defaultHandlers);
 
-            //ordering here is important.  the last match wins
-            List<Class<?>> classes;
-            try {
-                classes = Reflection.getClassesForPackage(_package);
-            } catch (Exception exception) {
-                throw new RuntimeException(exception);
-            }
+                //ordering here is important.  the last match wins
+                List<Class<?>> classes;
+                try {
+                    classes = Reflection.getClassesForPackage(_package);
+                } catch (Exception exception) {
+                    throw new RuntimeException(exception);
+                }
 
-            for (Class<?> clazz : classes) {
-                if (FilteredResourceHandlerI.class.isAssignableFrom(clazz)) {
-                    handlers.get(_package).add((FilteredResourceHandlerI) clazz.newInstance());
+                for (Class<?> clazz : classes) {
+                    if (FilteredResourceHandlerI.class.isAssignableFrom(clazz)) {
+                        handlers.get(_package).add((FilteredResourceHandlerI) clazz.newInstance());
+                    }
                 }
             }
         }

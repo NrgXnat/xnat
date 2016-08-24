@@ -10,8 +10,6 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -24,13 +22,15 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 
+import java.util.List;
+
 public class AcceptProjectAccess extends SecureAction {
 
 	@Override
 	public void doPerform(RunData data, Context context) throws Exception {
-		UserI user = XDAT.getUserDetails();
+		UserI user = (UserI) context.get("user"); //Check the user in the context before XDAT.getUserDetails() because XDAT.getUserDetails() may still be the guest user at this point.
 		if (user == null) {
-			user = (UserI) context.get("user");
+			user = XDAT.getUserDetails();
         }
 		if (user.getUsername().equals("guest")) {
 			data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());

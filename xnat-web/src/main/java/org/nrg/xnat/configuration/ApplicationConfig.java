@@ -16,7 +16,7 @@ import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
 import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
-import org.nrg.xnat.restlet.XnatRestlet;
+import org.nrg.xnat.preferences.AutomationPreferences;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
@@ -30,12 +30,14 @@ import java.util.HashSet;
 import java.util.List;
 
 @Configuration
-@ComponentScan({"org.nrg.automation.repositories", "org.nrg.config.daos", "org.nrg.dcm.xnat", "org.nrg.dicomtools.filters",
-                "org.nrg.framework.datacache.impl.hibernate", "org.nrg.framework.services.impl", "org.nrg.notify.daos",
-                "org.nrg.prefs.repositories", "org.nrg.xdat.daos", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xft.daos",
-                "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xnat.configuration", "org.nrg.xnat.daos",
-                "org.nrg.xnat.event.listeners", "org.nrg.xnat.helpers.merge", "org.nrg.xnat.initialization.tasks",
-                "org.nrg.xnat.services.impl.hibernate", "org.nrg.xnat.spawner.repositories", "org.nrg.automation.daos"})
+@ComponentScan({"org.nrg.automation.daos", "org.nrg.automation.repositories", "org.nrg.config.daos", "org.nrg.dcm.xnat",
+                "org.nrg.dicomtools.filters", "org.nrg.framework.datacache.impl.hibernate",
+                "org.nrg.framework.services.impl", "org.nrg.notify.daos", "org.nrg.prefs.repositories",
+                "org.nrg.xdat.daos", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xft.daos",
+                "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xnat.configuration",
+                "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners", "org.nrg.xnat.helpers.merge",
+                "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.services.impl.hibernate",
+                "org.nrg.xnat.spawner.repositories"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
 public class ApplicationConfig {
@@ -57,6 +59,11 @@ public class ApplicationConfig {
     @Bean
     public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
         return new NotificationsPreferences(preferenceService, eventService, configFolderPaths);
+    }
+
+    @Bean
+    public AutomationPreferences automationPreferences(final NrgEventService service) {
+        return new AutomationPreferences(service);
     }
 
     @Bean

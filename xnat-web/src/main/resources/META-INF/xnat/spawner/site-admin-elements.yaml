@@ -27,34 +27,42 @@ siteDescriptionPage:
         type: text
         name: siteDescriptionPage
         size: 30
-    after: "<p class='description'>Specify a velocity template file to display on the login page</p>"
+    after: >
+        <p class="description">Specify a velocity template file to display on the login page</p>
 
 siteDescriptionText:
     tag: textarea|data-code-editor;data-code-language=html
     element:
         name: siteDescriptionText
         rows: 8
-    after: "<p class='description'>Specify a simple text description of this site.</p>"
+    after: >
+        <p class="description">Specify a simple text description of this site.</p>
 
 passwordExpirationInterval:
     tag: input
-    before: '<br>'
     element:
         type: text
         id: passwordExpirationInterval
         name: passwordExpirationInterval
         label: Password Expiration (Interval)
     after: >
-      <p class='description'>Interval of time after which unchanged passwords expire and users have to change them. Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a></p>
+      <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
+      Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a></p>
 
 passwordExpirationDate:
     tag: input
-    before: '<br>'
     element:
         type: text
         id: passwordExpirationDate
         name: passwordExpirationDate
         label: Password Expiration (Date)
+    after:
+        datePicker:
+            tag: span#datePicker
+            content: >
+              &nbsp;&nbsp;<span id='openCal-passwordExpirationDate' class='icon icon-sm icon-calendar'></span>
+              <br>
+              <p class='description'>Expire passwords that were last changed before this date and require those users to change them.</p>
 
 siteDescriptionType:
     kind: panel.element
@@ -435,22 +443,17 @@ passwords:
                             tag: label.pad5h|for=passwordExpirationTypeDate
                             content: Date
                 passwordExpirationInterval:
-                    tag: div.input-bundle.interval.inline
+                    tag: div.input-bundle.interval
                     contents:
                         ${passwordExpirationInterval}
                 passwordExpirationDate:
-                    tag: div.input-bundle.date.inline
-                    after:
-                        label:
-                            tag: span#datePicker
-                            content: >
-                              &nbsp;&nbsp;<span id='openCal-passwordExpirationDate' class='icon icon-sm icon-calendar'></span><br><p class='description'>Expire passwords that were last changed before this date and require those users to change them.</p>
+                    tag: div.input-bundle.date
                     contents:
                         ${passwordExpirationDate}
                 pwExpTypeJs:
                     tag: script
                     element:
-                        src: ~/scripts/xnat/admin/pwExpType.js
+                        src: ~/scripts/xnat/admin/passwords.js
         passwordReuseRestriction:
             kind: panel.select.single
             id: passwordReuseRestriction
@@ -1167,6 +1170,21 @@ fileSystem:
         ${checksums}
 #        ${checksumsPropertyChangedListener}
 
+automationSettings:
+    kind: panel.form
+    name: automationSettings
+    label: Automation
+    method: POST
+    contentType: json
+    action: /xapi/automation
+    load: /xapi/automation
+    contents:
+        internalScriptingEnabled:
+            kind: panel.input.checkbox
+            name: internalScriptingEnabled
+            label: Internal Scripting Enabled
+            description: "When enabled, administrators can create and edit scripts that run internally to the XNAT process. This can be a powerful feature, but also can pose security hazards that may be unacceptable for certain deployments. For these situations, configurable internal scripting can be disabled (XNAT itself may still use some scripting for feature implementation, but these scripts can not be modified or updated by users)."
+
 misc:
     kind: panel.form
     name: misc
@@ -1324,6 +1342,13 @@ adminPage:
             group: advanced
             contents:
                 ${fileSystem}
+        automationTab:
+            kind: tab
+            name: automationTab
+            label: Automation
+            group: advanced
+            contents:
+                ${automationSettings}
         misc:
             kind: tab
             name: misc

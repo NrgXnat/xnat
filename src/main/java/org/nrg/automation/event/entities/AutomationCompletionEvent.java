@@ -3,14 +3,13 @@ package org.nrg.automation.event.entities;
 import java.util.List;
 
 import org.nrg.automation.entities.ScriptOutput;
-import org.nrg.framework.event.EventI;
-
+import org.nrg.automation.event.AutomationCompletionEventI;
 import com.google.common.collect.Lists;
 
 /**
  * The Class AutomationCompletionEvent.
  */
-public class AutomationCompletionEvent implements EventI {
+public class AutomationCompletionEvent implements AutomationCompletionEventI {
 	
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = -7136676406371991268L;

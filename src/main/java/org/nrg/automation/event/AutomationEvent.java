@@ -6,7 +6,6 @@ import javax.persistence.Transient;
 
 import org.nrg.framework.event.StructuredEvent;
 import org.python.google.common.collect.Maps;
-import org.nrg.automation.event.entities.AutomationCompletionEvent;
 
 /**
  * The abstract class AutomationEvent.
@@ -21,7 +20,7 @@ public abstract class AutomationEvent extends StructuredEvent implements Automat
 	private static final long serialVersionUID = 6426741957267293144L;
 
 	/** The automation completion event. */
-	private AutomationCompletionEvent automationCompletionEvent;
+	private AutomationCompletionEventI automationCompletionEvent;
 	
 	/** The parameter map. Initialize it wit empty map, to avoid NPE */
 	private Map<String,Object> parameterMap = Maps.newHashMap();
@@ -31,7 +30,7 @@ public abstract class AutomationEvent extends StructuredEvent implements Automat
 	 */
 	@Override
 	@Transient
-	public AutomationCompletionEvent getAutomationCompletionEvent() {
+	public AutomationCompletionEventI getAutomationCompletionEvent() {
 		return automationCompletionEvent;
 	}
 
@@ -39,7 +38,7 @@ public abstract class AutomationEvent extends StructuredEvent implements Automat
 	 * @see org.nrg.xft.event.AutomationEventImplementerI#setAutomationCompletionEvent(org.nrg.xft.event.entities.AutomationCompletionEvent)
 	 */
 	@Override
-	public void setAutomationCompletionEvent(AutomationCompletionEvent automationCompletionEvent) {
+	public void setAutomationCompletionEvent(AutomationCompletionEventI automationCompletionEvent) {
 		this.automationCompletionEvent = automationCompletionEvent;
 	}
 

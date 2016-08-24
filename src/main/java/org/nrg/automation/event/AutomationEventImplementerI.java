@@ -2,7 +2,6 @@ package org.nrg.automation.event;
 
 import java.util.Map;
 
-import org.nrg.automation.event.entities.AutomationCompletionEvent;
 import org.nrg.framework.event.StructuredEventI;
 
 /**
@@ -18,14 +17,14 @@ public interface AutomationEventImplementerI extends StructuredEventI {
 	 *
 	 * @return the automation completion event
 	 */
-	AutomationCompletionEvent getAutomationCompletionEvent(); 
+	AutomationCompletionEventI getAutomationCompletionEvent(); 
 	
 	/**
 	 * Sets the automation completion event.
 	 *
 	 * @param automationCompletionEvent the new automation completion event
 	 */
-	void setAutomationCompletionEvent(AutomationCompletionEvent automationCompletionEvent); 
+	void setAutomationCompletionEvent(AutomationCompletionEventI automationCompletionEvent); 
 	
 	/**
 	 * Gets the parameter map.

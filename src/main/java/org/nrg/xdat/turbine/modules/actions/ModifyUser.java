@@ -11,8 +11,6 @@
 
 
 package org.nrg.xdat.turbine.modules.actions;
-import java.util.Hashtable;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
@@ -21,11 +19,12 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
+
+import java.util.Hashtable;
 /**
  * 
  * @author Tim
@@ -102,6 +101,10 @@ public class ModifyUser extends SecureAction {
         if(StringUtils.isNotEmpty(newPassword)){
         	submitted.setVerified(Boolean.TRUE);
         	submitted.setPassword(newPassword);
+
+			if(newPassword!=null && newPassword.length()==64){
+				submitted.setSalt(oldUser.getSalt());
+			}
 		}else{
 			data.setMessage("Password cannot be empty.");
 			data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");

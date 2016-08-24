@@ -23,7 +23,7 @@ import java.sql.SQLException;
 @NrgPreferenceBean(toolId = SiteConfigPreferences.SITE_CONFIG_TOOL_ID,
                    toolName = "XNAT Site Preferences",
                    description = "Manages site configurations and settings for the XNAT system.",
-                   properties = "config/site/siteConfiguration.properties",
+                   properties = "META-INF/xnat/preferences/site-config.properties",
                    strict = false)
 public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";

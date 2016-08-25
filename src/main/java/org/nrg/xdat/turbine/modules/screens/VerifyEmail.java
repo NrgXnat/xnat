@@ -1,9 +1,12 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
+/*
+ * org.nrg.xdat.turbine.modules.screens.VerifyEmail
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
 package org.nrg.xdat.turbine.modules.screens;
-
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -18,11 +21,15 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+@SuppressWarnings("unused")
 public class VerifyEmail extends VelocitySecureScreen {
 	private static final Logger logger = Logger.getLogger(VerifyEmail.class);
 	
@@ -35,103 +42,96 @@ public class VerifyEmail extends VelocitySecureScreen {
 
     @Override
     protected void doBuildTemplate(final RunData data, final Context context) {
-    	String alias = "";
+        final String alias = (String) TurbineUtils.GetPassedParameter("a", data);
+        final String secret = (String) TurbineUtils.GetPassedParameter("s", data);
+        final String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, secret);
 
         try {
-            if (XDAT.getSiteConfigPreferences().getUserRegistration()) {
-                context.put("autoApproval", "true");
-            } else {
-                context.put("autoApproval", "false");
-            }
+            if (StringUtils.isNotBlank(userID)) {
+                final UserI user = Users.getUser(userID);
+                final List<UserI> users = getAllUsersWithEmail(user.getEmail());
+                final List<UserI> verified = new ArrayList<>();
 
-            alias = (String) TurbineUtils.GetPassedParameter("a", data);
-            String secret = (String) TurbineUtils.GetPassedParameter("s", data);
-			String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, secret);
-	    	if (userID!=null) {
-	    		UserI u = Users.getUser(userID);
-	    		List<UserI> users = getAllUsersWithEmail(u.getEmail());
-	    		List<UserI> verified = new ArrayList<UserI>();
+                final boolean autoApproveRegistered = XDAT.getSiteConfigPreferences().getUserRegistration();
 
-	    		for(UserI curUser : users){
-	    			if((curUser.isVerified()!=null && !(curUser.isVerified())) || (!curUser.isEnabled() && disabledDueToInactivity(curUser))){
-	    				curUser.setVerified(Boolean.TRUE);
-	    			
-	    				// If auto-approval is true, the user is enabled
-	    				if(XDAT.getSiteConfigPreferences().getUserRegistration()){
-	    					curUser.setEnabled(true);
-	    				}
-	    				
-	    				try {
-	    					// Save the user, and add the user to the list of verified users.
-	    					// need to specify override security because users generally cannot enable their own account.
-	    					Users.save(curUser, curUser,true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Verify User Email"));
-	    					verified.add(curUser);
-	    				} catch (Exception e) {
-	    					invalidInformation(data, context, e.getMessage());
-	    					logger.error("Error Verifying User", e);
-	    				}
-	    			}
-	    		}
+                for (final UserI current : users) {
+                    if ((current.isVerified() == null || !current.isVerified()) || (!current.isEnabled() && disabledDueToInactivity(current))) {
+                        current.setVerified(true);
+                        verified.add(current);
 
-                // Default message if we didn't verify any users. (Changed below if verified.size > 0)
-                String userMessage = "All users with the email, " + u.getEmail() + ", have been previously verified.";
+                        // If auto-approval is true, the user is enabled
+                        if (autoApproveRegistered) {
+                            current.setEnabled(true);
+                        }
 
-                try{
-
-					// If we verified any of the above users.
-					if(verified.size() > 0){
-						// Build the user message
-						StringBuilder msgBuilder = new StringBuilder();
-						msgBuilder.append(u.getEmail()).append(" has been verified for the following users: ");
-						for(UserI uv : verified){ 
-							// Append a list of user names that we have verified.
-							if(verified.get(verified.size() - 1) == uv){
-								msgBuilder.append(uv.getUsername()); // Don't append comma if it's the last in the list.
-							}else{
-								msgBuilder.append(uv.getUsername()).append(", ");
-							}
-                            // If this user has never logged in, they're new, send the appropriate notification.
-                            if (Users.getLastLogin(uv) == null) {
-                                AdminUtils.sendNewUserNotification(uv, context);
-                            } else if (disabledDueToInactivity(uv)) {
-                                AdminUtils.sendDisabledUserVerificationNotification(uv, context);
-                            }
-						}
-						// Set the user message.
-						userMessage = msgBuilder.toString();
-					}
-				} 
-				catch (Exception exception) {
-					logger.error("Error occurred sending admin email to enable newly verified accounts", exception);
-				}
-                if(!XDAT.getSiteConfigPreferences().getUserRegistration()){
-                    //data.setRedirectURI(null);
-                    data.setMessage("Thank you for your interest in our site. Your user account will be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.");
-                    redirectToLogin(data);
-				}
-                else{
-                    // Set message to display to the user. You do not need a message informing you of the accounts that were verified if all you did was register and you did not click a verify email link.
-                    //data.setRedirectURI(null);
-                    data.setMessage(userMessage);
-                    redirectToLogin(data);
+                        try {
+                            // Save the user, and add the user to the list of verified users.
+                            // need to specify override security because users generally cannot enable their own account.
+                            Users.save(current, current, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Verify User Email"));
+                        } catch (Exception e) {
+                            invalidInformation(data, context, e.getMessage());
+                            logger.error("Error Verifying User", e);
+                        }
+                    }
                 }
-	    	} else {
-	        	invalidInformation(data, context, "Invalid token. Your email could not be verified.");
-	        }
-		} catch (Exception e) {
-            logger.error("",e);
 
-            AccessLogger.LogActionAccess(data, "Failed Login by alias '" + alias +"': " +e.getMessage());
+                final String message;
+                try {
+                    // If we verified any of the above users.
+                    if (verified.size() > 0) {
+                        // Build the user message
+                        final StringBuilder buffer = new StringBuilder();
+                        buffer.append(user.getEmail()).append(" has been verified for the following users: ");
+                        for (final UserI current : verified) {
+                            // Append a list of user names that we have verified.
+                            if (verified.get(verified.size() - 1) == current) {
+                                buffer.append(current.getUsername()); // Don't append comma if it's the last in the list.
+                            } else {
+                                buffer.append(current.getUsername()).append(", ");
+                            }
 
-			// Set Error Message and clean out the user.
-            if (e instanceof SQLException) {
-				data.setMessage("An error has occurred.  Please contact a site administrator for assistance.");
+                            // If this user has never logged in, they're new, send the appropriate notification.
+                            if (Users.getLastLogin(current) == null) {
+                                AdminUtils.sendNewUserNotification(current, context);
+                            } else if (disabledDueToInactivity(current)) {
+                                AdminUtils.sendDisabledUserVerificationNotification(current, context);
+                            }
+                        }
+                        // Set the user message.
+                        message = buffer.toString();
+                    } else {
+                        message = "All users with email address " + user.getEmail() + " have been previously verified.";
+                    }
+                    if (!autoApproveRegistered) {
+                        //data.setRedirectURI(null);
+                        data.setMessage("Thank you for your interest in our site. Your user account will be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.");
+                        redirectToLogin(data);
+                    } else {
+                        // Set message to display to the user. You do not need a message informing you of the accounts that were verified if all you did was register and you did not click a verify email link.
+                        //data.setRedirectURI(null);
+                        data.setMessage(message);
+                        redirectToLogin(data);
+                    }
+                } catch (Exception exception) {
+                    logger.error("Error occurred sending admin email to enable newly verified accounts", exception);
+                }
             } else {
-				data.setMessage(e.getMessage());
+                invalidInformation(data, context, "Invalid token. Your email could not be verified.");
+            }
+        } catch (Exception e) {
+            logger.error("", e);
+
+            AccessLogger.LogActionAccess(data, "Failed Login by alias '" + alias + "': " + e.getMessage());
+
+            // Set Error Message and clean out the user.
+            if (e instanceof SQLException) {
+                data.setMessage("An error has occurred.  Please contact a site administrator for assistance.");
+            } else {
+                data.setMessage(e.getMessage());
             }
 
             redirectToLogin(data);
-		}
+        }
     }
 
     @Override

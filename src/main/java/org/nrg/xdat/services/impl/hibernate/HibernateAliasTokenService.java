@@ -1,31 +1,37 @@
-/**
- * H2AliasTokenService
- * (C) 2012 Washington University School of Medicine
+/*
+ * HibernateAliasTokenService
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on 4/17/12 by rherri01
  */
 package org.nrg.xdat.services.impl.hibernate;
 
-import java.util.List;
-import java.util.Set;
-
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.daos.AliasTokenDAO;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.commons.lang.StringUtils;
+
+import java.sql.SQLException;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Set;
 @Service
 public class HibernateAliasTokenService extends AbstractHibernateEntityService<AliasToken, AliasTokenDAO> implements AliasTokenService {
+    @Autowired
+    public HibernateAliasTokenService(final AliasTokenDAO dao, final SiteConfigPreferences preferences) {
+        _dao = dao;
+        _preferences = preferences;
+    }
 
     /**
      * Finds all active tokens for a particular user.
@@ -82,6 +88,16 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
     @Transactional
     public AliasToken issueTokenForUser(final UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses) {
         AliasToken token = newEntity();
+        final Calendar calendar = Calendar.getInstance();
+        try {
+            // Try to get the configuration setting for the alias token timeout.
+            final long seconds = SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getAliasTokenTimeout());
+            calendar.add(Calendar.SECOND, ((Long) seconds).intValue());
+        } catch (SQLException e) {
+            // If that fails--always means number format exception--use two days as the default.
+            calendar.add(Calendar.DATE, 2);
+        }
+        token.setEstimatedExpirationTime(calendar.getTime());
         token.setXdatUserId(xdatUser.getLogin());
         token.setSingleUse(isSingleUse);
         token.setValidIPAddresses(validIPAddresses);
@@ -171,6 +187,6 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
 
     private static final Log _log = LogFactory.getLog(HibernateAliasTokenService.class);
 
-    @Autowired
-    private AliasTokenDAO _dao;
+    private final AliasTokenDAO         _dao;
+    private final SiteConfigPreferences _preferences;
 }

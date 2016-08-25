@@ -221,7 +221,7 @@ siteSetup:
             label: Miscellaneous Settings
             footer: false
             method: POST
-            action: /xapi/notifications/batch
+            action: /xapi/siteConfig/batch
             contentType: json
             load: XNAT.data.siteConfig
             contents:

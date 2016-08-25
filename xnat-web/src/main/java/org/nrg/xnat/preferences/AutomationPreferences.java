@@ -4,6 +4,7 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +19,8 @@ public class AutomationPreferences extends EventTriggeringAbstractPreferenceBean
     public static final String AUTOMATION_TOOL_ID = "automation";
 
     @Autowired
-    public AutomationPreferences(final NrgEventService eventService) {
-        super(eventService);
+    public AutomationPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
+        super(preferenceService, eventService);
     }
 
     @NrgPreference(defaultValue = "true")

@@ -4,6 +4,8 @@ import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,6 +16,11 @@ import java.util.Map;
                    toolName = "Bean preference bean",
                    description = "Manages preferences that are stored in a bean rather than a simple Java type.")
 public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
+    @Autowired
+    public BeanPrefsToolPreferenceBean(final NrgPreferenceService preferenceService) {
+        super(preferenceService);
+    }
+
     @NrgPreference(defaultValue = "{'scpId':'CCIR','aeTitle':'CCIR','port':8104,'enabled':true}")
     public BeanPrefsToolPreference getPrefA() throws IOException {
         return deserialize(getValue("prefA"), BeanPrefsToolPreference.class);

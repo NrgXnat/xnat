@@ -3,12 +3,22 @@ package org.nrg.prefs.tools.relaxed;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.nio.file.Path;
+import java.util.List;
 
 @NrgPreferenceBean(toolId = "relaxed",
                    toolName = "Relaxed Prefs Tool",
                    description = "This tests the non-relaxed mode on adding preferences",
                    strict = false)
 public class RelaxedPrefsToolPreferenceBean extends AbstractPreferenceBean {
+    @Autowired
+    public RelaxedPrefsToolPreferenceBean(final NrgPreferenceService preferenceService) {
+        super(preferenceService);
+    }
+
     public String getRelaxedPrefA() {
         return getValue("relaxedPrefA");
     }

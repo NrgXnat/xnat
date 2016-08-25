@@ -4,10 +4,17 @@ import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @SuppressWarnings("WeakerAccess")
 @NrgPreferenceBean(toolId = "properties", toolName = "Properties Test", description = "This is a test of the properties bean.")
 public class PropertiesTestToolPreferenceBean extends AbstractPreferenceBean {
+    @Autowired
+    public PropertiesTestToolPreferenceBean(final NrgPreferenceService preferenceService) {
+        super(preferenceService);
+    }
+
     @NrgPreference(defaultValue = "valueA", property = "property.A")
     public String getPropertyA() {
         return getValue("property.A");

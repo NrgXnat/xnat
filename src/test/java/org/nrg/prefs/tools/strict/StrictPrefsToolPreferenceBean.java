@@ -4,11 +4,22 @@ import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.nio.file.Path;
+import java.util.List;
 
 @NrgPreferenceBean(toolId = "strict",
                    toolName = "Strict Prefs Tool",
                    description = "This tests the strict mode on adding preferences")
+@SuppressWarnings("WeakerAccess")
 public class StrictPrefsToolPreferenceBean extends AbstractPreferenceBean {
+    @Autowired
+    public StrictPrefsToolPreferenceBean(final NrgPreferenceService preferenceService) {
+        super(preferenceService);
+    }
+
     @NrgPreference(defaultValue = "strictValueA")
     public String getStrictPrefA() {
         return getValue("strictPrefA");

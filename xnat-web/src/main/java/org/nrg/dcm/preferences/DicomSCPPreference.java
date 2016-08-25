@@ -10,6 +10,7 @@ import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.utils.XnatUserProvider;
@@ -28,7 +29,8 @@ import java.util.concurrent.Executors;
 @NrgPreferenceBean(toolId = "dicomScpManager", toolName = "DICOM SCP Manager", description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.")
 public class DicomSCPPreference extends AbstractPreferenceBean {
     @Autowired
-    public DicomSCPPreference(final XnatUserProvider primaryAdminUserProvider, final ApplicationContext context) {
+    public DicomSCPPreference(final NrgPreferenceService preferenceService, final XnatUserProvider primaryAdminUserProvider, final ApplicationContext context) {
+        super(preferenceService);
         _provider = primaryAdminUserProvider;
         _context = context;
     }

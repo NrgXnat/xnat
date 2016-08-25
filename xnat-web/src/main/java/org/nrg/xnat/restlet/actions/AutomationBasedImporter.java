@@ -12,44 +12,25 @@ package org.nrg.xnat.restlet.actions;
  * @author Mike Hodge <hodgem@mir.wustl.edu>
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
-
-import java.util.concurrent.Callable;
-
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
-import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.json.JSONTokener;
-
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
+import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationCompletionEvent;
 import org.nrg.automation.event.entities.AutomationEventIdsIds;
-import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.services.AutomationEventIdsIdsService;
 import org.nrg.automation.services.AutomationEventIdsService;
 import org.nrg.automation.services.ScriptTriggerService;
@@ -60,15 +41,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
-import org.nrg.xnat.event.listeners.AutomationCompletionEventListener;
-import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
-import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
-import org.nrg.xnat.restlet.files.utils.RestFileUtils;
-import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
-
-import java.util.zip.ZipOutputStream;
-
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.EventUtils.CATEGORY;
@@ -81,6 +53,24 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
+import org.nrg.xnat.event.listeners.AutomationCompletionEventListener;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
+import org.nrg.xnat.restlet.files.utils.RestFileUtils;
+import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.turbine.utils.ArcSpecManager;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.net.URLDecoder;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.zip.ZipOutputStream;
 
 @ImporterHandler(handler = "automation", allowCallsWithoutFiles = true, callPartialUriWrap = false)
 public class AutomationBasedImporter extends ImporterHandlerA implements Callable<List<String>> {

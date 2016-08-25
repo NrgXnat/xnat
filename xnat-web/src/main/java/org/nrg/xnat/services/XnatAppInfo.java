@@ -1,18 +1,24 @@
 package org.nrg.xnat.services;
 
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
+
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xdat.XDAT;
 import org.python.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.jar.Attributes;
@@ -32,6 +38,7 @@ public class XnatAppInfo {
 
     @Inject
     public XnatAppInfo(final ServletContext context, final JdbcTemplate template) throws IOException {
+        _template = template;
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
             final Manifest   manifest   = new Manifest(input);
             final Attributes attributes = manifest.getMainAttributes();
@@ -62,12 +69,50 @@ public class XnatAppInfo {
                     keyedAttributes.put(property, attributes.getValue(property));
                 }
             }
+            if (!isInitialized()) {
+                try {
+                    final int count = _template.queryForObject("select count(*) from arc_archivespecification", Integer.class);
+                    if (count > 0) {
+                        // Migrate to preferences map.
+                        _template.query("select arc_archivespecification.site_id, arc_archivespecification.site_admin_email, arc_archivespecification.site_url, arc_archivespecification.smtp_host, arc_archivespecification.require_login, arc_archivespecification.enable_new_registrations, arc_archivespecification.enable_csrf_token, arc_pathinfo.archivepath, arc_pathinfo.prearchivepath, arc_pathinfo.cachepath, arc_pathinfo.buildpath, arc_pathinfo.ftppath, arc_pathinfo.pipelinepath from arc_archivespecification LEFT JOIN arc_pathinfo ON arc_archivespecification.globalpaths_arc_pathinfo_id=arc_pathinfo.arc_pathinfo_id", new RowMapper<Object>() {
+                            @Override
+                            public Object mapRow(final ResultSet rs, final int rowNum) throws SQLException {
+                                _foundPreferences.put("siteId", rs.getString("site_id"));
+                                _foundPreferences.put("adminEmail", rs.getString("site_admin_email"));
+                                _foundPreferences.put("siteUrl", rs.getString("site_url"));
+                                _foundPreferences.put("smtp_host", rs.getString("smtp_host"));
+                                _foundPreferences.put("requireLogin", rs.getString("require_login"));
+                                _foundPreferences.put("userRegistration", rs.getString("enable_new_registrations"));
+                                _foundPreferences.put("enableCsrfToken", rs.getString("enable_csrf_token"));
+                                _foundPreferences.put("archivePath", rs.getString("archivepath"));
+                                _foundPreferences.put("prearchivePath", rs.getString("prearchivepath"));
+                                _foundPreferences.put("cachePath", rs.getString("cachepath"));
+                                _foundPreferences.put("buildPath", rs.getString("buildpath"));
+                                _foundPreferences.put("ftpPath", rs.getString("ftppath"));
+                                _foundPreferences.put("pipelinePath", rs.getString("pipelinepath"));
+                                return _foundPreferences;
+                            }
+                        });
+                    }
+                } catch (DataAccessException e) {
+                    _log.info("Nothing to migrate");
+                }
+            }
         }
-        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
-            final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
-            _plugins.put(properties.getProperty("name"), properties);
+
+    }
+
+    public Map<String, String> getFoundPreferences() {
+        if (_foundPreferences.size() == 0) {
+            return null;
         }
-        _template = template;
+
+        return new HashMap<>(_foundPreferences);
+
+//        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
+//            final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+//            _plugins.put(properties.getProperty("name"), properties);
+//        }
     }
 
     /**
@@ -81,10 +126,34 @@ public class XnatAppInfo {
             // Recheck to see if it has been initialized. We don't need to recheck to see if it's been
             // uninitialized because that's silly.
             //noinspection SqlDialectInspection,SqlNoDataSourceInspection
-            _initialized = _template.queryForObject("select value from xhbm_preference p, xhbm_tool t where t.tool_id = 'siteConfig' and p.tool = t.id and p.name = 'initialized';", Boolean.class);
-            if (_log.isInfoEnabled()) {
-                _log.info("The site was not flagged as initialized, but found initialized preference set to true. Flagging as initialized.");
+            try {
+                _initialized = _template.queryForObject("select value from xhbm_preference p, xhbm_tool t where t.tool_id = 'siteConfig' and p.tool = t.id and p.name = 'initialized';", Boolean.class);
+                if (_initialized) {
+                    if (_log.isInfoEnabled()) {
+                        _log.info("The site was not flagged as initialized, but found initialized preference set to true. Flagging as initialized.");
+                    }
+                } else {
+                    if (_log.isInfoEnabled()) {
+                        _log.info("The site was not flagged as initialized and initialized preference set to false. Setting system for initialization.");
+                    }
+                    for(String pref: _foundPreferences.keySet()){
+                        _template.update(
+                                "UPDATE xhbm_preference SET value = ? WHERE name = ?",
+                                new Object[]{_foundPreferences.get(pref), pref}, new int[]{Types.VARCHAR, Types.VARCHAR}
+                        );
+                        try {
+                            XDAT.getSiteConfigPreferences().set(_foundPreferences.get(pref), pref);
+                        }
+                        catch(InvalidPreferenceName e){
+                            _log.error("",e);
+                        }
+                    }
+                }
             }
+            catch(EmptyResultDataAccessException e){
+                //Could not find the initialized preference. Site is still not initialized.
+            }
+
         }
         return _initialized;
     }
@@ -231,11 +300,12 @@ public class XnatAppInfo {
 
     private final JdbcTemplate _template;
 
-    private final Date                             _startTime  = new Date();
-    private final Properties                       _properties = new Properties();
-    private final Map<String, Map<String, String>> _attributes = new HashMap<>();
-    private final Map<String, Properties>          _plugins    = new HashMap<>();
+    private final Map<String, String> _foundPreferences = new HashMap<>();
 
-    private boolean _initialized = false;
+    private final Date                             _startTime   = new Date();
+    private final Properties                       _properties  = new Properties();
+    private final Map<String, Map<String, String>> _attributes  = new HashMap<>();
+    private       boolean                          _initialized = false;
+    private final Map<String, Properties>          _plugins    = new HashMap<>();
 }
 

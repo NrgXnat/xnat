@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +40,19 @@ public class SiteConfigApi extends AbstractXapiRestController {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
+    }
+
+    @PostConstruct
+    public void checkForFoundPreferences() {
+        if (!_appInfo.isInitialized()) {
+            Map<String, String> tempPrefs = _appInfo.getFoundPreferences();
+            if(tempPrefs!=null){
+                _found.putAll(tempPrefs);
+            }
+            if (_found.size() > 0) {
+                _hasFoundPreferences = true;
+            }
+        }
     }
 
     @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = Properties.class)
@@ -98,13 +112,15 @@ public class SiteConfigApi extends AbstractXapiRestController {
             _log.debug("User " + username + " requested the site configuration.");
         }
 
-        final Map<String, Object> preferences = _preferences.getPreferenceMap();
+        final Map<String, Object> preferences = getPreferences();
 
         if (!_appInfo.isInitialized()) {
             if (_log.isInfoEnabled()) {
                 _log.info("The site is being initialized by user {}. Setting default values from context.", username);
             }
-            preferences.put("siteUrl", XnatHttpUtils.getServerRoot(request));
+            if (!preferences.containsKey("siteUrl")) {
+                preferences.put("siteUrl", XnatHttpUtils.getServerRoot(request));
+            }
         }
 
         return new ResponseEntity<>(preferences, HttpStatus.OK);
@@ -125,7 +141,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
 
         final Map<String, Object> values = new HashMap<>();
         for (final String preference : preferences) {
-            final Object value = _preferences.getProperty(preference);
+            final Object value = getPreferences().get(preference);
             if (value != null) {
                 values.put(preference, value);
             }
@@ -141,7 +157,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-        final Object value = _preferences.getProperty(property);
+        final Object value = getPreferences().get(property);
         if (_log.isDebugEnabled()) {
             _log.debug("User " + getSessionUser().getUsername() + " requested the value for the site configuration property " + property + ", got value: " + value);
         }
@@ -214,6 +230,15 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    private Map<String, Object> getPreferences() {
+        if (!_hasFoundPreferences) {
+            return _preferences.getPreferenceMap();
+        }
+        final Map<String, Object> preferences = new HashMap<>(_preferences.getPreferenceMap());
+        preferences.putAll(_found);
+        return preferences;
+    }
+
     private void initialize() throws InitializationException {
         // In the case where the application hasn't yet been initialized, this operation should mean that the system is
         // being initialized from the set-up page. In that case, we need to propagate a few properties to the arc-spec
@@ -228,5 +253,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     private static final Logger _log = LoggerFactory.getLogger(SiteConfigApi.class);
 
     private final SiteConfigPreferences _preferences;
-    private final XnatAppInfo _appInfo;
+    private final XnatAppInfo           _appInfo;
+    private final Map<String, String> _found = new HashMap<>();
+    private boolean _hasFoundPreferences;
 }

@@ -2,6 +2,7 @@ package org.nrg.xnat.initialization;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.python.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +80,7 @@ public class PropertiesConfig {
     }
 
     @Bean
-    public List<Path> configFolderPaths(final Environment environment) {
+    public ConfigPaths configFolderPaths(final Environment environment) {
         if (_configFolderPaths.size() == 0) {
             final Map<String, String> paths = new HashMap<>();
             for (int index = 0; index < CONFIG_LOCATIONS.size(); index++) {
@@ -207,7 +208,7 @@ public class PropertiesConfig {
 
     private static final List<String> CONFIG_URLS = new ArrayList<>();
 
-    private final List<Path>   _configFolderPaths     = new ArrayList<>();
+    private final ConfigPaths   _configFolderPaths     = new ConfigPaths();
     private final List<String> _configFolderLocations = new ArrayList<>();
     private Path _xnatHome;
 }

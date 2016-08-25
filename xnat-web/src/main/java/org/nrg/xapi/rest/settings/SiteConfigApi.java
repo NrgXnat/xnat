@@ -118,7 +118,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
             if (_log.isInfoEnabled()) {
                 _log.info("The site is being initialized by user {}. Setting default values from context.", username);
             }
-            if (!preferences.containsKey("siteUrl")) {
+            if (!preferences.containsKey("siteUrl") || StringUtils.isBlank(preferences.get("siteUrl").toString())) {
                 preferences.put("siteUrl", XnatHttpUtils.getServerRoot(request));
             }
         }

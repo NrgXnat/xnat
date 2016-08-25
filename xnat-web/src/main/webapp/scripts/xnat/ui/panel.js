@@ -230,8 +230,6 @@ var XNAT = getObject(XNAT || {});
                 var $this = $(this);
                 var val = lookupObjectValue(dataObj, this.name||this.title);
 
-                //if (!val) return;
-
                 if (Array.isArray(val)) {
                     val = val.join(', ');
                     $this.addClass('array-list')
@@ -240,7 +238,15 @@ var XNAT = getObject(XNAT || {});
                     val = stringable(val) ? val : JSON.stringify(val);
                 }
 
-                $this.not(':checkbox, :radio').changeVal(val);
+                // used on hidden inputs to reset values
+                if ($this.hasClasses('proxy && dirty')) {
+                    this.value = $this.dataAttr('value');
+                }
+
+                //if (val === "") return;
+
+                // $this.not(':checkbox, :radio').changeVal(val);
+                $this.not(':radio').changeVal(val);
 
                 if (/checkbox/i.test(this.type)) {
                     this.checked = realValue(val);
@@ -252,6 +258,8 @@ var XNAT = getObject(XNAT || {});
                         $this.trigger('change');
                     }
                 }
+
+                $this.removeClass('dirty').dataAttr('value', val);
 
             });
 
@@ -492,7 +500,7 @@ var XNAT = getObject(XNAT || {});
                     var obj = {};
                     // actually, NEVER use returned data...
                     // ALWAYS reload from the server
-                    obj.refresh = opts.refresh || opts.reload || opts.url || opts.load;
+                    obj.load = opts.refresh || opts.reload || opts.url || opts.load;
                     if (!silent){
                         XNAT.ui.banner.top(2000, 'Data saved successfully.', 'success');
                         loadData($form, obj);
@@ -509,6 +517,7 @@ var XNAT = getObject(XNAT || {});
                 ajaxConfig.processData = false;
                 ajaxConfig.contentType = 'application/json';
                 $.ajax(ajaxConfig);
+                // XNAT.xhr.form($form, ajaxConfig);
             }
             else {
                 $(this).ajaxSubmit(ajaxConfig);
@@ -846,7 +855,7 @@ var XNAT = getObject(XNAT || {});
                 multiple: true,
                 className: addClassName(opts, 'file-upload-input')
             }],
-            ['button', {
+            ['button.btn.btn-sm', {
                 type: 'submit',
                 id: opts.id +'-button',
                 html: 'Upload'

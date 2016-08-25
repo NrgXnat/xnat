@@ -188,7 +188,7 @@ var XNAT = getObject(XNAT);
             addClassName(opts.element, opts.data.validate);
         }
 
-        addDataObjects(opts.element, opts.data||{});
+        addDataObjects(opts.element, opts.data);
         
         if (opts.placeholder) {
             opts.element.placeholder = opts.placeholder;
@@ -202,16 +202,17 @@ var XNAT = getObject(XNAT);
         var $element = $(element);
 
         // set the value of individual form elements
+        var hasValue = isDefined(opts.value);
         
         // look up a namespaced object value if the value starts with '??'
         var doLookup = '??';
-        if (opts.value && opts.value.toString().indexOf(doLookup) === 0) {
+        if (hasValue && opts.value.toString().indexOf(doLookup) === 0) {
             // element.value = lookupValue(opts.value.split(doLookup)[1].trim());
-            $element.val(lookupObjectValue(opts.value.split(doLookup)[1].trim())).change();
+            $element.val(lookupObjectValue(opts.value.split(doLookup)[1].trim()));
         }
 
         var doEval = '!?';
-        if (opts.value && opts.value.toString().indexOf(doEval) === 0) {
+        if (hasValue && opts.value.toString().indexOf(doEval) === 0) {
             opts.value = (opts.value.split(doEval)[1]||'').trim();
             try {
                 $element.val(eval(opts.value)).change();
@@ -226,7 +227,7 @@ var XNAT = getObject(XNAT);
         var ajaxPrefix = '$?';
         var ajaxUrl = '';
         var ajaxProp = '';
-        if (opts.value && opts.value.toString().indexOf(ajaxPrefix) === 0) {
+        if (hasValue && opts.value.toString().indexOf(ajaxPrefix) === 0) {
             ajaxUrl = (opts.value.split(ajaxPrefix)[1]||'').split('|')[0];
             ajaxProp = opts.value.split('|')[1] || '';
             ajaxValue(element, ajaxUrl.trim(), ajaxProp.trim());
@@ -256,23 +257,34 @@ var XNAT = getObject(XNAT);
             inner.push(spawn('span.after', opts.afterElement));
         }
 
-        var hiddenInput;
+        var $hiddenInput, hiddenInput;
 
         // check buttons if value is true
         if (/checkbox/i.test(element.type||'')) {
 
-            element.checked = /true|checked/i.test((opts.checked||element.value||'').toString());
+            element.checked = /true|checked/i.test(opts.checked||element.value||'');
 
             // add a hidden input to capture the checkbox/radio value
-            hiddenInput = spawn('input', {
+            $hiddenInput = $.spawn('input.proxy', {
                 type: 'hidden',
                 name: element.name,
-                value: element.checked ? element.value || opts.value || element.checked : false
+                value: element.checked ? (element.value || opts.value || element.checked || 'true') : 'false'
             });
+
+            hiddenInput = $hiddenInput[0];
+
+            // add [data-value] attribute
+            $hiddenInput.dataAttr('value', hiddenInput.value);
 
             // change the value of the hidden input onclick
             element.onclick = function(){
-                hiddenInput.value = this.checked ? this.value || this.checked.toString() : false;
+                // if the checkbox value is boolean,
+                // match the value to the 'checked' state
+                if (/true|false/i.test(this.value)) {
+                    this.value = this.checked;
+                }
+                hiddenInput.value = this.checked ? (this.value || this.checked || 'true') : 'false';
+                $hiddenInput.toggleClass('dirty');
             };
             
             // copy name to title

@@ -11,13 +11,13 @@ console.log('passwordExpirationType.js');
     (function(){
 
         var fieldInterval$ =
-                container$.find('#passwordExpirationInterval')
+                container$.find('[name="passwordExpirationInterval"]')
                     .css({ marginTop: '10px' });
 
         var oldInterval = fieldInterval$.val();
 
         var fieldDate$ =
-                container$.find('#passwordExpirationDate')
+                container$.find('[name="passwordExpirationDate"]')
                     .attr({
                         size: 10,
                         placeholder: 'MM/DD/YYYY'
@@ -40,7 +40,7 @@ console.log('passwordExpirationType.js');
                         fieldDate$.datetimepicker('show');
                     });
 
-        container$.find('input[name="passwordExpirationType"]').on('change', function(){
+        container$.find('[name="passwordExpirationType"]').on('change', function(){
 
             // Does the interval need to be set to "-1" to disable expiration?
 
@@ -69,7 +69,7 @@ console.log('passwordExpirationType.js');
     (function(){
 
         var durationContainer$ = $('div[data-name="passwordHistoryDuration"]');
-        var durationInput$ = durationContainer$.find('input#passwordHistoryDuration');
+        var durationInput$ = durationContainer$.find('[name="passwordHistoryDuration"]');
 
         $('#passwordReuseRestriction').on('change', function(){
             changePasswordReuseType(this.value);

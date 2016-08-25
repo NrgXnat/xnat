@@ -31,7 +31,7 @@ siteDescriptionPage:
         <p class="description">Specify a velocity template file to display on the login page</p>
 
 siteDescriptionText:
-    tag: textarea|data-code-editor;data-code-language=html
+    tag: textarea|data-code-editor=html|data-code-language=html
     element:
         name: siteDescriptionText
         rows: 8
@@ -39,23 +39,19 @@ siteDescriptionText:
         <p class="description">Specify a simple text description of this site.</p>
 
 passwordExpirationInterval:
-    tag: input
-    element:
-        type: text
-        id: passwordExpirationInterval
-        name: passwordExpirationInterval
-        label: Password Expiration (Interval)
+    kind: input.text
+#    id: passwordExpirationInterval
+    name: passwordExpirationInterval
+    label: Password Expiration (Interval)
     after: >
       <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
       Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a></p>
 
 passwordExpirationDate:
-    tag: input
-    element:
-        type: text
-        id: passwordExpirationDate
-        name: passwordExpirationDate
-        label: Password Expiration (Date)
+    kind: input.text
+#    id: passwordExpirationDate
+    name: passwordExpirationDate
+    label: Password Expiration (Date)
     after:
         datePicker:
             tag: span#datePicker
@@ -78,21 +74,19 @@ siteDescriptionType:
                 style: "margin: 3px 0 8px 0;"
             content: Select a site description option below
         siteDescriptionTypePage:
-            tag: input|data-value=Page
-            element:
-                type: radio
-                name: siteDescriptionType
-                value: Page
+            kind: input.radio
+            name: siteDescriptionType
+            id: siteDescriptionTypePage
+            value: Page
             after:
                 label:
                     tag: label.pad5h|for=siteDescriptionTypePage
                     content: Page
         siteDescriptionTypeText:
-            tag: input|data-value=Text
-            element:
-                type: radio
-                name: siteDescriptionType
-                value: Text
+            kind: input.radio
+            name: siteDescriptionType
+            id: siteDescriptionTypeText
+            value: Text
             after:
                 label:
                     tag: label.pad5h|for=siteDescriptionTypeText
@@ -106,9 +100,7 @@ siteDescriptionType:
             contents:
                 ${siteDescriptionText}
         siteInfoJs:
-            tag: script
-            element:
-                src: ~/scripts/xnat/admin/siteInfo.js
+            tag: script|src=/scripts/xnat/admin/siteInfo.js
 
 siteLoginLanding:
     kind: panel.input.text
@@ -410,34 +402,28 @@ passwords:
                         style: "margin: 3px 0 8px 0;"
                     content: Select a password expiration type below
                 passwordExpirationTypeDisabled:
-                    tag: input|data-value=Disabled
-                    element:
-                        type: radio
-                        id: passwordExpirationTypeDisabled
-                        name: passwordExpirationType
-                        value: Disabled
+                    kind: input.radio
+                    id: passwordExpirationTypeDisabled
+                    name: passwordExpirationType
+                    value: Disabled
                     after:
                         label:
                             tag: label.pad5h|for=passwordExpirationTypeDisabled
                             content: Disabled
                 passwordExpirationTypeInterval:
-                    tag: input|data-value=Interval
-                    element:
-                        type: radio
-                        id: passwordExpirationTypeInterval
-                        name: passwordExpirationType
-                        value: Interval
+                    kind: input.radio
+                    id: passwordExpirationTypeInterval
+                    name: passwordExpirationType
+                    value: Interval
                     after:
                         label:
                             tag: label.pad5h|for=passwordExpirationTypeInterval
                             content: Interval
                 passwordExpirationTypeDate:
-                    tag: input|data-value=Date
-                    element:
-                        type: radio
-                        id: passwordExpirationTypeDate
-                        name: passwordExpirationType
-                        value: Date
+                    kind: input.radio
+                    id: passwordExpirationTypeDate
+                    name: passwordExpirationType
+                    value: Date
                     after:
                         label:
                             tag: label.pad5h|for=passwordExpirationTypeDate
@@ -451,9 +437,7 @@ passwords:
                     contents:
                         ${passwordExpirationDate}
                 pwExpTypeJs:
-                    tag: script
-                    element:
-                        src: ~/scripts/xnat/admin/passwords.js
+                    tag: script|src=/scripts/xnat/admin/passwords.js
         passwordReuseRestriction:
             kind: panel.select.single
             id: passwordReuseRestriction
@@ -713,13 +697,10 @@ themeManagement:
     action: /xapi/theme
     contents:
         themeScript:
-            tag: script
-            element:
-                src: ~/scripts/xnat/admin/themeManagement.js
+            tag: script|src=/scripts/xnat/admin/themeManagement.js
         themeStyle:
             tag: style
-            element:
-                html: ".themeUploader{width:270px;display:inline !important;}"
+            contents: ".themeUploader{width:270px;display:inline !important;}"
         currentTheme:
             kind: panel.display
             id: currentTheme
@@ -737,14 +718,11 @@ themeManagement:
             description: Selected a new global theme from those available on the system.
             value: ""
             options:
-                default:
-                    label: None
-                    value: None
-            after:
-                - "<span style=\"position: relative; top: -78px;left: 270px;\"> <!-- &nbsp;<button id=\"submitThemeButton\" onclick=\"setTheme();\">Set Theme</button>&nbsp;&nbsp; --> <button id=\"removeThemeButton\" onclick=\"removeTheme();\">Remove Theme</button></span>"
+                None: None
             element:
-                style:
-                    min-width: 250px
+                style: "width:220px;margin-right:39px;"
+            afterElement: >
+                <button class="btn btn-sm" id="removeThemeButton" onclick="removeTheme()">Remove Theme</button>
         uploadTheme:
             kind: panel.input.upload
             id: themeFileUpload
@@ -939,6 +917,7 @@ sessionBuilder:
             name: sessionXmlRebuilderRepeat
             label: Session Idle Check Interval
             placeholder: Interval in milliseconds
+            afterElement: milliseconds
             description: >
                 This controls how often the system checks to see if any incoming DICOM sessions in the prearchive have
                 been idle for longer than the configured session idle time. This value should be specified in
@@ -948,6 +927,7 @@ sessionBuilder:
             name: sessionXmlRebuilderInterval
             label: Session Idle Time
             placeholder: Time in minutes
+            afterElement: minutes
             description: >
                 This tells the system how long a DICOM session should sit idle—that is, with no new data added to the
                 session—before attempting to build a session document from the DICOM data. This value is specified in

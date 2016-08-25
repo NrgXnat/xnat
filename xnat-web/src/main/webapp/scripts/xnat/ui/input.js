@@ -55,16 +55,16 @@ var XNAT = getObject(XNAT);
             config = type;
             type = null; // it MUST contain a 'type' property
         }
-        config = getObject(config);
+        config = cloneObject(config);
         config.type = type || config.type || 'text';
         // lookup a value if it starts with '??'
         var doLookup = '??';
-        if (config.value && config.value.toString().indexOf(doLookup) === 0) {
+        if (config.value && (config.value+'').indexOf(doLookup) === 0) {
             config.value = lookupValue(config.value.split(doLookup)[1])
         }
         // lookup a value from a namespaced object
         // if no value is given
-        if (!config.value && config.data && config.data.lookup) {
+        if (config.value === undefined && config.data && config.data.lookup) {
             config.value = lookupValue(config.data.lookup)
         }
         var spawned = spawn('input', config);

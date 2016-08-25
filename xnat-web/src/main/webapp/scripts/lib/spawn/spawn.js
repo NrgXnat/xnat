@@ -2,8 +2,8 @@
  * DOM element spawner with *optional* jQuery functionality
  *
  * EXAMPLES:
- * var p1 = spawn('p|id:p1', 'Text for paragraph 1.');
- * var div2 = spawn('div|class=div2', ['Text for div2.', p1]) // inserts text and puts p1 inside div2
+ * var p1 = spawn('p#p1', 'Text for paragraph 1.');
+ * var div2 = spawn('div.div2', ['Text for div2.', p1]) // inserts text and puts p1 inside div2
  * var ul1 = spawn('ul', [['li', 'Content for <li> 1.'], ['li', 'Content for the next <li>.']]);
  * div2.appendChild(ul1); // add ul1 to div2
  */
@@ -84,12 +84,16 @@
 
 
     function parseAttrs(el, attrs){
-        // allow ';' or ',' for attribute delimeter
-        (attrs.split(/;|,/) || []).forEach(function(att, i){
+        // allow 'attrs' to be a string or array
+        if (typeof attrs == 'string'){
+            // use '|' for attribute delimiter
+            attrs = attrs.split('|');
+        }
+        attrs.forEach(function(att, i){
             if (!att) return;
-            // allow ':' or '=' for key/value separator
-            var sep = /:|=/;
-            // tolerate quotes around values
+            // use '=' for key/value separator
+            var sep = '=';
+            // remove quotes around values
             var quotes = /^['"]+|['"]+$/g;
             var key = att.split(sep)[0].trim();
             var val = (att.split(sep)[1]||'').trim().replace(quotes, '') || key;
@@ -252,10 +256,10 @@
 
         if (parts.length){
             // pass element attributes in 'tag' string, like:
-            // spawn('a|id="foo-link";href="foo";class="bar"');
-            // or (colons for separators, commas for delimeters, no quotes),:
-            // spawn('input|type:checkbox,id:foo-ckbx');
-            parseAttrs(el, parts[0]||'');
+            // spawn('a|id="foo-link"|href="foo"|class="bar"');
+            // or (without quotes),:
+            // spawn('input|type=checkbox|id=foo-ckbx');
+            parseAttrs(el, parts);
         }
 
         if (!opts && !children){

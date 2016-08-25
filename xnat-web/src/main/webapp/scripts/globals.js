@@ -320,7 +320,8 @@ function lookupObjectValue(root, objStr, prop){
         delim = '.',
         brackets = /[\]\[]/,
         hasBrackets = false,
-        parts = [];
+        parts = [],
+        undefined;
     
     if (!objStr) {
         objStr = root+'';
@@ -362,7 +363,7 @@ function lookupObjectValue(root, objStr, prop){
             val = root[part] || '';
         }
         else {
-            if (!val) return false;
+            if (val === undefined) return false;
             val = val[part];
         }
     });
@@ -665,6 +666,11 @@ function toDashed(str){
 }
 //hyphenate = toDashed;
 //dashify   = toDashed;
+
+// like toDashed() but with underscores instead of hyphens
+function toUnderscore(str){
+    return toDashed(str).replace(/-+/g, '_');
+}
 
 // set 'forceLower' === true (or omit argument)
 // to ensure *only* 'cameled' letters are uppercase

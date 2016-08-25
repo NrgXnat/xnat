@@ -1,11 +1,9 @@
-/**
+/*
  * AliasTokenService
- * (C) 2012 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on 4/17/12 by rherri01
  */
 package org.nrg.xdat.services;
 
@@ -22,12 +20,12 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param xdatUserId    The user ID from the XdatUser table.
      * @return An list of the {@link AliasToken alias tokens} issued to the indicated user.
      */
-    abstract public List<AliasToken> findTokensForUser(String xdatUserId);
+    List<AliasToken> findTokensForUser(String xdatUserId);
     /**
      * Finds and deactivates all active tokens for a particular user.
      * @param xdatUserId    The user ID from the XdatUser table.
      */
-    abstract public void deactivateAllTokensForUser(String xdatUserId);
+    void deactivateAllTokensForUser(String xdatUserId);
     /**
      * Issues a token to the user with the indicated name.
      *
@@ -35,7 +33,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @return An {@link AliasToken} issued to the indicated user.
      * @throws Exception When something goes wrong.
      */
-    abstract public AliasToken issueTokenForUser(String xdatUserId) throws Exception;
+    AliasToken issueTokenForUser(String xdatUserId) throws Exception;
     /**
      * Issues a token to the indicated user. This calls the {@link #issueTokenForUser(UserI, boolean)} version of
      * this method, passing <b>false</b> by default for the boolean parameter.
@@ -43,7 +41,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param xdatUser    The user requesting a token.
      * @return An {@link AliasToken} issued to the indicated user.
      */
-    abstract public AliasToken issueTokenForUser(UserI xdatUser);
+    AliasToken issueTokenForUser(UserI xdatUser);
     /**
      * Issues a token to the indicated user. The <b>isSingleUse</b> parameter indicates whether the issued token should
      * be disposed of when the token is used.
@@ -52,7 +50,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param isSingleUse Indicates whether the token should be disposed of once the token is used once.
      * @return An {@link AliasToken} issued to the indicated user.
      */
-    abstract public AliasToken issueTokenForUser(UserI xdatUser, boolean isSingleUse);
+    AliasToken issueTokenForUser(UserI xdatUser, boolean isSingleUse);
     /**
      * Issues a token to the indicated user. The <b>validIPAddresses</b> parameter indicates which originating IPs
      * should be permitted to offer the returned alias tokens. Note that there is nothing in the issued token that
@@ -62,7 +60,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param validIPAddresses    The list of IP addresses from which the alias token will be accepted.
      * @return An {@link AliasToken} issued to the indicated user.
      */
-    abstract public AliasToken issueTokenForUser(UserI xdatUser, Set<String> validIPAddresses);
+    AliasToken issueTokenForUser(UserI xdatUser, Set<String> validIPAddresses);
     /**
      * Issues a token to the indicated user.  The <b>isSingleUse</b> parameter indicates whether the issued token should
      * be disposed of when the token is used.The <b>validIPAddresses</b> parameter indicates which originating IPs
@@ -74,7 +72,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param validIPAddresses    The list of IP addresses from which the alias token will be accepted.
      * @return An {@link AliasToken} issued to the indicated user.
      */
-    abstract public AliasToken issueTokenForUser(UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses);
+    AliasToken issueTokenForUser(UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses);
 
     /**
      * Locates and returns the token indicated by the alias string. The returned token should not be considered fully
@@ -84,7 +82,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param alias    The alias for the requested token.
      * @return The token matching the indicated alias if one exists; otherwise this returns null.
      */
-    abstract public AliasToken locateToken(String alias);
+    AliasToken locateToken(String alias);
 
     /**
      * Checks whether a token exists with the indicated alias and secret and no IP address restrictions. If so, this
@@ -95,7 +93,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param secret    The secret to validate the indicated alias.
      * @return The {@link UserI#getLogin() XDAT user login ID} of the matching token exists, or <b>null</b> if not.
      */
-    abstract public String validateToken(String alias, String secret);
+    String validateToken(String alias, String secret);
 
     /**
      * Checks whether a token exists with the indicated alias and secret and an IP address matching one of the defined
@@ -108,12 +106,12 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param address   The IP address to validate.
      * @return The {@link UserI#getLogin() XDAT user login ID} of the matching token exists, or <b>null</b> if not.
      */
-    abstract public String validateToken(String alias, String secret, String address);
+    String validateToken(String alias, String secret, String address);
 
     /**
      * Invalidates the token with the given alias. No supporting validation is required for this operation.
      *
      * @param alias    The alias of the token to be invalidated.
      */
-    abstract public void invalidateToken(String alias);
+    void invalidateToken(String alias);
 }

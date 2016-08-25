@@ -1,19 +1,14 @@
 /*
  * org.nrg.xdat.turbine.modules.actions.XDATRegisterUser
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/10/14 8:53 AM
  */
-
-
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
@@ -33,18 +28,19 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.*;
 
 @SuppressWarnings("unused")
 public class XDATRegisterUser extends VelocitySecureAction {
-    static Logger logger = Logger.getLogger(XDATRegisterUser.class);
+    private static final Logger logger = LoggerFactory.getLogger(XDATRegisterUser.class);
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
@@ -85,34 +81,21 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 	                if (validator.isValid(tempPass, null)) {
 
-		                // NEW USER
+                        // NEW USER
                         found.setPassword(tempPass);
 
-                        boolean autoApproval = XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar();
+                        final boolean autoApproveRegistered = XDAT.getSiteConfigPreferences().getUserRegistration();
+                        final boolean autoApprovePar = XDAT.getSiteConfigPreferences().getPar();
 
-                        if((XDAT.getSiteConfigPreferences().getUserRegistration() || XDAT.getSiteConfigPreferences().getPar()) && hasPAR(data)){
-                            found.setEnabled(Boolean.TRUE);
-                        }
-		                else if (XDAT.getSiteConfigPreferences().getUserRegistration()) {
-		                	if (XDAT.getSiteConfigPreferences().getEmailVerification()) {
-		                		found.setEnabled(Boolean.FALSE);
-		                	} else {
-		                		found.setEnabled(Boolean.TRUE);
-		                	}
-		                } else {
-	                		found.setEnabled(Boolean.FALSE);
-		                }
-
-                        if (hasPAR(data)) {
-	                		found.setVerified(Boolean.TRUE);
-                        }
-                        else {
-	                		found.setVerified(Boolean.FALSE);
-                        }
+                        // Approve them if:
+                        //  -- we autoapprove par users and this user has a PAR
+                        //  -- we autoapprove registered users and don't require email verification
+                        found.setEnabled(autoApprovePar && hasPAR(data) || autoApproveRegistered && !XDAT.getSiteConfigPreferences().getEmailVerification());
+                        found.setVerified(!XDAT.getSiteConfigPreferences().getEmailVerification() || hasPAR(data));
 
                         UserI currUser = XDAT.getUserDetails();
                         UserI userToSave = found;
-                        if(currUser!=null && !currUser.isGuest()){
+                        if (currUser != null && !currUser.isGuest()) {
                             userToSave = currUser;
                         }
                         Users.save(found, userToSave, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
@@ -121,71 +104,71 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         final String phone = TurbineUtils.HasPassedParameter("phone", data) ? (String) TurbineUtils.GetPassedParameter("phone", data) : "";
                         final String lab = TurbineUtils.HasPassedParameter("lab", data) ? (String) TurbineUtils.GetPassedParameter("lab", data) : "";
 
-                        if (autoApproval) {
+                        if (found.isEnabled()) {
                             if (!hasPAR(data) && XDAT.getSiteConfigPreferences().getEmailVerification()) {
-                            	try {
+                                try {
                                     sendNewUserVerificationEmail(data, context, found);
                                 } catch (Exception e) {
                                     logger.error("Error occurred sending new user email", e);
                                     handleInvalid(data, context, "We are unable to send you the verification email. If you entered a valid email address, please contact our technical support.");
                                 }
                             } else {
-	                            XDAT.setUserDetails(found);
-                                UserHelper.setUserHelper(data.getRequest(),found);
+                                XDAT.setUserDetails(found);
+                                UserHelper.setUserHelper(data.getRequest(), found);
 
-			                    data.setMessage("User registration complete.");
+                                data.setMessage("User registration complete.");
 
-			                    if (AdminUtils.GetNewUserRegistrationsEmail()) {
+                                if (AdminUtils.GetNewUserRegistrationsEmail()) {
                                     AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
                                 }
                                 AdminUtils.sendNewUserEmailMessage(found.getUsername(), found.getEmail(), context);
 
-			                    XFTItem item = XFTItem.NewItem("xdat:user_login",found);
-			                    Date today = Calendar.getInstance(TimeZone.getDefault()).getTime();
-			                    item.setProperty("xdat:user_login.user_xdat_user_id", found.getID());
-			                    item.setProperty("xdat:user_login.login_date", today);
-			                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
-			                    item.setProperty("xdat:user_login.session_id", data.getSession().getId());
+                                XFTItem item = XFTItem.NewItem("xdat:user_login", found);
+                                Date today = Calendar.getInstance(TimeZone.getDefault()).getTime();
+                                item.setProperty("xdat:user_login.user_xdat_user_id", found.getID());
+                                item.setProperty("xdat:user_login.login_date", today);
+                                item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
+                                item.setProperty("xdat:user_login.session_id", data.getSession().getId());
                                 SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
 
                                 Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-			                    grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-			    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getLogin(), tempPass, grantedAuthorities);
+                                grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+                                Authentication authentication = new UsernamePasswordAuthenticationToken(found.getLogin(), tempPass, grantedAuthorities);
 
                                 if (!found.isGuest()) {
                                     SecurityContextHolder.getContext().setAuthentication(authentication);
                                 }
 
-                                try{
-			                    	directRequest(data,context,found);
-			                    }catch(Exception e){
-			                        logger.error(e);
+                                try {
+                                    directRequest(data, context, found);
+                                } catch (Exception e) {
+                                    logger.error("Error directing request after new user was registered.", e);
                                     handleInvalid(data, context, "Error directing request after new user was registered.");
-			                    }
+                                }
                             }
-		                } else {
-		                    try {
-		                    	directRequest(data, context, found);
-		                    } catch(Exception e) {
-		                        logger.error(e);
-		                    }
+                        } else {
+                            try {
+                                directRequest(data, context, found);
+                            } catch (Exception e) {
+                                logger.error("", e);
+                            }
 
-		                    try {
+                            try {
                                 cacheRegistrationData(found, comments, phone, lab);
-                                if (!hasPAR(data) && XDAT.getSiteConfigPreferences().getEmailVerification()) {
+                                if (!found.isVerified()) {
                                     sendNewUserVerificationEmail(data, context, found);
                                 } else {
-                                	AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
-	                            	data.setRedirectURI(null);
-	                                data.setScreenTemplate("PostRegister.vm");
+                                    AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
+                                    data.setRedirectURI(null);
+                                    data.setScreenTemplate("PostRegister.vm");
                                 }
                             } catch (Exception exception) {
                                 //Email send failed
                                 logger.error("Error occurred sending new user email", exception);
                                 handleInvalid(data, context, "Email send failed. If you are unable to log in to your account, please contact an administrator or create an account with a different email address.");
                             }
-		                }
-	                } else {
+                        }
+                    } else {
                         //Invalid Password
 		            	handleInvalid(data, context, validator.getMessage());
 	                }

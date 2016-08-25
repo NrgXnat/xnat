@@ -1,11 +1,9 @@
-/**
+/*
  * AliasTokenDAO
- * (C) 2012 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on 4/17/12 by rherri01
  */
 package org.nrg.xdat.daos;
 
@@ -37,8 +35,9 @@ public class AliasTokenDAO extends AbstractHibernateDAO<AliasToken> {
 
     public List<AliasToken> findByXdatUserId(String xdatUserId) {
         return findByXdatUserId(xdatUserId, false);
-}
+    }
 
+    @SuppressWarnings("unchecked")
     public List<AliasToken> findByXdatUserId(String xdatUserId, boolean includeDisabled) {
         Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("xdatUserId", xdatUserId));

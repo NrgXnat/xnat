@@ -17,6 +17,8 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.utilities.Patterns;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+
 import java.security.SecureRandom;
 import javax.persistence.*;
 import java.util.Date;
@@ -58,6 +60,7 @@ public class AliasToken extends AbstractHibernateEntity {
      *
      * @return A value representing the token secret.
      */
+    @Column(nullable = false)
     public String getSecret() {
         return _secret;
     }
@@ -69,6 +72,28 @@ public class AliasToken extends AbstractHibernateEntity {
      */
     public void setSecret(final String secret) {
         _secret = secret;
+    }
+
+    /**
+     * Returns the time the token is expected to expire. This value is "expected" because it is calculated by adding the
+     * currently configured {@link SiteConfigPreferences#getAliasTokenTimeout() alias token timeout} to the time the
+     * token is issued. If the timeout is changed after the token is issued, then the token may expire earlier or later
+     * than the expected expiration time.
+     *
+     * @return The time at which the alias token is expected to expire.
+     */
+    public Date getEstimatedExpirationTime() {
+        return _estimatedExpirationTime;
+    }
+
+    /**
+     * Sets the time the token is expected to expire. See {@link #getEstimatedExpirationTime()} for an explanation of
+     * why the expiration time is only expected and not guaranteeed.
+     *
+     * @param estimatedExpirationTime    The time at which the alias token is expected to expire.
+     */
+    public void setEstimatedExpirationTime(final Date estimatedExpirationTime) {
+        _estimatedExpirationTime = estimatedExpirationTime;
     }
 
     /**
@@ -95,6 +120,7 @@ public class AliasToken extends AbstractHibernateEntity {
      *
      * @return The username of the XDAT user account for whom the token was issued.
      */
+    @Column(nullable = false)
     public String getXdatUserId() {
         return _xdatUserId;
     }
@@ -115,7 +141,6 @@ public class AliasToken extends AbstractHibernateEntity {
      * @return A list of the valid originating IP addresses and address ranges.
      */
     @ElementCollection(fetch = FetchType.EAGER)
-    @Column(nullable = true)
     public Set<String> getValidIPAddresses() {
         return _validIPAddresses;
     }
@@ -212,8 +237,10 @@ public class AliasToken extends AbstractHibernateEntity {
     }
 
     private static final Log _log = LogFactory.getLog(AliasToken.class);
+
     private String                       _alias;
-    private String                         _secret;
+    private String                       _secret;
+    private Date                         _estimatedExpirationTime;
     private boolean                      _isSingleUse;
     private String                       _xdatUserId;
     private Set<String>                  _validIPAddresses;

@@ -1,5 +1,6 @@
 <!-- Sequence: 10 -->
-<li><a href="/page/admin/">Site Administration</a></li>
+##<li><a href="/page/admin/">Site Administration</a></li>
+<li><a href="${SITE_ROOT}/app/template/Page.vm?view=admin">Site Administration</a></li>
 <li><a href="$link.setPage("XDATScreen_admin.vm")">Users</a></li>
 <li><a href="$link.setPage("XDATScreen_groups.vm")">Groups</a></li>
 <li><a href="$link.setPage("XDATScreen_dataTypes.vm")">Data Types</a></li>

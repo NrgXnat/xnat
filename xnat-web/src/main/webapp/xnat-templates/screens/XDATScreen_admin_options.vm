@@ -27,7 +27,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
     <div id="more-options">
 
-        <a href="/page/admin/">Configuration</a>
+        <a href="${SITE_ROOT}/app/template/Page.vm?view=admin">Site Administration</a>
 
         <a class="iframe-dialog" href="$link.setPage("XDATScreen_emailSpecifications.vm").addPathInfo("popup","true")?message=false">Set Email Settings</a>
 

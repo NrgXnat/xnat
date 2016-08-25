@@ -1,18 +1,20 @@
 ## Main JavaScript and CSS files for XNAT
 
 #set ($SITE_ROOT = $content.getURI(''))
+#set ($versionString = "v=1.7.0a2") 
 
 ## only load once
 #if (!$appJS)
 
     <!-- app.css loaded last -->
-    <link rel="stylesheet" type="text/css" href="$content.getURI('style/app.css?v=1.7.0a1')">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
+    <!-- Icon sets -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.css?${versionString}">
 
-    <link rel="stylesheet" type="text/css" href="$content.getURI('page/admin/style.css?v=1.7.0a1')">
-
-    <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/xmodal-v1/xmodal.css?v=1.7.0a1')">
-    <script src="$content.getURI('scripts/xmodal-v1/xmodal.js')"></script>
-    <script src="$content.getURI('scripts/xmodal-v1/xmodal-migrate.js')"></script>
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xmodal-v1/xmodal.css?${versionString}">
+    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.js"></script>
+    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.js"></script>
 
     <!-- XNAT JLAPI scripts -->
     <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>

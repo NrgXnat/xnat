@@ -220,9 +220,6 @@ $navigation.setTemplate("/BaseJS.vm")
 <!-- YUI css -->
 <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/yui/build/assets/skins/xnat/xnat.css?v=1.7.0a1')">
 
-<!-- Icon sets -->
-<link rel="stylesheet" type="text/css" href="$content.getURI('style/icons.css?v=1.7.0a1')">
-
 <!-- date input stuff -->
 <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.min.css?${versionString}">
 <script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.min.js"></script>

@@ -13,7 +13,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 <table border="0" width="95%">
     <tr>
         <td>
-            <a href="/page/admin/">Configuration</a><BR><BR>
+            <a href="${SITE_ROOT}/app/template/Page.vm?view=admin">Configuration</a><BR><BR>
             <a href="$link.setPage("EditEmailSpecs.vm")">Set Email Settings</a><BR><BR>
             <a href="$link.setAction("ManagementAction").addPathInfo("refresh","ArcSpecManager")">Reset Archive Specification</a><BR><BR>
             <a href="$link.setAction("RefreshAction").addPathInfo("refresh","ElementSecurity")">Reload Security Settings</a><BR><BR>

@@ -9,8 +9,6 @@
 
 <pg:restricted msg="${redirect}">
 
-    <link rel="stylesheet" type="text/css" href="${sessionScope.siteRoot}/page/admin/style.css">
-
     <div id="page-body">
         <div class="pad">
 

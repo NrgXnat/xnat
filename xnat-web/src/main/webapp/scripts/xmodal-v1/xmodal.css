@@ -49,7 +49,7 @@ div.xmodal .title .maximize {
     position: absolute ; top: 8px ; right: 8px ;
     font-size: 18px ; font-weight: normal ; text-align: center; line-height: 19px;
     color: #808080 ; background: #f8f8f8 ;
-    border: 1px solid #c0c0c0 ; border-radius: 2px; }
+    border: 1px solid #a0a0a0 ; border-radius: 2px; }
 div.xmodal .title .maximize { right: 38px; line-height: 10px; }
 div.xmodal .title .close:hover,
 div.xmodal .title .maximize:hover { color: #606060; background: #fafafa; border-color: #a0a0a0; cursor: pointer; }
@@ -80,18 +80,19 @@ div.xmodal .footer .buttons { display: table-cell ; padding-right: 15px ; vertic
 div.xmodal .footer .buttons .link { display: inline-block; padding: 10px; font-size: 13px; text-decoration: underline; }
 div.xmodal .footer .button {
     display: inline-block ; margin-left: 10px ; padding: 6px 12px !important ; float: right ;
-    vertical-align: middle; font-size: 13px ; font-weight: normal; letter-spacing: 0.02em; text-decoration: none !important ; }
+    vertical-align: middle; box-shadow: 0 1px 1px #a0a0a0;
+    font-size: 13px ; font-weight: normal; letter-spacing: 0.02em; text-decoration: none !important ; }
 div.xmodal .footer a.button { height: 24px ; line-height: 24px; } /* set height only for <a> buttons */
 div.xmodal .footer .button,
 div.xmodal .footer .button.cancel.default {
-    color: #000 ; background: #f8f8f8 linear-gradient( #ffffff, #f0f0f0 ) ; border: 1px solid #c0c0c0 ; border-radius: 3px ; }
+    color: #000 ; background: #f8f8f8 linear-gradient( #ffffff, #f0f0f0 ) ; border: 1px solid #a0a0a0 ; border-radius: 3px ; }
 div.xmodal .footer .button:hover,
 div.xmodal .footer .button.cancel.default:hover { background: #e8e8e8; }
 div.xmodal .footer .button:active,
 div.xmodal .footer .button.cancel.default:active { color: inherit ; background: #d0d0d0 }
-div.xmodal .footer .button.default { color: #fff ; background: #1A75BB center top repeat-x ; border-color: #096BB7 ; }
-div.xmodal .footer .button.default:active { background: #1A75BB ; border-color: #096BB7 ; }
-div.xmodal .footer .button.default:hover { background: #096BB7; }
+div.xmodal .footer .button.default { color: #fff ; background: #1A75BB linear-gradient( #3C8BC7, #1A75BB ); border-color: #085895 ; }
+div.xmodal .footer .button.default:active { background: #1A75BB ; border-color: #085895 ; }
+div.xmodal .footer .button.default:hover { background: #1A75BB; }
 div.xmodal .footer .button.hidden,
 div.xmodal .footer .button.disabled { opacity: 0.6; }
 div.xmodal .footer .button.hidden:hover,

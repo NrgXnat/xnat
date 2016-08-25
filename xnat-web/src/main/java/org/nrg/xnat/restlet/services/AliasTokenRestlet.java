@@ -30,6 +30,7 @@ import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -93,13 +94,14 @@ public class AliasTokenRestlet extends SecureResource {
         Map<String, String> map = Maps.newHashMap();
         map.put("alias", token.getAlias());
         map.put("secret", token.getSecret());
-        String value = "";
-        try {
-            value = _serializer.toJson(map);
-        } catch (IOException e) {
-            //
+        if (token.getEstimatedExpirationTime() != null) {
+            map.put("estimatedExpirationTime", FORMATTER.format(token.getEstimatedExpirationTime()));
         }
-        return value;
+        try {
+            return _serializer.toJson(map);
+        } catch (IOException ignored) {
+            return "";
+        }
     }
 
     @Override
@@ -114,7 +116,8 @@ public class AliasTokenRestlet extends SecureResource {
         return _service;
     }
 
-    private static final int INVALID = -1;
+    private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("yyyyMMdd_HHmmss");
+
     private final SerializerService _serializer;
     private       AliasTokenService _service;
     private       String            _operation;

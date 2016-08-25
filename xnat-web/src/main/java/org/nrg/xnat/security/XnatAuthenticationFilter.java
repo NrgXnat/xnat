@@ -120,7 +120,7 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
 
         try {
             AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "SUCCESS");
-            Authentication auth =  getAuthenticationManager().authenticate(authRequest);
+            Authentication auth = getAuthenticationManager().authenticate(authRequest);
 
             //Fixed XNAT-4409 by adding a check for a par parameter on login. If a PAR is present and valid, then grant the user that just logged in the appropriate project permissions.
             if(StringUtils.isNotBlank(request.getParameter("par"))){

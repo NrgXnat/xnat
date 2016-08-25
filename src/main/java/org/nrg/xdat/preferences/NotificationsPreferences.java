@@ -20,6 +20,7 @@ import java.util.Map;
 @NrgPreferenceBean(toolId = NotificationsPreferences.NOTIFICATIONS_TOOL_ID,
                    toolName = "XNAT Site Notifications Preferences",
                    description = "Manages notifications and email settings for the XNAT system.",
+                   properties = "META-INF/xnat/preferences/notifications.properties",
                    strict = false)
 public class NotificationsPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String NOTIFICATIONS_TOOL_ID = "notifications";

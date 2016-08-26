@@ -1,5 +1,6 @@
 package org.nrg.xapi.rest.notifications;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
@@ -64,7 +65,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<Properties> getAllSiteConfigProperties(@ApiParam(hidden = true) final HttpServletRequest request) throws IOException {
+    public ResponseEntity<Properties> getNotificationsProperties(@ApiParam(hidden = true) final HttpServletRequest request) throws IOException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -96,8 +97,8 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set notifications properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = "batch", consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
-    public ResponseEntity<Void> setBatchNotificationsProperties(@ApiParam(value = "The map of notifications properties to be set.", required = true) @RequestBody final Properties properties) throws InitializationException {
+    @RequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    public ResponseEntity<Void> setNotificationsProperties(@ApiParam(value = "The map of notifications properties to be set.", required = true) @RequestBody final Properties properties) throws InitializationException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -107,14 +108,16 @@ public class NotificationsApi extends AbstractXapiRestController {
 
         for (final String name : properties.stringPropertyNames()) {
             try {
-                if (StringUtils.equals(name, "notifications.emailRecipientErrorMessages")) {
+                if (StringUtils.equals(name, "emailRecipientErrorMessages")) {
                     _notificationsPrefs.setEmailRecipientErrorMessages(properties.getProperty(name));
-                } else if (StringUtils.equals(name, "notifications.emailRecipientIssueReports")) {
+                } else if (StringUtils.equals(name, "emailRecipientIssueReports")) {
                     _notificationsPrefs.setEmailRecipientIssueReports(properties.getProperty(name));
-                } else if (StringUtils.equals(name, "notifications.emailRecipientNewUserAlert")) {
+                } else if (StringUtils.equals(name, "emailRecipientNewUserAlert")) {
                     _notificationsPrefs.setEmailRecipientNewUserAlert(properties.getProperty(name));
-                } else if (StringUtils.equals(name, "notifications.emailRecipientUpdate")) {
+                } else if (StringUtils.equals(name, "emailRecipientUpdate")) {
                     _notificationsPrefs.setEmailRecipientUpdate(properties.getProperty(name));
+                } else if (StringUtils.equals(name, "smtpServer")) {
+                    _notificationsPrefs.setSmtpServer(_serializer.deserializeJson(properties.getProperty(name), TYPE_REF_HASHMAP_STRING_STRING));
                 } else {
                     _notificationsPrefs.set(properties.getProperty(name), name);
                 }
@@ -123,54 +126,29 @@ public class NotificationsApi extends AbstractXapiRestController {
                 }
             } catch (InvalidPreferenceName invalidPreferenceName) {
                 _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
+            } catch (IOException e) {
+                _log.error("An error occurred deserializing the preference: " + name + ", which is just lame.");
             }
         }
 
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
+        // If any of the SMTP properties changed, then change the values for
+        if (properties.containsKey("smtpServer") || properties.containsKey("host") || properties.containsKey("port") || properties.containsKey("protocol") || properties.containsKey("username") || properties.containsKey("password")) {
+            final String host     = _notificationsPrefs.getHostname();
+            final int    port     = _notificationsPrefs.getPort();
+            final String protocol = _notificationsPrefs.getProtocol();
+            final String username = _notificationsPrefs.getUsername();
+            final String password = _notificationsPrefs.getPassword();
 
-    @ApiOperation(value = "Sets a map of notifications properties for mail.", notes = "Sets the notifications properties for mail specified in the map.", response = Void.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Notifications properties for mail successfully set."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to set notifications properties for mail."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = "batchMail", consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
-    public ResponseEntity<Void> setBatchNotificationsPropertiesForMail(@ApiParam(value = "The map of notifications properties for mail to be set.", required = true) @RequestBody final Properties properties) throws InitializationException {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
+            logConfigurationSubmit(host, port, protocol, username, password, properties);
+
+            setHost(host, false);
+            setPort(port);
+            setProtocol(protocol);
+            setUsername(username);
+            setPassword(password);
+
+            _javaMailSender.setJavaMailProperties(getSubmittedProperties(properties));
         }
-
-        logSetProperties(properties);
-
-        for (final String name : properties.stringPropertyNames()) {
-            try {
-                _notificationsPrefs.set(properties.getProperty(name), name);
-                if (_log.isInfoEnabled()) {
-                    _log.info("Set property {} to value: {}", name, properties.get(name));
-                }
-            } catch (InvalidPreferenceName invalidPreferenceName) {
-                _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
-            }
-        }
-
-        String host     = _notificationsPrefs.getHostname();
-        int    port     = _notificationsPrefs.getPort();
-        String protocol = _notificationsPrefs.getProtocol();
-        String username = _notificationsPrefs.getUsername();
-        String password = _notificationsPrefs.getPassword();
-
-        logConfigurationSubmit(host, port, protocol, username, password, properties);
-
-        setHost(host, false);
-        setPort(port);
-        setProtocol(protocol);
-        setUsername(username);
-        setPassword(password);
-
-        _javaMailSender.setJavaMailProperties(getSubmittedProperties(properties));
-
-        setSmtp();
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -245,8 +223,6 @@ public class NotificationsApi extends AbstractXapiRestController {
 
         _javaMailSender.setJavaMailProperties(getSubmittedProperties(properties));
 
-        setSmtp();
-
         return getSmtpServerProperties();
     }
 
@@ -282,8 +258,6 @@ public class NotificationsApi extends AbstractXapiRestController {
             }
         }
 
-        setSmtp();
-
         return getSmtpServerProperties();
     }
 
@@ -304,7 +278,6 @@ public class NotificationsApi extends AbstractXapiRestController {
             _log.info("User " + getSessionUser().getLogin() + " setting mail host to: " + host);
         }
         setHost(host, true);
-        setSmtp();
         return getSmtpServerProperties();
     }
 
@@ -325,7 +298,6 @@ public class NotificationsApi extends AbstractXapiRestController {
             _log.info("User " + getSessionUser().getLogin() + " setting mail port to: " + port);
         }
         setPort(port);
-        setSmtp();
         return getSmtpServerProperties();
     }
 
@@ -777,28 +749,6 @@ public class NotificationsApi extends AbstractXapiRestController {
         return properties;
     }
 
-    private void setSmtp() {
-        final Map<String, String> smtp = new HashMap<>();
-        smtp.put("host", StringUtils.defaultIfBlank(_javaMailSender.getHost(), "localhost"));
-        smtp.put("port", Integer.toString(_javaMailSender.getPort()));
-        if (StringUtils.isNotBlank(_javaMailSender.getUsername())) {
-            smtp.put("username", _javaMailSender.getUsername());
-        }
-        if (StringUtils.isNotBlank(_javaMailSender.getPassword())) {
-            smtp.put("password", _javaMailSender.getPassword());
-        }
-        if (StringUtils.isNotBlank(_javaMailSender.getProtocol())) {
-            smtp.put("protocol", _javaMailSender.getProtocol());
-        }
-        final Properties properties = _javaMailSender.getJavaMailProperties();
-        if (properties.size() > 0) {
-            for (final String property : properties.stringPropertyNames()) {
-                smtp.put(property, properties.getProperty(property));
-            }
-        }
-        _notificationsPrefs.setSmtpServer(smtp);
-    }
-
     private void cleanProperties(final Properties properties) {
         if (properties.containsKey("host")) {
             properties.remove("host");
@@ -877,8 +827,9 @@ public class NotificationsApi extends AbstractXapiRestController {
         }
     }
 
-    private static final Logger _log    = LoggerFactory.getLogger(NotificationsApi.class);
-    private static final String NOT_SET = "NotSet";
+    private static final Logger                                 _log                           = LoggerFactory.getLogger(NotificationsApi.class);
+    private static final String                                 NOT_SET                        = "NotSet";
+    private final static TypeReference<HashMap<String, String>> TYPE_REF_HASHMAP_STRING_STRING = new TypeReference<HashMap<String, String>>() {};
 
     private final NotificationsPreferences _notificationsPrefs;
     private final JavaMailSenderImpl       _javaMailSender;

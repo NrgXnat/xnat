@@ -181,7 +181,7 @@ var XNAT = getObject(XNAT);
 
                     function initialize(){
                         XNAT.xhr.postJSON({
-                            url: XNAT.url.rootUrl('/xapi/siteConfig/batch'),
+                            url: XNAT.url.rootUrl('/xapi/siteConfig'),
                             data: JSON.stringify({initialized:true}),
                             success: function(){
                                 xmodal.loading.close('#multi-save');

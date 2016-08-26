@@ -2,7 +2,7 @@ configPath: /setup
 nonAdminErrorPath: /app/template/Unconfigured.vm
 
 initPaths:
-  - /xapi/siteConfig/batch
+  - /xapi/siteConfig
   - /xapi/siteConfig/initialized
   - /xapi/notifications/smtp
   - /xapi/spawner/resolve/siteAdmin/siteSetup

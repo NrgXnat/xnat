@@ -93,7 +93,7 @@ var XNAT = getObject(XNAT || {});
                     // Do nothing
                 }
             }
-        } 
+        }
     }
 
     /**
@@ -168,6 +168,7 @@ var XNAT = getObject(XNAT || {});
         opts.element = opts.element || opts.config || {};
         opts.title = opts.title || opts.label || opts.header;
         opts.name = opts.name || opts.element.name || opts.id || opts.element.id || randomID('form-', false);
+        opts.action = opts.action || opts.url;
 
         // data-* attributes to add to panel
         addDataObjects(opts, {
@@ -273,6 +274,8 @@ var XNAT = getObject(XNAT || {});
         function loadData(form, obj){
 
             obj = cloneObject(obj);
+
+            obj.load = obj.load || obj.url;
 
             // need a form to put the data into!
             // and a 'load' property too

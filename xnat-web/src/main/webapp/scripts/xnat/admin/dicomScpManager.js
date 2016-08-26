@@ -2,6 +2,8 @@
  * Manage DICOM SCP Receivers
  */
 
+console.log('dicomScpManager.js');
+
 var XNAT = getObject(XNAT || {});
 
 (function(factory){

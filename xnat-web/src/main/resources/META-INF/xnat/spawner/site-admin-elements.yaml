@@ -45,7 +45,7 @@ passwordExpirationInterval:
     label: Password Expiration (Interval)
     after: >
       <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
-      Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a></p>
+      Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
 
 passwordExpirationDate:
     kind: input.text
@@ -297,21 +297,21 @@ userLoginsSessionControls:
             label: Session Timeout
             description: >
               Interval for timing out user sessions. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         aliasTokenTimeout:
             kind: panel.input.text
             name: aliasTokenTimeout
             label: Alias Token Timeout
             description: >
               Interval for timing out alias tokens. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         aliasTokenTimeoutSchedule:
             kind: panel.input.text
             name: aliasTokenTimeoutSchedule
             label: Alias Token Timeout Schedule
             description: >
-              How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses
-              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
+              How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses basic
+              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
         sessionTimeoutMessage:
             kind: panel.textarea
             name: sessionTimeoutMessage
@@ -347,28 +347,28 @@ userLoginsSessionControls:
             label: Failed Logins Lockout Duration
             description: >
               Interval of time to lock user accounts that have exceeded the max_failed_logins count. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         resetFailedLoginsSchedule:
             kind: panel.input.text
             name: resetFailedLoginsSchedule
             label: Reset Failed Logins Schedule
             description: >
-              How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses
-              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
+              How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
+              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
         userInactivityLockout:
             kind: panel.input.text
             name: inactivityBeforeLockout
             label: User Inactivity Lockout
             description: >
               Interval of inactivity before a user account is disabled. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         inactivityBeforeLockoutSchedule:
             kind: panel.input.text
             name: inactivityBeforeLockoutSchedule
             label: Inactivity Lockout Schedule
             description: >
-              How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses
-              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a>
+              How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
+              <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
 
 passwords:
     kind: panel.form
@@ -394,7 +394,7 @@ passwords:
             kind: panel.element
             label: Password Expiration
             info: >
-                <p>A <b>password expiration interval</b> specifies the length of time users have before they must change their passwords (Specified in <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>)</p><p>Alternatively, a <b>password expiration date</b> can be configured to expire passwords that were last changed before it. This is useful for purging access to obsolete accounts.</p>
+                <p>A <b>password expiration interval</b> specifies the length of time users have before they must change their passwords (Specified in <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>).</p><p>Alternatively, a <b>password expiration date</b> can be configured to expire passwords that were last changed before it. This is useful for purging access to obsolete accounts.</p>
             contents:
                 info:
                     tag: p
@@ -457,7 +457,7 @@ passwords:
             label: Password History
             description: >
               Interval for which users cannot reuse an old password of theirs. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>
+              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         requireSaltedPasswords:
             kind: panel.input.checkbox
             id: requireSaltedPasswords
@@ -1126,9 +1126,7 @@ dicomScpReceivers:
         dicomScpManager:
             tag: "div#dicom-scp-manager"
         dicomScpManagerScript:
-            tag: script
-            element:
-                src: /scripts/xnat/admin/dicomScpManager.js
+            tag: script|src="~/scripts/xnat/admin/dicomScpManager.js"
 
 fileSystem:
     kind: panel.form

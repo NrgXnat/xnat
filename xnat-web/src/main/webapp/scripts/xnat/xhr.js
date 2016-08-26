@@ -442,36 +442,47 @@ var XNAT = getObject(XNAT||{}),
     function setValues(form, dataObj){
         // cache and check if form exists
         var $form = $$(form);
+
         if (!$form.length) return;
+
         // find all input and select elements with a name attribute
-        $form.find('input[name], select[name]').each(function(){
-            var val = '';
-            if (Array.isArray(dataObj)) {
-                val = dataObj.join(', ');
+        $form.find(':input').each(function(){
+
+            var $this = $(this);
+            var val = lookupObjectValue(dataObj, this.name||this.title);
+
+            if (Array.isArray(val)) {
+                val = val.join(', ');
+                $this.addClass('array-list')
             }
             else {
-                val = stringable(dataObj) ? dataObj+'' : dataObj[this.name] || '';
+                val = stringable(val) ? val : JSON.stringify(val);
             }
+
             changeValue(this, val);
+
             // special handling for checkboxes
             if (this.type === 'checkbox') {
-                this.checked = (realValue(this.value) === true)
+                this.checked = realValue(val)
             }
-            // // special handling for radio buttons (???)
-            // if (this.type === 'radio') {
-            //     this.checked = (realValue(this.value) === (dataObj[this.name]||''))
-            // }
+            // special handling for radio buttons
+            if (this.type === 'radio') {
+                this.checked = isEqual(this.value, val);
+                if (this.checked) {
+                    $this.trigger('change');
+                }
+            }
         });
-        // set textarea innerText from a 'value' property
-        $form.find('textarea[name]').each(function(){
-            var $textarea = $(this);
-            var textValue =  (function(){
-                var val = dataObj[this.name];
-                return stringable(val) ? val+'' : safeStringify(val);
-            })();
-            changeValue($textarea, textValue);
-            // $textarea.val(textValue).change();
-        });
+        // // set textarea innerText from a 'value' property
+        // $form.find('textarea[name]').each(function(){
+        //     var $textarea = $(this);
+        //     var textValue =  (function(){
+        //         var val = dataObj[this.name];
+        //         return stringable(val) ? val+'' : safeStringify(val);
+        //     })();
+        //     changeValue($textarea, textValue);
+        //     // $textarea.val(textValue).change();
+        // });
         return $form;
     }
 
@@ -489,8 +500,8 @@ var XNAT = getObject(XNAT||{}),
             callback = diddly;
 
         opts = cloneObject(opts);
-        opts.url = XNAT.url.rootUrl(opts.url || $form.attr('action'));
-        opts.method = opts.method || _form.method || 'GET';
+        opts.url = XNAT.url.rootUrl(opts.url || $form.data('url') || $form.attr('action'));
+        opts.method = opts.method || $form.data('method') || _form.method || 'GET';
 
         if ($.isFunction(opts.validate)) {
             validation = opts.validate.call(_form, opts);
@@ -511,9 +522,12 @@ var XNAT = getObject(XNAT||{}),
         // don't pass 'callback' property into the AJAX request
         delete opts.callback;
 
+        var inputs = $form.find(':input').not('button, [type="submit"]').toArray();
+
         if (/POST|PUT/i.test(opts.method)) {
             if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
-                opts.data = formToJSON($form, true);
+                // opts.data = formToJSON($form, true);
+                opts.data = JSON.stringify(form2js(inputs, ':', false));
                 opts.processData = false;
                 opts.contentType = 'application/json';
             }
@@ -530,7 +544,7 @@ var XNAT = getObject(XNAT||{}),
             opts.success = function(data){
                 callback.apply($form, arguments);
                 // DON'T TRUST RETURNED DATA
-                //setValues($form, data);
+                setValues($form, data);
             };
         }
 
@@ -541,9 +555,10 @@ var XNAT = getObject(XNAT||{}),
 
     // $('form.foo').submitJSON();
     $.fn.submitJSON = function(opts){
-        $(this).addClass('json');
+        var $form = $(this);
+        $form.addClass('json');
         return xhr.form(this, extend(true, {
-            method: this.method || 'POST',
+            method: $form.data('method') || this.method || 'POST',
             processData: false,
             contentType: 'application/json'
         }, opts))

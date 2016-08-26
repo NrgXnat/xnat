@@ -180,6 +180,7 @@
     <script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.min.js"></script>
 
     <!-- XNAT JLAPI scripts -->
+    <script src="${SITE_ROOT}/scripts/xnat/validate.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/xhr.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/event.js"></script>

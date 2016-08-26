@@ -95,6 +95,18 @@ var XNAT = getObject(XNAT);
                 try {
                     spawnedElement =
                         spawn(prop.tag || prop.element.tag || 'div', prop.element, prop.content);
+
+                    // convert relative URIs for href, src, and action attributes
+                    if (spawnedElement.href) {
+                        spawnedElement.href = setRoot(spawnedElement.getAttribute('href'))
+                    }
+                    if (spawnedElement.src) {
+                        spawnedElement.src = setRoot(spawnedElement.getAttribute('src'))
+                    }
+                    if (spawnedElement.action) {
+                        spawnedElement.action = setRoot(spawnedElement.getAttribute('action'))
+                    }
+
                     // jQuery's .append() method is
                     // MUCH more robust and forgiving
                     // than element.appendChild()

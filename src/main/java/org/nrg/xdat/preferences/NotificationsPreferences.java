@@ -1,5 +1,8 @@
 package org.nrg.xdat.preferences;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.api.NotificationType;
@@ -13,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("unused")
@@ -25,117 +29,121 @@ import java.util.Map;
 public class NotificationsPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String NOTIFICATIONS_TOOL_ID = "notifications";
 
+    private static final String USER_REG_EMAIL        = "Welcome to the SITE_NAME Web Archive!<br><br>You can now log on to the SITE_NAME at:<a href=\"SITE_URL\">SITE_URL</a><br><br>Your username is: USER_USERNAME<br><br><br>For support, contact the <a href=\"mailto:ADMIN_EMAIL?subject=SITE_NAME Assistance\">SITE_NAME Management </A>";
+    private static final String FORGOT_USERNAME_EMAIL = "\nYou requested your username, which is: USER_USERNAME\n<br><br><br>Please login to the site for additional user information <a href=\"SITE_URL\">SITE_NAME</a>.\n";
+    private static final String FORGOT_PASSWORD_EMAIL = "Dear USER_FIRSTNAME USER_LASTNAME,\nPlease click this link to reset your password: RESET_URL <br/>\r\nThis link will expire in 24 hours.";
+
     @Autowired
     public NotificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
         super(preferenceService, eventService, configFolderPaths);
     }
 
-    @NrgPreference(property = "notifications.helpContactInfo")
-    public String getHelpContactInfo(){
-        return getValue("notifications.helpContactInfo");
+    @NrgPreference
+    public String getHelpContactInfo() {
+        return getValue("helpContactInfo");
     }
 
     public void setHelpContactInfo(final String helpContactInfo) {
         try {
-            set(helpContactInfo, "notifications.helpContactInfo");
+            set(helpContactInfo, "helpContactInfo");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.helpContactInfo': something is very wrong here.", e);
+            _log.error("Invalid preference name 'helpContactInfo': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue="Welcome to the SITE_NAME Web Archive!<br><br>You can now log on to the SITE_NAME at:<a href=\"SITE_URL\">SITE_URL</a><br><br>Your username is: USER_USERNAME<br><br><br>For support, contact the <a href=\"mailto:ADMIN_EMAIL?subject=SITE_NAME Assistance\">SITE_NAME Management </A>", property = "notifications.emailMessageUserRegistration")
-    public String getEmailMessageUserRegistration(){
-        return getValue("notifications.emailMessageUserRegistration");
+    @NrgPreference(defaultValue = USER_REG_EMAIL)
+    public String getEmailMessageUserRegistration() {
+        return getValue("emailMessageUserRegistration");
     }
 
     public void setEmailMessageUserRegistration(final String emailMessageUserRegistration) {
         try {
-            set(emailMessageUserRegistration, "notifications.emailMessageUserRegistration");
+            set(emailMessageUserRegistration, "emailMessageUserRegistration");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailMessageUserRegistration': something is very wrong here.", e);
+            _log.error("Invalid preference name 'emailMessageUserRegistration': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue="\nYou requested your username, which is: USER_USERNAME\n<br><br><br>Please login to the site for additional user information <a href=\"SITE_URL\">SITE_NAME</a>.\n", property = "notifications.emailMessageForgotUsernameRequest")
-    public String getEmailMessageForgotUsernameRequest(){
-        return getValue("notifications.emailMessageForgotUsernameRequest");
+    @NrgPreference(defaultValue = FORGOT_USERNAME_EMAIL)
+    public String getEmailMessageForgotUsernameRequest() {
+        return getValue("emailMessageForgotUsernameRequest");
     }
 
     public void setEmailMessageForgotUsernameRequest(final String emailMessageForgotUsernameRequest) {
         try {
-            set(emailMessageForgotUsernameRequest, "notifications.emailMessageForgotUsernameRequest");
+            set(emailMessageForgotUsernameRequest, "emailMessageForgotUsernameRequest");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailMessageForgotUsernameRequest': something is very wrong here.", e);
+            _log.error("Invalid preference name 'emailMessageForgotUsernameRequest': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue="Dear USER_FIRSTNAME USER_LASTNAME,\nPlease click this link to reset your password: RESET_URL <br/>\r\nThis link will expire in 24 hours.", property = "notifications.emailMessageForgotPasswordReset")
-    public String getEmailMessageForgotPasswordReset(){
-        return getValue("notifications.emailMessageForgotPasswordReset");
+    @NrgPreference(defaultValue = FORGOT_PASSWORD_EMAIL)
+    public String getEmailMessageForgotPasswordReset() {
+        return getValue("emailMessageForgotPasswordReset");
     }
 
     public void setEmailMessageForgotPasswordReset(final String emailMessageForgotPasswordReset) {
         try {
-            set(emailMessageForgotPasswordReset, "notifications.emailMessageForgotPasswordReset");
+            set(emailMessageForgotPasswordReset, "emailMessageForgotPasswordReset");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.emailMessageForgotPasswordReset': something is very wrong here.", e);
+            _log.error("Invalid preference name 'emailMessageForgotPasswordReset': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "notifications.notifyAdminUserRegistration")
-    public boolean getNotifyAdminUserRegistration(){
-        return getBooleanValue("notifications.notifyAdminUserRegistration");
+    @NrgPreference(defaultValue = "false")
+    public boolean getNotifyAdminUserRegistration() {
+        return getBooleanValue("notifyAdminUserRegistration");
     }
 
     public void setNotifyAdminUserRegistration(final boolean notifyAdminUserRegistration) {
         try {
-            setBooleanValue(notifyAdminUserRegistration, "notifications.notifyAdminUserRegistration");
+            setBooleanValue(notifyAdminUserRegistration, "notifyAdminUserRegistration");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.notifyAdminUserRegistration': something is very wrong here.", e);
+            _log.error("Invalid preference name 'notifyAdminUserRegistration': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "notifications.notifyAdminPipelineEmails")
-    public boolean getNotifyAdminPipelineEmails(){
-        return getBooleanValue("notifications.notifyAdminPipelineEmails");
+    @NrgPreference(defaultValue = "true")
+    public boolean getNotifyAdminPipelineEmails() {
+        return getBooleanValue("notifyAdminPipelineEmails");
     }
 
     public void setNotifyAdminPipelineEmails(final boolean notifyAdminPipelineEmails) {
         try {
-            setBooleanValue(notifyAdminPipelineEmails, "notifications.notifyAdminPipelineEmails");
+            setBooleanValue(notifyAdminPipelineEmails, "notifyAdminPipelineEmails");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.notifyAdminPipelineEmails': something is very wrong here.", e);
+            _log.error("Invalid preference name 'notifyAdminPipelineEmails': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "notifications.notifyAdminProjectAccessRequest")
-    public boolean getNotifyAdminProjectAccessRequest(){
-        return getBooleanValue("notifications.notifyAdminProjectAccessRequest");
+    @NrgPreference(defaultValue = "true")
+    public boolean getNotifyAdminProjectAccessRequest() {
+        return getBooleanValue("notifyAdminProjectAccessRequest");
     }
 
     public void setNotifyAdminProjectAccessRequest(final boolean notifyAdminProjectAccessRequest) {
         try {
-            setBooleanValue(notifyAdminProjectAccessRequest, "notifications.notifyAdminProjectAccessRequest");
+            setBooleanValue(notifyAdminProjectAccessRequest, "notifyAdminProjectAccessRequest");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.notifyAdminProjectAccessRequest': something is very wrong here.", e);
+            _log.error("Invalid preference name 'notifyAdminProjectAccessRequest': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "notifications.notifyAdminProjectOnSessionTransfer")
-    public boolean getNotifyAdminSessionTransfer(){
-        return getBooleanValue("notifications.notifyAdminProjectOnSessionTransfer");
+    @NrgPreference(defaultValue = "true")
+    public boolean getNotifyAdminSessionTransfer() {
+        return getBooleanValue("notifyAdminSessionTransfer");
     }
 
     public void setNotifyAdminSessionTransfer(final boolean notifyAdminProjectOnSessionTransfer) {
         try {
-            setBooleanValue(notifyAdminProjectOnSessionTransfer, "notifications.notifyAdminProjectOnSessionTransfer");
+            setBooleanValue(notifyAdminProjectOnSessionTransfer, "notifyAdminSessionTransfer");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'notifications.notifyAdminProjectOnSessionTransfer': something is very wrong here.", e);
+            _log.error("Invalid preference name 'notifyAdminSessionTransfer': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(property = "notifications.emailRecipientErrorMessages")
-    public String getEmailRecipientErrorMessages(){
+    @NrgPreference
+    public String getEmailRecipientErrorMessages() {
         return XDAT.getSubscriberEmailsListAsString(NotificationType.Error);
     }
 
@@ -143,8 +151,8 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         XDAT.replaceSubscriberList(emailRecipientErrorMessages, NotificationType.Error, getEmailAllowNonuserSubscribers());
     }
 
-    @NrgPreference(property = "notifications.emailRecipientIssueReports")
-    public String getEmailRecipientIssueReports(){
+    @NrgPreference
+    public String getEmailRecipientIssueReports() {
         return XDAT.getSubscriberEmailsListAsString(NotificationType.Issue);
     }
 
@@ -152,8 +160,8 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         XDAT.replaceSubscriberList(emailRecipientIssueReports, NotificationType.Issue, getEmailAllowNonuserSubscribers());
     }
 
-    @NrgPreference(property = "notifications.emailRecipientNewUserAlert")
-    public String getEmailRecipientNewUserAlert(){
+    @NrgPreference
+    public String getEmailRecipientNewUserAlert() {
         return XDAT.getSubscriberEmailsListAsString(NotificationType.NewUser);
     }
 
@@ -161,8 +169,8 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         XDAT.replaceSubscriberList(emailRecipientNewUserAlert, NotificationType.NewUser, getEmailAllowNonuserSubscribers());
     }
 
-    @NrgPreference(property = "notifications.emailRecipientUpdate")
-    public String getEmailRecipientUpdate(){
+    @NrgPreference
+    public String getEmailRecipientUpdate() {
         return XDAT.getSubscriberEmailsListAsString(NotificationType.Update);
     }
 
@@ -170,16 +178,53 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         XDAT.replaceSubscriberList(emailRecipientUpdate, NotificationType.Update, getEmailAllowNonuserSubscribers());
     }
 
-    @NrgPreference(defaultValue = "{'host':'localhost','port':'25'}")
+    @NrgPreference(defaultValue = "true")
+    public boolean getCopyAdminOnNotifications() {
+        return getBooleanValue("copyAdminOnNotifications");
+    }
+
+    public void setCopyAdminOnNotifications(final boolean copyAdminOnNotifications) {
+        try {
+            setBooleanValue(copyAdminOnNotifications, "copyAdminOnNotifications");
+        } catch (InvalidPreferenceName invalidPreferenceName) {
+            _log.error("Invalid preference name 'copyAdminOnNotifications': something is very wrong here.", invalidPreferenceName);
+        }
+    }
+
     public Map<String, String> getSmtpServer() {
-        return getMapValue("smtpServer");
+        if (_smtpServer.isEmpty()) {
+            _smtpServer.put("host", getHostname());
+            _smtpServer.put("port", Integer.toString(getPort()));
+            if (StringUtils.isNotBlank(getProtocol())) {
+                _smtpServer.put("protocol", getProtocol());
+            }
+            if (StringUtils.isNotBlank(getUsername())) {
+                _smtpServer.put("username", getUsername());
+            }
+            if (StringUtils.isNotBlank(getPassword())) {
+                _smtpServer.put("password", getPassword());
+            }
+        }
+        return Maps.newHashMap(_smtpServer);
     }
 
     public void setSmtpServer(final Map<String, String> smtpServer) {
-        try {
-            setMapValue("smtpServer", smtpServer);
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'smtpServer': something is very wrong here.", e);
+        _smtpServer.clear();
+        _smtpServer.putAll(smtpServer);
+        if (_smtpServer.containsKey("host")) {
+            setHostname(_smtpServer.get("host"));
+        }
+        if (_smtpServer.containsKey("port")) {
+            setPort(Integer.parseInt(_smtpServer.get("port")));
+        }
+        if (_smtpServer.containsKey("protocol")) {
+            setProtocol(_smtpServer.get("protocol"));
+        }
+        if (_smtpServer.containsKey("username")) {
+            setUsername(_smtpServer.get("username"));
+        }
+        if (_smtpServer.containsKey("password")) {
+            setPassword(_smtpServer.get("password"));
         }
     }
 
@@ -328,4 +373,5 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
 
     private static final Logger _log = LoggerFactory.getLogger(NotificationsPreferences.class);
 
+    private final Map<String, String> _smtpServer = new HashMap<>();
 }

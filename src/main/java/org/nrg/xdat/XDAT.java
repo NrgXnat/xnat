@@ -68,7 +68,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.jms.Destination;
@@ -229,7 +228,6 @@ public class XDAT implements Initializable, Configurable{
 
 	public static Authentication setGuestUserDetails() throws UserNotFoundException, UserInitException {
 		final UserI guest = Users.getGuest();
-		assert guest != null : "Didn't find the guest user.";
 		return new AnonymousAuthenticationToken(getContextService().getBean(AnonymousAuthenticationProvider.class).getKey(), guest, Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
 	}
 
@@ -237,7 +235,13 @@ public class XDAT implements Initializable, Configurable{
 		if (user.isGuest()) {
 			return setGuestUserDetails();
 		}
-		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, null);
+
+		final Collection<GrantedAuthority> authorities = new ArrayList<>();
+		if (Roles.isSiteAdmin(user)) {
+			authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+		}
+		authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 		return authentication;
 	}
@@ -651,6 +655,7 @@ public class XDAT implements Initializable, Configurable{
 	 */
 	public static String getSubscriberEmailsListAsString(NotificationType event) {
 		final Channel channel = getHtmlMailChannel();
+		boolean created = false;
 
 		Category category = getNotificationService().getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, event.toString());
 		if (category == null) {

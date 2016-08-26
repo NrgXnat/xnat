@@ -30,13 +30,13 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
 
 @SuppressWarnings("unused")
 public class XDATRegisterUser extends VelocitySecureAction {
@@ -86,12 +86,15 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
                         final boolean autoApproveRegistered = XDAT.getSiteConfigPreferences().getUserRegistration();
                         final boolean autoApprovePar = XDAT.getSiteConfigPreferences().getPar();
+                        final boolean hasParData = hasPAR(data);
+                        final boolean enabled = autoApprovePar && hasParData || autoApproveRegistered && (hasParData || !XDAT.getSiteConfigPreferences().getEmailVerification());
+                        final boolean verified = !XDAT.getSiteConfigPreferences().getEmailVerification() || hasParData;
 
                         // Approve them if:
                         //  -- we autoapprove par users and this user has a PAR
                         //  -- we autoapprove registered users and don't require email verification
-                        found.setEnabled(autoApprovePar && hasPAR(data) || autoApproveRegistered && !XDAT.getSiteConfigPreferences().getEmailVerification());
-                        found.setVerified(!XDAT.getSiteConfigPreferences().getEmailVerification() || hasPAR(data));
+                        found.setEnabled(enabled);
+                        found.setVerified(verified);
 
                         UserI currUser = XDAT.getUserDetails();
                         UserI userToSave = found;
@@ -104,8 +107,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         final String phone = TurbineUtils.HasPassedParameter("phone", data) ? (String) TurbineUtils.GetPassedParameter("phone", data) : "";
                         final String lab = TurbineUtils.HasPassedParameter("lab", data) ? (String) TurbineUtils.GetPassedParameter("lab", data) : "";
 
-                        if (found.isEnabled()) {
-                            if (!hasPAR(data) && XDAT.getSiteConfigPreferences().getEmailVerification()) {
+                        if (enabled) {
+                            if (verified) {
                                 try {
                                     sendNewUserVerificationEmail(data, context, found);
                                 } catch (Exception e) {
@@ -113,7 +116,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                     handleInvalid(data, context, "We are unable to send you the verification email. If you entered a valid email address, please contact our technical support.");
                                 }
                             } else {
-                                XDAT.setUserDetails(found);
+                                Authentication authentication = XDAT.setUserDetails(found);
                                 UserHelper.setUserHelper(data.getRequest(), found);
 
                                 data.setMessage("User registration complete.");
@@ -130,10 +133,6 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                 item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
                                 item.setProperty("xdat:user_login.session_id", data.getSession().getId());
                                 SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
-
-                                Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-                                grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-                                Authentication authentication = new UsernamePasswordAuthenticationToken(found.getLogin(), tempPass, grantedAuthorities);
 
                                 if (!found.isGuest()) {
                                     SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -949,7 +949,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "Your login attempt failed because the username and password combination you provided was invalid. After %d failed login attempts, your user account will be locked. If you believe your account is currently locked, you can:<ul><li>Unlock it by resetting your password</li><li>Wait one hour for it to unlock automatically</li></ul>", property = "UI.login_failure_message")
+    @NrgPreference(defaultValue = "Your login attempt failed because the username and password combination you provided was invalid or the site is currently at the maximum number of user sessions. After %d failed login attempts, your user account will be locked. If you believe your account is currently locked, you can:<ul><li>Unlock it by resetting your password</li><li>Wait one hour for it to unlock automatically</li></ul>", property = "UI.login_failure_message")
     public String getUiLoginFailureMessage() {
         return getValue("UI.login_failure_message");
     }

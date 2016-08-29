@@ -1019,9 +1019,9 @@ body .btn1[type="button"],
 body [type="submit"] {
     color: #fff;
     background: #1A75BB linear-gradient( #3C8BC7, #1A75BB );
-    /*border: 1px solid #102040;*/
-    border: 1px solid #033E77;
-    box-shadow: 0 1px 1px #848484;
+    /*border: 1px solid #033E77;*/
+    border: 1px solid #085895;
+    box-shadow: 0 1px 1px #a0a0a0;
 }
 
 .btn1:hover,
@@ -1042,8 +1042,8 @@ body [type="submit"]:hover {
 body button,
 body [type="button"],
 body [type="reset"] {
-    background: #f0f0f0 linear-gradient( #ffffff, #f0f0f0 );
-    border: 1px solid #848484;
+    background: #f8f8f8 linear-gradient( #ffffff, #f0f0f0 );
+    border: 1px solid #a0a0a0;
 }
 
 .btn:hover,

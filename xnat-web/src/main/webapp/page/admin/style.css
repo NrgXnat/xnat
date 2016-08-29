@@ -97,7 +97,7 @@ body.xnat .xmodal .panel { border: none; }
 }
 .panel .panel-element .element-wrapper { display: inline-block; width: 70%; float: right; }
 .panel .panel-element.stacked .element-wrapper { display: block; width: inherit; float: none; }
-.panel .panel-element .element-wrapper .description { margin: 3px 0 5px; color: #848484; }
+.panel .panel-element .element-wrapper .description { margin: 5px 2px; color: #727272; }
 .panel .panel-element.stacked .element-wrapper .description { font-size: 12px; }
 .panel .panel-element span.before { right: 10px; }
 .panel .panel-element span.after { margin-left: 10px; }
@@ -117,7 +117,7 @@ body.xnat .xmodal .panel { border: none; }
     font-family: Courier, monospace; font-weight: normal;
 }
 
-.panel .input-bundle { margin-top: 5px; }
+.panel .input-bundle { margin-top: 10px; }
 
 .panel .panel-subhead {
     border-bottom: 1px solid #c8c8c8;

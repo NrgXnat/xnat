@@ -50,7 +50,15 @@ var XNAT = getObject(XNAT || {});
         // set the data attributes and return the new data object
         return el.data;
     }
-    
+
+    function setDisabled(elements, disabled){
+        $$(elements).each(function(idx){
+            var _disabled = !!disabled;
+            var modifyClass = _disabled ? 'addClass' : 'removeClass';
+            $(this).prop('disabled', _disabled)[modifyClass]('disabled');
+        });
+    }
+
     // string that indicates to look for a namespaced object value
     var lookupPrefix = '??';
 
@@ -153,11 +161,138 @@ var XNAT = getObject(XNAT || {});
         else if (/submit|primary/.test(type)) {
             button.classes.push('submit')
         }
-        if (disabled) {
+        if (disabled === true) {
             button.classes.push('disabled');
-            button.disabled = 'disabled'
+            button.disabled = true
         }
         return spawn('button', button);
+    }
+
+    // populate the data fields if this panel is in the 'active' tab
+    // (only getting values for the active tab should cut down on requests)
+    function loadData(form, obj){
+
+        obj = cloneObject(obj);
+
+        obj.load = obj.load || obj.url;
+
+
+        // need a form to put the data into!
+        // and a 'load' property too
+        if (!form || !obj.load) {
+            loadingDialog().close();
+            return;
+        }
+
+        var $form = $(form);
+
+        obj.load = (obj.load+'').trim();
+
+        // if 'load' starts with '$?', '~/', or just '/'
+        // then values need to load via REST
+        var ajaxPrefix = /^(\$\?|~\/|\/)/;
+        var doAjax = ajaxPrefix.test(obj.load);
+
+        // if 'load' starts with '!?' do an eval()
+        var evalPrefix = '!?';
+
+        // if 'load' starts with ?? (or NOT evalPrefix or ajaxPrefix), do lookup
+        var lookupPrefix = '??';
+
+        // ...BUT...
+        // if there's an existing property name:
+        // XNAT.data['/rest/url']
+        // that matches the URL, then use that
+        if (doAjax && XNAT.data && XNAT.data[obj.load]) {
+            doAjax = false;
+            obj.prop = obj.load;
+            obj.load = '??:XNAT:data'
+        }
+
+        if (!doAjax) {
+
+            var doLookup = obj.load.indexOf(lookupPrefix) === 0;
+            if (doLookup) {
+                obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
+                obj.prop = obj.prop || obj.load.split('|')[1] || '';
+                $(form).setValues(lookupObjectValue(window, obj.load, obj.prop));
+                loadingDialog().close();
+                return form;
+            }
+
+            var doEval = obj.load.indexOf(evalPrefix) === 0;
+            if (doEval) {
+                obj.load = (obj.load.split(evalPrefix)[1]||'').trim();
+            }
+
+            // lastly try to eval the 'load' value
+            try {
+                $form.setValues(eval(obj.load));
+            }
+            catch (e) {
+                console.log(e);
+            }
+
+            loadingDialog().close();
+
+            return $form[0];
+
+        }
+
+        //////////
+        // REST
+        //////////
+
+        var ajaxUrl = obj.refresh || '';
+
+        // if 'load' starts with $?, do ajax request
+        //var ajaxPrefix = '$?';
+        var ajaxProp = '';
+
+        // value: $? /path/to/data | obj:prop:name
+        // value: ~/path/to/data|obj.prop.name
+        if (doAjax) {
+            ajaxUrl = (obj.load.split(ajaxPrefix)[2]||'').trim().split('|')[0];
+            ajaxProp = ajaxUrl.split('|')[1] || '';
+        }
+
+        // need a url to get the data
+        if (!ajaxUrl || !stringable(ajaxUrl)) {
+            loadingDialog().close();
+            return form;
+        }
+
+        // force GET method
+        obj.method = 'GET';
+
+        // setup the ajax request
+        // override values with an
+        // 'ajax' or 'xhr' property
+        obj.ajax = extend(true, {
+            method: obj.method,
+            url: XNAT.url.rootUrl(ajaxUrl)
+        }, obj.ajax || obj.xhr);
+
+        obj.ajax.success = function(data){
+            if (ajaxProp){
+                data = data[ajaxProp];
+            }
+            $(form).dataAttr('status', 'clean');
+            $(form).setValues(data);
+        };
+
+        obj.ajax.error = function(){
+            $(form).dataAttr('status', 'error');
+        };
+
+
+        obj.ajax.complete = function(){
+            loadingDialog().close();
+        };
+
+        // return the ajax thing for method chaining
+        return XNAT.xhr.request(obj.ajax);
+
     }
 
     // creates a panel that's a form that can be submitted
@@ -223,180 +358,63 @@ var XNAT = getObject(XNAT || {});
         // cache a jQuery-wrapped element
         var $formPanel = $(_formPanel);
 
-        // set form element values from an object map
-        function setValues(form, dataObj){
-            // find all form inputs with a name attribute
-            $$(form).find(':input').each(function(){
-
-                var $this = $(this);
-                var val = lookupObjectValue(dataObj, this.name||this.title);
-
-                if (Array.isArray(val)) {
-                    val = val.join(', ');
-                    $this.addClass('array-list')
-                }
-                else {
-                    val = stringable(val) ? val : JSON.stringify(val);
-                }
-
-                // used on hidden inputs to reset values
-                if ($this.hasClasses('proxy && dirty')) {
-                    this.value = $this.dataAttr('value');
-                }
-
-                //if (val === "") return;
-
-                // $this.not(':checkbox, :radio').changeVal(val);
-                $this.not(':radio').changeVal(val);
-
-                if (/checkbox/i.test(this.type)) {
-                    this.checked = realValue(val);
-                }
-
-                if (/radio/i.test(this.type)) {
-                    this.checked = isEqual(this.value, val);
-                    if (this.checked) {
-                        $this.trigger('change');
-                    }
-                }
-
-                $this.removeClass('dirty').dataAttr('value', val);
-
-            });
-
-            loadingDialog().closeAll();
-
-        }
-
-
-        // populate the data fields if this panel is in the 'active' tab
-        // (only getting values for the active tab should cut down on requests)
-        function loadData(form, obj){
-
-            obj = cloneObject(obj);
-
-            obj.load = obj.load || obj.url;
-
-            // need a form to put the data into!
-            // and a 'load' property too
-            if (!form || !obj.load) {
-                loadingDialog().close();
-                return;
-            }
-
-            obj.load = (obj.load+'').trim();
-
-            // if 'load' starts with '$?', '~/', or just '/'
-            // then values need to load via REST
-            var ajaxPrefix = /^(\$\?|~\/|\/)/;
-            var doAjax = ajaxPrefix.test(obj.load);
-
-            // if 'load' starts with '!?' do an eval()
-            var evalPrefix = '!?';
-
-            // if 'load' starts with ?? (or NOT evalPrefix or ajaxPrefix), do lookup
-            var lookupPrefix = '??';
-
-            if (!doAjax) {
-
-                var doLookup = obj.load.indexOf(lookupPrefix) === 0;
-                if (doLookup) {
-                    obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
-                    obj.prop = obj.prop || obj.load.split('|')[1] || '';
-                    setValues(form, lookupObjectValue(window, obj.load, obj.prop));
-                    loadingDialog().close();
-                    return form;
-                }
-
-                var doEval = obj.load.indexOf(evalPrefix) === 0;
-                if (doEval) {
-                    obj.load = (obj.load.split(evalPrefix)[1]||'').trim();
-                }
-
-                // lastly try to eval the 'load' value
-                try {
-                    setValues(form, eval(obj.load));
-                }
-                catch (e) {
-                    console.log(e);
-                }
-
-                loadingDialog().close();
-                return form;
-                
-            }
-
-            //////////
-            // REST
-            //////////
-
-            var ajaxUrl = obj.refresh || '';
-
-            // if 'load' starts with $?, do ajax request
-            //var ajaxPrefix = '$?';
-            var ajaxProp = '';
-
-            // value: $? /path/to/data | obj:prop:name
-            // value: ~/path/to/data|obj.prop.name
-            if (doAjax) {
-                ajaxUrl = (obj.load.split(ajaxPrefix)[2]||'').trim().split('|')[0];
-                ajaxProp = ajaxUrl.split('|')[1] || '';
-            }
-
-            // need a url to get the data
-            if (!ajaxUrl || !stringable(ajaxUrl)) {
-                loadingDialog().close();
-                return form;
-            }
-
-            // force GET method
-            obj.method = 'GET';
-
-            // setup the ajax request
-            // override values with an
-            // 'ajax' or 'xhr' property
-            obj.ajax = extend(true, {
-                method: obj.method,
-                url: XNAT.url.rootUrl(ajaxUrl)
-            }, obj.ajax || obj.xhr);
-
-            obj.ajax.success = function(data){
-                if (ajaxProp){
-                    data = data[ajaxProp];
-                }
-                $(form).dataAttr('status', 'clean');
-                setValues(form, data);
-            };
-
-            obj.ajax.error = function(){
-                $(form).dataAttr('status', 'error');
-            };
-
-
-            obj.ajax.complete = function(){
-                loadingDialog().close();
-            };
-
-            // return the ajax thing for method chaining
-            return XNAT.xhr.request(obj.ajax);
-
-        }
+        // // set form element values from an object map
+        // // HANDLED BY $('form').setValues({name:'value'}) now
+        // function dontSetValues(form, dataObj){
+        //     // find all form inputs with a name attribute
+        //     $$(form).find(':input').each(function(){
+        //
+        //         var $this = $(this);
+        //         var val = lookupObjectValue(dataObj, this.name||this.title);
+        //
+        //         if (Array.isArray(val)) {
+        //             val = val.join(', ');
+        //             $this.addClass('array-list')
+        //         }
+        //         else {
+        //             val = stringable(val) ? val : JSON.stringify(val);
+        //         }
+        //
+        //         // used on hidden inputs to reset values
+        //         if ($this.hasClasses('proxy && dirty')) {
+        //             this.value = $this.dataAttr('value');
+        //         }
+        //
+        //         //if (val === "") return;
+        //
+        //         // $this.not(':checkbox, :radio').changeVal(val);
+        //         $this.not(':radio').changeVal(val);
+        //
+        //         if (/checkbox/i.test(this.type)) {
+        //             this.checked = realValue(val);
+        //         }
+        //
+        //         if (/radio/i.test(this.type)) {
+        //             this.checked = isEqual(this.value, val);
+        //             if (this.checked) {
+        //                 $this.trigger('change');
+        //             }
+        //         }
+        //
+        //         $this.removeClass('dirty').dataAttr('value', val);
+        //
+        //     });
+        //
+        //     loadingDialog().closeAll();
+        //
+        // }
 
         // if (opts.load) {
         //     loadData(_formPanel, opts)
         // }
 
-        // keep an eye on the inputs
-        $formPanel.find(':input').on('change', function(){
-            $formPanel.dataAttr('status', 'dirty');
-        });
-
         opts.onload = opts.onload || callback;
 
         // custom event for reloading data (refresh)
         $formPanel.on('reload-data', function(){
+            var _load = opts.refresh || opts.load || opts.url;
             loadData(this, {
-                load: opts.refresh || opts.load || opts.url
+                load: _load ? ('$?' + _load.replace(/^\$\?/, '')) : ''
             });
         });
 
@@ -417,6 +435,11 @@ var XNAT = getObject(XNAT || {});
         }
 
         multiform.errors = 0;
+
+        // keep an eye on the inputs
+        // $formPanel.on('change', 'input, select, textarea', function(){
+        //     setDisabled($formPanel.find('.panel-footer button'), false);
+        // });
 
         // intercept the form submit to do it via REST instead
         $formPanel.on('submit', function(e){
@@ -500,10 +523,12 @@ var XNAT = getObject(XNAT || {});
                 method: $form.data('method') || opts.method || 'POST',
                 url: this.action,
                 success: function(){
-                    var obj = {};
+                    var obj = {},
+                        _load = opts.refresh || opts.reload || opts.url || opts.load;
                     // actually, NEVER use returned data...
                     // ALWAYS reload from the server
-                    obj.load = opts.refresh || opts.reload || opts.url || opts.load;
+                    // (prepending '$?' assures that)
+                    obj.load = _load ? ('$?' + _load.replace(/^\$\?/, '')) : '';
                     if (!silent){
                         XNAT.ui.banner.top(2000, 'Data saved successfully.', 'success');
                         loadData($form, obj);
@@ -672,10 +697,13 @@ var XNAT = getObject(XNAT || {});
         var dialog = new xmodal.Modal    
     };
 
+    panel.info = function(opts){};
+    panel.info.dialog = {};
+
     // create a single generic panel element
     panel.element = function(opts){
 
-        var _element, _inner = [], _target;
+        var _element, _inner = [], _target, infoId = '', _info = '';
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
         if (opts.id || opts.element.id) {
@@ -685,16 +713,42 @@ var XNAT = getObject(XNAT || {});
         addDataObjects(opts.element, { name: opts.name||'' });
         opts.label = opts.label||opts.title||opts.name||'';
 
-        _inner.push(['div.element-label', opts.label]);
+        // add a help info icon if one is specified
+        if (opts.info){
+            infoId = randomID('i', false);
+            _info = spawn('a.infolink|href=#!', {
+                id: infoId,
+                style: {
+                    position: 'relative',
+                    top: '3px',
+                    right: '8px'
+                }
+            }, [
+                ['img', {
+                    src: XNAT.url.rootUrl('/style/icons/icon-qm-48.png'),
+                    width: 16,
+                    height: 16
+                }]
+            ]);
+
+            panel.info.dialog[infoId] = function(){
+                console.log('info for ' + opts.label);
+                xmodal.message({
+                    title: opts.label,
+                    content: opts.info,
+                    height: 240,
+                    footer: false
+                });
+            };
+
+            //_inner.push(_info);
+            // infoContent[infoId++] = {label:opts.label, content:opts.info};
+        }
+
+        _inner.push(['div.element-label', [_info, opts.label]]);
 
         // 'contents' will be inserted into the 'target' element
         _target = spawn('div.element-wrapper');
-
-        // add a help info icon if one is specified
-        if (opts.info){
-            _inner.push(['span#infolink-'+infoId+'.infolink.icon.icon-sm.icon-status.icon-qm','']);
-            infoContent[infoId++] = {label:opts.label, content:opts.info};
-        }
 
         // add the target to the content array
         _inner.push(_target);
@@ -720,7 +774,16 @@ var XNAT = getObject(XNAT || {});
 
     };
     panel.element.init = panel.element;
-    
+
+
+    $(function(){
+        // delegate 'infolink' click handlers to 'body' element
+        $('body').on('click', 'a.infolink', function(){
+            panel.info.dialog[this.id].apply(this, arguments);
+        });
+    });
+
+
     panel.subhead = function(opts){
         opts = cloneObject(opts);
         opts.html = opts.html || opts.text || opts.label;
@@ -1029,119 +1092,120 @@ var XNAT = getObject(XNAT || {});
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-    /**
-     * Panel widget with default 'Submit' and 'Revert' buttons
-     * @param opts
-     * @param container
-     * @returns {*}
-     */
-    panel.form = function panelForm(opts, container){
-
-        var _panel, $panel,
-            saveBtn, revertBtn,
-            $saveBtn, $revertBtn;
-
-        opts.tag = 'form.xnat-form-panel';
-
-        opts.title = opts.label;
-
-        opts.body = [];
-
-        if (opts.description) {
-            opts.body.push(element.p(opts.description || ''))
-        }
-
-        if (opts.elements) {
-            opts.body = opts.body.concat(setupElements(opts.elements))
-        }
-
-        saveBtn   = footerButton('Save', 'submit', true, 'save pull-right');
-        revertBtn = footerButton('Discard Changes', 'button', true, 'revert pull-right');
-
-        opts.footer = [
-            saveBtn,
-            spawn('span.pull-right', '&nbsp;&nbsp;&nbsp;'),
-            revertBtn,
-            footerButton('Default Settings', 'link', false, 'defaults pull-left'),
-            spawn('div.clear')
-        ];
-
-        // CREATE THE PANEL
-        _panel = panel(opts);
-
-        $panel = $(_panel.element);
-        $saveBtn = $(saveBtn);
-        $revertBtn = $(revertBtn);
-
-        // what's the submission method?
-        var method = opts.method || 'GET';
-
-        method = method.toUpperCase();
-
-        var url = '#';
-
-        if (method === 'GET') {
-            url = XNAT.url.restUrl(opts.url)
-        }
-        else if (/PUT|POST|DELETE/.test(method)) {
-            // add CSRF token for PUT, POST, or DELETE
-            url = XNAT.url.csrfUrl(opts.url)
-        }
-        else {
-            // any other 'method' value is ignored
-        }
-
-        // set panel as 'dirty' when stuff changes
-        $panel.on('change', ':input', function(){
-            $(this).addClass('dirty');
-            setDisabled($panel.find('.panel-footer button'), false);
-        });
-
-        $panel.on('submit', function(e){
-            e.preventDefault();
-            // submit the data and disable 'Save' and 'Revert' buttons
-            if (opts.url) {
-                try {
-                    XNAT.xhr.request({
-                        method: method,
-                        url: url,
-                        data: $panel,
-                        success: function(){
-                            console.log('success!');
-                            setDisabled([$saveBtn, $revertBtn], true);
-                        },
-                        error: function(){
-                            console.log('error.')
-                        }
-                    })
-                }
-                catch (e) {
-                    setDisabled([$saveBtn, $revertBtn], true);
-                    console.log(e)
-                }
-            }
-        });
-
-        _panel.revert = function(){
-            discardChanges($panel);
-            setDisabled([$saveBtn, $revertBtn], true);
-        };
-
-        $revertBtn.on('click', _panel.revert);
-
-        _panel.panel = _panel.element;
-
-        return {
-            element: _panel,
-            spawned: _panel,
-            get: function(){
-                return _panel;
-            }
-        }
-
-    };
+    // /**
+    //  * Panel widget with default 'Submit' and 'Revert' buttons
+    //  * @param opts
+    //  * @param container
+    //  * @returns {*}
+    //  */
+    // panel.form = function panelForm(opts, container){
+    //
+    //     var _panel, $panel,
+    //         saveBtn, revertBtn,
+    //         $saveBtn, $revertBtn;
+    //
+    //     opts.tag = 'form.xnat-form-panel';
+    //
+    //     opts.title = opts.label;
+    //
+    //     opts.body = [];
+    //
+    //     if (opts.description) {
+    //         opts.body.push(element.p(opts.description || ''))
+    //     }
+    //
+    //     if (opts.elements) {
+    //         opts.body = opts.body.concat(setupElements(opts.elements))
+    //     }
+    //
+    //     saveBtn   = footerButton('Save', 'submit', true, 'save pull-right');
+    //     revertBtn = footerButton('Discard Changes', 'button', true, 'revert pull-right');
+    //
+    //     opts.footer = [
+    //         saveBtn,
+    //         spawn('span.pull-right', '&nbsp;&nbsp;&nbsp;'),
+    //         revertBtn,
+    //         footerButton('Default Settings', 'link', false, 'defaults pull-left'),
+    //         spawn('div.clear')
+    //     ];
+    //
+    //     // CREATE THE PANEL
+    //     _panel = panel(opts);
+    //
+    //     $panel = $(_panel.element);
+    //     $saveBtn = $(saveBtn);
+    //     $revertBtn = $(revertBtn);
+    //
+    //     // what's the submission method?
+    //     var method = opts.method || 'GET';
+    //
+    //     method = method.toUpperCase();
+    //
+    //     var url = '#';
+    //
+    //     if (method === 'GET') {
+    //         url = XNAT.url.restUrl(opts.url)
+    //     }
+    //     else if (/PUT|POST|DELETE/.test(method)) {
+    //         // add CSRF token for PUT, POST, or DELETE
+    //         url = XNAT.url.csrfUrl(opts.url)
+    //     }
+    //     else {
+    //         // any other 'method' value is ignored
+    //     }
+    //
+    //     // set panel as 'dirty' when stuff changes
+    //     $panel.on('change', ':input', function(){
+    //         $(this).addClass('dirty');
+    //         setDisabled($panel.find('.panel-footer button'), false);
+    //     });
+    //
+    //     $panel.on('submit', function(e){
+    //         e.preventDefault();
+    //         // submit the data and disable 'Save' and 'Revert' buttons
+    //         if (opts.url) {
+    //             try {
+    //                 XNAT.xhr.request({
+    //                     method: method,
+    //                     url: url,
+    //                     data: $panel,
+    //                     success: function(){
+    //                         console.log('success!');
+    //                         setDisabled([$saveBtn, $revertBtn], true);
+    //                     },
+    //                     error: function(){
+    //                         console.log('error.')
+    //                     }
+    //                 })
+    //             }
+    //             catch (e) {
+    //                 setDisabled([$saveBtn, $revertBtn], true);
+    //                 console.log(e)
+    //             }
+    //         }
+    //     });
+    //
+    //     _panel.revert = function(){
+    //         discardChanges($panel);
+    //         setDisabled([$saveBtn, $revertBtn], true);
+    //     };
+    //
+    //     $revertBtn.on('click', _panel.revert);
+    //
+    //     _panel.panel = _panel.element;
+    //
+    //     return {
+    //         element: _panel,
+    //         spawned: _panel,
+    //         get: function(){
+    //             return _panel;
+    //         }
+    //     }
+    //
+    // };
 
     // return a single 'toggle' element
+    // TODO: create toggler widget
     function radioToggle(item){
 
         var element = extend(true, {}, item),
@@ -1198,54 +1262,6 @@ var XNAT = getObject(XNAT || {});
     }
 
 
-    // create elements that are part of an 'element-group'
-    // returns Spawn arguments array
-    function groupElements(items){
-        return items.map(function(item){
-            var label = '';
-            var tag = item.kind === 'hidden' ? 'div.hidden' : 'div.group-item';
-            if (item.label) {
-                label = elementLabel(item.label, item.id)
-            }
-            tag += '|data-name=' + item.name;
-            return [tag, [].concat(label, panelElement(item))];
-        });
-    }
-    
-    function discardChanges(form){
-
-        var $form = $$(form);
-
-        // reset all checkboxes and radio buttons
-        $form.find(':checkbox, :radio').each(function(){
-            var $this = $(this);
-            if ($this.hasClass('dirty')) {
-                if ($this.data('state') !== 'checked') {
-                    if ($this.is(':checked')) {
-                        $this.trigger('click')
-                    }
-                    else {
-                        // nevermind.
-                    }
-                }
-                $this.removeClass('dirty');
-            }
-        });
-
-        // reset text inputs based on [data-value] attribute
-        $form.find(':input').not(':checkbox, :radio').val(function(){
-            return $(this).data('value');
-        }).trigger('change').removeClass('dirty');
-
-        // simulate click on items that were initially checked
-        //$form.find(':input[data-state="checked"]').trigger('click');
-
-    }
-
-    function setValue(target, source){
-        $$(target).val($$(source).val());
-    }
-
     function toggleValue(target, source, modifier){
 
         var $source = $$(source);
@@ -1265,15 +1281,6 @@ var XNAT = getObject(XNAT || {});
     }
 
 
-    function setDisabled(elements, disabled){
-        [].concat(elements).forEach(function(element){
-            var _disabled = !!disabled;
-            var modifyClass = _disabled ? 'addClass' : 'removeClass';
-            $$(element).prop('disabled', _disabled)[modifyClass]('disabled');
-        });
-    }
-
-
     function setHidden(elements, hidden){
         [].concat(elements).forEach(function(element){
             var showOrHide, modifyClass;
@@ -1290,97 +1297,90 @@ var XNAT = getObject(XNAT || {});
     }
 
 
-    XNAT.ui = getObject(XNAT.ui || {});
-    XNAT.ui.panel = panel; // temporarily use the 'form' panel kind
-    XNAT.ui.panelForm = XNAT.ui.formPanel = panel.form;
-
-
-    $(function(){
-
-        var $body = $('body');
-
-        // bind the XNAT.event.toggle() function to elements with 'data-' attributes
-        $body.on('change.modify', '[data-modify]', function(){
-
-            var $this = $(this);
-            var checked = $this.is(':checked');
-
-            // allow multiple states to be passed - separated by semicolons
-            var states = $this.data('modify').split(';');
-
-            states.forEach(function(set){
-
-                var parts = set.split(':');
-
-                var state = parts[0].trim();
-
-                // allow multiple arguments as a comma-separated list
-                var args = parts[1].split(',');
-
-                var _target = args[0].trim();
-                var _source = (args[1] || '').trim() || _target;
-
-                if (args[1]) {
-                    _source = args[1].trim();
-                }
-
-                switch (state) {
-
-                    case 'toggle.disabled' || 'toggle.disable':
-                        setDisabled(_target, checked);
-                        break;
-
-                    case 'toggle.enabled' || 'toggle.enable':
-                        setDisabled(_target, !checked);
-                        break;
-
-                    case 'disable' || 'disabled':
-                        setDisabled(_target, true);
-                        break;
-
-                    case 'enable' || 'enabled':
-                        setDisabled(_target, false);
-                        break;
-
-                    case 'toggle.hidden' || 'toggle.hide':
-                        setHidden(_target, checked);
-                        break;
-
-                    case 'toggle.visible' || 'toggle.show':
-                        setHidden(_target, !checked);
-                        break;
-
-                    case 'hide':
-                        setHidden(_target, true);
-                        break;
-
-                    case 'show':
-                        setHidden(_target, false);
-                        break;
-
-                    case 'toggle.value':
-                        toggleValue(_target, _source, $this[0]);
-                        break;
-
-                    case 'apply.value' || 'set.value':
-                        setValue(_target, $this);
-                        break;
-
-                    case 'get.value':
-                        setValue($this, _target);
-                        break;
-
-                }
-
-            })
-
-        });
-
-        // trigger a change on load?
-        //$('[data-modify]').trigger('change.modify');
-
-    });
+    // $(function(){
+    //
+    //     var $body = $('body');
+    //
+    //     // bind the XNAT.event.toggle() function to elements with 'data-' attributes
+    //     $body.on('change.modify', '[data-modify]', function(){
+    //
+    //         var $this = $(this);
+    //         var checked = $this.is(':checked');
+    //
+    //         // allow multiple states to be passed - separated by semicolons
+    //         var states = $this.data('modify').split(';');
+    //
+    //         states.forEach(function(set){
+    //
+    //             var parts = set.split(':');
+    //
+    //             var state = parts[0].trim();
+    //
+    //             // allow multiple arguments as a comma-separated list
+    //             var args = parts[1].split(',');
+    //
+    //             var _target = args[0].trim();
+    //             var _source = (args[1] || '').trim() || _target;
+    //
+    //             if (args[1]) {
+    //                 _source = args[1].trim();
+    //             }
+    //
+    //             switch (state) {
+    //
+    //                 case 'toggle.disabled' || 'toggle.disable':
+    //                     setDisabled(_target, checked);
+    //                     break;
+    //
+    //                 case 'toggle.enabled' || 'toggle.enable':
+    //                     setDisabled(_target, !checked);
+    //                     break;
+    //
+    //                 case 'disable' || 'disabled':
+    //                     setDisabled(_target, true);
+    //                     break;
+    //
+    //                 case 'enable' || 'enabled':
+    //                     setDisabled(_target, false);
+    //                     break;
+    //
+    //                 case 'toggle.hidden' || 'toggle.hide':
+    //                     setHidden(_target, checked);
+    //                     break;
+    //
+    //                 case 'toggle.visible' || 'toggle.show':
+    //                     setHidden(_target, !checked);
+    //                     break;
+    //
+    //                 case 'hide':
+    //                     setHidden(_target, true);
+    //                     break;
+    //
+    //                 case 'show':
+    //                     setHidden(_target, false);
+    //                     break;
+    //
+    //                 case 'toggle.value':
+    //                     toggleValue(_target, _source, $this[0]);
+    //                     break;
+    //
+    //                 case 'apply.value' || 'set.value':
+    //                     setValue(_target, $this);
+    //                     break;
+    //
+    //                 case 'get.value':
+    //                     setValue($this, _target);
+    //                     break;
+    //
+    //             }
+    //
+    //         })
+    //
+    //     });
+    //
+    //     // trigger a change on load?
+    //     //$('[data-modify]').trigger('change.modify');
+    //
+    // });
 
 })(XNAT, jQuery, window);
-
-var infoId = 0, infoContent = [];

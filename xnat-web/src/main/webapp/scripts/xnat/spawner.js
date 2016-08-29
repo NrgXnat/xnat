@@ -316,9 +316,11 @@ var XNAT = getObject(XNAT);
             url: url
         }, opts));
 
-        function spawnRender(container){
+        function spawnRender(){
+            var renderArgs = arguments;
             return request.done(function(obj){
-                spawner.spawn(obj).render($$(container))
+                spawner.spawn(obj).render.apply(request, renderArgs);
+                return request;
             });
         }
 

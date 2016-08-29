@@ -52,55 +52,42 @@
                         XNAT.data = extend(true, {
                             siteConfig: {},
                             notifications: {}
-                        }, XNAT.data);
+                        }, XNAT.data||{});
 
                         <%-- safety check --%>
                         <c:if test="${not empty siteConfig}">
                             XNAT.data.siteConfig = ${siteConfig};
                             // get rid of the 'targetSource' property
                             delete XNAT.data.siteConfig.targetSource;
+                            XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
                         </c:if>
 
                         <%-- can't use empty/undefined object --%>
                         <c:if test="${not empty notifications}">
                             XNAT.data.notifications = ${notifications};
+                            XNAT.data['/xapi/notifications'] = XNAT.data.notifications;
                         </c:if>
 
-                        var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/adminPage');
+                        // these properties MUST be set before spawning 'tabs' widgets
+                        XNAT.tabs.container = $('#admin-config-tabs').find('div.content-tabs');
+                        XNAT.tabs.layout = 'left';
 
-                        $.get({
-                            url: jsonUrl,
-                            success: function(data){
-
-                                // these properties MUST be set before spawning 'tabs' widgets
-                                XNAT.tabs.container = $('#admin-config-tabs').find('div.content-tabs');
-                                XNAT.tabs.layout = 'left';
-
-                                // SPAWN THE TABS
-                                var adminTabs = XNAT.spawner.spawn(data);
-
-                                adminTabs.render(XNAT.tabs.container, 500, function(){
-                                    initInfoLinks();
-                                    //if (window.location.hash) {
-                                    //    XNAT.ui.tab.select(getUrlHashValue());
-                                    //}
-                                });
-
-                                // SAVE THE UI JSON
-                                XNAT.app.adminTabs = adminTabs;
-
-                            }
+                        var adminTabs = XNAT.spawner.resolve('siteAdmin/adminPage');
+                        adminTabs.render(XNAT.tabs.container, 200, function(){
+                            //initInfoLinks();
+                            // SAVE THE UI JSON
+                            XNAT.app.adminTabs = adminTabs;
                         });
 
                     })();
-                    
-                    function initInfoLinks(){
-                      $('.infolink').click(function(e){
-                        var idx = this.id.substr(9);
-                        var help = infoContent[idx];
-                        xmodal.message(help.title, help.content);
-                      });
-                    };
+
+//                    function initInfoLinks(){
+//                        $('.infolink').click(function(e){
+//                            var idx = this.id.substr(9);
+//                            var help = infoContent[idx];
+//                            xmodal.message(help.title, help.content);
+//                        });
+//                    }
                 </script>
 
             </div>

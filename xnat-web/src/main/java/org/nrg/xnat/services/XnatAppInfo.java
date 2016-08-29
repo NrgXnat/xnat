@@ -147,6 +147,9 @@ public class XnatAppInfo {
                         catch(InvalidPreferenceName e){
                             _log.error("",e);
                         }
+                        catch(NullPointerException e){
+                            _log.error("Error getting site config preferences.",e);
+                        }
                     }
                 }
             }

@@ -320,7 +320,7 @@ userLoginsSessionControls:
             kind: panel.input.number
             name: ":sessions.concurrent_max"
             label: Maximum Concurrent Sessions
-            description: The maximum number of permitted sessions a user can have open simultaneously
+            description: The maximum number of permitted sessions a user can have open simultaneously. You must restart Tomcat for changes to this to take effect.
         loginFailureMessage:
             kind: panel.textarea
             name: ":UI.login_failure_message"

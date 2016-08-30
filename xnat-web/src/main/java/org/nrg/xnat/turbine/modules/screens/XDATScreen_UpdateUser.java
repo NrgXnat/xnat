@@ -51,6 +51,8 @@ public class XDATScreen_UpdateUser extends SecureScreen {
         c.put("esc", new EscapeTool());
         c.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
         c.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
+        c.put("notifications", XDAT.getNotificationsPreferences());
+        c.put("siteConfig", XDAT.getSiteConfigPreferences());
 
         doBuildTemplate(data, c);
     }

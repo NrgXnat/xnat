@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.actions;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.nrg.xdat.XDAT;
@@ -34,23 +35,28 @@ import org.springframework.security.core.session.SessionRegistryImpl;
 
 public class UserSessionId extends SecureResource {
 
-	final private String userID;
+	final private String _userId;
 
 	public UserSessionId(Context context, Request request, Response response) throws Exception {
 		super(context, request, response);
 
         final UserI user = getUser();
-		userID = (String) getParameter(request, "USER_ID");
-        if (!Roles.isSiteAdmin(user) && !user.getLogin().equals(userID)) {
-            _log.error("User " + user.getLogin() + " attempted to access session list for user " + userID);
+        _userId = (String) getParameter(request, "USER_ID");
+        if (!Roles.isSiteAdmin(user) && !user.getLogin().equals(_userId)) {
+            _log.error("User " + user.getLogin() + " attempted to access session list for user " + _userId);
             response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Only administrators can get the session list for users other than themselves.");
         } else {
             if (_log.isDebugEnabled()) {
-                _log.debug(user.getLogin() + " is retrieving active sessions for user " + userID);
+                _log.debug(user.getLogin() + " is retrieving active sessions for user " + _userId);
             }
             getVariants().add(new Variant(MediaType.ALL));
         }
 	}
+
+    @Override
+    public boolean allowDelete() {
+        return true;
+    }
 
     @Override
     public Representation represent(Variant variant) {
@@ -59,7 +65,7 @@ public class UserSessionId extends SecureResource {
 		List<SessionInformation> l = null;
 		for (Object p : allPrincipals) {
 			if (p instanceof UserI) {
-				if (((UserI) p).getLogin().equalsIgnoreCase(userID)) {
+				if (((UserI) p).getLogin().equalsIgnoreCase(_userId)) {
 					l = sessionRegistry.getAllSessions(p, false);
 				}
 			}
@@ -67,11 +73,11 @@ public class UserSessionId extends SecureResource {
         try {
 		if (l == null) {
 			JSONObject json = new JSONObject();
-			json.put(userID, 0);
+			json.put(_userId, 0);
                 return new JSONObjectRepresentation(null, json);
 		} else {
 			JSONObject json = new JSONObject();
-                json.put(userID, l.size());
+                json.put(_userId, l.size());
                 return new JSONObjectRepresentation(null, json);
             }
         } catch (JSONException e) {
@@ -81,6 +87,43 @@ public class UserSessionId extends SecureResource {
 		}
 
 	}
+
+    @Override
+    public void handleDelete() {
+        final SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
+        Object principal = null;
+        for (final Object candidate : sessionRegistry.getAllPrincipals()) {
+            if (candidate instanceof UserI) {
+                if (StringUtils.equals(_userId, ((UserI) candidate).getUsername())) {
+                    principal = candidate;
+                    break;
+                }
+            } else if (candidate instanceof String) {
+                if (StringUtils.equals(_userId, (String) candidate)) {
+                    principal = candidate;
+                    break;
+                }
+            }
+        }
+        if (principal == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+            return;
+        }
+        if (_log.isDebugEnabled()) {
+            _log.debug("Found principal for user {}", _userId);
+        }
+        final List<SessionInformation> sessions = sessionRegistry.getAllSessions(principal, false);
+        if (_log.isDebugEnabled()) {
+            _log.debug("Found {} sessions for user {}", sessions.size(), _userId);
+        }
+        for (final SessionInformation session : sessions) {
+            if (_log.isDebugEnabled()) {
+                _log.debug("Expiring user {} session with ID {}", _userId, session.getSessionId());
+            }
+            session.expireNow();
+        }
+        getResponse().setStatus(Status.SUCCESS_OK);
+    }
 
     private static final Logger _log = LoggerFactory.getLogger(UserSessionId.class);
 }

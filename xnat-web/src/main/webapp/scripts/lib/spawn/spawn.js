@@ -271,6 +271,11 @@
         opts = opts || {};
         children = children || null;
 
+        // make sure [type] attribute is applied FIRST for <input> elements
+        if (/input/i.test(el.tagName) && opts.type) {
+            el.type = opts.type;
+        }
+
         if (!isVoid){
             // if 'opts' is a string,
             // set el's innerHTML and
@@ -300,6 +305,7 @@
         // IE *REALLY* hates method="PUT" on forms
         var methodPut = (opts.method && /put/i.test(opts.method));
 
+        //////////////////////////////////////////////////
         // add attributes and properties to element
         forOwn(opts, function(prop, val){
             // only add if NOT in 'skip' array
@@ -307,6 +313,8 @@
                 el[prop] = val;
             }
         });
+        //////////////////////////////////////////////////
+
 
         // explicitly add element attributes
         if (opts.attr){

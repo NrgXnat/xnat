@@ -125,3 +125,6 @@ div.abu-xnat-interactivity-area-sub {
 .passParamText { margin-left: 30px; margin-right: 10px; }
 
 .interactivityAreaSpan { margin-left: 15px; margin-right: 10px; }
+
+#configUploadDiv { overflow-x: hidden; }
+

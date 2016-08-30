@@ -923,17 +923,20 @@ XNAT.app.abu.processFiles=function() {
 			var eventHandlerScope = eventHandlerElement.className;
 		}
 
+		this.currentUploaderConfig = undefined;
 		this.paramsToPass = undefined;
 		for (var i=0;i<this.uploaderConfig.length;i++) {
-			if (this.uploaderConfig[i].eventTriggerId==eventHandler && this.uploaderConfig[i].eventScope==eventHandlerScope &&
-			 	(this.uploaderConfig[i].parameters!=undefined && this.uploaderConfig[i].parameters!=null && this.uploaderConfig[i].parameters.length>0)) {
-				this.paramsToPass = this.uploaderConfig[i].parameters;
+			if (this.uploaderConfig[i].eventTriggerId==eventHandler && this.uploaderConfig[i].eventScope==eventHandlerScope) {
+				this.currentUploaderConfig = this.uploaderConfig[i];
 				break;
 			}
 		}
+		this.paramsToPass = undefined;
+		if (this.currentUploaderConfig.parameters!=undefined && this.currentUploaderConfig.parameters!=null && this.currentUploaderConfig.parameters.length>0) {
+			this.paramsToPass = this.currentUploaderConfig.parameters;
+		}
 
 		if (typeof(this.paramsToPass) !== 'undefined' && this.paramsToPass != null && this.paramsToPass.length>0) {
-
 			var pModalOpts = {
 				width: 740,  
 				height: 480,  
@@ -1002,6 +1005,10 @@ XNAT.app.abu.continueProcessing=function() {
 		var eventHandler = $('#eventHandlerSelect').val();
 		if (eventHandler != undefined && eventHandler != null && eventHandler.length>0) {
 			params['eventHandler'] = eventHandler;
+		}
+		var escapeHtml = (typeof this.currentUploaderConfig !== 'undefined') ? this.currentUploaderConfig.escapeHtml : undefined;
+		if (escapeHtml != undefined && escapeHtml != null) {
+			params['escapeHtml'] = escapeHtml;
 		}
 		params['xsiType'] = XNAT.data.context.xsiType;
 		var queryParams = "?import-handler=" + XNAT.app.abu.importHandler + "&" + $.param(params);
@@ -1102,6 +1109,7 @@ XNAT.app.abu.saveUploaderConfiguration=function(configTriggerId, configEvent, sc
 	newConfigObj.launchFromResourceUploads = $('#ULC_RB_launchFromResourceUploads').is(':checked');
 	newConfigObj.launchWithoutUploads = $('#ULC_RB_launchWithoutUploads').is(':checked');
 	newConfigObj.doNotUseUploader = $('#ULC_RB_doNotUseUploader').is(':checked');
+	newConfigObj.escapeHtml = $('#ULC_RB_outputText').is(':checked');
 	newConfigObj.parameters = undefined;
 	$(".ULC_parametersDiv").each(function() {
 		var parameterField = $(this).find(".ULC_parametersField").val();
@@ -1244,6 +1252,7 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 		configObj.launchFromResourceUploads = false;
 		configObj.launchWithoutUploads = false;
 		configObj.doNotUseUploader = true;
+		configObj.escapeHtml = false;
 		// best to leave these undefined, I think
 		//configObj.parameters = [  ];
 		//configObj.contexts = [ 'xnat:projectData','xnat:subjectAssessorData','xnat:imageAssessorData','xnat:imageSessionData','xnat:imageScanData','xnat:subjectData' ];
@@ -1278,17 +1287,26 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 	/** NOTE:  These radio buttons were originally coded as checkboxes, assuming the same scripts might be triggered from different upload/launch contexts. **
  	 **        It was later decided that each event handler should only be triggered from a single upload/launch context.  The code that uses these still   **
          **        treats them as check boxes in case we change our desired usage.                                                                              **/ 
+
+
 	configHtml+='<div style="margin-left:20px;width:100%"><p><b>Usage:</b>';
-	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchFromCacheUploads" name="ULC_RB" value="launchFromCacheUploads"' +
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchFromCacheUploads" name="ULC_RB_USAGE" value="launchFromCacheUploads"' +
 				 ((configObj.launchFromCacheUploads) ? ' checked' : '') + '> <b> Use for cache space uploads</b> </div>';
 	if (scope!='site') {
-		configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchFromResourceUploads" name="ULC_RB" value="launchFromResourceUploads"' +
+		configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchFromResourceUploads" name="ULC_RB_USAGE" value="launchFromResourceUploads"' +
 					 ((configObj.launchFromResourceUploads) ? ' checked' : '') + '> <b> Use for configured resource uploads </b> </div>';
 	}
-	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchWithoutUploads" name="ULC_RB" value="launchWithoutUploads"' +
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchWithoutUploads" name="ULC_RB_USAGE" value="launchWithoutUploads"' +
 				 ((configObj.launchWithoutUploads) ? ' checked' : '') + '> <b> Trigger without uploads </b> </div>';
-	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_doNotUseUploader" name="ULC_RB" value="doNotUseUploader"' +
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_doNotUseUploader" name="ULC_RB_USAGE" value="doNotUseUploader"' +
 				 ((configObj.doNotUseUploader) ? ' checked' : '') + '> <b> Do not use uploader </b> </div>';
+	configHtml+='</div></p>';
+	configHtml+='<p>';
+	configHtml+='<div style="margin-left:20px;width:100%"><p><b>Output Type:</b>';
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_outputHtml" name="ULC_RB_OUTPUT" value="outputHtml"' +
+				 ((configObj.escapeHtml) ? '' : 'checked') + '> <b> HTML </b> </div>';
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_outputText" name="ULC_RB_OUTPUT" value="outputText"' +
+				 ((configObj.escapeHtml) ? ' checked' : '') + '> <b> Text (escape HTML characters) </b> </div>';
 	configHtml+='</div></p>';
 	configHtml+='<p>';
 	configHtml+='<div style="margin-left:20px;width:100%"><p><b>User Supplied Parameters:</b><p><div id="ULC_parameters">';

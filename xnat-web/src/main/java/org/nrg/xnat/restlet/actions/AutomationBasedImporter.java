@@ -18,6 +18,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -187,8 +188,10 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		final Object configuredResourceParam = params.get("configuredResource");
 		final Object buildPathParam = params.get("buildPath");
 		final Object eventHandlerParam = params.get("eventHandler");
+		final Object escapeHtmlParam = params.get("escapeHtml");
 		// final Object sendemailParam = params.get("sendemail");
 		final boolean doProcess = processParam != null && processParam.toString().equalsIgnoreCase("true");
+		final boolean escapeHtml = escapeHtmlParam != null && escapeHtmlParam.toString().equalsIgnoreCase("true");
 		configuredResource = (configuredResourceParam != null) ? configuredResourceParam.toString() : CACHE_CONSTANT;
 
 		// Uploads to configured resources are handled on the client side. Only
@@ -198,7 +201,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			return;
 		}
 		if (doProcess && !configuredResource.equalsIgnoreCase(CACHE_CONSTANT)) {
-			doAutomation();
+			doAutomation(escapeHtml);
 			return;
 		}
 
@@ -239,7 +242,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		// Conditionally process cache location files, otherwise return cache
 		// location
 		if (doProcess) {
-			doAutomation();
+			doAutomation(escapeHtml);
 			/*
 			 * if (sendemailParam!=null &&
 			 * sendemailParam.toString().equalsIgnoreCase("true")) {
@@ -465,7 +468,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	 *             the server exception
 	 */
 	@SuppressWarnings({ "rawtypes", "static-access" })
-	private void doAutomation() throws ClientException, ServerException {
+	private void doAutomation(boolean escapeHtml) throws ClientException, ServerException {
 
 		returnList.add("<b>BEGIN PROCESSING UPLOADED FILES</b>");
 
@@ -663,47 +666,77 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			for (ScriptOutput scriptOut : scriptOutputs) {
 				returnList.add("<br><b>SCRIPT EXECUTION RESULT</b>");
 				returnList.add("<br><b>FINAL STATUS:  " + scriptOut.getStatus() + "</b>");
-				StringWriter writer = new StringWriter();
 				if (scriptOut.getStatus().equals(Status.ERROR) && scriptOut.getResults() != null
 						&& scriptOut.getResults().toString().length() > 0) {
 					returnList.add("<br><b>SCRIPT RESULTS</b><br>");
 					try {
-						StringEscapeUtils.escapeHtml(writer, scriptOut.getResults().toString());
-						returnList.add(writer.toString().replace("\n", "<br>"));
-						writer.close();
+						if (escapeHtml) {
+							final StringWriter writer = new StringWriter();
+							StringEscapeUtils.escapeHtml(writer, scriptOut.getResults().toString());
+							returnList.add(writer.toString().replace("\n", "<br>"));
+							writer.close();
+						} else {
+							returnList.add(conditionallyAddHtmlBreaks(scriptOut.getResults().toString()));
+						}
 					} catch (IOException e) {
-						returnList.add(scriptOut.getResults().toString().replace("\n", "<br>"));
+						returnList.add(conditionallyAddHtmlBreaks(scriptOut.getResults().toString()));
 					}
 				}
 				if (scriptOut.getOutput() != null && scriptOut.getOutput().length() > 0) {
 					returnList.add("<br><b>SCRIPT STDOUT</b><br>");
 					try {
-						StringEscapeUtils.escapeHtml(writer, scriptOut.getOutput());
-						returnList.add(writer.toString().replace("\n", "<br>"));
-						writer.close();
+						if (escapeHtml) {
+							final StringWriter writer = new StringWriter();
+							StringEscapeUtils.escapeHtml(writer, scriptOut.getOutput());
+							returnList.add(writer.toString().replace("\n", "<br>"));
+							writer.close();
+						} else {
+							returnList.add(conditionallyAddHtmlBreaks(scriptOut.getOutput().toString()));
+						}
 					} catch (IOException e) {
-						returnList.add(scriptOut.getOutput().replace("\n", "<br>"));
+						returnList.add(conditionallyAddHtmlBreaks(scriptOut.getOutput().toString()));
 					}
 				}
 				if (scriptOut.getErrorOutput() != null && scriptOut.getErrorOutput().length() > 0) {
 					returnList.add("<br><b>SCRIPT STDERR/EXCEPTION</b><br>");
 					try {
-						StringEscapeUtils.escapeHtml(writer, scriptOut.getErrorOutput());
-						returnList.add(writer.toString().replace("\n", "<br>"));
-						writer.close();
+						if (escapeHtml) {
+							final StringWriter writer = new StringWriter();
+							StringEscapeUtils.escapeHtml(writer, scriptOut.getErrorOutput());
+							returnList.add(writer.toString().replace("\n", "<br>"));
+							writer.close();
+						} else {
+							returnList.add(conditionallyAddHtmlBreaks(scriptOut.getErrorOutput().toString()));
+						}
 					} catch (IOException e) {
-						returnList.add(scriptOut.getErrorOutput().replace("\n", "<br>"));
+						returnList.add(conditionallyAddHtmlBreaks(scriptOut.getErrorOutput().toString()));
 					}
 				}
 			}
 		} else {
 			returnList.add("<br><b>No output was returned from the script</b>");
 		}
-		returnList.add("<br><b>FINISHED PROCESSING");
+		returnList.add("<br><b>PROCESSING COMPLETE");
+		
 	}
 	
+ 	private String conditionallyAddHtmlBreaks(String output) {
+ 		// An (overly) simplistic check just trying to see if the output is doing its own line breaking.  Otherwise we'll add them.
+ 		// I'm not sure we want to do this, but some currently in used scripts plan on the importer doing the breaks and
+ 		// this could be useful for text output that doesn't request the html to be escaped.
+		return output.replace("\n", ((double)((StringUtils.countMatches(output,"<br>")+
+										StringUtils.countMatches(output,"<br/>")+
+										StringUtils.countMatches(output,"<p>")+
+										StringUtils.countMatches(output,"<tr>")+
+										StringUtils.countMatches(output,"<ul>")+
+										StringUtils.countMatches(output,"<ul>")+
+										StringUtils.countMatches(output,"<ol>")+
+										StringUtils.countMatches(output,"<li>")+
+										StringUtils.countMatches(output,"<dl>")
+									))/((double)(StringUtils.countMatches(output,"\n")+1))>0.95) ? "" : "<br>") + "<br>";
+	}
 
- 	/**
+	/**
 	  * Builds the workflow.
 	  *
 	  * @param proj the proj

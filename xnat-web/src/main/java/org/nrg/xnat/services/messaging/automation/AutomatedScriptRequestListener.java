@@ -101,7 +101,7 @@ public class AutomatedScriptRequestListener {
                  	(automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
                    			scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
                    				"<h3>No output was returned from the script run</h3>";	
-                    final String EMAIL_SUBJECT = "Automation Results";
+                    final String EMAIL_SUBJECT = "Automation Results (" + request.getScriptId() + ")";
                     AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOutStr, false, notifyList.toArray(new String[0]));
                 }
             }

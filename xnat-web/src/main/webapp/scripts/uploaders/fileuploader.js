@@ -201,6 +201,8 @@ abu.FileUploader = function(o){
 		$("#abu-process-button").css("visibility","hidden");
 		$("#abu-upload-button").addClass("abu-button-disabled");
 		$("#abu-files-processing").css("display","None");
+		$(".abu-uploader").css("overflow-y","auto");
+		$(".abu-uploader").css("overflow-x","hidden");
 	}
 
 	this.doFileUpload = function(fileA) {

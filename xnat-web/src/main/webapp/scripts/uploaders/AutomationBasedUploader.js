@@ -911,6 +911,8 @@ XNAT.app.abu.processFiles=function() {
 		XNAT.app.abu.filesProcessed = true;
 
 		$(".abu-files-processing").css("display","block");
+		$(".abu-uploader").css("overflow-x","hidden");
+		$(".abu-uploader").css("overflow-y","hidden");
 
 		// Since we're using the update-stats=false parameter, we need to call catalog refresh when we're finished uploading.
 		XNAT.app.abu.updateResourceStats();

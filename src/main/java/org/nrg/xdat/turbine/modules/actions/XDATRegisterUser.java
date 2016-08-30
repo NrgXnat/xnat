@@ -108,7 +108,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         final String lab = TurbineUtils.HasPassedParameter("lab", data) ? (String) TurbineUtils.GetPassedParameter("lab", data) : "";
 
                         if (enabled) {
-                            if (verified) {
+                            if (!verified) {
                                 try {
                                     sendNewUserVerificationEmail(data, context, found);
                                 } catch (Exception e) {

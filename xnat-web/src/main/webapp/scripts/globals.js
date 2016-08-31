@@ -312,7 +312,7 @@ function setExtendedObject(obj, str, val){
 
 // loops over object string using quasi-dot notation (with colons):
 // we use colons because property names can contain periods (which is dumb)
-// var myVal = lookupObjectValue(XNAT, 'data:siteConfig:siteId');
+// var myVal = lookupObjectValue(XNAT, ':data:siteConfig:siteId');
 // --> myVal == 'myXnatSiteId'
 function lookupObjectValue(root, objStr, prop){
     
@@ -321,7 +321,7 @@ function lookupObjectValue(root, objStr, prop){
         brackets = /[\]\[]/,
         hasBrackets = false,
         parts = [],
-        undefined;
+        undef;
     
     if (!objStr) {
         objStr = root+'';
@@ -339,8 +339,8 @@ function lookupObjectValue(root, objStr, prop){
         //objStr = objStr.replace(/^\[|]$/g, '')
         hasBrackets = true;
     }
-    // if 'objStr' contains colons, use those as the path delimiter
-    else if (/:/.test(objStr)) {
+    // if 'objStr' STARTS WITH a colon, use those as the path delimiter
+    else if (/^:/.test(objStr)) {
         delim = ':';
     }
     // otherwise we're probably using dot notation
@@ -360,17 +360,17 @@ function lookupObjectValue(root, objStr, prop){
     parts.forEach(function(part, i){
         // start at the root object
         if (i === 0) {
-            val = root[part] || '';
+            val = (root[part] !== undef) ? root[part] : '';
         }
         else {
-            if (val === undefined) return false;
+            if (val === undef) return false;
             val = val[part];
         }
     });
     
     // explicitly set a final property name to look for
     if (prop) {
-        val = val[prop] || val;
+        val = (val[prop] !== undef) ? val[prop] : val;
     }
     
     return val;
@@ -658,6 +658,8 @@ autoID = randomID;
 // set 'forceLower' === true (or omit argument)
 // to ensure output is lowercase
 function toDashed(str){
+    var undefined;
+    str = str !== undefined ? str+'' : '';
     return str.replace(/[A-Z]/g, function(u) {
         return '-' + u;
     }).replace(/[A-Z]-/g, function(c){

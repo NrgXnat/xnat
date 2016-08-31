@@ -451,7 +451,7 @@ var XNAT = getObject(XNAT||{}),
         }
 
         // apply values to each input
-        $inputs.each(function(){
+        $inputs.not('button').each(function(){
 
             var $this = $(this);
             var val = lookupObjectValue(dataObj, this.name||this.title);
@@ -467,7 +467,12 @@ var XNAT = getObject(XNAT||{}),
             //if (val === "") return;
 
             if (/checkbox/i.test(this.type)) {
-                this.checked = realValue(val);
+                val = realValue(val);
+                // allow values other than 'true' or 'false'
+                this.checked = (this.value && val && isEqual(this.value, val)) ? true : val;
+                if (this.value === '') {
+                    this.value = val;
+                }
             }
             else if (/radio/i.test(this.type)) {
                 this.checked = isEqual(this.value, val);
@@ -479,7 +484,13 @@ var XNAT = getObject(XNAT||{}),
                 changeValue($this, val);
             }
 
-            $this.removeClass('dirty').dataAttr('value', val);
+            if (!/textarea/i.test(this.tagName)) {
+                $this.dataAttr('value', val);
+            }
+
+            $this.removeClass('dirty').on('change', function(){
+                $(this).addClass('dirty');
+            });
 
         });
 
@@ -530,7 +541,7 @@ var XNAT = getObject(XNAT||{}),
         if (/POST|PUT/i.test(opts.method)) {
             if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
                 // opts.data = formToJSON($form, true);
-                opts.data = JSON.stringify(form2js(inputs, ':', false));
+                opts.data = JSON.stringify(form2js(inputs, opts.delimiter||opts.delim||':', false));
                 opts.processData = false;
                 opts.contentType = 'application/json';
             }

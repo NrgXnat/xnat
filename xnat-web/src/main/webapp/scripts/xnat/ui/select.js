@@ -40,6 +40,12 @@ var XNAT = getObject(XNAT);
             return spawn('option', opt);    
         });      
     };
+
+
+    // ADD options to a menu
+    select.addOptions = function(menu, options){
+        $$(menu).append(select.options(options));
+    };
     
     
     // ========================================
@@ -55,13 +61,13 @@ var XNAT = getObject(XNAT);
         config.layout = firstDefined(config.layout, 'left');
 
         config.id = config.id || toDashed(config.name) || randomID('menu-', false);
-        config.name = config.name || toCamelCase(config.id) || '';
+        config.name = config.name || '';
 
         config.element = extend(true, {
             id: config.id,
             name: config.name,
             value: config.value || '',
-            title: config.title || config.name || config.id || ''
+            title: config.title || ''
         }, config.element);
 
         menu = spawn('select', config.element);

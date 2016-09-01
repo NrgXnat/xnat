@@ -332,7 +332,6 @@ var XNAT = getObject(XNAT || {});
             _formPanel = spawn('form.xnat-form-panel.panel.panel-default', extend(true, {
                 id: toDashed(opts.id || opts.element.id || opts.name) + '-panel',
                 name: opts.name,
-                method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
                 addClass: opts.classes || '',
                 data: opts.data
@@ -348,6 +347,11 @@ var XNAT = getObject(XNAT || {});
                 (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer || _footer])
 
             ]);
+
+        // add [method] attribute ONLY for POST or GET
+        if (/POST|GET/i.test(opts.method+'')) {
+            _formPanel.method = opts.method;
+        }
 
         // if there's a 'validation' (or 'validate') property, add 'validate' class
         if (opts.validation || opts.validate) {
@@ -523,7 +527,7 @@ var XNAT = getObject(XNAT || {});
                 method: $form.data('method') || opts.method || 'POST',
                 url: this.action,
                 success: function(){
-                    var obj = {},
+                    var obj = {}, callback,
                         _load = opts.refresh || opts.reload || opts.url || opts.load;
                     // actually, NEVER use returned data...
                     // ALWAYS reload from the server
@@ -532,6 +536,19 @@ var XNAT = getObject(XNAT || {});
                     if (!silent){
                         XNAT.ui.banner.top(2000, 'Data saved successfully.', 'success');
                         loadData($form, obj);
+                    }
+                    // fire callback function if specified
+                    if (opts.success || opts.callback) {
+                        callback = opts.success||opts.callback;
+                        if (typeof callback === 'string') {
+                            callback = eval(callback);
+                        }
+                        try {
+                            callback.apply(this, arguments);
+                        }
+                        catch(e) {
+                            console.log('something is broken: ' + e);
+                        }
                     }
                 }
             };
@@ -710,7 +727,7 @@ var XNAT = getObject(XNAT || {});
             opts.element.id = (opts.id || opts.element.id) + '-element';
         }
         addClassName(opts.element, 'panel-element');
-        addDataObjects(opts.element, { name: opts.name||'' });
+        addDataObjects(opts.element, { name: (opts.name||'').replace(/^:*/, '') });
         opts.label = opts.label||opts.title||opts.name||'';
 
         // add a help info icon if one is specified
@@ -868,6 +885,13 @@ var XNAT = getObject(XNAT || {});
         opts = cloneObject(opts);
         opts.type = 'checkbox';
         addClassName(opts, 'checkbox');
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+
+    panel.input.switchbox = function panelInputSwitchbox(opts){
+        opts = cloneObject(opts);
+        opts.type = 'checkbox';
+        addClassName(opts, 'switchbox');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
@@ -1249,7 +1273,6 @@ var XNAT = getObject(XNAT || {});
                 $(description).removeClass('hidden');
                 alert('foo');
             });
-            //button.onchange = ;
 
             label.append = description;
 

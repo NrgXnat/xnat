@@ -99,8 +99,9 @@ var XNAT = getObject(XNAT);
         var _templ, _spawn, _html;
         opts = cloneObject(opts);
         addClassName(opts, 'panel-element');
+        opts.name = (opts.name||'').replace(/^:*/,'');
         _templ = [
-            'div|data-name='+(opts.name||''),
+            'div|data-name='+opts.name,
             { className: opts.className },
             [].concat(content, spawn('br.clear'))
         ];
@@ -238,22 +239,36 @@ var XNAT = getObject(XNAT);
 
         // add value to [data-value] attribute
         // (except for textareas - that could get ugly)
-        if (isArray(element.value) || stringable(element.value)) {
-            $element.not('textarea').dataAttr('value', element.value);
+        if (!/textarea/i.test(element.tagName)){
+            if (isArray(element.value) || stringable(element.value)) {
+                $element.dataAttr('value', element.value);
+            }
         }
 
         var inner = [];
 
         // add 'before' content before the core element
         if (opts.beforeElement) {
-            opts.beforeElement = stringable(opts.beforeElement) ? [opts.beforeElement] : 
+            opts.beforeElement = stringable(opts.beforeElement) ? [opts.beforeElement] : '';
             inner.push(spawn('span.before', opts.beforeElement));
         }
 
-        inner.push(element);
+
+        // special stuff for switchbox elements
+        if (/switchbox/i.test(opts.kind)) {
+            inner.push(spawn('label.switchbox', [
+                element,
+                ['span.switchbox-outer', [['span.switchbox-inner']]]
+            ]))
+        }
+        else {
+            inner.push(element);
+        }
+
 
         // add 'after' content after the core element
         if (opts.afterElement) {
+            opts.afterElement = stringable(opts.afterElement) ? [opts.afterElement] : '';
             inner.push(spawn('span.after', opts.afterElement));
         }
 

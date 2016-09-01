@@ -286,7 +286,7 @@ div.containerTitle {
 }
 
 div.containerBody {
-    overflow: auto;
+    /*overflow: auto;*/
     font-size: 12px;
     line-height: 15px;
     padding: 0;
@@ -324,7 +324,8 @@ div.mainContainerBody {
 
 div.containerItem {
     /* font-size: 11px ; line-height: 13px ; */
-    padding: /* 3px 0 0 3px */ 8px 12px 0 12px;
+    /*padding: !* 3px 0 0 3px *! 8px 12px 0 12px;*/
+    margin: 15px;
 }
 
 div.projectIndex {
@@ -1118,6 +1119,11 @@ select {
 
 select[multiple] {
     max-width: 200px;
+}
+
+/* Chosen menu overrides */
+body.xnat .chosen-container {
+    font-size: 12px;
 }
 
 /* page layout styles */
@@ -1954,7 +1960,7 @@ span.noteOptional {
 }
 
 input.requiredField {
-    padding: 3px 5px 2px 4px;
+    /*padding: 3px 5px 2px 4px;*/
     border: 1px solid #cc0000;
 }
 
@@ -1976,6 +1982,11 @@ div.icon-remove {
 
 input.invalid {
     background: #ffc;
+    border: 1px solid #c00;
+}
+
+input.required.invalid {
+    background: #fcc;
 }
 
 .summary h3 {
@@ -2103,7 +2114,7 @@ input.invalid {
 /* ADD/EDIT PROJECT FORM */
 #new-project-form,
 #edit-project-form {
-    /* width: 760px; */
+    width: 960px;
     margin: 0 auto;
 }
 
@@ -3177,6 +3188,43 @@ label.search-method-label {
 .date-range {
     white-space: nowrap;
 }
+
+/* "switch" checkbox widgets - pure css */
+label.switchbox > input { display: none; }
+
+label.switchbox > input + .switchbox-outer {
+    display: inline-block;
+    width: 32px;
+    height: 16px;
+    background: #c00;
+    position: relative;
+    border-radius: 3px;
+    border: 1px solid #a0a0a0;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+}
+
+label.switchbox > input + .switchbox-outer > .switchbox-inner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: none;
+    position: absolute;
+    right: auto;
+    top: 0;
+    border-radius: 1px;
+    left: 0;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+label.switchbox > input:checked + .switchbox-outer {
+    background: #0a0;
+}
+
+label.switchbox > input:checked + .switchbox-outer > .switchbox-inner {
+    right: 0; left: auto;
+}
+
 
 /* friendlyForm styles. Taken from ConnectomeDB. To be refactored / replaced in XNAT 1.7, most likely */
 fieldset,

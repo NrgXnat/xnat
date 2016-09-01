@@ -260,17 +260,17 @@ generalSecuritySettings:
             element:
                 title: Security Channel
         requireLogin:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: requireLogin
             label: Require User Login
             description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
         restrictUserListAccessToAdmins:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins
             label: "Restrict user list access <br>to site administrators?"
             description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
         uiAllowNonAdminProjectCreation:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: ":UI.allow-non-admin-project-creation"
             label: "Allow non-administrators <br>to create projects?"
             description: "Should this site allow non-administrator users to create new projects? If turned on, the site is more secure, but this can make it more difficult for regular users to create new projects for their research efforts."
@@ -449,7 +449,7 @@ passwords:
               Interval for which users cannot reuse an old password of theirs. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         requireSaltedPasswords:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             id: requireSaltedPasswords
             name: requireSaltedPasswords
             label: Require Passwords To Be Salted
@@ -463,12 +463,12 @@ csrf:
     contentType: json
     contents:
         enableCsrfToken:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: enableCsrfToken
             label: Require CSRF Token?
             description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
         csrfEmailAlert:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: csrfEmailAlert
             label: CSRF Email Alert
             description: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
@@ -511,7 +511,7 @@ emailServerSettings:
     label: Mail Server Settings
     contents:
         smtpEnabled:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: ":smtp.enabled"
             label: "Enable SMTP?"
         hostname:
@@ -544,11 +544,11 @@ emailServerSettings:
             name: mailServerProperties
             label: Properties
         smtpAuth:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: ":mail.smtp.auth"
             label: SMTP Auth?
         smtpStartTls:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: ":mail.smtp.starttls.enable"
             label: Start TLS?
         smtpSSLTrust:
@@ -649,7 +649,7 @@ notifications:
             description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             value: "!? XNAT.data.notifications['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
         copyAdminOnNotifications:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: copyAdminOnNotifications
             label: "Copy Administrator on Notifications?"
             description: "Indicates whether the primary administrator should receive a copy of error, issue, new user, and update notifications if the administrator is not one of the configured recipients."
@@ -659,7 +659,7 @@ notifications:
             label: "Other"
 
         emailAllowNonuserSubscribers:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: emailAllowNonuserSubscribers
             label: "Allow Nonuser Subscribers"
             description: "Indicates whether this site should restrict email addresses for site notifications to addresses that are associated with valid active users of the XNAT installation. If turned on, the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events."
@@ -715,15 +715,15 @@ authenticationMethods:
     contentType: json
     contents:
         xnatInternal:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: ":provider.providers.xnatInternal"
             label: XNAT (Internal)
         ldapProvider:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: ":provider.providers.ldap"
             label: LDAP
 #        oauthProvider:
-#            kind: panel.input.checkbox
+#            kind: panel.input.switchbox
 #            id: oauthProvider
 #            name: ":provider.providers.oauth"
 #            label: OAuth
@@ -811,7 +811,7 @@ registrationOptions:
     contentType: json
     contents:
         requireEmailVerificationToRegister:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: emailVerification
             label: "Require Email Verification <br>to Register?"
             description: >
@@ -830,7 +830,7 @@ registrationOptions:
             name: emailVerificationExpiration
             label: "Email Verification Expiration"
         autoEnableUserRegistration:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: userRegistration
             label: "Auto-enable <br>User Registration?"
             description: >
@@ -838,7 +838,7 @@ registrationOptions:
                 projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
                 receives an email notification when a user registers.
         autoEnablePar:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: par
             label: "Auto-enable with <br>Project Access Request?"
             description: >
@@ -847,7 +847,7 @@ registrationOptions:
                 access requests should override how user registration is normally handled. Either way the administrator receives an email notification
                 when a user registers.
         uiAllowNewUserComments:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: ":UI.allow-new-user-comments"
             label: "Allow User Comments <br>on Registration?"
 
@@ -906,7 +906,7 @@ anonymization:
     url: /xapi/siteConfig
     contents:
         enableSitewideAnonymizationScript:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: enableSitewideAnonymizationScript
             label: "Enable Site-wide <br>Anonymization Script?"
         sitewideAnonymizationScript:
@@ -926,7 +926,7 @@ seriesImportFilter:
     url: /xapi/siteConfig
     contents:
         enableSitewideSeriesImportFilter:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: enableSitewideSeriesImportFilter
             label: "Enable Site-wide <br>Series Import Filter?"
         sitewideSeriesImportFilterMode:
@@ -1013,7 +1013,7 @@ sessionUploadMethod:
 #            label: Display Applet Link
 #            description: "Enable to display link to Upload Applet on various XNAT pages."
         enableProjectAppletScript:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: enableProjectAppletScript
             label: Enable Project Applet Script
             description: "The site-wide applet settings script can be supplemented by applet settings specified at the project level if this setting is enabled."
@@ -1109,7 +1109,7 @@ automationSettings:
     url: /xapi/automation
     contents:
         internalScriptingEnabled:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: internalScriptingEnabled
             label: Internal Scripting Enabled
             description: "When enabled, administrators can create and edit scripts that run internally to the XNAT process. This can be a powerful feature, but also can pose security hazards that may be unacceptable for certain deployments. For these situations, configurable internal scripting can be disabled (XNAT itself may still use some scripting for feature implementation, but these scripts can not be modified or updated by users)."
@@ -1124,7 +1124,7 @@ misc:
     url: /xapi/siteConfig
     contents:
         scanTypeMapping:
-            kind: panel.input.checkbox
+            kind: panel.input.switchbox
             name: scanTypeMapping
             label: Scan Type Mapping?
         development:

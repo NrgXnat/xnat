@@ -419,9 +419,11 @@ var XNAT = getObject(XNAT);
         obj.element = obj.element$[0];
         if (element) {
             obj.element$ = $$(element).removeClass('valid invalid');
-            obj.element = obj.element$[0];
-            obj.value = obj.element.value || '';
             obj.len = obj.element$.length;
+            if (obj.len) {
+                obj.element = obj.element$[0];
+                obj.value = obj.element.value || '';
+            }
         }
         return obj;
     }

@@ -154,207 +154,281 @@
 
 </TABLE>
 <script type="text/javascript" src="$content.getURI("scripts/generated/xnat_investigatorData.js")"></script>
-<script type="text/javascript" src="$content.getURI("scripts/xnat_investigatorData/investigatorManager.js")"></script>
+##<script type="text/javascript" src="$content.getURI("scripts/xnat_investigatorData/investigatorManager.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/xnat/app/investigators.js")"></script>
 <script>
 
-    window.invest_manager = new InvestigatorManager();
+    (function(){
 
-        #if($om.getProperty('pi_xnat_investigatordata_id'))
-        window.primary_investigator = "$!om.getProperty('pi_xnat_investigatordata_id')";
+        var investigatorData = getObject(XNAT.app.investigatorData);
+        var projectID = XNAT.data.context.projectID;
+
+        investigatorData.project = projectID;
+        investigatorData.primary = null;
+        investigatorData.others = [];
+        investigatorData.count = 0;
+
+        //window.invest_manager = new InvestigatorManager();
+
+        #if($om.getProperty("pi_xnat_investigatordata_id"))
+            investigatorData.primary = '$!om.getProperty("pi_xnat_investigatordata_id")';
         #end
 
-    window.other_investigators = new Array();
+//        window.other_investigators = new Array();
 
         #set ($investigators = $om.getInvestigators_investigator())
         #foreach($inv in $investigators)
             #if (!$inv.getXnatInvestigatordataId.equals($primaryInv))
-            window.other_investigators.push("$inv.getXnatInvestigatordataId()");
+                investigatorData.others.push('$inv.getXnatInvestigatordataId()');
+                //window.other_investigators.push("$inv.getXnatInvestigatordataId()");
             #end
         #end
 
-    var removeInvestigatorIcon = 'url($content.getURI("scripts/yui/build/assets/skins/images/xnat-sprite.png"))';
+        console.log(investigatorData.primary);
 
-    window.refreshInvestigators = function () {
-        var div = document.getElementById("investigatorBox");
-        div.innerHTML = "";
+        var iBox = $('#investigatorBox');
+        var piBox = spawn('span#primary-investigator-menu');
 
-        var table = document.createElement("table");
-        var tbody = document.createElement("tbody");
-        var tr = document.createElement("tr");
+        var piMenu = investigatorData.init();
 
-        tbody.appendChild(tr);
-        table.appendChild(tbody);
-        div.appendChild(table);
-        var th = document.createElement("th");
-        th.innerHTML = "PI";
-        tr.appendChild(th);
+        // creates <select>
+        piMenu.createMenu({
+            name: 'xnat:projectData/pi_xnat_investigatordata_id'
+        });
 
-        var td = document.createElement("td");
-        var piSelect = document.createElement("select");
-        piSelect.id='primaryInvestigator_0';
-        piSelect.name = "xnat:projectData/pi_xnat_investigatordata_id";
-        piSelect.onchange=changeOtherInvestigator;
-        window.invest_manager.populateSelect(piSelect, window.primary_investigator, true);
-        td.appendChild(piSelect);
-        tr.appendChild(td);
-        td = document.createElement("td");
-        var remInvestButton = document.createElement("div");
-        remInvestButton.className = "icon-cancel";
-        remInvestButton.style.backgroundImage = removeInvestigatorIcon;
-        remInvestButton.id = "remInvestBut_" + (tbody.rows.length);
-        remInvestButton.title = "Remove Investigator";
-        remInvestButton.onclick = function () {
-            $(piSelect).val("NULL");
+        // creates <option> elements with PI selected
+        piMenu.createMenuItems(investigatorData.primary);
+
+        // puts the menu in the box
+        piMenu.render(piBox, 300);
+
+        // button for creating new investigators
+        var creator = spawn('button#create-investigator|type=button', 'Create Investigator');
+
+        creator.onclick = function(){
+            piMenu.dialog();
         };
-        td.appendChild(remInvestButton);
-        tr.appendChild(td);
 
-        //MORE INVESTIGATORS
-        var td = document.createElement("td");
-        td.valign = "bottom";
-        var button = document.createElement("input");
-        button.type = "button";
-        button.value = "More Investigators";
-        button.tbody = tbody;
-        button.onclick = function () {
-            tr = document.createElement("tr");
-            tr.id = "Investigator_" + (tbody.rows.length);
-            var th = document.createElement("th");
-//          th.innerHTML="Investigator "+(tbody.rows.length);
-            tr.appendChild(th);
-            var td = document.createElement("td");
-            var pSelect = document.createElement("select");
-            pSelect.id = "otherInvestigator_"+(tbody.rows.length);
-            pSelect.name = "xnat:projectData/investigators/investigator[" + (tbody.rows.length) + "]/xnat_investigatordata_id";
-            pSelect.onchange=changeOtherInvestigator;
-            window.invest_manager.populateSelect(pSelect, window.other_investigators[otherCounter], false);
-            td.appendChild(pSelect);
-            tr.appendChild(td);
-            td = document.createElement("td");
-            var remInvestButton = document.createElement("div");
-            remInvestButton.className = "icon-cancel";
-            remInvestButton.style.backgroundImage = removeInvestigatorIcon;
-            remInvestButton.id = "remInvestBut_" + (tbody.rows.length);
-            remInvestButton.title = "Remove Investigator";
-            remInvestButton.onclick = function () {
-                var idx = this.id.substr(this.id.indexOf('_') + 1);
-                removeInvestigator(idx);
-            };
-            td.appendChild(remInvestButton);
-            tr.appendChild(td);
-            tbody.appendChild(tr);
-            return false;
-        }
-        td.appendChild(button);
-        tr.appendChild(td);
+        iBox.html('<b>PI:</b> &nbsp; ')
+            .append(piBox)
+            .append(' &nbsp; ')
+            .append(creator);
 
-        //CREATE INVESTIGATOR
-        var td = document.createElement("td");
-        td.valign = "bottom";
-        var button = document.createElement("input");
-        button.type = "button";
-        button.value = "Create Investigator";
-        button.tbody = tbody;
-        button.onclick = function () {
-            if (window.investigatorForm != undefined) {
-                window.investigatorForm.close();
-                window.investigatorForm = null;
-            }
 
-            window.create_investigator_link = "$link.setPage('XDATScreen_edit_xnat_investigatorData.vm').addPathInfo('popup','true')";
-            window.create_investigator_link += "/project/$project/destination/JS_Parent_Return.vm";
+        // TODO: 'OTHER' INVESTIGATORS
+//
+//        function othersMenu(){
+//            var iMenu = XNAT.app.investigatorData.init(inv);
+//
+//            iMenu.setMenu(spawn('select|multiple', {name: iMenuName()} ));
+//            iMenu.getAll({
+//                success: function(){
+//                    iBox.empty()
+//                            .append([
+//                                '<b>PI:</b>',
+//                                ' &nbsp; ',
+//                                iContainer,
+//                                ' &nbsp; ',
+//                                iButton
+//                            ]);
+//                }
+//            });
+//
+//            iMenu.renderMenu(iContainer);
+//
+//        }
 
-            window.investigatorForm = window.open(window.create_investigator_link, '', 'width=500,height=550,status=yes,resizable=yes,scrollbars=yes,toolbar=no');
-            if (window.investigatorForm.opener == null) window.investigatorForm.opener = self;
-        }
-        td.appendChild(button);
-        tr.appendChild(td);
 
-        for (var otherCounter = 0; otherCounter < window.other_investigators.length; otherCounter++) {
-          createOtherInvestigator(otherCounter, tbody, tr);
-        }
-        if(window.unsavedInvestigators){
-          for(var unsavedCounter=0;unsavedCounter<window.unsavedInvestigators.length;unsavedCounter++){
-            if(typeof window.unsavedInvestigators[unsavedCounter] === 'string'){
-              $(window.unsavedInvestigators[unsavedCounter]).remove();
-            } else if(unsavedCounter == 0 && window.unsavedInvestigators[unsavedCounter]){
-              $('#primaryInvestigator_0').val(window.unsavedInvestigators[unsavedCounter]);
-            } else if(window.unsavedInvestigators[unsavedCounter]){
-              if(unsavedCounter > otherCounter){
-                createOtherInvestigator(unsavedCounter-1, tbody, tr);
-              }
-              $('#otherInvestigator_'+unsavedCounter).val(window.unsavedInvestigators[unsavedCounter]);
-            }
-          }
-        }
-    };
+        //var iDialog = XNAT.app.investigatorData.dialog();
 
-    function createOtherInvestigator(index, tbody, tr){
-      tr=document.createElement("tr");
-      tr.id="Investigator_" + (index+1);
-      var th= document.createElement("th");
-      tr.appendChild(th);
-      var td= document.createElement("td");
-      var pSelect=document.createElement("select");
-      pSelect.id = "otherInvestigator_"+(index+1);
-      pSelect.name="xnat:projectData/investigators/investigator["+ (index+1) + "]/xnat_investigatordata_id";
-      pSelect.onchange=changeOtherInvestigator;
-      window.invest_manager.populateSelect(pSelect,window.other_investigators[index],false);
-      td.appendChild(pSelect);
-      tr.appendChild(td);
-      td= document.createElement("td");
-      var remInvestButton = document.createElement("div");
-      remInvestButton.className="icon-cancel";
-      remInvestButton.style.backgroundImage=removeInvestigatorIcon;
-      remInvestButton.id="remInvestBut_"+(tbody.rows.length);
-      remInvestButton.title="Remove Investigator";
-      remInvestButton.onclick=function(){
-        var idx = this.id.substr(this.id.indexOf('_')+1);
-        removeInvestigator(idx);
-      };
-      td.appendChild(remInvestButton);
-      tr.appendChild(td);
-      tbody.appendChild(tr);
-    };
 
-    var changeOtherInvestigator = function(event){
-      if(!window.unsavedInvestigators){
-        window.unsavedInvestigators = [];
-      }
-      var invNum = parseInt($(event.target).val())
-      var selId= $(event.target)[0].id;
-      var idx = selId.substring((selId.indexOf('_')+1));
-      window.unsavedInvestigators[idx] = invNum;
-    };
 
-    window.success = function (subject_id) {
-        if (window.investigatorForm != undefined) {
-            window.investigatorForm.close();
-            window.investigatorForm = null;
-        }
-        xmodal.message('Saved Investigator', 'The investigator you entered was stored.');
-        document.getElementById("investigatorBox").innerHTML = "Loading...";
-        window.invest_manager.init();
-    }
-    window.failure = function (msg) {
-        xmodal.message('Save Failed', msg);
-        if (window.investigatorForm != undefined) {
-            window.investigatorForm.close();
-            window.investigatorForm = null;
-        }
-    }
 
-    window.invest_manager.investigatorsLoaded.subscribe(window.refreshInvestigators, this);
-    window.invest_manager.init();
+    })();
 
-    function removeInvestigator(index) {
-      var id = '#Investigator_'+index;
-      $(id).remove();
-      if(!window.unsavedInvestigators){
-        window.unsavedInvestigators = [];
-      }
-      window.unsavedInvestigators[index] = id;
-    }
+    //var removeInvestigatorIcon = 'url($content.getURI("scripts/yui/build/assets/skins/images/xnat-sprite.png"))';
+
+##    window.refreshInvestigators = function () {
+##        var div = document.getElementById("investigatorBox");
+##        div.innerHTML = "";
+##
+##        var table = document.createElement("table");
+##        var tbody = document.createElement("tbody");
+##        var tr = document.createElement("tr");
+##
+##        tbody.appendChild(tr);
+##        table.appendChild(tbody);
+##        div.appendChild(table);
+##        var th = document.createElement("th");
+##        th.innerHTML = "PI";
+##        tr.appendChild(th);
+##
+##        var td = document.createElement("td");
+##        var piSelect = document.createElement("select");
+##        piSelect.id='primaryInvestigator_0';
+##        piSelect.name = "xnat:projectData/pi_xnat_investigatordata_id";
+##        piSelect.onchange=changeOtherInvestigator;
+##        window.invest_manager.populateSelect(piSelect, window.primary_investigator, true);
+##        td.appendChild(piSelect);
+##        tr.appendChild(td);
+##        td = document.createElement("td");
+##        var remInvestButton = document.createElement("div");
+##        remInvestButton.className = "icon-cancel";
+##        remInvestButton.style.backgroundImage = removeInvestigatorIcon;
+##        remInvestButton.id = "remInvestBut_" + (tbody.rows.length);
+##        remInvestButton.title = "Remove Investigator";
+##        remInvestButton.onclick = function () {
+##            $(piSelect).val("NULL");
+##        };
+##        td.appendChild(remInvestButton);
+##        tr.appendChild(td);
+##
+##        //MORE INVESTIGATORS
+##        var td = document.createElement("td");
+##        td.valign = "bottom";
+##        var button = document.createElement("input");
+##        button.type = "button";
+##        button.value = "More Investigators";
+##        button.tbody = tbody;
+##        button.onclick = function () {
+##            tr = document.createElement("tr");
+##            tr.id = "Investigator_" + (tbody.rows.length);
+##            var th = document.createElement("th");
+##//          th.innerHTML="Investigator "+(tbody.rows.length);
+##            tr.appendChild(th);
+##            var td = document.createElement("td");
+##            var pSelect = document.createElement("select");
+##            pSelect.id = "otherInvestigator_"+(tbody.rows.length);
+##            pSelect.name = "xnat:projectData/investigators/investigator[" + (tbody.rows.length) + "]/xnat_investigatordata_id";
+##            pSelect.onchange=changeOtherInvestigator;
+##            window.invest_manager.populateSelect(pSelect, window.other_investigators[otherCounter], false);
+##            td.appendChild(pSelect);
+##            tr.appendChild(td);
+##            td = document.createElement("td");
+##            var remInvestButton = document.createElement("div");
+##            remInvestButton.className = "icon-cancel";
+##            remInvestButton.style.backgroundImage = removeInvestigatorIcon;
+##            remInvestButton.id = "remInvestBut_" + (tbody.rows.length);
+##            remInvestButton.title = "Remove Investigator";
+##            remInvestButton.onclick = function () {
+##                var idx = this.id.substr(this.id.indexOf('_') + 1);
+##                removeInvestigator(idx);
+##            };
+##            td.appendChild(remInvestButton);
+##            tr.appendChild(td);
+##            tbody.appendChild(tr);
+##            return false;
+##        }
+##        td.appendChild(button);
+##        tr.appendChild(td);
+##
+##        //CREATE INVESTIGATOR
+##        var td = document.createElement("td");
+##        td.valign = "bottom";
+##        var button = document.createElement("input");
+##        button.type = "button";
+##        button.value = "Create Investigator";
+##        button.tbody = tbody;
+##        button.onclick = function () {
+##            if (window.investigatorForm != undefined) {
+##                window.investigatorForm.close();
+##                window.investigatorForm = null;
+##            }
+##
+##            window.create_investigator_link = "$link.setPage('XDATScreen_edit_xnat_investigatorData.vm').addPathInfo('popup','true')";
+##            window.create_investigator_link += "/project/$project/destination/JS_Parent_Return.vm";
+##
+##            window.investigatorForm = window.open(window.create_investigator_link, '', 'width=500,height=550,status=yes,resizable=yes,scrollbars=yes,toolbar=no');
+##            if (window.investigatorForm.opener == null) window.investigatorForm.opener = self;
+##        }
+##        td.appendChild(button);
+##        tr.appendChild(td);
+##
+##        for (var otherCounter = 0; otherCounter < window.other_investigators.length; otherCounter++) {
+##          createOtherInvestigator(otherCounter, tbody, tr);
+##        }
+##        if(window.unsavedInvestigators){
+##          for(var unsavedCounter=0;unsavedCounter<window.unsavedInvestigators.length;unsavedCounter++){
+##            if(typeof window.unsavedInvestigators[unsavedCounter] === 'string'){
+##              $(window.unsavedInvestigators[unsavedCounter]).remove();
+##            } else if(unsavedCounter == 0 && window.unsavedInvestigators[unsavedCounter]){
+##              $('#primaryInvestigator_0').val(window.unsavedInvestigators[unsavedCounter]);
+##            } else if(window.unsavedInvestigators[unsavedCounter]){
+##              if(unsavedCounter > otherCounter){
+##                createOtherInvestigator(unsavedCounter-1, tbody, tr);
+##              }
+##              $('#otherInvestigator_'+unsavedCounter).val(window.unsavedInvestigators[unsavedCounter]);
+##            }
+##          }
+##        }
+##    };
+##
+##    function createOtherInvestigator(index, tbody, tr){
+##      tr=document.createElement("tr");
+##      tr.id="Investigator_" + (index+1);
+##      var th= document.createElement("th");
+##      tr.appendChild(th);
+##      var td= document.createElement("td");
+##      var pSelect=document.createElement("select");
+##      pSelect.id = "otherInvestigator_"+(index+1);
+##      pSelect.name="xnat:projectData/investigators/investigator["+ (index+1) + "]/xnat_investigatordata_id";
+##      pSelect.onchange=changeOtherInvestigator;
+##      window.invest_manager.populateSelect(pSelect,window.other_investigators[index],false);
+##      td.appendChild(pSelect);
+##      tr.appendChild(td);
+##      td= document.createElement("td");
+##      var remInvestButton = document.createElement("div");
+##      remInvestButton.className="icon-cancel";
+##      remInvestButton.style.backgroundImage=removeInvestigatorIcon;
+##      remInvestButton.id="remInvestBut_"+(tbody.rows.length);
+##      remInvestButton.title="Remove Investigator";
+##      remInvestButton.onclick=function(){
+##        var idx = this.id.substr(this.id.indexOf('_')+1);
+##        removeInvestigator(idx);
+##      };
+##      td.appendChild(remInvestButton);
+##      tr.appendChild(td);
+##      tbody.appendChild(tr);
+##    };
+##
+##    var changeOtherInvestigator = function(event){
+##      if(!window.unsavedInvestigators){
+##        window.unsavedInvestigators = [];
+##      }
+##      var invNum = parseInt($(event.target).val())
+##      var selId= $(event.target)[0].id;
+##      var idx = selId.substring((selId.indexOf('_')+1));
+##      window.unsavedInvestigators[idx] = invNum;
+##    };
+##
+##    window.success = function (subject_id) {
+##        if (window.investigatorForm != undefined) {
+##            window.investigatorForm.close();
+##            window.investigatorForm = null;
+##        }
+##        xmodal.message('Saved Investigator', 'The investigator you entered was stored.');
+##        document.getElementById("investigatorBox").innerHTML = "Loading...";
+##        window.invest_manager.init();
+##    }
+##    window.failure = function (msg) {
+##        xmodal.message('Save Failed', msg);
+##        if (window.investigatorForm != undefined) {
+##            window.investigatorForm.close();
+##            window.investigatorForm = null;
+##        }
+##    }
+##
+##    window.invest_manager.investigatorsLoaded.subscribe(window.refreshInvestigators, this);
+##    window.invest_manager.init();
+##
+##    function removeInvestigator(index) {
+##      var id = '#Investigator_'+index;
+##      $(id).remove();
+##      if(!window.unsavedInvestigators){
+##        window.unsavedInvestigators = [];
+##      }
+##      window.unsavedInvestigators[index] = id;
+##    }
 
     function stringCamelCaps(val) {
         if (val == "")return "";

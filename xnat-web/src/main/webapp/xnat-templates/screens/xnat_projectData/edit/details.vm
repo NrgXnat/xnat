@@ -68,7 +68,7 @@
     #end
 
     <TR>
-        <TH align="left" style="vertical-align: top;">
+        <TH align="left">
             <span class="nobr">$displayManager.getSingularDisplayNameForProject() Description</span>
         </TH>
         <TD>
@@ -135,7 +135,7 @@
     #end
 
     <TR>
-        <TH align="left" valign="top">Investigator(s)</TH>
+        <TH align="left">Investigator(s)</TH>
         <TD>
             <div id="investigatorBox">Loading...</div>
         </TD>
@@ -160,18 +160,18 @@
 
     (function(){
 
-        var investigatorData = getObject(XNAT.app.investigatorData);
+        var investigators = getObject(XNAT.app.investigators);
         var projectID = XNAT.data.context.projectID;
 
-        investigatorData.project = projectID;
-        investigatorData.primary = null;
-        investigatorData.others = [];
-        investigatorData.count = 0;
+        investigators.project = projectID;
+        investigators.primary = null;
+        investigators.others = [];
+        investigators.count = 0;
 
         //window.invest_manager = new InvestigatorManager();
 
         #if($om.getProperty("pi_xnat_investigatordata_id"))
-            investigatorData.primary = '$!om.getProperty("pi_xnat_investigatordata_id")';
+            investigators.primary = '$!om.getProperty("pi_xnat_investigatordata_id")';
         #end
 
 //        window.other_investigators = new Array();
@@ -179,17 +179,17 @@
         #set ($investigators = $om.getInvestigators_investigator())
         #foreach($inv in $investigators)
             #if (!$inv.getXnatInvestigatordataId.equals($primaryInv))
-                investigatorData.others.push('$inv.getXnatInvestigatordataId()');
+                investigators.others.push('$inv.getXnatInvestigatordataId()');
                 //window.other_investigators.push("$inv.getXnatInvestigatordataId()");
             #end
         #end
 
-        console.log(investigatorData.primary);
+        console.log(investigators.primary);
 
         var iBox = $('#investigatorBox');
         var piBox = spawn('span#primary-investigator-menu');
 
-        var piMenu = investigatorData.init();
+        var piMenu = investigators.init();
 
         // creates <select>
         piMenu.createMenu({
@@ -197,7 +197,7 @@
         });
 
         // creates <option> elements with PI selected
-        piMenu.createMenuItems(investigatorData.primary);
+        piMenu.createMenuItems(investigators.primary);
 
         // puts the menu in the box
         piMenu.render(piBox, 300);
@@ -218,7 +218,7 @@
         // TODO: 'OTHER' INVESTIGATORS
 //
 //        function othersMenu(){
-//            var iMenu = XNAT.app.investigatorData.init(inv);
+//            var iMenu = XNAT.app.investigators.init(inv);
 //
 //            iMenu.setMenu(spawn('select|multiple', {name: iMenuName()} ));
 //            iMenu.getAll({
@@ -239,7 +239,7 @@
 //        }
 
 
-        //var iDialog = XNAT.app.investigatorData.dialog();
+        //var iDialog = XNAT.app.investigators.dialog();
 
 
 

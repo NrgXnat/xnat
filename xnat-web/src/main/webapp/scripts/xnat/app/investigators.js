@@ -16,7 +16,7 @@ var XNAT = getObject(XNAT);
     }
 }(function(){
 
-    var undef, investigatorData,
+    var undef, investigators,
         BASE_URL = '/xapi/investigators',
         ui       = XNAT.ui,
         xhr      = XNAT.xhr,
@@ -30,7 +30,7 @@ var XNAT = getObject(XNAT);
         return xurl.rootUrl(BASE_URL + part);
     }
 
-    investigatorData = getObject(XNAT.app.investigatorData || XNAT.xapi.investigators || {});
+    investigators = getObject(XNAT.app.investigators || XNAT.xapi.investigators || {});
 
     var investigatorDataObj = {
         "id": null,
@@ -131,24 +131,30 @@ var XNAT = getObject(XNAT);
     // renders the <option> elements
     Investigators.fn.createMenuItems = function(selected){
         var self = this;
-        selected = [].concat(selected);
+        selected = [].concat(selected).map(function(item){
+            return item+'';
+        });
         this.getAll();
         this.xhr.done(function(data){
+
             self.selected = [];
-            self.menu$
-                .empty()
-                .append(data.map(function(item){
-                    var id = item.xnatInvestigatordataId+'';
-                    var menuOption = spawn('option', {
-                        value: id,
-                        html: item.lastname + ', ' + item.firstname
-                    });
-                    if (selected.indexOf(id) > -1) {
-                        self.selected.push(id);
-                        menuOption.selected = true;
-                    }
-                    return menuOption;
-                }));
+
+            var options = data.map(function(item){
+                var id = item.xnatInvestigatordataId+'';
+                var menuOption = spawn('option', {
+                    value: id,
+                    html: item.lastname + ', ' + item.firstname
+                });
+                if (selected.indexOf(id) > -1) {
+                    self.selected.push(id);
+                    menuOption.selected = true;
+                }
+                return menuOption;
+            });
+
+            // empty the options, then add the updated options
+            self.menu$.empty().append(options);
+
         });
         return this;
     };
@@ -170,7 +176,6 @@ var XNAT = getObject(XNAT);
         // make sure the request is done before rendering
         this.xhr.done(function(){
             $$(container).append(self.menu);
-            self.menu$.change();
             menuInit(self.menu, null, width||200);
         });
         return this;
@@ -180,7 +185,7 @@ var XNAT = getObject(XNAT);
         var self = this;
         this.createMenuItems(selected);
         this.xhr.done(function(){
-            self.menu$.change();
+            //self.menu$.val(selected).change();
             menuUpdate(self.menu);
         });
         return this;
@@ -285,30 +290,30 @@ var XNAT = getObject(XNAT);
 
 
     // init function for XNAT.misc.blank
-    investigatorData.init = function(opts){
+    investigators.init = function(opts){
         return new Investigators(opts);
     };
 
-    investigatorData.getAll = function(opts){
+    investigators.getAll = function(opts){
         return this.init().getAll(opts).xhr;
     };
 
-    investigatorData.get = function(id){
+    investigators.get = function(id){
         return this.init().get(id).xhr;
     };
 
     // JUST the REST call to create new investigator
-    investigatorData.createNew = function(opts){
+    investigators.createNew = function(opts){
         //
     };
 
     // JUST the REST call to update the investigator
-    investigatorData.update = function(){
+    investigators.update = function(){
         //
     };
 
 
-    investigatorData.delete = function(id, opts){
+    investigators.delete = function(id, opts){
         if (!id) return false;
         return xhr.delete(extend, {
             url: setupUrl(id)
@@ -318,8 +323,8 @@ var XNAT = getObject(XNAT);
     //////////////////////////////////////////////////
 
     // this script has loaded
-    investigatorData.loaded = true;
+    investigators.loaded = true;
 
-    return XNAT.app.investigatorData = XNAT.xapi.investigators = investigatorData;
+    return XNAT.app.investigators = XNAT.xapi.investigators = investigators;
 
 }));

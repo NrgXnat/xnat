@@ -72,8 +72,9 @@ body.xnat .panel-default { border: 1px solid #c8c8c8; }
     padding: 12px 16px;
     color: #fff; background: #1A75BB;
 }
-/* no border on panels in a dialog box */
-body.xnat .xmodal .panel { padding: 0; margin: 0; border: none; }
+/* special styling for panels in a dialog box */
+body.xnat div.xmodal .panel { padding: 0; margin: 0; border: none; }
+body.xnat div.xmodal .panel-body { padding: 0 ; }
 
 /* hide footer on individual form elements that are part of a multi-form panel */
 .multi-form .panel .footer { display: none; }

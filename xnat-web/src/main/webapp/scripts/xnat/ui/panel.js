@@ -728,7 +728,7 @@ var XNAT = getObject(XNAT || {});
         }
         addClassName(opts.element, 'panel-element');
         addDataObjects(opts.element, { name: (opts.name||'').replace(/^:*/, '') });
-        opts.label = opts.label||opts.title||opts.name||'';
+        opts.label = opts.label||opts.title||'';
 
         // add a help info icon if one is specified
         if (opts.info){
@@ -762,7 +762,7 @@ var XNAT = getObject(XNAT || {});
             // infoContent[infoId++] = {label:opts.label, content:opts.info};
         }
 
-        _inner.push(['div.element-label', [_info, opts.label]]);
+        _inner.push(['div.element-label', [_info, (opts.label ? opts.label : '')]]);
 
         // 'contents' will be inserted into the 'target' element
         _target = spawn('div.element-wrapper');

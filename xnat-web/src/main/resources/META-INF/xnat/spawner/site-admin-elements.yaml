@@ -196,7 +196,7 @@ zipExtensions:
     name: zipExtensions
     label: Zip Extensions
 checksums:
-    kind: panel.input.checkbox
+    kind: panel.input.switchbox
     name: checksums
     label: Checksums?
     description: >

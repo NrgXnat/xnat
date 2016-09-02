@@ -20,6 +20,7 @@
 
     // only show the header logo on the 'home' page
     $('#header_logo').show();
+    XNAT.app.adjustHeaderAndNavForLogoSize();
 
     var frontTabs = new YAHOO.widget.TabView('front_search');
 

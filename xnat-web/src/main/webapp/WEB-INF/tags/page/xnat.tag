@@ -556,28 +556,30 @@ ${bodyTop}
 
     <script type="text/javascript">
 
-        (function(){
 
+        XNAT.app.adjustHeaderAndNavForLogoSize = function(){
+    
             var header_logo$ = $('#header_logo');
-
+    
             // adjust height of header if logo is taller than 65px
             var hdr_logo_height = header_logo$.height();
             if (hdr_logo_height > 65) {
                 jq('.main_header').height(hdr_logo_height + 10);
             }
-
-            // adjust width of main nav if logo is wider than 175px
-            var hdr_logo_width = header_logo$.width();
-            if (hdr_logo_width > 175) {
-                jq('#main_nav').width(932 - hdr_logo_width - 20);
-            }
-
+    
+            ## Commented out 2016/09/02 (XNAT-4501).  I don't think we want to do this (See home page when this takes effect)
+            ##// adjust width of main nav if logo is wider than 175px
+            ##var hdr_logo_width = header_logo$.width();
+            ##if (hdr_logo_width > 175) {
+            ##    jq('#main_nav').width(932 - hdr_logo_width - 20);
+            ##}
+    
             //
             //var recent_proj_height = jq('#min_projects_list > div').height();
             var recent_proj_height = 67;
             //jq('#min_projects_list, #min_expt_list').height(recent_proj_height * 5).css({'min-width':349,'overflow-y':'scroll'});
-
-        })();
+    
+        }
 
         // initialize the advanced search method toggler
         XNAT.app.searchMethodToggler = function(parent$){

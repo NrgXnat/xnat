@@ -34,15 +34,15 @@ public class Investigator implements XnatInvestigatordataI {
     }
 
     public Investigator(final ResultSet resultSet) throws SQLException {
-        _xnatInvestigatordataId = resultSet.getInt(0);
-        _id = resultSet.getString(1);
-        _title = resultSet.getString(2);
-        _firstname = resultSet.getString(2);
-        _lastname = resultSet.getString(2);
-        _institution = resultSet.getString(2);
-        _department = resultSet.getString(2);
-        _email = resultSet.getString(2);
-        _phone = resultSet.getString(2);
+        _xnatInvestigatordataId = resultSet.getInt(1);
+        _id = resultSet.getString(2);
+        _title = resultSet.getString(3);
+        _firstname = resultSet.getString(4);
+        _lastname = resultSet.getString(5);
+        _institution = resultSet.getString(6);
+        _department = resultSet.getString(7);
+        _email = resultSet.getString(8);
+        _phone = resultSet.getString(9);
         _primaryProjects.addAll(getProjectIds(resultSet.getArray(10)));
         _investigatorProjects.addAll(getProjectIds(resultSet.getArray(11)));
     }
@@ -192,7 +192,11 @@ public class Investigator implements XnatInvestigatordataI {
         if (array == null) {
             return Collections.emptyList();
         }
-        return Arrays.asList((String[]) array.getArray());
+        final String[] projectIds = (String[]) array.getArray();
+        if (projectIds.length == 0) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(projectIds);
     }
 
     private final Integer _xnatInvestigatordataId;

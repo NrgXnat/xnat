@@ -10,10 +10,10 @@
  */
 package org.nrg.xnat.restlet.resources;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.XDAT;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -33,7 +33,6 @@ import java.util.Map;
 
 public class RestMockCallMapRestlet extends SecureResource {
 
-    private final static TypeReference<HashMap<String, String>> TYPE_REFERENCE = new TypeReference<HashMap<String, String>>() {};
     private final static ObjectMapper MAPPER = new ObjectMapper(new JsonFactory());
 
     private final String _call;
@@ -47,7 +46,7 @@ public class RestMockCallMapRestlet extends SecureResource {
         }
 
         try {
-            return MAPPER.readValue(configuration, TYPE_REFERENCE);
+            return MAPPER.readValue(configuration, SerializerService.TYPE_REF_MAP_STRING_STRING);
         } catch (IOException ignored) {
             return new HashMap<>();
         }

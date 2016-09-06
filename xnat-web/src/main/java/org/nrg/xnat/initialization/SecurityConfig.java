@@ -127,7 +127,7 @@ public class SecurityConfig {
     public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor(final SerializerService serializer, final SiteConfigPreferences preferences) throws IOException {
         final Resource resource = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         try (final InputStream inputStream = resource.getInputStream()) {
-            final HashMap<String, ArrayList<String>>         urlMap        = serializer.deserializeYaml(inputStream, TYPE_REFERENCE);
+            final HashMap<String, ArrayList<String>>         urlMap        = serializer.deserializeYaml(inputStream, SerializerService.TYPE_REF_MAP_STRING_LIST_STRING);
             final FilterSecurityInterceptorBeanPostProcessor postProcessor = new FilterSecurityInterceptorBeanPostProcessor(preferences);
             postProcessor.setOpenUrls(urlMap.get("openUrls"));
             postProcessor.setAdminUrls(urlMap.get("adminUrls"));
@@ -236,7 +236,5 @@ public class SecurityConfig {
         return list;
     }
 
-    private static final ResourceLoader                                    RESOURCE_LOADER = new DefaultResourceLoader();
-    private static final TypeReference<HashMap<String, ArrayList<String>>> TYPE_REFERENCE  = new TypeReference<HashMap<String, ArrayList<String>>>() {
-    };
+    private static final ResourceLoader RESOURCE_LOADER = new DefaultResourceLoader();
 }

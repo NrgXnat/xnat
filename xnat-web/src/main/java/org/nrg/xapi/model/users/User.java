@@ -1,7 +1,6 @@
 package org.nrg.xapi.model.users;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
@@ -13,6 +12,7 @@ import org.nrg.xft.security.UserI;
 import java.util.Date;
 
 @ApiModel(description = "Contains the properties that define a user on the system.")
+@JsonIgnoreProperties(value = {"FullName", "Password", "Salt", "XdatUser"}, ignoreUnknown = true)
 public class User {
     public User() {
     }
@@ -45,7 +45,6 @@ public class User {
      * The user's unique key.
      **/
     @ApiModelProperty(value = "The user's unique key.")
-    @JsonProperty("id")
     public Integer getId() {
         return _id;
     }
@@ -58,7 +57,6 @@ public class User {
      * The user's login name.
      **/
     @ApiModelProperty(value = "The user's login name.")
-    @JsonProperty("username")
     public String getUsername() {
         return _username;
     }
@@ -71,7 +69,6 @@ public class User {
      * The user's first name.
      **/
     @ApiModelProperty(value = "The user's first name.")
-    @JsonProperty("firstName")
     public String getFirstName() {
         return _firstName;
     }
@@ -85,7 +82,6 @@ public class User {
      * The user's last name.
      **/
     @ApiModelProperty(value = "The user's last name.")
-    @JsonProperty("lastName")
     public String getLastName() {
         return _lastName;
     }
@@ -99,7 +95,6 @@ public class User {
      * The user's _email address.
      **/
     @ApiModelProperty(value = "The user's email address.")
-    @JsonProperty("email")
     public String getEmail() {
         return _email;
     }
@@ -112,7 +107,6 @@ public class User {
      * Whether the user is a site administrator.
      **/
     @ApiModelProperty(value = "Whether the user is a site administrator.")
-    @JsonProperty("admin")
     public boolean isAdmin() {
         return _isAdmin;
     }
@@ -125,7 +119,6 @@ public class User {
      * Whether the user is enabled.
      **/
     @ApiModelProperty(value = "Whether the user is enabled.")
-    @JsonProperty("enabled")
     public boolean isEnabled() {
         return _isEnabled;
     }
@@ -138,7 +131,6 @@ public class User {
      * Whether the user is verified.
      **/
     @ApiModelProperty(value = "Whether the user is verified.")
-    @JsonProperty("verified")
     public boolean isVerified() {
         return _isVerified;
     }
@@ -148,24 +140,9 @@ public class User {
     }
 
     /**
-     * The user's primary database (deprecated).
-     **/
-    @ApiModelProperty(value = "The user's primary database (deprecated).")
-    @JsonProperty("dbName")
-    public String getDbName() {
-        return _dbName;
-    }
-
-    @SuppressWarnings("unused")
-    public void setDbName(String dbName) {
-        _dbName = dbName;
-    }
-
-    /**
-     * The user's encrypted _password.
+     * The user's encrypted password.
      **/
     @ApiModelProperty(value = "The user's encrypted password.")
-    @JsonProperty("password")
     public String getPassword() {
         return _password;
     }
@@ -178,7 +155,6 @@ public class User {
      * The _salt used to encrypt the user's _password.
      **/
     @ApiModelProperty(value = "The salt used to encrypt the user's password.")
-    @JsonProperty("salt")
     public String getSalt() {
         return _salt;
     }
@@ -192,7 +168,6 @@ public class User {
      * The date and time the user record was last modified.
      **/
     @ApiModelProperty(value = "The date and time the user record was last modified.")
-    @JsonProperty("lastModified")
     public Date getLastModified() {
         return _lastModified;
     }
@@ -205,7 +180,6 @@ public class User {
      * The user's authorization record used when logging in.
      **/
     @ApiModelProperty(value = "The user's authorization record used when logging in.")
-    @JsonProperty("authorization")
     public UserAuth getAuthorization() {
         return _authorization;
     }
@@ -215,32 +189,9 @@ public class User {
         _authorization = authorization;
     }
 
-    @JsonIgnore
+    @ApiModelProperty(value = "The user's full name.")
     public String getFullName() {
         return String.format("%s %s", getFirstName(), getLastName());
-    }
-
-    @JsonIgnore
-    public XdatUser getXDATUser(final UserI requester) {
-        final XdatUser user;
-        if (StringUtils.isNotBlank(_username)) {
-            user = XDATUser.getXdatUsersByLogin(_username, requester, true);
-        } else if (_id != null) {
-            user = AutoXdatUser.getXdatUsersByXdatUserId(_id, requester, true);
-        } else {
-            user = null;
-        }
-        if (user != null) {
-            return user;
-        }
-        final XDATUser newUser = new XDATUser();
-        newUser.setLogin(_username);
-        newUser.setFirstname(_firstName);
-        newUser.setLastname(_lastName);
-        newUser.setEmail(_email);
-        newUser.setPrimaryPassword(_password);
-        newUser.setSalt(_salt);
-        return newUser;
     }
 
     @Override

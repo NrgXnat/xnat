@@ -8,11 +8,11 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import org.apache.commons.beanutils.BeanUtils;
+import org.nrg.framework.beans.Beans;
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
-import org.nrg.prefs.beans.PreferenceBeanMixIn;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.helpers.prearchive.PrearcConfig;
@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Configuration for the XNAT root application context. This contains all of the basic infrastructure for initializing
+ * Configuration for the XNAT root application context. This contains all of the F infrastructure for initializing
  * and bootstrapping the site, including data source configuration, transaction and session management, and site
  * configuration preferences.
  * <p>
@@ -102,7 +102,7 @@ public class RootConfig {
     }
 
     @Bean
-    public Jackson2ObjectMapperBuilder objectMapperBuilder() {
+    public Jackson2ObjectMapperBuilder objectMapperBuilder() throws NrgServiceException {
         return new Jackson2ObjectMapperBuilder()
                 .serializationInclusion(JsonInclude.Include.NON_NULL)
                 .failOnEmptyBeans(false)
@@ -113,10 +113,8 @@ public class RootConfig {
     }
 
     @Bean
-    public Map<Class<?>, Class<?>> mixIns() {
-        final Map<Class<?>, Class<?>> mixIns = new HashMap<>();
-        mixIns.put(SiteConfigPreferences.class, PreferenceBeanMixIn.class);
-        return mixIns;
+    public Map<Class<?>, Class<?>> mixIns() throws NrgServiceException {
+        return Beans.getMixIns();
     }
 
     @Bean
@@ -138,8 +136,8 @@ public class RootConfig {
     }
 
     @Bean
-    public SerializerService serializerService() {
-        return new SerializerService();
+    public SerializerService serializerService(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
+        return new SerializerService(objectMapperBuilder);
     }
 
     @Bean

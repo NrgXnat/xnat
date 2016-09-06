@@ -2,6 +2,8 @@ package org.nrg.xnat.configuration;
 
 import org.nrg.automation.runners.ScriptRunnerOutputAdapter;
 import org.nrg.automation.services.ScriptRunnerService;
+import org.nrg.automation.services.ScriptService;
+import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.automation.services.impl.DefaultScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
@@ -19,8 +21,8 @@ import java.util.Map;
 public class AutomationConfig {
 
     @Bean
-    public ScriptRunnerService scriptRunnerService() {
-        final DefaultScriptRunnerService service = new DefaultScriptRunnerService();
+    public ScriptRunnerService scriptRunnerService(final ScriptService scriptService, final ScriptTriggerService triggerService) {
+        final DefaultScriptRunnerService service = new DefaultScriptRunnerService(scriptService, triggerService);
         service.setRunnerPackages(Collections.singletonList("org.nrg.automation.runners"));
         return service;
     }

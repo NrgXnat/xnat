@@ -1530,7 +1530,7 @@ public abstract class SecureResource extends Resource {
         }
 
         try {
-            List<String> userResourceWhitelist = getSerializer().deserializeJson(config, TYPE_REFERENCE_LIST_STRING);
+            List<String> userResourceWhitelist = getSerializer().deserializeJson(config, SerializerService.TYPE_REF_LIST_STRING);
             if (userResourceWhitelist != null) {
                 return userResourceWhitelist.contains(user.getUsername());
             }
@@ -1541,8 +1541,6 @@ public abstract class SecureResource extends Resource {
         }
         return false;
     }
-
-    protected final static TypeReference<ArrayList<String>> TYPE_REFERENCE_LIST_STRING = new TypeReference<ArrayList<String>>() {};
 
     private static final Map<String, List<FilteredResourceHandlerI>> handlers = Maps.newConcurrentMap();
 

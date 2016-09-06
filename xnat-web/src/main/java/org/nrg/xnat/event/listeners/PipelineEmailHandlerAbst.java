@@ -137,7 +137,7 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
 
                     if (StringUtils.isNotBlank(comments)) {
                         try {
-                            params.putAll(getSerializer().deserializeJson(comments, new TypeReference<HashMap<String, String>>(){}));
+                            params.putAll(getSerializer().deserializeJson(comments, SerializerService.TYPE_REF_MAP_STRING_STRING));
                         } catch (Exception e1) {
                             // Do nothing. This isn't necessarily a problem.
                             params.put("comments",comments);

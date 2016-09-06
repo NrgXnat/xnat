@@ -1,6 +1,5 @@
 package org.nrg.xapi.rest.notifications;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
@@ -26,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -117,7 +115,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                 } else if (StringUtils.equals(name, "emailRecipientUpdate")) {
                     _notificationsPrefs.setEmailRecipientUpdate(properties.getProperty(name));
                 } else if (StringUtils.equals(name, "smtpServer")) {
-                    _notificationsPrefs.setSmtpServer(_serializer.deserializeJson(properties.getProperty(name), TYPE_REF_HASHMAP_STRING_STRING));
+                    _notificationsPrefs.setSmtpServer(_serializer.deserializeJson(properties.getProperty(name), SerializerService.TYPE_REF_MAP_STRING_STRING));
                 } else {
                     _notificationsPrefs.set(properties.getProperty(name), name);
                 }
@@ -829,7 +827,6 @@ public class NotificationsApi extends AbstractXapiRestController {
 
     private static final Logger                                 _log                           = LoggerFactory.getLogger(NotificationsApi.class);
     private static final String                                 NOT_SET                        = "NotSet";
-    private final static TypeReference<HashMap<String, String>> TYPE_REF_HASHMAP_STRING_STRING = new TypeReference<HashMap<String, String>>() {};
 
     private final NotificationsPreferences _notificationsPrefs;
     private final JavaMailSenderImpl       _javaMailSender;

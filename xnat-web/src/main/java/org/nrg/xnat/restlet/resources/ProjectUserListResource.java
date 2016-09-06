@@ -13,6 +13,7 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -101,7 +102,7 @@ public class ProjectUserListResource extends SecureResource {
         final String config = configService.getConfigContents("user-resource-whitelist", "whitelist.json", Scope.Project, projectId);
         if (!StringUtils.isBlank(config)) {
             try {
-                List<String> projectUserResourceWhitelist = getSerializer().deserializeJson(config, TYPE_REFERENCE_LIST_STRING);
+                List<String> projectUserResourceWhitelist = getSerializer().deserializeJson(config, SerializerService.TYPE_REF_LIST_STRING);
                 if (projectUserResourceWhitelist != null) {
                     return projectUserResourceWhitelist.contains(getUser().getUsername());
                 }

@@ -6,7 +6,7 @@ import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.processors.XnatPluginBean;
+import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;

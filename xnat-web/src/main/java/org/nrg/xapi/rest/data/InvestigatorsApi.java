@@ -10,7 +10,6 @@ import org.nrg.xdat.om.XnatInvestigatordata;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
-import org.nrg.xdat.security.services.RoleRepositoryServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;

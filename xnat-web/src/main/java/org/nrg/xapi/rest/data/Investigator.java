@@ -1,7 +1,6 @@
 package org.nrg.xapi.rest.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.apache.commons.lang3.NotImplementedException;
 import org.nrg.xdat.bean.XnatInvestigatordataBean;
 import org.nrg.xdat.model.XnatInvestigatordataI;
 import org.nrg.xdat.om.XnatInvestigatordata;
@@ -19,6 +18,10 @@ import java.util.*;
  * associated.
  */
 public class Investigator implements XnatInvestigatordataI {
+    public Investigator() {
+        //
+    }
+
     public Investigator(final XnatInvestigatordataI investigator, final Collection<String> primaryProjects, final Collection<String> investigatorProjects) {
         _xnatInvestigatordataId = investigator.getXnatInvestigatordataId();
         _id = investigator.getId();
@@ -65,7 +68,7 @@ public class Investigator implements XnatInvestigatordataI {
 
     @Override
     public void setTitle(final String title) {
-        throw new NotImplementedException("Set methods on this class are not implemented: the class is meant to be read-only and only for reference purposes.");
+        _title = title;
     }
 
     @Override
@@ -75,7 +78,7 @@ public class Investigator implements XnatInvestigatordataI {
 
     @Override
     public void setFirstname(final String firstname) {
-        throw new NotImplementedException("Set methods on this class are not implemented: the class is meant to be read-only and only for reference purposes.");
+        _firstname = firstname;
     }
 
     @Override
@@ -85,7 +88,7 @@ public class Investigator implements XnatInvestigatordataI {
 
     @Override
     public void setLastname(final String lastname) {
-        throw new NotImplementedException("Set methods on this class are not implemented: the class is meant to be read-only and only for reference purposes.");
+        _lastname = lastname;
     }
 
     @Override
@@ -95,7 +98,7 @@ public class Investigator implements XnatInvestigatordataI {
 
     @Override
     public void setInstitution(final String institution) {
-        throw new NotImplementedException("Set methods on this class are not implemented: the class is meant to be read-only and only for reference purposes.");
+        _institution = institution;
     }
 
     @Override
@@ -105,7 +108,7 @@ public class Investigator implements XnatInvestigatordataI {
 
     @Override
     public void setDepartment(final String department) {
-        throw new NotImplementedException("Set methods on this class are not implemented: the class is meant to be read-only and only for reference purposes.");
+        _department = department;
     }
 
     @Override
@@ -115,7 +118,7 @@ public class Investigator implements XnatInvestigatordataI {
 
     @Override
     public void setEmail(final String email) {
-        throw new NotImplementedException("Set methods on this class are not implemented: the class is meant to be read-only and only for reference purposes.");
+        _email = email;
     }
 
     @Override
@@ -125,7 +128,7 @@ public class Investigator implements XnatInvestigatordataI {
 
     @Override
     public void setPhone(final String phone) {
-        throw new NotImplementedException("Set methods on this class are not implemented: the class is meant to be read-only and only for reference purposes.");
+        _phone = phone;
     }
 
     @Override
@@ -134,13 +137,18 @@ public class Investigator implements XnatInvestigatordataI {
     }
 
     @Override
-    public void setId(final String v) {
-        throw new NotImplementedException("Set methods on this class are not implemented: the class is meant to be read-only and only for reference purposes.");
+    public void setId(final String id) {
+        _id = id;
     }
 
     @Override
     public Integer getXnatInvestigatordataId() {
         return _xnatInvestigatordataId;
+    }
+
+    @SuppressWarnings("unused")
+    public void setXnatInvestigatordataId(final Integer xnatInvestigatordataId) {
+        _xnatInvestigatordataId = xnatInvestigatordataId;
     }
 
     /**
@@ -199,15 +207,15 @@ public class Investigator implements XnatInvestigatordataI {
         return Arrays.asList(projectIds);
     }
 
-    private final Integer _xnatInvestigatordataId;
-    private final String _id;
-    private final String _title;
-    private final String _firstname;
-    private final String _lastname;
-    private final String _institution;
-    private final String _department;
-    private final String _email;
-    private final String _phone;
+    private Integer _xnatInvestigatordataId;
+    private String _id;
+    private String _title;
+    private String _firstname;
+    private String _lastname;
+    private String _institution;
+    private String _department;
+    private String _email;
+    private String _phone;
     private final Set<String> _primaryProjects      = new HashSet<>();
     private final Set<String> _investigatorProjects = new HashSet<>();
 }

@@ -1,20 +1,19 @@
 package org.nrg.xapi.model.users;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.om.base.auto.AutoXdatUser;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.security.UserI;
 
 import java.util.Date;
 
 @ApiModel(description = "Contains the properties that define a user on the system.")
-@JsonIgnoreProperties(value = {"FullName", "Password", "Salt", "XdatUser"}, ignoreUnknown = true)
 public class User {
     public User() {
+        // Nothing to see here...
     }
 
     public User(final String username) {
@@ -28,11 +27,11 @@ public class User {
         _lastName = user.getLastname();
         _email = user.getEmail();
         _isAdmin = (user instanceof XDATUser && ((XDATUser) user).isSiteAdmin());
-        _dbName = "";
-        _password = "";
-        _salt = "";
-        _lastModified = null;
-        _authorization = null;
+        _dbName = user.getDBName();
+        _password = user.getPassword();
+        _salt = user.getSalt();
+        _lastModified = user.getLastModified();
+        _authorization = user.getAuthorization();
         _isEnabled = user.isEnabled();
         _isVerified = user.isVerified();
     }
@@ -143,6 +142,7 @@ public class User {
      * The user's encrypted password.
      **/
     @ApiModelProperty(value = "The user's encrypted password.")
+    @JsonIgnore
     public String getPassword() {
         return _password;
     }
@@ -155,6 +155,7 @@ public class User {
      * The _salt used to encrypt the user's _password.
      **/
     @ApiModelProperty(value = "The salt used to encrypt the user's password.")
+    @JsonIgnore
     public String getSalt() {
         return _salt;
     }
@@ -180,23 +181,23 @@ public class User {
      * The user's authorization record used when logging in.
      **/
     @ApiModelProperty(value = "The user's authorization record used when logging in.")
-    public UserAuth getAuthorization() {
+    public UserAuthI getAuthorization() {
         return _authorization;
     }
 
     @SuppressWarnings("unused")
-    public void setAuthorization(UserAuth authorization) {
+    public void setAuthorization(UserAuthI authorization) {
         _authorization = authorization;
     }
 
     @ApiModelProperty(value = "The user's full name.")
+    @JsonIgnore
     public String getFullName() {
         return String.format("%s %s", getFirstName(), getLastName());
     }
 
     @Override
     public String toString() {
-
         return "class User {\n" +
                "  id: " + _id + "\n" +
                "  username: " + _username + "\n" +
@@ -211,17 +212,17 @@ public class User {
                "}\n";
     }
 
-    private Integer _id        = null;
-    private String  _username  = null;
-    private String  _firstName = null;
-    private String  _lastName  = null;
-    private String  _email     = null;
-    private boolean _isAdmin;
-    private String _dbName = null;
-    private String _password = null;
-    private String _salt = null;
-    private Date _lastModified = null;
-    private UserAuth _authorization = null;
-    private boolean _isEnabled;
-    private boolean _isVerified;
+    private Integer   _id;
+    private String    _username;
+    private String    _firstName;
+    private String    _lastName;
+    private String    _email;
+    private String    _dbName;
+    private String    _password;
+    private String    _salt;
+    private Date      _lastModified;
+    private UserAuthI _authorization;
+    private boolean   _isAdmin;
+    private boolean   _isEnabled;
+    private boolean   _isVerified;
 }

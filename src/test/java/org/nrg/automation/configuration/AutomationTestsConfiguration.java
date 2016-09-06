@@ -1,6 +1,8 @@
 package org.nrg.automation.configuration;
 
 import org.nrg.automation.services.ScriptRunnerService;
+import org.nrg.automation.services.ScriptService;
+import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.automation.services.impl.DefaultScriptRunnerService;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.framework.test.OrmTestConfiguration;
@@ -16,8 +18,8 @@ import java.util.Collections;
 @Import(OrmTestConfiguration.class)
 public class AutomationTestsConfiguration {
     @Bean
-    public ScriptRunnerService scriptRunnerService() {
-        return new DefaultScriptRunnerService() {{
+    public ScriptRunnerService scriptRunnerService(final ScriptService scriptService, final ScriptTriggerService triggerService) {
+        return new DefaultScriptRunnerService(scriptService, triggerService) {{
             setRunnerPackages(Collections.singletonList("org.nrg.automation.runners"));
         }};
     }

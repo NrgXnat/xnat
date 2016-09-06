@@ -11,6 +11,7 @@ package org.nrg.automation.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.automation.configuration.AutomationTestsConfiguration;
@@ -27,10 +28,7 @@ import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -49,18 +47,10 @@ public class TestScriptTriggerAndTemplateServices {
     public static final String EVENT_ID_1 = "Something happened!";
     public static final String EVENT_ID_2 = "Something else happened!";
     public static final String EVENT_CLASS = "org.nrg.xft.event.entities.WorkflowStatusEvent";
-	public static final Map<String,List<String>> EVENT_FILTERS;
-	public static final Map<String,String> EVENT_FILTER;
-	public static final String STATUS_COMPLETE = "Complete";
-	
-	static {
-	 	EVENT_FILTERS = Maps.newHashMap();
-	 	EVENT_FILTER = Maps.newHashMap();
-		final List<String> filterValues = Lists.newArrayList(); 
-		filterValues.add(STATUS_COMPLETE);
-		EVENT_FILTERS.put("status", filterValues);
-		EVENT_FILTER.put("status", STATUS_COMPLETE);
-	}
+    public static final String STATUS_COMPLETE = "Complete";
+    public static final Map<String,String> EVENT_FILTER = new HashMap<String, String>() {{
+        put("status", STATUS_COMPLETE);
+    }};
 
     @Test
     public void testSimpleScript() {

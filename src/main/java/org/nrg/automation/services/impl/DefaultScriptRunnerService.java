@@ -19,10 +19,10 @@ import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.inject.Inject;
 import javax.script.ScriptEngine;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -34,6 +34,11 @@ import java.util.Map.Entry;
  */
 @Service
 public class DefaultScriptRunnerService implements ScriptRunnerService, InitializingBean {
+    @Autowired
+    public DefaultScriptRunnerService(final ScriptService scriptService, final ScriptTriggerService triggerService) {
+        _scriptService = scriptService;
+        _triggerService = triggerService;
+    }
 
     /**
      * Invoked by a BeanFactory after it has set all bean properties supplied
@@ -851,12 +856,10 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     private static final Logger _log = LoggerFactory.getLogger(DefaultScriptRunnerService.class);
 
     /** The _script service. */
-    @Inject
-    private ScriptService _scriptService;
+    private final ScriptService _scriptService;
 
     /** The _trigger service. */
-    @Inject
-    private ScriptTriggerService _triggerService;
+    private final ScriptTriggerService _triggerService;
 
     /** The _runners. */
     private final Map<String, Class<? extends ScriptRunner>> _runners = new HashMap<>();

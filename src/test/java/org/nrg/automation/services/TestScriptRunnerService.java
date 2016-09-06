@@ -12,13 +12,13 @@ import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.python.google.common.collect.Lists;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,19 +60,11 @@ public class TestScriptRunnerService {
     public static final String SCRIPT_ID_3 = "three";
     public static final String SCRIPT_LABEL_3 = "label three";
     public static final String EVENT_CLASS = "org.nrg.xft.event.entities.WorkflowStatusEvent";
-	public static final Map<String,List<String>> EVENT_FILTERS;
-	public static final Map<String,String> EVENT_FILTER;
-	public static final String STATUS_COMPLETE = "Complete";
-	
-	static {
-	 	EVENT_FILTERS = Maps.newHashMap();
-	 	EVENT_FILTER = Maps.newHashMap();
-		final List<String> filterValues = Lists.newArrayList(); 
-		filterValues.add(STATUS_COMPLETE);
-		EVENT_FILTERS.put("status", filterValues);
-		EVENT_FILTER.put("status", STATUS_COMPLETE);
-	}
-    
+    public static final String STATUS_COMPLETE = "Complete";
+    public static final Map<String,List<String>> EVENT_FILTERS = new HashMap<String, List<String>>() {{
+        put("status", Collections.singletonList(STATUS_COMPLETE));
+    }};
+
     @Test
     public void testRunnerSerialization() throws JsonProcessingException {
         final ObjectMapper mapper = new ObjectMapper();

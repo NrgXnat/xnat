@@ -9,7 +9,6 @@ import java.util.List;
  * ScriptService interface.
  */
 public interface ScriptService extends BaseHibernateService<Script> {
-
     /**
      * A convenience test for the existence of a script with the indicated script ID.
      *

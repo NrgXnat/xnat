@@ -2,6 +2,8 @@ package org.nrg.xdat.preferences;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.annotations.XnatMixIn;
+import org.nrg.framework.beans.ProxiedBeanMixIn;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
@@ -25,6 +27,7 @@ import java.sql.SQLException;
                    description = "Manages site configurations and settings for the XNAT system.",
                    properties = "META-INF/xnat/preferences/site-config.properties",
                    strict = false)
+@XnatMixIn(ProxiedBeanMixIn.class)
 public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 

@@ -1,8 +1,9 @@
 package org.nrg.xdat.preferences;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.annotations.XnatMixIn;
+import org.nrg.framework.beans.ProxiedBeanMixIn;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.api.NotificationType;
@@ -26,6 +27,7 @@ import java.util.Map;
                    description = "Manages notifications and email settings for the XNAT system.",
                    properties = "META-INF/xnat/preferences/notifications.properties",
                    strict = false)
+@XnatMixIn(ProxiedBeanMixIn.class)
 public class NotificationsPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String NOTIFICATIONS_TOOL_ID = "notifications";
 

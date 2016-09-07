@@ -13,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 /**
@@ -93,6 +95,27 @@ public abstract class AbstractXapiRestController {
             _log.info("User {} requested by {}, but not found", username, user.getUsername());
             return null;
         }
+    }
+
+    /**
+     * Indicates whether the user is permitted to access a particular REST function. Access is granted if the
+     * request URL matches one of the patterns specified in the open URLs list <i>or</i> if the user is a site
+     * administrator <i>or</i> the user's login name matches one of the submitted <b>id</b> values. The latter case is
+     * useful to test whether a user can edit the corresponding user account or is an owner of a project, for example.
+     *
+     * @param request     The request with a URI path to test.
+     * @param openUrls    The list of open URLs configured for the system.
+     * @param ids         One or more IDs that can be tested against the username.
+     *
+     * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
+     */
+    protected HttpStatus isPermitted(final HttpServletRequest request, final Collection<AntPathRequestMatcher> openUrls, final String... ids) {
+        for (final AntPathRequestMatcher matcher : openUrls) {
+            if (matcher.matches(request)) {
+                return null;
+            }
+        }
+        return isPermitted(ids);
     }
 
     /**
@@ -178,5 +201,3 @@ public abstract class AbstractXapiRestController {
     private final UserManagementServiceI _userManagementService;
     private final RoleHolder             _roleHolder;
 }
-
-

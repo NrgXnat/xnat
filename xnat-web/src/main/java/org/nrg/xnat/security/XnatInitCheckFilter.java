@@ -27,9 +27,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
 
 public class XnatInitCheckFilter extends GenericFilterBean {
     @Autowired
@@ -55,7 +52,7 @@ public class XnatInitCheckFilter extends GenericFilterBean {
 
             if (isAnonymous) {
                 String header = request.getHeader("Authorization");
-                if (header != null && header.startsWith("Basic ") && !isInitializerPath(uri)) {
+                if (header != null && header.startsWith("Basic ") && !_appInfo.isInitPathRequest(request)) {
                     // Users that authenticated using basic authentication receive an error message informing
                     // them that the system is not yet initialized.
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Site has not yet been configured.");
@@ -65,13 +62,13 @@ public class XnatInitCheckFilter extends GenericFilterBean {
 
             final String referer = request.getHeader("Referer");
 
-            if (isInitializerPath(uri) ||
-                _configurationPathPattern.matcher(uri).matches() ||
-                _nonAdminErrorPathPattern.matcher(uri).matches() ||
-                isExemptedPath(uri)) {
+            if (_appInfo.isInitPathRequest(request) ||
+                _appInfo.isConfigPathRequest(request) ||
+                _appInfo.isNonAdminErrorPathRequest(request) ||
+                _appInfo.isExemptedPathRequest(request)) {
                 //If you're already on the configuration page, error page, or expired password page, continue on without redirect.
                 chain.doFilter(req, res);
-            } else if (referer != null && (_configurationPathPattern.matcher(referer).matches() || _nonAdminErrorPathPattern.matcher(referer).matches() || isExemptedPath(referer)) && !uri.contains("/app/template") && !uri.contains("/app/screen") && !uri.endsWith(".vm") && !uri.equals("/")) {
+            } else if (referer != null && (_appInfo.isConfigPathRequest(referer) || _appInfo.isNonAdminErrorPathRequest(referer) || _appInfo.isExemptedPathRequest(referer)) && !uri.contains("/app/template") && !uri.contains("/app/screen") && !uri.endsWith(".vm") && !uri.equals("/")) {
                 //If you're on a request within the configuration page (or error page or expired password page), continue on without redirect. This checks that the referer is the configuration page and that
                 // the request is not for another page (preventing the user from navigating away from the Configuration page via the menu bar).
                 chain.doFilter(req, res);
@@ -85,71 +82,23 @@ public class XnatInitCheckFilter extends GenericFilterBean {
                     final String serverPath = XnatHttpUtils.getServerRoot(request);
                     if (Roles.isSiteAdmin(user)) {
                         if (_log.isWarnEnabled()) {
-                            _log.warn("Admin user {} has logged into the uninitialized server and is being redirected to {}", user.getUsername(), serverPath + _configurationPath);
+                            _log.warn("Admin user {} has logged into the uninitialized server and is being redirected to {}", user.getUsername(), serverPath + _appInfo.getConfigPath());
                         }
                         //Otherwise, if the user has administrative permissions, direct the user to the configuration page.
-                        response.sendRedirect(serverPath + _configurationPath);
+                        response.sendRedirect(serverPath + _appInfo.getConfigPath());
                     } else {
                         if (_log.isWarnEnabled()) {
-                            _log.warn("Non-admin user {} has logged into the uninitialized server and is being redirected to {}", user.getUsername(), serverPath + _nonAdminErrorPath);
+                            _log.warn("Non-admin user {} has logged into the uninitialized server and is being redirected to {}", user.getUsername(), serverPath + _appInfo.getNonAdminErrorPath());
                         }
                         //The system is not initialized but the user does not have administrative permissions. Direct the user to an error page.
-                        response.sendRedirect(serverPath + _nonAdminErrorPath);
+                        response.sendRedirect(serverPath + _appInfo.getNonAdminErrorPath());
                     }
                 }
             }
         }
     }
 
-    public void setInitializationPaths(final List<String> initializationPaths) {
-        for (final String initializationPath : initializationPaths) {
-            _initializationPathPatterns.add(Pattern.compile("^(https*://.*)?" + initializationPath + ".*$"));
-        }
-    }
-
-    public void setConfigurationPath(String configurationPath) {
-        _configurationPath = configurationPath;
-        _configurationPathPattern = Pattern.compile("^(https*://.*)?" + configurationPath + "/*");
-    }
-
-    public void setNonAdminErrorPath(String nonAdminErrorPath) {
-        _nonAdminErrorPath = nonAdminErrorPath;
-        _nonAdminErrorPathPattern = Pattern.compile("^(https*://.*)?" + nonAdminErrorPath + "/*");
-    }
-
-    public void setExemptedPaths(List<String> exemptedPaths) {
-        _exemptedPaths.clear();
-        _exemptedPaths.addAll(exemptedPaths);
-    }
-
-    private boolean isExemptedPath(final String path) {
-        for (final String exemptedPath : _exemptedPaths) {
-            if (path.split("\\?")[0].endsWith(exemptedPath)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isInitializerPath(final String uri) {
-        for (final Pattern initializationPathPattern : _initializationPathPatterns) {
-            if (initializationPathPattern.matcher(uri).matches()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private static Logger _log = LoggerFactory.getLogger(XnatInitCheckFilter.class);
 
     private final XnatAppInfo _appInfo;
-
-    private String  _configurationPath;
-    private String  _nonAdminErrorPath;
-    private Pattern _configurationPathPattern;
-    private Pattern _nonAdminErrorPathPattern;
-
-    private List<Pattern> _initializationPathPatterns = new ArrayList<>();
-
-    private final List<String> _exemptedPaths = new ArrayList<>();
 }

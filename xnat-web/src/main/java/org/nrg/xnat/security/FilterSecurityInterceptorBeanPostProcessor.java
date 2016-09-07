@@ -13,6 +13,7 @@ package org.nrg.xnat.security;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -25,25 +26,14 @@ import org.springframework.security.web.access.intercept.FilterSecurityIntercept
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProcessor {
     @Autowired
-    public FilterSecurityInterceptorBeanPostProcessor(final SiteConfigPreferences preferences) {
+    public FilterSecurityInterceptorBeanPostProcessor(final SiteConfigPreferences preferences, final XnatAppInfo appInfo) {
         _preferences = preferences;
-    }
-
-    public void setOpenUrls(List<String> openUrls) {
-        _openUrls.clear();
-        _openUrls.addAll(openUrls);
-    }
-
-    public void setAdminUrls(List<String> adminUrls) {
-        _adminUrls.clear();
-        _adminUrls.addAll(adminUrls);
+        _appInfo = appInfo;
     }
 
     @Override
@@ -70,27 +60,25 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
     public ExpressionBasedFilterInvocationSecurityMetadataSource getMetadataSource(boolean requiredLogin) {
         final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
 
-        for (final String openUrl : _openUrls) {
+        for (final AntPathRequestMatcher matcher : _appInfo.getOpenUrls().values()) {
             if (_log.isDebugEnabled()) {
-                _log.debug("Setting permitAll on the open URL: " + openUrl);
+                _log.debug("Setting permitAll on the open URL: " + matcher.getPattern());
             }
-
-            map.put(new AntPathRequestMatcher(openUrl), SecurityConfig.createList(PERMIT_ALL));
+            map.put(matcher, SecurityConfig.createList(PERMIT_ALL));
         }
 
-        for (String adminUrl : _adminUrls) {
+        for (final AntPathRequestMatcher matcher : _appInfo.getAdminUrls().values()) {
             if (_log.isDebugEnabled()) {
-                _log.debug("Setting permissions on the admin URL: " + adminUrl);
+                _log.debug("Setting permissions on the admin URL: " + matcher.getPattern());
             }
-
-            map.put(new AntPathRequestMatcher(adminUrl), SecurityConfig.createList(ADMIN_EXPRESSION));
+            map.put(matcher, SecurityConfig.createList(ADMIN_EXPRESSION));
         }
 
-        final String nonopen = requiredLogin ? DEFAULT_EXPRESSION : PERMIT_ALL;
+        final String secure = requiredLogin ? DEFAULT_EXPRESSION : PERMIT_ALL;
         if (_log.isDebugEnabled()) {
-            _log.debug("Setting " + nonopen + " on the default pattern: " + DEFAULT_PATTERN);
+            _log.debug("Setting " + secure + " on the default pattern: " + DEFAULT_PATTERN);
         }
-        map.put(new AntPathRequestMatcher(DEFAULT_PATTERN), SecurityConfig.createList(nonopen));
+        map.put(new AntPathRequestMatcher(DEFAULT_PATTERN), SecurityConfig.createList(secure));
         return new ExpressionBasedFilterInvocationSecurityMetadataSource(map, new DefaultWebSecurityExpressionHandler());
     }
 
@@ -115,7 +103,5 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
     private static final String DEFAULT_EXPRESSION = "hasRole('ROLE_USER')";
 
     private final SiteConfigPreferences _preferences;
-
-    private final List<String> _openUrls = new ArrayList<>();
-    private final List<String> _adminUrls = new ArrayList<>();
+    private final XnatAppInfo           _appInfo;
 }

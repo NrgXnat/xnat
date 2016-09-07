@@ -1,10 +1,6 @@
 package org.nrg.xnat.initialization;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.nrg.config.exceptions.SiteConfigurationException;
-import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
@@ -20,9 +16,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Primary;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.vote.AuthenticatedVoter;
@@ -46,7 +39,6 @@ import org.springframework.security.web.session.ConcurrentSessionFilter;
 
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 @Configuration
@@ -124,15 +116,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor(final SerializerService serializer, final SiteConfigPreferences preferences) throws IOException {
-        final Resource resource = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
-        try (final InputStream inputStream = resource.getInputStream()) {
-            final HashMap<String, ArrayList<String>>         urlMap        = serializer.deserializeYaml(inputStream, SerializerService.TYPE_REF_MAP_STRING_LIST_STRING);
-            final FilterSecurityInterceptorBeanPostProcessor postProcessor = new FilterSecurityInterceptorBeanPostProcessor(preferences);
-            postProcessor.setOpenUrls(urlMap.get("openUrls"));
-            postProcessor.setAdminUrls(urlMap.get("adminUrls"));
-            return postProcessor;
-        }
+    public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor(final SiteConfigPreferences preferences, final XnatAppInfo appInfo) throws IOException {
+        return new FilterSecurityInterceptorBeanPostProcessor(preferences, appInfo);
     }
 
     @Bean
@@ -203,38 +188,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatInitCheckFilter xnatInitCheckFilter(final SerializerService serializer, final XnatAppInfo appInfo) throws IOException {
-        final Resource resource = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/initialization-urls.yaml");
-        try (final InputStream inputStream = resource.getInputStream()) {
-            final XnatInitCheckFilter filter = new XnatInitCheckFilter(appInfo);
-            final JsonNode            paths  = serializer.deserializeYaml(inputStream);
-            filter.setConfigurationPath(paths.get("configPath").asText());
-            filter.setNonAdminErrorPath(paths.get("nonAdminErrorPath").asText());
-            filter.setInitializationPaths(nodeToList(paths.get("initPaths")));
-            filter.setExemptedPaths(nodeToList(paths.get("exemptedPaths")));
-            return filter;
-        }
+    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) throws IOException {
+        return new XnatInitCheckFilter(appInfo);
     }
 
     @Bean
     public XnatDatabaseUserDetailsService customDatabaseService(final XdatUserAuthService userAuthService, final DataSource dataSource) {
         return new XnatDatabaseUserDetailsService(userAuthService, dataSource);
     }
-
-    protected List<String> nodeToList(final JsonNode node) {
-        final List<String> list = new ArrayList<>();
-        if (node.isArray()) {
-            final ArrayNode arrayNode = (ArrayNode) node;
-            for (final JsonNode item : arrayNode) {
-                list.add(item.asText());
-            }
-        } else if (node.isTextual()) {
-            list.add(node.asText());
-        } else {
-            list.add(node.toString());
-        }
-        return list;
-    }
-
-    private static final ResourceLoader RESOURCE_LOADER = new DefaultResourceLoader();
 }

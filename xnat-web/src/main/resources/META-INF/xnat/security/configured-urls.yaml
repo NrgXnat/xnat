@@ -23,6 +23,7 @@ openUrls:
   - /data/services/sendemailverification*
   - /REST/services/sendemailverification*
   - /xapi/siteConfig/buildInfo
+  - /xapi/siteConfig/siteWideAlert*
   - /images/**
   - /scripts/**
   - /style/**

@@ -169,16 +169,21 @@ public class XnatAppInfo {
                         _log.info("The site was not flagged as initialized and initialized preference set to false. Setting system for initialization.");
                     }
                     for (String pref : _foundPreferences.keySet()) {
-                        _template.update(
-                                "UPDATE xhbm_preference SET value = ? WHERE name = ?",
-                                new Object[]{_foundPreferences.get(pref), pref}, new int[]{Types.VARCHAR, Types.VARCHAR}
-                                        );
-                        try {
-                            XDAT.getSiteConfigPreferences().set(_foundPreferences.get(pref), pref);
-                        } catch (InvalidPreferenceName e) {
-                            _log.error("", e);
-                        } catch (NullPointerException e) {
-                            _log.error("Error getting site config preferences.", e);
+                        if(_foundPreferences.get(pref)!=null) {
+                            _template.update(
+                                    "UPDATE xhbm_preference SET value = ? WHERE name = ?",
+                                    new Object[]{_foundPreferences.get(pref), pref}, new int[]{Types.VARCHAR, Types.VARCHAR}
+                            );
+                            try {
+                                XDAT.getSiteConfigPreferences().set(_foundPreferences.get(pref), pref);
+                            } catch (InvalidPreferenceName e) {
+                                _log.error("", e);
+                            } catch (NullPointerException e) {
+                                _log.error("Error getting site config preferences.", e);
+                            }
+                        }
+                        else{
+                            _log.warn("Preference "+pref+" was null.");
                         }
                     }
                 }

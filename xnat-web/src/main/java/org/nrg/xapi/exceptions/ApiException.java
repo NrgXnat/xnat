@@ -1,4 +1,4 @@
-package org.nrg.xapi.rest;
+package org.nrg.xapi.exceptions;
 
 public class ApiException extends Exception {
     public ApiException(int code, String msg) {

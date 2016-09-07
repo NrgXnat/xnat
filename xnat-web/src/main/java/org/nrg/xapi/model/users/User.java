@@ -1,6 +1,7 @@
 package org.nrg.xapi.model.users;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.xdat.entities.UserAuthI;
@@ -106,7 +107,7 @@ public class User {
      * Whether the user is a site administrator.
      **/
     @ApiModelProperty(value = "Whether the user is a site administrator.")
-    public boolean isAdmin() {
+    public Boolean isAdmin() {
         return _isAdmin;
     }
 
@@ -118,7 +119,7 @@ public class User {
      * Whether the user is enabled.
      **/
     @ApiModelProperty(value = "Whether the user is enabled.")
-    public boolean isEnabled() {
+    public Boolean isEnabled() {
         return _isEnabled;
     }
 
@@ -130,7 +131,7 @@ public class User {
      * Whether the user is verified.
      **/
     @ApiModelProperty(value = "Whether the user is verified.")
-    public boolean isVerified() {
+    public Boolean isVerified() {
         return _isVerified;
     }
 
@@ -142,7 +143,7 @@ public class User {
      * The user's encrypted password.
      **/
     @ApiModelProperty(value = "The user's encrypted password.")
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getPassword() {
         return _password;
     }
@@ -155,7 +156,7 @@ public class User {
      * The _salt used to encrypt the user's _password.
      **/
     @ApiModelProperty(value = "The salt used to encrypt the user's password.")
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getSalt() {
         return _salt;
     }
@@ -222,7 +223,7 @@ public class User {
     private String    _salt;
     private Date      _lastModified;
     private UserAuthI _authorization;
-    private boolean   _isAdmin;
-    private boolean   _isEnabled;
-    private boolean   _isVerified;
+    private Boolean   _isAdmin;
+    private Boolean   _isEnabled;
+    private Boolean   _isVerified;
 }

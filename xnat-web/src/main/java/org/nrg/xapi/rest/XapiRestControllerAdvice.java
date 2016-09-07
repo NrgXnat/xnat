@@ -4,6 +4,8 @@ import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xapi.exceptions.DataFormatException;
+import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -24,6 +26,16 @@ public class XapiRestControllerAdvice {
     @ExceptionHandler(EnabledDICOMReceiverWithDuplicatePortException.class)
     public ModelAndView handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final EnabledDICOMReceiverWithDuplicatePortException exception) {
         return handleException(request, exception.getMessage());
+    }
+
+    @ExceptionHandler(DataFormatException.class)
+    public ModelAndView handleDataFormatException(final HttpServletRequest request, final DataFormatException exception) {
+        return handleException(request, exception.getMessage(), exception);
+    }
+
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    public ModelAndView handleDataFormatException(final HttpServletRequest request, final ResourceAlreadyExistsException exception) {
+        return handleException(request, exception.getMessage(), exception);
     }
 
     @ExceptionHandler(NrgServiceException.class)

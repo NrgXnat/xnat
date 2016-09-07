@@ -7,7 +7,7 @@ import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.xapi.rest.NotFoundException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;

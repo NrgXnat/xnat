@@ -14,7 +14,6 @@ def vCargo = '1.4.18'
 def vSlf4j = '1.7.21'
 def vLog4j = '1.2.17'
 def vJunit = '4.12'
-// def vSaxon = '9.7.0-7'
 def vSaxon = '9.1.0.8'
 def vGroovy = '2.4.6'
 def vJython = '2.7.0'
@@ -50,6 +49,7 @@ apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'maven'
+apply plugin: 'jacoco'
 apply plugin: 'maven-publish'
 apply plugin: 'com.bmuschko.tomcat'
 apply plugin: 'com.bmuschko.cargo'
@@ -165,6 +165,17 @@ war {
                 'Build-Number': buildNumber,
                 'Implementation-Sha': revision,
                 'Implementation-Version': version
+    }
+}
+jacoco {
+    toolVersion = "0.7.6.201602180812"
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination "${buildDir}/jacocoHtml"
     }
 }
 

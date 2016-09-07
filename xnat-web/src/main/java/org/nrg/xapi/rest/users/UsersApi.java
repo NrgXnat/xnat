@@ -7,8 +7,11 @@ import org.jetbrains.annotations.Nullable;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.utilities.Patterns;
+import org.nrg.xapi.exceptions.DataFormatException;
+import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
-import org.nrg.xapi.rest.NotFoundException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXapiRestController;
@@ -194,70 +197,113 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Creates or updates the user object with the specified username.", notes = "Returns the updated serialized user object with the specified username.", response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully created or updated."),
+    @ApiOperation(value = "Updates the user object with the specified username.", notes = "Returns the updated serialized user object with the specified username.", response = User.class)
+    @ApiResponses({@ApiResponse(code = 201, message = "User successfully created."),
+                   @ApiResponse(code = 400, message = "The submitted data was invalid."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to create or update this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
+                   @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<User> usersIdPut(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") String username, @RequestBody User model) throws NotFoundException, PasswordComplexityException {
-        HttpStatus status = isPermitted(username);
+    @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    public ResponseEntity<User> createUser(@RequestBody final User model) throws NotFoundException, PasswordComplexityException, DataFormatException, UserInitException, ResourceAlreadyExistsException {
+        final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-        UserI user;
+
+        validateUser(model);
+
+        final UserI user = getUserManagementService().createUser();
+
+        if (user == null) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Failed to create a user object for user " + model.getUsername());
+        }
+
+        user.setLogin(model.getUsername());
+        user.setFirstname(model.getFirstName());
+        user.setLastname(model.getLastName());
+        user.setEmail(model.getEmail());
+        if (model.isEnabled() != null) {
+            user.setEnabled(model.isEnabled());
+        }
+        if (model.isVerified()) {
+            user.setVerified(model.isVerified());
+        }
+        user.setPassword(model.getPassword());
+        user.setAuthorization(model.getAuthorization());
+
+        fixPassword(user);
+
+        try {
+            getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
+            return new ResponseEntity<>(new User(user), HttpStatus.CREATED);
+        } catch (Exception e) {
+            _log.error("Error occurred modifying user " + user.getLogin());
+        }
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ApiOperation(value = "Updates the user object with the specified username.", notes = "Returns the updated serialized user object with the specified username.", response = User.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "User successfully updated."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to update this user."),
+                   @ApiResponse(code = 404, message = "User not found."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @RequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") final String username, @RequestBody final User model) throws NotFoundException, PasswordComplexityException, UserInitException {
+        final HttpStatus status = isPermitted(username);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+
+        final UserI user;
         try {
             user = getUserManagementService().getUser(username);
-        } catch (Exception e) {
-            //Create new User
-            user = getUserManagementService().createUser();
-            user.setLogin(username);
+        } catch (UserNotFoundException e) {
+            throw new NotFoundException("User with username " + username + " was not found.");
         }
+
         if (user == null) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Failed to retrieve or create a user object for user " + username);
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Failed to retrieve user object for user " + username);
         }
-        if ((StringUtils.isNotBlank(model.getFirstName())) && (!StringUtils.equals(model.getFirstName(), user.getFirstname()))) {
+
+        if ((StringUtils.isNotBlank(model.getUsername())) && (!StringUtils.equals(user.getUsername(), model.getUsername()))) {
+            user.setLogin(model.getUsername());
+        }
+        if ((StringUtils.isNotBlank(model.getFirstName())) && (!StringUtils.equals(user.getFirstname(), model.getFirstName()))) {
             user.setFirstname(model.getFirstName());
         }
-        if ((StringUtils.isNotBlank(model.getLastName())) && (!StringUtils.equals(model.getLastName(), user.getLastname()))) {
+        if ((StringUtils.isNotBlank(model.getLastName())) && (!StringUtils.equals(user.getLastname(), model.getLastName()))) {
             user.setLastname(model.getLastName());
         }
-        if ((StringUtils.isNotBlank(model.getEmail())) && (!StringUtils.equals(model.getEmail(), user.getEmail()))) {
+        if ((StringUtils.isNotBlank(model.getEmail())) && (!StringUtils.equals(user.getEmail(), model.getEmail()))) {
             user.setEmail(model.getEmail());
         }
-        if (model.isEnabled() != user.isEnabled()) {
-            user.setEnabled(model.isEnabled());
-            if (!model.isEnabled()) {
-                //When a user is disabled, deactivate all their AliasTokens
-                try {
-                    XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(user.getLogin());
-                } catch (Exception e) {
-                    _log.error("", e);
-                }
-            }
+        if ((StringUtils.isNotBlank(model.getPassword())) && (!StringUtils.equals(user.getPassword(), model.getPassword()))) {
+            user.setPassword(model.getPassword());
+            fixPassword(user);
         }
-        if (model.isVerified() != user.isVerified()) {
+        if (model.getAuthorization() != null && !model.getAuthorization().equals(user.getAuthorization())) {
+            user.setAuthorization(model.getAuthorization());
+        }
+        if (model.isEnabled() != null) {
+            user.setEnabled(model.isEnabled());
+        }
+        if (model.isVerified() != null) {
             user.setVerified(model.isVerified());
         }
 
-        final String password;
-        if (StringUtils.isNotBlank(model.getPassword())) {
-            password = model.getPassword();
-            if (!_passwordValidator.isValid(password, user)) {
-                throw new PasswordComplexityException(_passwordValidator.getMessage());
+        if (!user.isEnabled()) {
+            //When a user is disabled, deactivate all their AliasTokens
+            try {
+                XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(user.getLogin());
+            } catch (Exception e) {
+                _log.error("", e);
             }
-        } else {
-            password = RandomStringUtils.randomAscii(32);
         }
-        final String salt = Users.createNewSalt();
-        user.setPassword(new ShaPasswordEncoder(256).encodePassword(password, salt));
-        user.setPrimaryPassword_encrypt(true);
-        user.setSalt(salt);
 
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Modified, "", ""));
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(new User(user), HttpStatus.OK);
         } catch (Exception e) {
             _log.error("Error occurred modifying user " + user.getLogin());
         }
@@ -611,6 +657,50 @@ public class UsersApi extends AbstractXapiRestController {
             }
         }
         return located;
+    }
+
+    private void validateUser(final User model) throws DataFormatException, UserInitException, ResourceAlreadyExistsException {
+        final DataFormatException exception = new DataFormatException();
+
+        if (StringUtils.isBlank(model.getUsername())) {
+            exception.addMissing("username");
+        } else if (!Patterns.USERNAME.matcher(model.getUsername()).matches()) {
+            exception.addInvalid("username");
+        }
+
+        try {
+            final UserI user = getUserManagementService().getUser(model.getUsername());
+            if (user != null) {
+                throw new ResourceAlreadyExistsException("user", model.getUsername());
+            }
+        } catch (UserNotFoundException ignored) {
+            // This is actually what we want.
+        }
+
+        if (StringUtils.isBlank(model.getEmail())) {
+            exception.addMissing("email");
+        } else if (!Patterns.EMAIL.matcher(model.getEmail()).matches()) {
+            exception.addInvalid("email");
+        }
+
+        if (exception.hasDataFormatErrors()) {
+            throw exception;
+        }
+    }
+
+    private void fixPassword(final UserI user) throws PasswordComplexityException {
+        final String password = user.getPassword();
+        if (StringUtils.isNotBlank(password)) {
+            if (!_passwordValidator.isValid(password, user)) {
+                throw new PasswordComplexityException(_passwordValidator.getMessage());
+            }
+        } else {
+            user.setPassword(RandomStringUtils.randomAscii(32));
+        }
+        final String salt = Users.createNewSalt();
+        user.setPassword(new ShaPasswordEncoder(256).encodePassword(password, salt));
+        user.setPrimaryPassword_encrypt(true);
+        user.setSalt(salt);
     }
 
     @SuppressWarnings("unused")

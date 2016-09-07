@@ -1,7 +1,6 @@
 package org.nrg.xapi.model.users;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.xdat.entities.UserAuthI;
@@ -11,6 +10,13 @@ import org.nrg.xft.security.UserI;
 
 import java.util.Date;
 
+/**
+ * A transport container for user details. The {@link #isSecured() secured property} controls whether security-related
+ * properties like password and salt are available. When a new user object is created through one of the wrapper
+ * constructors, such as {@link #User(String)} or {@link #User(UserI)}, secure is set to true. This means that
+ * serializing beans with existing user accounts won't expose the password data. Newly created beans have secure set to
+ * false by default to allow for serializing the bean for REST calls with all data intact.
+ */
 @ApiModel(description = "Contains the properties that define a user on the system.")
 public class User {
     public User() {
@@ -35,6 +41,7 @@ public class User {
         _authorization = user.getAuthorization();
         _isEnabled = user.isEnabled();
         _isVerified = user.isVerified();
+        _secured = true;
     }
 
     public User(final XdatUser user) {
@@ -143,9 +150,8 @@ public class User {
      * The user's encrypted password.
      **/
     @ApiModelProperty(value = "The user's encrypted password.")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getPassword() {
-        return _password;
+        return _secured ? null : _password;
     }
 
     public void setPassword(String password) {
@@ -156,9 +162,8 @@ public class User {
      * The _salt used to encrypt the user's _password.
      **/
     @ApiModelProperty(value = "The salt used to encrypt the user's password.")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getSalt() {
-        return _salt;
+        return _secured ? null : _salt;
     }
 
     @SuppressWarnings("unused")
@@ -183,7 +188,7 @@ public class User {
      **/
     @ApiModelProperty(value = "The user's authorization record used when logging in.")
     public UserAuthI getAuthorization() {
-        return _authorization;
+        return _secured ? null : _authorization;
     }
 
     @SuppressWarnings("unused")
@@ -195,6 +200,15 @@ public class User {
     @JsonIgnore
     public String getFullName() {
         return String.format("%s %s", getFirstName(), getLastName());
+    }
+
+    @ApiModelProperty(value = "Indicates whether the user object is secured, which causes secure fields like password and salt to return null.")
+    public boolean isSecured() {
+        return _secured;
+    }
+
+    public void setSecured(final boolean secured) {
+        _secured = secured;
     }
 
     @Override
@@ -221,6 +235,7 @@ public class User {
     private String    _dbName;
     private String    _password;
     private String    _salt;
+    private boolean   _secured;
     private Date      _lastModified;
     private UserAuthI _authorization;
     private Boolean   _isAdmin;

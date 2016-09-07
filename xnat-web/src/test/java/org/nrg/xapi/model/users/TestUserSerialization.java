@@ -22,39 +22,73 @@ public class TestUserSerialization {
     }
 
     @Test
-    public void testHiddenProperties() throws IOException {
-        final User input = new User();
-        input.setUsername("name");
-        input.setEmail("foo@bar.com");
-        input.setPassword("password");
-        input.setSalt("salt");
-        input.setAdmin(false);
-        input.setEnabled(true);
+    public void testSecuredProperties() throws IOException {
+        final User secured = new User();
+        secured.setUsername("name");
+        secured.setEmail("foo@bar.com");
+        secured.setPassword("password");
+        secured.setSalt("salt");
+        secured.setAdmin(false);
+        secured.setEnabled(true);
+        secured.setSecured(true);
 
-        final String json = _serializer.toJson(input);
-        assertNotNull(json);
-        assertTrue(StringUtils.isNotBlank(json));
+        // Users are unsecured by default when created by default constructor.
+        final User unsecured = new User();
+        unsecured.setUsername("name");
+        unsecured.setEmail("foo@bar.com");
+        unsecured.setPassword("password");
+        unsecured.setSalt("salt");
+        unsecured.setAdmin(false);
+        unsecured.setEnabled(true);
+
+        final String secureJson = _serializer.toJson(secured);
+        assertNotNull(secureJson);
+        assertTrue(StringUtils.isNotBlank(secureJson));
+        final String unsecureJson = _serializer.toJson(unsecured);
+        assertNotNull(unsecureJson);
+        assertTrue(StringUtils.isNotBlank(unsecureJson));
 
         // Here's where we make sure the password and salt aren't serialized.
-        final JsonNode map = _serializer.deserializeJson(json);
-        assertNotNull(map);
-        assertTrue(map.has("username"));
-        assertTrue(map.has("email"));
-        assertFalse(map.has("password"));
-        assertFalse(map.has("salt"));
-        assertTrue(map.has("admin"));
-        assertTrue(map.has("enabled"));
-        assertFalse(map.has("verified"));
+        final JsonNode securedMap = _serializer.deserializeJson(secureJson);
+        assertNotNull(securedMap);
+        assertTrue(securedMap.has("username"));
+        assertTrue(securedMap.has("email"));
+        assertFalse(securedMap.has("password"));
+        assertFalse(securedMap.has("salt"));
+        assertTrue(securedMap.has("admin"));
+        assertTrue(securedMap.has("enabled"));
+        assertFalse(securedMap.has("verified"));
 
-        final User output = _serializer.deserializeJson(json, User.class);
-        assertNotNull(output);
-        assertTrue(StringUtils.isNotBlank(output.getUsername()));
-        assertTrue(StringUtils.isNotBlank(output.getEmail()));
-        assertTrue(StringUtils.isBlank(output.getPassword()));
-        assertTrue(StringUtils.isBlank(output.getSalt()));
-        assertFalse(output.isAdmin());
-        assertTrue(output.isEnabled());
-        assertNull(output.isVerified());
+        // Here's where we make sure the password and salt ARE serialized.
+        final JsonNode unsecuredMap = _serializer.deserializeJson(unsecureJson);
+        assertNotNull(unsecuredMap);
+        assertTrue(unsecuredMap.has("username"));
+        assertTrue(unsecuredMap.has("email"));
+        assertTrue(unsecuredMap.has("password"));
+        assertTrue(unsecuredMap.has("salt"));
+        assertTrue(unsecuredMap.has("admin"));
+        assertTrue(unsecuredMap.has("enabled"));
+        assertFalse(unsecuredMap.has("verified"));
+
+        final User securedOutput = _serializer.deserializeJson(secureJson, User.class);
+        assertNotNull(securedOutput);
+        assertTrue(StringUtils.isNotBlank(securedOutput.getUsername()));
+        assertTrue(StringUtils.isNotBlank(securedOutput.getEmail()));
+        assertTrue(StringUtils.isBlank(securedOutput.getPassword()));
+        assertTrue(StringUtils.isBlank(securedOutput.getSalt()));
+        assertFalse(securedOutput.isAdmin());
+        assertTrue(securedOutput.isEnabled());
+        assertNull(securedOutput.isVerified());
+
+        final User unsecuredOutput = _serializer.deserializeJson(unsecureJson, User.class);
+        assertNotNull(unsecuredOutput);
+        assertTrue(StringUtils.isNotBlank(unsecuredOutput.getUsername()));
+        assertTrue(StringUtils.isNotBlank(unsecuredOutput.getEmail()));
+        assertTrue(StringUtils.isNotBlank(unsecuredOutput.getPassword()));
+        assertTrue(StringUtils.isNotBlank(unsecuredOutput.getSalt()));
+        assertFalse(unsecuredOutput.isAdmin());
+        assertTrue(unsecuredOutput.isEnabled());
+        assertNull(unsecuredOutput.isVerified());
     }
 
     private SerializerService _serializer;

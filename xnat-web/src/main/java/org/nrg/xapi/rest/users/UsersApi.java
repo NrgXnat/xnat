@@ -78,34 +78,25 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = "profiles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<List<Map<String, String>>> usersProfilesGet() {
+    public ResponseEntity<List<User>> usersProfilesGet() {
         if (_preferences.getRestrictUserListAccessToAdmins()) {
             final HttpStatus status = isPermitted();
             if (status != null) {
                 return new ResponseEntity<>(status);
             }
         }
-        List<UserI> users = getUserManagementService().getUsers();
-        List<Map<String, String>> userMaps = null;
+        final List<UserI> users = getUserManagementService().getUsers();
+        final List<User> beans = new ArrayList<>();
         if (users != null && users.size() > 0) {
-            userMaps = new ArrayList<>();
             for (UserI user : users) {
                 try {
-                    Map<String, String> userMap = new HashMap<>();
-                    userMap.put("firstname", user.getFirstname());
-                    userMap.put("lastname", user.getLastname());
-                    userMap.put("username", user.getUsername());
-                    userMap.put("email", user.getEmail());
-                    userMap.put("id", String.valueOf(user.getID()));
-                    userMap.put("enabled", String.valueOf(user.isEnabled()));
-                    userMap.put("verified", String.valueOf(user.isVerified()));
-                    userMaps.add(userMap);
+                    beans.add(new User(user));
                 } catch (Exception e) {
                     _log.error("", e);
                 }
             }
         }
-        return new ResponseEntity<>(userMaps, HttpStatus.OK);
+        return new ResponseEntity<>(beans, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get list of active users.", notes = "Returns a map of usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. The number of active sessions and a list of the session IDs is associated with each user.", response = Map.class, responseContainer = "Map")
@@ -180,7 +171,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<User> usersIdGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username) {
+    public ResponseEntity<User> getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable("username") final String username) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -225,7 +216,7 @@ public class UsersApi extends AbstractXapiRestController {
         if (model.isEnabled() != null) {
             user.setEnabled(model.isEnabled());
         }
-        if (model.isVerified()) {
+        if (model.isVerified() != null) {
             user.setVerified(model.isVerified());
         }
         user.setPassword(model.getPassword());

@@ -48,6 +48,46 @@
             #end
         #end
         <div class="clear"></div>
+
+        #if ($siteConfig.pathErrorWarning != "")
+            <div id="warning_bar" style="display:none;">
+                <span class="close"><img src="$content.getURI('images/close.gif')"></span>
+                <span>
+                    XNAT System Path Verification Failure: Contact your system administrator
+                    <span class="tip_text">(<i>what does this mean?</i>)
+                        <span class="tip shadowed">
+                            $siteConfig.pathErrorWarning
+                        </span>
+                    </span>
+                </span>
+                        </div>
+                    #end
+
+                    #if ($sessionCount > 1 || $sessionIpCount > 1 )
+                    ##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
+                        <div id="warning_bar" style="display:none;">
+                            <span class="close"><img src="$content.getURI('images/close.gif')"></span>
+                <span>
+                    #if ( $sessionIpCount > 1 )
+                        ATTENTION: You have $sessionCount sessions open from $sessionIpCount distinct IP addresses.
+                    <span class="tip_text">(<i>what does this mean?</i>)
+                        <span class="tip shadowed">
+                            You may have multiple browsers open or may be logged in from more than one computer. If you believe that someone other than you has logged in to your account, please contact your site administrator immediately.
+                            The IP addresses are: $sessionIpCsv.
+                        </span>
+                    </span>
+                    #else
+                        ATTENTION: You have $sessionCount sessions open from one IP address.
+                    <span class="tip_text">(<i>what does this mean?</i>)
+                        <span class="tip shadowed">
+                            There is more than one session open from this computer (at IP address $sessionIpCsv). You could be logged in to XNAT using the same credentials using multiple browsers or from separate user accounts on your computer. If you believe that someone other than you has logged in to your account, please contact your site administrator immediately.
+                        </span>
+                    </span>
+
+                    #end
+                </span>
+            </div>
+        #end
     </div>
 </div><!-- /user_bar -->
 
@@ -68,46 +108,6 @@
         });
     })
 </script>
-
-#if ($siteConfig.pathErrorWarning != "")
-  <div id="warning_bar" style="display:none;">
-    <span class="close"><img src="$content.getURI('images/close.gif')"></span>
-    <span>
-        XNAT System Path Verification Failure: Contact your system administrator
-        <span class="tip_text">(<i>what does this mean?</i>)
-            <span class="tip shadowed">
-                $siteConfig.pathErrorWarning
-            </span>
-        </span>
-    </span>
-  </div>
-#end
-
-#if ($sessionCount > 1 || $sessionIpCount > 1 )
-##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
-<div id="warning_bar" style="display:none;">
-    <span class="close"><img src="$content.getURI('images/close.gif')"></span>
-    <span>
-        #if ( $sessionIpCount > 1 )
-            ATTENTION: You have $sessionCount sessions open from $sessionIpCount distinct IP addresses.
-        <span class="tip_text">(<i>what does this mean?</i>)
-            <span class="tip shadowed">
-                You may have multiple browsers open or may be logged in from more than one computer. If you believe that someone other than you has logged in to your account, please contact your site administrator immediately.
-                The IP addresses are: $sessionIpCsv.
-            </span>
-        </span>
-        #else
-            ATTENTION: You have $sessionCount sessions open from one IP address.
-        <span class="tip_text">(<i>what does this mean?</i>)
-            <span class="tip shadowed">
-                There is more than one session open from this computer (at IP address $sessionIpCsv). You could be logged in to XNAT using the same credentials using multiple browsers or from separate user accounts on your computer. If you believe that someone other than you has logged in to your account, please contact your site administrator immediately.
-            </span>
-        </span>
-
-        #end
-    </span>
-</div>
-#end
 
 <div id="main_nav">
     <div class="inner">
@@ -217,18 +217,18 @@
 <div id="header" class="main_header"><div class="pad">
 
     #if($siteConfig.getProperty("siteWideAlertStatus","")=="2")
-        <div id="headNotification" class="$siteConfig.getProperty("siteWideAlertType","") hidden" style="margin-bottom: 2em;">
+        <div class="$siteConfig.getProperty("siteWideAlertType","") headNotification hidden">
             <span class="closeNotification"><img src="$content.getURI('images/close.gif')"></span>
             <span>$siteConfig.getProperty("siteWideAlertMessage","")</span>
         </div>
 
         <script>
             if (Cookies.get('NOTIFICATION_MESSAGE') !== 'CLOSED') {
-                jq('#headNotification').removeClass('hidden');
+                jq('.headNotification').removeClass('hidden');
             }
 
             jq('.closeNotification').on('click',function(){
-                jq('#headNotification').slideUp().addClass('hidden');
+                jq(this).parent('.headNotification').slideUp().addClass('hidden');
                 Cookies.set('NOTIFICATION_MESSAGE','CLOSED',{path: '/'});
             })
         </script>

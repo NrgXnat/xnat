@@ -27,7 +27,7 @@ var XNAT = getObject(XNAT);
 
     function addOption(el, opt){
         el.appendChild(spawn('option', extend(true, {
-            value: opt.value || '',
+            value: opt.value !== undefined ? opt.value : '',
             html: opt.html || opt.text || opt.label || opt.value,
             selected: opt.selected || false
         }, opt.element )));
@@ -66,7 +66,7 @@ var XNAT = getObject(XNAT);
         config.element = extend(true, {
             id: config.id,
             name: config.name,
-            value: config.value || '',
+            value: config.value !== undefined ? config.value : '',
             title: config.title || ''
         }, config.element);
 

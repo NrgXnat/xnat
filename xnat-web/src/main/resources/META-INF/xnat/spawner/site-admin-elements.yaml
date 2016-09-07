@@ -144,6 +144,43 @@ adminEmail:
         on system events, such as errors, processing completion, new user registration and so on. These emails
         can be configured on the Notifications tab.
 
+siteWideAlertStatus:
+    kind: panel.select.single
+    name: siteWideAlertStatus
+    label: Enable Alert Message
+    options:
+        "0": "Off"
+        1: "On (Login Page Only)"
+        2: "On (Login and Site Header)"
+    element:
+        title: Enable Alert Message
+
+siteWideAlertMessage:
+    kind: panel.textarea
+    name: siteWideAlertMessage
+    label: Alert Message
+    code: html
+    description: Enter your message text here. You can use HTML to enter links or add emphasis as needed.
+
+siteWideAlertType:
+    kind: panel.select.single
+    name: siteWideAlertType
+    label: Alert Type
+    description: "Default: Alert"
+    options:
+        message:
+            label: Message
+            value: message
+        alert:
+            label: Alert
+            value: alert
+        error:
+            label: Error
+            value: error
+    element:
+        title: Select Alert Type
+#    value: alert
+
 fileSystemSettingsWarning:
     someInfo:
         tag: div.message
@@ -234,6 +271,18 @@ adminInfo:
     url: /xapi/siteConfig
     contents:
         ${adminEmail}
+
+siteWideAlerts:
+    kind: panel.form
+    name: siteWideAlerts
+    label: Site-wide Alerts
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${siteWideAlertStatus}
+        ${siteWideAlertMessage}
+        ${siteWideAlertType}
 
 generalSecuritySettings:
     kind: panel.form
@@ -1174,6 +1223,7 @@ adminPage:
             contents:
                 ${siteInfo}
                 ${adminInfo}
+                ${siteWideAlerts}
         security:
             kind: tab
             name: security

@@ -733,7 +733,7 @@ div.warning {
 }
 
 div.error {
-    background-color: #ffcfcf;
+    background-color: #ffeaf5;
     background-image: url(icons/icon-error-48.png);
 }
 
@@ -794,19 +794,30 @@ div.warning.no-icon {
 #header div.note,
 #header div.success,
 #header div.warning {
-    background-image: none;
-    border-width: 1px 0;
-    font-size: 11px;
-    margin: 0 -3px 0 -27px;
-    padding: 6px;
+    background-position: 8px 5px;
+    margin: 2em 0;
+    padding: 6px 6px 6px 28px;
 }
 
 #header div span {
+    display: inline-block;
     padding: 0 4px;
 }
 
-#header .close-notification:hover {
+#header .closeNotification {
+    float: right;
     cursor: pointer;
+    width: 60px;
+    text-align: right;
+}
+#header .closeNotification:hover:before {
+    content: 'Close ';
+    color: #808080;
+    text-transform: uppercase;
+    font-size: 9px;
+}
+#header .closeNotification:hover {
+    opacity: 0.8;
 }
 
 .warning-inbody {
@@ -826,7 +837,7 @@ div.warning.no-icon {
     min-height: 20px;
     padding: 2px;
     position: absolute;
-    left: 0;
+/*    left: 0; */
     top: 0;
     vertical-align: middle;
     width: 550px;
@@ -1315,7 +1326,7 @@ span.sep {
     /*margin-left: -20px;*/
     line-height: 25px;
     font-size: 11px;
-    letter-spacing: 0.05em;
+/*    letter-spacing: 0.05em; */
     vertical-align: middle;
     color: #fff;
     background: #033769;
@@ -1455,7 +1466,7 @@ span.sep {
     width: 520px;
     height: 20px;
     position: absolute;
-    left: 0;
+/*    left: 0; */
     top: 0;
     line-height: 20px;
     vertical-align: middle;

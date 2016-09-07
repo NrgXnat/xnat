@@ -28,8 +28,8 @@ $page.setTitle("$siteId - Please Login")
     </div>
     <![endif]-->
 
-#if($siteConfig.getProperty("siteWideAlertStatus","")!="0")
-    <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;"><strong>$siteConfig.getProperty("siteWideAlertMessage","")</strong></div>
+#if($siteConfig.getProperty("siteWideAlertStatus","")!="0" && $siteConfig.getProperty("siteWideAlertStatus","")!="off")
+    <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;" data-status="$siteConfig.getProperty("siteWideAlertStatus","")">$siteConfig.getProperty("siteWideAlertMessage","")</div>
 #end
 
 #if($turbineUtils.GetPassedParameter("par",$data))

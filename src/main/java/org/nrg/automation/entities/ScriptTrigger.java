@@ -1,24 +1,21 @@
-/**
+/*
  * ScriptTrigger
  * (C) 2014 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on 9/19/2014 by Rick Herrick
  */
 package org.nrg.automation.entities;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.python.google.common.collect.Lists;
-import org.python.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Sets;
 
 import java.util.HashSet;
 import java.util.List;
@@ -39,23 +36,23 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
 
 	/** The Constant DEFAULT_CLASS. */
 	public static final String DEFAULT_CLASS = "org.nrg.xft.event.entities.WorkflowStatusEvent";
-	
+
 	/** The Constant DEFAULT_EVENT. */
 	public static final String DEFAULT_EVENT = "Manual";
-	
+
 	/** The Constant DEFAULT_FILTERS. */
 	public static final Map<String,List<String>> DEFAULT_FILTERS;
-	
+
 	/** The Constant DEFAULT_FILTER. */
 	public static final Map<String,String> DEFAULT_FILTER;
-	
+
 	/** The Constant STATUS_COMPLETE. */
 	public static final String STATUS_COMPLETE = "Complete";
-	
+
 	static {
 	 	DEFAULT_FILTERS = Maps.newHashMap();
 	 	DEFAULT_FILTER = Maps.newHashMap();
-		final List<String> filterValues = Lists.newArrayList(); 
+		final List<String> filterValues = Lists.newArrayList();
 		filterValues.add(STATUS_COMPLETE);
 		DEFAULT_FILTERS.put("status", filterValues);
 		DEFAULT_FILTER.put("status", STATUS_COMPLETE);
@@ -101,7 +98,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         setDescription(description);
         setScriptId(scriptId);
         setAssociation(association); // datatype:xnat:mrSessionData
-        setSrcEventClass(srcEventClass); 
+        setSrcEventClass(srcEventClass);
         setEvent(event);             // archived
         if (eventFilters != null) {
         	setEventFilters(eventFilters);
@@ -113,7 +110,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
             _log.debug("Creating a ScriptTrigger object with the values: {}", toString());
         }
     }
-    
+
     /**
      * Instantiates a new script trigger.
      *
@@ -128,7 +125,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
     public ScriptTrigger(final String triggerId, final String description, final String scriptId, final String association, final String srcEventClass, final String event, final Map<String,List<String>> filterMap) {
     	this(triggerId, description, scriptId, association, srcEventClass, event, mapToEventFilters(filterMap));
     }
-    
+
     /**
      * Gets the trigger id.
      *
@@ -355,7 +352,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
     public int compareTo(@NotNull final ScriptTrigger other) {
         return toString().compareTo(other.toString());
     }
-	
+
 	/**
 	 * Map to event filters.
 	 *
@@ -376,26 +373,26 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
 
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = -6922583117863143778L;
-    
+
     /** The _trigger id. */
     private String _triggerId;
-    
+
     /** The _description. */
     private String _description;
-    
+
     /** The _script id. */
     private String _scriptId;
-    
+
     /** The _association. */
     private String _association;
-    
+
     /** The _event. */
     private String _event;
-    
+
     /** The _src event class. */
     private String _srcEventClass;
-    
+
     /** The _event filters. */
     private Set<EventFilters> _eventFilters;
-    
+
 }

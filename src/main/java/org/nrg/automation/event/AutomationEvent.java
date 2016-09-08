@@ -4,8 +4,8 @@ import java.util.Map;
 
 import javax.persistence.Transient;
 
+import com.google.common.collect.Maps;
 import org.nrg.framework.event.StructuredEvent;
-import org.python.google.common.collect.Maps;
 
 /**
  * The abstract class AutomationEvent.

@@ -9,6 +9,7 @@
  */
 package org.nrg.automation.services.impl.hibernate;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.nrg.automation.entities.Event;
 import org.nrg.automation.entities.ScriptTrigger;
@@ -17,7 +18,6 @@ import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.python.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

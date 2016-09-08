@@ -1,5 +1,6 @@
 package org.nrg.xnat.restlet.resources;
 
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -13,7 +14,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
-import org.python.google.common.collect.Sets;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Representation;
@@ -354,7 +354,7 @@ public class ScriptTriggerResource extends AutomationResource {
                 _log.info("Created a new trigger: " + trigger.toString());
             }
             recordAutomationEvent(triggerId, getAssociation(), "Create", ScriptTrigger.class);
-            // Return thie trigger ID in the response test.  The upload UI needs it
+            // Return the trigger ID in the response test.  The upload UI needs it
             this.getResponse().setEntity(new StringRepresentation(triggerId));
         } else {
             final String scriptId = jsonResults.getScriptId();

@@ -40,6 +40,7 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpSession;
 import java.util.*;
 
 @Api(description = "User Management API")
@@ -309,24 +310,31 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = {"{username}", "active/{username}"}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
-    public ResponseEntity<List<String>> invalidateUser(@ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable("username") String username) throws NotFoundException {
+    public ResponseEntity<List<String>> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable("username") final String username) throws NotFoundException {
         HttpStatus status = isPermitted(username);
         if (status != null) {
             return new ResponseEntity<>(status);
         }
         final UserI user;
-        try {
-            user = getUserManagementService().getUser(username);
-            if (user == null) {
+        final String currentSessionId;
+        if (StringUtils.equals(getSessionUser().getUsername(), username)) {
+            user = getSessionUser();
+            currentSessionId = current.getId();
+        } else {
+            try {
+                user = getUserManagementService().getUser(username);
+                if (user == null) {
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                }
+                currentSessionId = null;
+            } catch (UserInitException e) {
+                _log.error("An error occurred initializing the user " + username, e);
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            } catch (UserNotFoundException e) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-        } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (UserNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        Object located = locatePrincipalByUsername(user.getUsername());
+        final Object located = locatePrincipalByUsername(user.getUsername());
         if (located == null) {
             return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
         }
@@ -336,8 +344,11 @@ public class UsersApi extends AbstractXapiRestController {
         }
         final List<String> sessionIds = new ArrayList<>();
         for (final SessionInformation session : sessions) {
-            sessionIds.add(session.getSessionId());
-            session.expireNow();
+            final String sessionId = session.getSessionId();
+            if (!StringUtils.equals(currentSessionId, sessionId)) {
+                sessionIds.add(sessionId);
+                session.expireNow();
+            }
         }
         return new ResponseEntity<>(sessionIds, HttpStatus.OK);
     }

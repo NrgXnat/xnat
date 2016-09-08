@@ -97,11 +97,6 @@ public class RootConfig {
     }
 
     @Bean
-    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter(final Jackson2ObjectMapperBuilder builder) {
-        return new MappingJackson2HttpMessageConverter(builder.build());
-    }
-
-    @Bean
     public Jackson2ObjectMapperBuilder objectMapperBuilder() throws NrgServiceException {
         return new Jackson2ObjectMapperBuilder()
                 .serializationInclusion(JsonInclude.Include.NON_NULL)
@@ -115,24 +110,6 @@ public class RootConfig {
     @Bean
     public Map<Class<?>, Class<?>> mixIns() throws NrgServiceException {
         return Beans.getMixIns();
-    }
-
-    @Bean
-    public MarshallingHttpMessageConverter marshallingMessageConverter() {
-        return new MarshallingHttpMessageConverter(
-                jaxb2Marshaller(),
-                jaxb2Marshaller()
-        );
-    }
-
-    @Bean
-    public Jaxb2Marshaller jaxb2Marshaller() {
-        Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
-        marshaller.setClassesToBeBound(SiteConfigPreferences.class);
-        final Map<String, Object> marshallerProperties = new HashMap<>();
-        marshallerProperties.put(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-        marshaller.setMarshallerProperties(marshallerProperties);
-        return marshaller;
     }
 
     @Bean

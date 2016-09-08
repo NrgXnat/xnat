@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.python.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -141,11 +140,6 @@ public class XnatAppInfo {
         }
 
         return new HashMap<>(_foundPreferences);
-
-//        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
-//            final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
-//            _plugins.put(properties.getProperty("name"), properties);
-//        }
     }
 
     /**
@@ -325,15 +319,6 @@ public class XnatAppInfo {
     }
 
     /**
-     * Returns the properties for all of the installed and active plugins in the deployed XNAT server.
-     *
-     * @return A map of all of the plugins installed on the server.
-     */
-    public Map<String, Properties> getPluginProperties() throws IOException {
-        return ImmutableMap.copyOf(_plugins);
-    }
-
-    /**
      * Gets the path where XNAT found its primary configuration file.
      *
      * @return The path where XNAT found its primary configuration file.
@@ -463,5 +448,4 @@ public class XnatAppInfo {
     private final Properties                         _properties       = new Properties();
     private final Map<String, Map<String, String>>   _attributes       = new HashMap<>();
     private       boolean                            _initialized      = false;
-    private final Map<String, Properties>            _plugins          = new HashMap<>();
 }

@@ -116,7 +116,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     private List<Class<?>> getPluginConfigs() {
         final List<Class<?>> configs = new ArrayList<>();
         try {
-            for (final XnatPluginBean plugin : XnatPluginBean.findAllXnatPluginBeans()) {
+            for (final XnatPluginBean plugin : XnatPluginBean.getXnatPluginBeans().values()) {
                 if (_log.isInfoEnabled()) {
                     _log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
                 }

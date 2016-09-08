@@ -1,16 +1,23 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.spawner.configuration.SpawnerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
@@ -28,7 +35,11 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+import javax.xml.bind.Marshaller;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Configuration
 @EnableWebMvc
@@ -36,10 +47,21 @@ import java.util.Locale;
 @Import(SpawnerConfig.class)
 @ComponentScan({"org.nrg.xapi.rest", "org.nrg.xnat.spawner.controllers"})
 public class WebConfig extends WebMvcConfigurerAdapter {
+    @Autowired
+    public void setJackson2ObjectMapperBuilder(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
+        _objectMapperBuilder = objectMapperBuilder;
+    }
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("**/swagger-ui.html").addResourceLocations("classpath:/META-INF/resources/");
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
+    }
+
+    @Override
+    public void configureMessageConverters(final List<HttpMessageConverter<?>> converters) {
+        converters.add(new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build()));
+        converters.add(new MarshallingHttpMessageConverter(_marshaller, _marshaller));
     }
 
     @Bean
@@ -91,4 +113,13 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     }
 
     private static final Logger _log = LoggerFactory.getLogger(WebConfig.class);
+    private static final Map<String, Object> MARSHALLER_PROPERTIES = new HashMap<String, Object>() {{ put(Marshaller.JAXB_FORMATTED_OUTPUT, true); }};
+
+    private Jackson2ObjectMapperBuilder _objectMapperBuilder;
+
+    private final Jaxb2Marshaller _marshaller = new Jaxb2Marshaller() {{
+        setClassesToBeBound(SiteConfigPreferences.class);
+        setMarshallerProperties(MARSHALLER_PROPERTIES);
+    }};
+
 }

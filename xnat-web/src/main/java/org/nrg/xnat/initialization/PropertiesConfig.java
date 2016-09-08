@@ -1,9 +1,9 @@
 package org.nrg.xnat.initialization;
 
+import com.google.common.base.Joiner;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
-import org.python.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;

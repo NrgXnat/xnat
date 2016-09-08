@@ -5,10 +5,10 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,9 +26,9 @@ import java.util.Properties;
 @RequestMapping(value = "/plugins")
 public class XnatPluginApi extends AbstractXapiRestController {
     @Autowired
-    public XnatPluginApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo) {
+    public XnatPluginApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) throws IOException {
         super(userManagementService, roleHolder);
-        _appInfo = appInfo;
+        _plugins = XnatPluginBean.getXnatPluginBeans();
     }
 
     @ApiOperation(value = "Returns a list of all of the installed and active XNAT plugins with their properties.", notes = "The maps returned from this call include all of the properties specified in the plugin's property file.", response = String.class, responseContainer = "Map")
@@ -36,8 +36,8 @@ public class XnatPluginApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<Map<String, Properties>> getAllDataTypeSchemas() throws IOException {
-        return new ResponseEntity<>(_appInfo.getPluginProperties(), HttpStatus.OK);
+    public ResponseEntity<Map<String, XnatPluginBean>> getAllDataTypeSchemas() throws IOException {
+        return new ResponseEntity<>(_plugins, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Returns the indicated XNAT plugin with its properties.", notes = "The map returned from this call include all of the properties specified in the plugin's property file.", response = Properties.class)
@@ -46,13 +46,12 @@ public class XnatPluginApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "{plugin}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<Properties> getRequestedDataTypeSchema(@PathVariable("plugin") final String plugin) throws IOException {
-        final Map<String, Properties> plugins = _appInfo.getPluginProperties();
-        if (!plugins.containsKey(plugin)) {
+    public ResponseEntity<XnatPluginBean> getRequestedDataTypeSchema(@PathVariable("plugin") final String plugin) throws IOException {
+        if (!_plugins.containsKey(plugin)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>(plugins.get(plugin), HttpStatus.OK);
+        return new ResponseEntity<>(_plugins.get(plugin), HttpStatus.OK);
     }
 
-    private final XnatAppInfo _appInfo;
+    private final Map<String, XnatPluginBean> _plugins;
 }

@@ -2,6 +2,7 @@ package org.nrg.xft.event.entities;
 
 import java.util.Map;
 
+import com.google.common.collect.Maps;
 import org.nrg.automation.event.AutomationEvent;
 import org.nrg.framework.event.EventClass;
 import org.nrg.framework.event.Filterable;
@@ -10,7 +11,6 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
-import org.python.google.common.collect.Maps;
 
 /**
  * The Class WorkflowStatusEvent.

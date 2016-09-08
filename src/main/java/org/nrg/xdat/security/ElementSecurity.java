@@ -134,7 +134,7 @@ public class ElementSecurity extends ItemWrapper {
             }
         }
 
-        for (final XnatPluginBean plugin : XnatPluginBean.findAllXnatPluginBeans()) {
+        for (final XnatPluginBean plugin : XnatPluginBean.getXnatPluginBeans().values()) {
             for (final XnatDataModelBean bean : plugin.getDataModelBeans()) {
                 if (!elements.containsKey(bean.getType()) && bean.isSecured()) {
                     if (GenericWrapperElement.GetFieldForXMLPath(bean.getType() + "/project") != null) {

@@ -10,20 +10,22 @@
  */
 package org.nrg.xnat.security.alias;
 
-import org.nrg.xdat.XDAT;
+import org.hibernate.SessionFactory;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.AliasTokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.util.Arrays;
-import java.util.List;
+import javax.inject.Inject;
 
 public class ClearExpiredAliasTokens implements Runnable {
-    public ClearExpiredAliasTokens(final JdbcTemplate template) {
+    public ClearExpiredAliasTokens(final AliasTokenService aliasTokenService, final SiteConfigPreferences preferences, final JdbcTemplate template) {
         if (_log.isDebugEnabled()) {
             _log.debug("Initializing the alias token sweeper job");
         }
-
+        _service = aliasTokenService;
+        _preferences=preferences;
         _template = template;
     }
 
@@ -34,19 +36,16 @@ public class ClearExpiredAliasTokens implements Runnable {
         if (_log.isDebugEnabled()) {
             _log.debug("Executing alias token sweep function");
         }
-        for (final String format : ALIAS_TOKEN_QUERIES) {
-            final String query = String.format(format, XDAT.getSiteConfigPreferences().getAliasTokenTimeout());
-            if (_log.isDebugEnabled()) {
-                _log.debug("Executing alias token sweep query: " + query);
-            }
-            _template.execute(query);
-        }
+        _service.invalidateExpiredTokens(_preferences.getAliasTokenTimeout());
     }
+    private final SiteConfigPreferences   _preferences;
+
+    @Inject
+    private SessionFactory _sessionFactory;
+
+    private final AliasTokenService         _service;
 
     private static final Logger       _log                            = LoggerFactory.getLogger(ClearExpiredAliasTokens.class);
-    private static final String       QUERY_DELETE_TOKEN_IP_ADDRESSES = "DELETE FROM xhbm_alias_token_validipaddresses WHERE alias_token in (SELECT id FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s')";
-    private static final String       QUERY_DELETE_ALIAS_TOKENS       = "DELETE FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s'";
-    private static final List<String> ALIAS_TOKEN_QUERIES             = Arrays.asList(QUERY_DELETE_TOKEN_IP_ADDRESSES, QUERY_DELETE_ALIAS_TOKENS);
 
     private final JdbcTemplate _template;
 }

@@ -51,8 +51,8 @@ import java.util.Properties;
 @Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class})
 public class RootConfig {
     @Bean
-    public XnatAppInfo appInfo(final ServletContext context, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
-        return new XnatAppInfo(context, serializerService, template);
+    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
+        return new XnatAppInfo(preferences, context, serializerService, template);
     }
 
     @Bean

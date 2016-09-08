@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.python.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,8 @@ public class XnatAppInfo {
     private static final String        SECONDS                  = "seconds";
 
     @Inject
-    public XnatAppInfo(final ServletContext context, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
+    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
+        _preferences=preferences;
         _template = template;
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
@@ -175,7 +176,7 @@ public class XnatAppInfo {
                                     new Object[]{_foundPreferences.get(pref), pref}, new int[]{Types.VARCHAR, Types.VARCHAR}
                             );
                             try {
-                                XDAT.getSiteConfigPreferences().set(_foundPreferences.get(pref), pref);
+                                _preferences.set(_foundPreferences.get(pref), pref);
                             } catch (InvalidPreferenceName e) {
                                 _log.error("", e);
                             } catch (NullPointerException e) {
@@ -452,7 +453,7 @@ public class XnatAppInfo {
     private final String _nonAdminErrorPath;
     private final Pattern _nonAdminErrorPathPattern;
     private final AntPathRequestMatcher _nonAdminErrorPathMatcher;
-
+    private final SiteConfigPreferences _preferences;
     private final Map<String, AntPathRequestMatcher> _openUrls         = new HashMap<>();
     private final Map<String, AntPathRequestMatcher> _adminUrls        = new HashMap<>();
     private final Map<String, AntPathRequestMatcher> _initPaths        = new HashMap<>();

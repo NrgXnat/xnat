@@ -7,12 +7,12 @@
  */
 package org.nrg.xdat.services;
 
-import java.util.List;
-import java.util.Set;
-
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xft.security.UserI;
+
+import java.util.List;
+import java.util.Set;
 
 public interface AliasTokenService extends BaseHibernateService<AliasToken> {
     /**
@@ -114,4 +114,8 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param alias    The alias of the token to be invalidated.
      */
     void invalidateToken(String alias);
+
+    void invalidateToken(final AliasToken token);
+
+    void invalidateExpiredTokens(String interval);
 }

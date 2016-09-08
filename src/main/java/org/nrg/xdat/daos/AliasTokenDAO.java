@@ -7,12 +7,16 @@
  */
 package org.nrg.xdat.daos;
 
+import org.apache.log4j.Logger;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -49,4 +53,21 @@ public class AliasTokenDAO extends AbstractHibernateDAO<AliasToken> {
         }
         return criteria.list();
     }
+
+    @SuppressWarnings("unchecked")
+    public List<AliasToken> findByExpired(String interval) {
+        Criteria criteria = getCriteriaForType();
+        try {
+            Date expirationTime = new Date(System.currentTimeMillis() - (1000L*SiteConfigPreferences.convertPGIntervalToSeconds(interval)));
+            criteria.add(Restrictions.lt("created", expirationTime));
+        } catch (SQLException e) {
+            _log.error("Failed to get list of expired tokens",e);
+        }
+        if (criteria.list().size() == 0) {
+            return null;
+        }
+        return criteria.list();
+    }
+
+    static Logger _log = Logger.getLogger(AliasTokenDAO.class);
 }

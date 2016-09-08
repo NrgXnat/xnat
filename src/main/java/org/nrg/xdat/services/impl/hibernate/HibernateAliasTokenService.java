@@ -167,11 +167,31 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
             if (_log.isInfoEnabled()) {
                 _log.info("Token requested to be invalidated but not found for alias: " + alias);
             }
-        } else {
+        }
+        else {
+            invalidateToken(token);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void invalidateToken(final AliasToken token) {
+        if (token != null) {
             if (_log.isDebugEnabled()) {
-                _log.debug("Invalidating token: " + alias);
+                _log.debug("Invalidating token: " + token.getAlias());
             }
             getDao().delete(token);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void invalidateExpiredTokens(String interval) {
+        List<AliasToken> tokensToExpire = _dao.findByExpired(interval);
+        for(AliasToken tok : tokensToExpire){
+            if(tok!=null){
+                invalidateToken(tok);
+            }
         }
     }
 

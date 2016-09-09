@@ -149,7 +149,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                     }
                     //modified to also set the new prearchive path.
                     doc.setPrearchivepath(newDirPath);
-                } catch (ScriptEvaluationException | SAXException | SQLException | SessionBuilder.NoUniqueSessionException | IOException e) {
+                } catch ( SAXException | SQLException | SessionBuilder.NoUniqueSessionException | IOException e) {
                     throwSync(e);
                 }
 

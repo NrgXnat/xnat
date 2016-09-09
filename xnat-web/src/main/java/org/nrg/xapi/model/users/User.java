@@ -115,7 +115,7 @@ public class User {
      **/
     @ApiModelProperty(value = "Whether the user is a site administrator.")
     public Boolean isAdmin() {
-        return _isAdmin;
+        return _secured ? null : _isAdmin;
     }
 
     public void setAdmin(final boolean isAdmin) {

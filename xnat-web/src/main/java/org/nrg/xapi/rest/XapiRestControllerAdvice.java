@@ -40,7 +40,7 @@ public class XapiRestControllerAdvice {
 
     @ExceptionHandler(NrgServiceException.class)
     public ModelAndView handleNrgServiceException(final HttpServletRequest request, final NrgServiceException exception) {
-        return handleException(HttpStatus.CONFLICT, request, "An NRG service error occurred.", exception);
+        return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, "An NRG service error occurred.", exception);
     }
 
     @ExceptionHandler(URISyntaxException.class)

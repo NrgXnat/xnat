@@ -68,6 +68,9 @@ var XNAT = getObject(XNAT);
                 prop = cloneObject(prop);
             }
 
+            // add this for proper handling in 'universal' widgets
+            prop.spawnerElement = true;
+
             prop.element = prop.element || prop.config || {};
 
             // use 'name' property in element or config
@@ -75,7 +78,9 @@ var XNAT = getObject(XNAT);
             // lastly use the object's own name
             prop.name = prop.name || item;
 
-            //prop.id = prop.id || prop.element.id || toDashed(prop.name);
+            // auto-generate IDs if not specified
+            // I really don't like doing this here.
+            prop.id = prop.id || prop.element.id || toDashed(prop.name);
 
             // accept 'kind' or 'type' property name
             // but 'kind' will take priority

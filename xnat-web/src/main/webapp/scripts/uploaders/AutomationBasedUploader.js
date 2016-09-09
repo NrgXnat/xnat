@@ -230,7 +230,7 @@ XNAT.app.abu.getAutomationHandlers = function(){
 			// Determine whether or not to display links
 			if (events.length>0) {
 				XNAT.app.abu.initUploaderConfig();
-				if (XNAT.app.abu.hasContextEvents("Upload",type)) {
+				if (XNAT.app.abu.hasContextEvents("Upload",type) || XNAT.app.abu.contextResourceConfigs.length>0) {
 					XNAT.app.abu.abuConfigs.showUploadLink();
 				} else {
 					XNAT.app.abu.abuConfigs.hideUploadLink();

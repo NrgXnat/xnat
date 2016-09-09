@@ -65,13 +65,14 @@ function getUrlHashValue(start, end){
 }
 
 function firstDefined() {
-    var undefined, i = -1;
+    var undef, i = -1, val;
     while (++i < arguments.length) {
-        if (arguments[i] !== undefined) {
-            return arguments[i];
+        val = arguments[i];
+        if (val !== undef && val !== 'undefined') {
+            return val;
         }
     }
-    return undefined;
+    return undef;
 }
 function isDefined( x ){
     return typeof x != 'undefined'

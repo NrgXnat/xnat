@@ -112,12 +112,14 @@ var XNAT = getObject(XNAT);
     Investigators.fn.setMenu = function(menu){
         this.menu$ = $$(menu);
         this.menu = this.menu$[0];
+        this.isMulti = this.menu.multiple;
         return this;
     };
 
     // sets the selected menu item and updates the .chosen() stuff
     Investigators.fn.setSelected = function(selected){
         var self = this;
+        selected = selected || self.selected;
         [].concat(selected).forEach(function(id){
             self.menu$.filter('[value="' + id + '"]').each(function(){
                 this.selected = true;
@@ -128,29 +130,54 @@ var XNAT = getObject(XNAT);
         return this;
     };
 
+    // return array of ids of selected investigators
+    Investigators.fn.getSelected = function(){
+        var self = this;
+        this.selected = [];
+        this.menu$.find(':selected').each(function(){
+            self.selected.push(this.value)
+        });
+        return this.selected;
+    };
+
     // renders the <option> elements
     Investigators.fn.createMenuItems = function(selected){
         var self = this;
+        // retain current selection, if nothing specified
+        selected = selected || this.getSelected();
         selected = [].concat(selected).map(function(item){
-            return item+'';
+            if (isDefined(item)) {
+                return item+'';
+            }
         });
+        console.log('selected: ' + selected.join('; '));
         this.getAll();
         this.xhr.done(function(data){
 
-            self.selected = [];
+            var _selected = [],
+                options = [];
 
-            var options = data.map(function(item){
+            if (!self.isMulti) {
+                if (!selected.length) {
+                    options.push(spawn('option|disabled|selected', 'Select...'));
+                }
+                options.push(spawn('option|value=NULL', 'None'));
+            }
+
+            data.forEach(function(item){
                 var id = item.xnatInvestigatordataId+'';
                 var menuOption = spawn('option', {
                     value: id,
                     html: item.lastname + ', ' + item.firstname
                 });
                 if (selected.indexOf(id) > -1) {
-                    self.selected.push(id);
+                    _selected.push(id);
                     menuOption.selected = true;
                 }
-                return menuOption;
+                options.push(menuOption);
             });
+
+            self.selected = _selected;
 
             // empty the options, then add the updated options
             self.menu$.empty().append(options);
@@ -183,6 +210,8 @@ var XNAT = getObject(XNAT);
 
     Investigators.fn.updateMenu = function(selected){
         var self = this;
+        // save currently selected items, if 'selected' is undefined
+        selected = selected || this.getSelected();
         this.createMenuItems(selected);
         this.xhr.done(function(){
             //self.menu$.val(selected).change();
@@ -193,10 +222,12 @@ var XNAT = getObject(XNAT);
 
     // putting the .dialog() method on the prototype
     // ties it to the associated menu
-    Investigators.fn.dialog = function(id, menuInstance){
+    Investigators.fn.dialog = function(id, menus){
 
         // the menu that gets updated on save
-        menuInstance = menuInstance || this;
+        menus = menus || null;
+
+        var self = this;
 
         function createInput(label, name, validate){
             return {
@@ -207,7 +238,9 @@ var XNAT = getObject(XNAT);
             }
         }
 
-        function createPanel(){
+        var isPrimary = self.menu.value == investigators.primary;
+
+        function investigatorForm(){
             return {
                 investigatorForm: {
                     kind: 'panel.form',
@@ -224,7 +257,16 @@ var XNAT = getObject(XNAT);
                         institution: createInput('Institution', 'institution'),
                         department: createInput('Department', 'department'),
                         email: createInput('Email', 'email', 'email'),
-                        phone: createInput('Phone', 'phone', 'numeric-dash')
+                        phone: createInput('Phone', 'phone', 'numeric-dash'),
+                        primary: {
+                            kind: 'panel.element',
+                            label: false,
+                            contents:
+                                '<label>' +
+                                '<input type="checkbox" class="set-primary">' +
+                                ' Set as Primary' +
+                                '</label>'
+                        }
                         // ID: createInput('ID', 'ID'),
                         // invId: {
                         //     kind: 'panel.input.hidden',
@@ -236,7 +278,7 @@ var XNAT = getObject(XNAT);
             }
         }
 
-        var invForm = XNAT.spawner.spawn(createPanel());
+        var invForm = XNAT.spawner.spawn(investigatorForm());
 
         var dialog =
                 xmodal.open({
@@ -245,10 +287,15 @@ var XNAT = getObject(XNAT);
                     beforeShow: function(obj){
                         invForm.render(obj.$modal.find('div.add-edit-investigator'));
                     },
+                    afterShow: function(obj){
+                        obj.$modal.find('input.set-primary').prop('checked', isPrimary);
+                    },
                     okLabel: 'Submit',
                     okClose: false,
                     okAction: function(obj){
-                        $(obj.$modal.find('form[name="editInvestigator"]')).submitJSON({
+                        var _form = obj.$modal.find('form[name="editInvestigator"]'),
+                            setPrimary = _form.find('input.set-primary')[0].checked;
+                        $(_form).submitJSON({
                             delim: '!',
                             validate: function(){
                                 var $form = $(this);
@@ -269,11 +316,16 @@ var XNAT = getObject(XNAT);
                                 return errors === 0;
                             },
                             success: function(data){
-                                ui.banner.top(2000, 'New investigator created.', 'success');
-                                // update a menu, if specified
-                                if (menuInstance instanceof Investigators) {
-                                    menuInstance.updateMenu(data.xnatInvestigatordataId);
+                                var selected = data.xnatInvestigatordataId;
+                                ui.banner.top(2000, 'Investigator data saved.', 'success');
+                                // update other menus, if specified
+                                if (menus) {
+                                    [].concat(menus).forEach(function(menu){
+                                        menu.updateMenu(setPrimary ? selected : '');
+                                    })
                                 }
+                                // update the menu associated with the dialog
+                                self.updateMenu([].concat(self.getSelected(), (!setPrimary ? selected : [])));
                                 dialog.close();
                             }
                         });
@@ -281,10 +333,11 @@ var XNAT = getObject(XNAT);
                     },
                     width: 500,
                     height: 500,
-                    padding: '0px'
+                    padding: '0px',
+                    scroll: false
                 });
 
-        return dialog
+        return this;
 
     };
 
@@ -312,6 +365,13 @@ var XNAT = getObject(XNAT);
         //
     };
 
+    investigators.updateMenus = function(selected){
+        if (investigators.menus && !investigators.menus.length) {
+            investigators.menus.forEach(function(menu){
+                menu.updateMenu(selected);
+            })
+        }
+    };
 
     investigators.delete = function(id, opts){
         if (!id) return false;

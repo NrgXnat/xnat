@@ -25,7 +25,6 @@ siteSetup:
             method: POST
             url: /xapi/siteConfig
             contentType: json
-            load: XNAT.data.siteConfig
             contents:
 
                 siteId:
@@ -38,7 +37,7 @@ siteSetup:
                         The id used to refer to this site (also used to generate ids). The Site ID must start
                         with a letter and contain only letters, numbers and underscores. It should be a short,
                         one-word name or acronym which describes your site.
-                    validation: required id
+                    validation: required id-strict
 
                 siteUrl:
                     kind: panel.input.text
@@ -63,30 +62,44 @@ siteSetup:
                     description: Email address for site administrator.
                     validation: required email
 
-# this is buggy - disabling for now
-#                notificationRecipients:
-#                    type: panel.form
-#                    classes: hidden
-#                    header: false
-#                    footer: false
-#                    method: POST
-#                    url: /xapi/notifications
-#                    contentType: json
-#                    contents:
-#                        adminEmail:
-#                            tag: input.disabled | disabled, type=hidden, data-value-from=#site-admin-email, name=adminEmail
-#                            value: !? $('#site-admin-email').val()
-#                        # copy adminEmail value to these properties:
-#                        help:
-#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.helpContactInfo
-#                        errorMessages:
-#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.emailRecipientErrorMessages
-#                        issueReports:
-#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.emailRecipientIssueReports
-#                        newUserAlert:
-#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.emailRecipientNewUserAlert
-#                        update:
-#                            tag: input| type=hidden, data-value-from=#site-admin-email, name=notifications.emailRecipientUpdate
+        # this seems to work now...
+        # copy values from admin email to recipient list
+        # =========================
+        # EMAIL RECIPIENTS
+        notificationRecipients:
+            type: panel.form
+            classes: hidden
+            header: false
+            footer: false
+            method: POST
+            url: /xapi/notifications
+            contentType: json
+            contents:
+                vars:
+                    tag: script
+                    content: >
+                        window.siteAdminEmailInput = $('#site-admin-email')[0]
+                # copy adminEmail value to these properties:
+                helpContactInfo:
+                    kind: input.hidden
+                    name: helpContactInfo
+                    value: @?=window.siteAdminEmailInput.value
+                errorMessages:
+                    kind: input.hidden
+                    name: emailRecipientErrorMessages
+                    value: @?=window.siteAdminEmailInput.value
+                issueReports:
+                    kind: input.hidden
+                    name: emailRecipientIssueReports
+                    value: @?=window.siteAdminEmailInput.value
+                newUserAlert:
+                    kind: input.hidden
+                    name: emailRecipientNewUserAlert
+                    value: @?=window.siteAdminEmailInput.value
+                update:
+                    kind: input.hidden
+                    name: emailRecipientUpdate
+                    value: @?=window.siteAdminEmailInput.value
 
         # =========================
         # DATA STORAGE
@@ -194,12 +207,12 @@ siteSetup:
                     text: Mail Server Settings
 
                 smtpAuth:
-                    kind: panel.input.checkbox
+                    kind: panel.input.switchbox
                     name: mail.smtp.auth
                     label: SMTP Auth?
 
                 smtpStartTls:
-                    kind: panel.input.checkbox
+                    kind: panel.input.switchbox
                     name: mail.smtp.starttls.enable
                     label: Start TLS?
 
@@ -220,15 +233,15 @@ siteSetup:
             contentType: json
             contents:
 
-               requireLogin:
-                   kind: panel.input.checkbox
+                requireLogin:
+                   kind: panel.input.switchbox
                    id: requireLogin
                    name: requireLogin
                    label: Require User Login
                    description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
 
-               autoEnableUserRegistration:
-                   kind: panel.input.checkbox
+                autoEnableUserRegistration:
+                   kind: panel.input.switchbox
                    id: autoEnableUserRegistration
                    name: userRegistration
                    label: "Auto-enable User Registration?"
@@ -237,8 +250,8 @@ siteSetup:
                        projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
                        receives an email notification when a user registers.
 
-               enableCsrfToken:
-                   kind: panel.input.checkbox
+                enableCsrfToken:
+                   kind: panel.input.switchbox
                    id: enableCsrfToken
                    name: enableCsrfToken
                    label: Require CSRF Token?

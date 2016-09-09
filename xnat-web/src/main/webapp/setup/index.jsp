@@ -23,11 +23,16 @@
                     <pg:restricted msg="${message}">
 
                         <c:import url="/xapi/siteConfig" var="siteConfig"/>
+                        <c:import url="/xapi/notifications" var="notifications"/>
 
                         <script>
+                            var XNAT = getObject(XNAT);
                             XNAT.data = extend({}, XNAT.data, {
-                                siteConfig: ${siteConfig}
+                                siteConfig: ${siteConfig},
+                                notifications: ${notifications}
                             });
+                            XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
+                            XNAT.data['/xapi/notifications'] = XNAT.data.notifications;
                             // get rid of the 'targetSource' property
                             delete XNAT.data.siteConfig.targetSource;
                         </script>
@@ -57,9 +62,9 @@
 
                         <script>
 
-                            //                        XNAT.app.setupComplete = function(){
-                            //                            XNAT.xhr.form('#site-setup', {});
-                            //                        };
+                            //XNAT.app.setupComplete = function(){
+                            //    XNAT.xhr.form('#site-setup', {});
+                            //};
 
                             XNAT.xhr.get({
                                 url:     XNAT.url.rootUrl('/setup/site-setup.yaml'),
@@ -68,8 +73,12 @@
                                     if (typeof data === 'string') {
                                         data = YAML.parse(data);
                                     }
-                                    var setupPanels = XNAT.spawner.spawn(data);
-                                    setupPanels.render('#site-setup-panels');
+
+                                    console.log(data);
+
+                                    XNAT.spawner
+                                        .spawn(data)
+                                        .render('#site-setup-panels');
                                 }
                             });
 

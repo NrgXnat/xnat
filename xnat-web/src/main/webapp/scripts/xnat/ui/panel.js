@@ -512,11 +512,12 @@ var XNAT = getObject(XNAT || {});
                 $$(form).serializeArray().forEach(function(item) {
                     if (!item.name) return;
                     var name = item.name.replace(/^:/,'');
+                    var val = firstDefined(item.value+'', '');
                     if (typeof json[name] == 'undefined') {
-                        json[name] = item.value || '';
+                        json[name] = val;
                     }
                     else {
-                        json[name] = [].concat(json[name], item.value||[]) ;
+                        json[name] = [].concat(json[name], val||[]) ;
                     }
                 });
                 return json;
@@ -909,7 +910,7 @@ var XNAT = getObject(XNAT || {});
             className: opts.className || opts.classes || '',
             name: opts.name,
             id: opts.id || toDashed(opts.name),
-            value: opts.value || ''
+            value: firstDefined(opts.value+'', '')
         }, opts.element);
         addClassName(opts.element, 'hidden');
         if (opts.validation || opts.validate) {
@@ -975,12 +976,17 @@ var XNAT = getObject(XNAT || {});
         if (opts.id) opts.element.id = opts.id;
         if (opts.name) opts.element.name = opts.name;
 
-        opts.element.html =
-            opts.element.html ||
-            opts.element.value ||
-            opts.value ||
-            opts.text ||
-            opts.html || '';
+        var val1 = opts.element.value;
+        var val2 = opts.value;
+
+        opts.element.value = firstDefined(val1, val2, '');
+
+        opts.element.html = firstDefined(
+            opts.element.html+'',
+            opts.element.value+'',
+            opts.text+'',
+            opts.html+'',
+            '');
     
         opts.element.html = lookupValue(opts.element.html);
         opts.element.title = 'Double-click to open in code editor.';
@@ -1033,7 +1039,7 @@ var XNAT = getObject(XNAT || {});
             name: opts.name,
             className: opts.className||'',
             title: opts.title||opts.name||opts.id||'',
-            value: opts.value||''
+            value: firstDefined(opts.value+'', '')
         }, opts.element);
         
         if (multi) {

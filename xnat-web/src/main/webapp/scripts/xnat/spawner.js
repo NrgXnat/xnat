@@ -53,10 +53,20 @@ var XNAT = getObject(XNAT);
         
         forOwn(obj, function(item, prop){
 
-            var kind, methodName, method, spawnedElement, $spawnedElement;
-            
-            // save the config properties in a new object
-            prop = cloneObject(prop);
+            var kind, element, method, spawnedElement, $spawnedElement;
+
+            // 'prop' can be a new or existing DOM element
+            if (prop instanceof Element) {
+                element = prop;
+                prop = {
+                    kind: 'element',
+                    element: element
+                };
+            }
+            else {
+                // save the config properties in a new object
+                prop = cloneObject(prop);
+            }
 
             prop.element = prop.element || prop.config || {};
 
@@ -65,12 +75,12 @@ var XNAT = getObject(XNAT);
             // lastly use the object's own name
             prop.name = prop.name || item;
 
-            prop.id = prop.id || prop.element.id || toDashed(prop.name);
+            //prop.id = prop.id || prop.element.id || toDashed(prop.name);
 
             // accept 'kind' or 'type' property name
             // but 'kind' will take priority
             // with a fallback to a generic div
-            kind = prop.kind || prop.type || 'div.spawned';
+            kind = prop.kind || prop.type || null;
 
             // make 'href' 'src' and 'action' properties
             // start at the site root if starting with '/'
@@ -93,8 +103,14 @@ var XNAT = getObject(XNAT);
                 prop.content = prop.content || prop.children || '';
 
                 try {
-                    spawnedElement =
-                        spawn(prop.tag || prop.element.tag || 'div', prop.element, prop.content);
+                    // if setting up Spawner elements in JS, allow a
+                    // DOM element to be passed in the 'element' property
+                    if (prop.element instanceof Element) {
+                        spawnedElement = prop.element;
+                    }
+                    else {
+                        spawnedElement = spawn(prop.tag || prop.element.tag || 'span', prop.element, prop.content);
+                    }
 
                     // convert relative URIs for href, src, and action attributes
                     if (spawnedElement.href) {
@@ -118,6 +134,9 @@ var XNAT = getObject(XNAT);
                     spawner.notSpawned.push(prop);
                 }
             }
+            else if (/^(text|html)$/i.test(kind)) {
+                $frag.append(prop.content||prop.html||prop.text)
+            }
             else {
 
                 // check for a matching XNAT.ui method to call:
@@ -134,6 +153,9 @@ var XNAT = getObject(XNAT);
 
                     // XNAT.ui.kind()
                     lookupObjectValue(NAMESPACE + '.' + kind) ||
+
+                    // XNAT.element.kind()
+                    lookupObjectValue(XNAT, 'element.' + kind) ||
 
                     // kind.init()
                     lookupObjectValue(kind + '.init') ||

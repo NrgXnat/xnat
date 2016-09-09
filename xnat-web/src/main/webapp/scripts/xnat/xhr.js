@@ -456,6 +456,13 @@ var XNAT = getObject(XNAT||{}),
             var $this = $(this);
             var val = lookupObjectValue(dataObj, this.name||this.title);
 
+            // don't set values of inputs with EXISTING
+            // values that start with "@?"
+            // -- those get parsed on submission
+            if (!val && this.value && /^(@\?)/.test(this.value)) {
+                return;
+            }
+
             if (Array.isArray(val)) {
                 val = val.join(', ');
                 $this.addClass('array-list')
@@ -536,7 +543,16 @@ var XNAT = getObject(XNAT||{}),
         // don't pass 'callback' property into the AJAX request
         delete opts.callback;
 
-        var inputs = $form.find(':input').not('button, [type="submit"]').toArray();
+        var $inputs = $form.find(':input').not('button, [type="submit"]');
+
+        // inputs with a value that starts with
+        // @? will get values from another source
+        $inputs.filter('[value^="@?"]').each(function(){
+            var source = this.value.replace(/^@\?[:=\s]*/, '');
+            this.value = eval(source);
+        });
+
+        var inputs = $inputs.toArray();
 
         if (/POST|PUT/i.test(opts.method)) {
             if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
@@ -544,6 +560,9 @@ var XNAT = getObject(XNAT||{}),
                 opts.data = JSON.stringify(form2js(inputs, opts.delimiter||opts.delim||':', false));
                 opts.processData = false;
                 opts.contentType = 'application/json';
+            }
+            else {
+                opts.data = $form.find(':input').not('.ignore').serialize();
             }
             opts.success = function(data){
                 callback.apply($form, arguments);

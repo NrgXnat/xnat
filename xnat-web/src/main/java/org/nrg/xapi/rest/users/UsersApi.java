@@ -145,7 +145,7 @@ public class UsersApi extends AbstractXapiRestController {
     @RequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<String>> getUserActiveSessions(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username) {
-        final HttpStatus status = isPermitted();
+        final HttpStatus status = isPermitted(username);
         if (status != null) {
             return new ResponseEntity<>(status);
         }
@@ -162,6 +162,7 @@ public class UsersApi extends AbstractXapiRestController {
             }
             return new ResponseEntity<>(sessionIds, HttpStatus.OK);
         }
+
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
@@ -173,9 +174,11 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<User> getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable("username") final String username) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
+        if (_preferences.getRestrictUserListAccessToAdmins()) {
+            final HttpStatus status = isPermitted(username);
+            if (status != null) {
+                return new ResponseEntity<>(status);
+            }
         }
         final UserI user;
         try {
@@ -309,7 +312,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to create or update this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = {"{username}", "active/{username}"}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @RequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
     public ResponseEntity<List<String>> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable("username") final String username) throws NotFoundException {
         HttpStatus status = isPermitted(username);
         if (status != null) {

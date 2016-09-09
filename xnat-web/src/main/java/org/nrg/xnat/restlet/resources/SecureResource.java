@@ -10,7 +10,6 @@
  */
 package org.nrg.xnat.restlet.resources;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Maps;
 import com.noelios.restlet.http.HttpConstants;
 import org.apache.commons.beanutils.BeanUtils;
@@ -1564,11 +1563,13 @@ public abstract class SecureResource extends Resource {
                     throw new RuntimeException(exception);
                 }
 
+                final List<FilteredResourceHandlerI> handlerClasses = new ArrayList<>();
                 for (Class<?> clazz : classes) {
                     if (FilteredResourceHandlerI.class.isAssignableFrom(clazz)) {
-                        handlers.get(_package).add((FilteredResourceHandlerI) clazz.newInstance());
+                        handlerClasses.add((FilteredResourceHandlerI) clazz.newInstance());
                     }
                 }
+                handlers.get(_package).addAll(handlerClasses);
             }
         }
 

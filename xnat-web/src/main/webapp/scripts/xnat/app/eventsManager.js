@@ -108,7 +108,7 @@ $(function(){
                 else {
                     if (!hasEvents) {
                         $add_event_handler.prop('disabled',true);
-                        $no_events_defined.show();
+                        $no_event_handlers.show();
                     }
                     else {
                         $no_event_handlers.show();

@@ -301,7 +301,6 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
         }
         final String eventName = eventID.replaceAll("\\*OPEN\\*", "(").replaceAll("\\*CLOSE\\*", ")");
         //check to see if this has been handled before
-        final AutomationCompletionEventI automationCompletionEvent = automationEvent.getAutomationCompletionEvent();
         for (final Script script : getScripts(automationEvent.getExternalId(), eventClass, eventID, filterMap)) {
             try {
                 final String action = "Executed script " + script.getScriptId();
@@ -321,10 +320,7 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
                 scriptWrk.setStatus(PersistentWorkflowUtils.QUEUED);
                 WorkflowUtils.save(scriptWrk, scriptWrk.buildEvent());
 
-                final AutomatedScriptRequest request = new AutomatedScriptRequest(automationEvent.getSrcStringifiedId(), automationEvent.getSrcEventClass(), user, script.getScriptId(), eventName,
-                                                                                  scriptWrk.getWorkflowId().toString(), automationEvent.getEntityType(), automationEvent.getSrcStringifiedId(), automationEvent.getExternalId(),
-                                                                                  automationEvent.getParameterMap(), automationCompletionEvent);
-
+                final AutomatedScriptRequest request = new AutomatedScriptRequest(automationEvent, eventName, user, script, scriptWrk);
                 XDAT.sendJmsRequest(request);
             } catch (Exception e1) {
                 logger.error("Script launch exception", e1);

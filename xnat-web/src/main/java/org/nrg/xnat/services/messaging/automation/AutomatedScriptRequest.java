@@ -1,7 +1,10 @@
 package org.nrg.xnat.services.messaging.automation;
 
 import org.json.JSONObject;
+import org.nrg.automation.entities.Script;
 import org.nrg.automation.event.AutomationCompletionEventI;
+import org.nrg.automation.event.AutomationEventImplementerI;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 
 import com.google.common.collect.Maps;
@@ -47,7 +50,11 @@ public class AutomatedScriptRequest implements Serializable {
 	/** The _argument map. */
 	private final Map<String,Object> _argumentMap = Maps.newHashMap();
 	
+	/** The _automation completion event. */
 	private final AutomationCompletionEventI _automationCompletionEvent;
+	
+	/** The _automation event. */
+	private final AutomationEventImplementerI _automationEvent;
 
 	/**
 	 * Instantiates a new automated script request.
@@ -77,6 +84,7 @@ public class AutomatedScriptRequest implements Serializable {
 		_dataId = dataId;
 		_externalId = externalId;
 		_automationCompletionEvent = automationCompletionEvent;
+		_automationEvent = null;
 		if (argumentMap != null) {
 			_argumentMap.putAll(argumentMap);
 		}
@@ -116,6 +124,32 @@ public class AutomatedScriptRequest implements Serializable {
 	public AutomatedScriptRequest(final String srcEventId, final String srcEventClass, final UserI user, final String scriptId, final String event, final String scriptWorkflow, final String dataType, final String dataId, final String externalId, Map<String,Object> argumentMap) {
 		this(srcEventId, srcEventClass, user, scriptId, event, scriptWorkflow, dataType, dataId, externalId, argumentMap, null);
 	}	
+
+	/**
+	 * Instantiates a new automated script request.
+	 *
+	 * @param automationEvent the automation event
+	 * @param eventName the event name
+	 * @param user the user
+	 * @param script the script
+	 * @param scriptWrk the script wrk
+	 */
+	public AutomatedScriptRequest(AutomationEventImplementerI automationEvent, String eventName, UserI user, Script script, PersistentWorkflowI scriptWrk) {
+		this._automationEvent = automationEvent;
+        this._srcEventId = automationEvent.getSrcStringifiedId();
+        this._srcEventClass = automationEvent.getSrcEventClass();
+        this._user = user;
+        this._scriptId = script.getScriptId();
+        this._event = eventName;
+        this._scriptWorkflowId = scriptWrk.getWorkflowId().toString();
+        this._dataType = automationEvent.getEntityType();
+        this._dataId = automationEvent.getEntityId();
+        this._externalId = automationEvent.getExternalId();
+        this._automationCompletionEvent = automationEvent.getAutomationCompletionEvent();
+        if (automationEvent.getParameterMap()!=null) {
+        	this._argumentMap.putAll(automationEvent.getParameterMap());
+        }
+	}
 
 	/**
 	 * Gets the src event id.
@@ -215,6 +249,16 @@ public class AutomatedScriptRequest implements Serializable {
 	 */
 	public AutomationCompletionEventI getAutomationCompletionEvent() {
 		return _automationCompletionEvent;
+	}
+	
+	
+	/**
+	 * Gets the automation event.
+	 *
+	 * @return the automation event
+	 */
+	public AutomationEventImplementerI getAutomationEvent() {
+		return _automationEvent;
 	}
 
 	/**

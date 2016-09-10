@@ -474,7 +474,7 @@
 
     <h3>Event Handlers</h3>
     <div id="events_list" style="min-height:120px;">
-        <p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>
+        ##<p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>
         <p id="no_event_handlers" style="display:none;padding:20px;">There are no event handlers currently configured for this project.</p>
         <!--
         <table id="events_table" class="xnat-table" style="display:none;width:100%;">

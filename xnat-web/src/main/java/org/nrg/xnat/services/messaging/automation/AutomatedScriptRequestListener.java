@@ -3,10 +3,12 @@ package org.nrg.xnat.services.messaging.automation;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
 import org.nrg.automation.event.AutomationCompletionEventI;
+import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
@@ -42,6 +44,7 @@ public class AutomatedScriptRequestListener {
         workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
         WorkflowUtils.save(workflow, workflow.buildEvent());
         final AutomationCompletionEventI automationCompletionEvent = request.getAutomationCompletionEvent();
+        final AutomationEventImplementerI automationEvent = request.getAutomationEvent();
 
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("user", request.getUser());
@@ -51,8 +54,16 @@ public class AutomatedScriptRequestListener {
         final String srcEventClass = request.getSrcEventClass();
         parameters.put("srcEventClass", srcEventClass);
         // For backwards compatibility
-        if (srcEventClass.contains("WorkflowStatusEvent") || srcEventClass.contains("WrkWorkflowdata")) {
+        if (srcEventClass.contains("WorkflowStatusEvent") && automationEvent instanceof WorkflowStatusEvent) {
+        	final WorkflowStatusEvent wfse = (WorkflowStatusEvent) automationEvent;
+        	if (wfse!=null && wfse.getWorkflow()!=null) {
+        		parameters.put("srcWorkflowId", wfse.getWorkflow().getWorkflowId());
+        	} 
+        } else if (srcEventClass.contains("WrkWorkflowdata")) {
         	parameters.put("srcWorkflowId", request.getArgumentMap().get("wrkWorkflowId"));
+        }
+        if (parameters.get("srcWorkflowId")==null) {
+        	parameters.put("srcWorkflowId", null);
         }
         parameters.put("scriptWorkflowId", request.getScriptWorkflowId());
         parameters.put("dataType", request.getDataType());

@@ -3207,11 +3207,11 @@ label.switchbox > input + .switchbox-outer {
     display: inline-block;
     width: 32px;
     height: 16px;
-    background: #c00;
+    background: #d0d0d0;
     position: relative;
     border-radius: 3px;
     border: 1px solid #a0a0a0;
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
 }
 
 label.switchbox > input + .switchbox-outer > .switchbox-inner {
@@ -3236,6 +3236,27 @@ label.switchbox > input:checked + .switchbox-outer > .switchbox-inner {
     right: 0; left: auto;
 }
 
+label.switchbox > input ~ .switchbox-on,
+label.switchbox > input ~ .switchbox-off {
+    position: relative; left: 10px; top: -4px;
+    color: #1A75BB;
+}
+
+label.switchbox > input ~ .switchbox-on {
+    display: none;
+}
+
+label.switchbox > input ~ .switchbox-off {
+    display: inline;
+}
+
+label.switchbox > input:checked ~ .switchbox-on {
+    display: inline;
+}
+
+label.switchbox > input:checked ~ .switchbox-off {
+    display: none;
+}
 
 /* friendlyForm styles. Taken from ConnectomeDB. To be refactored / replaced in XNAT 1.7, most likely */
 fieldset,

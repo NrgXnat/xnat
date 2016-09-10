@@ -236,6 +236,8 @@ checksums:
     kind: panel.input.switchbox
     name: checksums
     label: Checksums?
+    onText: Enabled
+    offText: Disabled
     description: >
         Indicates whether checksums should be calculated for each image file as it's archived.
         Activating this provides greater assurance of data integrity, but may add significant
@@ -312,16 +314,22 @@ generalSecuritySettings:
             kind: panel.input.switchbox
             name: requireLogin
             label: Require User Login
+            onText: Required
+            offText: Not Required
             description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
         restrictUserListAccessToAdmins:
             kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins
             label: "Restrict user list access <br>to site administrators?"
+            onText: Restricted
+            offText: Not Restricted
             description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
         uiAllowNonAdminProjectCreation:
             kind: panel.input.switchbox
             name: ":UI.allow-non-admin-project-creation"
             label: "Allow non-administrators <br>to create projects?"
+            onText: Allow
+            offText: Do Not Allow
             description: "Should this site allow non-administrator users to create new projects? If turned on, the site is more secure, but this can make it more difficult for regular users to create new projects for their research efforts."
 
 userLoginsSessionControls:
@@ -502,6 +510,8 @@ passwords:
             id: requireSaltedPasswords
             name: requireSaltedPasswords
             label: Require Passwords To Be Salted
+            onText: Required
+            offText: Not Required
 
 csrf:
     kind: panel.form
@@ -515,11 +525,15 @@ csrf:
             kind: panel.input.switchbox
             name: enableCsrfToken
             label: Require CSRF Token?
+            onText: Required
+            offText: Not Required
             description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
         csrfEmailAlert:
             kind: panel.input.switchbox
             name: csrfEmailAlert
             label: CSRF Email Alert
+            onText: Enabled
+            offText: Disabled
             description: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
 
 securityServices:
@@ -563,6 +577,8 @@ emailServerSettings:
             kind: panel.input.switchbox
             name: ":smtp.enabled"
             label: "Enable SMTP?"
+            onText: Enabled
+            offText: Disabled
         hostname:
             kind: panel.input.text
             name: host
@@ -596,10 +612,14 @@ emailServerSettings:
             kind: panel.input.switchbox
             name: ":mail.smtp.auth"
             label: SMTP Auth?
+            onText: Enabled
+            offText: Disabled
         smtpStartTls:
             kind: panel.input.switchbox
             name: ":mail.smtp.starttls.enable"
             label: Start TLS?
+            onText: Enabled
+            offText: Disabled
         smtpSSLTrust:
             kind: panel.input.text
             name: ":mail.smtp.ssl.trust"
@@ -701,6 +721,8 @@ notifications:
             kind: panel.input.switchbox
             name: copyAdminOnNotifications
             label: "Copy Administrator on Notifications?"
+            onText: Enabled
+            offText: Disabled
             description: "Indicates whether the primary administrator should receive a copy of error, issue, new user, and update notifications if the administrator is not one of the configured recipients."
 
         otherSubhead:
@@ -711,6 +733,8 @@ notifications:
             kind: panel.input.switchbox
             name: emailAllowNonuserSubscribers
             label: "Allow Nonuser Subscribers"
+            onText: Allow
+            offText: Do Not Allow
             description: "Indicates whether this site should restrict email addresses for site notifications to addresses that are associated with valid active users of the XNAT installation. If turned on, the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events."
 #            value: "?? XNAT.data.siteConfig.emailAllowNonuserSubscribers"
 
@@ -724,23 +748,21 @@ themeManagement:
             tag: script|src=/scripts/xnat/admin/themeManagement.js
         themeStyle:
             tag: style
-            contents: ".themeUploader{width:270px;display:inline !important;}"
+            content: ".themeUploader{width:270px;display:inline !important;}"
         currentTheme:
             kind: panel.display
             id: currentTheme
             label: Current Theme
             description: The currently selected global theme.
-            value: ""
             element:
                 style:
-                    color: 'red'
+                    color: red
         existingTheme:
             kind: panel.select.single
             id: themeSelection
             name: themeSelection
             label: Select an existing theme
             description: Selected a new global theme from those available on the system.
-            value: ""
             options:
                 None: None
             element:
@@ -755,6 +777,53 @@ themeManagement:
             description: Upload a zipped theme package for selection above.
             className: themeUploader
 
+pluginTable:
+    kind: table.dataTable
+    id: xnat-plugin-list
+    name: pluginList
+    load: /xapi/plugins
+    items:
+        id: ~  # '~' creates hidden column
+        name: Plugin Name
+        pluginClass: Plugin Class
+        dataModelBeans:
+            label: Contents
+            cells:
+                html: <a href="#!" class="view-plugin-info link">View Plugin Info</a>
+
+pluginTableScript:
+    tag: script
+    content: >
+        var $body = $('body');
+        $body.on('click', '.view-plugin-info', function(){
+            var $this = $(this);
+            var $tr = $this.closest('tr');
+            var _id = $tr.find('td.id').text().trim();
+            var _url = XNAT.url.restUrl('/xapi/plugins/' + _id);
+            XNAT.xhr.getJSON(_url).done(function(data){
+                var _source = spawn('textarea', JSON.stringify(data, null, 4));
+                XNAT.app.codeEditor.init(_source, {
+                    language: 'json'
+                }).openEditor({
+                    title: 'Plugin Info',
+                    footerContent: '(read-only)',
+                    buttons: { close: { label: 'Close' } }
+                });
+            });
+        });
+        $body.on('focus', 'textarea.ace_text-input', function(){
+            this.disabled = true;
+        });
+
+pluginList:
+    kind: panel
+    name: pluginList
+    label: List of Installed Plugins
+    footer: false
+    contents:
+        ${pluginTable}
+        ${pluginTableScript}
+
 authenticationMethods:
     kind: panel.form
     name: authenticationMethods
@@ -767,10 +836,14 @@ authenticationMethods:
             kind: panel.input.switchbox
             name: ":provider.providers.xnatInternal"
             label: XNAT (Internal)
+            onText: Enabled
+            offText: Disabled
         ldapProvider:
             kind: panel.input.switchbox
             name: ":provider.providers.ldap"
             label: LDAP
+            onText: Enabled
+            offText: Disabled
 #        oauthProvider:
 #            kind: panel.input.switchbox
 #            id: oauthProvider
@@ -863,6 +936,8 @@ registrationOptions:
             kind: panel.input.switchbox
             name: emailVerification
             label: "Require Email Verification <br>to Register?"
+            onText: Required
+            offText: Not Required
             description: >
                 If true, users will receive an email after registering for an account and must click a
                 link in the email to verify their email address before they are able to use their account.
@@ -882,6 +957,8 @@ registrationOptions:
             kind: panel.input.switchbox
             name: userRegistration
             label: "Auto-enable <br>User Registration?"
+            onText: Auto-enable
+            offText: Do Not Auto-enable
             description: >
                 If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
                 projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
@@ -890,6 +967,8 @@ registrationOptions:
             kind: panel.input.switchbox
             name: par
             label: "Auto-enable with <br>Project Access Request?"
+            onText: Auto-enable
+            offText: Do Not Auto-enable
             description: >
                 If true, user accounts created when accepting project access requests will always be enabled (and verified) automatically. If false,
                 user accounts will only be enabled automatically if "Auto-enable User Registration?" is true. So this setting determines whether project
@@ -899,6 +978,8 @@ registrationOptions:
             kind: panel.input.switchbox
             name: ":UI.allow-new-user-comments"
             label: "Allow User Comments <br>on Registration?"
+            onText: Allow
+            offText: Do Not Allow
 
 manageDataTypes:
     kind: panel.form
@@ -958,6 +1039,8 @@ anonymization:
             kind: panel.input.switchbox
             name: enableSitewideAnonymizationScript
             label: "Enable Site-wide <br>Anonymization Script?"
+            onText: Enabled
+            offText: Disabled
         sitewideAnonymizationScript:
             kind: panel.textarea
             name: sitewideAnonymizationScript
@@ -978,6 +1061,8 @@ seriesImportFilter:
             kind: panel.input.switchbox
             name: enableSitewideSeriesImportFilter
             label: "Enable Site-wide <br>Series Import Filter?"
+            onText: Enabled
+            offText: Disabled
         sitewideSeriesImportFilterMode:
             kind: panel.select.single
             name: sitewideSeriesImportFilterMode
@@ -1065,6 +1150,8 @@ sessionUploadMethod:
             kind: panel.input.switchbox
             name: enableProjectAppletScript
             label: Enable Project Applet Script
+            onText: Enabled
+            offText: Disabled
             description: "The site-wide applet settings script can be supplemented by applet settings specified at the project level if this setting is enabled."
         appletScript:
             kind: panel.textarea
@@ -1161,6 +1248,8 @@ automationSettings:
             kind: panel.input.switchbox
             name: internalScriptingEnabled
             label: Internal Scripting Enabled
+            onText: Enabled
+            offText: Disabled
             description: "When enabled, administrators can create and edit scripts that run internally to the XNAT process. This can be a powerful feature, but also can pose security hazards that may be unacceptable for certain deployments. For these situations, configurable internal scripting can be disabled (XNAT itself may still use some scripting for feature implementation, but these scripts can not be modified or updated by users)."
 
 misc:
@@ -1176,6 +1265,8 @@ misc:
             kind: panel.input.switchbox
             name: scanTypeMapping
             label: Scan Type Mapping?
+            onText: Enabled
+            offText: Disabled
         development:
             kind: panel.subhead
             label: Development Utilities
@@ -1256,6 +1347,13 @@ adminPage:
             group: xnatSetup
             contents:
                 ${themeManagement}
+        plugins:
+            kind: tab
+            name: plugins
+            label: Manage Plugins
+            group: xnatSetup
+            contents:
+                ${pluginList}
 #        authenticationMethods:
 #            kind: tab
 #            name: authenticationMethods

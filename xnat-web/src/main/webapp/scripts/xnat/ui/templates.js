@@ -258,7 +258,9 @@ var XNAT = getObject(XNAT);
         if (/switchbox/i.test(opts.kind)) {
             inner.push(spawn('label.switchbox', [
                 element,
-                ['span.switchbox-outer', [['span.switchbox-inner']]]
+                ['span.switchbox-outer', [['span.switchbox-inner']]],
+                ['span.switchbox-on', opts.onText||''],
+                ['span.switchbox-off', opts.offText||'']
             ]))
         }
         else {

@@ -32,12 +32,12 @@ var XNAT = getObject(XNAT || {});
         this.opts = cloneObject(opts);
 
         this.source = source;
-        this.$source = $$(this.source);
+        this.$source = $$(this.source) || {};
 
         // this will be defined when the dialog opens
         this.$editor = null;
 
-        this.isInput = (function(){ return _this.$source.is(':input') })();
+        this.isInput = this.$source.is ? (function(){ return _this.$source.is(':input') })() : false;
 
         this.isUrl = !this.source && (this.opts.loadUrl || this.opts.load || this.opts.url);
 
@@ -46,7 +46,7 @@ var XNAT = getObject(XNAT || {});
         // set default language for editor
         // add [data-code-language="javascript"] to source code element
         // for correct syntax highlighting
-        this.language = this.opts.language || this.$source.attr('data-code-language');
+        this.language = this.opts.language || (this.$source.attr ? this.$source.attr('data-code-language') : '');
 
         this.getSourceCode = function(){
             if (this.isUrl){
@@ -57,7 +57,7 @@ var XNAT = getObject(XNAT || {});
             }
             else {
                 // extract code from the source
-                this.code = this.isInput ? this.$source.val() : this.$source.html();
+                this.code = this.isInput ? this.$source.val() : this.$source.html ? this.$source.html() : '';
             }
             return this.code;
             // return {

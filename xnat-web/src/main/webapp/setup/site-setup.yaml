@@ -210,11 +210,15 @@ siteSetup:
                     kind: panel.input.switchbox
                     name: mail.smtp.auth
                     label: SMTP Auth?
+                    onText: Enabled
+                    offText: Disabled
 
                 smtpStartTls:
                     kind: panel.input.switchbox
                     name: mail.smtp.starttls.enable
                     label: Start TLS?
+                    onText: Enabled
+                    offText: Disabled
 
                 smtpSSLTrust:
                     kind: panel.input.text
@@ -234,25 +238,31 @@ siteSetup:
             contents:
 
                 requireLogin:
-                   kind: panel.input.switchbox
-                   id: requireLogin
-                   name: requireLogin
-                   label: Require User Login
-                   description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
+                    kind: panel.input.switchbox
+                    id: requireLogin
+                    name: requireLogin
+                    label: Require User Login
+                    onText: Required
+                    offText: Not Required
+                    description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
 
                 autoEnableUserRegistration:
-                   kind: panel.input.switchbox
-                   id: autoEnableUserRegistration
-                   name: userRegistration
-                   label: "Auto-enable User Registration?"
-                   description: >
-                       If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
-                       projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
-                       receives an email notification when a user registers.
+                    kind: panel.input.switchbox
+                    id: autoEnableUserRegistration
+                    name: userRegistration
+                    label: "Auto-enable User Registration?"
+                    onText: Auto-enable
+                    offText: Do Not Auto-enable
+                    description: >
+                        If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
+                        projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
+                        receives an email notification when a user registers.
 
                 enableCsrfToken:
-                   kind: panel.input.switchbox
-                   id: enableCsrfToken
-                   name: enableCsrfToken
-                   label: Require CSRF Token?
-                   description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
+                    kind: panel.input.switchbox
+                    id: enableCsrfToken
+                    name: enableCsrfToken
+                    label: Require CSRF Token?
+                    onText: Required
+                    offText: Not Required
+                    description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?

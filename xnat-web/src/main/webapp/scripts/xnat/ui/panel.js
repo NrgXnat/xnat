@@ -1077,14 +1077,14 @@ var XNAT = getObject(XNAT || {});
         // initialize the table
         var dataTable = XNAT.table.dataTable(opts.data||[], opts);
 
-        var panelElement = panel.element({
-            label: opts.label,
+        var panelTable = panel.display({
+            label: opts.label||false,
             description: opts.description
         });
 
-        panelElement.target.appendChild(dataTable.table);
+        panelTable.target.appendChild(dataTable.table);
 
-        return panelElement;
+        return panelTable;
         
     };
 

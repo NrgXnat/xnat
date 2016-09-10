@@ -341,8 +341,8 @@ var XNAT = getObject(XNAT);
 
         var tableData = data;
 
-        // tolerate reversed arguments
-        if (Array.isArray(opts)){
+        // tolerate reversed arguments or spawner element object
+        if (Array.isArray(opts) || data.spawnerElement) {
             tableData = opts;
             opts = getObject(data);
         }
@@ -376,12 +376,28 @@ var XNAT = getObject(XNAT);
         var newTable = new Table(opts.element);
 
         function createTable(rows){
-            var props = [];
+            var props = [], objRows = [];
+            // convert object list to array list
+            if (isPlainObject(rows)) {
+                forOwn(rows, function(name, stuff){
+                    objRows.push(stuff);
+                });
+                rows = objRows; // now it's an array
+            }
             if (!allItems && (opts.items || opts.properties)) {
                 newTable.tr();
                 forOwn(opts.items||opts.properties, function(name, val){
+                    // if 'val' is a string, it's the text for the <th>
+                    // if it's an object, get the 'label' property
+                    //var label = stringable(val) ? val+'' : val.label;
                     props.push(name);
-                    newTable.th(val);
+                    newTable.th(val.label || val);
+                    if (val === '~') {
+                        $(newTable.last.th).html(name)
+                                .addClass('hidden')
+                                .dataAttr('prop', name);
+                        return;
+                    }
                     if (!opts.sortable) return;
                     if (opts.sortable === true || opts.sortable.indexOf(name) !== -1) {
                         addClassName(newTable.last.th, 'sort');
@@ -395,6 +411,9 @@ var XNAT = getObject(XNAT);
                 forOwn(rows[0], function(name, val){
                     if (allItems) {
                         newTable.th(name);
+                        if (val === '~') {
+                            addClassName(newTable.last.th, 'hidden');
+                        }
                     }
                     props.push(name);
                 });
@@ -402,7 +421,19 @@ var XNAT = getObject(XNAT);
             rows.forEach(function(item){
                 newTable.tr();
                 props.forEach(function(name){
-                    newTable.td({ className: name }, item[name]);
+                    var cellObj = { className: name };
+                    var itemObj = item[name];
+                    if (opts.items && opts.items[name].cells) {
+                        extend(true, cellObj, opts.items[name].cells);
+                    }
+                    else {
+                        cellObj.html = itemObj;
+                    }
+                    newTable.td(cellObj);
+                    if (opts.items[name] === '~') {
+                        addClassName(newTable.last.td, 'hidden');
+                    }
+
                 });
             });
         }

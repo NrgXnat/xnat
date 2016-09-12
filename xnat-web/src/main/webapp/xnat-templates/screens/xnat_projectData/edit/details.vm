@@ -288,6 +288,7 @@
         var editPrimary = spawn('a#edit-primary|href=#!', 'Edit Selected');
 
         editPrimary.onclick = function(){
+//            investigators.primary = primaryMenu.getSelected(0);
             if (investigators.primary !== 'NULL') {
                 primaryMenu.dialog(investigators.primary)
             }

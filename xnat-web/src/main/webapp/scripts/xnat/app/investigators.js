@@ -131,13 +131,13 @@ var XNAT = getObject(XNAT);
     };
 
     // return array of ids of selected investigators
-    Investigators.fn.getSelected = function(){
+    Investigators.fn.getSelected = function(i){
         var self = this;
         this.selected = [];
         this.menu$.find(':selected').each(function(){
             self.selected.push(this.value)
         });
-        return this.selected;
+        return i || i === 0 ? this.selected[i] : this.selected;
     };
 
     // renders the <option> elements
@@ -326,6 +326,10 @@ var XNAT = getObject(XNAT);
                                 }
                                 // update the menu associated with the dialog
                                 self.updateMenu([].concat(self.getSelected(), (!setPrimary ? selected : [])));
+                                // set the PI if editing/creating PI
+                                if (setPrimary) {
+                                    investigators.primary = selected;
+                                }
                                 dialog.close();
                             }
                         });

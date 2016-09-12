@@ -789,7 +789,15 @@ pluginTable:
         dataModelBeans:
             label: Contents
             cells:
-                html: <a href="#!" class="view-plugin-info link">View Plugin Info</a>
+                apply: JSON.stringify  # function that accepts value as sole argument
+                html: >
+                    <a href="#!" class="view-plugin-info link">View Plugin Info</a>
+                    <div class="hidden plugin-json-string">__VALUE__</div>
+    messages:
+        noData: >
+            There are no plugins installed in this XNAT. Try searching for plugins on XNAT Marketplace.
+        error: >
+            An error occurred retrieving information for installed plugins.
 
 pluginTableScript:
     tag: script
@@ -806,12 +814,13 @@ pluginTableScript:
                     language: 'json'
                 }).openEditor({
                     title: 'Plugin Info',
+                    classes: 'plugin-json',
                     footerContent: '(read-only)',
                     buttons: { close: { label: 'Close' } }
                 });
             });
         });
-        $body.on('focus', 'textarea.ace_text-input', function(){
+        $body.on('focus', '.plugin-json textarea.ace_text-input', function(){
             this.disabled = true;
         });
 

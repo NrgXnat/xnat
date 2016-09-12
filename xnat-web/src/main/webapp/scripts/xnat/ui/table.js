@@ -367,6 +367,7 @@ var XNAT = getObject(XNAT);
         }
 
         opts.element = extend(true, {
+            id: opts.id || randomID('t', false),
             style: {
                 width: opts.width || '100%'
             }
@@ -374,6 +375,10 @@ var XNAT = getObject(XNAT);
 
         // initialize the table
         var newTable = new Table(opts.element);
+
+        // create a div to hold the table
+        // or message (if no data or error)
+        var tableContainer = spawn('div.data-table-container', [newTable.table]);
 
         function createTable(rows){
             var props = [], objRows = [];
@@ -422,13 +427,18 @@ var XNAT = getObject(XNAT);
                 newTable.tr();
                 props.forEach(function(name){
                     var cellObj = { className: name };
-                    var itemObj = item[name];
+                    var itemVal = item[name];
                     if (opts.items && opts.items[name].cells) {
                         extend(true, cellObj, opts.items[name].cells);
                     }
                     else {
-                        cellObj.html = itemObj;
+                        cellObj.html = itemVal;
                     }
+                    if (cellObj.apply) {
+                        itemVal = eval(cellObj.apply).apply(item, itemVal);
+                    }
+                    // special __VALUE__ string gets replaced
+                    cellObj.html = cellObj.html.replace(/__VALUE__/, itemVal);
                     newTable.td(cellObj);
                     if (opts.items[name] === '~') {
                         addClassName(newTable.last.td, 'hidden');
@@ -436,6 +446,26 @@ var XNAT = getObject(XNAT);
 
                 });
             });
+        }
+
+
+        function showMessage(){
+            tableContainer.innerHTML = '';
+            return {
+                noData: function(msg){
+                    tableContainer.innerHTML = '' +
+                        '<div class="no-data">' +
+                        (msg || 'Data not available.') +
+                        '</div>';
+                },
+                error: function(msg, error){
+                    tableContainer.innerHTML = '' +
+                        '<div class="error">' +
+                        (msg || '') +
+                        (error ? '<br><br>' + error : '') +
+                        '</div>';
+                }
+            };
         }
 
         // if 'tableData' is a string, use as the url
@@ -457,7 +487,18 @@ var XNAT = getObject(XNAT);
                         // handle data returned in ResultSet.Result array
                         json = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
                     }
-                    createTable(json);
+                    // make sure there's data before rendering the table
+                    if (isEmpty(json)) {
+                        showMessage().noData(opts.messages ? opts.messages.noData || opts.messages.empty : '')
+                    }
+                    else {
+                        createTable(json);
+                    }
+                },
+                error: function(obj, status, message){
+                    var _msg = opts.messages ? opts.messages.error : '';
+                    var _err = 'Error: ' + message;
+                    showMessage().error(_msg);
                 }
             });
         }
@@ -467,16 +508,16 @@ var XNAT = getObject(XNAT);
         }
 
         if (opts.container) {
-            $$(opts.container).append(newTable.table);
+            $$(opts.container).append(tableContainer);
         }
 
         // add properties for Spawner compatibility
-        newTable.element = newTable.spawned = newTable.table;
+        newTable.element = newTable.spawned = tableContainer;
         newTable.get = function(){
-            return newTable.table;
+            return tableContainer;
         };
 
-        return newTable;
+        return tableContainer;
 
     };
 

@@ -156,6 +156,12 @@ function isEmptyArray( arr ){
     return isArray(arr) && arr.length === 0;
 }
 function isEmpty( x, args ){
+    if (typeof x === 'boolean') {
+        return false;
+    }
+    if (isNumeric(x)) {
+        return false;
+    }
     if (isString(x)){
         return x === '';
     }
@@ -163,7 +169,7 @@ function isEmpty( x, args ){
         return isEmptyObject(x);
     }
     if (isArray(x)){
-        return isEmptyArray(x);
+        return !x.length;
     }
     // does a function return an 'empty' value?
     if (isFunction(x)){

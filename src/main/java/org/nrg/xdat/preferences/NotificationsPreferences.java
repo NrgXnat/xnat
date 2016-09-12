@@ -181,6 +181,19 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     }
 
     @NrgPreference(defaultValue = "true")
+    public boolean getCopyAdminOnPageEmails() {
+        return getBooleanValue("copyAdminOnPageEmails");
+    }
+
+    public void setCopyAdminOnPageEmails(final boolean copyAdminOnPageEmails) {
+        try {
+            setBooleanValue(copyAdminOnPageEmails, "copyAdminOnPageEmails");
+        } catch (InvalidPreferenceName invalidPreferenceName) {
+            _log.error("Invalid preference name 'copyAdminOnPageEmails': something is very wrong here.", invalidPreferenceName);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true")
     public boolean getCopyAdminOnNotifications() {
         return getBooleanValue("copyAdminOnNotifications");
     }

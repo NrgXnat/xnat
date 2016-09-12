@@ -30,51 +30,51 @@ import java.util.Calendar;
 public class EmailCustomSearch {
     private static final Logger logger = LoggerFactory.getLogger(EmailCustomSearch.class);
 
-    public void send(HttpServletRequest req, HttpServletResponse response,ServletConfig sc) throws IOException{
+    public void send(HttpServletRequest req, HttpServletResponse response, ServletConfig sc) throws IOException {
         String xmlString = req.getParameter("search_xml");
-        
+
         UserI user = XDAT.getUserDetails();
 
-        String _return ="<DIV class=\"error\">Unknown Exception</DIV>";
-		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
-        if (user!=null){
-            String toAddress = req.getParameter("toAddress");
-            String ccAddress = req.getParameter("ccAddress");
-            String bccAddress = req.getParameter("bccAddress");
-            String subject = req.getParameter("subject");
-            String message = req.getParameter("message");
-            
-			if (AdminUtils.GetPageEmail()) {
-				if (StringUtils.isBlank(bccAddress)) {
-					bccAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
-				} else {
-					bccAddress += ", " + XDAT.getSiteConfigPreferences().getAdminEmail();
-                        }
-                    }
-                    
-			// Split each string on commas and whitespace.
-			String[] tos = StringUtils.split(toAddress, ", ");
-			String[] ccs = StringUtils.split(ccAddress, ", ");
-			String[] bccs = StringUtils.split(bccAddress, ", ");
+        String _return = "<DIV class=\"error\">Unknown Exception</DIV>";
+        if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+            if (user != null) {
+                String toAddress = req.getParameter("toAddress");
+                String ccAddress = req.getParameter("ccAddress");
+                String bccAddress = req.getParameter("bccAddress");
+                String subject = req.getParameter("subject");
+                String message = req.getParameter("message");
 
-			if (toAddress != null || ccAddress != null || bccAddress != null) {
-				try {
-                    Object search_id=PoolDBUtils.LogCustomSearch(user.getUsername(), xmlString, user.getDBName());
-					String formattedMessage = formatHtmlMessage(req, user, message, search_id);
-					XDAT.getMailService().sendHtmlMessage(user.getEmail(), tos, ccs, bccs, subject, formattedMessage);
-                        _return=("<DIV class=\"warning\">Message sent.</DIV>");
-                    } catch (Exception e) {
-                        logger.error("",e);
-                        _return=("<DIV class=\"error\">Unable to send mail.</DIV>");
+                if (XDAT.getNotificationsPreferences().getCopyAdminOnPageEmails()) {
+                    if (StringUtils.isBlank(bccAddress)) {
+                        bccAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
+                    } else {
+                        bccAddress += ", " + XDAT.getSiteConfigPreferences().getAdminEmail();
                     }
+                }
+
+                // Split each string on commas and whitespace.
+                String[] tos = StringUtils.split(toAddress, ", ");
+                String[] ccs = StringUtils.split(ccAddress, ", ");
+                String[] bccs = StringUtils.split(bccAddress, ", ");
+
+                if (toAddress != null || ccAddress != null || bccAddress != null) {
+                    try {
+                        Object search_id = PoolDBUtils.LogCustomSearch(user.getUsername(), xmlString, user.getDBName());
+                        String formattedMessage = formatHtmlMessage(req, user, message, search_id);
+                        XDAT.getMailService().sendHtmlMessage(user.getEmail(), tos, ccs, bccs, subject, formattedMessage);
+                        _return = ("<DIV class=\"warning\">Message sent.</DIV>");
+                    } catch (Exception e) {
+                        logger.error("", e);
+                        _return = ("<DIV class=\"error\">Unable to send mail.</DIV>");
+                    }
+                }
+            } else {
+                _return = "<DIV class=\"error\">Missing User Account</DIV>";
             }
-        }else{
-            _return= "<DIV class=\"error\">Missing User Account</DIV>";
+        } else {
+            _return = "<DIV class=\"error\">SMTP disabled.</DIV>";
         }
-		}else{
-            _return= "<DIV class=\"error\">SMTP disabled.</DIV>";
-        }
-		
+
         response.setContentType("text/html");
         response.setHeader("Cache-Control", "no-cache");
         response.getWriter().write(_return);

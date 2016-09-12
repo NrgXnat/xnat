@@ -121,10 +121,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
                                 data.setMessage("User registration complete.");
 
-                                if (AdminUtils.GetNewUserRegistrationsEmail()) {
-                                    AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
-                                }
-                                AdminUtils.sendNewUserEmailMessage(found.getUsername(), found.getEmail(), context);
+                                AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
+                                AdminUtils.sendNewUserEmailMessage(found.getUsername(), found.getEmail());
 
                                 XFTItem item = XFTItem.NewItem("xdat:user_login", found);
                                 Date today = Calendar.getInstance(TimeZone.getDefault()).getTime();

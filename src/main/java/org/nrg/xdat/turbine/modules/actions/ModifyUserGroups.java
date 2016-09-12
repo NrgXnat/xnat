@@ -44,10 +44,10 @@ public class ModifyUserGroups extends SecureAction {
     public void doPerform(RunData data, Context context) throws Exception {
         UserI newUser = Users.createUser(TurbineUtils.GetDataParameterHash(data));
         UserI oldUser = Users.getUser(newUser.getLogin());
-        UserI authenticatedUser = TurbineUtils.getUser(data);
+        UserI authenticatedUser = XDAT.getUserDetails();
 
         if (Roles.isSiteAdmin(authenticatedUser)) {
-            PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), Users.getUserDataType(), oldUser.getID().toString(), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified user settings"));
+            PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, Users.getUserDataType(), oldUser.getID().toString(), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified user settings"));
             EventMetaI ci = wrk.buildEvent();
 
             try {
@@ -108,7 +108,7 @@ public class ModifyUserGroups extends SecureAction {
             } else if (newUser.isEnabled() && !oldUser.isEnabled()) {
                 //When a user is enabled, notify the administrator
                 try {
-                    AdminUtils.sendNewUserEmailMessage(oldUser.getUsername(), oldUser.getEmail(), context);
+                    AdminUtils.sendNewUserEmailMessage(oldUser.getUsername(), oldUser.getEmail());
                 } catch (Exception e) {
                     logger.error("", e);
                 }

@@ -35,7 +35,7 @@ public class EmailReportAction extends EmailAction {
     
     public void sendMessage(RunData data, Context context) {
         if (!StringUtils.isBlank(toAddress) | !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {	
-			if (AdminUtils.GetPageEmail()) {
+			if (XDAT.getNotificationsPreferences().getCopyAdminOnPageEmails()) {
 				if (StringUtils.isBlank(bccAddress)) {
 					bccAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
 				} else {

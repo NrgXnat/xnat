@@ -16,7 +16,6 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
@@ -25,7 +24,6 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
 
 /**
@@ -57,7 +55,7 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
                 if (enabled)
                 {
                     try {
-                        AdminUtils.sendNewUserEmailMessage(u.getUsername(), u.getEmail(), context);
+                        AdminUtils.sendNewUserEmailMessage(u.getUsername(), u.getEmail());
                     } catch (Exception e) {
                         logger.error("",e);
                     }

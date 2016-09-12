@@ -38,7 +38,7 @@ public class ActionsCompleted extends org.nrg.xdat.turbine.modules.screens.Secur
             }else{
                 String s = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("exception",data));
                 if (s !=null)
-                    AdminUtils.sendErrorNotification(data, s, context);
+                    AdminUtils.sendErrorNotification(s, context);
             }
         } catch (RuntimeException e) {
         }

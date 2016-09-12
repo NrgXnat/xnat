@@ -8,17 +8,14 @@
  *
  * Last modified 2/17/14 10:25 AM
  */
-
 package org.nrg.xdat.turbine.utils;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.mail.api.MailMessage;
-import org.nrg.mail.api.NotificationSubscriberProvider;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
@@ -28,7 +25,6 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +42,7 @@ import java.util.Map;
 public class AdminUtils {
 	private static final Logger  logger                 = LoggerFactory.getLogger(AdminUtils.class);
 
-	private static       String  authorizerEmailAddress = null;
-	private static       boolean NEW_USER_REGISTRATIONS = true;
-	private static       boolean PAGE_EMAIL             = true;
 	private static       String  login_failure_message  = null;
-
-	private static NotificationSubscriberProvider _provider;
 
 	/**
      *
@@ -80,40 +71,6 @@ public class AdminUtils {
 		return login_failure_message;
 	}
 
-	public static void SetNewUserRegistrationsEmail(boolean b) {
-		NEW_USER_REGISTRATIONS = b;
-	}
-
-	public static void SetPageEmail(boolean b) {
-		PAGE_EMAIL = b;
-	}
-
-	public static boolean GetNewUserRegistrationsEmail() {
-		return NEW_USER_REGISTRATIONS;
-	}
-
-	public static boolean GetPageEmail() {
-		return PAGE_EMAIL;
-	}
-
-	/**
-	 * Gets the Authorizer Email Id
-	 *
-		* @return Email id
-	 */
-	public static String getAuthorizerEmailId() {
-		if (authorizerEmailAddress == null) {
-			try {
-				authorizerEmailAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
-			} catch (Exception e) {
-				logger.error("", e);
-				authorizerEmailAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
-			}
-
-		}
-		return authorizerEmailAddress;
-	}
-
 	public static void sendDisabledUserVerificationNotification(final UserI user, final Context context) throws Exception {
         context.put("time", Calendar.getInstance().getTime());
         context.put("server", TurbineUtils.GetFullServerPath());
@@ -130,7 +87,7 @@ public class AdminUtils {
         XDAT.verifyNotificationType(NotificationType.Issue);
         XDAT.getNotificationService().createNotification(NotificationType.Issue.toString(), properties);
 
-		sendAdminNotificationCopy(body, subject, NotificationType.Issue);
+		sendAdminNotificationCopy(subject, body, NotificationType.Issue);
 	}
 
 	public static void sendNewUserNotification(final UserI user, final Context context) throws Exception {
@@ -153,7 +110,7 @@ public class AdminUtils {
 			AdminUtils.sendNewUserRequestNotification(username, firstName, lastName, email, comments, phone, organization, context);
 		} else if((!XDAT.getSiteConfigPreferences().getEmailVerification()) || user.isVerified()) {
 			AdminUtils.sendNewUserCreationNotification(username, firstName, lastName, email, comments, phone, organization, context);
-			AdminUtils.sendNewUserEmailMessage(username, email, context);
+			AdminUtils.sendNewUserEmailMessage(username, email);
 		}
 	}
 
@@ -163,15 +120,6 @@ public class AdminUtils {
 			throw new Exception("Unable to send verification email. Required User is null.");
 		}
 		sendNewUserVerificationEmail(user.getEmail(), user.getFirstname(), user.getLastname(), user.getLogin());
-	}
-
-	public static void sendNewUserVerificationEmail(ItemI i) throws Exception {
-		// If the Item is null, don't continue.
-		if (i == null) {
-			throw new Exception("Unable to send verification email. Required Item is null.");
-		}
-		sendNewUserVerificationEmail((String) i.getProperty("email"), (String) i.getProperty("firstName"),
-									 (String) i.getProperty("lastName"), (String) i.getProperty("login"));
 	}
 
 	public static void sendNewUserVerificationEmail(String email, String firstName, String lastName, String userName) throws Exception {
@@ -206,7 +154,7 @@ public class AdminUtils {
 	 * @param username    The username of the new user.
 	 * @param email       The email  of the new user.
 	 */
-	public static void sendNewUserEmailMessage(String username, String email, Context context) throws Exception {
+	public static void sendNewUserEmailMessage(String username, String email) throws Exception {
 		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
 			String body = XDAT.getNotificationsPreferences().getEmailMessageUserRegistration();
 			body = body.replaceAll("USER_USERNAME",username);
@@ -221,48 +169,11 @@ public class AdminUtils {
 
 			String subject = "Welcome to " + TurbineUtils.GetSystemName();
 
-			if (AdminUtils.GetNewUserRegistrationsEmail()) {
-				XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), new String[] { email }, new String[] { XDAT.getSiteConfigPreferences().getAdminEmail() }, null, subject, body);
-			} else {
-				XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), email, subject, body);
-			}
+			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), new String[] { email }, new String[] { XDAT.getSiteConfigPreferences().getAdminEmail() }, null, subject, body);
 		}
 	}
 
-	/**
-	 * Constructs the body of the email sent to an authorizer
-	 *
-	 * @return body of authorization email
-	 */
-	public static String getAuthorizeRequestEmailBody(String UserName_AwaitingAuthorization, String login) {
-		String msg = "Authorization for new or updated access privilege has been requested for <b>" + UserName_AwaitingAuthorization + "</b>";
-		msg += "<br><br> This user will not be able to access the requested resources until you have completed authorization. Please review the privileges <a href=\"" + TurbineUtils.GetFullServerPath()
-				+ "/app/action/DisplayItemAction/search_element/xdat:user/search_field/xdat:user.login/search_value/" + login + "/\">here</a>.";
-		msg += "<br><br> For help, contact  <a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "?subject=" + TurbineUtils.GetSystemName() + " Assistance\">" + TurbineUtils.GetSystemName() + " Management </A>";
-		return msg;
-	}
-
-	/**
-	 * Sends the Authorization Request to authorizer
-	 *
-	 * @param user    The user to be authorized.
-	 */
-	public static void sendAuthorizationEmailMessage(UserI user) {
-		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
-		String from = XDAT.getSiteConfigPreferences().getAdminEmail();
-		String[] tos = StringUtils.split(getAuthorizerEmailId(), ", ");
-		String[] ccs = AdminUtils.GetNewUserRegistrationsEmail() ? new String[] { from } : null;
-		String subject = TurbineUtils.GetSystemName() + ": Authorization Request";
-		String body = getAuthorizeRequestEmailBody(user.getFirstname() + " " + user.getLastname(), user.getUsername());
-		try {
-			XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subject, body);
-		} catch (MessagingException exception) {
-			logger.error("Unable to send mail", exception);
-		}
-	}
-	}
-
-    public static boolean sendUserHTMLEmail(final String subject, final String message, final boolean ccAdmin, final String[] addresses) {
+	public static boolean sendUserHTMLEmail(final String subject, final String message, final boolean ccAdmin, final String[] addresses) {
 		if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
 			if (addresses.length > 0) {
 				final String from = XDAT.getSiteConfigPreferences().getAdminEmail();
@@ -277,7 +188,7 @@ public class AdminUtils {
 		return false;
 	}
 
-	public static void sendErrorNotification(RunData data, String message, Context context) throws Exception {
+	public static void sendErrorNotification(String message, Context context) throws Exception {
 		UserI user = XDAT.getUserDetails();
 		assert user != null;
 		String email = user.getEmail();
@@ -331,15 +242,7 @@ public class AdminUtils {
 		sendAdminEmail(null, subject, message);
 	}
 
-	public static NotificationSubscriberProvider getNotificationSubscriberProvider() {
-	    return _provider;
-	}
-
-	public static void setNotificationSubscriberProvider(NotificationSubscriberProvider provider) {
-	    _provider = provider;
-	}
-
-    public static String populateVmTemplate(Context context, String templatePath) throws Exception {
+	public static String populateVmTemplate(Context context, String templatePath) throws Exception {
         StringWriter writer = new StringWriter();
         Template template = Velocity.getTemplate(templatePath);
         template.merge(context, writer);
@@ -369,7 +272,7 @@ public class AdminUtils {
 		return fallback;
 	}
 
-	private static void sendAdminNotificationCopy(final String body, final String subject, final NotificationType event) {
+	private static void sendAdminNotificationCopy(final String subject, final String body, final NotificationType event) {
 		final String email = XDAT.getSiteConfigPreferences().getAdminEmail();
 		if (XDAT.getNotificationsPreferences().getCopyAdminOnNotifications() &&
 			!StringUtils.contains(XDAT.getSubscriberEmailsListAsString(event), email)) {
@@ -386,7 +289,7 @@ public class AdminUtils {
 	 * @param username    The username of the new user.
 	 * @param email       The email of the new user.
 	 * @param context     The data context.
-	 * @throws Exception
+	 * @throws Exception When something goes wrong.
 	 * @see #sendNewUserCreationNotification(String, String, String, String, String, String, String, org.apache.velocity.context.Context)
 	 */
 	private static void sendNewUserRequestNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
@@ -423,7 +326,7 @@ public class AdminUtils {
 	 * @param username    The username of the new user.
 	 * @param email       The email of the new user.
 	 * @param context     The data context.
-	 * @throws Exception
+	 * @throws Exception When something goes wrong.
 	 */
 	private static void sendNewUserCreationNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
 		context.put("time", Calendar.getInstance().getTime());

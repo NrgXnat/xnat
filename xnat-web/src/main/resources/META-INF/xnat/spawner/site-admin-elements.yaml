@@ -795,7 +795,7 @@ pluginTable:
                     <div class="hidden plugin-json-string">__VALUE__</div>
     messages:
         noData: >
-            There are no plugins installed in this XNAT. Try searching for plugins on XNAT Marketplace.
+            There are no plugins installed in this XNAT. Try searching for plugins on <a href="http://marketplace.xnat.org/plugins/" title="XNAT Marketplace" target="_blank">XNAT Marketplace</a>.
         error: >
             An error occurred retrieving information for installed plugins.
 

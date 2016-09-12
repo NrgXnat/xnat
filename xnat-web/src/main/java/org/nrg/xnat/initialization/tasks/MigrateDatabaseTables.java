@@ -11,6 +11,7 @@ package org.nrg.xnat.initialization.tasks;
 import com.google.common.base.Joiner;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,9 +31,10 @@ import java.util.Properties;
 @Component
 public class MigrateDatabaseTables extends AbstractInitializingTask {
     @Autowired
-    public MigrateDatabaseTables(final JdbcTemplate template, final TransactionTemplate transactionTemplate) {
+    public MigrateDatabaseTables(final JdbcTemplate template, final TransactionTemplate transactionTemplate, final XnatAppInfo appInfo) {
         super();
         _db = new DatabaseHelper(template, transactionTemplate);
+        _appInfo = appInfo;
     }
 
     @Override
@@ -86,6 +88,10 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                     }
                 }
             }
+            if (_appInfo.isPrimaryNode()) {
+                _log.info("This service is the primary XNAT node, checking whether database updates are required.");
+                // Do the needful here.
+            }
             complete();
         } catch (IOException e) {
             _log.error("An error occurred attempting to read table migration properties files", e);
@@ -98,4 +104,5 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
     private static final String SQL_WARNING_TABLE = "The requested table";
 
     private final DatabaseHelper _db;
+    private final XnatAppInfo _appInfo;
 }

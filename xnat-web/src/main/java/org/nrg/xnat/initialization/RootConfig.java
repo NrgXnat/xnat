@@ -20,15 +20,12 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import javax.servlet.ServletContext;
-import javax.xml.bind.Marshaller;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -51,8 +48,8 @@ import java.util.Properties;
 @Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class})
 public class RootConfig {
     @Bean
-    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
-        return new XnatAppInfo(preferences, context, serializerService, template);
+    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
+        return new XnatAppInfo(preferences, context, environment, serializerService, template);
     }
 
     @Bean

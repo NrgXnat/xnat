@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
@@ -62,6 +63,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     public void configureMessageConverters(final List<HttpMessageConverter<?>> converters) {
         converters.add(new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build()));
         converters.add(new MarshallingHttpMessageConverter(_marshaller, _marshaller));
+        converters.add(new StringHttpMessageConverter());
     }
 
     @Bean

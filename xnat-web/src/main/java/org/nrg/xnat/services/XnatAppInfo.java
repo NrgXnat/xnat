@@ -7,6 +7,7 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -34,7 +35,8 @@ import java.util.regex.Pattern;
 @Component
 public class XnatAppInfo {
 
-    public static final String NON_RELEASE_VERSION_REGEX = "(?i:^.*(SNAPSHOT|BETA|RC).*$)";
+    public static final String NON_RELEASE_VERSION_REGEX  = "(?i:^.*(SNAPSHOT|BETA|RC).*$)";
+    public static final String XNAT_PRIMARY_MODE_PROPERTY = "xnat.is_primary_node";
 
     private static final int           MILLISECONDS_IN_A_DAY    = (24 * 60 * 60 * 1000);
     private static final int           MILLISECONDS_IN_AN_HOUR  = (60 * 60 * 1000);
@@ -46,9 +48,11 @@ public class XnatAppInfo {
     private static final String        SECONDS                  = "seconds";
 
     @Inject
-    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
-        _preferences=preferences;
+    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
+        _preferences = preferences;
         _template = template;
+        _environment = environment;
+        _primaryNode = Boolean.parseBoolean(_environment.getProperty(XNAT_PRIMARY_MODE_PROPERTY, "true"));
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         try (final InputStream inputStream = configuredUrls.getInputStream()) {
@@ -164,11 +168,11 @@ public class XnatAppInfo {
                         _log.info("The site was not flagged as initialized and initialized preference set to false. Setting system for initialization.");
                     }
                     for (String pref : _foundPreferences.keySet()) {
-                        if(_foundPreferences.get(pref)!=null) {
+                        if (_foundPreferences.get(pref) != null) {
                             _template.update(
                                     "UPDATE xhbm_preference SET value = ? WHERE name = ?",
                                     new Object[]{_foundPreferences.get(pref), pref}, new int[]{Types.VARCHAR, Types.VARCHAR}
-                            );
+                                            );
                             try {
                                 _preferences.set(_foundPreferences.get(pref), pref);
                             } catch (InvalidPreferenceName e) {
@@ -176,9 +180,8 @@ public class XnatAppInfo {
                             } catch (NullPointerException e) {
                                 _log.error("Error getting site config preferences.", e);
                             }
-                        }
-                        else{
-                            _log.warn("Preference "+pref+" was null.");
+                        } else {
+                            _log.warn("Preference " + pref + " was null.");
                         }
                     }
                 }
@@ -208,6 +211,56 @@ public class XnatAppInfo {
      */
     public Properties getSystemProperties() {
         return (Properties) _properties.clone();
+    }
+
+    /**
+     * Gets the requested environment property. Returns null if the property doesn't exist in the environment.
+     *
+     * @param property The name of the property to retrieve.
+     *
+     * @return The value of the property if found, null otherwise.
+     */
+    public String getConfiguredProperty(final String property) {
+        return getConfiguredProperty(property, (String) null);
+    }
+
+    /**
+     * Gets the requested environment property. Returns the specified default value if the property doesn't exist in the
+     * environment.
+     *
+     * @param property     The name of the property to retrieve.
+     * @param defaultValue The default value to return if the property isn't set in the environment.
+     *
+     * @return The value of the property if found, the specified default value otherwise.
+     */
+    public String getConfiguredProperty(final String property, final String defaultValue) {
+        return _environment.getProperty(property, defaultValue);
+    }
+
+    /**
+     * Gets the requested environment property. Returns null if the property doesn't exist in the environment.
+     *
+     * @param property The name of the property to retrieve.
+     * @param type     The type of the property to retrieve.
+     *
+     * @return The value of the property if found, null otherwise.
+     */
+    public <T> T getConfiguredProperty(final String property, final Class<T> type) {
+        return getConfiguredProperty(property, type, null);
+    }
+
+    /**
+     * Gets the requested environment property. Returns the specified default value if the property doesn't exist in the
+     * environment.
+     *
+     * @param property     The name of the property to retrieve.
+     * @param type     The type of the property to retrieve.
+     * @param defaultValue The default value to return if the property isn't set in the environment.
+     *
+     * @return The value of the property if found, the specified default value otherwise.
+     */
+    public <T> T getConfiguredProperty(final String property, final Class<T> type, final T defaultValue) {
+        return _environment.getProperty(property, type, defaultValue);
     }
 
     /**
@@ -295,6 +348,17 @@ public class XnatAppInfo {
         uptime.put(SECONDS, SECONDS_FORMAT.format(minutesRemainder / 1000F));
 
         return uptime;
+    }
+
+    /**
+     * Indicates whether this is a stand-alone XNAT server or the primary node in a distributed XNAT deployment, as
+     * opposed to a secondary node. The return value for this method is determined by the value set for the
+     * <b>xnat.is_primary_node</b> property. If no value is set for this property, it defaults to <b>true</b>.
+     *
+     * @return Returns true if this is a stand-alone XNAT server or the primary node in a distributed XNAT deployment.
+     */
+    public boolean isPrimaryNode() {
+        return _primaryNode;
     }
 
     /**
@@ -431,14 +495,17 @@ public class XnatAppInfo {
     private static final ResourceLoader RESOURCE_LOADER             = new DefaultResourceLoader();
 
     private final JdbcTemplate _template;
+    private final Environment  _environment;
 
-    private final String _configPath;
-    private final Pattern _configPathPattern;
+    private final String                _configPath;
+    private final Pattern               _configPathPattern;
     private final AntPathRequestMatcher _configPathMatcher;
-    private final String _nonAdminErrorPath;
-    private final Pattern _nonAdminErrorPathPattern;
+    private final String                _nonAdminErrorPath;
+    private final Pattern               _nonAdminErrorPathPattern;
     private final AntPathRequestMatcher _nonAdminErrorPathMatcher;
     private final SiteConfigPreferences _preferences;
+    private final boolean               _primaryNode;
+
     private final Map<String, AntPathRequestMatcher> _openUrls         = new HashMap<>();
     private final Map<String, AntPathRequestMatcher> _adminUrls        = new HashMap<>();
     private final Map<String, AntPathRequestMatcher> _initPaths        = new HashMap<>();

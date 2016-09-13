@@ -127,6 +127,9 @@ function isEqual( a, b ){
 function isEqualLower(a, b){
     return isEqual(stringLower(a||''), stringLower(b||''));
 }
+function isFunction( func ){
+    return typeof func == 'function';
+}
 function isObject( obj ){
     // returns true for objects, arrays, and null
     return typeof obj == 'object';
@@ -142,7 +145,7 @@ function isEmptyObject( obj ){
     return true;
 }
 function getObject( obj ){
-    return isPlainObject(obj) ? obj : {};
+    return (isPlainObject(obj) || isFunction(obj)) ? obj : {};
 }
 function isArray( arr ){
     if ( Array.isArray ) {
@@ -176,9 +179,6 @@ function isEmpty( x, args ){
         return isEmpty(x.apply(null, [].concat(args)));
     }
     return (x === null || isUndefined(x) || !isFunction(x));
-}
-function isFunction( func ){
-    return typeof func == 'function';
 }
 function isNumber( num ){
     return (typeof num == 'number' && !isNaN(num));
@@ -1201,6 +1201,11 @@ function loadCSS( url, parent ){
     // use CSS-style selector for 'parent'
     parent = parent ? document.querySelector(parent) : document.querySelector('head');
     parent.appendChild(scriptElement(url, min, name));
+}
+
+// basic indentation formatting only
+function formatJSON(json, indent){
+    return JSON.stringify(json, null, indent || 4);
 }
 
 function prettifyJSON(data, indent) {

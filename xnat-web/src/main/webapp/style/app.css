@@ -3725,5 +3725,13 @@ textarea.xml-formatted {
 .pad5h { padding-left: 5px; padding-right: 5px; }
 .pad10h { padding-left: 10px; padding-right: 10px; }
 .pad20h { padding-left: 20px; padding-right: 20px; }
+.pad1v { padding-top: 1px; padding-bottom: 1px; }
+.pad5v { padding-top: 5px; padding-bottom: 5px; }
+.pad10v { padding-top: 10px; padding-bottom: 10px; }
+.pad20v { padding-top: 20px; padding-bottom: 20px; }
+.pad1top, .pad-top-1 { padding-top: 5px; }
+.pad5top, .pad-top-5 { padding-top: 5px; }
+.pad10top, .pad-top-10 { padding-top: 10px; }
+.pad20top, .pad-top-20 { padding-top: 20px; }
 
 .inline { display: inline }

@@ -147,10 +147,3 @@ var XNAT = getObject(XNAT||{});
     ////////////////////////////////////////////////////////////
 
 })(XNAT);
-
-function isPlainObject( obj ){
-    return Object.prototype.toString.call(obj) === '[object Object]';
-}
-function getObject( obj ){
-    return isPlainObject(obj) ? obj : {};
-}

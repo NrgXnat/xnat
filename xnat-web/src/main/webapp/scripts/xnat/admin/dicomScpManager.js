@@ -209,23 +209,27 @@ var XNAT = getObject(XNAT || {});
         // TODO: move event listeners to parent elements - events will bubble up
         // ^-- this will reduce the number of event listeners
         function enabledCheckbox(item){
+            var ckbox = spawn('input.enabled', {
+                type: 'checkbox',
+                checked: !!item.enabled,
+                onchange: function(){
+                    // save the status when clicked
+                    var enabled = this.checked;
+                    XNAT.xhr.put({
+                        url: scpUrl(item.id + '/enabled/' + enabled),
+                        success: function(){
+                            var status = (enabled ? ' enabled' : ' disabled');
+                            XNAT.ui.banner.top(1000, '<b>' + item.aeTitle + '</b> ' + status, 'success');
+                            console.log(item.id + (enabled ? ' enabled' : ' disabled'))
+                        }
+                    });
+                }
+            });
             return spawn('div.center', [
-                ['input.enabled', {
-                    type: 'checkbox',
-                    checked: !!item.enabled,
-                    onclick: function(){
-                        // save the status when clicked
-                        var enabled = this.checked;
-                        XNAT.xhr.put({
-                            url: scpUrl(item.id + '/enabled/' + enabled),
-                            success: function(){
-                                var status = (enabled ? ' enabled' : ' disabled');
-                                XNAT.ui.banner.top(1000, '<b>' + item.aeTitle + '</b> ' + status, 'success');
-                                console.log(item.id + (enabled ? ' enabled' : ' disabled'))
-                            }
-                        });
-                    }
-                }]
+                spawn('label.switchbox', [
+                    ckbox,
+                    ['span.switchbox-outer', [['span.switchbox-inner']]]
+                ])
             ]);
         }
 

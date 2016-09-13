@@ -491,12 +491,8 @@ passwords:
             name: passwordReuseRestriction
             label: Password Reuse Restriction
             options:
-                None:
-                    label: None
-                    value: None
-                Historical:
-                    label: Historical
-                    value: Historical
+                None: None
+                Historical: Historical
         passwordHistoryDuration:
             kind: panel.input.text
             id: passwordHistoryDuration
@@ -789,7 +785,7 @@ pluginTable:
         dataModelBeans:
             label: Contents
             cells:
-                apply: JSON.stringify  # function that accepts value as sole argument
+                apply: formatJSON  # function that accepts value as sole argument
                 html: >
                     <a href="#!" class="view-plugin-info link">View Plugin Info</a>
                     <div class="hidden plugin-json-string">__VALUE__</div>
@@ -810,14 +806,14 @@ pluginTableScript:
             var _url = XNAT.url.restUrl('/xapi/plugins/' + _id);
             XNAT.xhr.getJSON(_url).done(function(data){
                 var _source = spawn('textarea', JSON.stringify(data, null, 4));
-                XNAT.app.codeEditor.init(_source, {
-                    language: 'json'
-                }).openEditor({
-                    title: 'Plugin Info',
-                    classes: 'plugin-json',
-                    footerContent: '(read-only)',
-                    buttons: { close: { label: 'Close' } }
-                });
+            XNAT.app.codeEditor.init(_source, {
+                language: 'json'
+            }).openEditor({
+                title: 'Plugin Info',
+                classes: 'plugin-json',
+                footerContent: '(read-only)',
+                buttons: { close: { label: 'Close' } }
+            });
             });
         });
         $body.on('focus', '.plugin-json textarea.ace_text-input', function(){
@@ -1195,6 +1191,8 @@ dicomScpReceivers:
                     action: /xapi/dicomscp
                     contentType: json
                     contents:
+                        pad:
+                            tag: div.pad20top
                         scpId:
                             kind: panel.input.hidden
                             id: scp-id

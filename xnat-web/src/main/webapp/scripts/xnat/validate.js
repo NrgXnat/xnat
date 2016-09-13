@@ -111,10 +111,10 @@ var XNAT = getObject(XNAT);
         cronDay: /^((\*|\?|([0-9]|[1-2][0-9]|3[0-1]))(\/\d+)?)$/,
         cronMonth: /^((\*|\?|([0-9]|1[0-2]))(\/\d+)?)$/,
         cronMonths: /^(((\*|\?|([0-9]|1[0-2]))(\/\d+)?)|(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|DEC))$/i,
-        cronMonthNames: /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|DEC)$/i,
+        cronMonthNames: /^(\*|\?|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|DEC)$/i,
         cronWeekday: /^((\*|\?|([0-7]))(\/\d+)?)$/,
         cronWeekdays: /^(((\*|\?|([0-7]))(\/\d+)?)|(MON|TUE|WED|THU|FRI|SAT|SUN))$/i,
-        cronWeekdayNames: /^(MON|TUE|WED|THU|FRI|SAT|SUN)$/i,
+        cronWeekdayNames: /^(\*|\?|MON|TUE|WED|THU|FRI|SAT|SUN)$/i,
         // cronAlt: /^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$/,
         // cron regex lifted from this post: http://stackoverflow.com/questions/235504/validating-crontab-entries-w-php
         // cron: /^\s*($|#|\w+\s*=|(\*(?:\/\d+)?|(?:[0-5]?\d)(?:-(?:[0-5]?\d)(?:\/\d+)?)?(?:,(?:[0-5]?\d)(?:-(?:[0-5]?\d)(?:\/\d+)?)?)*)\s+(\*(?:\/\d+)?|(?:[01]?\d|2[0-3])(?:-(?:[01]?\d|2[0-3])(?:\/\d+)?)?(?:,(?:[01]?\d|2[0-3])(?:-(?:[01]?\d|2[0-3])(?:\/\d+)?)?)*)\s+(\*(?:\/\d+)?|(?:0?[1-9]|[12]\d|3[01])(?:-(?:0?[1-9]|[12]\d|3[01])(?:\/\d+)?)?(?:,(?:0?[1-9]|[12]\d|3[01])(?:-(?:0?[1-9]|[12]\d|3[01])(?:\/\d+)?)?)*)\s+(\*(?:\/\d+)?|(?:[1-9]|1[012])(?:-(?:[1-9]|1[012])(?:\/\d+)?)?(?:,(?:[1-9]|1[012])(?:-(?:[1-9]|1[012])(?:\/\d+)?)?)*|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+(\*(?:\/\d+)?|(?:[0-6])(?:-(?:[0-6])(?:\/\d+)?)?(?:,(?:[0-6])(?:-(?:[0-6])(?:\/\d+)?)?)*|mon|tue|wed|thu|fri|sat|sun)\s+|(@reboot|@yearly|@annually|@monthly|@weekly|@daily|@midnight|@hourly)\s+)([^\s]+)\s+(.*)$/,
@@ -122,7 +122,7 @@ var XNAT = getObject(XNAT);
     };
     // aliases
     regex.int = regex.integer;
-    regex.number = regex.numeric;
+    //regex.number = regex.numeric;
     regex.float = regex.decimal;
     regex.hex = regex.hexadecimal;
     regex.alphaNumeric = regex.alphaNum;
@@ -147,7 +147,7 @@ var XNAT = getObject(XNAT);
     // define custom test methods for more complex validations
     var test = {};
 
-    test.numeric = function(value){
+    test.numeric = test.number = function(value){
         console.log('numeric');
         return isNumeric(value);
     };
@@ -176,98 +176,35 @@ var XNAT = getObject(XNAT);
 
     // match to 6-field cron syntax:
     // 0 0 * * * *
-    test.cronFn = function(value){
+    test.cron = test.cronSyntax = function(value){
 
-        // TODO: replace all this with regex tests
+        value = (value+'').trim();
 
-        /*
-        var WORDS = ('reboot yearly annually monthly ' +
-            'weekly daily midnight hourly').split(/\s+/).map(function(word){
-            return '@' + word
-        });
-        var MONTHS = ('JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC').split(/\s+/);
-        var DAYS = ('MON TUE WED THU FRI SAT SUN').split(/\s+/);
-
-        // is it a special cron keyword?
-        if (WORDS.indexOf(value) > -1) {
-            return true
+        // easiest test - use words
+        if (regex.cronWords.test(value)) {
+            return true;
         }
 
-        // split passed value into separate fields
-        var FIELDS = (value+'').trim().split(/\s+/);
+        // split value to test parts
+        var parts = value.split(/\s+/);
 
-        // check for 6 fields
-        if (FIELDS.length < 6) {
-            return false
-        }
-
-        var SECONDS = FIELDS[0].split('/');
-        var MINUTES = FIELDS[1].split('/');
-        var HOURS   = FIELDS[2].split('/');
-        var DAY     = FIELDS[3];
-        var MONTH   = FIELDS[4];
-        var WEEKDAY = FIELDS[5];
+        // array of regexes to match 'parts' array
+        var tests = [
+            regex.cronSeconds,
+            regex.cronMinutes,
+            regex.cronHours,
+            regex.cronDay,
+            regex.cronMonths,
+            regex.cronWeekdays
+        ];
 
         var errors = 0;
 
-        function isWild(val){
-            return /[*?/]/.test((val+'').trim());
-        }
+        parts.forEach(function(part, i){
+            errors = tests[i].test(part) ? 0 : errors + 1;
+        });
 
-        function isRange(val){
-            return /[a-z0-9]-[a-z0-9]/i.test(val)
-        }
-
-        function isError(val, regex){
-            var notWild = !isWild(val);
-            var notMatch = regex ? !regex.test(val) : false;
-            if (notWild && notMatch) {
-                errors++
-            }
-        }
-
-        function checkTime(val, limit, regex){
-
-            val = [].concat(val);
-
-            var notWild = !isWild(val[0]);
-
-            if (notWild){
-                if (+val[0] < 0 || +val[0] > limit) {
-                    isError(val, regex)
-                }
-            }
-
-            // seconds interval must be a number
-            if (val[1] && !/[0-9]/.test(val[1])) {
-                errors++
-            }
-
-        }
-
-        // seconds
-        checkTime(SECONDS, 59);
-
-        // minutes
-        checkTime(MINUTES, 59);
-
-        // hours
-        checkTime(HOURS, 23);
-
-        // day
-        checkTime(DAY, 31);
-
-        // month
-        var monthRegex = /JAN|FEB|MAR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC/i;
-        checkTime(MONTH, 12, monthRegex);
-
-        // day of the week
-        var weekdayRegex = /MON|TUE|WED|THU|FRI|SAT|SUN/i;
-        checkTime(WEEKDAY, 7, weekdayRegex);
-
-        return (errors === 0);
-
-        */
+        return errors === 0;
 
     };
 
@@ -346,6 +283,47 @@ var XNAT = getObject(XNAT);
         return value+'' === test+''
     };
     test.equals = test.equalTo;
+
+    // date checks
+    test.greaterThanDate = function(field, date){
+        var enteredDate = getValidDate(field.value),
+            validDate   = getValidDate(date);
+        if (!validDate || !enteredDate) {
+            return false;
+        }
+        return enteredDate > validDate;
+    };
+    test.gtDate = test.greaterThanDate;
+    test.greaterThanOrEqualDate = function(field, date){
+        var enteredDate = getValidDate(field.value),
+            validDate   = getValidDate(date);
+        if (!validDate || !enteredDate) {
+            return false;
+        }
+        return enteredDate >= validDate;
+    };
+    test.greaterThanOrEqualToDate = test.greaterThanOrEqualDate;
+    test.gteDate = test.greaterThanOrEqualDate;
+    test.lessThanDate = function(field, date){
+        var enteredDate = getValidDate(field.value),
+            validDate   = getValidDate(date);
+        if (!validDate || !enteredDate) {
+            return false;
+        }
+        return enteredDate < validDate;
+    };
+    test.ltDate = test.lessThanDate;
+    test.lessThanOrEqualDate = function(field, date){
+        var enteredDate = getValidDate(field.value),
+            validDate   = getValidDate(date);
+        if (!validDate || !enteredDate) {
+            return false;
+        }
+        return enteredDate <= validDate;
+    };
+    test.lessThanOrEqualToDate = test.lessThanOrEqualDate;
+    test.lteDate = test.lessThanOrEqualDate;
+
 
     // XNAT.validate('input.credit-card').is('creditCard').check();
     test.creditCard = function(value){
@@ -429,9 +407,16 @@ var XNAT = getObject(XNAT);
         return obj;
     }
 
+    // TODO: get this working
     function getValidDate(date){
 
-        if (!date.match('today') && !date.match(regex[date])) {
+        var regexDateMatch = (
+                date.match(regex['dateISO']) ||
+                date.match(regex['dateUS']) ||
+                date.match(regex['dateEU'])
+        );
+
+        if (!date.match('today') && !regexDateMatch) {
             return false;
         }
 
@@ -439,7 +424,7 @@ var XNAT = getObject(XNAT);
             validDateArray;
 
         if (!date.match('today')) {
-            validDateArray = date.split(/[\s.-]+/);
+            validDateArray = date.split(/[\s.-/]+/);
             validDate.setFullYear(validDateArray[0]);
             validDate.setMonth(validDateArray[1] - 1);
             validDate.setDate(validDateArray[2]);

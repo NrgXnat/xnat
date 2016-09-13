@@ -69,15 +69,14 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        final List<Class<?>> configClasses = new ArrayList<>();
-        configClasses.add(RootConfig.class);
-        configClasses.addAll(getPluginConfigs());
-        return configClasses.toArray(new Class[configClasses.size()]);
+        return new Class<?>[] { RootConfig.class };
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return new Class[0];
+        final List<Class<?>> configClasses = new ArrayList<>();
+        configClasses.addAll(getPluginConfigs());
+        return configClasses.toArray(new Class[configClasses.size()]);
     }
 
     @Override

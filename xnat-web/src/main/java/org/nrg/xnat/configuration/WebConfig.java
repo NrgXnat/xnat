@@ -37,10 +37,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import javax.xml.bind.Marshaller;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 @Configuration
 @EnableWebMvc
@@ -61,9 +58,24 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override
     public void configureMessageConverters(final List<HttpMessageConverter<?>> converters) {
-        converters.add(new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build()));
-        converters.add(new MarshallingHttpMessageConverter(_marshaller, _marshaller));
-        converters.add(new StringHttpMessageConverter());
+        converters.add(mappingJackson2HttpMessageConverter());
+        converters.add(marshallingHttpMessageConverter());
+        converters.add(stringHttpMessageConverter());
+    }
+
+    @Bean
+    public HttpMessageConverter<?> mappingJackson2HttpMessageConverter() {
+        return new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build());
+    }
+
+    @Bean
+    public HttpMessageConverter<?> marshallingHttpMessageConverter() {
+        return new MarshallingHttpMessageConverter(_marshaller, _marshaller);
+    }
+
+    @Bean
+    public HttpMessageConverter<?> stringHttpMessageConverter() {
+        return new StringHttpMessageConverter();
     }
 
     @Bean

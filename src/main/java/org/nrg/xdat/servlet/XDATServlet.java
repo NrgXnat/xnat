@@ -17,7 +17,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.db.DBAction;
@@ -219,10 +218,10 @@ public class XDATServlet extends HttpServlet {
                     transaction.execute(func[0]);
                     runAfter.addAll(func[1]);
                 }
-
-                //create the views defined in the display documents
-                logger.info("Initializing database views...");
-                transaction.execute(DisplayManager.GetCreateViewsSQL());
+//
+//                //create the views defined in the display documents
+//                logger.info("Initializing database views...");
+//                transaction.execute(DisplayManager.GetCreateViewsSQL().get(0));
 
                 transaction.execute(runAfter);
 

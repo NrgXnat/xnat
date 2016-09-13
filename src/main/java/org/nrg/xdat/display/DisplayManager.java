@@ -10,11 +10,7 @@
  */
 package org.nrg.xdat.display;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -28,23 +24,21 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.DataModelDefinition;
-import org.nrg.xft.schema.XFTDataModel;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 
 /**
  * @author Tim
@@ -501,9 +495,10 @@ public class DisplayManager {
         }
     }
 
-    public static List<String> GetCreateViewsSQL() {
+    public static List<List<String>> GetCreateViewsSQL() {
         final List<String> views = new ArrayList<>();
-
+        final List<String> drops = new ArrayList<>();
+        final List<List<String>> viewsAndDrops = new ArrayList<>();
 
         views.add("GRANT ALL ON TABLE xdat_search.xs_item_access TO public;");
 
@@ -540,6 +535,7 @@ public class DisplayManager {
             for (final Object o : ed.getSortedViews()) {
                 SQLView view = (SQLView) o;
                 views.add("--DEFINED VIEW\nCREATE OR REPLACE VIEW " + view.getName() + " AS " + view.getSql() + ";\n\n");
+                drops.add("DROP VIEW " + view.getName() + " CASCADE;");
             }
 
             try {
@@ -559,6 +555,7 @@ public class DisplayManager {
                     if (!createdAlias.contains(viewName)) {
                         createdAlias.add(viewName);
                         views.add("--DISPLAY LINK\nCREATE OR REPLACE VIEW " + viewName + " AS " + query + ";\n\n");
+                        drops.add("DROP VIEW " + viewName + " CASCADE;");
                     }
                 } catch (Exception e1) {
                     logger.error("Error in Display Document for '" + root.getFullXMLName() + "'.\n" + e1.getMessage());
@@ -729,8 +726,9 @@ public class DisplayManager {
                 "\n	RETURN; " +
                 "\nEND;'" +
                 "\n   LANGUAGE 'plpgsql' VOLATILE;");
-
-        return views;
+        viewsAndDrops.add(views);
+        viewsAndDrops.add(drops);
+        return viewsAndDrops;
     }
 
     public static String GetArcDefinitionQuery(ArcDefinition arcD, SchemaElement root, SchemaElement foreign, UserI user) throws Exception {

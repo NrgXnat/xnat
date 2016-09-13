@@ -1,5 +1,5 @@
 /*
- * org.nrg.xnat.initialization.tasks.XnatPasswordEncrypter
+ * org.nrg.xnat.initialization.tasks.MigrateDatabaseTables
  * XNAT http://www.xnat.org
  * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
@@ -11,6 +11,8 @@ package org.nrg.xnat.initialization.tasks;
 import com.google.common.base.Joiner;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.xdat.display.DisplayManager;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +92,32 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
             }
             if (_appInfo.isPrimaryNode()) {
                 _log.info("This service is the primary XNAT node, checking whether database updates are required.");
-                // Do the needful here.
+
+                PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction();
+                try {
+                    transaction.start();
+                    //create the views defined in the display documents
+                    _log.info("Initializing database views...");
+                    try {
+                        transaction.execute(DisplayManager.GetCreateViewsSQL().get(0));
+                    }
+                    catch(Exception e){
+                        transaction.execute(DisplayManager.GetCreateViewsSQL().get(1));//drop all
+                        transaction.execute(DisplayManager.GetCreateViewsSQL().get(0));//then try to create all
+                    }
+                    transaction.commit();
+                } catch (Exception e) {
+                    try {
+                        transaction.rollback();
+                    } catch (SQLException e1) {
+                        _log.error("", e1);
+                    }
+                    _log.error("", e);
+                    return;
+                } finally {
+                    transaction.close();
+                }
+
             }
             complete();
         } catch (IOException e) {

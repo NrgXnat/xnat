@@ -21,36 +21,6 @@ var XNAT = getObject(XNAT || {});
     XNAT.ui.panel = panel =
         getObject(XNAT.ui.panel || {});
 
-    function hasClassName(el, className){
-        var elClasses = el.className.split(/\s+/);
-        return elClasses.indexOf(className.trim()) > -1;
-    }
-
-    // add new element class without destroying existing class
-    function addClassName(el, newClass){
-        el.className = el.className || '';
-        var classes = el.className.split(/\s+/); // existing classes
-        var newClasses = newClass.split(/\s+/);
-        // don't add duplicate classes
-        newClasses.forEach(function(cls){
-            if (!hasClassName(el, cls)) {
-                classes.push(cls);
-            }
-        });
-        // set the className and return the string
-        return el.className = classes.join(' ').trim();
-    }
-
-    // add new data object item to be used for [data-] attribute(s)
-    function addDataObjects(el, attrs){
-        el.data = el.data || {};
-        forOwn(attrs, function(name, prop){
-            el.data[name] = prop;
-        });
-        // set the data attributes and return the new data object
-        return el.data;
-    }
-
     function setDisabled(elements, disabled){
         $$(elements).each(function(idx){
             var _disabled = !!disabled;
@@ -116,7 +86,7 @@ var XNAT = getObject(XNAT || {});
         opts.title = opts.title || opts.label || opts.header;
 
         var _target = spawn('div.panel-body', opts.element),
-                
+
             hideHeader = (isDefined(opts.header) && (opts.header === false || /^-/.test(opts.title))),
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
@@ -358,7 +328,7 @@ var XNAT = getObject(XNAT || {});
             addClassName(_formPanel, 'validate');
             addDataObjects()
         }
-        
+
         // cache a jQuery-wrapped element
         var $formPanel = $(_formPanel);
 
@@ -709,10 +679,10 @@ var XNAT = getObject(XNAT || {});
             }
         }
     };
-    
+
     // setup a dialog box that contains stuff
     panel.dialogForm = panel.formDialog = function(opts){
-        var dialog = new xmodal.Modal    
+        var dialog = new xmodal.Modal
     };
 
     panel.info = function(opts){};
@@ -843,7 +813,7 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
-    
+
     panel.display = function(opts){
         return XNAT.ui.template.panelDisplay(opts).spawned;
     };
@@ -907,12 +877,11 @@ var XNAT = getObject(XNAT || {});
         opts = cloneObject(opts);
         opts.element = extend(true, {
             type: 'hidden',
-            className: opts.className || opts.classes || '',
             name: opts.name,
             id: opts.id || toDashed(opts.name),
             value: firstDefined(opts.value+'', '')
         }, opts.element);
-        addClassName(opts.element, 'hidden');
+        addClassName(opts.element, [opts.className, opts.classes, opts.addClass, 'hidden']);
         if (opts.validation || opts.validate) {
             addDataObjects(opts.element, {
                 validate: opts.validation || opts.validate
@@ -987,7 +956,7 @@ var XNAT = getObject(XNAT || {});
             opts.text+'',
             opts.html+'',
             '');
-    
+
         opts.element.html = lookupValue(opts.element.html);
         opts.element.title = 'Double-click to open in code editor.';
 
@@ -1005,7 +974,7 @@ var XNAT = getObject(XNAT || {});
         }
 
         opts.element.rows = opts.rows || opts.element.rows || 10;
-        
+
         var textarea = spawn('textarea', opts.element);
 
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
@@ -1023,7 +992,7 @@ var XNAT = getObject(XNAT || {});
     //////////////////////////////////////////////////
     // SELECT MENU PANEL ELEMENTS
     //////////////////////////////////////////////////
-    
+
     panel.select = {};
 
     panel.select.menu = function panelSelectMenu(opts, multi){
@@ -1037,11 +1006,12 @@ var XNAT = getObject(XNAT || {});
         opts.element = extend({
             id: opts.id,
             name: opts.name,
-            className: opts.className||'',
             title: opts.title||opts.name||opts.id||'',
             value: firstDefined(opts.value+'', '')
         }, opts.element);
-        
+
+        addClassName(opts.element, [opts.className, opts.classes, opts.addClass]);
+
         if (multi) {
             opts.element.multiple = true;
         }
@@ -1069,7 +1039,7 @@ var XNAT = getObject(XNAT || {});
     //////////////////////////////////////////////////
     // DATA PANELS - RETRIEVE/DISPLAY DATA
     //////////////////////////////////////////////////
-    
+
     panel.dataTable = function(opts){
 
         opts = cloneObject(opts);
@@ -1085,7 +1055,7 @@ var XNAT = getObject(XNAT || {});
         panelTable.target.appendChild(dataTable.table);
 
         return panelTable;
-        
+
     };
 
     panel.dataList = function(opts){
@@ -1108,7 +1078,7 @@ var XNAT = getObject(XNAT || {});
     return XNAT.ui.panel = panel;
 
 
-    
+
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // STOP EVERYTHING!!!!!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

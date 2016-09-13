@@ -21,7 +21,7 @@ var XNAT = getObject(XNAT || {});
     var dicomScpManager, undefined,
         rootUrl = XNAT.url.rootUrl;
 
-    XNAT.admin = 
+    XNAT.admin =
         getObject(XNAT.admin || {});
 
     XNAT.admin.dicomScpManager = dicomScpManager =
@@ -209,24 +209,29 @@ var XNAT = getObject(XNAT || {});
         // TODO: move event listeners to parent elements - events will bubble up
         // ^-- this will reduce the number of event listeners
         function enabledCheckbox(item){
-            var ckbox = spawn('input.enabled', {
+            var enabled = !!item.enabled;
+            var ckbox = spawn('input.dicom-scp-enabled', {
                 type: 'checkbox',
-                checked: !!item.enabled,
+                checked: enabled,
+                value: enabled,
+                data: { id: item.id, name: item.aeTitle },
                 onchange: function(){
                     // save the status when clicked
-                    var enabled = this.checked;
+                    var checkbox = this;
+                    enabled = checkbox.checked;
                     XNAT.xhr.put({
                         url: scpUrl(item.id + '/enabled/' + enabled),
                         success: function(){
                             var status = (enabled ? ' enabled' : ' disabled');
+                            checkbox.value = enabled;
                             XNAT.ui.banner.top(1000, '<b>' + item.aeTitle + '</b> ' + status, 'success');
-                            console.log(item.id + (enabled ? ' enabled' : ' disabled'))
+                            console.log(item.aeTitle + status)
                         }
                     });
                 }
             });
             return spawn('div.center', [
-                spawn('label.switchbox', [
+                spawn('label.switchbox|title=' + item.aeTitle, [
                     ckbox,
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
@@ -275,13 +280,13 @@ var XNAT = getObject(XNAT || {});
                 }
             }, 'Delete');
         }
-        
+
         dicomScpManager.getAll().done(function(data){
             data.forEach(function(item){
                 scpTable.tr({ title: item.aeTitle, data: { id: item.id, port: item.port }})
-                        .td([editLink(item, item.aeTitle)])
-                        .td([['div.mono.center', item.port]])
-                        .td([enabledCheckbox(item)])
+                        .td([editLink(item, item.aeTitle)]).addClass('aeTitle')
+                        .td([['div.mono.center', item.port]]).addClass('port')
+                        .td([enabledCheckbox(item)]).addClass('status')
                         .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });
 
@@ -296,19 +301,19 @@ var XNAT = getObject(XNAT || {});
         });
 
         dicomScpManager.$table = $(scpTable.table);
-        
+
         return scpTable.table;
     };
 
     dicomScpManager.init = function(container){
-        
+
         var $manager = $$(container||'div#dicom-scp-manager');
 
         dicomScpManager.$container = $manager;
 
         $manager.append(dicomScpManager.table());
         // dicomScpManager.table($manager);
-        
+
         var newReceiver = spawn('button.new-dicomscp-receiver.btn.btn-sm.submit', {
             html: 'New DICOM SCP Receiver',
             onclick: function(){
@@ -348,7 +353,7 @@ var XNAT = getObject(XNAT || {});
             newReceiver,
             ['div.clear.clearfix']
         ]));
-        
+
         return {
             element: $manager[0],
             spawned: $manager[0],

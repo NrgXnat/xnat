@@ -28,20 +28,6 @@ var XNAT = getObject(XNAT);
         element = window.spawn,
         undefined;
 
-    // add new element class without destroying existing class
-    function addClassName(el, newClass){
-        el.className = [].concat(el.className||[], newClass).join(' ').trim();
-        return el.className;
-    }
-
-    // add new data object item to be used for [data-] attribute(s)
-    function addDataObjects(obj, attrs){
-        obj.data = obj.data || {};
-        forOwn(attrs, function(name, prop){
-            obj.data[name] = prop;
-        });
-        return obj.data;
-    }
 
     /**
      * Constructor function for XNAT.table()
@@ -70,9 +56,13 @@ var XNAT = getObject(XNAT);
             };
 
             this.setLast = function(el){
-                this.last.parent =
+                this.last.parent = this.last.child =
                     this.last[el.tagName.toLowerCase()] =
                         el;
+            };
+
+            this.getLast = function(){
+                return this.last.child;
             };
 
             this._rows = [];
@@ -84,10 +74,27 @@ var XNAT = getObject(XNAT);
 
     }
 
-
     // alias prototype for less typing
     Table.p = Table.prototype;
 
+    // return last item to use with jQuery methods
+    // XNAT.table().tr().$('attr', ['title', 'foo']).td('Bar').$({ addClass: 'bar' }).getHTML();
+    // <table><tr title="foo"><td class="bar">Bar</td></tr></table>
+    // yes, the HTML is shorter and simpler, but also harder to generate programmatically
+    Table.p.$ = function(method, args){
+        var $el = $(this.getLast());
+        var methods = isPlainObject(method) ? method : null;
+        args = args || [];
+        if (!methods) {
+            methods = {};
+            // force an object if not already
+            methods[method] = args;
+        }
+        forOwn(methods, function(name, arg){
+            $el[name].apply($el, [].concat(arg));
+        });
+        return this;
+    };
 
     // jQuery methods we'd like to use:
     var $methods = [
@@ -98,9 +105,8 @@ var XNAT = getObject(XNAT);
     ];
 
     $methods.forEach(function(method){
-        Table.p[method] = function(){
-            var $el = this.last$();
-            $el[method].apply($el, arguments);
+        Table.p[method] = function(args){
+            this.$(method, args);
             return this;
         }
     });
@@ -115,6 +121,7 @@ var XNAT = getObject(XNAT);
     Table.p.td = function(opts, content){
         var td = element('td', opts, content);
         this.last.td = td;
+        this.last.child = td;
         this.last.tr.appendChild(td);
         return this;
     };
@@ -122,6 +129,7 @@ var XNAT = getObject(XNAT);
     Table.p.th = function(opts, content){
         var th = element('th', opts, content);
         this.last.th = th;
+        this.last.child = th;
         this.last.tr.appendChild(th);
         this._cols++; // do this here?
         return this;
@@ -143,7 +151,8 @@ var XNAT = getObject(XNAT);
             this.last.parent.appendChild(tr);
         }
         this.last.tr = tr;
-        //this.setLast(tr);
+        this.last.child = tr;
+        // this.setLast(tr);
         // nullify last <th> and <td> elements since this is a new row
         this.last.th = this.last.td = null;
         return this;
@@ -197,13 +206,23 @@ var XNAT = getObject(XNAT);
     Table.p.thead = function(opts, data){
         var head = element('thead', opts);
         this.table.appendChild(head);
+        // this.last.child = head;
         this.setLast(head);
+        return this;
+    };
+
+    Table.p.tfoot = function(opts, data){
+        var foot = element('tfoot', opts);
+        this.table.appendChild(foot);
+        // this.last.child = foot;
+        this.setLast(foot);
         return this;
     };
 
     Table.p.tbody = function(opts, data){
         var body = element('tbody', opts);
         this.table.appendChild(body);
+        // this.last.child = body;
         this.setLast(body);
         return this;
     };
@@ -318,18 +337,18 @@ var XNAT = getObject(XNAT);
 
     };
 
-    Table.p.render = function(element, empty){
-        var $element;
-        if (element) {
-            $element = $$(element);
+    Table.p.render = function(container, empty){
+        var $container;
+        if (container) {
+            $container = $$(container);
             if (empty){
-                $element.empty();
+                $container.empty();
             }
-            $element.append(this.table);
+            $container.append(this.table);
         }
         return this.table;
     };
-    
+
     // 'opts' are options for the <table> element
     // 'config' is for other configurable stuff
     table = function(opts, config){

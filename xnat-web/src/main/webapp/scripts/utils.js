@@ -102,6 +102,43 @@ function replaceEach(str, replacements, regex_params){
 }
 
 
+function hasClassName(el, className){
+    var elClasses = (el.className||'').split(/\s+/); // existing classes
+    return elClasses.indexOf(className.trim()) > -1;
+}
+
+
+// add new element class without destroying existing class
+function addClassName(el, newClass){
+    var classes = (el.className||'').split(/\s+/); // existing classes
+    var newClasses = [].concat(newClass||[]).join(' ').split(/\s+/);
+    // don't add duplicate classes
+    newClasses.forEach(function(cls){
+        if (!cls) return;
+        if (!hasClassName(el, cls)) {
+            classes.push(cls);
+        }
+    });
+    classes = classes.join(' ').trim();
+    // set the className and return the string
+    if (classes) {
+        el.className = classes;
+    }
+    return classes;
+}
+
+
+// add new data object item to be used for [data-] attribute(s)
+function addDataObjects(el, attrs){
+    el.data = el.data || {};
+    forOwn(attrs, function(name, prop){
+        el.data[name] = prop;
+    });
+    // set the data attributes and return the new data object
+    return el.data;
+}
+
+
 // make sure the ajax calls are NOT cached
 //$.ajaxSetup({cache:false});
 
@@ -678,7 +715,7 @@ function compareByText( obj1, obj2 ){
 
 // simplest accordion of all
 $.fn.superSimpleAccordion = function(){
-    
+
     var container = $(this).show();
     var h3s = container.find('h3');
     var divs = h3s.next('div');
@@ -704,5 +741,5 @@ $.fn.superSimpleAccordion = function(){
         '#accordion h3.active { background: #1A75BB; color: #fff; } ' +
         '#accordion .content { padding: 1em; border: 1px solid #d0d0d0; }' +
         '</style>');
-    
+
 };

@@ -21,23 +21,8 @@ var XNAT = getObject(XNAT);
 
     XNAT.ui = getObject(XNAT.ui || {});
 
-    XNAT.ui.template = template = 
+    XNAT.ui.template = template =
         XNAT.ui.template || {};
-
-    // add new element class without destroying existing class
-    function addClassName(el, newClass){
-        el.className = [].concat(el.className||[], newClass).join(' ').trim();
-        return el.className;
-    }
-
-    // add new data object item to be used for [data-] attribute(s)
-    function addDataObjects(obj, attrs){
-        obj.data = obj.data || {};
-        forOwn(attrs, function(name, prop){
-            obj.data[name] = prop;
-        });
-        return obj.data;
-    }
 
     function lookupValue(el, lookup){
         if (!lookup) {
@@ -92,7 +77,7 @@ var XNAT = getObject(XNAT);
     };
     // ========================================
 
-    
+
     // ========================================
     // generic panel element
     template.panelElement = function(opts, content){
@@ -126,27 +111,30 @@ var XNAT = getObject(XNAT);
     // ========================================
     // display only element for form panels
     template.panelDisplay = function(opts, element){
-        
+
         opts = cloneObject(opts);
         opts.id = opts.id||toDashed(opts.name||'');
         opts.label = opts.label||'';
-        
+
         // pass in an element or create a new 'div' element
-        element = 
+        element =
             element || spawn('div', extend(true, {
                 id: opts.id,
-                className: opts.className||'',
                 title: opts.title||opts.name||opts.id,
                 html: opts.value||opts.html||opts.text||opts.body||''
             }, opts.element));
-        
+
+        if (opts.className || opts.classes || opts.addClass) {
+            addClassName(element, [opts.className, opts.classes, opts.addClass]);
+        }
+
         return template.panelElement(opts, [
 
             // only add a label if specified
             (opts.label ? ['label.element-label|for='+element.id||opts.id, opts.label] : ''),
 
             ['div.element-wrapper', [].concat(
-                
+
                 (opts.beforeElement ? opts.beforeElement : []),
 
                 element ,
@@ -158,7 +146,7 @@ var XNAT = getObject(XNAT);
             )]
         ]);
     };
-    // ========================================    
+    // ========================================
 
 
     // ========================================
@@ -172,14 +160,17 @@ var XNAT = getObject(XNAT);
             type: opts.type||'text',
             id: opts.id,
             name: opts.name,
-            className: opts.className||'',
             size: opts.size || 25,
             title: opts.title||opts.label||opts.name||opts.id,
             value: opts.value||''
         }, opts.element);
 
+        if (opts.className || opts.classes || opts.addClass) {
+            addClassName(opts.element, [opts.className, opts.classes, opts.addClass]);
+        }
+
         opts.data = opts.data || {};
-        
+
         if (opts.element.type !== 'password'){
             opts.data.value = opts.data.value || opts.value;
         }
@@ -190,7 +181,7 @@ var XNAT = getObject(XNAT);
         }
 
         addDataObjects(opts.element, opts.data);
-        
+
         if (opts.placeholder) {
             opts.element.placeholder = opts.placeholder;
         }
@@ -204,7 +195,7 @@ var XNAT = getObject(XNAT);
 
         // set the value of individual form elements
         var hasValue = isDefined(opts.value);
-        
+
         // look up a namespaced object value if the value starts with '??'
         var doLookup = '??';
         if (hasValue && opts.value.toString().indexOf(doLookup) === 0) {
@@ -303,13 +294,13 @@ var XNAT = getObject(XNAT);
                 hiddenInput.value = this.checked ? (this.value || this.checked || 'true') : 'false';
                 $hiddenInput.toggleClass('dirty');
             };
-            
+
             // copy name to title
             element.title = element.name;
-            
+
             // remove name of checkbox/radio to avoid conflicts
             element.name = '';
-            
+
             // add a class for easy selection
             addClassName(element, 'controller');
             addClassName(opts, 'controller');
@@ -337,8 +328,8 @@ var XNAT = getObject(XNAT);
             ['div.element-wrapper', elements]
         ]);
     };
-    
-    
+
+
     template.codeEditor = function(opts, contents){
         // options for the 'div.editor-content' element
         opts = extend(true, opts, {

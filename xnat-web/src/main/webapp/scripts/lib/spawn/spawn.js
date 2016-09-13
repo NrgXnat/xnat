@@ -106,16 +106,16 @@
         });
     }
 
+
     function hasClassName(el, className){
-        var elClasses = el.className.split(/\s+/);
+        var elClasses = (el.className||'').split(/\s+/); // existing classes
         return elClasses.indexOf(className.trim()) > -1;
     }
 
 
     // add new element class without destroying existing class
     function addClassName(el, newClass){
-        el.className = el.className || '';
-        var classes = el.className.split(/\s+/); // existing classes
+        var classes = (el.className||'').split(/\s+/); // existing classes
         var newClasses = [].concat(newClass||[]).join(' ').split(/\s+/);
         // don't add duplicate classes
         newClasses.forEach(function(cls){
@@ -124,8 +124,12 @@
                 classes.push(cls);
             }
         });
+        classes = classes.join(' ').trim();
         // set the className and return the string
-        return el.className = classes.join(' ').trim();
+        if (classes) {
+            el.className = classes;
+        }
+        return classes;
     }
 
 
@@ -185,7 +189,7 @@
         var el, $el, parts, id, classes, tagParts, attrs, isVoid,
             // property names to skip later
             skip = [
-                'innerHTML', 'html', 'attr', 'config', 
+                'innerHTML', 'html', 'attr', 'config',
                 'kind', 'tag', 'tagName',
                 'prepend', 'append', 'appendTo',
                 'classes', 'className', 'addClass',
@@ -199,13 +203,13 @@
             opts = tag[1];
             tag = tag[0];
         }
-        
+
         // handle passing a config object as the only argument
         if (!children && !opts && typeof tag !== 'string') {
             opts = tag;
             tag = null;
         }
-        
+
         tag = tag || opts.tag || opts.tagName || 'span';
 
         if (tag === '!'){
@@ -434,7 +438,7 @@
         }
 
         if (opts.after){
-            // don't append element twice if 
+            // don't append element twice if
             // there's 'before' AND 'after'
             if (!opts.before) {
                 appendChildren(frag, opts.after, spawn);
@@ -442,7 +446,7 @@
             }
             el = frag;
         }
-        
+
         if (errors.length){
             if (hasConsole) console.log(errors);
         }
@@ -460,7 +464,7 @@
         };
 
         if (typeof opts.done == 'function') {
-            opts.done.call(el);    
+            opts.done.call(el);
         }
 
         return el;

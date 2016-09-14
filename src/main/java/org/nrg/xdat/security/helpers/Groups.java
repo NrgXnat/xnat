@@ -144,13 +144,14 @@ public class Groups {
     /**
      * Remove user from the group (including updating database if necessary)
      *
-     * @param user       The user to remove from the group.
-     * @param groupId    The ID of the group from which the user should be removed.
-     * @param ci         The event metadata.
+     * @param user              The user to remove from the group.
+     * @param authenticatedUser The user requesting the removal.
+     * @param groupId           The ID of the group from which the user should be removed.
+     * @param ci                The event metadata.
      * @throws Exception
      */
-    public static void removeUserFromGroup(UserI user, String groupId, EventMetaI ci) throws Exception {
-        getUserGroupService().removeUserFromGroup(user, groupId, ci);
+    public static void removeUserFromGroup(UserI user, UserI authenticatedUser, String groupId, EventMetaI ci) throws Exception {
+        getUserGroupService().removeUserFromGroup(user, authenticatedUser, groupId, ci);
     }
 
     /**

@@ -114,13 +114,13 @@ public class UserGroupManager implements UserGroupServiceI{
 	}
 
 	@Override
-	public void removeUserFromGroup(UserI user, String groupId, EventMetaI ci) throws Exception {
+	public void removeUserFromGroup(UserI user, UserI currentUser, String groupId, EventMetaI ci) throws Exception {
 		for (XdatUserGroupid map : ((XDATUser)user).getGroups_groupid()) {
 			if (map.getGroupid().equals(groupId)) {
-				SaveItemHelper.authorizedDelete(map.getItem(), user,ci);
+				SaveItemHelper.authorizedDelete(map.getItem(), currentUser, ci);
 			}
 		}
-	    ((XDATUser)user).resetCriteria();
+		((XDATUser)user).resetCriteria();
 	}
 
 	@Override
@@ -343,7 +343,7 @@ public class UserGroupManager implements UserGroupServiceI{
 	
 					//find mapping object to delete
 					if(Groups.isMember(newUser, entry.getValue().getId())){
-						Groups.removeUserFromGroup(newUser, entry.getValue().getId(),ci);
+						Groups.removeUserFromGroup(newUser, currentUser, entry.getValue().getId(),ci);
 					}
 				}
 			}

@@ -1,11 +1,11 @@
 package org.nrg.xdat.security;
 
-import java.util.List;
-import java.util.Map;
-
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Tim Olsen &lt;tim@deck5consulting.com&gt;
@@ -83,16 +83,17 @@ public interface UserGroupServiceI {
 	 * @param group      The user group.
 	 */
 	void updateUserForGroup(UserI user, String groupId, UserGroupI group);
-	
+
 	/**
 	 * Remove user from the group (including updating database if necessary)
-	 * 
-	 * @param user       The user to remove from the group.
-	 * @param groupId    The ID of the group to remove the user from.
-	 * @param ci         Event metadata for the operation.
-	 * @throws Exception When something goes wrong.
+	 *
+	 * @param user       		The user to remove from the group.
+	 * @param authenticatedUser The user requesting the removal.
+	 * @param groupId    		The ID of the group to remove the user from.
+	 * @param ci         		Event metadata for the operation.
+	 * @throws Exception 		When something goes wrong.
 	 */
-	void removeUserFromGroup(UserI user, String groupId, EventMetaI ci) throws Exception;
+	void removeUserFromGroup(UserI user, UserI authenticatedUser, String groupId, EventMetaI ci) throws Exception;
 	
 	/**
 	 * Refresh the user group for this user (this updates any local copies of the group for this user).  This should be eliminated by a more clear caching mechanism.

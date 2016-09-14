@@ -12,14 +12,17 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
@@ -29,13 +32,11 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.services.XdatUserAuthService;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public class ModifyUserGroups extends SecureAction {
@@ -57,7 +58,7 @@ public class ModifyUserGroups extends SecureAction {
                 //remove old groups no longer needed
                 for (UserGroupI uGroup : oldGroups.values()) {
                     if (!Groups.isMember(newUser, uGroup.getId())) {
-                        Groups.removeUserFromGroup(oldUser, uGroup.getId(), ci);
+                        Groups.removeUserFromGroup(oldUser, authenticatedUser, uGroup.getId(), ci);
                     }
                 }
 

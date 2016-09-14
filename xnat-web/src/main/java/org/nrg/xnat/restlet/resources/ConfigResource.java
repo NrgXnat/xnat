@@ -24,7 +24,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.helpers.merge.AnonUtils;
+import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -331,7 +331,7 @@ public class ConfigResource extends SecureResource {
                 }
 
                 if(StringUtils.isBlank(projectId)){
-                    AnonUtils.invalidateSitewideAnonCache();
+                    DefaultAnonUtils.invalidateSitewideAnonCache();
                 }
             }
 
@@ -369,7 +369,7 @@ public class ConfigResource extends SecureResource {
                     configService.replaceConfig(user.getUsername(), reason, toolName, path, isUnversioned, contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
                 }
                 if(projectId==null){
-                    AnonUtils.invalidateSitewideAnonCache();
+                    DefaultAnonUtils.invalidateSitewideAnonCache();
                 }
                 getResponse().setStatus(Status.SUCCESS_CREATED);
             }

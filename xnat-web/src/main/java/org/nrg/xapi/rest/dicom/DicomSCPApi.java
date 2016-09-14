@@ -1,4 +1,4 @@
-package org.nrg.xapi.rest.dicomscp;
+package org.nrg.xapi.rest.dicom;
 
 import io.swagger.annotations.*;
 import org.nrg.dcm.DicomSCP;

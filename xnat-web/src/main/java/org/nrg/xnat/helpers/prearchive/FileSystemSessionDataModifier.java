@@ -15,7 +15,6 @@ import org.dcm4che2.data.DicomObject;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.Anonymize;
 import org.nrg.dcm.edit.ScriptApplicator;
-import org.nrg.dcm.edit.ScriptEvaluationException;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.session.SessionBuilder;
@@ -24,6 +23,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.AnonUtils;
+import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase.SyncFailedException;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.slf4j.Logger;
@@ -122,9 +122,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
             public XnatImagesessiondataBean run() throws SyncFailedException {
                 XnatImagesessiondataBean doc = null;
                 try {
-                    XnatProjectdata xpd = XnatProjectdata.getXnatProjectdatasById(newProject, null, false);
-                    Long projectId = DicomEdit.getDBId(xpd);
-                    Configuration c = AnonUtils.getService().getScript(DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, newProject), projectId);
+                    Configuration c = DefaultAnonUtils.getService().getProjectScriptConfiguration(newProject);
                     if (c != null) {
                         final String anonScript = c.getContents();
                         final ScriptApplicator scriptapplicator = new ScriptApplicator(new ByteArrayInputStream(anonScript.getBytes("UTF-8")));

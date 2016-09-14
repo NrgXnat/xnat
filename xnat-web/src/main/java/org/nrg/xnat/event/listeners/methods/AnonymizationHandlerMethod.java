@@ -2,7 +2,6 @@ package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
@@ -18,9 +17,10 @@ import java.util.Map;
 @Component
 public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
     @Autowired
-    public AnonymizationHandlerMethod(final SiteConfigPreferences preferences, final XnatUserProvider primaryAdminUserProvider) {
+    public AnonymizationHandlerMethod(final SiteConfigPreferences preferences, final XnatUserProvider primaryAdminUserProvider, final AnonUtils anonUtils) {
         super(primaryAdminUserProvider);
         _preferences = preferences;
+        _anonUtils = anonUtils;
     }
 
     @Override
@@ -44,15 +44,15 @@ public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHand
 
     private void updateAnon() {
         try {
-            AnonUtils.getService().setSiteWideScript(getAdminUsername(), DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null), _preferences.getSitewideAnonymizationScript());
+            _anonUtils.setSiteWideScript(getAdminUsername(), _preferences.getSitewideAnonymizationScript());
         } catch (Exception e) {
             _log.error("Failed to set sitewide anon script.", e);
         }
         try {
             if (_preferences.getEnableSitewideAnonymizationScript()) {
-                AnonUtils.getService().enableSiteWide(getAdminUsername(), DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null));
+                _anonUtils.enableSiteWide(getAdminUsername());
             } else {
-                AnonUtils.getService().disableSiteWide(getAdminUsername(), DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null));
+                _anonUtils.disableSiteWide(getAdminUsername());
             }
         } catch (Exception e) {
             _log.error("Failed to enable/disable sitewide anon script.", e);
@@ -63,4 +63,5 @@ public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHand
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("enableSitewideAnonymizationScript", "sitewideAnonymizationScript"));
 
     private final SiteConfigPreferences _preferences;
+    private final AnonUtils             _anonUtils;
 }

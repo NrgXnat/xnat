@@ -3,6 +3,7 @@ package org.nrg.xnat.event.listeners.methods;
 import com.google.common.collect.ImmutableList;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.DisableInactiveUsers;
+import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
@@ -15,9 +16,10 @@ import java.util.concurrent.ScheduledFuture;
 @Component
 public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
     @Autowired
-    public InactivityBeforeLockoutHandlerMethod(final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler) {
+    public InactivityBeforeLockoutHandlerMethod(final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler, final XnatUserProvider primaryAdminUserProvider) {
         _preferences = preferences;
         _scheduler = scheduler;
+        _userProvider = primaryAdminUserProvider;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPref
         }
         _scheduledInactivityBeforeLockout.clear();
         try {
-            _scheduledInactivityBeforeLockout.add(_scheduler.schedule(new DisableInactiveUsers((new Long(SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getInactivityBeforeLockout()))).intValue(), (new Long(SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration()))).intValue()), new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule())));
+            _scheduledInactivityBeforeLockout.add(_scheduler.schedule(new DisableInactiveUsers(_userProvider, (new Long(SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getInactivityBeforeLockout()))).intValue(), (new Long(SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration()))).intValue()), new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule())));
         } catch (SQLException ignored) {
             // Do nothing: the SQL exception here is superfluous.
         }
@@ -58,4 +60,5 @@ public class InactivityBeforeLockoutHandlerMethod extends AbstractSiteConfigPref
 
     private final SiteConfigPreferences   _preferences;
     private final ThreadPoolTaskScheduler _scheduler;
+    private final XnatUserProvider        _userProvider;
 }

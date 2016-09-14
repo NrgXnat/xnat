@@ -16,6 +16,7 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.editscript.DicomEdit.ResourceScope;
+import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,11 +67,11 @@ public class SiteWideAnonymizer extends AnonymizerA {
 	
 	
 	Configuration getScript() {
-		return AnonUtils.getService().getScript(this.path, null);
+		return DefaultAnonUtils.getService().getSiteWideScriptConfiguration();
 	}
 	
 	public List<File> getFilesToAnonymize() throws IOException {
-		List<File> fs = new ArrayList<File>();
+		List<File> fs = new ArrayList<>();
 		if (located_in_prearchive) {
 			PrearcSessionAnonymizer p = new PrearcSessionAnonymizer(s, s.getProject(), s.getPrearchivepath());
 			fs.addAll(p.getFilesToAnonymize());
@@ -83,7 +84,7 @@ public class SiteWideAnonymizer extends AnonymizerA {
 	}
 	
 	boolean isEnabled() {
-		return AnonUtils.getService().isEnabled(this.path, null);
+		return DefaultAnonUtils.getService().isSiteWideScriptEnabled();
 	}
 	public java.lang.Void call() throws Exception {
 		super.call();

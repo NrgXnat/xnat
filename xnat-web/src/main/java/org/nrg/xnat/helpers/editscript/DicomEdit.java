@@ -10,14 +10,6 @@
  */
 package org.nrg.xnat.helpers.editscript;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -27,19 +19,24 @@ import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.merge.AnonUtils;
+import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.Context;
-import org.restlet.data.MediaType;
-import org.restlet.data.Method;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.data.Status;
+import org.restlet.data.*;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 public final class DicomEdit extends SecureResource {
 
@@ -104,8 +101,9 @@ public final class DicomEdit extends SecureResource {
     public DicomEdit(Context context, Request request, Response response) {
         super(context, request, response);
 
-        String projectId = (String) request.getAttributes().get(DicomEdit.PROJECT_ID);
-        this.project = XnatProjectdata.getXnatProjectdatasById(projectId, null, false);
+        _service = DefaultAnonUtils.getService();
+        _projectId = (String) request.getAttributes().get(DicomEdit.PROJECT_ID);
+        this.project = XnatProjectdata.getXnatProjectdatasById(_projectId, null, false);
 
         this.scope = this.determineResourceScope(request);
         this.rType = this.determineResourceType(request);
@@ -114,18 +112,6 @@ public final class DicomEdit extends SecureResource {
         getVariants().add(new Variant(MediaType.APPLICATION_JSON));
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.TEXT_XML));
-    }
-
-    /**
-     * Get this project's unique identifier in the database.
-     * "projectdata_info" is used by XNAT to keep track of every project
-     * ever created and so is robust to deleted projects.
-     *
-     * @param p The project to get the DB ID
-     * @return The DB ID for the submitted project.
-     */
-    public static Long getDBId(XnatProjectdata p) {
-        return (long) (Integer) p.getItem().getProps().get("projectdata_info");
     }
 
     @Override
@@ -146,13 +132,12 @@ public final class DicomEdit extends SecureResource {
                                 @Override
                                 public XFTTable call() throws Exception {
                                     XFTTable table = new XFTTable();
-                                    Long project_id = project == null ? null : DicomEdit.getDBId(project);
                                     if (rType == ResourceType.SCRIPT) {
                                         List<Configuration> cs = new ArrayList<>();
                                         if (all) {
-                                            cs.addAll(AnonUtils.getService().getAllScripts(project_id));
+                                            cs.addAll(StringUtils.isBlank(_projectId) ? _service.getAllScripts() : _service.getAllScripts(_projectId));
                                         } else {
-                                            cs.add(AnonUtils.getService().getScript(DicomEdit.buildScriptPath(scope, project), project_id));
+                                            cs.add(StringUtils.isBlank(_projectId) ? _service.getSiteWideScriptConfiguration() : _service.getProjectScriptConfiguration(_projectId));
                                         }
                                         table.initTable(scriptColumns);
                                         for (Configuration c : cs) {
@@ -170,9 +155,9 @@ public final class DicomEdit extends SecureResource {
                                     } else if (rType == ResourceType.STATUS) {
                                         List<Configuration> cs = new ArrayList<>();
                                         if (all) {
-                                            cs.addAll(AnonUtils.getService().getAllScripts(project_id));
+                                            cs.addAll(_service.getAllScripts(_projectId));
                                         } else {
-                                            cs.add(AnonUtils.getService().getScript(DicomEdit.buildScriptPath(scope, project), project_id));
+                                            cs.add(_service.getProjectScriptConfiguration(_projectId));
                                         }
                                         table.initTable(editColumns);
                                         for (Configuration c : cs) {
@@ -233,14 +218,12 @@ public final class DicomEdit extends SecureResource {
                                     String script = getFile();
                                     if (script != null) {
                                         if (scope == ResourceScope.SITE_WIDE) {
-                                            AnonUtils.getService().setSiteWideScript(user.getLogin(),
-                                                                                     DicomEdit.buildScriptPath(scope, project),
-                                                                                     script);
+                                            _service.setSiteWideScript(user.getLogin(),
+                                                                                            script);
                                         } else { // project specific
-                                            AnonUtils.getService().setProjectScript(user.getLogin(),
-                                                                                    DicomEdit.buildScriptPath(scope, project),
-                                                                                    script,
-                                                                                    DicomEdit.getDBId(project));
+                                            _service.setProjectScript(user.getLogin(),
+                                                                                           script,
+                                                                                    project.getId());
                                         }
                                     } else {
                                         // something went wrong, but the error response status should have
@@ -256,21 +239,15 @@ public final class DicomEdit extends SecureResource {
                                             Boolean activate = Boolean.parseBoolean(qActivate);
                                             if (scope == ResourceScope.SITE_WIDE) {
                                                 if (activate) {
-                                                    AnonUtils.getService().enableSiteWide(user.getLogin(),
-                                                                                          DicomEdit.buildScriptPath(scope, project));
+                                                    _service.enableSiteWide(user.getLogin());
                                                 } else {
-                                                    AnonUtils.getService().disableSiteWide(user.getLogin(),
-                                                                                           DicomEdit.buildScriptPath(scope, project));
+                                                    _service.disableSiteWide(user.getLogin());
                                                 }
                                             } else { // project -specific
                                                 if (activate) {
-                                                    AnonUtils.getService().enableProjectSpecific(user.getLogin(),
-                                                                                                 DicomEdit.buildScriptPath(scope, project),
-                                                                                                 DicomEdit.getDBId(project));
+                                                    _service.enableProjectSpecific(user.getLogin(), project.getId());
                                                 } else {
-                                                    AnonUtils.getService().disableProjectSpecific(user.getLogin(),
-                                                                                                  DicomEdit.buildScriptPath(scope, project),
-                                                                                                  DicomEdit.getDBId(project));
+                                                    _service.disableProjectSpecific(user.getLogin(), project.getId());
                                                 }
                                             }
                                         } else {
@@ -430,7 +407,7 @@ public final class DicomEdit extends SecureResource {
          * Perform some sanity checks and then run the operation
          *
          * @return An object of the type for the script operation.
-         * @throws Exception
+         * @throws Exception When something goes wrong.
          */
         A run() throws Exception {
             if (this.rType != ResourceType.UNKNOWN) {
@@ -478,9 +455,12 @@ public final class DicomEdit extends SecureResource {
     private static final String[] scriptColumns = {"project", "user", "create_date", "script", "id"};
     private static final String[] editColumns = {"project", "edit", "create_date", "user", "id"};
 
+    private final AnonUtils _service;
+    
     /**
      * Project for this operation.
      */
+    private final String _projectId;
     private final XnatProjectdata project;
 
     /**

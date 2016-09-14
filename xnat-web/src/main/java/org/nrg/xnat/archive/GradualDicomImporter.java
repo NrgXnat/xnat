@@ -42,8 +42,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Files;
 import org.nrg.xnat.Labels;
-import org.nrg.xnat.helpers.editscript.DicomEdit;
-import org.nrg.xnat.helpers.merge.AnonUtils;
+import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.prearchive.DatabaseSession;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase.Either;
@@ -340,8 +339,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
             try {
                 // check to see of this session came in through the upload applet
-                if (!session.getPreventAnon() && AnonUtils.getService().isEnabled(DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null), null)) {
-                    Configuration c = AnonUtils.getCachedSitewideAnon();
+                if (!session.getPreventAnon() && DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
+                    Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
                     if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
                         //noinspection deprecation
                         Anonymize.anonymize(outputFile,

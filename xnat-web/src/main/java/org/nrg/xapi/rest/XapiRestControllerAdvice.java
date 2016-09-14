@@ -1,5 +1,6 @@
 package org.nrg.xapi.rest;
 
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
@@ -52,6 +53,11 @@ public class XapiRestControllerAdvice {
     @ExceptionHandler(FileNotFoundException.class)
     public ModelAndView handleFileNotFoundException(final HttpServletRequest request, final FileNotFoundException exception) {
         return handleException(HttpStatus.BAD_REQUEST, request, "Unable to find requested file or resource: " + exception.getMessage(), exception);
+    }
+
+    @ExceptionHandler(ConfigServiceException.class)
+    public ModelAndView handleConfigServiceException(final HttpServletRequest request, final ConfigServiceException exception) {
+        return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, "An error occurred when accessing the configuration service: " + exception.getMessage(), exception);
     }
 
     private ModelAndView handleException(final HttpServletRequest request, final String message) {

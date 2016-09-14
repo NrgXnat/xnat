@@ -188,64 +188,68 @@ public class ProjectMemberResource extends SecureResource {
 			try {
 				final UserI user = getUser();
 				if(Permissions.canDelete(user,proj)){
-					if (unknown.size()>0){
-						//NEW USER                        
-                        try {
-							for(String uID : unknown){
+					if (unknown.size() > 0) {
+						//NEW USER
+						try {
+							for (String uID : unknown) {
 								VelocityContext context = new VelocityContext();
-								context.put("user",user);
-							    context.put("server",TurbineUtils.GetFullServerPath(request));
-							    context.put("process","Transfer to the archive.");
-							    context.put("system",TurbineUtils.GetSystemName());
-							    context.put("access_level",gID);
-							    context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
-							    context.put("projectOM",proj);
-							    //SEND email to user
-							    final PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, proj.getId(), proj.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.INVITE_USER_TO_PROJECT + " (" + uID + ")"));
-						    	try {
+								context.put("user", user);
+								context.put("server", TurbineUtils.GetFullServerPath(request));
+								context.put("process", "Transfer to the archive.");
+								context.put("system", TurbineUtils.GetSystemName());
+								context.put("access_level", gID);
+								context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
+								context.put("projectOM", proj);
+								//SEND email to user
+								final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, proj.getId(), proj.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.INVITE_USER_TO_PROJECT + " (" + uID + ")"));
+								try {
 									ProjectAccessRequest.InviteUser(context, uID, user, user.getFirstname() + " " + user.getLastname() + " has invited you to join the " + proj.getName() + " " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".");
 									WorkflowUtils.complete(wrk, wrk.buildEvent());
 								} catch (Exception e) {
 									WorkflowUtils.fail(wrk, wrk.buildEvent());
-									logger.error("",e);
+									logger.error("", e);
 								}
 							}
 						} catch (Throwable e) {
-							logger.error("",e);
+							logger.error("", e);
 						}
 					}
-					
-					if (newUsers.size()>0){
+
+					if (newUsers.size() > 0) {
 						//CURRENT USER
 
-						String email=(this.isQueryVariableTrue("sendemail"))?"true":"false";
-						
-			            
-						boolean sendmail=Boolean.parseBoolean(email);
-						
-						for(UserI newUser: newUsers){
-							final PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, Users.getUserDataType(),newUser.getID().toString(),proj.getId(),newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.ADD_USER_TO_PROJECT));
-					    	EventMetaI c=wrk.buildEvent();
+						String email = (this.isQueryVariableTrue("sendemail")) ? "true" : "false";
 
-							proj.addGroupMember(group.getId(), newUser, user,WorkflowUtils.setStep(wrk, "Add " + newUser.getLogin()));
-							WorkflowUtils.complete(wrk, c);
 
-							if (sendmail){
-                                try {
-                                    VelocityContext context = new VelocityContext();
+						boolean sendmail = Boolean.parseBoolean(email);
 
-                                    context.put("user",user);
-                                    context.put("server",TurbineUtils.GetFullServerPath(request));
-                                    context.put("process","Transfer to the archive.");
-                                    context.put("system",TurbineUtils.GetSystemName());
-                                    context.put("access_level","member");
-                                    context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-                                    context.put("projectOM",proj);
-                                    org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newUser.getEmail(), user, TurbineUtils.GetSystemName() + " Access Granted for " + proj.getName());
-                                } catch (Throwable e) {
-                                    logger.error("",e);
-                                }
-                            }
+						for (UserI newUser : newUsers) {
+							if(newUser!=null && newUser.getID().equals(Users.getGuest().getID())){
+								getResponse().setStatus(Status.CLIENT_ERROR_PRECONDITION_FAILED);
+							} else {
+								final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, Users.getUserDataType(), newUser.getID().toString(), proj.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.ADD_USER_TO_PROJECT));
+								EventMetaI c = wrk.buildEvent();
+
+								proj.addGroupMember(group.getId(), newUser, user, WorkflowUtils.setStep(wrk, "Add " + newUser.getLogin()));
+								WorkflowUtils.complete(wrk, c);
+
+								if (sendmail) {
+									try {
+										VelocityContext context = new VelocityContext();
+
+										context.put("user", user);
+										context.put("server", TurbineUtils.GetFullServerPath(request));
+										context.put("process", "Transfer to the archive.");
+										context.put("system", TurbineUtils.GetSystemName());
+										context.put("access_level", "member");
+										context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
+										context.put("projectOM", proj);
+										org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newUser.getEmail(), user, TurbineUtils.GetSystemName() + " Access Granted for " + proj.getName());
+									} catch (Throwable e) {
+										logger.error("", e);
+									}
+								}
+							}
 						}
 					}
 				}else{

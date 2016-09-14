@@ -599,6 +599,9 @@ public class UsersApi extends AbstractXapiRestController {
             if (user == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
+            if(user.getID().equals(Users.getGuest().getID())){
+                return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+            }
             try {
                 Groups.addUserToGroup(group, user, getSessionUser(), null);
                 return new ResponseEntity<>(HttpStatus.OK);

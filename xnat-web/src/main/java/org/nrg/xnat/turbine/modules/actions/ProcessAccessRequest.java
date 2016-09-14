@@ -72,7 +72,7 @@ public class ProcessAccessRequest extends SecureAction {
 			    
 			    for (Map.Entry<String, UserGroupI> entry:Groups.getGroupsForUser(other).entrySet()){
 			        if (entry.getValue().getTag().equals(project.getId())){
-			        	Groups.removeUserFromGroup(other, entry.getValue().getId(), c);
+			        	Groups.removeUserFromGroup(other, user, entry.getValue().getId(), c);
 			        }
 			    }
 			    
@@ -153,7 +153,7 @@ public class ProcessAccessRequest extends SecureAction {
 			try {				
 				for (Map.Entry<String, UserGroupI> entry:Groups.getGroupsForUser(user).entrySet()){
 				    if (entry.getValue()!=null && entry.getValue().getTag()!=null && entry.getValue().getTag().equals(project.getId())){
-				    	Groups.removeUserFromGroup(other, entry.getValue().getId(), c);
+				    	Groups.removeUserFromGroup(other, user, entry.getValue().getId(), c);
 				    }
 				}
 				

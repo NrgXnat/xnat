@@ -525,7 +525,7 @@ public class ProjectAccessRequest {
 				for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(user).entrySet()) {
 					if (StringUtils.equals(entry.getValue().getTag(),_projectId)) {
 						if(!UserHelper.getUserHelperService(user).isOwner(_projectId)){
-							Groups.removeUserFromGroup(user, entry.getValue().getId(), eventInfo);
+							Groups.removeUserFromGroup(user, user, entry.getValue().getId(), eventInfo);
 						}
 					}
 				}

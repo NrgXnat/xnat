@@ -632,7 +632,7 @@ public class UsersApi extends AbstractXapiRestController {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             try {
-                Groups.removeUserFromGroup(user, group, null);
+                Groups.removeUserFromGroup(user, getSessionUser(), group, null);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
                 _log.error("Error occurred removing user " + user.getLogin() + " from group " + group + ".");

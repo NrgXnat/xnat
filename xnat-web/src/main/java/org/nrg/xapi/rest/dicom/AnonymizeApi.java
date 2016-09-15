@@ -1,9 +1,6 @@
 package org.nrg.xapi.rest.dicom;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.annotations.XapiRestController;
@@ -78,7 +75,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the site-wide anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = "site/enabled", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Void> setSiteWideAnonScriptEnabled(@RequestBody final boolean enable) throws ConfigServiceException {
+    public ResponseEntity<Void> setSiteWideAnonScriptEnabled(@ApiParam(value = "Whether the site-wide anonymization script should be enabled or disabled.", required = true) @RequestParam(required= false, defaultValue = "true") final boolean enable) throws ConfigServiceException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -119,7 +116,8 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 404, message = "The specified project wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = "projects/{projectId}", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Void> setProjectAnonScript(@PathVariable("projectId") final String projectId, @RequestBody final String script) throws NrgServiceException {
+    public ResponseEntity<Void> setProjectAnonScript(@ApiParam(value = "Indicates the ID of the project to be enabled or disabled.", required = true) @PathVariable("projectId") final String projectId,
+                                                     @ApiParam(value = "Whether the specified project's anonymization script should be enabled or disabled.", required = true) @RequestBody final String script) throws NrgServiceException {
         final HttpStatus status;
         try {
             status = canEditProject(projectId);
@@ -161,7 +159,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Void> setProjectAnonScriptEnabled(@PathVariable("projectId") final String projectId, @RequestBody final boolean enable) throws NrgServiceException {
+    public ResponseEntity<Void> setProjectAnonScriptEnabled(@PathVariable("projectId") final String projectId, @RequestParam(required= false, defaultValue = "true") final boolean enable) throws NrgServiceException {
         final HttpStatus status;
         try {
             status = canEditProject(projectId);

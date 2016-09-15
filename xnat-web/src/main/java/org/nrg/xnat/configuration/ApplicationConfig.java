@@ -36,8 +36,7 @@ import java.util.List;
                 "org.nrg.xdat.daos", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xft.daos",
                 "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xnat.configuration",
                 "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners", "org.nrg.xnat.helpers.merge",
-                "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.services.impl.hibernate",
-                "org.nrg.xnat.spawner.repositories"})
+                "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.services.impl.hibernate"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
 public class ApplicationConfig {

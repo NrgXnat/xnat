@@ -5,8 +5,8 @@ import org.apache.axis.transport.http.AxisHTTPSessionListener;
 import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.beans.XnatPluginBean;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
@@ -69,14 +69,16 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class<?>[] { RootConfig.class };
+        final List<Class<?>> configClasses = new ArrayList<>();
+        configClasses.add(RootConfig.class);
+        configClasses.addAll(getPluginConfigs());
+        configClasses.add(ControllerConfig.class);
+        return configClasses.toArray(new Class[configClasses.size()]);
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        final List<Class<?>> configClasses = new ArrayList<>();
-        configClasses.addAll(getPluginConfigs());
-        return configClasses.toArray(new Class[configClasses.size()]);
+        return EMPTY_ARRAY;
     }
 
     @Override
@@ -175,5 +177,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     }
 
     private static final Logger _log = LoggerFactory.getLogger(XnatWebAppInitializer.class);
+    private static final Class<?>[] EMPTY_ARRAY = new Class<?>[0];
+
     private ServletContext _context;
 }

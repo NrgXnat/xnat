@@ -118,9 +118,9 @@ public class XnatAppInfo {
                                 _foundPreferences.put("adminEmail", rs.getString("site_admin_email"));
                                 _foundPreferences.put("siteUrl", rs.getString("site_url"));
                                 _foundPreferences.put("smtp_host", rs.getString("smtp_host"));
-                                _foundPreferences.put("requireLogin", rs.getString("require_login"));
-                                _foundPreferences.put("userRegistration", rs.getString("enable_new_registrations"));
-                                _foundPreferences.put("enableCsrfToken", rs.getString("enable_csrf_token"));
+                                _foundPreferences.put("requireLogin", translateIntToBoolean(rs.getString("require_login")));
+                                _foundPreferences.put("userRegistration", translateIntToBoolean(rs.getString("enable_new_registrations")));
+                                _foundPreferences.put("enableCsrfToken", translateIntToBoolean(rs.getString("enable_csrf_token")));
                                 _foundPreferences.put("archivePath", rs.getString("archivepath"));
                                 _foundPreferences.put("prearchivePath", rs.getString("prearchivepath"));
                                 _foundPreferences.put("cachePath", rs.getString("cachepath"));
@@ -136,6 +136,17 @@ public class XnatAppInfo {
                 }
             }
         }
+    }
+
+    private String translateIntToBoolean(String oldProperty){
+        String translation = oldProperty;
+        if(oldProperty.equals("0")){
+            translation="false";
+        }
+        else if(oldProperty.equals("1")){
+            translation="true";
+        }
+        return translation;
     }
 
     public Map<String, String> getFoundPreferences() {

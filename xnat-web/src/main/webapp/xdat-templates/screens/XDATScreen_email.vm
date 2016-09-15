@@ -25,7 +25,13 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 ##}
 ##</script>
 #if ($data.message)
-<div class="error">$data.message</div><br>
+<div class="success" id="xdatMessage">$data.message</div><br>
+    <script>
+        var xdatMessage = "$data.message".toLowerCase();
+        if (xdatMessage.indexOf('fail') > -1) {
+            $('#xdatMessage').removeClass('success').addClass('error');
+        }
+    </script>
 #end
 #parse("/screens/admin_bar.vm")
 

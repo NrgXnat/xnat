@@ -25,7 +25,6 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
-
 @Service
 public class HibernateAliasTokenService extends AbstractHibernateEntityService<AliasToken, AliasTokenDAO> implements AliasTokenService {
     @Autowired
@@ -36,9 +35,7 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
 
     /**
      * Finds all active tokens for a particular user.
-     *
-     * @param xdatUserId The user ID from the XdatUser table.
-     *
+     * @param xdatUserId    The user ID from the XdatUser table.
      * @return An list of the {@link AliasToken alias tokens} issued to the indicated user.
      */
     @Override
@@ -47,27 +44,25 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
         return getDao().findByXdatUserId(xdatUserId);
 
     }
-
     /**
      * Finds and deactivates all active tokens for a particular user.
-     *
-     * @param username The username of the user to deactivate.
+     * @param username    The username of the user to deactivate.
      */
     @Override
     @Transactional
     public void deactivateAllTokensForUser(String username) {
         List<AliasToken> tokens = findTokensForUser(username);
-        if (tokens != null) {
-            for (AliasToken token : tokens) {
-                token.setEnabled(false);
-            }
+        if(tokens!=null){
+	        for(AliasToken token : tokens) {
+	            token.setEnabled(false);
+	        }
         }
     }
 
     @Override
     @Transactional
     public AliasToken issueTokenForUser(final String username) throws Exception {
-        UserI user = Users.getUser(username);
+    	UserI user=Users.getUser(username);
         return issueTokenForUser(user);
     }
 
@@ -119,7 +114,6 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
      * addresses} have also been checked and validated against the requesting client.
      *
      * @param alias The alias for the requested token.
-     *
      * @return The token matching the indicated alias if one exists; otherwise this returns null.
      */
     @Override
@@ -173,7 +167,8 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
             if (_log.isInfoEnabled()) {
                 _log.info("Token requested to be invalidated but not found for alias: " + alias);
             }
-        } else {
+        }
+        else {
             invalidateToken(token);
         }
     }
@@ -192,21 +187,17 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
     @Override
     @Transactional
     public void invalidateExpiredTokens(String interval) {
-        final List<AliasToken> tokensToExpire = _dao.findByExpired(interval);
-        if (tokensToExpire != null) {
-            for (final AliasToken token : tokensToExpire) {
-                if (token != null) {
-                    invalidateToken(token);
-                }
+        List<AliasToken> tokensToExpire = _dao.findByExpired(interval);
+        for(AliasToken tok : tokensToExpire){
+            if(tok!=null){
+                invalidateToken(tok);
             }
         }
     }
 
     /**
      * Gets the {@link AliasTokenDAO alias token DAO} instance for this service.
-     *
      * @return The {@link AliasTokenDAO alias token DAO} instance for this service.
-     *
      * @see AbstractHibernateEntityService#getDao()
      */
     @Override

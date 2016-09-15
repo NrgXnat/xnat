@@ -26,6 +26,9 @@
 ##        #end
     </script>
 
+    <script type="text/javascript" src="$content.getURI("scripts/polyfills.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/globals.js")"></script>
+
     <script type="text/javascript">
 
         var serverRoot = "$content.getURI('')";

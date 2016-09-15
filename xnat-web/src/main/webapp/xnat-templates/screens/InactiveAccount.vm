@@ -67,7 +67,7 @@ $page.setBgColor($ui.bgcolor)
 </div>
 
 <script type="text/javascript">
-    (function () {
+    $(function () {
 
         function validEmailFormat(email) {
             var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -142,9 +142,9 @@ $page.setBgColor($ui.bgcolor)
         jQuery('#send-activation-email-link').click(function (e) {
             e.preventDefault();
 
-            var __modal, __emailInput;
+            var requestModal, __modal, __emailInput;
 
-            var requestModal = {};
+            window.requestModal = requestModal = {};
             //requestModal.id = 'request-modal'
             requestModal.width = 400;
             requestModal.height = 200;
@@ -200,5 +200,5 @@ $page.setBgColor($ui.bgcolor)
             xmodal.open(requestModal);
         });
 
-    })();
+    });
 </script>

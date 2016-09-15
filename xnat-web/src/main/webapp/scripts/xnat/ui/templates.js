@@ -207,7 +207,7 @@ var XNAT = getObject(XNAT);
         if (hasValue && opts.value.toString().indexOf(doEval) === 0) {
             opts.value = (opts.value.split(doEval)[1]||'').trim();
             try {
-                $element.val(eval(opts.value)).change();
+                $element.changeVal(eval(opts.value));
             }
             catch (e) {
                 $element.val('').change();
@@ -240,8 +240,8 @@ var XNAT = getObject(XNAT);
 
         // add 'before' content before the core element
         if (opts.beforeElement) {
-            opts.beforeElement = stringable(opts.beforeElement) ? [opts.beforeElement] : '';
-            inner.push(spawn('span.before', opts.beforeElement));
+            opts.beforeElement = stringable(opts.beforeElement) ? opts.beforeElement : '';
+            inner.push(opts.beforeElement);
         }
 
 
@@ -261,8 +261,8 @@ var XNAT = getObject(XNAT);
 
         // add 'after' content after the core element
         if (opts.afterElement) {
-            opts.afterElement = stringable(opts.afterElement) ? [opts.afterElement] : '';
-            inner.push(spawn('span.after', opts.afterElement));
+            opts.afterElement = stringable(opts.afterElement) ? opts.afterElement : '';
+            inner.push(opts.afterElement);
         }
 
         var $hiddenInput, hiddenInput;
@@ -270,13 +270,13 @@ var XNAT = getObject(XNAT);
         // check buttons if value is true
         if (/checkbox/i.test(element.type||'')) {
 
-            element.checked = /true|checked/i.test(opts.checked||element.value||'');
+            element.checked = /^(true|checked|1)$/gi.test((opts.checked||element.value||'').trim());
 
             // add a hidden input to capture the checkbox/radio value
             $hiddenInput = $.spawn('input.proxy', {
                 type: 'hidden',
                 name: element.name,
-                value: element.checked ? (element.value || opts.value || element.checked || 'true') : 'false'
+                value: element.checked ? (element.value || opts.value || element.checked || true) : false
             });
 
             hiddenInput = $hiddenInput[0];
@@ -284,14 +284,32 @@ var XNAT = getObject(XNAT);
             // add [data-value] attribute
             $hiddenInput.dataAttr('value', hiddenInput.value);
 
-            // change the value of the hidden input onclick
-            element.onclick = function(){
-                // if the checkbox value is boolean,
-                // match the value to the 'checked' state
-                if (/true|false/i.test(this.value)) {
-                    this.value = this.checked;
+            element.onclick = function(e){
+                var _val = this.value+'';
+                // shift-click a checkbox (or switchbox) to
+                // switch between boolean true/false and 1/0
+                if (e.shiftKey) {
+                    if (/^(1|0)$/g.test(_val)) {
+                        _val = _val === '1' ? 'true' : 'false';
+                    }
+                    else if (/^(true|false)$/gi.test(_val)) {
+                        _val = _val === 'true' ? '1' : '0';
+                    }
                 }
-                hiddenInput.value = this.checked ? (this.value || this.checked || 'true') : 'false';
+                this.value = _val;
+            };
+
+            // change the value of the hidden input
+            // when 'controller' input changes
+            element.onchange = function(){
+                var _val = this.value+'';
+                if (/^(1|0)$/g.test(_val)) {
+                    _val = this.checked ? '1' : '0';
+                }
+                else if (/^(true|false)$/gi.test(_val)) {
+                    _val = this.checked ? 'true' : 'false';
+                }
+                this.value = hiddenInput.value = _val;
                 $hiddenInput.toggleClass('dirty');
             };
 

@@ -93,74 +93,31 @@ public final class DicomHeaderDump {
 
     /**
      * Convert a tag into a row of the XFTTable.
-     * @param o Necessary so we can get to the description of the tag
-     * @param e The current DICOM element
+     * @param object Necessary so we can get to the description of the tag
+     * @param element The current DICOM element
      * @param parentTag If non null, this is a nested DICOM tag. 
      * @param maxLen The maximum number of characters to read from the description and value 
-     * @return
+     * @return The strings that comprise the row for the DICOM tag.
      */
-    String[] makeRow(DicomObject o, DicomElement e, String parentTag , int maxLen) {
-        String tag = TagUtils.toString(e.tag());
-        String value = "";
+    String[] makeRow(final DicomObject object, final DicomElement element, final String parentTag, final int maxLen) {
+        final String tag = TagUtils.toString(element.tag());
 
         // If this element has nested tags it doesn't have a value and trying to 
         // extract one using dcm4che will result in an UnsupportedOperationException 
         // so check first.
-        if (!e.hasDicomObjects()) {
-            value = escapeHTML(e.getValueAsString(null, maxLen));
-        }
-        else {
-            value = "";
-        }
+        final String value = !element.hasDicomObjects() ? escapeHTML(element.getValueAsString(null, maxLen)) : "";
 
-
-        String vr = e.vr().toString();
-        String desc = o.nameOf(e.tag());
+        final String vr = element.vr().toString();
 
         // This fixes the unfortunate tendency of DICOM tags to use good typographical but poor programming practices.
-        if (desc.contains("&")) {
-            desc = desc.replace("&", "&amp;");
-        }
-        if (desc.contains("'")) {
-            desc = desc.replace("‘", "&apos;");
-        }
-        if (desc.contains("‘")) {
-            desc = desc.replace("‘", "&apos;");
-        }
-        if (desc.contains("’")) {
-            desc = desc.replace("’", "&apos;");
-        }
-        if (desc.contains("\"")) {
-            desc = desc.replace("”", "&quot;");
-        }
-        if (desc.contains("”")) {
-            desc = desc.replace("”", "&quot;");
-        }
-        if (desc.contains("”")) {
-            desc = desc.replace("”", "&apos;");
-        }
-        if (desc.contains("<")) {
-            desc = desc.replace("”", "&lt;");
-        }
-        if (desc.contains(">")) {
-            desc = desc.replace("”", "&gt;");
-        }
+        final String desc = escapeHTML(object.nameOf(element.tag()));
 
-        List<String> l = new ArrayList<>();
-        if (parentTag == null) {
-            String[] _s = {tag,"",vr,value,desc};
-            l.addAll(Arrays.asList(_s));
-        }
-        else {
-            String[] _s = {parentTag, tag, vr, value, desc};
-            l.addAll(Arrays.asList(_s));
-        }
-        String[] row = l.toArray(new String[l.size()]);
-        return row;
+        final List<String> strings = new ArrayList<>(parentTag == null ? Arrays.asList(tag, "", vr, value, desc) : Arrays.asList(parentTag, tag, vr, value, desc));
+        return strings.toArray(new String[strings.size()]);
     }
 
-    public static String escapeHTML(String o){
-        return (o==null)?null: StringEscapeUtils.escapeHtml4(o);
+    public static String escapeHTML(final String value) {
+        return value == null ? null : StringEscapeUtils.escapeHtml4(value);
     }
 
     /**

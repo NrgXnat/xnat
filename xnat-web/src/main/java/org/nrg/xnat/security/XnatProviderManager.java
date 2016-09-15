@@ -332,7 +332,7 @@ public class XnatProviderManager extends ProviderManager {
          */
         private synchronized void addFailedLoginAttempt(final Authentication auth) throws SiteConfigurationException {
             XdatUserAuth ua = _manager.getUserByAuth(auth);
-            if (ua != null) {
+            if (ua != null && !ua.getXdatUsername().equals("guest")) {
                 if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
                     ua.setFailedLoginAttempts(ua.getFailedLoginAttempts() + 1);
                     ua.setLastLoginAttempt(new Date());

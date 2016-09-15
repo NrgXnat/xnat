@@ -64,7 +64,8 @@ public class DisableInactiveUsers implements Runnable {
                     final UserI u = Users.getUser(username);
 
                     // Fixes XNAT-2407. Only disable user if they have not been recently modified (enabled).
-                    if (!hasUserBeenModified(u, _inactivityBeforeLockout)) {
+                    // Also do not disable the guest user.
+                    if (!hasUserBeenModified(u, _inactivityBeforeLockout) && !username.equals("guest")) {
                         u.setEnabled("0");
                         u.setVerified("0");
                         Users.save(u, adminUser, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.PROCESS, "Disabled due to inactivity"));

@@ -166,7 +166,8 @@ public class ProjectListResource extends QueryOrganizerResource {
 
         FilteredResourceHandlerI handler = null;
         try {
-            for (FilteredResourceHandlerI filter : getHandlers("org.nrg.xnat.restlet.projectsList.extensions", _defaultHandlers)) {
+            final List<FilteredResourceHandlerI> handlers = getHandlers("org.nrg.xnat.restlet.projectsList.extensions", _defaultHandlers);
+            for (FilteredResourceHandlerI filter : handlers) {
                 if (filter.canHandle(this)) {
                     handler = filter;
                 }

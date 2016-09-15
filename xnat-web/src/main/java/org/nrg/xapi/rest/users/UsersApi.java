@@ -9,10 +9,9 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.Patterns;
 import org.nrg.xapi.exceptions.DataFormatException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
-import org.nrg.xapi.exceptions.NotFoundException;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.PasswordValidatorChain;
@@ -48,11 +47,14 @@ import java.util.*;
 @RequestMapping(value = "/users")
 public class UsersApi extends AbstractXapiRestController {
     @Autowired
-    public UsersApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final SessionRegistry sessionRegistry, final PasswordValidatorChain passwordValidator) {
+    public UsersApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService,
+                    final RoleHolder roleHolder, final SessionRegistry sessionRegistry,
+                    final PasswordValidatorChain passwordValidator, final AliasTokenService aliasTokenService) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _sessionRegistry = sessionRegistry;
         _passwordValidator = passwordValidator;
+        _aliasTokenService = aliasTokenService;
     }
 
     @ApiOperation(value = "Get list of users.", notes = "The primary users function returns a list of all users of the XNAT system. This includes just the username and nothing else. You can retrieve a particular user by adding the username to the REST API URL or a list of users with abbreviated user profiles by calling /xapi/users/profiles.", response = String.class, responseContainer = "List")
@@ -239,6 +241,7 @@ public class UsersApi extends AbstractXapiRestController {
 
     @ApiOperation(value = "Updates the user object with the specified username.", notes = "Returns the updated serialized user object with the specified username.", response = User.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User successfully updated."),
+                   @ApiResponse(code = 304, message = "The user object was not modified because no attributes were changed."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 404, message = "User not found."),
@@ -261,48 +264,62 @@ public class UsersApi extends AbstractXapiRestController {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Failed to retrieve user object for user " + username);
         }
 
+        boolean isDirty = false;
         if ((StringUtils.isNotBlank(model.getUsername())) && (!StringUtils.equals(user.getUsername(), model.getUsername()))) {
             user.setLogin(model.getUsername());
+            isDirty = true;
         }
         if ((StringUtils.isNotBlank(model.getFirstName())) && (!StringUtils.equals(user.getFirstname(), model.getFirstName()))) {
             user.setFirstname(model.getFirstName());
+            isDirty = true;
         }
         if ((StringUtils.isNotBlank(model.getLastName())) && (!StringUtils.equals(user.getLastname(), model.getLastName()))) {
             user.setLastname(model.getLastName());
+            isDirty = true;
         }
         if ((StringUtils.isNotBlank(model.getEmail())) && (!StringUtils.equals(user.getEmail(), model.getEmail()))) {
             user.setEmail(model.getEmail());
+            isDirty = true;
         }
-        if ((StringUtils.isNotBlank(model.getPassword())) && (!StringUtils.equals(user.getPassword(), model.getPassword()))) {
+        // Don't do password compare: we can't.
+        if (StringUtils.isNotBlank(model.getPassword())) {
             user.setPassword(model.getPassword());
             fixPassword(user);
+            isDirty = true;
         }
         if (model.getAuthorization() != null && !model.getAuthorization().equals(user.getAuthorization())) {
             user.setAuthorization(model.getAuthorization());
+            isDirty = true;
         }
-        if (model.isEnabled() != null) {
-            user.setEnabled(model.isEnabled());
-        }
-        if (model.isVerified() != null) {
-            user.setVerified(model.isVerified());
-        }
-
-        if (!user.isEnabled()) {
-            //When a user is disabled, deactivate all their AliasTokens
-            try {
-                XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(user.getLogin());
-            } catch (Exception e) {
-                _log.error("", e);
+        final Boolean enabled = model.isEnabled();
+        if (enabled != null && enabled != user.isEnabled()) {
+            user.setEnabled(enabled);
+            if (!enabled) {
+                //When a user is disabled, deactivate all their AliasTokens
+                try {
+                    _aliasTokenService.deactivateAllTokensForUser(user.getLogin());
+                } catch (Exception e) {
+                    _log.error("", e);
+                }
             }
+            isDirty = true;
+        }
+        final Boolean verified = model.isVerified();
+        if (verified != null && verified != user.isVerified()) {
+            user.setVerified(verified);
+            isDirty = true;
         }
 
+        if (!isDirty) {
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        }
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Modified, "", ""));
             return new ResponseEntity<>(new User(user), HttpStatus.OK);
         } catch (Exception e) {
             _log.error("Error occurred modifying user " + user.getLogin());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ApiOperation(value = "Invalidates all active sessions associated with the specified username.", notes = "Returns a list of session IDs that were invalidated.", response = String.class, responseContainer = "List")
@@ -730,4 +747,5 @@ public class UsersApi extends AbstractXapiRestController {
     private final SiteConfigPreferences  _preferences;
     private final SessionRegistry        _sessionRegistry;
     private final PasswordValidatorChain _passwordValidator;
+    private final AliasTokenService _aliasTokenService;
 }

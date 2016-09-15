@@ -298,7 +298,8 @@ public class ProjectResource extends ItemResource {
         if (project != null) {
             FilteredResourceHandlerI handler = null;
             try {
-                for (FilteredResourceHandlerI filter : getHandlers("org.nrg.xnat.restlet.projectResource.extensions", _defaultHandlers)) {
+                final List<FilteredResourceHandlerI> handlers = getHandlers("org.nrg.xnat.restlet.projectResource.extensions", _defaultHandlers);
+                for (final FilteredResourceHandlerI filter : handlers) {
                     if (filter.canHandle(this)) {
                         handler = filter;
                     }

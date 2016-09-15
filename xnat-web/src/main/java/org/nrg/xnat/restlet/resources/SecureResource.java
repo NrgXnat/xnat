@@ -1542,6 +1542,7 @@ public abstract class SecureResource extends Resource {
     }
 
     private static final Map<String, List<FilteredResourceHandlerI>> handlers = Maps.newConcurrentMap();
+    private static final Object MUTEX_HANDLERS = new Object();
 
     /**
      * Get a list of the possible handlers.  This allows additional handlers to be injected at a later date or via a module.
@@ -1550,26 +1551,22 @@ public abstract class SecureResource extends Resource {
      * @throws InstantiationException When an error occurs creating one of the handler objects.
      * @throws IllegalAccessException When access levels are incorrect during access or creation.
      */
-    public static List<FilteredResourceHandlerI> getHandlers(String _package, List<FilteredResourceHandlerI> _defaultHandlers) throws InstantiationException, IllegalAccessException {
-        if (handlers.get(_package) == null) {
-            synchronized (handlers) {
-                handlers.put(_package, _defaultHandlers);
-
+    public static List<FilteredResourceHandlerI> getHandlers(String _package, List<FilteredResourceHandlerI> defaultHandlers) throws InstantiationException, IllegalAccessException {
+        if (!handlers.containsKey(_package)) {
+            synchronized (MUTEX_HANDLERS) {
+                final List<FilteredResourceHandlerI> handlerClasses = new ArrayList<>(defaultHandlers);
                 //ordering here is important.  the last match wins
-                List<Class<?>> classes;
                 try {
-                    classes = Reflection.getClassesForPackage(_package);
+                    final List<Class<?>> classes = Reflection.getClassesForPackage(_package);
+                    for (final Class<?> clazz : classes) {
+                        if (FilteredResourceHandlerI.class.isAssignableFrom(clazz)) {
+                            handlerClasses.add((FilteredResourceHandlerI) clazz.newInstance());
+                        }
+                    }
                 } catch (Exception exception) {
                     throw new RuntimeException(exception);
                 }
-
-                final List<FilteredResourceHandlerI> handlerClasses = new ArrayList<>();
-                for (Class<?> clazz : classes) {
-                    if (FilteredResourceHandlerI.class.isAssignableFrom(clazz)) {
-                        handlerClasses.add((FilteredResourceHandlerI) clazz.newInstance());
-                    }
-                }
-                handlers.get(_package).addAll(handlerClasses);
+                handlers.put(_package, handlerClasses);
             }
         }
 

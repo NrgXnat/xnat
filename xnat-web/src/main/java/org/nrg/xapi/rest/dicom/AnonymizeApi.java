@@ -61,7 +61,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved the status of the site-wide anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access the site-wide anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "site/enabled", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET)
+    @RequestMapping(value = "site/enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Boolean> isSiteWideAnonScriptEnabled() throws ConfigServiceException {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -74,7 +74,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully set the status of the site-wide anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the site-wide anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "site/enabled", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT)
+    @RequestMapping(value = "site/enabled", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Void> setSiteWideAnonScriptEnabled(@ApiParam(value = "Whether the site-wide anonymization script should be enabled or disabled.", required = true) @RequestParam(required= false, defaultValue = "true") final boolean enable) throws ConfigServiceException {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -140,7 +140,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved the status of the project-specific anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access the project-specific anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET)
+    @RequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Boolean> isProjectAnonScriptEnabled(@PathVariable("projectId") final String projectId) throws NrgServiceException {
         final HttpStatus status;
         try {
@@ -158,7 +158,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully set the status of the project-specific anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT)
+    @RequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Void> setProjectAnonScriptEnabled(@PathVariable("projectId") final String projectId, @RequestParam(required= false, defaultValue = "true") final boolean enable) throws NrgServiceException {
         final HttpStatus status;
         try {

@@ -387,6 +387,7 @@ var XNAT = getObject(XNAT || {});
         // custom event for reloading data (refresh)
         $formPanel.on('reload-data', function(){
             var _load = opts.refresh || opts.load || opts.url;
+            $(this).find('.valid, .invalid').removeClass('valid invalid');
             loadData(this, {
                 load: _load ? ('$?' + _load.replace(/^\$\?/, '')) : ''
             });

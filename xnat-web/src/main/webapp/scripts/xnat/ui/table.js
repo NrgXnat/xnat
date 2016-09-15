@@ -397,7 +397,19 @@ var XNAT = getObject(XNAT);
 
         // create a div to hold the table
         // or message (if no data or error)
-        var tableContainer = spawn('div.data-table-container', [newTable.table]);
+        var $tableContainer = $.spawn('div.data-table-container', [newTable.table]);
+        var tableContainer = $tableContainer[0];
+
+        // if (opts.before) {
+        //     $tableContainer.prepend(opts.before);
+        // }
+
+        // add the table
+        // $tableContainer.append(newTable.table);
+
+        // if (opts.after) {
+        //     $tableContainer.append(opts.after);
+        // }
 
         function createTable(rows){
             var props = [], objRows = [];
@@ -408,6 +420,7 @@ var XNAT = getObject(XNAT);
                 });
                 rows = objRows; // now it's an array
             }
+            // create header row
             if (!allItems && (opts.items || opts.properties)) {
                 newTable.tr();
                 forOwn(opts.items||opts.properties, function(name, val){
@@ -415,16 +428,24 @@ var XNAT = getObject(XNAT);
                     // if it's an object, get the 'label' property
                     //var label = stringable(val) ? val+'' : val.label;
                     props.push(name);
+
+                    // don't create <th> for items labeled as '~data'
+                    if (/^~data/.test(val)) {
+                        return;
+                    }
+
                     newTable.th(val.label || val);
-                    if (val === '~') {
+
+                    if (/^~!/.test(val.label || val)) {
                         $(newTable.last.th).html(name)
                                 .addClass('hidden')
                                 .dataAttr('prop', name);
                         return;
                     }
-                    if (!opts.sortable) return;
-                    if (opts.sortable === true || opts.sortable.indexOf(name) !== -1) {
+                    //if (!opts.sortable) return;
+                    if (val.sort || opts.sortable === true || (opts.sortable||[]).indexOf(name) !== -1) {
                         addClassName(newTable.last.th, 'sort');
+                        newTable.last.th.appendChild(spawn('i', '&nbsp;'))
                     }
                 });
             }
@@ -435,7 +456,7 @@ var XNAT = getObject(XNAT);
                 forOwn(rows[0], function(name, val){
                     if (allItems) {
                         newTable.th(name);
-                        if (val === '~') {
+                        if (/^~!/.test(val)) {
                             addClassName(newTable.last.th, 'hidden');
                         }
                     }
@@ -444,23 +465,77 @@ var XNAT = getObject(XNAT);
             }
             rows.forEach(function(item){
                 newTable.tr();
+                // iterate properties for each row
                 props.forEach(function(name){
-                    var cellObj = { className: name };
+
+                    var hidden = false;
                     var itemVal = item[name];
-                    if (opts.items && opts.items[name].cells) {
-                        extend(true, cellObj, opts.items[name].cells);
+                    var cellObj = {};
+                    var tdElement = {
+                        className: name,
+                        html: itemVal
+                    };
+
+                    if (opts.items) {
+                        cellObj = opts.items[name];
+                        if (typeof cellObj === 'string') {
+                            // set item label to '~data' to add as a
+                            // [data-*] attribute to the <tr>
+                            if (/^~data/.test(cellObj)) {
+                                var dataName = cellObj.split('.')[1] || name;
+                                newTable.last$('tr').dataAttr(dataName, itemVal);
+                                return;
+                            }
+                            hidden = /^~!/.test(cellObj);
+                        }
+                        else {
+                            if (cellObj.td || cellObj.element) {
+                                extend(true, tdElement, cellObj.td || cellObj.element);
+                            }
+                            if (cellObj.value) {
+                                // explicitly override value
+                                itemVal = cellObj.value;
+                            }
+                            if (cellObj.className) {
+                                addClassName(tdElement, cellObj.className);
+                            }
+                            // if (cellObj.apply) {
+                            //     itemVal = eval(cellObj.apply).apply(item, [itemVal]);
+                            // }
+                            if (cellObj['call']) {
+                                if (isFunction(cellObj['call'])) {
+                                    itemVal = cellObj['call'].call(item, itemVal) || itemVal;
+                                }
+                                else {
+                                    itemVal = eval('('+cellObj['call'].trim()+')').call(item, itemVal) || itemVal;
+                                }
+                            }
+                            // special __VALUE__ string gets replaced
+                            if (cellObj.html || cellObj.content) {
+                                tdElement.html = (cellObj.html || cellObj.content).replace(/__VALUE__/g, itemVal);
+                            }
+                            hidden = /^~!/.test(cellObj.label);
+                        }
                     }
-                    else {
-                        cellObj.html = itemVal;
+
+                    newTable.td(tdElement);
+
+                    var $td = $(newTable.last.td);
+
+                    // evaluate jQuery methods
+                    if (cellObj.$) {
+                        if (typeof cellObj.$ === 'string') {
+                            eval('$(newTable.last.td).'+(cellObj.$).trim());
+                        }
+                        else {
+                            forOwn(cellObj.$, function(method, args){
+                                $td[method].apply($td, [].concat(args))
+                            });
+                        }
                     }
-                    if (cellObj.apply) {
-                        itemVal = eval(cellObj.apply).apply(item, itemVal);
-                    }
-                    // special __VALUE__ string gets replaced
-                    cellObj.html = cellObj.html.replace(/__VALUE__/, itemVal);
-                    newTable.td(cellObj);
-                    if (opts.items[name] === '~') {
-                        addClassName(newTable.last.td, 'hidden');
+
+                    if (hidden) {
+                        $td.addClass('hidden');
                     }
 
                 });

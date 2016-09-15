@@ -10,6 +10,8 @@ var XNAT = getObject(XNAT || {});
     var codeEditor,
         xhr = XNAT.xhr;
 
+    console.log('codeEditor.js');
+
     var csrfParam = {
         XNAT_CSRF: csrfToken
     };
@@ -132,12 +134,13 @@ var XNAT = getObject(XNAT || {});
                 _this.aceEditor.setTheme('ace/theme/eclipse');
                 _this.aceEditor.getSession().setMode('ace/mode/' + stringLower(_this.language||''));
                 _this.aceEditor.session.setValue(_this.code);
+                // _this.aceEditor.setReadOnly(_this.readonly);
             }
         });
 
         // put the new editor div in the wrapper
         _this.$editor.empty().append(editor);
-        
+
         return this;
 
     };
@@ -154,7 +157,8 @@ var XNAT = getObject(XNAT || {});
     // open code in a dialog for editing
     Editor.fn.openEditor = function(opts){
 
-        var _this = this;
+        var _this = this,
+            fn = {};
 
         var modal = {};
         modal.width = 880;
@@ -190,13 +194,31 @@ var XNAT = getObject(XNAT || {});
                 'Changes will be submitted on save.' :
                 'Changes are not submitted automatically.<br>The containing form will need to be submitted to save.') +
             '</span>';
-        modal.beforeShow = function(obj){
-            _this.$editor = obj.$modal.find('div.code-editor');
+
+        // the 'beforeShow' and 'afterShow' methods
+        // get an extra argument - the Editor instance
+
+        var _beforeShow = opts.beforeShow;
+
+        fn.beforeShow = function(dialog){
+            _this.$editor = this.$modal.find('div.code-editor');
             _this.load();
+            if (isFunction(_beforeShow)) {
+                // '_this' is the Editor instance
+                _beforeShow.call(this, dialog, _this)
+            }
         };
-        modal.afterShow = function(){
-            _this.$editor.focus();
+
+        var _afterShow = opts.afterShow;
+
+        fn.afterShow = function(dialog){
+            if (isFunction(_afterShow)) {
+                // '_this' is the Editor instance
+                _afterShow.call(this, dialog, _this)
+            }
+            _this.aceEditor.focus();
         };
+
         modal.buttons = {
             save: {
                 label: _this.isUrl ? 'Submit Changes' : 'Apply Changes',
@@ -212,9 +234,7 @@ var XNAT = getObject(XNAT || {});
         };
         
         // override modal options with {opts}
-        extend(modal, opts);
-
-        this.dialog = xmodal.open(modal);
+        this.dialog = xmodal.open(extend({}, modal, opts, fn));
         
         return this;
 

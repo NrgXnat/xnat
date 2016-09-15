@@ -1,5 +1,5 @@
 // interactions with 'Security Passwords' section of admin ui
-console.log('passwordExpirationType.js');
+console.log('passwords.js');
 
 (function(){
 

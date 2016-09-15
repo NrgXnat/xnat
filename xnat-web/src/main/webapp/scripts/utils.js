@@ -183,6 +183,75 @@ jQuery.loadScript = function (url, arg1, arg2) {
 };
 
 
+// return defined attributes for selection
+// optionally passing a list of attributes to get
+// (as an array or space- or comma-separated list)
+(function($attr){
+
+    function notEmpty(item){
+        return item > ''
+    }
+
+    function mapAttrs(attrs){
+        var i = -1,
+            attr,
+            obj = {};
+        while (++i < attrs.length){
+            attr = attrs[i];
+            if (attr.specified) {
+                obj[attr.name] =
+                    obj[toCamelCase(attr.name)] =
+                        attr;
+            }
+        }
+        return obj;
+    }
+
+    $.fn.getAttr =
+    $.fn.getAttrs =
+    $.fn.getAttributes = function(attrs){
+        var attributes = this[0].attributes,
+            attrMap = mapAttrs(attributes),
+            names = [],
+            obj = {};
+        if (!this.length) {
+            return null;
+        }
+        // normalize to an array of attribute names
+        if (attrs) {
+            names = [].concat(attrs||[]).join(' ').split(/[,\s+]/).filter(notEmpty);
+        }
+        else {
+            names = toArray(attributes).map(function(item){ return item.name });
+        }
+        if (!names.length) {
+            return attrMap;
+        }
+        names.forEach(function(name){
+            obj[name] =
+                obj[toCamelCase(name)] =
+                    attrMap[name].value;
+        });
+        return obj;
+    }
+
+    // given: <div id="foo" title="Foo" class="bar">Foo</div>
+    // $('#foo').attr();
+    // --> { id: 'foo', title: 'Foo', "class": 'bar' }
+    $.fn.attr =
+    $.fn.attrs = function() {
+        if (!arguments.length) {
+            if (!this.length) {
+                return null;
+            }
+            return mapAttrs(this[0].attributes);
+        }
+        return $attr.apply(this, arguments);
+    };
+
+})($.fn.attr);
+
+
 // set the value of a form element, then fire the
 // 'onchange' event ONLY if the value actually changed
 // (works on hidden inputs too)
@@ -340,12 +409,14 @@ jQuery.fn.tableSort = function(){
     //     return this.innerHTML.trim() > '';
     // }).addClass('sort');
     $table.find('th.sort')
-          .append('<i>&nbsp;</i>')
           // wrapInner('<a href="#" class="nolink" title="click to sort on this column"/>').
           .each(function(){
+              var $this = $(this);
+              $this.find('i').remove();
+              $this.append('<i>&nbsp;</i>');
               // don't overwrite existing title
               this.title += ' (click to sort) ';
-              $(this).on('click.sort', function(){
+              $this.on('click.sort', function(){
                   var $th = $(this),
                       thIndex = $th.index(),
                       sorted = $th.hasAnyClass('asc desc'),
@@ -513,6 +584,7 @@ function menuInit(select, opts, width){
 }
 
 function menuUpdate(select){
+    if (!select) return false;
     return $$(select||'select.xnat-menu').trigger('chosen:updated');
 }
 

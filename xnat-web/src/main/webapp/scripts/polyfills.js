@@ -256,6 +256,101 @@ if (!Array.prototype.filter) {
     };
 }
 
+// trim spaces from all string items in an array
+// optionally removing empty strings from the array
+// and optionally purging non-string items
+if (!Array.prototype.trim) {
+    Array.prototype.trim = function(strip, purge) {
+        'use strict';
+        if (this == null) {
+            throw new TypeError('Array.prototype.trim called on null or undefined');
+        }
+        var i = -1;
+        var len = this.length;
+        var outputArray = [];
+        var item;
+        while (++i < len) {
+            item = this[i];
+            // return non-string items as-is
+            if (typeof item !== 'string') {
+                // if not purging them
+                if (purge !== true) {
+                    outputArray.push(item);
+                }
+                continue;
+            }
+            // trim whitespace from string
+            item = item.trim();
+            // only push empty item if not stripping them
+            if (item === '') {
+                if (!strip) {
+                    outputArray.push(item);
+                }
+            }
+            else {
+                // always push non-empty strings
+                outputArray.push(item);
+            }
+        }
+        return outputArray;
+    }
+}
+
+// force 'stringable' array elements to string,
+// optionally including non-stringable items
+if (!Array.prototype.strings) {
+    Array.prototype.strings = function(other){
+        'use strict';
+        if (this == null) {
+            throw new TypeError('Array.prototype.strings called on null or undefined');
+        }
+        var stringArray = [];
+        this.forEach(function(item){
+            var _item = null;
+            if (/string|number|boolean/.test(typeof item)) {
+                _item = item+'';
+            }
+            else if (other) {
+                if (Array.isArray(item)){
+                    _item = '[' + item.strings(other) + ']';
+                }
+                else if (typeof item === 'function') {
+                    _item = item.toString().replace(/\s+/, ' ');
+                }
+                else if (typeof item === 'object') {
+                    try {
+                        _item = JSON.stringify(item)
+                    }
+                    catch(e1) {
+                        try {
+                            _item = item.toString()
+                        }
+                        catch(e2) {
+                            try {
+                                _item = item+''
+                            }
+                            catch(e3) {
+                                console.error('Could not stringify. ' + [e1, e2, e3].join(' '));
+                            }
+                        }
+                    }
+                }
+            }
+            if (_item) {
+                stringArray.push(_item);
+            }
+        });
+        return stringArray;
+    }
+}
+
+// simple check for a plain object
+if (typeof Object.isObject != 'function') {
+    Object.isObject = function(obj) {
+        return Object.prototype.toString.call(obj) === '[object Object]';
+    };
+}
+
 if (typeof Object.assign != 'function') {
     Object.assign = function (target) {
         var undefined;

@@ -25,6 +25,8 @@ var XNAT = getObject(XNAT);
     XNAT.app = getObject(XNAT.app||{});
     XNAT.xapi = getObject(XNAT.xapi||{});
 
+    console.log('investigators.js');
+
     function setupUrl(part){
         part = part ? '/' + part : '';
         return xurl.rootUrl(BASE_URL + part);
@@ -74,6 +76,7 @@ var XNAT = getObject(XNAT);
 
     function Investigators(opts){
         extend(true, this, opts);
+        this.menu = null; // this will be updated when a menu is created
     }
 
     Investigators.fn = Investigators.prototype;
@@ -238,7 +241,7 @@ var XNAT = getObject(XNAT);
             }
         }
 
-        var isPrimary = self.menu.value == investigators.primary;
+        var isPrimary = self.menu ? self.menu.value == investigators.primary : false;
 
         function investigatorForm(){
             return {
@@ -258,7 +261,7 @@ var XNAT = getObject(XNAT);
                         department: createInput('Department', 'department'),
                         email: createInput('Email', 'email', 'email'),
                         phone: createInput('Phone', 'phone', 'numeric-dash'),
-                        primary: {
+                        primary: self.menu ? {
                             kind: 'panel.element',
                             label: false,
                             contents:
@@ -266,6 +269,9 @@ var XNAT = getObject(XNAT);
                                 '<input type="checkbox" class="set-primary">' +
                                 ' Set as Primary' +
                                 '</label>'
+                        } : {
+                            tag: 'i.hidden',
+                            content: '(no menu, no checkbox)'
                         }
                         // ID: createInput('ID', 'ID'),
                         // invId: {
@@ -288,13 +294,15 @@ var XNAT = getObject(XNAT);
                         invForm.render(obj.$modal.find('div.add-edit-investigator'));
                     },
                     afterShow: function(obj){
-                        obj.$modal.find('input.set-primary').prop('checked', isPrimary);
+                        if (self.menu) {
+                            obj.$modal.find('input.set-primary').prop('checked', isPrimary);
+                        }
                     },
                     okLabel: 'Submit',
                     okClose: false,
                     okAction: function(obj){
                         var _form = obj.$modal.find('form[name="editInvestigator"]'),
-                            setPrimary = _form.find('input.set-primary')[0].checked;
+                            setPrimary = self.menu ? _form.find('input.set-primary')[0].checked : false;
                         $(_form).submitJSON({
                             delim: '!',
                             validate: function(){
@@ -315,20 +323,22 @@ var XNAT = getObject(XNAT);
 
                                 return errors === 0;
                             },
-                            success: function(data){
+                            success: function(data, status, xhrObj){
                                 var selected = data.xnatInvestigatordataId;
                                 ui.banner.top(2000, 'Investigator data saved.', 'success');
                                 // update other menus, if specified
-                                if (menus) {
-                                    [].concat(menus).forEach(function(menu){
-                                        menu.updateMenu(setPrimary ? selected : '');
-                                    })
-                                }
-                                // update the menu associated with the dialog
-                                self.updateMenu([].concat(self.getSelected(), (!setPrimary ? selected : [])));
-                                // set the PI if editing/creating PI
-                                if (setPrimary) {
-                                    investigators.primary = selected;
+                                if (self.menu) {
+                                    if (menus) {
+                                        [].concat(menus).forEach(function(menu){
+                                            menu.updateMenu(setPrimary ? selected : '');
+                                        })
+                                    }
+                                    // update the menu associated with the dialog
+                                    self.updateMenu([].concat(self.getSelected(), (!setPrimary ? selected : [])));
+                                    // set the PI if editing/creating PI
+                                    if (setPrimary) {
+                                        investigators.primary = selected;
+                                    }
                                 }
                                 dialog.close();
                             }
@@ -346,6 +356,75 @@ var XNAT = getObject(XNAT);
     };
 
 
+    Investigators.fn.dataTable = function(container){
+
+        var self = this;
+        
+        var tableConfig = {
+            "investigatorsTable": {
+                kind: "table.dataTable",
+                load: "/xapi/investigators",
+                "items": {
+                    "xnatInvestigatordataId": {
+                        label: '<div class="hidden"></div>',
+                        className: "center",
+                        content: '<a href="#!" class="view-investigator" data-id="__VALUE__">View</a>',
+                        call: function(id){}
+                    },
+                    // "title": {
+                    //     label: "Title",
+                    //     call: function(val){ return val || '-' }
+                    // },
+                    "firstname": {
+                        label: "First Name",
+                        call: function(val){ return val || '-' }
+                    },
+                    "lastname": {
+                        label: "Last Name",
+                        call: function(val){ return val || '-' }
+                    },
+                    "email": {
+                        label: "Email",
+                        call: function(val){ return val || '-' }
+                    },
+                    "institution": {
+                        label: "Institution",
+                        call: function(val){ return val || '-' }
+                    },
+                    "primaryProjects": {
+                        label: "PI",
+                        call: function(val){ return val.join(', ') }
+                    },
+                    "investigatorProjects": {
+                        label: "~!",
+                        call: function(val){ return val.join(', ') }
+                    }
+                }
+            }
+        };
+
+        this.spawnedTable = XNAT.spawner.spawn(tableConfig);
+        this.table = this.spawnedTable.get();
+
+        if (container) {
+            this.spawnedTable.render(container);
+        }
+
+        var $body = $('body');
+
+        $body.on('click', 'a.view-investigator', function(){
+            self.dialog($(this).data('id'));
+        });
+
+        $body.on('click', 'button#new-investigator', function(){
+            self.dialog();
+        });
+
+        return this;
+
+    };
+    
+    
     // init function for XNAT.misc.blank
     investigators.init = function(opts){
         return new Investigators(opts);

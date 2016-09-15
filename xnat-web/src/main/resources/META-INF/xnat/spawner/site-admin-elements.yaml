@@ -1,7 +1,7 @@
 
 tabGroups:
 #    dashboard: Dashboard
-    xnatSetup: XNAT Setup
+    xnatSetup: Site Settings
     manageAccess: Manage Access
     manageData: Manage Data
     processing: Processing
@@ -14,7 +14,7 @@ siteId:
     kind: panel.input.text
     name: siteId
     label: Site ID
-    validation: required id onblur
+    validation: required id-strict max-length:24
     description: >
         The id used to refer to this site (also used to generate database ids).
         The Site ID must start with a letter and contain only letters, numbers
@@ -43,6 +43,7 @@ passwordExpirationInterval:
 #    id: passwordExpirationInterval
     name: passwordExpirationInterval
     label: Password Expiration (Interval)
+    validation: interval
     after: >
       <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
       Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
@@ -52,6 +53,7 @@ passwordExpirationDate:
 #    id: passwordExpirationDate
     name: passwordExpirationDate
     label: Password Expiration (Date)
+    validation: date-us
     after:
         datePicker:
             tag: span#datePicker
@@ -106,6 +108,7 @@ siteLoginLanding:
     kind: panel.input.text
     name: siteLoginLanding
     label: Site Login Landing
+    validation: required uri
     description: "The page users will land on immediately after logging in."
 
 siteLandingLayout:
@@ -117,6 +120,7 @@ siteHome:
     kind: panel.input.text
     name: siteHome
     label: Site Home
+    validation: required uri
     description: "The page users will land on by clicking the XNAT logo in the menu bar."
 
 siteHomeLayout:
@@ -139,6 +143,7 @@ adminEmail:
     kind: panel.input.email
     name: adminEmail
     label: Site Admin Email
+    validation: required email
     description: >
         The administrative email account to receive system emails. This address will receive frequent emails
         on system events, such as errors, processing completion, new user registration and so on. These emails
@@ -194,7 +199,7 @@ archivePath:
     kind: panel.input.text
     name: archivePath
     label: Archive Path
-    validation: required path
+    validation: required uri
     description: ""
     element:
         disabled: true
@@ -202,31 +207,31 @@ cachePath:
     kind: panel.input.text
     name: cachePath
     label: Cache Path
-    validation: required path
+    validation: required uri
     description: ""
 prearchivePath:
     kind: panel.input.text
     name: prearchivePath
     label: Prearchive Path
-    validation: required path
+    validation: required uri
     description: ""
 ftpPath:
     kind: panel.input.text
     name: ftpPath
     label: FTP Path
-    validation: required path
+    validation: required uri
     description: ""
 buildPath:
     kind: panel.input.text
     name: buildPath
     label: Build Path
-    validation: required id onblur
+    validation: required id
     description: ""
 pipelinePath:
     kind: panel.input.text
     name: pipelinePath
     label: Pipeline Path
-    validation: required id onblur
+    validation: required id
     description: ""
 zipExtensions:
     kind: panel.input.text
@@ -344,6 +349,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: sessionTimeout
             label: Session Timeout
+            validation: required interval
             description: >
               Interval for timing out user sessions. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -351,6 +357,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: aliasTokenTimeout
             label: Alias Token Timeout
+            validation: required interval
             description: >
               Interval for timing out alias tokens. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -358,6 +365,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: aliasTokenTimeoutSchedule
             label: Alias Token Timeout Schedule
+            validation: required cron
             description: >
               How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -377,6 +385,7 @@ userLoginsSessionControls:
             kind: panel.input.number
             name: ":sessions.concurrent_max"
             label: Maximum Concurrent Sessions
+            validation: required integer gte:1 lte:9999
             description: The maximum number of permitted sessions a user can have open simultaneously. You must restart Tomcat for changes to this to take effect.
         loginFailureMessage:
             kind: panel.textarea
@@ -389,11 +398,13 @@ userLoginsSessionControls:
             kind: panel.input.number
             name: maxFailedLogins
             label: Maximum Failed Logins
+            validation: required integer gte:1 lte:9999
             description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
         failedLoginLockoutDuration:
             kind: panel.input.text
             name: maxFailedLoginsLockoutDuration
             label: Failed Logins Lockout Duration
+            validation: required interval
             description: >
               Interval of time to lock user accounts that have exceeded the max_failed_logins count. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -401,6 +412,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: resetFailedLoginsSchedule
             label: Reset Failed Logins Schedule
+            validation: required cron
             description: >
               How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -408,6 +420,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: inactivityBeforeLockout
             label: User Inactivity Lockout
+            validation: required interval
             description: >
               Interval of inactivity before a user account is disabled. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -415,6 +428,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: inactivityBeforeLockoutSchedule
             label: Inactivity Lockout Schedule
+            validation: required cron
             description: >
               How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -778,17 +792,30 @@ pluginTable:
     id: xnat-plugin-list
     name: pluginList
     load: /xapi/plugins
+    # specify which properties to show in the table
     items:
-        id: ~  # '~' creates hidden column
+        #id: ~!  # '~!' creates hidden column
+        id: ~data  # '~data' adds this item as a [data-] attribute to each <tr>
+        beanName: ~data.bean
         name: Plugin Name
-        pluginClass: Plugin Class
-        dataModelBeans:
+        pluginClass:
+            label: Plugin Class
+            className: center
+        viewPluginInfo:
             label: Contents
-            cells:
-                apply: formatJSON  # function that accepts value as sole argument
-                html: >
-                    <a href="#!" class="view-plugin-info link">View Plugin Info</a>
-                    <div class="hidden plugin-json-string">__VALUE__</div>
+            value: "-" # this gets overwritten with 'html' below
+            className: center
+            # function that accepts current item as sole argument and parent object as 'this'
+            # returned value will be new value - if nothing's returned, value is passed through
+            call: (function(){ return formatJSON(this) })
+            html: >
+                <a href="#!" class="view-plugin-info link">View Plugin Info</a>
+                <div data-code-language="json" class="hidden plugin-json-string">__VALUE__</div>
+            td:
+                title: "Plugin JSON"
+            #$: addClass('plugin-info') # this can be a string or object
+            $:
+                addClass: plugin-info
     messages:
         noData: >
             There are no plugins installed in this XNAT. Try searching for plugins on <a href="http://marketplace.xnat.org/plugins/" title="XNAT Marketplace" target="_blank">XNAT Marketplace</a>.
@@ -796,29 +823,7 @@ pluginTable:
             An error occurred retrieving information for installed plugins.
 
 pluginTableScript:
-    tag: script
-    content: >
-        var $body = $('body');
-        $body.on('click', '.view-plugin-info', function(){
-            var $this = $(this);
-            var $tr = $this.closest('tr');
-            var _id = $tr.find('td.id').text().trim();
-            var _url = XNAT.url.restUrl('/xapi/plugins/' + _id);
-            XNAT.xhr.getJSON(_url).done(function(data){
-                var _source = spawn('textarea', JSON.stringify(data, null, 4));
-            XNAT.app.codeEditor.init(_source, {
-                language: 'json'
-            }).openEditor({
-                title: 'Plugin Info',
-                classes: 'plugin-json',
-                footerContent: '(read-only)',
-                buttons: { close: { label: 'Close' } }
-            });
-            });
-        });
-        $body.on('focus', '.plugin-json textarea.ace_text-input', function(){
-            this.disabled = true;
-        });
+    tag: script|src=/scripts/xnat/admin/pluginManager.js
 
 pluginList:
     kind: panel
@@ -1016,7 +1021,7 @@ sessionBuilder:
             name: sessionXmlRebuilderRepeat
             label: Session Idle Check Interval
             placeholder: Interval in milliseconds
-            afterElement: milliseconds
+            afterElement: <span class="after">milliseconds</span>
             description: >
                 This controls how often the system checks to see if any incoming DICOM sessions in the prearchive have
                 been idle for longer than the configured session idle time. This value should be specified in
@@ -1026,7 +1031,7 @@ sessionBuilder:
             name: sessionXmlRebuilderInterval
             label: Session Idle Time
             placeholder: Time in minutes
-            afterElement: minutes
+            afterElement: <span class="after">minutes</span>
             description: >
                 This tells the system how long a DICOM session should sit idle—that is, with no new data added to the
                 session—before attempting to build a session document from the DICOM data. This value is specified in
@@ -1259,6 +1264,55 @@ automationSettings:
             offText: Disabled
             description: "When enabled, administrators can create and edit scripts that run internally to the XNAT process. This can be a powerful feature, but also can pose security hazards that may be unacceptable for certain deployments. For these situations, configurable internal scripting can be disabled (XNAT itself may still use some scripting for feature implementation, but these scripts can not be modified or updated by users)."
 
+investigators:
+    kind: panel
+    name: investigators
+    label: List of Investigators
+    contents:
+        investigatorsTable:
+            kind: table.dataTable
+            load: /xapi/investigators
+            sortable: firstname, lastname, email, institution
+            before:
+                investigatorsjs:
+                    tag: script|src=/scripts/xnat/app/investigators.js
+                script:
+                    tag: script
+                    content: >
+                        XNAT.admin = getObject(XNAT.admin);
+                        XNAT.admin.investigatorTable = XNAT.app.investigators.init().dataTable();
+                        XNAT.admin.investigatorFieldValue = function(val){ return val || '-' };
+                        XNAT.admin.investigatorArrayList = function(val){ return val.join(', ') };
+            items:
+                xnatInvestigatordataId:
+                    label: <div class="hidden"></div>
+                    className: center
+                    content: <a href="#!" class="view-investigator link" data-id="__VALUE__">View</a>
+#                title:
+#                    label: Title
+#                    call: function(val){ return val || '-' }
+                firstname:
+                    label: First Name
+                    call: XNAT.admin.investigatorFieldValue
+                lastname:
+                    label: Last Name
+                    call: XNAT.admin.investigatorFieldValue
+                email:
+                    label: Email
+                    call: XNAT.admin.investigatorFieldValue
+                institution:
+                    label: Institution
+                    call: XNAT.admin.investigatorFieldValue
+                primaryProjects:
+                    label: Project PI
+                    call: XNAT.admin.investigatorArrayList
+                investigatorProjects:
+                    label: ~!
+                    call: XNAT.admin.investigatorArrayList
+        newInvestigatorButton:
+            tag: button#new-investigator.btn1|style=margin-top:15px
+            content: Create New Investigator
+
 misc:
     kind: panel.form
     name: misc
@@ -1431,6 +1485,13 @@ adminPage:
             group: advanced
             contents:
                 ${automationSettings}
+        manageInvestigators:
+            kind: tab
+            name: manageInvestigators
+            label: Manage Investigators
+            group: other
+            contents:
+                ${investigators}
         misc:
             kind: tab
             name: misc

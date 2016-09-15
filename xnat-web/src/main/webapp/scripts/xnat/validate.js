@@ -17,7 +17,7 @@ var XNAT = getObject(XNAT);
     }
 }(function(){
 
-    var undefined, validate;
+    var undefined, undef, validate;
 
     XNAT.validation = getObject(XNAT.validation || {});
 
@@ -158,7 +158,7 @@ var XNAT = getObject(XNAT);
         var units = /\s+(sec|second|min|minute|hour|day|week|month|year)(s)?\s*/;
         var num = true;
         var valid = true;
-        var i = 1; // start i at 1 since parts[0] will be an empty string
+        var i = parts[0] === '' ? 1 : 0; // start i at 1 if parts[0] is an empty string
         var part;
         while (parts[i] && valid === true) {
             part = (parts[i] + '');
@@ -549,7 +549,7 @@ var XNAT = getObject(XNAT);
             var elValidate = new Validator(this);
             elValidate.is(type, args);
             //valid = regex[type].test(this.value);
-            if (elValidate.isValid(false)) {
+            if (!elValidate.isValid(true)) {
                 invalid++
             }
         });
@@ -629,8 +629,19 @@ var XNAT = getObject(XNAT);
     // function (must return true or false),
     // or custom regex
     Validator.fn.check = function(type){
+        var self = this,
+            types = [];
         if (type) {
             this.is(type);
+        }
+        else if (type !== false) {
+            if (this.element$.dataAttr('validate')) {
+                types = this.element$.dataAttr('validate').split(/\s+/);
+                types.forEach(function(_type){
+                    var parts = _type.split(/[:=]/);
+                    self.is(parts[0], parts[1]);
+                })
+            }
         }
         return this.isValid(true);
     };

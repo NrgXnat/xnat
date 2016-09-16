@@ -12,7 +12,6 @@
 
 package org.nrg.xft.db;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -22,6 +21,8 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.XftStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -31,10 +32,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PoolDBUtils {
-	static org.apache.log4j.Logger logger = Logger.getLogger(PoolDBUtils.class);
-	//private ResultSet rs = null;
-	private Connection con = null;
-	private Statement st = null;
+	private static final Logger     logger = LoggerFactory.getLogger(PoolDBUtils.class);
+	private              Connection con    = null;
+	private              Statement  st     = null;
 
 	/**
 	 * Processes the specified query on the specified db with a pooled connection.
@@ -979,12 +979,12 @@ public class PoolDBUtils {
 			st.execute(query);
 		}
 
-		public void execute(Collection<String> statements) throws SQLException {
+		public void execute(Collection<String> statements) {
 			for (final String statement : statements) {
 				try {
 					st.execute(statement);
 				} catch (SQLException e) {
-					logger.error("An error occurred in the SQL statement: " + statement);
+					logger.error("An error occurred in the SQL statement: " + statement + "\nError: " + e.getErrorCode() + ", state: " + e.getSQLState() + "\nMessage: " + e.getMessage());
 				}
 			}
 		}
@@ -1000,7 +1000,7 @@ public class PoolDBUtils {
 		public void close() {
 			try {
 				con.setAutoCommit(true);//reset pooled connection to auto-commit for next consumer
-			} catch (SQLException e) {}
+			} catch (SQLException ignored) {}
 
 	    	pooledConnection.closeConnection(null);//use the pool manager to close the connection
 		}

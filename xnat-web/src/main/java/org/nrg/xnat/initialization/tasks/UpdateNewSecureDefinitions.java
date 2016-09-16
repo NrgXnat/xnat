@@ -21,15 +21,14 @@ public class UpdateNewSecureDefinitions extends AbstractInitializingTask {
     }
 
     @Override
-    public void run() {
+    protected void callImpl() throws InitializingTaskException {
         try {
             if (ElementSecurity.GetElementSecurities() != null) {
                 _log.debug("Found element securities, running update new secure definitions.");
                 _featureRepositoryService.updateNewSecureDefinitions();
             }
-            complete();
         } catch (Exception ignore) {
-            // No worries...
+            throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "An error occurred retrieving element security settings. This usually just means they haven't yet been initialized.");
         }
     }
 

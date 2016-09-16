@@ -23,6 +23,7 @@ import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.annotation.*;
+import org.springframework.scheduling.TaskScheduler;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,8 +47,8 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public InitializingTasksExecutor initializingTasksExecutor(final List<InitializingTask> tasks) {
-        return new InitializingTasksExecutor(tasks);
+    public InitializingTasksExecutor initializingTasksExecutor(final TaskScheduler scheduler, final List<InitializingTask> tasks) {
+        return new InitializingTasksExecutor(scheduler, tasks);
     }
 
     @Bean

@@ -37,7 +37,7 @@ public class UpdateUserAuthTable extends AbstractInitializingTask {
     }
 
     @Override
-    public void run() {
+    protected void callImpl() throws InitializingTaskException {
         try {
             final List<XdatUserAuth> unmapped = _template.query("SELECT login, enabled FROM xdat_user WHERE login NOT IN (SELECT xdat_username FROM xhbm_xdat_user_auth)", new RowMapper<XdatUserAuth>() {
                 @Override
@@ -58,9 +58,8 @@ public class UpdateUserAuthTable extends AbstractInitializingTask {
             }
             _log.debug("Updating the user auth table to set password updated to the current time for local users");
             _template.execute("UPDATE xhbm_xdat_user_auth SET password_updated=current_timestamp WHERE auth_method='" + XdatUserAuthService.LOCALDB + "' AND password_updated IS NULL");
-            complete();
         } catch (BadSqlGrammarException e) {
-            _log.info("Unable to execute user auth table update, maybe the table doesn't exist yet?", e);
+            throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "Unable to execute user auth table update, the table probably doesn't exist yet.", e);
         }
     }
 

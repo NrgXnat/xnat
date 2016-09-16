@@ -11,13 +11,6 @@
  */
 package org.nrg.xnat.initialization.tasks;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.mail.MessagingException;
-
 import org.nrg.mail.services.MailService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -27,7 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import com.google.common.collect.Lists;
+import java.io.File;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class SystemPathVerification extends AbstractInitializingTask {
@@ -44,91 +40,79 @@ public class SystemPathVerification extends AbstractInitializingTask {
         return "System Path Verification";
     }
 
-    private final static List<String> pathErrors       = Lists.newArrayList();
-    public static String pathErrorWarning = null;
-
     @Override
-    public void run() {
-        if (_appInfo.isInitialized()) {
-            try {
-            	final Integer resourceCount = _template.queryForObject("SELECT COUNT(xnat_abstractresource_id) AS COUNT FROM xnat_abstractresource", Integer.class);
-                
-            	validatePath(_config.getArchivePath(), "Archive", (resourceCount>0));
-                validatePath(_config.getCachePath(), "Cache", false);
-                validatePath(_config.getPipelinePath(), "Pipeline", false);
-                validatePath(_config.getBuildPath(), "Build", false);
-                validatePath(_config.getPrearchivePath(), "Prearchive", false);
+    protected void callImpl() throws InitializingTaskException {
+        if (!_appInfo.isInitialized()) {
+            throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The system is not yet initialized. Delaying system path verification until initialization is completed.");
+        }
 
-                if (pathErrors.size() > 0) {
-                    // Send warning email to admin and issue browser notification
-                    notifyOfPathErrors(resourceCount);
-                } else {
-                    _config.setPathErrorWarning("");
-                }
-                complete();
-            } catch (Throwable e) {
-                logger.error("An error occurred trying to retrieve the values for the system paths.", e);
+        try {
+            final Integer resourceCount = _template.queryForObject("SELECT COUNT(xnat_abstractresource_id) AS COUNT FROM xnat_abstractresource", Integer.class);
+
+            final List<String> errors = new ArrayList<>();
+            errors.addAll(validatePath(_config.getArchivePath(), "Archive", (resourceCount > 0)));
+            errors.addAll(validatePath(_config.getCachePath(), "Cache", false));
+            errors.addAll(validatePath(_config.getPipelinePath(), "Pipeline", false));
+            errors.addAll(validatePath(_config.getBuildPath(), "Build", false));
+            errors.addAll(validatePath(_config.getPrearchivePath(), "Prearchive", false));
+
+            if (errors.size() > 0) {
+                // Send warning email to admin and issue browser notification
+                notify(errors, resourceCount);
+            } else {
+                _config.setPathErrorWarning("");
             }
+        } catch (SQLException e) {
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred accessing the database while verifying system paths.");
         }
     }
 
-    private boolean validatePath(final String path, final String displayName, final boolean checkForFiles) throws SQLException {
-        File filePath = new File(path);
+    private List<String> validatePath(final String path, final String displayName, final boolean checkForFiles) throws SQLException {
+        final List<String> errors   = new ArrayList<>();
+        final File         filePath = new File(path);
         if (!filePath.exists()) {
-            pathErrors.add(displayName + " path \"" + path + "\" does not exist.");
-            return false;
+            errors.add(displayName + " path \"" + path + "\" does not exist.");
         } else if (!filePath.isDirectory()) {
-            pathErrors.add(displayName + " path \"" + path + "\" is not a directory.");
-            return false;
+            errors.add(displayName + " path \"" + path + "\" is not a directory.");
         } else if (checkForFiles) {
-            File[] files = filePath.listFiles();
-            final String noFiles = displayName + " files do not exist under \"" + path + "\".";
-            if (files == null) {
-                pathErrors.add(noFiles);
-                return false;
-            }
-            if (files.length < 1) {
-                pathErrors.add(noFiles);
-                return false;
+            final File[] files = filePath.listFiles();
+            if (files == null || files.length < 1) {
+                errors.add(displayName + " files do not exist under \"" + path + "\".");
             }
         }
-        return true;
+        return errors;
     }
 
-    private void notifyOfPathErrors(int numResources) {
-        int i = 1;
-        String adminEmail = _config.getAdminEmail();
-        String sysName = _config.getSiteId();
-        String emailSubj = sysName + " " + this.getTaskName() + " Failure";
-        StringBuilder sb = new StringBuilder();
-        String singPlurl = " has";
-        if (pathErrors.size() > 1) {
-            singPlurl = "s have";
+    private void notify(final List<String> errors, final int numResources) {
+        final StringBuilder buffer     = new StringBuilder();
+        buffer.append("The following system path error").append(errors.size() > 1 ? "s have" : " has").append(" been discovered:");
+
+        int index = 1;
+        for (final String error : errors) {
+            buffer.append("\n\t");
+            buffer.append(index++);
+            buffer.append(". ");
+            buffer.append(error);
         }
-        sb.append("The following system path error");
-        sb.append(singPlurl);
-        sb.append(" been discovered:");
-        for (String err : pathErrors) {
-            sb.append("\n\t");
-            sb.append(i++);
-            sb.append(". ");
-            sb.append(err);
-        }
-        _config.setPathErrorWarning(sb.toString().replace("\n", "<br>"));
-        pathErrorWarning = sb.insert(0, emailSubj + ": ").toString();
-        logger.error(pathErrorWarning);
-        
+
+        final String        adminEmail = _config.getAdminEmail();
+        final String        emailSubj  = _config.getSiteId() + " " + this.getTaskName() + " Failure";
+        logger.error(emailSubj + ": " + buffer.toString());
+
+        final String html = buffer.toString().replace("\n", "<br>");
+        _config.setPathErrorWarning(html);
+
         if (numResources > 0) {
-        	//only send an email if the system is supposed to have resources
+            //only send an email if the system is supposed to have resources
             try {
-                _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, pathErrorWarning);
+                _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, html);
             } catch (Throwable e) {
                 logger.error("", e);
             }
         }
     }
 
-    private static Logger logger = LoggerFactory.getLogger(SystemPathVerification.class);
+    private static final Logger logger = LoggerFactory.getLogger(SystemPathVerification.class);
 
     private final JdbcTemplate          _template;
     private final MailService           _mailService;

@@ -3,7 +3,6 @@ package org.nrg.xnat.initialization.tasks;
 import org.hibernate.SessionFactory;
 import org.nrg.config.entities.Configuration;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,7 @@ public class UpdateConfigurationService extends AbstractInitializingTask {
     }
 
     @Override
-    public void run() {
+    protected void callImpl() throws InitializingTaskException {
         final List<Long> projectIds = _template.query(QUERY, new RowMapper<Long>() {
             @Override
             public Long mapRow(final ResultSet resultSet, final int index) throws SQLException {
@@ -55,7 +54,6 @@ public class UpdateConfigurationService extends AbstractInitializingTask {
             }
             _sessionFactory.getCache().evictEntityRegion(Configuration.class);
         }
-        complete();
     }
 
     private static final Logger _log   = LoggerFactory.getLogger(UpdateConfigurationService.class);

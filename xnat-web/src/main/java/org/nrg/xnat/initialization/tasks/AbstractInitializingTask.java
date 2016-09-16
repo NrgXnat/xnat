@@ -1,15 +1,55 @@
 package org.nrg.xnat.initialization.tasks;
 
 import org.nrg.xnat.initialization.InitializingTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
 public abstract class AbstractInitializingTask implements InitializingTask {
-    @Override
-    public abstract String getTaskName();
+    protected AbstractInitializingTask() {
+        this(0);
+    }
+
+    protected AbstractInitializingTask(final int maxExecutions) {
+        _maxExecutions = maxExecutions;
+    }
 
     @Override
-    public abstract void run();
+    public Boolean call() {
+        try {
+            _executions++;
+            callImpl();
+            complete();
+            return true;
+        } catch (InitializingTaskException e) {
+            switch (e.getLevel()) {
+                case SingleNotice:
+                    if (_executions == 1) {
+                        _log.info(e.getMessage());
+                    } else {
+                        _log.debug(e.getMessage());
+                    }
+                    break;
+                case Info:
+                    _log.info(e.getMessage());
+                    break;
+                case Warn:
+                    _log.warn(e.getMessage());
+                    break;
+                case Error:
+                    if (e.getCause() == null) {
+                        _log.error(e.getMessage(), e);
+                    } else {
+                        _log.error(e.getMessage(), e.getCause());
+                    }
+            }
+            return false;
+        }
+    }
+
+    @Override
+    public abstract String getTaskName();
 
     @Override
     public boolean isCompleted() {
@@ -29,7 +69,25 @@ public abstract class AbstractInitializingTask implements InitializingTask {
     @Override
     public void reset() {
         _completedAt = null;
+        _executions = 0;
     }
 
+    @Override
+    public boolean isMaxedOut() {
+        return _maxExecutions > 0 && _executions < _maxExecutions;
+    }
+
+    @Override
+    public int executions() {
+        return _executions;
+    }
+
+    protected abstract void callImpl() throws InitializingTaskException;
+
+    private static final Logger _log = LoggerFactory.getLogger(AbstractInitializingTask.class);
+
+    private final int _maxExecutions;
+
     private Date _completedAt;
+    private int _executions;
 }

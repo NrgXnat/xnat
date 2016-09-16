@@ -1,12 +1,15 @@
 package org.nrg.xnat.initialization.tasks;
 
 import org.nrg.config.entities.Configuration;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 @Component
 public class GetSiteWidePETTracerList extends AbstractInitializingTask {
@@ -22,7 +25,7 @@ public class GetSiteWidePETTracerList extends AbstractInitializingTask {
     }
 
     @Override
-    public void run() {
+    protected void callImpl() throws InitializingTaskException {
         try {
             final String path = PETTracerUtils.buildScriptPath(PETTracerUtils.ResourceScope.SITE_WIDE, "");
             final Configuration configuration = _petTracerUtils.getTracerList(path, null);
@@ -31,8 +34,10 @@ public class GetSiteWidePETTracerList extends AbstractInitializingTask {
                 final String siteWide = PETTracerUtils.getDefaultTracerList();
                 _petTracerUtils.setSiteWideTracerList(_adminUsername, path, siteWide);
             }
-        } catch (Throwable e) {
-            _log.error("Unable to either find or initialize the PET tracer list.", e);
+        } catch (ConfigServiceException e) {
+            throw new InitializingTaskException(InitializingTaskException.Level.Warn, "An error occurred access the configuration service, it may not be initialized yet.", e);
+        } catch (IOException e) {
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, "Unable to either find or retrieve the PET tracer list.", e);
         }
     }
 

@@ -26,7 +26,7 @@ public class GetSiteWideAnonScript extends AbstractInitializingTask {
     }
 
     @Override
-    public void run() {
+    protected void callImpl() throws InitializingTaskException {
         try {
             final Configuration initConfig = _anonUtils.getSiteWideScriptConfiguration();
             if (initConfig == null) {
@@ -37,15 +37,14 @@ public class GetSiteWideAnonScript extends AbstractInitializingTask {
                     _anonUtils.setSiteWideScript(adminUser, siteWideScript);
                     _preferences.setSitewideAnonymizationScript(siteWideScript);
                 } else {
-                    throw new Exception("Site administrator not found.");
+                    throw new InitializingTaskException(InitializingTaskException.Level.Error, "Site administrator not found.");
                 }
             }
             // there is a default site-wide script, so nothing to do here for the else.
-            complete();
         } catch (FileNotFoundException e) {
-            _log.info("Couldn't find default anonymization script, waiting", e);
-        } catch (Throwable e) {
-            _log.error("Unable to either find or initialize script database", e);
+            throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "Couldn't find default anonymization script, will try again.", e);
+        } catch (Exception e) {
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, "Unable to either find or initialize script database", e);
         }
     }
 

@@ -11,9 +11,6 @@ package org.nrg.xnat.initialization.tasks;
 import com.google.common.base.Joiner;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
-import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +30,9 @@ import java.util.Properties;
 @Component
 public class MigrateDatabaseTables extends AbstractInitializingTask {
     @Autowired
-    public MigrateDatabaseTables(final JdbcTemplate template, final TransactionTemplate transactionTemplate, final XnatAppInfo appInfo) {
+    public MigrateDatabaseTables(final JdbcTemplate template, final TransactionTemplate transactionTemplate) {
         super();
         _db = new DatabaseHelper(template, transactionTemplate);
-        _appInfo = appInfo;
     }
 
     @Override
@@ -45,7 +41,7 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
     }
 
     @Override
-    public void run() {
+    protected void callImpl() throws InitializingTaskException {
         try {
             final Map<String, Map<String, String>> tables = new HashMap<>();
             for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/migration/**/*-tables.properties")) {
@@ -90,40 +86,10 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                     }
                 }
             }
-            if (_appInfo.isPrimaryNode()) {
-                _log.info("This service is the primary XNAT node, checking whether database updates are required.");
-
-                PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction();
-                try {
-                    transaction.start();
-                    //create the views defined in the display documents
-                    _log.info("Initializing database views...");
-                    try {
-                        transaction.execute(DisplayManager.GetCreateViewsSQL().get(0));
-                    }
-                    catch(Exception e){
-                        transaction.execute(DisplayManager.GetCreateViewsSQL().get(1));//drop all
-                        transaction.execute(DisplayManager.GetCreateViewsSQL().get(0));//then try to create all
-                    }
-                    transaction.commit();
-                } catch (Exception e) {
-                    try {
-                        transaction.rollback();
-                    } catch (SQLException e1) {
-                        _log.error("", e1);
-                    }
-                    _log.error("", e);
-                    return;
-                } finally {
-                    transaction.close();
-                }
-
-            }
-            complete();
         } catch (IOException e) {
-            _log.error("An error occurred attempting to read table migration properties files", e);
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred attempting to read table migration properties files", e);
         } catch (SQLException e) {
-            _log.error("An error occurred accessing the database", e);
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred accessing the database", e);
         }
     }
 
@@ -131,5 +97,4 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
     private static final String SQL_WARNING_TABLE = "The requested table";
 
     private final DatabaseHelper _db;
-    private final XnatAppInfo _appInfo;
 }

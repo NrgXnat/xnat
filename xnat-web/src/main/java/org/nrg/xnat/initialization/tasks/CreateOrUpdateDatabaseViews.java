@@ -2,8 +2,11 @@ package org.nrg.xnat.initialization.tasks;
 
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.display.DisplayManager;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +33,18 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
     protected void callImpl() throws InitializingTaskException {
         if (_appInfo.isPrimaryNode()) {
             _log.info("This service is the primary XNAT node, checking whether database updates are required.");
+            final Boolean shouldUpdateViews = XDATServlet.shouldUpdateViews();
+
             try {
-                if (!_helper.tableExists("xdat_search", "xs_item_access")) {
+                if (!_helper.tableExists("xdat_search", "xs_item_access") || !XFTManager.isInitialized() || shouldUpdateViews == null) {
                     throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The table 'xdat_search.xs_item_access' does not yet exist. Deferring execution.");
                 }
             } catch (SQLException e) {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check for the table 'xdat_search.xs_item_access'.", e);
+            }
+
+            if (!shouldUpdateViews) {
+                _log.info("XDATServlet indicates that views do not need to be updated, terminating task.");
             }
 
             final PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction();

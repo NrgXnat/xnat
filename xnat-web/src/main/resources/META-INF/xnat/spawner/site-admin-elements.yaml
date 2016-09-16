@@ -1033,8 +1033,8 @@ sessionBuilder:
             placeholder: Time in minutes
             afterElement: <span class="after">minutes</span>
             description: >
-                This tells the system how long a DICOM session should sit idleâ€”that is, with no new data added to the
-                sessionâ€”before attempting to build a session document from the DICOM data. This value is specified in
+                This tells the system how long a DICOM session should sit idle—that is, with no new data added to the
+                session—before attempting to build a session document from the DICOM data. This value is specified in
                 minutes and defaults to 5 minutes.
 
 anonymization:
@@ -1057,7 +1057,7 @@ anonymization:
             label: "Edit Anonymization Script"
             code: text
             description: >
-                This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="http://nrg.wustl.edu/software/dicomedit/dicomedit-reference/" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
+                This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="https://wiki.xnat.org/display/XTOOLS/DicomEdit" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
 
 seriesImportFilter:
     kind: panel.form

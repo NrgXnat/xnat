@@ -1033,8 +1033,8 @@ sessionBuilder:
             placeholder: Time in minutes
             afterElement: <span class="after">minutes</span>
             description: >
-                This tells the system how long a DICOM session should sit idle—that is, with no new data added to the
-                session—before attempting to build a session document from the DICOM data. This value is specified in
+                This tells the system how long a DICOM session should sit idle&mdash;that is, with no new data added to the
+                session&mdash;before attempting to build a session document from the DICOM data. This value is specified in
                 minutes and defaults to 5 minutes.
 
 anonymization:

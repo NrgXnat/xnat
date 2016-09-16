@@ -14,7 +14,7 @@ siteId:
     kind: panel.input.text
     name: siteId
     label: Site ID
-    validation: required id-strict max-length:24
+    validation: required id-strict max-length:24 onblur
     description: >
         The id used to refer to this site (also used to generate database ids).
         The Site ID must start with a letter and contain only letters, numbers
@@ -43,7 +43,7 @@ passwordExpirationInterval:
 #    id: passwordExpirationInterval
     name: passwordExpirationInterval
     label: Password Expiration (Interval)
-    validation: interval
+    validation: interval onblur
     after: >
       <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
       Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
@@ -53,7 +53,7 @@ passwordExpirationDate:
 #    id: passwordExpirationDate
     name: passwordExpirationDate
     label: Password Expiration (Date)
-    validation: date-us
+    validation: date-us onblur
     after:
         datePicker:
             tag: span#datePicker
@@ -108,7 +108,7 @@ siteLoginLanding:
     kind: panel.input.text
     name: siteLoginLanding
     label: Site Login Landing
-    validation: required uri
+    validation: required uri onblur onsubmit
     description: "The page users will land on immediately after logging in."
 
 siteLandingLayout:
@@ -120,7 +120,7 @@ siteHome:
     kind: panel.input.text
     name: siteHome
     label: Site Home
-    validation: required uri
+    validation: required uri onblur onsubmit
     description: "The page users will land on by clicking the XNAT logo in the menu bar."
 
 siteHomeLayout:
@@ -132,7 +132,7 @@ siteUrl:
     kind: panel.input.text
     name: siteUrl
     label: Site Url
-    validation: required url
+    validation: required url onblur onsubmit
     description: >
         The address you want visible to users in emails, and other external links. This should be a
         functional address (i.e. if the user pasted this address in their web browser, they should
@@ -143,7 +143,7 @@ adminEmail:
     kind: panel.input.email
     name: adminEmail
     label: Site Admin Email
-    validation: required email
+    validation: required email onblur onsubmit
     description: >
         The administrative email account to receive system emails. This address will receive frequent emails
         on system events, such as errors, processing completion, new user registration and so on. These emails
@@ -199,7 +199,7 @@ archivePath:
     kind: panel.input.text
     name: archivePath
     label: Archive Path
-    validation: required uri
+    validation: required uri onblur
     description: ""
     element:
         disabled: true
@@ -207,31 +207,31 @@ cachePath:
     kind: panel.input.text
     name: cachePath
     label: Cache Path
-    validation: required uri
+    validation: required uri onblur
     description: ""
 prearchivePath:
     kind: panel.input.text
     name: prearchivePath
     label: Prearchive Path
-    validation: required uri
+    validation: required uri onblur
     description: ""
 ftpPath:
     kind: panel.input.text
     name: ftpPath
     label: FTP Path
-    validation: required uri
+    validation: required uri onblur
     description: ""
 buildPath:
     kind: panel.input.text
     name: buildPath
     label: Build Path
-    validation: required id
+    validation: required uri onblur
     description: ""
 pipelinePath:
     kind: panel.input.text
     name: pipelinePath
     label: Pipeline Path
-    validation: required id
+    validation: required uri onblur
     description: ""
 zipExtensions:
     kind: panel.input.text
@@ -349,7 +349,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: sessionTimeout
             label: Session Timeout
-            validation: required interval
+            validation: required interval onblur
             description: >
               Interval for timing out user sessions. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -357,7 +357,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: aliasTokenTimeout
             label: Alias Token Timeout
-            validation: required interval
+            validation: required interval onblur
             description: >
               Interval for timing out alias tokens. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -365,7 +365,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: aliasTokenTimeoutSchedule
             label: Alias Token Timeout Schedule
-            validation: required cron
+            validation: required cron onblur
             description: >
               How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -398,13 +398,13 @@ userLoginsSessionControls:
             kind: panel.input.number
             name: maxFailedLogins
             label: Maximum Failed Logins
-            validation: required integer gte:1 lte:9999
+            validation: required integer gte:1 lte:9999 onblur
             description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
         failedLoginLockoutDuration:
             kind: panel.input.text
             name: maxFailedLoginsLockoutDuration
             label: Failed Logins Lockout Duration
-            validation: required interval
+            validation: required interval onblur
             description: >
               Interval of time to lock user accounts that have exceeded the max_failed_logins count. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -412,7 +412,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: resetFailedLoginsSchedule
             label: Reset Failed Logins Schedule
-            validation: required cron
+            validation: required cron onblur
             description: >
               How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -420,7 +420,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: inactivityBeforeLockout
             label: User Inactivity Lockout
-            validation: required interval
+            validation: required interval onblur
             description: >
               Interval of inactivity before a user account is disabled. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -428,7 +428,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: inactivityBeforeLockoutSchedule
             label: Inactivity Lockout Schedule
-            validation: required cron
+            validation: required cron onblur
             description: >
               How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -1281,8 +1281,14 @@ investigators:
                     content: >
                         XNAT.admin = getObject(XNAT.admin);
                         XNAT.admin.investigatorTable = XNAT.app.investigators.init().dataTable();
-                        XNAT.admin.investigatorFieldValue = function(val){ return val || '-' };
-                        XNAT.admin.investigatorArrayList = function(val){ return val.join(', ') };
+                        XNAT.admin.investigatorFieldValue = function(val){
+                            return val || '<div class="center">-</div>'
+                        };
+                        XNAT.admin.investigatorProjectList = function(val){
+                            return val.map(function(item){
+                                return '<a class="link" href="/data/projects/' + item + '">' + item + '</a>'
+                            }).join(', ');
+                        };
             items:
                 xnatInvestigatordataId:
                     label: <div class="hidden"></div>
@@ -1305,10 +1311,10 @@ investigators:
                     call: XNAT.admin.investigatorFieldValue
                 primaryProjects:
                     label: Project PI
-                    call: XNAT.admin.investigatorArrayList
+                    call: XNAT.admin.investigatorProjectList
                 investigatorProjects:
                     label: ~!
-                    call: XNAT.admin.investigatorArrayList
+                    call: XNAT.admin.investigatorProjectList
         newInvestigatorButton:
             tag: button#new-investigator.btn1|style=margin-top:15px
             content: Create New Investigator

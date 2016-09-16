@@ -514,6 +514,9 @@ var XNAT = getObject(XNAT);
                             if (cellObj.html || cellObj.content) {
                                 tdElement.html = (cellObj.html || cellObj.content).replace(/__VALUE__/g, itemVal);
                             }
+                            else {
+                                tdElement.html = itemVal;
+                            }
                             hidden = /^~!/.test(cellObj.label);
                         }
                     }

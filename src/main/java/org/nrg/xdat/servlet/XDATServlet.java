@@ -52,8 +52,14 @@ public class XDATServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(XDATServlet.class);
     private static final Pattern SQL_PATTERN = Pattern.compile("^.*(\\d\\d\\d).sql$");
 
+    private static Boolean _shouldUpdateViews;
+
     // TODO: Added in to support CustomClasspathResourceLoader on 1.6.5 migration, needs to be removed and refactored.
     public static String WEBAPP_ROOT;
+
+    public static Boolean shouldUpdateViews() {
+        return _shouldUpdateViews;
+    }
 
     public void init(ServletConfig config) throws ServletException {
         replaceLogging();
@@ -123,6 +129,7 @@ public class XDATServlet extends HttpServlet {
                 //only interested in the required ones here.
                 final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
                 if (sql.size() > 0) {
+                    _shouldUpdateViews = false;
                     System.out.println("===========================");
                     System.out.println("Database out of date... updating");
                     for (String s : sql) System.out.println(s);
@@ -145,10 +152,12 @@ public class XDATServlet extends HttpServlet {
                     //commenting this out because it is very slow.... they certainly don't need to be run every startup.  But, we need some way of getting them updated when it is needed.
                     //du.addStatements(sql);
                     //du.start();// start in a separate thread
+                    _shouldUpdateViews = true;
                     (new DelayedSequenceChecker()).start();//this isn't necessary if we did the du.start();
                     return false;
                 }
             } else {
+                _shouldUpdateViews = false;
                 System.out.println("===========================");
                 System.out.println("New Database -- BEGINNING Initialization");
                 System.out.println("===========================");
@@ -164,6 +173,7 @@ public class XDATServlet extends HttpServlet {
                 return true;
             }
         } else {
+            _shouldUpdateViews = true;
             (new DelayedSequenceChecker()).start();
             return false;
         }

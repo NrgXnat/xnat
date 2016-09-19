@@ -10,11 +10,6 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-
-import javax.mail.MessagingException;
-
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
@@ -24,11 +19,13 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
+
+import java.io.StringWriter;
+import java.util.ArrayList;
 
 public class RequestAccess extends SecureAction {
     static Logger logger = Logger.getLogger(RequestAccess.class);
@@ -74,7 +71,7 @@ public class RequestAccess extends SecureAction {
             throw exception;
 		}
 
-		String[] to = null;
+		String[] to = {};
         if (ownerEmails != null && ownerEmails.size() > 0) {
         	to = ownerEmails.toArray(new String[ownerEmails.size()]);
         }
@@ -89,11 +86,22 @@ public class RequestAccess extends SecureAction {
 
         try {
 			XDAT.getMailService().sendHtmlMessage(from, to, null, bcc, subject, message);
-		} catch (MessagingException exception) {
-            logger.error("Unable to send mail", exception);
-            throw exception;
+        } catch (Exception exception) {
+            logger.error("Send failed. Retrying by sending each email individually.", exception);
+            int successfulSends = 0;
+            for (String recipient : to) {
+                try {
+                    XDAT.getMailService().sendHtmlMessage(from, new String[]{recipient}, null, bcc, subject, message);
+                    successfulSends++;
+                } catch (Exception e) {
+                    logger.error("Unable to send mail to " + recipient + ".", e);
+                }
+            }
+            if (successfulSends == 0) {
+                logger.error("Unable to send mail", exception);
+            }
         }
-        
+
         data.setMessage("Access request sent.");
         data.setScreenTemplate("Index.vm");
     }

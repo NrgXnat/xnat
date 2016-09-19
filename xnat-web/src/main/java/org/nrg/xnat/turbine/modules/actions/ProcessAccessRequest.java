@@ -101,8 +101,7 @@ public class ProcessAccessRequest extends SecureAction {
 		    try {
             	XDAT.getMailService().sendHtmlMessage(from, other.getEmail(), user.getEmail(), XDAT.getSiteConfigPreferences().getAdminEmail(), subject, message);
 		    } catch (Exception e) {
-		        logger.error("Unable to send mail",e);
-		        throw e;
+		        logger.error("Unable to send denial email",e);
 		    }
 		}
 
@@ -151,7 +150,7 @@ public class ProcessAccessRequest extends SecureAction {
         	}
 
 			try {				
-				for (Map.Entry<String, UserGroupI> entry:Groups.getGroupsForUser(user).entrySet()){
+				for (Map.Entry<String, UserGroupI> entry:Groups.getGroupsForUser(other).entrySet()){
 				    if (entry.getValue()!=null && entry.getValue().getTag()!=null && entry.getValue().getTag().equals(project.getId())){
 				    	Groups.removeUserFromGroup(other, user, entry.getValue().getId(), c);
 				    }
@@ -197,12 +196,23 @@ public class ProcessAccessRequest extends SecureAction {
         template.merge(context,sw);
         String message= sw.toString();
 
-        try {
-        	XDAT.getMailService().sendHtmlMessage(from, to, cc, bcc, subject, message);
-        } catch (Exception e) {
-            logger.error("Unable to send mail",e);
-            throw e;
-        }
+		try {
+			XDAT.getMailService().sendHtmlMessage(from, to, cc, bcc, subject, message);
+		} catch (Exception exception) {
+			logger.error("Send failed. Retrying by sending each email individually.", exception);
+			int successfulSends = 0;
+			for (String recipient : to) {
+				try {
+					XDAT.getMailService().sendHtmlMessage(from, new String[]{recipient}, null, bcc, subject, message);
+					successfulSends++;
+				} catch (Exception e) {
+					logger.error("Unable to send mail to " + recipient + ".", e);
+				}
+			}
+			if (successfulSends == 0) {
+				logger.error("Unable to send mail", exception);
+			}
+		}
     }
 
     /* (non-Javadoc)

@@ -167,7 +167,7 @@ public class VerifyEmail extends VelocitySecureScreen {
             String query = "SELECT COUNT(*) AS count " +
                     "FROM xdat_user_history " +
                     "WHERE xdat_user_id=" + user.getID() + " " +
-                    "AND change_user=" + user.getID() + " " +
+                    //"AND change_user=" + user.getID() + " " +
                     "AND change_date = (SELECT MAX(change_date) " +
                     "FROM xdat_user_history " +
                     "WHERE xdat_user_id=" + user.getID() + " " +

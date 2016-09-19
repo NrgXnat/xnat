@@ -12,7 +12,13 @@
     $!template.setLayoutTemplate($siteConfig.getProperty("siteHomeLayout","/Index.vm"))
 #end
 #if ($data.message)
-<div class="note">$data.message</div><br>
+<div class="note" id="messageToDisplay">$data.message</div><br>
+<script>
+    var messageToDisplay = "$data.message".toLowerCase();
+    if (messageToDisplay.indexOf('no project owners have emails which could receive the access request') > -1) {
+        $('#messageToDisplay').removeClass('note').addClass('error');
+    }
+</script>
 #end
 
 #if(0 < $par_count)

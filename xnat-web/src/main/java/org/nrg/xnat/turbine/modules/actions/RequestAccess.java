@@ -84,6 +84,8 @@ public class RequestAccess extends SecureAction {
         String from = XDAT.getSiteConfigPreferences().getAdminEmail();
         String subject = TurbineUtils.GetSystemName() + " Access Request for " + project.getName();
 
+        data.setMessage("Access request sent.");
+
         try {
 			XDAT.getMailService().sendHtmlMessage(from, to, null, bcc, subject, message);
         } catch (Exception exception) {
@@ -99,10 +101,10 @@ public class RequestAccess extends SecureAction {
             }
             if (successfulSends == 0) {
                 logger.error("Unable to send mail", exception);
+                data.setMessage("No project owners have emails which could receive the access request. Please contact the system administrator for additional assistance.");
             }
         }
 
-        data.setMessage("Access request sent.");
         data.setScreenTemplate("Index.vm");
     }
 }

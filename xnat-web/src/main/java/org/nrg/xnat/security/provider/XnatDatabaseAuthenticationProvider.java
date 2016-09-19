@@ -135,7 +135,7 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
                     String query = "SELECT COUNT(*) AS count " +
                             "FROM xdat_user_history " +
                             "WHERE xdat_user_id=" + xdatUserDetails.getID() + " " +
-                            "AND change_user=" + xdatUserDetails.getID() + " " +
+                            //"AND change_user=" + xdatUserDetails.getID() + " " +
                             "AND change_date = (SELECT MAX(change_date) " +
                             "FROM xdat_user_history " +
                             "WHERE xdat_user_id=" + xdatUserDetails.getID() + " " +

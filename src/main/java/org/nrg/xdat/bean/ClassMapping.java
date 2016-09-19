@@ -28,9 +28,9 @@ public class ClassMapping implements ClassMappingI {
                 try {
                     final Configuration config = new PropertiesConfiguration(props);
                     @SuppressWarnings("unchecked")
-                    final Iterator<Object> keys = config.getKeys();
+                    final Iterator<String> keys = config.getKeys();
                     while (keys.hasNext()) {
-                        final String key = (String) keys.next();
+                        final String key = keys.next();
                         final String value = config.getString(key);
                         // Sometimes the keys are loaded with the backslash, sometimes they're not...
                         elements.put(key.replace("\\", ""), value);

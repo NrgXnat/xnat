@@ -563,7 +563,7 @@ public class DisplayManager {
             } catch (XFTInitException e) {
                 logger.error("Error initializing XFT", e);
             } catch (ElementNotFoundException e) {
-                logger.error("Error in Display Document.  \nNo such schema-element '" + ed.getElementName() + "'.");
+                logger.error("Error in Display Document.  \nNo such schema-element '" + ed.getElementName() + "'.", e);
             }
         }
 

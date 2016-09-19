@@ -14,6 +14,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -55,6 +56,14 @@ public class XFTManager {
     private static Map<String,String> ROOT_LEVEL_ELEMENTS = new Hashtable<>();
 
     private String sourceDir = "";
+
+    /**
+     * Indicates whether the manager instance has been initialized.
+     * @return Returns true if the manager is initialized and ready for use, false otherwise.
+     */
+    public static boolean isInitialized() {
+        return MANAGER != null;
+    }
 
     /**
      * Gets singleton instance of the Manager

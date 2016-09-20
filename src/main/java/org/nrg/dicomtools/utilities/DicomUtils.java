@@ -1,3 +1,12 @@
+/*
+ * org.nrg.dicomtools.utilities.DicomUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.dicomtools.utilities;
 
 import org.dcm4che2.data.Tag;

@@ -1,3 +1,12 @@
+/*
+ * org.nrg.dicomtools.filters.SeriesImportFilterMode
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.dicomtools.filters;
 
 import java.util.HashMap;

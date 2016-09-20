@@ -68,7 +68,7 @@ public class DisableInactiveUsers implements Runnable {
                     if (!hasUserBeenModified(u, _inactivityBeforeLockout) && !username.equals("guest")) {
                         u.setEnabled("0");
                         u.setVerified("0");
-                        Users.save(u, adminUser, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.PROCESS, "Disabled due to inactivity"));
+                        Users.save(u, u, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.PROCESS, "Disabled due to inactivity"));
 
                         String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), _lockoutDuration));
                         System.out.println("Locked out " + u.getLogin() + " user account until " + expiration);

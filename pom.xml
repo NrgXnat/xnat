@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ pom.xml
+  ~ parent: pom.xml
   ~ XNAT http://www.xnat.org
   ~ Copyright (c) 2016, Washington University School of Medicine
   ~ All Rights Reserved
@@ -14,7 +14,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.0-SNAPSHOT</version>
+    <version>1.7.0</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -57,7 +57,7 @@
         <xdat.version>${project.version}</xdat.version>
         <nrg.config.version>${project.version}</nrg.config.version>
         <nrg.framework.version>${project.version}</nrg.framework.version>
-        <nrg.dicomedit.version>6.0-SNAPSHOT</nrg.dicomedit.version>
+        <nrg.dicomedit.version>6.0</nrg.dicomedit.version>
         <nrg.dicomutils.version>1.3.1</nrg.dicomutils.version>
         <nrg.dicomimageutils.version>${project.version}</nrg.dicomimageutils.version>
         <nrg.dicomdb.version>[4.0.0,5.0.0)</nrg.dicomdb.version>

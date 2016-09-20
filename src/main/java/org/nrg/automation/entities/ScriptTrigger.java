@@ -1,10 +1,12 @@
 /*
- * ScriptTrigger
- * (C) 2014 Washington University School of Medicine
+ * org.nrg.automation.entities.ScriptTrigger
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
+ * Released under the Simplified BSD.
  */
+
 package org.nrg.automation.entities;
 
 import com.google.common.collect.Lists;

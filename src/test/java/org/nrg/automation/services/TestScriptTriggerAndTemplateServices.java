@@ -1,12 +1,12 @@
 /*
- * TestScriptTriggerAndTemplateServices
- * (C) 2014 Washington University School of Medicine
+ * org.nrg.automation.services.TestScriptTriggerAndTemplateServices
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
- *
- * Created on 9/19/2014 by Rick Herrick
+ * Released under the Simplified BSD.
  */
+
 package org.nrg.automation.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

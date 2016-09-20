@@ -1,3 +1,12 @@
+/*
+ * org.nrg.automation.services.ScriptRunnerService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.automation.services;
 
 import org.nrg.automation.entities.Script;

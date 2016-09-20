@@ -1,12 +1,12 @@
-/**
- * HibernateScriptTriggerTemplateService
- * (C) 2014 Washington University School of Medicine
+/*
+ * org.nrg.automation.services.impl.hibernate.HibernateScriptTriggerService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
- *
- * Created on 9/19/2014 by Rick Herrick
+ * Released under the Simplified BSD.
  */
+
 package org.nrg.automation.services.impl.hibernate;
 
 import com.google.common.collect.Lists;

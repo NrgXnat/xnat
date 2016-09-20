@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ D:/Development/XNAT/1.6/nrg_config/src/main/resources/META-INF/configuration/nrg-automation-context.xml
+  ~ /home/rherrick/Development/XNAT/1.7/libraries/automation/src/main/resources/META-INF/configuration/nrg-automation-context.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ Copyright (c) 2016, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
-  ~
-  ~ Last modified 8/26/13 6:15 PM
   -->
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"

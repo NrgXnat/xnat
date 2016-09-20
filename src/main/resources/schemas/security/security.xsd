@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ core: /home/rherrick/Development/Release/1.7/xdat/src/main/resources/schemas/security/security.xsd
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
 <!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Tim Olsen (Washington University) -->
 <xs:schema targetNamespace="http://nrg.wustl.edu/security" xmlns:xdat="http://nrg.wustl.edu/security" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:element name="security">

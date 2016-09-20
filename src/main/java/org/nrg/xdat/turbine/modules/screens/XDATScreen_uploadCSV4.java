@@ -1,13 +1,12 @@
 /*
- * org.nrg.xdat.turbine.modules.screens.XDATScreen_uploadCSV4
+ * core: org.nrg.xdat.turbine.modules.screens.XDATScreen_uploadCSV4
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/1/13 9:13 AM
  */
+
 package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;

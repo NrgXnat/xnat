@@ -1,12 +1,10 @@
 /*
- * org.nrg.xdat.turbine.modules.screens.XDATScreen_enable_xdat_user
+ * core: org.nrg.xdat.turbine.modules.screens.XDATScreen_enable_xdat_user
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 9/26/13 11:58 AM
  */
 
 

@@ -1,13 +1,12 @@
 /*
+ * core: org.nrg.xdat.services.ThemeService
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Author: Justin Cleveland <clevelandj@wustl.edu> (jcleve01)
- * Last modified 2/29/2016 11:20 AM
  */
+
 package org.nrg.xdat.services;
 
 import org.nrg.xdat.entities.ThemeConfig;

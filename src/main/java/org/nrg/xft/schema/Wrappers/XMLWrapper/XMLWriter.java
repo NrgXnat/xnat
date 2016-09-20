@@ -1,11 +1,12 @@
 /*
- * org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter
+ * core: org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
 import java.io.BufferedOutputStream;

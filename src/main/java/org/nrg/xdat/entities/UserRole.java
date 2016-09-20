@@ -1,3 +1,12 @@
+/*
+ * core: org.nrg.xdat.entities.UserRole
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 /**
  * UserRole
  * (C) 2013 Washington University School of Medicine

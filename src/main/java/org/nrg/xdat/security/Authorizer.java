@@ -1,13 +1,12 @@
 /*
- * org.nrg.xdat.security.Authorizer
+ * core: org.nrg.xdat.security.Authorizer
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/11/14 12:00 PM
  */
+
 package org.nrg.xdat.security;
 
 import java.sql.SQLException;

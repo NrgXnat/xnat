@@ -1,13 +1,12 @@
 /*
- * org.nrg.xft.entities.XftFieldExclusion
+ * core: org.nrg.xft.entities.XftFieldExclusion
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 9/4/13 4:37 PM
  */
+
 package org.nrg.xft.entities;
 
 import java.util.regex.Pattern;

@@ -1,13 +1,12 @@
 /*
- * org.nrg.xdat.security.PasswordValidatorChain
+ * core: org.nrg.xdat.security.PasswordValidatorChain
  * XNAT http://www.xnat.org
- * Copyright (c) 2015, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/1/13 9:13 AM
  */
+
 package org.nrg.xdat.security;
 
 import org.apache.commons.lang.StringUtils;

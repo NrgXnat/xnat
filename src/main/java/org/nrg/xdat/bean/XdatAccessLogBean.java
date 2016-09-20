@@ -1,4 +1,13 @@
 /*
+ * core: org.nrg.xdat.bean.XdatAccessLogBean
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
+/*
  * GENERATED FILE
  * Created on Thu Mar 31 18:38:30 CDT 2016
  *

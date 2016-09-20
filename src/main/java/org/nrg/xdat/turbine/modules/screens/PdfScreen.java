@@ -1,3 +1,12 @@
+/*
+ * core: org.nrg.xdat.turbine.modules.screens.PdfScreen
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 package org.nrg.xdat.turbine.modules.screens;
 

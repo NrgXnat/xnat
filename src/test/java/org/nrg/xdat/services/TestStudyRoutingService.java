@@ -1,14 +1,12 @@
 /*
- * org.nrg.xdat.services.TestStudyRoutingService
- * TIP is developed by the Neuroinformatics Research Group
+ * core: org.nrg.xdat.services.TestStudyRoutingService
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 6/10/14 2:09 PM
  */
+
 package org.nrg.xdat.services;
 
 import org.junit.Test;

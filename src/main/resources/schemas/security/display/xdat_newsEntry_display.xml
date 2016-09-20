@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/project-skeletons/xnat/src/schemas/security/display/xdat_newsEntry_display.xml
+  ~ core: /home/rherrick/Development/Release/1.7/xdat/src/main/resources/schemas/security/display/xdat_newsEntry_display.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
-  ~
-  ~ Last modified 2/7/14 12:19 PM
   -->
-<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xdat:newsEntry" full-description="News" brief-description="News">
+
+Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xdat:newsEntry" full-description="News" brief-description="News">
 	<DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="string">
 		<DisplayFieldElement name="Field1" schema-element="xdat:newsEntry.meta.insert_date"/>
 	</DisplayField>

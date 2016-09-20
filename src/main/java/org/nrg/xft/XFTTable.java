@@ -1,13 +1,12 @@
 /*
- * org.nrg.xft.XFTTable
+ * core: org.nrg.xft.XFTTable
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/11/14 2:34 PM
  */
+
 package org.nrg.xft;
 
 import java.io.BufferedWriter;

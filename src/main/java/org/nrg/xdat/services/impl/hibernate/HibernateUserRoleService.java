@@ -1,3 +1,12 @@
+/*
+ * core: org.nrg.xdat.services.impl.hibernate.HibernateUserRoleService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 /**
  * H2AliasTokenService
  * (C) 2012 Washington University School of Medicine

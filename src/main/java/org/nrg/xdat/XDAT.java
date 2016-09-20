@@ -1,12 +1,10 @@
 /*
- * org.nrg.xdat.XDAT
+ * core: org.nrg.xdat.XDAT
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 1/3/14 12:24 PM
  */
 
 package org.nrg.xdat;

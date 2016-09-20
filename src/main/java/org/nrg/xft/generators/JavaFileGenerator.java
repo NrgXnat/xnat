@@ -1,12 +1,10 @@
 /*
- * org.nrg.xft.generators.JavaFileGenerator
+ * core: org.nrg.xft.generators.JavaFileGenerator
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 11/18/13 9:36 AM
  */
 
 

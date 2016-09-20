@@ -1,12 +1,10 @@
 /*
- * org.nrg.xft.db.DBItemCache
+ * core: org.nrg.xft.db.DBItemCache
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/1/13 9:13 AM
  */
 
 package org.nrg.xft.db;

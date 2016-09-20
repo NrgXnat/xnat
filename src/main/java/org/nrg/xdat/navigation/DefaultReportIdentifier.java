@@ -1,13 +1,12 @@
 /*
- * org.nrg.xdat.navigation.DefaultReportIdentifier
+ * core: org.nrg.xdat.navigation.DefaultReportIdentifier
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 1/21/14 9:52 AM
  */
+
 package org.nrg.xdat.navigation;
 
 import org.apache.turbine.util.RunData;

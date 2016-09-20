@@ -1,12 +1,10 @@
 /*
- * org.nrg.xdat.turbine.modules.screens.SecureReport
+ * core: org.nrg.xdat.turbine.modules.screens.SecureReport
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/10/13 7:54 PM
  */
 
 package org.nrg.xdat.turbine.modules.screens;

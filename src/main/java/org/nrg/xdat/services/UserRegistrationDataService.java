@@ -1,3 +1,12 @@
+/*
+ * core: org.nrg.xdat.services.UserRegistrationDataService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 /**
  * UserRegistrationDataService
  * (C) 2013 Washington University School of Medicine

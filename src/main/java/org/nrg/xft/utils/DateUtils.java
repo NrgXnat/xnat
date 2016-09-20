@@ -1,13 +1,12 @@
 /*
- * org.nrg.xft.utils.DateUtils
+ * core: org.nrg.xft.utils.DateUtils
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 8/26/13 11:51 AM
  */
+
 package org.nrg.xft.utils;
 
 import org.apache.commons.lang3.StringUtils;

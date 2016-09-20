@@ -1,3 +1,12 @@
+/*
+ * core: org.nrg.xdat.services.FeatureDefinitionService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.xdat.services;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateService;

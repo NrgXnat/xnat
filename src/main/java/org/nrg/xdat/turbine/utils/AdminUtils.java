@@ -1,13 +1,12 @@
 /*
- * org.nrg.xdat.turbine.utils.AdminUtils
+ * core: org.nrg.xdat.turbine.utils.AdminUtils
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/17/14 10:25 AM
  */
+
 package org.nrg.xdat.turbine.utils;
 
 import org.apache.commons.lang3.StringUtils;

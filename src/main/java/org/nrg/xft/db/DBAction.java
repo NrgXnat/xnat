@@ -1,13 +1,12 @@
 /*
- * org.nrg.xft.db.DBAction
+ * core: org.nrg.xft.db.DBAction
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 10/3/13 9:23 AM
  */
+
 package org.nrg.xft.db;
 
 import java.io.IOException;

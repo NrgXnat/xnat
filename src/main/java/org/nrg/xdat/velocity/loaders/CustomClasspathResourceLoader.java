@@ -1,13 +1,12 @@
 /*
- * org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader
+ * core: org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 11/20/13 2:28 PM
  */
+
 package org.nrg.xdat.velocity.loaders;
 
 import com.google.common.collect.ImmutableList;

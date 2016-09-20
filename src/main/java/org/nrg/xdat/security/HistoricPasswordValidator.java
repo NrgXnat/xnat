@@ -1,13 +1,12 @@
 /*
- * org.nrg.xdat.security.HistoricPasswordValidator
+ * core: org.nrg.xdat.security.HistoricPasswordValidator
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 12/11/13 3:34 PM
  */
+
 package org.nrg.xdat.security;
 
 import org.nrg.xdat.preferences.SiteConfigPreferences;

@@ -1,3 +1,12 @@
+/*
+ * web: pwExpType.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 // interactions with 'Security Passwords' section of admin ui
 
 console.log('pwExpType.js');

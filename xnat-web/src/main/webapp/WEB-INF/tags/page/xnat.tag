@@ -9,6 +9,15 @@
 <%@ attribute name="bodyTop" %>
 <%@ attribute name="bodyBottom" %>
 
+<%--
+  ~ web: xnat.tag
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  --%>
+
 <head>
 
     <c:if test="${empty requestScope.hasInit}">
@@ -702,7 +711,7 @@ ${bodyTop}
             buildDate: "Sun Jun 05 12:41:24 CDT 2016",
             buildNumber: "Manual",
             commit: "v275-gd2220fd",
-            version: "1.7.0-SNAPSHOT"
+            version: "1.7.0"
         };
 
         XNAT.version = buildInfo.version;

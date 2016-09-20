@@ -1,3 +1,12 @@
+/*
+ * web: projectSubjectSelector.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *  
+ * Released under the Simplified BSD.
+ */
+
 /**
  * New "universal" project-subject selector.
  * Checks against user's permissions to determine

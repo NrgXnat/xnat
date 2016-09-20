@@ -1,13 +1,12 @@
 /*
+ * web: org.nrg.xnat.turbine.modules.screens.Login
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Author: Justin Cleveland <clevelandj@wustl.edu> (jcleve01)
- * Last modified 1/22/2016 3:20 PM
  */
+
 package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.log4j.Logger;

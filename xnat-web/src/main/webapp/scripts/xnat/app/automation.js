@@ -1,3 +1,12 @@
+/*
+ * web: automation.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 /**
  * functions for XNAT automation workflow events
  * xnat-templates/screens/xnat_projectData/xnat_projectData_summary_manage.vm

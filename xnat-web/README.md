@@ -59,7 +59,7 @@ You may need to build the [XDAT Data Builder Gradle plugin](https://bitbucket.or
 This will create your deployable web application in the location:
 
 ```bash
-build/libs/xnat-web-1.7.0-SNAPSHOT.war
+build/libs/xnat-web-1.7.0.war
 ```
 
 You can perform a build to your local Maven repository for development purposes like this:

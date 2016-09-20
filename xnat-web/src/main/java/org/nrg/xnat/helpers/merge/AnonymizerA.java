@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.helpers.merge.AnonymizerA
+ * web: org.nrg.xnat.helpers.merge.AnonymizerA
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 1/27/14 11:54 AM
  */
+
 package org.nrg.xnat.helpers.merge;
 
 import org.nrg.config.entities.Configuration;

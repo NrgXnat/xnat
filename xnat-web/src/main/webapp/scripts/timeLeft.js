@@ -1,3 +1,12 @@
+/*
+ * web: timeLeft.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *  
+ * Released under the Simplified BSD.
+ */
+
 // set up the XNAT.app.timeout object
 if (typeof XNAT == 'undefined'){ XNAT={} }
 if (typeof XNAT.app == 'undefined'){ XNAT.app={} }

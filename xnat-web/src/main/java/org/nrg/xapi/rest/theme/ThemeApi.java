@@ -1,12 +1,10 @@
 /*
+ * web: org.nrg.xapi.rest.theme.ThemeApi
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Author: Justin Cleveland <clevelandj@wustl.edu>
- * Last modified 3/7/2016 11:52 AM
  */
 
 package org.nrg.xapi.rest.theme;

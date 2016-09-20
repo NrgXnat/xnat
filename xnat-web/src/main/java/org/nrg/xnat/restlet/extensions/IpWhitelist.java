@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.restlet.extensions.IpWhitelist
+ * web: org.nrg.xnat.restlet.extensions.IpWhitelist
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 1/15/14 3:08 PM
  */
+
 package org.nrg.xnat.restlet.extensions;
 
 import com.google.common.base.Joiner;

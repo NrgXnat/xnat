@@ -1,12 +1,10 @@
 /*
- * org.nrg.xnat.turbine.modules.screens.PipelineScreen_protocolcheck_add
+ * web: org.nrg.xnat.turbine.modules.screens.PipelineScreen_protocolcheck_add
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 12/19/13 3:01 PM
  */
 
 package org.nrg.xnat.turbine.modules.screens;

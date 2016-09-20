@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.restlet.extensions.SessionCountRestlet
+ * web: org.nrg.xnat.restlet.extensions.SessionCountRestlet
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/13/14 1:18 PM
  */
+
 package org.nrg.xnat.restlet.extensions;
 
 import org.apache.commons.lang3.StringUtils;

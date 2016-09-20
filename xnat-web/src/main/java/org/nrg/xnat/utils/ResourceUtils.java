@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.utils.ResourceUtils
+ * web: org.nrg.xnat.utils.ResourceUtils
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 9/9/13 5:05 PM
  */
+
 package org.nrg.xnat.utils;
 
 import org.apache.commons.lang3.StringUtils;

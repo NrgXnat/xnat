@@ -1,6 +1,15 @@
 <%@ tag description="Initialize Variables" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
+<%--
+  ~ web: jsvars.tag
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  --%>
+
 <script>
     var PAGE = {};
     PAGE.siteRoot = '${sessionScope.siteRoot}';

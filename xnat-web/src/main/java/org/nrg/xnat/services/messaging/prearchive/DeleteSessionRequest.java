@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.services.messaging.prearchive.DeleteSessionRequest
+ * web: org.nrg.xnat.services.messaging.prearchive.DeleteSessionRequest
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 12/19/13 3:01 PM
  */
+
 package org.nrg.xnat.services.messaging.prearchive;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import java.io.File;

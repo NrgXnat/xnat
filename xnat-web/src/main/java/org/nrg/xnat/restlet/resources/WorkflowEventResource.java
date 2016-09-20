@@ -1,3 +1,12 @@
+/*
+ * web: org.nrg.xnat.restlet.resources.WorkflowEventResource
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.xnat.restlet.resources;
 
 import org.apache.commons.lang3.StringUtils;

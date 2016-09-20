@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.restlet.services.prearchive.PrearchiveBatchMove
+ * web: org.nrg.xnat.restlet.services.prearchive.PrearchiveBatchMove
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 12/19/13 3:01 PM
  */
+
 package org.nrg.xnat.restlet.services.prearchive;
 
 import org.nrg.action.ClientException;

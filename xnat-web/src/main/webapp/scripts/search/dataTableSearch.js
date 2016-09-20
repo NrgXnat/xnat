@@ -1,3 +1,12 @@
+/*
+ * web: dataTableSearch.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 //variable to contain a list of ID's for each table that's been loaded in the page
 XNAT.app.resizableTables = new Array();
 

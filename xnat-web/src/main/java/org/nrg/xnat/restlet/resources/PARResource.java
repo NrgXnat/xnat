@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.restlet.resources.PARResource
+ * web: org.nrg.xnat.restlet.resources.PARResource
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 10/29/13 3:29 PM
  */
+
 package org.nrg.xnat.restlet.resources;
 
 import org.apache.commons.lang3.StringUtils;

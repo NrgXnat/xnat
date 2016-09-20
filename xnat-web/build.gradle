@@ -1,4 +1,13 @@
-def vXnat = '1.7.0-SNAPSHOT'
+/*
+ * web: build.gradle
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
+def vXnat = '1.7.0'
 def vXnatPipeline = vXnat
 def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.7.RELEASE'
@@ -311,13 +320,13 @@ dependencies {
     compile "org.nrg:mail:${vXnat}"
     compile "org.nrg:notify:${vXnat}"
 
-    compile "org.nrg:dicom-xnat-mx:1.7.0-SNAPSHOT"
-    compile "org.nrg:dicom-xnat-sop:1.7.0-SNAPSHOT"
-    compile "org.nrg:dicom-xnat-util:1.7.0-SNAPSHOT"
-    compile "org.nrg:ecat4xnat:1.7.0-SNAPSHOT"
+    compile "org.nrg:dicom-xnat-mx:${vXnat}"
+    compile "org.nrg:dicom-xnat-sop:${vXnat}"
+    compile "org.nrg:dicom-xnat-util:${vXnat}"
+    compile "org.nrg:ecat4xnat:${vXnat}"
     compile "org.nrg:DicomDB:4.1.0"
     compile "org.nrg:ExtAttr:4.1.0"
-    compile "org.nrg:DicomEdit:6.0-SNAPSHOT"
+    compile "org.nrg:DicomEdit:6.0"
     compile "org.nrg:DicomImageUtils:${vXnat}"
     compile "org.nrg:DicomUtils:1.3.1"
     compile "org.nrg:PrearcImporter:${vXnat}"

@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider
+ * web: org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 11/4/13 9:51 AM
  */
+
 package org.nrg.xnat.security.provider;
 
 import org.nrg.xdat.XDAT;

@@ -1,3 +1,12 @@
+/*
+ * web: settingsManager.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *  
+ * Released under the Simplified BSD.
+ */
+
 //requires settings object
 // {"URI":"","radio_ids":["id1","id2"],"current_selected":"id2","msg":"Saving","color":"#DEDEDE","button":"idy"}
 

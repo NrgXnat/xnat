@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.restlet.representations.item.extensions.ItemValuesRepresentation
+ * web: org.nrg.xnat.restlet.representations.item.extensions.ItemValuesRepresentation
  * XNAT http://www.xnat.org
- * Copyright (c) 2015, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2015-07-15 11:15 AM
  */
+
 package org.nrg.xnat.restlet.representations.item.extensions;
 
 import org.apache.log4j.Logger;

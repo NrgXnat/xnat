@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.security.XnatProviderManager
+ * web: org.nrg.xnat.security.XnatProviderManager
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 12/13/13 2:19 PM
  */
+
 package org.nrg.xnat.security;
 
 import com.google.common.collect.Maps;

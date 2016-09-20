@@ -1,13 +1,10 @@
 /*
- * org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages
- *
- * Copyright (c) 2016, Washington University School of Medicine
+ * web: org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
- * XNAT is an open-source project of the Neuroinformatics Research Group.
  * Released under the Simplified BSD.
- *
- * Last modified 1/19/16 3:49 PM
  */
 
 package org.nrg.xnat.restlet.actions.importer;

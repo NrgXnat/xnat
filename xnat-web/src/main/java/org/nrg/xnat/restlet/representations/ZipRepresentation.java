@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.restlet.representations.ZipRepresentation
+ * web: org.nrg.xnat.restlet.representations.ZipRepresentation
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/17/13 4:45 PM
  */
+
 package org.nrg.xnat.restlet.representations;
 
 import java.io.File;

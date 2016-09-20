@@ -1,4 +1,13 @@
 /*
+ * web: settings.gradle
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
+/*
 // To declare projects as part of a multi-project build use the 'include' method
 include 'shared'
 include 'api'

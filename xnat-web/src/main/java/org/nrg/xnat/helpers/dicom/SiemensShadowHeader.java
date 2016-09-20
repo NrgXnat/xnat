@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.helpers.dicom.SiemensShadowHeader
+ * web: org.nrg.xnat.helpers.dicom.SiemensShadowHeader
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/10/13 9:04 PM
  */
+
 package org.nrg.xnat.helpers.dicom;
 
 import com.google.common.base.Joiner;

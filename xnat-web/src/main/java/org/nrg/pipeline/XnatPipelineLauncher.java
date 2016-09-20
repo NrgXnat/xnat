@@ -1,12 +1,10 @@
 /*
- * org.nrg.pipeline.XnatPipelineLauncher
+ * web: org.nrg.pipeline.XnatPipelineLauncher
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 12/19/13 5:12 PM
  */
 
 package org.nrg.pipeline;

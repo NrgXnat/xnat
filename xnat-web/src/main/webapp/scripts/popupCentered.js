@@ -1,3 +1,12 @@
+/*
+ * web: popupCentered.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *  
+ * Released under the Simplified BSD.
+ */
+
 /**
  * Helper function for creating centered popup windows.
  * Minimum required parameters:

@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.helpers.uri.archive.ResourceURII
+ * web: org.nrg.xnat.helpers.uri.archive.ResourceURII
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/10/13 9:04 PM
  */
+
 package org.nrg.xnat.helpers.uri.archive;
 
 import org.nrg.xdat.model.XnatAbstractresourceI;

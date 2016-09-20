@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.restlet.resources.ScanResource
+ * web: org.nrg.xnat.restlet.resources.ScanResource
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/10/14 11:34 AM
  */
+
 package org.nrg.xnat.restlet.resources;
 
 import org.nrg.action.ActionException;

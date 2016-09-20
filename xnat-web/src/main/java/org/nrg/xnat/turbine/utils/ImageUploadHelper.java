@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.turbine.utils.ImageUploadHelper
+ * web: org.nrg.xnat.turbine.utils.ImageUploadHelper
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 1/21/14 1:57 PM
  */
+
 package org.nrg.xnat.turbine.utils;
 
 import java.io.File;

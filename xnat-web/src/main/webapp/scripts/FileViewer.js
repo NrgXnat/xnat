@@ -1,3 +1,12 @@
+/*
+ * web: FileViewer.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *  
+ * Released under the Simplified BSD.
+ */
+
 // TODO: HACKITY HACK HACK HACK. Because of scope issues in the file management functions, it's difficult to tell the
 // upload form that it needs to reload the page on completion of operations. Eventually table population should come
 // completely via REST to the back-end, but we don't currently live in that world.

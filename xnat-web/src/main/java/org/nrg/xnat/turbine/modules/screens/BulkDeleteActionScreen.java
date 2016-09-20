@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.turbine.modules.screens.BulkDeleteActionScreen
+ * web: org.nrg.xnat.turbine.modules.screens.BulkDeleteActionScreen
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/3/14 1:16 PM
  */
+
 package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;

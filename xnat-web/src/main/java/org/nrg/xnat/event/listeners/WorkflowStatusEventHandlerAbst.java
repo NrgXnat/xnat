@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.workflow.WorkflowSaveHandlerAbst
+ * web: org.nrg.xnat.event.listeners.WorkflowStatusEventHandlerAbst
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/8/16 8:03 AM
  */
+
 package org.nrg.xnat.event.listeners;
 
 import org.apache.commons.lang3.StringUtils;

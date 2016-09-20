@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.restlet.resources.files.FileList
+ * web: org.nrg.xnat.restlet.resources.files.FileList
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/18/14 8:41 PM
  */
+
 package org.nrg.xnat.restlet.resources.files;
 
 import org.apache.commons.collections.CollectionUtils;

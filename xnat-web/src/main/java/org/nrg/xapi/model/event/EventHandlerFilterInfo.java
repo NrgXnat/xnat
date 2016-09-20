@@ -1,3 +1,12 @@
+/*
+ * web: org.nrg.xapi.model.event.EventHandlerFilterInfo
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.xapi.model.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.helpers.prearchive.DatabaseSession
+ * web: org.nrg.xnat.helpers.prearchive.DatabaseSession
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 9/5/13 2:38 PM
  */
+
 package org.nrg.xnat.helpers.prearchive;
 
 import org.apache.commons.lang3.StringUtils;

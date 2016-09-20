@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.turbine.modules.screens.PrearchiveMatch
+ * web: org.nrg.xnat.turbine.modules.screens.PrearchiveMatch
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 9/9/13 1:04 PM
  */
+
 package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.log4j.Logger;

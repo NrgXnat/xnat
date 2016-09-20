@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.security.DisableInactiveUsersJob
+ * web: org.nrg.xnat.security.DisableInactiveUsers
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 11/4/13 9:51 AM
  */
+
 package org.nrg.xnat.security;
 
 import org.apache.commons.lang3.time.DateUtils;

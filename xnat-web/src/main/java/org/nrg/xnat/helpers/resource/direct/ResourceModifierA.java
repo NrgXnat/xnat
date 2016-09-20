@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.helpers.resource.direct.ResourceModifierA
+ * web: org.nrg.xnat.helpers.resource.direct.ResourceModifierA
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/18/14 5:55 PM
  */
+
 package org.nrg.xnat.helpers.resource.direct;
 
 import java.io.File;

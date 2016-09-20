@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.turbine.modules.actions.XDATRegisterUser
+ * web: org.nrg.xnat.turbine.modules.actions.XDATRegisterUser
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 10/29/13 5:20 PM
  */
+
 package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;

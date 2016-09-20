@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.helpers.prearchive.PrearcDatabase
+ * web: org.nrg.xnat.services.messaging.file.MoveStoredFileRequestListener
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Created 3/12/14 1:49 PM
  */
+
 package org.nrg.xnat.services.messaging.file;
 
 import org.nrg.xdat.XDAT;

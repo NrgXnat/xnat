@@ -1,16 +1,13 @@
-package org.nrg.xnat.restlet.actions;
-
 /*
- * org.nrg.xnat.restlet.actions.importer.handlers.AutomationBasedImporter
+ * web: org.nrg.xnat.restlet.actions.AutomationBasedImporter
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 4/25/16 9:04 PM
- * @author Mike Hodge <hodgem@mir.wustl.edu>
  */
+
+package org.nrg.xnat.restlet.actions;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

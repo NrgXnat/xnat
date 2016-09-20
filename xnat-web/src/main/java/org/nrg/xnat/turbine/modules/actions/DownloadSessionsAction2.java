@@ -1,13 +1,12 @@
 /*
- * org.nrg.xnat.turbine.modules.actions.DownloadSessionsAction2
+ * web: org.nrg.xnat.turbine.modules.actions.DownloadSessionsAction2
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 2/10/14 3:12 PM
  */
+
 package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;

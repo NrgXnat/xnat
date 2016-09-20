@@ -1,3 +1,12 @@
+/*
+ * web: customPage.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 /*!
  * Retrieve custom pages via AJAX
  * Used in: /xnat-templates/screens/Page.vm

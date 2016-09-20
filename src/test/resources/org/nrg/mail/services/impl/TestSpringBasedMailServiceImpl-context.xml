@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ D:/Development/XNAT/1.6/nrg_mail/src/test/resources/org/nrg/mail/services/impl/TestSpringBasedMailServiceImpl-context.xml
+  ~ /home/rherrick/Development/XNAT/1.7/libraries/mail/src/test/resources/org/nrg/mail/services/impl/TestSpringBasedMailServiceImpl-context.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ Copyright (c) 2016, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
-  ~
-  ~ Last modified 7/1/13 5:30 PM
   -->
 <beans xmlns="http://www.springframework.org/schema/beans"
         xmlns:p="http://www.springframework.org/schema/p"

@@ -1,12 +1,10 @@
 /*
  * org.nrg.mail.api.MailMessageTest
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/1/13 5:30 PM
  */
 package org.nrg.mail.api;
 

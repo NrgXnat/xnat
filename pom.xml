@@ -1,12 +1,10 @@
 <!--
-  ~ D:/Development/XNAT/1.6/nrg_mail/pom.xml
+  ~ mail: pom.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ Copyright (c) 2016, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
-  ~
-  ~ Last modified 8/26/13 1:30 PM
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -15,7 +13,7 @@
 	<parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <version>1.7.0</version>
 	</parent>
 
 	<artifactId>mail</artifactId>

@@ -8,7 +8,7 @@
   ~ Released under the Simplified BSD.
   -->
 
-Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xdat:newsEntry" full-description="News" brief-description="News">
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xdat:newsEntry" full-description="News" brief-description="News">
 	<DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="string">
 		<DisplayFieldElement name="Field1" schema-element="xdat:newsEntry.meta.insert_date"/>
 	</DisplayField>

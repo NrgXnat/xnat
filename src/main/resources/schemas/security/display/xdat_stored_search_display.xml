@@ -8,7 +8,7 @@
   ~ Released under the Simplified BSD.
   -->
 
-Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xdat:stored_search" full-description="Bundles" brief-description="Bundles">
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xdat:stored_search" full-description="Bundles" brief-description="Bundles">
 	<DisplayField id="ROOT_ELEMENT_NAME" header="pivot" visible="true" searchable="true">
 		<DisplayFieldElement name="Field1" schema-element="xdat:stored_search/root_element_name"/>
 	</DisplayField>

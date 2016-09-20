@@ -1,3 +1,12 @@
+/*
+ * org.nrg.config.extensions.postChange.Separatepetmr.Bool.PETMRSettingChange
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.config.extensions.postChange.Separatepetmr.Bool;
 
 import org.nrg.config.entities.Configuration;

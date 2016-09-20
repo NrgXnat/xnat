@@ -1,12 +1,10 @@
 /*
  * org.nrg.config.daos.ConfigurationDAO
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 9/12/13 4:00 PM
  */
 package org.nrg.config.daos;
 

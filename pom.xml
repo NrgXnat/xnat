@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ D:/Development/XNAT/1.6/nrg_config/pom.xml
+  ~ config: pom.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ Copyright (c) 2016, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
-  ~
-  ~ Last modified 10/23/13 2:31 PM
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
@@ -18,7 +16,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <version>1.7.0</version>
     </parent>
 
     <artifactId>config</artifactId>

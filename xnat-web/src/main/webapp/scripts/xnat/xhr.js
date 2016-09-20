@@ -518,7 +518,7 @@ var XNAT = getObject(XNAT||{}),
 
         var $form = $$(form),
             _form = $form[0], // raw DOM element
-            validation = true,
+            validateForm = $form.hasClass('validate'),
             callback = diddly;
 
         opts = cloneObject(opts);
@@ -526,10 +526,9 @@ var XNAT = getObject(XNAT||{}),
         opts.method = opts.method || $form.data('method') || _form.method || 'GET';
 
         if ($.isFunction(opts.validate)) {
-            validation = opts.validate.call(_form, opts);
-            if (!validation) {
+            if (!opts.validate.call(_form, opts)) {
                 $form.removeClass('valid').addClass('invalid');
-                return validation;
+                return false;
             }    
             else {
                 $form.removeClass('invalid').addClass('valid');
@@ -552,6 +551,35 @@ var XNAT = getObject(XNAT||{}),
             var source = this.value.replace(/^@\?[:=\s]*/, '');
             this.value = eval(source);
         });
+
+        var errors = [];
+
+        // validate all fields with [data-validate] attribute
+        if (validateForm && XNAT.validate) {
+
+            $inputs.filter('[data-validate]').not('.ignore').each(function(){
+                var valid = XNAT.validate(this).check();
+                if (!valid) {
+                    errors.push(this.title||this.name||this.id)
+                }
+            });
+
+        }
+
+        // stop here if there are errors
+        if (errors.length) {
+            console.log('ERRORS: ' + errors);
+            // errors = errors.map(function(field){
+            //     return '<li>' + field + '</li>'
+            // });
+            // xmodal.message({
+            //     title: 'Validation Failed',
+            //     content: '' +
+            //         '<p>Please correct errors with the following fields:</p> ' +
+            //         '<ul>' + errors.join('') + '</ul>'
+            // });
+            // return false;
+        }
 
         var inputs = $inputs.toArray();
 

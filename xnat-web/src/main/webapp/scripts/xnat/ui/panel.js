@@ -423,8 +423,6 @@ var XNAT = getObject(XNAT || {});
             e.stopImmediatePropagation();
 
             var $form = $(this).removeClass('error'),
-                errors = 0,
-                valid = true,
                 silent = $form.hasClass('silent'),
                 multiform = {};
 
@@ -433,27 +431,7 @@ var XNAT = getObject(XNAT || {});
                 return false;
             }
 
-            $form.dataAttr('errors', 0);
-
-            // validate inputs before moving on
-            $form.find(':input.required').each(function(){
-                $(this).removeClass('invalid');
-                if (this.value.toString() === '') {
-                    errors++;
-                    valid = false;
-                    $(this).addClass('invalid');
-                }
-            });
-
-            $form.dataAttr('errors', errors);
-
-            if (!valid) {
-                $form.addClass('error');
-                if (!silent) {
-                    xmodal.message('Error','Please enter values for the required items and re-submit the form.');
-                }
-                return false;
-            }
+            //$form.dataAttr('errors', 0);
 
             // only open loading dialog for standard (non-multi) submit
             if (!multiform.count){
@@ -497,18 +475,59 @@ var XNAT = getObject(XNAT || {});
             var ajaxConfig = {
                 //method: opts.method,
                 method: $form.data('method') || opts.method || 'POST',
-                url: this.action,
+                url: $form.attr('action') || $form.data('url'),
+                validate: function(){
+
+                    // TODO: enable this after testing validation methods more thoroughly
+
+                    // var errors = [],
+                    //     errorCount = 0,
+                    //     valid = true;
+                    //
+                    // // validate inputs before moving on
+                    // $form.find(':input[data-validate]').not('.ignore').each(function(){
+                    //     valid = XNAT.validate(this).check();
+                    //     if (!valid) {
+                    //         errorCount++;
+                    //         errors.push(this.title||this.name||this.id||this.tagName);
+                    //     }
+                    // });
+                    //
+                    // $form.dataAttr('errorCount', errorCount);
+                    //
+                    // if (errorCount) {
+                    //     $form.addClass('error');
+                    //     if (!silent) {
+                    //         xmodal.message({
+                    //             title: 'Error',
+                    //             content: '' +
+                    //             //'<div style="font-size:15px;">' +
+                    //             '<p>Please correct the following fields and re-submit the form:</p>' +
+                    //             '<ul><li><b>' + errors.join('</b></li><li><b>') + '</b></li></ul>' +
+                    //             //'</div>' +
+                    //             '',
+                    //             width: 500,
+                    //             height: 300
+                    //         });
+                    //     }
+                    //     return false;
+                    // }
+
+                    return true;
+
+                },
                 success: function(){
                     var obj = {}, callback,
                         _load = opts.refresh || opts.reload || opts.url || opts.load;
                     // actually, NEVER use returned data...
                     // ALWAYS reload from the server
                     // (prepending '$?' assures that)
-                    obj.load = _load ? ('$?' + _load.replace(/^\$\?/, '')) : '';
+                    obj.load = _load ? (_load.replace(/^(\$\?)*/, '$?')) : '';
                     if (!silent){
                         XNAT.ui.banner.top(2000, 'Data saved successfully.', 'success');
                         loadData($form, obj);
                     }
+                    $form.find(':input[data-validate]').removeClass('valid invalid');
                     // fire callback function if specified
                     if (opts.success || opts.callback) {
                         callback = opts.success||opts.callback;
@@ -533,12 +552,14 @@ var XNAT = getObject(XNAT || {});
                 ajaxConfig.data = JSON.stringify(form2js(inputs, ':', false));
                 ajaxConfig.processData = false;
                 ajaxConfig.contentType = 'application/json';
-                $.ajax(ajaxConfig);
+                //$.ajax(ajaxConfig);
                 // XNAT.xhr.form($form, ajaxConfig);
             }
-            else {
-                $(this).ajaxSubmit(ajaxConfig);
-            }
+            // else {
+            //     $(this).ajaxSubmit(ajaxConfig);
+            // }
+
+            XNAT.xhr.form($form, ajaxConfig);
 
             return false;
 

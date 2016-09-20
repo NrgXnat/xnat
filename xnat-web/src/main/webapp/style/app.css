@@ -2000,6 +2000,11 @@ input.required.invalid {
     background: #fcc;
 }
 
+input.valid {
+    border: 1px solid #1dca23;
+    box-shadow: 0 0 5px rgba(29,202,35,0.3);
+}
+
 .summary h3 {
     line-height: 15px;
     margin: 0 !important;

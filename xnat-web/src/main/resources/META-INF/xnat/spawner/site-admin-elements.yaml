@@ -14,7 +14,7 @@ siteId:
     kind: panel.input.text
     name: siteId
     label: Site ID
-    validation: required id-strict max-length:24 onblur
+    validation: id-strict max-length:24 onblur
     description: >
         The id used to refer to this site (also used to generate database ids).
         The Site ID must start with a letter and contain only letters, numbers
@@ -22,11 +22,7 @@ siteId:
         describes your site. No spaces or non-alphanumeric characters.
 
 siteDescriptionPage:
-    tag: input
-    element:
-        type: text
-        name: siteDescriptionPage
-        size: 30
+    tag: input|type=text|name=siteDescriptionPage|size=30|class=uri onblur|data-validate=uri onblur
     after: >
         <p class="description">Specify a velocity template file to display on the login page</p>
 
@@ -108,7 +104,7 @@ siteLoginLanding:
     kind: panel.input.text
     name: siteLoginLanding
     label: Site Login Landing
-    validation: required uri onblur onsubmit
+    validation: uri onblur
     description: "The page users will land on immediately after logging in."
 
 siteLandingLayout:
@@ -120,7 +116,7 @@ siteHome:
     kind: panel.input.text
     name: siteHome
     label: Site Home
-    validation: required uri onblur onsubmit
+    validation: uri onblur
     description: "The page users will land on by clicking the XNAT logo in the menu bar."
 
 siteHomeLayout:
@@ -132,7 +128,7 @@ siteUrl:
     kind: panel.input.text
     name: siteUrl
     label: Site Url
-    validation: required url onblur onsubmit
+    validation: url onblur
     description: >
         The address you want visible to users in emails, and other external links. This should be a
         functional address (i.e. if the user pasted this address in their web browser, they should
@@ -143,7 +139,7 @@ adminEmail:
     kind: panel.input.email
     name: adminEmail
     label: Site Admin Email
-    validation: required email onblur onsubmit
+    validation: email onblur
     description: >
         The administrative email account to receive system emails. This address will receive frequent emails
         on system events, such as errors, processing completion, new user registration and so on. These emails
@@ -199,7 +195,7 @@ archivePath:
     kind: panel.input.text
     name: archivePath
     label: Archive Path
-    validation: required uri onblur
+    validation: uri onblur
     description: ""
     element:
         disabled: true
@@ -207,31 +203,31 @@ cachePath:
     kind: panel.input.text
     name: cachePath
     label: Cache Path
-    validation: required uri onblur
+    validation: uri onblur
     description: ""
 prearchivePath:
     kind: panel.input.text
     name: prearchivePath
     label: Prearchive Path
-    validation: required uri onblur
+    validation: uri onblur
     description: ""
 ftpPath:
     kind: panel.input.text
     name: ftpPath
     label: FTP Path
-    validation: required uri onblur
+    validation: uri onblur
     description: ""
 buildPath:
     kind: panel.input.text
     name: buildPath
     label: Build Path
-    validation: required uri onblur
+    validation: uri onblur
     description: ""
 pipelinePath:
     kind: panel.input.text
     name: pipelinePath
     label: Pipeline Path
-    validation: required uri onblur
+    validation: uri onblur
     description: ""
 zipExtensions:
     kind: panel.input.text
@@ -304,15 +300,9 @@ generalSecuritySettings:
             name: ":security.channel"
             label: Security Channel
             options:
-                any:
-                    label: Any
-                    value: any
-                http:
-                    label: http
-                    value: http
-                https:
-                    label: https
-                    value: https
+                any: Any
+                http: http
+                https: https
             element:
                 title: Security Channel
         requireLogin:
@@ -349,7 +339,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: sessionTimeout
             label: Session Timeout
-            validation: required interval onblur
+            validation: interval onblur
             description: >
               Interval for timing out user sessions. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -357,7 +347,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: aliasTokenTimeout
             label: Alias Token Timeout
-            validation: required interval onblur
+            validation: interval onblur
             description: >
               Interval for timing out alias tokens. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -365,7 +355,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: aliasTokenTimeoutSchedule
             label: Alias Token Timeout Schedule
-            validation: required cron onblur
+            validation: cron onblur
             description: >
               How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -385,7 +375,7 @@ userLoginsSessionControls:
             kind: panel.input.number
             name: ":sessions.concurrent_max"
             label: Maximum Concurrent Sessions
-            validation: required integer gte:1 lte:9999
+            validation: integer gte:1 onblur
             description: The maximum number of permitted sessions a user can have open simultaneously. You must restart Tomcat for changes to this to take effect.
         loginFailureMessage:
             kind: panel.textarea
@@ -398,13 +388,13 @@ userLoginsSessionControls:
             kind: panel.input.number
             name: maxFailedLogins
             label: Maximum Failed Logins
-            validation: required integer gte:1 lte:9999 onblur
+            validation: integer gte:-1 lte:9999 !eq:0 onblur
             description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
         failedLoginLockoutDuration:
             kind: panel.input.text
             name: maxFailedLoginsLockoutDuration
             label: Failed Logins Lockout Duration
-            validation: required interval onblur
+            validation: interval onblur
             description: >
               Interval of time to lock user accounts that have exceeded the max_failed_logins count. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -412,7 +402,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: resetFailedLoginsSchedule
             label: Reset Failed Logins Schedule
-            validation: required cron onblur
+            validation: cron onblur
             description: >
               How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -420,7 +410,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: inactivityBeforeLockout
             label: User Inactivity Lockout
-            validation: required interval onblur
+            validation: interval onblur
             description: >
               Interval of inactivity before a user account is disabled. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -428,7 +418,7 @@ userLoginsSessionControls:
             kind: panel.input.text
             name: inactivityBeforeLockoutSchedule
             label: Inactivity Lockout Schedule
-            validation: required cron onblur
+            validation: cron onblur
             description: >
               How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
@@ -512,6 +502,7 @@ passwords:
             id: passwordHistoryDuration
             name: passwordHistoryDuration
             label: Password History
+            validation: allow-empty interval onblur
             description: >
               Interval for which users cannot reuse an old password of theirs. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
@@ -559,21 +550,25 @@ securityServices:
 #            id: securityServicesFeatureDefault
             name: ":security.services.feature.default"
             label: Feature Default
+            size: 50
         securityServicesFeatureRepoDefault:
             kind: panel.input.text
 #            id: securityServicesFeatureRepoDefault
             name: ":security.services.featureRepository.default"
             label: Feature Repository Default
+            size: 50
         securityServicesRoleDefault:
             kind: panel.input.text
 #            id: securityServicesRoleDefault
             name: ":security.services.role.default"
             label: Role Default
+            size: 50
         securityServicesRoleRepositoryDefault:
             kind: panel.input.text
 #            id: securityServicesRoleRepositoryDefault
             name: ":security.services.roleRepository.default"
             label: Role Repository Default
+            size: 50
 
 emailServerSettings:
     kind: panel.form
@@ -598,6 +593,7 @@ emailServerSettings:
             kind: panel.input.number
             name: port
             label: Port
+            validation: allow-empty integer onblur
             placeholder: 587
         username:
             kind: panel.input.text
@@ -652,6 +648,7 @@ notifications:
         helpContactInfo:
             kind: panel.input.email
             label: "Help Contact Info"
+            validation: allow-empty email onblur
 #            value: "!? XNAT.data.notifications['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
 
         emailMessageSubhead:
@@ -711,21 +708,25 @@ notifications:
             kind: panel.input.email
             label: "Error Messages"
             description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            validation: allow-empty email onblur
             value: "!? XNAT.data.notifications['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             label: "Issue Reports"
             description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            validation: allow-empty email onblur
             value: "!? XNAT.data.notifications['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             label: "New User Alert"
             description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            validation: allow-empty email onblur
             value: "!? XNAT.data.notifications['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             label: "Updates"
             description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            validation: allow-empty email onblur
             value: "!? XNAT.data.notifications['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
         copyAdminOnNotifications:
             kind: panel.input.switchbox
@@ -963,6 +964,8 @@ registrationOptions:
             kind: panel.input.number
             name: emailVerificationExpiration
             label: "Email Verification Expiration"
+            afterElement: "<span class='after'>Days</span>"
+            validation: integer onblur
         autoEnableUserRegistration:
             kind: panel.input.switchbox
             name: userRegistration
@@ -1020,6 +1023,7 @@ sessionBuilder:
             kind: panel.input.number
             name: sessionXmlRebuilderRepeat
             label: Session Idle Check Interval
+            validation: integer onblur
             placeholder: Interval in milliseconds
             afterElement: <span class="after">milliseconds</span>
             description: >
@@ -1030,6 +1034,7 @@ sessionBuilder:
             kind: panel.input.number
             name: sessionXmlRebuilderInterval
             label: Session Idle Time
+            validation: integer onblur
             placeholder: Time in minutes
             afterElement: <span class="after">minutes</span>
             description: >
@@ -1209,14 +1214,14 @@ dicomScpReceivers:
                             name: aeTitle
                             label: AE Title
 #                            description: AE Title for DICOM Receiver
-                            validation: required
+                            validation: not-empty
                         port:
                             kind: panel.input.number
                             id: scp-port
                             name: port
                             label: Port
 #                            description: Port for DICOM Receiver
-                            validation: required naturalNoZero
+                            validation: integer
 #                        fileNamer:
 #                            kind: panel.input.text
 #                            name: fileNamer
@@ -1272,6 +1277,11 @@ investigators:
         investigatorsTable:
             kind: table.dataTable
             load: /xapi/investigators
+            messages:
+                noData: >
+                    There are no investigators defined in this system. Click the button below to create one.
+                error: >
+                    An error occurred retrieving investigator information.
             sortable: firstname, lastname, email, institution
             before:
                 investigatorsjs:
@@ -1284,9 +1294,9 @@ investigators:
                         XNAT.admin.investigatorFieldValue = function(val){
                             return val || '<div class="center">-</div>'
                         };
-                        XNAT.admin.investigatorProjectList = function(val){
-                            return val.map(function(item){
-                                return '<a class="link" href="/data/projects/' + item + '">' + item + '</a>'
+                        XNAT.admin.investigatorProjectList = function(projects){
+                            return projects.map(function(proj){
+                                return '<a title="Go to project page for ' + proj + '" class="link" href="/data/projects/' + proj + '">' + proj + '</a>'
                             }).join(', ');
                         };
             items:

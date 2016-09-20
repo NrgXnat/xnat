@@ -73,36 +73,38 @@ var XNAT = getObject(XNAT);
         message[toUnderscore(name)] = message[name];  // under_score names
     });
 
-
     var regex = {
-        required: /[\S\W]+/,                // whitespace characters will still validate
+        //required: /[\S\W]+/,                // whitespace characters will still validate
         notEmpty: /[\S]/,                   // must contain more than just whitespace characters
         rule: /^(.+?)\[(.+)\]$/,            // ?
         //numeric: /^-?\d*\d{3}[,]*\d[.]*\d+$/,
         integer: /^-?[0-9]+$/,              // positive or negative whole number
         natural: /^[0-9]+$/,                // positive whole number
-        naturalNoZero: /^[1-9][0-9]*$/,     // no leading 0
-        decimal: /^-?[0-9]*\.?[0-9]+$/,
-        hexadecimal: /^[0-9a-f]+$/,
-        email: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
-        alpha: /^[a-z]+$/i,                 // ONLY letters
-        alphaSafe: /^[a-z_]+$/i,            // ONLY letters and underscores
-        alphaDash: /^[a-z_\-]+$/i,          // ONLY letters, underscore, and dash
-        alphaNum: /^[a-z0-9]+$/i,           // ONLY letters and numbers
-        alphaNumSafe: /^[a-z0-9_]+$/i,      // ONLY letters, numbers, and underscore
-        alphaNumDash: /^[a-z0-9_\-]+$/i,    // ONLY letters, numbers, underscore, and dash
-        alphaNumDashSpace: /^[a-z0-9_\- ]+$/i, // ONLY letters, numbers, underscore, dash, and space
-        idSafe: /^[a-z][a-z0-9_\-]+$/i,     // safe to use as an ID - alphasafe and must start with a letter
-        idStrict: /^[a-z][a-z0-9_]+$/i,     // 'idSafe' without hyphens
-        ip: /^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})$/i,
-        base64: /[^a-zA-Z0-9\/+=]/i,
-        numericDash: /^[\d\-\s]+$/,
-        url: /^((http|https):\/\/(\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/,
-        uri: /^([\/](\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/,
+        naturalNoZero: /^([1-9]+[0-9]*)$/,  // positive whole number, no leading 0s
+        decimal: /^(-?[0-9]*\.?[0-9])$/,
+        hexadecimal: /^[0-9a-f]$/i,
+        email: /^([a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))$/i,
+        alpha: /^[a-z]$/i,                 // ONLY letters
+        alphaSafe: /^[a-z_]$/i,            // ONLY letters and underscores
+        alphaDash: /^[a-z_\-]$/i,          // ONLY letters, underscore, and dash
+        alphaNum: /^[a-z0-9]$/i,           // ONLY letters and numbers
+        alphaNumSafe: /^[a-z0-9_]$/i,      // ONLY letters, numbers, and underscore
+        alphaNumDash: /^[a-z0-9_\-]$/i,    // ONLY letters, numbers, underscore, and dash
+        alphaNumDashSpace: /^[a-z0-9_\- ]$/i, // ONLY letters, numbers, underscore, dash, and space
+        idSafe: /^([a-z][a-z0-9_\-]*)$/i,     // safe to use as an ID - alphasafe and must start with a letter
+        idStrict: /^([a-z][a-z0-9_]*)$/i,    // 'idSafe' without hyphens
+        ip: /^(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2}))$/i,
+        base64: /^([^a-zA-Z0-9\/+=])$/i,
+        numericDash: /^[\d\-\s]$/,
+        //url: /^(((http|https):\/\/(\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?)$/,
+        //url: /^(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&/=]*))$/i,
+        url: /^(https?:\/\/[^\/\s]+(\/.*)?)$/i, // keep it simple for less strict url validation
+        //uri: /^(([\/](\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/])))$/,
+        uri: /^(\/\w*)/i, // simpler URI check only requires string start with a single '/'
         // these date regexes can't check leap years or other incorrect MM/DD combos
-        dateISO: /^(19|20)\d\d([- /.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$/,
-        dateUS: /^(0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d$/,
-        dateEU: /^(0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.](19|20)\d\d$/,
+        dateISO: /^((19|20)\d\d([- /.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01]))$/,
+        dateUS: /^((0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d)$/,
+        dateEU: /^((0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.](19|20)\d\d)$/,
         // CRON!!!!!  (Say it like "KHAN!!!!!")
         cronWords: /^@(reboot|yearly|annually|monthly|weekly|daily|midnight|hourly)$/i,
         cronSeconds: /^((\*|\?|0|([1-9]|[1-5][0-9]))(\/\d+)?)$/,
@@ -129,6 +131,7 @@ var XNAT = getObject(XNAT);
     regex.alphaNumericSafe = regex.alphaNumSafe;
     regex.ipAddr = regex.ipAddress = regex.ip;
     regex.fullUrl = regex.url;
+    regex.path = regex.uri;
     regex.date = regex.dateISO;
 
     // auto-generate alternate property names from camelCase names
@@ -147,6 +150,19 @@ var XNAT = getObject(XNAT);
     // define custom test methods for more complex validations
     var test = {};
 
+    test.required = function(){
+        // 'this' is the parent Validator instance
+        return (new Validator(this.element)).required().validated;
+    };
+
+    test.empty = function(value){
+        return !(value+'');
+    };
+
+    test.not = function(value, not){
+        return (new Validator()).val(value).not(not).validated;
+    };
+
     test.numeric = test.number = function(value){
         console.log('numeric');
         return isNumeric(value);
@@ -157,7 +173,7 @@ var XNAT = getObject(XNAT);
         var parts = value.split(/([0-9]+)/);
         var units = /\s+(sec|second|min|minute|hour|day|week|month|year)(s)?\s*/;
         var num = true;
-        var valid = true;
+        var valid = value ? true : false;
         var i = parts[0] === '' ? 1 : 0; // start i at 1 if parts[0] is an empty string
         var part;
         while (parts[i] && valid === true) {
@@ -198,10 +214,10 @@ var XNAT = getObject(XNAT);
             regex.cronWeekdays
         ];
 
-        var errors = 0;
+        var errors = 6;
 
         parts.forEach(function(part, i){
-            errors = tests[i].test(part) ? 0 : errors + 1;
+            errors = tests[i].test(part) ? errors - 1 : errors ;
         });
 
         return errors === 0;
@@ -279,14 +295,18 @@ var XNAT = getObject(XNAT);
     test.lessThanOrEqualTo = test.lessThanOrEqual;
     test.lte = test.lessThanOrEqual;
 
-    test.equalTo = function(value, test){
-        return value+'' === test+''
+    test.equalTo = function(value, testValue){
+        if (/^![^!]/.test(testValue)){
+            return value+'' !== testValue+'';
+        }
+        return value+'' === testValue+''
     };
     test.equals = test.equalTo;
+    test.eq = test.equalTo;
 
     // date checks
-    test.greaterThanDate = function(field, date){
-        var enteredDate = getValidDate(field.value),
+    test.greaterThanDate = function(value, date){
+        var enteredDate = getValidDate(value),
             validDate   = getValidDate(date);
         if (!validDate || !enteredDate) {
             return false;
@@ -294,8 +314,8 @@ var XNAT = getObject(XNAT);
         return enteredDate > validDate;
     };
     test.gtDate = test.greaterThanDate;
-    test.greaterThanOrEqualDate = function(field, date){
-        var enteredDate = getValidDate(field.value),
+    test.greaterThanOrEqualDate = function(value, date){
+        var enteredDate = getValidDate(value),
             validDate   = getValidDate(date);
         if (!validDate || !enteredDate) {
             return false;
@@ -304,8 +324,8 @@ var XNAT = getObject(XNAT);
     };
     test.greaterThanOrEqualToDate = test.greaterThanOrEqualDate;
     test.gteDate = test.greaterThanOrEqualDate;
-    test.lessThanDate = function(field, date){
-        var enteredDate = getValidDate(field.value),
+    test.lessThanDate = function(value, date){
+        var enteredDate = getValidDate(value),
             validDate   = getValidDate(date);
         if (!validDate || !enteredDate) {
             return false;
@@ -313,8 +333,8 @@ var XNAT = getObject(XNAT);
         return enteredDate < validDate;
     };
     test.ltDate = test.lessThanDate;
-    test.lessThanOrEqualDate = function(field, date){
-        var enteredDate = getValidDate(field.value),
+    test.lessThanOrEqualDate = function(value, date){
+        var enteredDate = getValidDate(value),
             validDate   = getValidDate(date);
         if (!validDate || !enteredDate) {
             return false;
@@ -393,7 +413,7 @@ var XNAT = getObject(XNAT);
             regex: '',
             value: '',
             values: [], // use to check more than one value
-            validated: null
+            validated: true // true until proven false
         };
         obj.element = obj.element$[0];
         if (element) {
@@ -482,6 +502,8 @@ var XNAT = getObject(XNAT);
 
     Validator.fn.is = function(type, args){
 
+        var parts = [];
+
         // check all if there's more than
         // one element in the selection
         if (this.len > 1) {
@@ -493,26 +515,52 @@ var XNAT = getObject(XNAT);
         // (this is necessary for working with chained methods)
         if (this.validated === false) { return this }
 
+        // skip on* types
+        if (/^on/i.test(type)) {
+            return this;
+        }
+
         if (this.trimValue) {
             this.value = (this.value+'').trim();
         }
 
+        // set 'allowEmpty' flag
+        if (type === 'allow-empty') {
+            this.allowEmpty = true;
+        }
+
+        if (typeof type === 'string') {
+            parts = type.split(':');
+            type = parts.shift();
+            if (parts.length) {
+                this.is(type, parts.join(':'));
+                return this;
+            }
+        }
+
+        // start with '!' for negation
+        // !eq:0
+        if (/^![^!]/.test(type)){
+            this.not(type.replace(/^!/, ''), args);
+            return this;
+        }
+
         // if there's a test['test'] method, use that
-        if (typeof test[type] == 'function') {
-            this.validated = test[type](this.value, args);
+        if (typeof test[type] === 'function') {
+            this.validated = test[type].apply(this, [].concat(this.value, args));
         }
         // if there's a regex defined (above) for 'type', use that
         else if (regex[type]) {
             this.pattern(regex[type]);
             // this.validated = regex[type].test(this.value);
         }
-        // if 'type' is a string, do a comparison
-        else if (typeof type == 'string') {
-            this.validated = test.equals(this.value, type);
+        // if 'type' is a string, number or boolean, do a string comparison
+        else if (/string|number|boolean/i.test(typeof type)) {
+            this.validated = test.equals.apply(this, [].concat(this.value, type, args));
         }
         // a 'type' function can also be passed
         // (must return boolean true or false)
-        else if (typeof type == 'function') {
+        else if (typeof type === 'function') {
             this.validated = type.apply(this, [].concat(args));
         }
         // otherwise do a regex test
@@ -526,14 +574,20 @@ var XNAT = getObject(XNAT);
             }
         }
 
+        // let empty string validate if 'allowEmpty' is true
+        if (this.allowEmpty && (this.value+'').trim() === ''){
+            this.validated = true;
+        }
+
         this.setClass();
 
         return this;
     };
 
-    Validator.fn.not = function(type){
-        this.is(type);
+    Validator.fn.not = function(type, args){
+        this.is(type, args);
         this.validated = !this.validated;
+        this.setClass();
         return this;
     };
 
@@ -562,8 +616,9 @@ var XNAT = getObject(XNAT);
     };
 
     Validator.fn.pattern = function(regex){
-        this.regex = regex;
+        this.regex = (typeof regex === 'string') ? new RegExp(regex) : regex;
         this.validated = regex.test(this.value);
+        this.setClass();
         return this;
     };
 
@@ -577,6 +632,7 @@ var XNAT = getObject(XNAT);
             targetValue = targetValue.trim();
         }
         this.validated = sourceValue === targetValue;
+        this.setClass();
         return this;
     };
 
@@ -595,8 +651,8 @@ var XNAT = getObject(XNAT);
     // example:
     // XNAT.validate('#sessions-concurrent-max').lessThan(1000).check();
     [   'minLength', 'maxLength', 'exactLength', 'isLength',
-        'greaterThan', 'greaterThanOrEqual', 'greaterThanOrEqualTo', 'gte',
-        'lessThan', 'lessThanOrEqual', 'lessThanOrEqualTo', 'lte',
+        'greaterThan', 'gt', 'greaterThanOrEqual', 'greaterThanOrEqualTo', 'gte',
+        'lessThan', 'lt', 'lessThanOrEqual', 'lessThanOrEqualTo', 'lte',
         'equalTo', 'equals', 'fileType'   ].forEach(function(method) {
 
         Validator.fn[method] = function (test) {
@@ -637,9 +693,15 @@ var XNAT = getObject(XNAT);
         else if (type !== false) {
             if (this.element$.dataAttr('validate')) {
                 types = this.element$.dataAttr('validate').split(/\s+/);
-                types.forEach(function(_type){
-                    var parts = _type.split(/[:=]/);
-                    self.is(parts[0], parts[1]);
+                $.each(types, function(idx, item){
+                    // stop if validation has already failed
+                    if (!self.validated) {
+                        return false;
+                    }
+                    // skip on* types
+                    if (!/^on/i.test(type)) {
+                        self.is(item);
+                    }
                 })
             }
         }
@@ -695,9 +757,42 @@ var XNAT = getObject(XNAT);
     };
 
 
+    // add event listeners for validation
+    $(function(){
+
+        var $body = $('body');
+
+        $body.on('focus', ':input[data-validate]', function(){
+            $(this).removeClass('valid invalid');
+        });
+
+        $body.on('blur', ':input[data-validate].onblur', function(){
+            validate(this).check();
+        });
+
+        // TODO: enable this after testing validation methods more thoroughly
+        // $body.on('submit', 'form.validate', function(e){
+        //     e.preventDefault();
+        //     var errors = 0,
+        //         $form = $(this);
+        //     $form.find(':input[data-validate]').not('.ignore').each(function(){
+        //         var valid = validate(this).check();
+        //         if (!valid) { errors++ }
+        //     });
+        //     return errors === 0;
+        //     // if (errors === 0){
+        //     //     //$form.removeClass('validate').submit();
+        //     //     return true;
+        //     // }
+        //     // return false;
+        // });
+
+    });
+
     // this script has loaded
     validate.loaded = true;
 
     return XNAT.validate = validate;
 
 }));
+

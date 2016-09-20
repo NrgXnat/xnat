@@ -1,11 +1,10 @@
-/**
- * PropertyBasedChannelRendererService
- * (C) 2011 Washington University School of Medicine
+/*
+ * org.nrg.notify.services.impl.PropertyBasedChannelRendererService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
+ * Released under the Simplified BSD.
  */
 package org.nrg.notify.services.impl;
 

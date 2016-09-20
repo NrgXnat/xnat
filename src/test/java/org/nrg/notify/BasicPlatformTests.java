@@ -1,11 +1,10 @@
-/**
- * BasicPlatformTests
- * (C) 2011 Washington University School of Medicine
+/*
+ * org.nrg.notify.BasicPlatformTests
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
+ * Released under the Simplified BSD.
  */
 package org.nrg.notify;
 
@@ -32,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
-
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = BasicPlatformTestConfiguration.class)

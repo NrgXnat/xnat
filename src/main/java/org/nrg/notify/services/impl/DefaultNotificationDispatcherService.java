@@ -1,11 +1,10 @@
-/**
- * HibernateNotificationDispatcherService
- * (C) 2011 Washington University School of Medicine
+/*
+ * org.nrg.notify.services.impl.DefaultNotificationDispatcherService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
- * <p>
- * Released under the Simplified BSD License
- * <p>
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.notify.services.impl;
 

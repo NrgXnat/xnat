@@ -1,9 +1,10 @@
 /*
- * DuplicateSubscriberException
- * (C) 2016 Washington University School of Medicine
+ * org.nrg.notify.exceptions.DuplicateSubscriberException
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
+ * Released under the Simplified BSD.
  */
 package org.nrg.notify.exceptions;
 

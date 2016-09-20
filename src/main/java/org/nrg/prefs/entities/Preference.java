@@ -1,13 +1,10 @@
 /*
- * ddict.entities.Resource
- *
- * Copyright (c) 2014, Washington University School of Medicine
+ * org.nrg.prefs.entities.Preference
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * XNAT is an open-source project of the Neuroinformatics Research Group.
  * Released under the Simplified BSD.
- *
- * Last modified 5/1/14 11:06 AM
  */
 
 package org.nrg.prefs.entities;

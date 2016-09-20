@@ -1,3 +1,12 @@
+/*
+ * org.nrg.prefs.services.impl.DefaultNrgPreferenceService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.prefs.services.impl;
 
 import org.nrg.framework.constants.Scope;

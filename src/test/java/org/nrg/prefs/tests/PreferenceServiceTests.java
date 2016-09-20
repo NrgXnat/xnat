@@ -1,13 +1,10 @@
 /*
- * org.nrg.ddict.services.TestDataDictionaryServices
- *
- * Copyright (c) 2014, Washington University School of Medicine
+ * org.nrg.prefs.tests.PreferenceServiceTests
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * XNAT is an open-source project of the Neuroinformatics Research Group.
  * Released under the Simplified BSD.
- *
- * Last modified 5/1/14 10:44 AM
  */
 
 package org.nrg.prefs.tests;

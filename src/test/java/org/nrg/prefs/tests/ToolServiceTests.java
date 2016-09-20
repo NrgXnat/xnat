@@ -1,10 +1,9 @@
 /*
  * org.nrg.prefs.tests.ToolServiceTests
- *
+ * XNAT http://www.xnat.org
  * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
- * XNAT is an open-source project of the Neuroinformatics Research Group.
  * Released under the Simplified BSD.
  */
 package org.nrg.prefs.tests;

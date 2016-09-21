@@ -536,6 +536,7 @@ var XNAT = getObject(XNAT);
         // set 'allowEmpty' flag
         if (type === 'allow-empty') {
             this.allowEmpty = true;
+            return this;
         }
 
         if (typeof type === 'string') {

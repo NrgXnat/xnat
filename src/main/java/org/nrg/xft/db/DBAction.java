@@ -814,7 +814,7 @@ public class DBAction {
                         Object newObject = oldHashClone.get(field);
                         if (!(newObject instanceof XFTItem)) {
                             final String newString = newObject.toString();
-                            if (StringUtils.isBlank(newString)) {
+                            if (StringUtils.isNotBlank(newString)) {
                                 if (!oldI.getPkNames().contains(field)) {
                                     logger.info("NEW:NULL OLD:" + newString);
                                     return true;
@@ -833,7 +833,7 @@ public class DBAction {
                         if (e.getAddin().equals("")) {
                             if (!(newObject instanceof XFTItem)) {
                                 final String newString = newObject.toString();
-                                if (StringUtils.isBlank(newString)) {
+                                if (StringUtils.isNotBlank(newString)) {
                                     if (!oldI.getPkNames().contains(field)) {
                                         logger.info("NEW:NULL OLD:" + newObject);
                                         return true;
@@ -855,7 +855,7 @@ public class DBAction {
                         }
                         if (!(newObject instanceof XFTItem)) {
                             final String newString = newObject.toString();
-                            if (StringUtils.isBlank(newString)) {
+                            if (StringUtils.isNotBlank(newString)) {
                                 if (!oldI.getPkNames().contains(field)) {
                                     logger.info("NEW:NULL OLD:" + newObject);
                                     return true;

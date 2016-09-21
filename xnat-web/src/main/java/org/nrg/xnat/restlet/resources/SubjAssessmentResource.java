@@ -168,8 +168,10 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
 		final UserI user = getUser();
 		try {
+			final boolean allowDataDeletion = isQueryVariableTrue("allowDataDeletion");
+
 			XFTItem template=null;
-			if (existing!=null){
+			if (existing!=null && !allowDataDeletion){
 				template=existing.getItem().getCurrentDBVersion();
 			}
 
@@ -497,10 +499,6 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 						return;
 					}
 					
-					boolean allowDataDeletion=false;
-					if(this.getQueryVariable("allowDataDeletion")!=null && this.getQueryVariable("allowDataDeletion").equals("true")){
-						allowDataDeletion=true;
-					}
 					PersistentWorkflowI wrk= WorkflowUtils.buildOpenWorkflow(user, expt.getItem(),newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(expt.getXSIType(), (existing==null))));
 					EventMetaI c=wrk.buildEvent();
 					

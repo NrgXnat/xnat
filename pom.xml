@@ -375,7 +375,7 @@
 
             <!-- PlexiViewer dependency definitions -->
             <dependency>
-                <groupId>org.nrg</groupId>
+                <groupId>org.nrg.xnat</groupId>
                 <artifactId>plexiviewer</artifactId>
                 <version>${xnat.version}</version>
             </dependency>
@@ -426,7 +426,6 @@
                 <artifactId>workflow</artifactId>
                 <version>1.0</version>
             </dependency>
-
 
             <!-- Pipeline dependency definitions -->
             <dependency>

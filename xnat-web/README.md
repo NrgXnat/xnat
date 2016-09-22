@@ -1,6 +1,6 @@
 # XNAT Web Application #
 
-This is the XNAT Web application build. The latest release version of XNAT is [1.7.0 Build #775 (Sep 22, 2016 12:34:05 PM)](https://bintray.com/nrgxnat/applications/XNAT/1.7.0). The source for the release version can be foound at [the 1.7.0 tag in the xnat-web source repository](https://bitbucket.org/xnatdev/xnat-web/commits/tag/1.7.0).
+This is the XNAT Web application build. The latest release version of XNAT is [1.7.0 Build #775 (Sep 22, 2016 12:34:05 PM)](https://bintray.com/nrgxnat/applications/XNAT/1.7.0). The source for the release version can be found at [the 1.7.0 tag in the xnat-web source repository](https://bitbucket.org/xnatdev/xnat-web/commits/tag/1.7.0).
 
 # Installing #
 

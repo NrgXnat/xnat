@@ -17,7 +17,10 @@
 package org.nrg.xdat.entities;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.net.util.SubnetUtils;
@@ -25,11 +28,10 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.utilities.Patterns;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 
-import java.security.SecureRandom;
 import javax.persistence.*;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -97,7 +99,7 @@ public class AliasToken extends AbstractHibernateEntity {
 
     /**
      * Sets the time the token is expected to expire. See {@link #getEstimatedExpirationTime()} for an explanation of
-     * why the expiration time is only expected and not guaranteeed.
+     * why the expiration time is only expected and not guaranteed.
      *
      * @param estimatedExpirationTime    The time at which the alias token is expected to expire.
      */
@@ -212,7 +214,50 @@ public class AliasToken extends AbstractHibernateEntity {
             _log.info("Found invalid IP address: " + address);
         }
 
+
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(final Object object) {
+        if (this == object) {
+            return true;
+        }
+
+        if (!(object instanceof AliasToken)) {
+            return false;
+        }
+
+        final AliasToken token = (AliasToken) object;
+
+        return new EqualsBuilder()
+                .appendSuper(super.equals(object))
+                .append(isSingleUse(), token.isSingleUse())
+                .append(getAlias(), token.getAlias())
+                .append(getSecret(), token.getSecret())
+                .append(getEstimatedExpirationTime(), token.getEstimatedExpirationTime())
+                .append(getXdatUserId(), token.getXdatUserId())
+                .append(getValidIPAddresses(), token.getValidIPAddresses())
+                .isEquals();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .appendSuper(super.hashCode())
+                .append(getAlias())
+                .append(getSecret())
+                .append(getEstimatedExpirationTime())
+                .append(isSingleUse())
+                .append(getXdatUserId())
+                .append(getValidIPAddresses())
+                .toHashCode();
     }
 
     /**

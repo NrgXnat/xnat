@@ -152,7 +152,7 @@ public class Users {
      *
      * @return
      */
-    public static List<UserI> getUsersByEmail(String email) {
+    public static List<? extends UserI> getUsersByEmail(String email) {
         final UserManagementServiceI service = getUserManagementService();
         return service.getUsersByEmail(email);
     }
@@ -185,7 +185,7 @@ public class Users {
      *
      * @return
      */
-    public static List<UserI> getUsers() {
+    public static List<? extends UserI> getUsers() {
         final UserManagementServiceI service = getUserManagementService();
         return service.getUsers();
     }

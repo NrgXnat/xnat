@@ -23,7 +23,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.daos.AliasTokenDAO;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +38,10 @@ import java.util.Set;
 @Service
 public class HibernateAliasTokenService extends AbstractHibernateEntityService<AliasToken, AliasTokenDAO> implements AliasTokenService {
     @Autowired
-    public HibernateAliasTokenService(final AliasTokenDAO dao, final SiteConfigPreferences preferences) {
+    public HibernateAliasTokenService(final AliasTokenDAO dao, final SiteConfigPreferences preferences, final UserManagementServiceI userService) {
         _dao = dao;
         _preferences = preferences;
+        _userService = userService;
     }
 
     /**
@@ -76,8 +77,7 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
     @Override
     @Transactional
     public AliasToken issueTokenForUser(final String username) throws Exception {
-        UserI user = Users.getUser(username);
-        return issueTokenForUser(user);
+        return issueTokenForUser(_userService.getUser(username));
     }
 
     @Override
@@ -225,6 +225,7 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
 
     private static final Log _log = LogFactory.getLog(HibernateAliasTokenService.class);
 
-    private final AliasTokenDAO         _dao;
-    private final SiteConfigPreferences _preferences;
+    private final AliasTokenDAO          _dao;
+    private final SiteConfigPreferences  _preferences;
+    private final UserManagementServiceI _userService;
 }

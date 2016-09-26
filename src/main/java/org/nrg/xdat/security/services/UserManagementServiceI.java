@@ -56,7 +56,7 @@ public interface UserManagementServiceI {
 	 * @param email    The email of the user(s) to retrieve.
 	 * @return Any users with the indicated email address.
 	 */
-	List<UserI> getUsersByEmail(String email);
+	List<? extends UserI> getUsersByEmail(String email);
 	
 	/**
 	 * Gets the guest user object.
@@ -70,7 +70,7 @@ public interface UserManagementServiceI {
 	 * Return a complete list of all the users in the database.
 	 * @return A list of all the users in the database.
 	 */
-	List<UserI> getUsers();
+	List<? extends UserI> getUsers();
 	
 	/**
 	 * Return a string identifying the type of user implementation that is being used (xdat:user)

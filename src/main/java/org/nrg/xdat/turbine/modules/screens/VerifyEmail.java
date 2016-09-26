@@ -50,7 +50,7 @@ public class VerifyEmail extends VelocitySecureScreen {
         try {
             if (StringUtils.isNotBlank(userID)) {
                 final UserI user = Users.getUser(userID);
-                final List<UserI> users = getAllUsersWithEmail(user.getEmail());
+                final List<? extends UserI> users = getAllUsersWithEmail(user.getEmail());
                 final List<UserI> verified = new ArrayList<>();
 
                 final boolean autoApproveRegistered = XDAT.getSiteConfigPreferences().getUserRegistration();
@@ -188,7 +188,7 @@ public class VerifyEmail extends VelocitySecureScreen {
      * @param email    The email we are searching on.
      * @return ItemCollection containing all users with the given email 
      */
-    private List<UserI> getAllUsersWithEmail(String email) throws Exception{
+    private List<? extends UserI> getAllUsersWithEmail(String email) throws Exception{
         return Users.getUsersByEmail(email);
      }
 

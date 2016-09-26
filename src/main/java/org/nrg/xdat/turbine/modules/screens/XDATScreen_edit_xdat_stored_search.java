@@ -45,7 +45,7 @@ public class XDATScreen_edit_xdat_stored_search extends AdminEditScreenA {
 	 * @see org.nrg.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
 	 */
 	public void finalProcessing(RunData data, Context context) {
-		List<UserI> allUsers=Users.getUsers();
+		List<? extends UserI> allUsers=Users.getUsers();
 		Hashtable<String,String> users_h = new Hashtable<String,String>();
 		
 		for(UserI u: allUsers){

@@ -8,17 +8,18 @@
   ~ Last modified 12/12/13 5:13 PM
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-	    <version>1.7.0</version>
+        <version>1.7.0</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
+    <version>1.7.1-SNAPSHOT</version>
 
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>
@@ -77,18 +78,18 @@
             <artifactId>config</artifactId>
         </dependency>
         <dependency>
-			<groupId>org.nrg</groupId>
-			<artifactId>mail</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.nrg</groupId>
-			<artifactId>framework</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.nrg</groupId>
-			<artifactId>automation</artifactId>
-		</dependency>
-		<dependency>
+            <groupId>org.nrg</groupId>
+            <artifactId>mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.nrg</groupId>
+            <artifactId>framework</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.nrg</groupId>
+            <artifactId>automation</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
@@ -152,15 +153,15 @@
             <groupId>javax.management.j2ee</groupId>
             <artifactId>javax.management.j2ee-api</artifactId>
         </dependency>
- 	    <dependency>
-	        <groupId>io.projectreactor</groupId>
-	        <artifactId>reactor-bus</artifactId>
-	   </dependency>
-	   <dependency>
-	       <groupId>io.projectreactor</groupId>
-	       <artifactId>reactor-core</artifactId>
-	   </dependency>
-       <dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-bus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
@@ -300,8 +301,8 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-                <scope>test</scope>
-            </dependency>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>

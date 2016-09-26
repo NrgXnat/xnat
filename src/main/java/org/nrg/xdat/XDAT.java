@@ -733,7 +733,7 @@ public class XDAT implements Initializable, Configurable{
 		// If we made it this far, there are no subscribers to the indicated site-wide event, so create the requested subscribers
 		final List<String> newSubscriberEmailList = StringUtils.isBlank(newSubscriberEmails) ? new ArrayList<String>() : Arrays.asList(newSubscriberEmails.split("[\\s]*,[\\s]*"));
 		for(String newSubscriberEmailString : newSubscriberEmailList){
-			List<UserI> users = Users.getUsersByEmail(newSubscriberEmailString);
+			List<? extends UserI> users = Users.getUsersByEmail(newSubscriberEmailString);
 			if(users!=null && users.size()>0){
 				for(UserI user : users){
 					Subscriber subscriber = getNotificationService().getSubscriberService().getSubscriberByName(user.getUsername());

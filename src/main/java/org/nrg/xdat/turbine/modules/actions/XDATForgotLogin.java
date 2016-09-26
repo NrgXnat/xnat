@@ -55,7 +55,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
 		if (!StringUtils.isBlank(email)) {
             //check email
 			
-			List<UserI> users=Users.getUsersByEmail(email);
+			List<? extends UserI> users=Users.getUsersByEmail(email);
 			
             if (users==null || users.size()==0){
                 data.setMessage("Unknown email address.");

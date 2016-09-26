@@ -74,8 +74,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
         		String noWhiteEmail = emailWithWhite.trim();
         		found.setEmail(emailWithWhite);
 
-        		List<UserI> matches=Users.getUsersByEmail(emailWithWhite);
-        		List<UserI> matches2=Users.getUsersByEmail(noWhiteEmail);
+        		List<? extends UserI> matches=Users.getUsersByEmail(emailWithWhite);
+        		List<? extends UserI> matches2=Users.getUsersByEmail(noWhiteEmail);
 
                 if (matches.size()==0 && matches2.size()==0) {
 	                String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it

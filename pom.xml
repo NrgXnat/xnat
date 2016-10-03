@@ -93,6 +93,7 @@
         <commons-collections.version>3.2.1</commons-collections.version>
         <commons-collections4.version>4.0</commons-collections4.version>
         <commons-configuration.version>1.10</commons-configuration.version>
+        <commons-configuration2.version>2.1</commons-configuration2.version>
         <commons-dbcp2.version>2.1.1</commons-dbcp2.version>
         <commons-discovery.version>0.5</commons-discovery.version>
         <commons-email.version>1.4</commons-email.version>
@@ -651,6 +652,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>${commons-collections4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>${commons-configuration2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>

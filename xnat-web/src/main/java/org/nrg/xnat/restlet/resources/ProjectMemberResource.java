@@ -118,7 +118,7 @@ public class ProjectMemberResource extends SecureResource {
 					}
 					if (newUser == null) {
 						//by email
-						List<UserI> items = Users.getUsersByEmail(uID);
+						List<? extends UserI> items = Users.getUsersByEmail(uID);
 						if (items.size() > 0) {
 							newUsers.addAll(items);
 						} else {

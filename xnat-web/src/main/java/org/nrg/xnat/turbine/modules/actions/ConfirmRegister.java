@@ -51,7 +51,7 @@ public class ConfirmRegister extends SecureAction {
             	//allowed to have multiple accounts with the admin email address
             	if(!StringUtils.equals(newUser.getEmail(), XDAT.getSiteConfigPreferences().getAdminEmail()))
             	{
-            		List<UserI> match=Users.getUsersByEmail(newUser.getEmail());
+            		List<? extends UserI> match=Users.getUsersByEmail(newUser.getEmail());
             		if(match.size()>0){
             			current=match.get(0);
             		}

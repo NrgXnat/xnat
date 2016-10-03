@@ -193,7 +193,7 @@ public class MailRestlet extends SecureResource {
                     }
                 } catch (NumberFormatException | UserNotFoundException exception) {
                     // If not an integer, we'll try it as an email address. It has to match an existing email address in the system!
-                    List<UserI> users = Users.getUsersByEmail(id);
+                    List<? extends UserI> users = Users.getUsersByEmail(id);
                     if (users == null || users.size() == 0) {
                         addIssue(String.format("The user email %s was not found in the system and was not included on the email.", id));
                     } else {

@@ -155,7 +155,7 @@ public class SetArcSpecs extends AdminAction {
                 Matcher emailMatcher = PATTERN_EMAIL.matcher(address);
                 if (emailMatcher.matches()) {
                     // Handle this as an email.
-                    List<UserI> users = Users.getUsersByEmail(email = address);
+                    List<? extends UserI> users = Users.getUsersByEmail(email = address);
                     if (users == null || users.size() == 0) {
                         // If we didn't find the user, do something.
                         // TODO: Need to add users that aren't located to a list of error messages.

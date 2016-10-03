@@ -97,7 +97,7 @@ public class UsersApi extends AbstractXapiRestController {
                 return new ResponseEntity<>(status);
             }
         }
-        final List<UserI> users = getUserManagementService().getUsers();
+        final List<? extends UserI> users = getUserManagementService().getUsers();
         final List<User> beans = new ArrayList<>();
         if (users != null && users.size() > 0) {
             for (UserI user : users) {

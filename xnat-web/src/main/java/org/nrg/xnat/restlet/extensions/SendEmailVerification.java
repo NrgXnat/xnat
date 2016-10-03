@@ -68,7 +68,7 @@ public class SendEmailVerification extends Resource {
     }
 
     private UserI getXDATUser(String email) throws Exception{
-       List<UserI> users=Users.getUsersByEmail(email);
+       List<? extends UserI> users=Users.getUsersByEmail(email);
        // If no user could be found throw EmailNotFoundException
        if(users.size()==0){ throw new EmailNotFoundException("No Such Email Exists."); }
        

@@ -9,15 +9,14 @@
 
 package org.nrg.xnat.restlet.services;
 
-import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
-import org.nrg.framework.services.SerializerService;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -29,9 +28,7 @@ import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
-import java.util.Map;
 
 public class AliasTokenRestlet extends SecureResource {
     private static final String PARAM_OPERATION = "OPERATION";
@@ -66,7 +63,7 @@ public class AliasTokenRestlet extends SecureResource {
             }
             try {
                 AliasToken token = StringUtils.isBlank(_username) ? getService().issueTokenForUser(user) : getService().issueTokenForUser(_username);
-                return new StringRepresentation(mapToken(token));
+                return new StringRepresentation(_serializer.toJson(token));
             } catch (Exception exception) {
                 throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "An error occurred retrieving the user: " + _username, exception);
             }
@@ -89,20 +86,6 @@ public class AliasTokenRestlet extends SecureResource {
         }
     }
 
-    private String mapToken(final AliasToken token) {
-        Map<String, String> map = Maps.newHashMap();
-        map.put("alias", token.getAlias());
-        map.put("secret", token.getSecret());
-        if (token.getEstimatedExpirationTime() != null) {
-            map.put("estimatedExpirationTime", FORMATTER.format(token.getEstimatedExpirationTime()));
-        }
-        try {
-            return _serializer.toJson(map);
-        } catch (IOException ignored) {
-            return "";
-        }
-    }
-
     @Override
     public Representation represent(Variant variant) throws ResourceException {
         return represent();
@@ -114,8 +97,6 @@ public class AliasTokenRestlet extends SecureResource {
         }
         return _service;
     }
-
-    private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("yyyyMMdd_HHmmss");
 
     private final SerializerService _serializer;
     private       AliasTokenService _service;

@@ -54,9 +54,17 @@
         <xnat.app.name>XNAT</xnat.app.name>
 
         <xnat.version>1.7.0</xnat.version>
-        <xdat.version>${xnat.version}</xdat.version>
+        <xnatdev.version>1.7.1-SNAPSHOT</xnatdev.version>
+        <xdat.version>${xnatdev.version}</xdat.version>
+        <nrg.anonymize.version>${xnat.version}</nrg.anonymize.version>
+        <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.framework.version>${xnat.version}</nrg.framework.version>
+        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
+        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
+        <nrg.mail.version>${xnat.version}</nrg.mail.version>
+        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
+        <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.dicomedit.version>6.0</nrg.dicomedit.version>
         <nrg.dicomutils.version>1.3.1</nrg.dicomutils.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
@@ -213,27 +221,27 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>automation</artifactId>
-                <version>${nrg.framework.version}</version>
+                <version>${nrg.automation.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>dicomtools</artifactId>
-                <version>${nrg.framework.version}</version>
+                <version>${nrg.dicomtools.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>prefs</artifactId>
-                <version>${nrg.framework.version}</version>
+                <version>${nrg.prefs.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>mail</artifactId>
-                <version>${nrg.framework.version}</version>
+                <version>${nrg.mail.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>notify</artifactId>
-                <version>${nrg.framework.version}</version>
+                <version>${nrg.notify.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
@@ -243,17 +251,17 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>transaction</artifactId>
-                <version>${nrg.config.version}</version>
+                <version>${nrg.transaction.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>anonymize</artifactId>
-                <version>${xnat.version}</version>
+                <version>${nrg.anonymize.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>nrg-all</artifactId>
-                <version>${xnat.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
@@ -361,7 +369,7 @@
             <dependency>
                 <groupId>org.nrg.xdat</groupId>
                 <artifactId>core</artifactId>
-                <version>${xdat.version}</version>
+                <version>${xdatdev.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xdat</groupId>

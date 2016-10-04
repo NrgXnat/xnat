@@ -171,7 +171,8 @@ public class XMLPathShortcuts implements XMLPathShortcutsI {
         addShortCut(RECON_DATA, "type", "xnat:reconstructedImageData/type");
         addShortCut(RECON_DATA, "baseScanType", "xnat:reconstructedImageData/baseScanType");
         addShortCut(RECON_DATA, "xnat_reconstructedimagedata_id", "xnat:reconstructedImageData/xnat_reconstructedimagedata_id", true);
-
+        addShortCut(RECON_DATA, "xsiType", "xnat:reconstructedImageData/extension_item/element_name",true);
+        
         //assessor
         addShortCut(DERIVED_DATA, "ID", "xnat:experimentdata/ID");
         addShortCut(DERIVED_DATA, "visit_id", "xnat:experimentdata/visit_id");

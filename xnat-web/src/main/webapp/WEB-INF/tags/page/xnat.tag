@@ -2,6 +2,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
+<jsp:useBean id="themeService" class="org.nrg.xdat.services.impl.ThemeServiceImpl"/>
+
 <%@ attribute name="page" %>
 <%@ attribute name="title" %>
 <%@ attribute name="headTop" %>

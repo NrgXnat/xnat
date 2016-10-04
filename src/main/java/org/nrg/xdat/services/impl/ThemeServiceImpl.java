@@ -83,13 +83,13 @@ public class ThemeServiceImpl implements ThemeService {
                     String contents = sb.toString();
                     themeConfig = _serializer.deserializeJson(contents, ThemeConfig.class);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    _log.error("An error occurred trying to retrieve the theme file " + themeFile.getAbsolutePath(), e);
                 }
             }
             try {
                 setTheme(themeConfig);
             } catch (ThemeNotFoundException e) {
-                e.printStackTrace();
+                _log.error("The specified theme {} wasn't found.", themeConfig.getName());
             }
         }
         if (role != null) {

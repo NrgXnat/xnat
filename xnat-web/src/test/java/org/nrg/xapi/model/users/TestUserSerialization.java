@@ -64,7 +64,7 @@ public class TestUserSerialization {
         assertTrue(securedMap.has("email"));
         assertFalse(securedMap.has("password"));
         assertFalse(securedMap.has("salt"));
-        assertTrue(securedMap.has("admin"));
+        assertFalse(securedMap.has("admin"));
         assertTrue(securedMap.has("enabled"));
         assertFalse(securedMap.has("verified"));
 
@@ -85,7 +85,7 @@ public class TestUserSerialization {
         assertTrue(StringUtils.isNotBlank(securedOutput.getEmail()));
         assertTrue(StringUtils.isBlank(securedOutput.getPassword()));
         assertTrue(StringUtils.isBlank(securedOutput.getSalt()));
-        assertFalse(securedOutput.isAdmin());
+        assertNull(securedOutput.isAdmin());
         assertTrue(securedOutput.isEnabled());
         assertNull(securedOutput.isVerified());
 

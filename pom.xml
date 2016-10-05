@@ -69,10 +69,6 @@
         <finalName>nrg-transaction-${project.version}</finalName>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <!-- plugin>
@@ -87,17 +83,12 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
-        </plugins>
-    </build>
-
-    <reporting>
-        <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>cobertura-maven-plugin</artifactId>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
         </plugins>
-    </reporting>
+    </build>
 
     <repositories>
         <repository>

@@ -13,7 +13,7 @@
 	<parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.0</version>
+        <version>1.7.1-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>mail</artifactId>
@@ -143,7 +143,7 @@
         <repository>
             <id>org.nrg.xnat.maven.libraries.release</id>
             <name>XNAT Maven Release Libraries</name>
-            <url>https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -154,7 +154,7 @@
         <repository>
             <id>org.nrg.xnat.maven.libraries.snapshot</id>
             <name>XNAT Maven Snapshot Libraries</name>
-            <url>https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot</url>
             <releases>
                 <enabled>false</enabled>
             </releases>

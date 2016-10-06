@@ -93,8 +93,8 @@ repositories {
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-def version = Jvm.current().javaVersion
-if (version.java8Compatible || version.java9Compatible) {
+def javaVersion = Jvm.current().javaVersion
+if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
     if (hasProperty("rt.17.jar")) {
         // Solution for bootstrap classpath warning and possible issues with compatibility with 1.7 libraries
         // was taken from this post on discuss.gradle.org: http://bit.ly/24xD9j0
@@ -118,8 +118,8 @@ if (version.java8Compatible || version.java9Compatible) {
         logger.warn "\n"
         logger.warn "In some isolated instances, using a bootstrap library from a JDK version later than 1.7 can result in run-time errors.\n"
     }
-} else if (!version.java7Compatible) {
-    throw new BuildCancelledException("You are using a JDK version (${version}) that is not compatible with Java 7. The XNAT build will fail. Please install a JDK version of Java 7 or later.")
+} else if (!javaVersion.java7Compatible) {
+    throw new BuildCancelledException("You are using a JDK version (${javaVersion}) that is not compatible with Java 7. The XNAT build will fail. Please install a JDK version of Java 7 or later.")
 }
 
 if (hasProperty("archiveName")) {

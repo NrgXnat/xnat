@@ -128,9 +128,11 @@ public abstract class SecureAction extends VelocitySecureAction {
         }
         errorMessage.append("\n Cookies:\n");
 
-        Cookie[] cookies = request.getCookies();
-        for (final Cookie cookie : cookies) {
-            errorMessage.append(cookie.getName()).append(" ").append(cookie.getValue()).append(" ").append(cookie.getMaxAge()).append(" ").append(cookie.getDomain()).append("\n");
+        final Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (final Cookie cookie : cookies) {
+                errorMessage.append(cookie.getName()).append(" ").append(cookie.getValue()).append(" ").append(cookie.getMaxAge()).append(" ").append(cookie.getDomain()).append("\n");
+            }
         }
         return errorMessage.toString();
     }

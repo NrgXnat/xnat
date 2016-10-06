@@ -11,17 +11,17 @@
 package org.nrg.xft.identifier;
 
 public interface IDGeneratorI {	
-	public String generateIdentifier() throws Exception;
+	String generateIdentifier() throws Exception;
 	
-	public void setTable(String s);
-	public String getTable();
+	void setTable(String s);
+	String getTable();
 	
-	public void setDigits(Integer i);
-	public Integer getDigits();
+	void setDigits(Integer i);
+	Integer getDigits();
 	
-	public void setColumn(String s);
-	public String getColumn();
+	void setColumn(String s);
+	String getColumn();
 	
-	public void setCode(String s);
-	public String getCode();
+	void setCode(String s);
+	String getCode();
 }

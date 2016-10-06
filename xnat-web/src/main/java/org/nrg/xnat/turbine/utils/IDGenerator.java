@@ -13,7 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.identifier.IDGeneratorI;
-import org.nrg.xnat.services.impl.hibernate.HibernateHostInfoService;
+import org.nrg.xnat.services.system.HostInfoService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public class IDGenerator implements IDGeneratorI {
 	 */
 	private static String getHostInfo(){
 		if (hostInfo==null || hostInfo.isEmpty()) {
-			hostInfo =  HibernateHostInfoService.getService().getHostNumber();
+			hostInfo =  XDAT.getContextService().getBean(HostInfoService.class).getHostNumber();
 		}
 		return hostInfo;
 	}
@@ -178,5 +178,4 @@ public class IDGenerator implements IDGeneratorI {
 		site_id = StringUtils.replace(site_id, "^", "");
 		return site_id;
 	}
-	
 }

@@ -9,22 +9,12 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Calendar;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.http.HttpSession;
-
 import org.apache.commons.fileupload.FileItem;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatCatalogTagBean;
 import org.nrg.xdat.bean.base.BaseElement;
@@ -46,14 +36,16 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
-import org.nrg.xnat.helpers.uri.URIManager;
-import org.nrg.xnat.helpers.uri.URIManager.ArchiveItemURI;
-import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
-import org.nrg.xnat.utils.ResourceUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
+
+import javax.servlet.http.HttpSession;
+import java.io.*;
+import java.util.Calendar;
+import java.util.zip.ZipOutputStream;
 
 public class ExptFileUpload extends SecureAction {
 
@@ -411,12 +403,8 @@ public class ExptFileUpload extends SecureAction {
                     data.getParameters().setString("project", tempMR.getProject());
                 }
 
-// New code to refresh the file catalog
-                URIManager.DataURIA uri=UriParserUtils.parseURI("/archive/experiments/" + tempMR.getId());
-                ArchiveItemURI resourceURI = (ArchiveItemURI) uri;
-                UserI user = TurbineUtils.getUser(data);
-                ResourceUtils.refreshResourceCatalog(resourceURI, user, this.newEventInstance(data, EventUtils.CATEGORY.DATA, "Catalog(s) Refreshed"), true, true, true, true);
-// End new code
+                final CatalogService catalogService = XDAT.getContextService().getBean(CatalogService.class);
+                catalogService.refreshResourceCatalog(XDAT.getUserDetails(), "/archive/experiments/" + tempMR.getId());
 
                 if (TurbineUtils.HasPassedParameter("destination", data)){
                     this.redirectToReportScreen((String)TurbineUtils.GetPassedParameter("destination", data), tempMR.getItem(), data);

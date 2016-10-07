@@ -964,7 +964,9 @@ XNAT.app.abu.processFiles=function() {
 			paramText='';
 			for (var i=0;i<this.paramsToPass.length;i++) {
 				paramText+='<tr><td style="padding-bottom:5px"><span id="passParamText' + i + '" class="passParamText" style="font-weight:bold">' + this.paramsToPass[i].name + 
-						'</span></td><td style="padding-bottom:5px"><input type="text" size="30" id="passParamInput' + i + '" class="passParamInput"></td></tr>';
+						'</span></td><td style="padding-bottom:5px"><input type="text" size="30" id="passParamInput' + i + '" class="passParamInput" value="' + this.paramsToPass[i].defaultVal + '"></td>' +
+				           	'<td style="padding-bottom:5px;"><span id="passParamDesc' + i + '" class="passParamDesc" style="margin-left:10px;width:300px;float:left;">' + this.paramsToPass[i].description + "</span></td>" +  
+						 '</tr>';
 			}
 			$('#modalParamsToPassDiv').html('<div id="passParamErrorDiv" class="error hidden"></div><h3>' +
 				 ((this.paramsToPass.length>0) ? "Please supply values for the following parameters:" :  "Please supply a value for the following parameter:") +
@@ -1113,12 +1115,16 @@ XNAT.app.abu.saveUploaderConfiguration=function(configTriggerId, configEvent, sc
 	newConfigObj.parameters = undefined;
 	$(".ULC_parametersDiv").each(function() {
 		var parameterField = $(this).find(".ULC_parametersField").val();
+		var parameterDefault = $(this).find(".ULC_parametersDefault").val();
+		var parameterDesc = $(this).find(".ULC_parametersDesc").val();
 		if (typeof(parameterField)!=='undefined' && parameterField != null && parameterField.replace('/ /g','').length>0) {
 			if (typeof(newConfigObj.parameters)==='undefined' || newConfigObj.parameters == null) {
 				newConfigObj.parameters = [];
 			}
 			var newParam = {};
 			newParam.name = parameterField.trim();
+			newParam.defaultVal = parameterDefault.trim();
+			newParam.description = parameterDesc.trim();
 			newParam.type = $(this).find(".ULC_parametersType").val();
 			newParam.required = $(this).find(".ULC_parametersRequired").is(':checked');
 			newConfigObj.parameters.push(newParam);
@@ -1312,20 +1318,26 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 	configHtml+='<div style="margin-left:20px;width:100%"><p><b>User Supplied Parameters:</b><p><div id="ULC_parameters">';
 	for (var i=0;i<((typeof(configObj.parameters)!=='undefined' && configObj.parameters.length>0) ? configObj.parameters.length : 0);i++) {
 		var hasValue = (typeof(configObj.parameters)!=='undefined' && configObj.parameters.length>=(i+1));
-		var fieldValue = (hasValue && typeof(configObj.parameters[i].name)!==undefined) ? configObj.parameters[i].name : '';
-		var stringSelected = (hasValue && typeof(configObj.parameters[i].type)!==undefined && configObj.parameters[i].type=='String') ? 'selected' : '';
-		var integerSelected = (hasValue && typeof(configObj.parameters[i].type)!==undefined && configObj.parameters[i].type=='Integer') ? 'selected' : '';
-		var floatSelected = (hasValue && typeof(configObj.parameters[i].type)!==undefined && configObj.parameters[i].type=='Float') ? 'selected' : '';
-		var fieldRequired = (hasValue && typeof(configObj.parameters[i].required)!==undefined && configObj.parameters[i].required==false) ? '' : 'checked';
+		var fieldValue = (hasValue && typeof(configObj.parameters[i].name)!=='undefined') ? configObj.parameters[i].name : '';
+		var stringSelected = (hasValue && typeof(configObj.parameters[i].type)!=='undefined' && configObj.parameters[i].type=='String') ? 'selected' : '';
+		var integerSelected = (hasValue && typeof(configObj.parameters[i].type)!=='undefined' && configObj.parameters[i].type=='Integer') ? 'selected' : '';
+		var floatSelected = (hasValue && typeof(configObj.parameters[i].type)!=='undefined' && configObj.parameters[i].type=='Float') ? 'selected' : '';
+		var fieldRequired = (hasValue && typeof(configObj.parameters[i].required)!=='undefined' && configObj.parameters[i].required==false) ? '' : 'checked';
+		var fieldDefault = (hasValue && typeof(configObj.parameters[i].defaultVal)!=='undefined') ? configObj.parameters[i].defaultVal : '';
+		var fieldDesc = (hasValue && typeof(configObj.parameters[i].description)!=='undefined') ? configObj.parameters[i].description : '';
 		configHtml+='<div id="ULC_parametersDiv' + i + '" class="ULC_parametersDiv" style="margin-left:20px;margin-bottom:5px;width:100%">' +
-				 '<input type="text" size="20"  id="ULC_parametersField' + i + '"  class="ULC_parametersField" value="' + fieldValue + '">' + 
-				'  <select id="ULC_parametersType' + i  + '" class="ULC_parametersType">' + 
+				'<div style="float:left"><div class="abu-config-param-grp"><div class="abu-config-param-row">' +
+				'<div class="abu-config-param-div">Name:</div><input type="text" size="20"  id="ULC_parametersField' + i + '" class="ULC_parametersField" value="' + fieldValue + '" > ' + 
+				' <select style="margin-left:5px" id="ULC_parametersType' + i  + '" class="ULC_parametersType">' + 
 				'<option value="String" ' + stringSelected + '>String</option>' + 
 				'<option value="Integer" ' + integerSelected + '>Integer</option>' + 
 				'<option value="Float" ' + floatSelected + '>Float</option>' + 
 				'</select>  ' + 
-				' <input type="checkbox" id="ULC_parametersRequired"' + i + '" ' + fieldRequired + 
-				' class="ULC_parametersRequired"> Required? <button id="ULC_parametersRemove' + i + '" class="parametersRemove">Remove</button></div>';
+				'<input type="checkbox" style="margin-left:5px" id="ULC_parametersRequired"' + i + '" ' + fieldRequired + ' class="ULC_parametersRequired"> Required? </div>' + 
+				 '<div class="abu-config-param-row"><div class="abu-config-param-div">Default Value:</div><input type="text" size="20"  id="ULC_parametersDefault' + i + '"  class="ULC_parametersDefault" value="' + fieldDefault + '"></div>' + 
+				 '<div class="abu-config-param-row"><div class="abu-config-param-div">Description Text:</div><input type="text" size="50"  id="ULC_parametersDesc' + i + '"  class="ULC_parametersDesc" value="' + fieldDesc + '"></div></div>' + 
+				'<button style="margin-left:10px" id="ULC_parametersRemove' + i + '" class="parametersRemove">Remove</button></div>' +
+				'</div>';
 	} 
 	configHtml+='</div>';
 	configHtml+='<span style="margin-left:20px"><button class="parametersAdd">Add Parameter</button></span>';
@@ -1425,6 +1437,8 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 
 		var divs = $(".ULC_parametersDiv");
 		var fields = $(".ULC_parametersField");
+		var defaultVal = $(".ULC_parametersDefault");
+		var desc = $(".ULC_parametersDesc");
 		for (var i=0;i<fields.length;i++) {
 			var val = $(fields.get(i)).val();
 			if (typeof(val)==='undefined' || val == null || val.length<1) {
@@ -1435,14 +1449,18 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 		var len = (divs.length>0) ? Number(($(divs).last().get(0)).id.replace("ULC_parametersDiv",""))+1 : 1;
 		$("#ULC_parameters").append(
 				'<div id="ULC_parametersDiv' + len + '" class="ULC_parametersDiv" style="margin-left:20px;margin-bottom:5px;width:100%">' +
-				'<input type="text" size="20"  id="ULC_parametersField' + i + '" class="ULC_parametersField"> ' + 
-				' <select id="ULC_parametersType' + len  + '" class="ULC_parametersType">' + 
+
+				'<div style="float:left"><div class="abu-config-param-grp"><div class="abu-config-param-row"><div class="abu-config-param-div">Name:</div><input type="text" size="20"  id="ULC_parametersField' + i + '" class="ULC_parametersField"> ' + 
+				' <select style="margin-left:5px" id="ULC_parametersType' + len  + '" class="ULC_parametersType">' + 
 				'<option value="String">String</option>' + 
 				'<option value="Integer">Integer</option>' + 
 				'<option value="Float">Float</option>' + 
 				'</select>  ' + 
-				'<input type="checkbox" id="ULC_parametersRequired"' + len + '" class="ULC_parametersRequired" checked> Required? <button id="ULC_parametersRemove' + len +
-				 '" class="parametersRemove">Remove</button></div>'
+				'<input type="checkbox" style="margin-left:5px" id="ULC_parametersRequired"' + len + '" class="ULC_parametersRequired" checked> Required? </div>' + 
+				 '<div class="abu-config-param-row"><div class="abu-config-param-div">Default Value:</div><input type="text" size="20"  id="ULC_parametersDefault' + i + '"  class="ULC_parametersDefault"></div>' + 
+				 '<div class="abu-config-param-row"><div class="abu-config-param-div">Description Text:</div><input type="text" size="50"  id="ULC_parametersDesc' + i + '"  class="ULC_parametersDesc"></div></div>' + 
+				'<button style="margin-left:10px" id="ULC_parametersRemove' + len + '" class="parametersRemove">Remove</button></div>' +
+				 '</div>'
 		);
 		$('#ULC_parametersRemove' + len).click(function(){ 
 			$("#ULC_parametersDiv" + len).remove(); 

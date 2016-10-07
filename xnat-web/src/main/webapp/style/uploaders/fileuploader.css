@@ -112,6 +112,10 @@ div.abu-xnat-interactivity-area-sub {
 .abu-percent { position:absolute; display:inline-block; top:0px; left:48%; line-height: 15px; }
 .abu-status { position:relative; display:none; }
 
+.abu-config-param-div { width:120px; text-align:right; margin-right:10px; float:left; }
+.abu-config-param-grp { margin-bottom:15px; float:left; border:1px solid #CCCCCC; width: 600px; padding:5px; }
+.abu-config-param-row { width:100%; margin-bottom:5px; float:left; margin-right:15px; }
+
 .opaque {
 	opacity:0.5;
         -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";

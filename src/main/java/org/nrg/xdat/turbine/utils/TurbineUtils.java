@@ -795,18 +795,20 @@ public class TurbineUtils {
     }
 
     public static Object GetPassedParameter(String s, RunData data, Object defualt) {
-        if (data.getParameters().get(s.toLowerCase()) != null) {
-            final Object o = TurbineUtils.escapeParam(data.getParameters().get(s.toLowerCase()));
-            if (o.toString().equalsIgnoreCase("")) {
-                return defualt;
-            } else {
-                return o;
-            }
-        } else {
+        if (data == null) {
             return defualt;
         }
+        final ParameterParser parameters = data.getParameters();
+        if (parameters != null) {
+            if (parameters.get(s.toLowerCase()) != null) {
+                final Object o = TurbineUtils.escapeParam(parameters.get(s.toLowerCase()));
+                if (StringUtils.isNotBlank(o.toString())) {
+                    return o;
+                }
+            }
+        }
+        return defualt;
     }
-
 
     public static void InstanciatePassedItemForScreenUse(RunData data, Context context) {
         try {

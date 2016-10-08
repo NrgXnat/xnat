@@ -21,17 +21,33 @@ if(typeof XNAT.app.abu.abuConfigs === 'undefined'){
 	 		});
 		},
 		modalOpts:{
-			width: 840,  
-			height: 580,  
-			id: 'xmodal-abu',  
+			width: 840,
+			height: 580,
+			id: 'xmodal-abu',
 			title: "Automation-Based Launcher/Uploader",
 			content: "<div id='modalUploadDiv'></div>",
-			ok: 'hide',
-			okLabel: 'Done',
-			okAction: function(){ },
-			cancel: 'hide',
-			cancelLabel: 'Cancel',
-			closeBtn: 'hide'
+			buttons: {
+				done: {
+					label: 'OK',
+					isDefault: true,
+					close: true,
+					action: function() {}
+				},
+				process: {
+					label: 'Process Uploaded Data',
+					isDefault: true,
+					close: false,
+					action: function() {}
+				},
+				cancel: {
+					label: 'Cancel',
+					close: true
+				}
+			},
+			beforeShow: function(obj) {
+				obj.$modal.find('#xmodal-abu-process-button').prop('disabled','disabled');
+				obj.$modal.find('#xmodal-abu-done-button').hide();
+			}
 		},
 
 		// Much of the remainder of the options code originates from ConfiguredResourceUploader.js
@@ -288,13 +304,13 @@ XNAT.app.abu.hasContextEvents = function(usage,dataType){
 XNAT.app.abu.eventHandlerChange = function(){
 	var eventHandler = $('#eventHandlerSelect').val();
 	if (typeof eventHandler === 'undefined' || eventHandler == null || eventHandler.length<1 && ($("#handlerDefaultOption").html() == 'NONE DEFINED' || $("#handlerDefaultOption").html() == 'SELECT')) {
-		$("#abu-process-button").addClass("abu-button-disabled");
+		$("#xmodal-abu-process-button").prop("disabled","disabled");
 		//$("#abu-process-button-text").html("&nbsp;");
-		$("#abu-process-button").css("visibility","hidden");
+		//$("#abu-process-button").css("visibility","hidden");
 	} else if ((XNAT.app.abu.usageSelect=='Launch') || (abu._fileUploader._uploadStarted && abu._fileUploader._filesInProgress<1)) {
-		$("#abu-process-button").removeClass("abu-button-disabled");
+		$("#xmodal-abu-process-button").prop("disabled",false);
 		//$("#abu-process-button-text").html("&nbsp;");
-		$("#abu-process-button").css("visibility","visible");
+		//$("#abu-process-button").css("visibility","visible");
 	}
 	XNAT.app.abu.filesProcessed = false;
 }
@@ -549,7 +565,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 	var props = $(XNAT.app.abu.currentLink).attr("data-props");
 	XNAT.app.abu.contextResourceConfigs = XNAT.app.abu.abuConfigs.getAllConfigsByType(type,props);		
 	var resourceConfigs = XNAT.app.abu.contextResourceConfigs;
-	var scriptDiv = "<div class='abu-xnat-interactivity-area-contents'>";
+	var scriptDiv = '';
 	var usageSelect = '<div class="abu-xnat-interactivity-area-sub usage-area"><span class="interactivityAreaSpan">Usage:</span> <select id="usageSelect" onchange="XNAT.app.abu.usageSelectAction()">'; 
                 if (typeof usageType == 'undefined' || usageType == 'upload') {
 			XNAT.app.abu.usageSelect = 'Upload';
@@ -586,7 +602,6 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 	scriptDiv+=resourceSelect;
 	scriptDiv+=eventSelect;
 	scriptDiv+=whatToDoSelect;
-	scriptDiv+='</div>';
 	try {
 		xmodal.open(XNAT.app.abu.abuConfigs.modalOpts);
 		abu.initializeUploader({
@@ -619,7 +634,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					// Force press of processing button after upload is started so workflow is created.  Only want one workflow per upload.
 					// Don't want cancellation of process during upload or incomplete file could end up in resource
 					if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)<0) {
-						$("#abu-done-button").addClass("abu-button-disabled");
+						$("#xmodal-abu-done-button").prop("disabled","disabled");
 					}
 					$("#resourceSelect").prop('disabled','disabled');
 					if ($("#whatToDoSelect").val() != "") {
@@ -631,18 +646,19 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					var eventHandler = $('#eventHandlerSelect').val();
 					if (typeof eventHandler !== 'undefined' && eventHandler != null && eventHandler.length>0) {
 						if ($(".abu-upload-complete-text").length==0) {
-							$("#abu-done-button").removeClass("abu-button-disabled");
+							// $("#abu-done-button").removeClass("abu-button-disabled");
 						} else {
-							$("#abu-done-button").addClass("abu-button-disabled");
+							// $("#abu-done-button").addClass("abu-button-disabled");
 						}
-						$("#abu-process-button").removeClass("abu-button-disabled");
-						$("#abu-process-button-text").html("Process Files");
-						$("#abu-process-button").css("visibility","visible");
+						$("#xmodal-abu-process-button").prop("disabled",false);
+						//$("#abu-process-button-text").html("Process Files");
+						//$("#abu-process-button").css("visibility","visible");
 					} else {
-						$("#abu-done-button-text").html("Done");
-						$("#abu-done-button-text").addClass("abu-done-button-done");
-						$("#abu-done-button-text").removeClass("abu-done-button-cancel");
-						$("#abu-done-button").removeClass("abu-button-disabled");
+						// $("#abu-done-button-text").html("Done");
+						// $("#abu-done-button-text").addClass("abu-done-button-done");
+						// $("#abu-done-button-text").removeClass("abu-done-button-cancel");
+						// $("#abu-done-button").removeClass("abu-button-disabled");
+						$('#xmodal-abu-done-button').show();
 					}
 				},
 			processFunction:function(){
@@ -655,7 +671,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			showUpdateOption:false,
 		});	
 		abu._fileUploader.buildUploaderDiv();
-		$(".abu-xnat-interactivity-area").html(scriptDiv);
+		$(".abu-xnat-interactivity-area-contents").html(scriptDiv);
 		XNAT.app.abu.populateEventHandlerSelect();
 		abu._fileUploader._currentAction = XNAT.app.abu.automationHandlerUrl(true);
 		if (typeof usageType !== 'undefined' && usageType != null) {
@@ -663,43 +679,46 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			if (usageType === 'launch') {
 				var eventHandler = $('#eventHandlerSelect').val();
 				if (eventHandler != undefined && eventHandler != null && eventHandler.length>0) {
-					$("#abu-process-button").removeClass("abu-button-disabled");
-					$("#abu-process-button").css("visibility","visible");
+					$("#xmodal-abu-process-button").prop("disabled",false);
+					$("#xmodal-abu-process-button").show();
 				} else {
-					$("#abu-done-button").removeClass("abu-button-disabled");
-					$("#abu-done-button-text").html("Done");
-					$("#abu-done-button-text").addClass("abu-done-button-done");
-					$("#abu-done-button-text").removeClass("abu-done-button-cancel");
+					// $("#abu-done-button").removeClass("abu-button-disabled");
+					// $("#abu-done-button-text").html("Done");
+					// $("#abu-done-button-text").addClass("abu-done-button-done");
+					// $("#abu-done-button-text").removeClass("abu-done-button-cancel");
+					$('#xmodal-abu-done-button').show();
 				}
-				$(".upload-area").css("display","none");
-				$(".whattodo-area").css("display","none");
-				$("#abu-upload-button").addClass("abu-button-disabled");
+				$(".upload-area").hide();
+				$(".whattodo-area").hide();
+				$(".abu-upload-button")
+					.hide()
+					.prop("disabled","disabled");
 				abu._fileUploader.DRAG_AND_DROP_ON = false;
-				$("#abu-upload-button").css("display","none");
-				$("#abu-process-button-text").html("Run script");
-				$("#abu-done-button-text").html("Cancel");
-				$("#abu-done-button-text").addClass("abu-done-button-cancel");
-				$("#abu-done-button-text").removeClass("abu-done-button-done");
+				$("#xmodal-abu-process-button").html("Run script");
+				// $("#abu-done-button-text").html("Cancel");
+				// $("#abu-done-button-text").addClass("abu-done-button-cancel");
+				// $("#abu-done-button-text").removeClass("abu-done-button-done");
+				$('#xmodal-abu-done-button').show();
 				if ($('#eventHandlerSelect option').size()>1 && $('#eventHandlerSelect').val()=="") {
-					$("#abu-process-button").addClass("abu-button-disabled");
-					//$("#abu-process-button-text").html("&nbsp;");
-					$("#abu-process-button").css("visibility","hidden");
+					$("#xmodal-abu-process-button").prop("disabled","disabled");
+					// $("#abu-process-button-text").html("&nbsp;");
+					// $("#xmodal-abu-process-button").hide();
 				} 
 				$("#file-uploader-instructions-sel").css("display","none");
 			} else {
 				XNAT.app.abu.populateWhatToDoSelect();
 				if ($('#whatToDoSelect option').size()>1 && $('#whatToDoSelect').val()=="") {
-					$("#abu-upload-button").addClass("abu-button-disabled");
+					$(".abu-upload-button").prop("disabled","disabled");
 					abu._fileUploader.DRAG_AND_DROP_ON = false;
 				} 
-				$("#abu-process-button").addClass("abu-button-disabled");
+				$("#xmodal-abu-process-button").prop("disabled","disabled");
 				//$("#abu-process-button-text").html("&nbsp;");
-				$("#abu-process-button").css("visibility","hidden");
-				$(".upload-area").css("display","none");
-				$(".eventhandler-area").css("display","none");
+				// $("#xmodal-abu-process-button").hide();
+				$(".upload-area").hide();
+				$(".eventhandler-area").hide();
 			}
 		} else {
-			$(".whattodo-area").css("display","none");
+			$(".whattodo-area").hide();
 		}
 	} catch(e) {
 		console.log(e.stack);
@@ -716,27 +735,30 @@ XNAT.app.abu.usageSelectAction = function(){
 	XNAT.app.abu.usageSelect = $('#usageSelect').val();
 	if (XNAT.app.abu.usageSelect=='Upload') {
 		XNAT.app.abu.populateEventHandlerSelect();
-		$("#abu-done-button").removeClass("abu-button-disabled");
-		$("#abu-upload-button").removeClass("abu-button-disabled");
+		$("#xmodal-abu-done-button")
+			.show()
+			.prop("disabled",false);
+		$(".abu-upload-button").prop("disabled",false);
 		abu._fileUploader.DRAG_AND_DROP_ON = true;
-		$("#abu-process-button").addClass("abu-button-disabled");
+		$("#xmodal-abu-process-button")
+			.hide()
+			.prop("disabled","disabled");
 		//$("#abu-process-button-text").html("&nbsp;");
-		$("#abu-process-button").css("visibility","hidden");
 		$("#script-select-text").html("Post-upload processing script:");
 		$("#resourceSelect").prop('disabled',false);
 		$(".response_text").html('');
 	} else if (XNAT.app.abu.usageSelect=='Launch') { 
 		XNAT.app.abu.populateEventHandlerSelect();
-		$("#abu-done-button").removeClass("abu-button-disabled");
-		$("#abu-upload-button").addClass("abu-button-disabled");
+		$("#xmodal-abu-done-button").show();
+		$(".abu-upload-button").prop("disabled","disabled");
 		abu._fileUploader.DRAG_AND_DROP_ON = false;
 		var eventHandler = $('#eventHandlerSelect').val();
 		if (eventHandler != undefined && eventHandler != null && eventHandler.length>0) {
-			$("#abu-process-button").removeClass("abu-button-disabled");
-			$("#abu-process-button").css("visibility","visible");
+			$("#xmodal-abu-process-button").prop("disabled",false);
+			// $("#xmodal-abu-process-button").show();
 		}
 		$("#script-select-text").html("Script to launch:");
-		$("#abu-process-button-text").html("Run script");
+		$("#xmodal-abu-process-button").html("Run script");
 		$("#resourceSelect").prop('disabled','disabled');
 		$(".response_text").html('');
 	}
@@ -775,15 +797,16 @@ XNAT.app.abu.whatToDoChange = function(){
 	XNAT.app.abu.updateModalAction();
 	$('#eventHandlerSelect').val(launchSelect);
 	if (typeof abu !== 'undefined' && abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
-		$("#abu-process-button").removeClass("abu-button-disabled");
-		$("#abu-process-button-text").html("Process files");
-		$("#abu-process-button").css("visibility","visible");
+		$("#xmodal-abu-process-button")
+			.prop("disabled","disabled")
+			.html("Process files")
+			.show();
 	}
 	if (XNAT.app.abu.usageSelect == 'Upload' && $('#whatToDoSelect option').size()>1 && $('#whatToDoSelect').val()=="") {
-		$("#abu-upload-button").addClass("abu-button-disabled");
+		$(".abu-upload-button").prop("disabled","disabled");
 		abu._fileUploader.DRAG_AND_DROP_ON = false;
 	} else if (typeof abu == 'undefined' || abu._fileUploader.uploadsStarted==0) {
-		$("#abu-upload-button").removeClass("abu-button-disabled");
+		$(".abu-upload-button").prop("disabled",false);
 		abu._fileUploader.DRAG_AND_DROP_ON = true;
 	} 
 	XNAT.app.abu.filesProcessed = false;
@@ -963,8 +986,10 @@ XNAT.app.abu.processFiles=function() {
 			xmodal.open(pModalOpts);
 			paramText='';
 			for (var i=0;i<this.paramsToPass.length;i++) {
-				paramText+='<tr><td style="padding-bottom:5px"><span id="passParamText' + i + '" class="passParamText" style="font-weight:bold">' + this.paramsToPass[i].name + 
-						'</span></td><td style="padding-bottom:5px"><input type="text" size="30" id="passParamInput' + i + '" class="passParamInput"></td></tr>';
+				paramText+='<tr><td style="padding-bottom:5px"><span id="passParamText' + i + '" class="passParamText" style="font-weight:bold">' + this.paramsToPass[i].name +
+					'</span></td><td style="padding-bottom:5px"><input type="text" size="30" id="passParamInput' + i + '" class="passParamInput" value="' + this.paramsToPass[i].defaultVal + '"></td>' +
+					'<td style="padding-bottom:5px;"><span id="passParamDesc' + i + '" class="passParamDesc" style="margin-left:10px;width:300px;float:left;">' + this.paramsToPass[i].description + "</span></td>" +
+					'</tr>';
 			}
 			$('#modalParamsToPassDiv').html('<div id="passParamErrorDiv" class="error hidden"></div><h3>' +
 				 ((this.paramsToPass.length>0) ? "Please supply values for the following parameters:" :  "Please supply a value for the following parameter:") +
@@ -1052,7 +1077,7 @@ XNAT.app.abu.continueProcessing=function() {
 			//if (XNAT.app.abu.usageSelect=='Upload') {
 			//	$("#resourceSelect").prop('disabled',false);
 			//} else if (XNAT.app.abu.usageSelect=='Launch') { 
-			//	$("#abu-process-button").removeClass("abu-button-disabled");
+			//	$("#abu-process-button").prop("disabled",false);
 			//}
 		});
 		processAjax.fail( function( data, textStatus, jqXHR ) {
@@ -1071,10 +1096,10 @@ XNAT.app.abu.continueProcessing=function() {
 			//if (XNAT.app.abu.usageSelect=='Upload') {
 			//	$("#resourceSelect").prop('disabled',false);
 			//} else if (XNAT.app.abu.usageSelect=='Launch') { 
-			//	$("#abu-process-button").removeClass("abu-button-disabled");
+			//	$("#abu-process-button").prop("disabled",false);
 			//}
 		});
-		$("#abu-done-button").removeClass("abu-button-disabled");
+		$("#xmodal-abu-done-button").prop("disabled",false);
 		setTimeout(function(){
 			if (document.getElementById("closeBox")!=null && document.getElementById("closeBox").checked) {
 				xmodal.message('Notice',"You will be sent an e-mail upon completion");
@@ -1113,12 +1138,16 @@ XNAT.app.abu.saveUploaderConfiguration=function(configTriggerId, configEvent, sc
 	newConfigObj.parameters = undefined;
 	$(".ULC_parametersDiv").each(function() {
 		var parameterField = $(this).find(".ULC_parametersField").val();
+		var parameterDefault = $(this).find(".ULC_parametersDefault").val();
+		var parameterDesc = $(this).find(".ULC_parametersDesc").val();
 		if (typeof(parameterField)!=='undefined' && parameterField != null && parameterField.replace('/ /g','').length>0) {
 			if (typeof(newConfigObj.parameters)==='undefined' || newConfigObj.parameters == null) {
 				newConfigObj.parameters = [];
 			}
 			var newParam = {};
 			newParam.name = parameterField.trim();
+			newParam.defaultVal = parameterDefault.trim();
+			newParam.description = parameterDesc.trim();
 			newParam.type = $(this).find(".ULC_parametersType").val();
 			newParam.required = $(this).find(".ULC_parametersRequired").is(':checked');
 			newConfigObj.parameters.push(newParam);
@@ -1317,15 +1346,21 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 		var integerSelected = (hasValue && typeof(configObj.parameters[i].type)!==undefined && configObj.parameters[i].type=='Integer') ? 'selected' : '';
 		var floatSelected = (hasValue && typeof(configObj.parameters[i].type)!==undefined && configObj.parameters[i].type=='Float') ? 'selected' : '';
 		var fieldRequired = (hasValue && typeof(configObj.parameters[i].required)!==undefined && configObj.parameters[i].required==false) ? '' : 'checked';
+		var fieldDefault = (hasValue && typeof(configObj.parameters[i].defaultVal)!==undefined) ? configObj.parameters[i].defaultVal : '';
+		var fieldDesc = (hasValue && typeof(configObj.parameters[i].description)!==undefined) ? configObj.parameters[i].description : '';
 		configHtml+='<div id="ULC_parametersDiv' + i + '" class="ULC_parametersDiv" style="margin-left:20px;margin-bottom:5px;width:100%">' +
-				 '<input type="text" size="20"  id="ULC_parametersField' + i + '"  class="ULC_parametersField" value="' + fieldValue + '">' + 
-				'  <select id="ULC_parametersType' + i  + '" class="ULC_parametersType">' + 
-				'<option value="String" ' + stringSelected + '>String</option>' + 
+			'<div style="float:left"><div class="abu-config-param-grp"><div class="abu-config-param-row">' +
+			'<div class="abu-config-param-div">Name:</div><input type="text" size="20"  id="ULC_parametersField' + i + '" class="ULC_parametersField" value="' + fieldValue + '" > ' +
+			'<select style="margin-left:5px" id="ULC_parametersType' + i  + '" class="ULC_parametersType">' +
+			'<option value="String" ' + stringSelected + '>String</option>' +
 				'<option value="Integer" ' + integerSelected + '>Integer</option>' + 
 				'<option value="Float" ' + floatSelected + '>Float</option>' + 
-				'</select>  ' + 
-				' <input type="checkbox" id="ULC_parametersRequired"' + i + '" ' + fieldRequired + 
-				' class="ULC_parametersRequired"> Required? <button id="ULC_parametersRemove' + i + '" class="parametersRemove">Remove</button></div>';
+				'</select>  ' +
+			'<input type="checkbox" style="margin-left:5px" id="ULC_parametersRequired"' + i + '" ' + fieldRequired + ' class="ULC_parametersRequired"> Required? </div>' +
+			'<div class="abu-config-param-row"><div class="abu-config-param-div">Default Value:</div><input type="text" size="20"  id="ULC_parametersDefault' + i + '"  class="ULC_parametersDefault" value="' + fieldDefault + '"></div>' +
+			'<div class="abu-config-param-row"><div class="abu-config-param-div">Description Text:</div><input type="text" size="50"  id="ULC_parametersDesc' + i + '"  class="ULC_parametersDesc" value="' + fieldDesc + '"></div></div>' +
+			'<button style="margin-left:10px" id="ULC_parametersRemove' + i + '" class="parametersRemove">Remove</button></div>' +
+			'</div>';
 	} 
 	configHtml+='</div>';
 	configHtml+='<span style="margin-left:20px"><button class="parametersAdd">Add Parameter</button></span>';
@@ -1425,6 +1460,8 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 
 		var divs = $(".ULC_parametersDiv");
 		var fields = $(".ULC_parametersField");
+		var defaultVal = $(".ULC_parametersDefault");
+		var desc = $(".ULC_parametersDesc");
 		for (var i=0;i<fields.length;i++) {
 			var val = $(fields.get(i)).val();
 			if (typeof(val)==='undefined' || val == null || val.length<1) {
@@ -1435,14 +1472,18 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 		var len = (divs.length>0) ? Number(($(divs).last().get(0)).id.replace("ULC_parametersDiv",""))+1 : 1;
 		$("#ULC_parameters").append(
 				'<div id="ULC_parametersDiv' + len + '" class="ULC_parametersDiv" style="margin-left:20px;margin-bottom:5px;width:100%">' +
-				'<input type="text" size="20"  id="ULC_parametersField' + i + '" class="ULC_parametersField"> ' + 
-				' <select id="ULC_parametersType' + len  + '" class="ULC_parametersType">' + 
+				'<div style="float:left"><div class="abu-config-param-grp"><div class="abu-config-param-row"><div class="abu-config-param-div">Name:</div><input type="text" size="20"  id="ULC_parametersField' + i + '" class="ULC_parametersField"> ' +
+				'<select style="margin-left:5px" id="ULC_parametersType' + len  + '" class="ULC_parametersType">' +
 				'<option value="String">String</option>' + 
 				'<option value="Integer">Integer</option>' + 
 				'<option value="Float">Float</option>' + 
-				'</select>  ' + 
-				'<input type="checkbox" id="ULC_parametersRequired"' + len + '" class="ULC_parametersRequired" checked> Required? <button id="ULC_parametersRemove' + len +
-				 '" class="parametersRemove">Remove</button></div>'
+				'</select>' +
+				'<input type="checkbox" style="margin-left:5px" id="ULC_parametersRequired"' + len + '" class="ULC_parametersRequired" checked> Required? </div>' +
+				'<div class="abu-config-param-row"><div class="abu-config-param-div">Default Value:</div><input type="text" size="20"  id="ULC_parametersDefault' + i + '"  class="ULC_parametersDefault"></div>' +
+				'<div class="abu-config-param-row"><div class="abu-config-param-div">Description Text:</div><input type="text" size="50"  id="ULC_parametersDesc' + i + '"  class="ULC_parametersDesc"></div></div>' +
+				'<button style="margin-left:10px" id="ULC_parametersRemove' + len + '" class="parametersRemove">Remove</button></div>' +
+				'</div>'
+
 		);
 		$('#ULC_parametersRemove' + len).click(function(){ 
 			$("#ULC_parametersDiv" + len).remove(); 

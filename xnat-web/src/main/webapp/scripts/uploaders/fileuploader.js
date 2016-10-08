@@ -38,66 +38,56 @@ abu.FileUploader = function(o){
 		$(this._options.element).append(
 			'<div class="abu-uploader">' +
 				'<div id="abu-files-processing" class="abu-files-processing">        Processing...... </div>' +
-				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel" onclick="abu._fileUploader.uploaderHelp()">?</a>' +
+				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel" onclick="abu._fileUploader.uploaderHelp()"><span class="icon icon-sm icon-qm"></span>Help</a>' +
 				'<div class="abu-upload-drop-area" style="display: none;"><span>Drop files here to upload</span></div>' +
 				'<div class="abu-xnat-interactivity-area">' +
+					'<div class="abu-xnat-interactivity-area-contents"></div>' +
+					'<div class="abu-options-div">' +
+					((this._options.showExtractOption) ?
+						'<div class="abu-options-cb" title = "Extract compressed files on upload (zip, tar, gz)"?>' +
+						'<input id="extractRequestBox" type="checkbox" value="1" checked="checked">' +
+						'Extract compressed files' +
+						'</div>' :
+							'<div class="abu-extract-zip"><input id="extractRequestBox" type="hidden" value="1"/></div>'
+					) +
+					((this._options.showCloseOption) ?
+						'<div class="abu-options-cb" title = "Close window upon submit and send e-mail upon completion">' +
+						'<input id="closeBox" type="checkbox" value="1">' +
+						'Close window upon submit' +
+						'</div>' : ""
+					) +
+					((this._options.showEmailOption) ?
+						'<div class="abu-options-cb" title = "Send e-mail upon completion">' +
+						'<input id="emailBox" type="checkbox" value="1">' +
+						'Send e-mail upon completion' +
+						'</div>' : ""
+					) +
+					((this._options.showUpdateOption) ?
+						'<div class="abu-options-cb" title = "Update existing records?">' +
+						'<input id="updateBox" type="checkbox" value="1">' +
+						'Update existing records?' +
+						'</div>' : ""
+					) +
+					((this._options.showVerboseOption) ?
+						'<div class="abu-options-cb" title = "Verbose status output?">' +
+						'<input id="verboseBox" type="checkbox" value="1"' +
+						'Verbose status output?' +
+						'</div>' : ""
+					) +
+					'</div>' +
 				'</div>' +
 			'<div id="abu-upload-button" class="abu-upload-button" style="position: relative; overflow: hidden; direction: ltr;">' + 
 				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input">' + 
 			'</div>' +
-			'<div id="abu-done-button" class="abu-done-button" style="position: relative; overflow: hidden; direction: ltr;">' + 
-				'<span id="abu-done-button-text" class="abu-done-button-cancel">Cancel</span><input type="image" name="done" class="abu-button-input" style="width:105px">' +
-			'</div>' +
-			'<div id="abu-process-button" class="abu-process-button " style="position: relative; overflow: hidden; direction: ltr;">' +
-				'<span id="abu-process-button-text">Process Files</span>' +
-				'<input type="image" name="process" class="abu-button-input" style="width:105px">' +
-			'</div>' +
-			'<div class="abu-options-div">' +
-			((this._options.showExtractOption) ?
-				'<div class="abu-options-cb" title = "Extract compressed files on upload (zip, tar, gz)"?>' +
-					'<input id="extractRequestBox" type="checkbox" value="1" checked="checked">' +
-					'Extract compressed files' +
-				'</div>' : 
-				'<div class="abu-extract-zip"><input id="extractRequestBox" type="hidden" value="1"/></div>'
-			) +
-			((this._options.showCloseOption) ?
-				'<div class="abu-options-cb" title = "Close window upon submit and send e-mail upon completion">' +
-					'<input id="closeBox" type="checkbox" value="1">' +
-					'Close window upon submit' +
-				'</div>' : "" 
-			) +
-			((this._options.showEmailOption) ?
-				'<div class="abu-options-cb" title = "Send e-mail upon completion">' +
-					'<input id="emailBox" type="checkbox" value="1">' +
-					'Send e-mail upon completion' +
-				'</div>' : "" 
-			) +
-			((this._options.showUpdateOption) ?
-				'<div class="abu-options-cb" title = "Update existing records?">' +
-					'<input id="updateBox" type="checkbox" value="1">' +
-					'Update existing records?' +
-				'</div>' : "" 
-			) +
-			((this._options.showVerboseOption) ?
-				'<div class="abu-options-cb" title = "Verbose status output?">' +
-					'<input id="verboseBox" type="checkbox" value="1"' +
-					'Verbose status output?' +
-				'</div>' : "" 
-			) +
-			'</div><br>' +
 			'<div class="abu-list-area"><ul class="abu-upload-list"></ul>' +
 				'<div class="response_text" style="display:none"></div>' +
 			'</div> ' 
 		); 
-		$("#abu-upload-button").mouseenter(function() { $(this).addClass("abu-upload-button-hover"); });
-		$("#abu-upload-button").mouseleave(function() { $(this).removeClass("abu-upload-button-hover"); });
-		$("#abu-upload-button").click(function() { $("#abu-done-button").removeClass("abu-button-disabled"); });
-		$("#abu-done-button").click(this._options.doneFunction);
-		$("#abu-done-button").mouseenter(function() { $(this).addClass("abu-done-button-hover"); });
-		$("#abu-done-button").mouseleave(function() { $(this).removeClass("abu-done-button-hover"); });
-		$("#abu-process-button").click(this._options.processFunction);
-		$("#abu-process-button").mouseenter(function() { $(this).addClass("abu-process-button-hover"); });
-		$("#abu-process-button").mouseleave(function() { $(this).removeClass("abu-process-button-hover"); });
+		// $("#abu-upload-button").click(function() { $("#abu-done-button").removeClass("abu-button-disabled"); });
+		$("#xmodal-abu-done-button").click(this._options.doneFunction);
+
+		// replaced #abu-process-button with #xmodal-abu-process-button, which is defined in the xmodal options
+		$("#xmodal-abu-process-button").click(this._options.processFunction);
 		$('#closeBox').change(function(){ 
 			if ($('#closeBox').is(':checked')) { 
 				$('#emailBox').prop('checked', true);
@@ -193,7 +183,9 @@ abu.FileUploader = function(o){
 			if (typeof eventData.target.files !== 'undefined') {
 				var fileA = eventData.target.files;
 				if (fileA.length==0) {
-					$("#abu-done-button").removeClass("abu-button-disabled");
+					$("#xmodal-abu-done-button")
+						.show()
+						.prop("disabled",false);
 				} 
 				this.doFileUpload(fileA);
 			}
@@ -201,15 +193,22 @@ abu.FileUploader = function(o){
 	}
 
 	this.processingComplete = function() {
-		$("#abu-done-button-text").html("Done");
-		$("#abu-done-button-text").addClass("abu-done-button-done");
-		$("#abu-done-button-text").removeClass("abu-done-button-cancel");
-		//$("#abu-upload-button").css("display","None");
-		$("#abu-process-button").addClass("abu-button-disabled");
-		//$("#abu-process-button-text").html("&nbsp;");
-		$("#abu-process-button").css("visibility","hidden");
-		$("#abu-upload-button").addClass("abu-button-disabled");
-		$("#abu-files-processing").css("display","None");
+		// $("#xmodal-abu-done-button").html("Done");
+		// $("#abu-done-button-text").addClass("abu-done-button-done");
+		// $("#abu-done-button-text").removeClass("abu-done-button-cancel");
+		// $("#abu-upload-button").css("display","None");
+		$("#xmodal-abu-done-button")
+			.prop("disabled",false)
+			.show();
+		$("#xmodal-abu-process-button")
+			.hide()
+			.prop("disabled","disabled");
+		// $("#abu-process-button-text").html("&nbsp;");
+		// $("#abu-process-button").css("visibility","hidden");
+		$(".abu-upload-button")
+			.hide()
+			.prop("disabled","disabled");
+		$("#abu-files-processing").hide();
 		$(".abu-uploader").css("overflow-y","auto");
 		$(".abu-uploader").css("overflow-x","hidden");
 	}
@@ -338,7 +337,9 @@ abu.FileUploader = function(o){
 			 		status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Failed</a>');
 			 		status.css("display","inline-block");
 			 		$(infoSelector).find(".abu-progress").css("display","none");
-					$("#abu-done-button").removeClass("abu-done-button-disabled");
+					$("#xmodal-abu-done-button")
+						.show()
+						.prop("disabled",false);
 				},
 				success: function(result) {
 					$(status).data("rtn",result);
@@ -364,7 +365,7 @@ abu.FileUploader = function(o){
 				 			status.html('<span class="abu-upload-complete abu-upload-complete-text">Upload complete' + 
 								((this.isOverwrite) ? ' (Existing file overwritten) ' : '') + '</span>');
 						}
-						$("#abu-done-button-text").addClass("abu-done-button-file-uploaded");
+						$("#xmodal-abu-done-button-text").addClass("abu-done-button-file-uploaded");
 					} else {
 			 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Duplicate file and overwrite=false.  Not uploaded.</a>');
 					}

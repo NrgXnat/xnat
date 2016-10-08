@@ -9,45 +9,33 @@
 
 .abu-uploader { position:relative; width: 100%; height:435px;}
 
-div.abu-button-disabled {
+.abu-button-disabled {
     background:#CCCCCC; pointer-events:none 
 }
 
-div.abu-xnat-interactivity-area {
-    display:block; /* or inline-block */
-    width: 100%; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
-    background:#fff; border-bottom:1px solid #fff;color:#000;
+.abu-xnat-interactivity-area {
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 2em;
 }
-div.abu-xnat-interactivity-area-contents {
-    display:inline; padding: 7px 0; text-align:right; margin-left:10px; margin-right:10px; float:right; width: 100%;    
+.abu-xnat-interactivity-area-contents {
+    padding: 7px 0;
 }
-div.abu-xnat-interactivity-area-sub {
-    display:inline; text-align:right; margin-left:10px; margin-right:10px; margin-top:0px; margin-bottom:5px; float:right; width: 100%;    
+.abu-xnat-interactivity-area-sub {
+    margin-bottom:5px;
 }
 
-.abu-done-button {
-    display:block; /* or inline-block */
-    width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
-    background:#1A75BB; border-bottom:1px solid #ddd;color:#fff;
-}
-.abu-done-button-hover {background:#0B6BE8;}
-.abu-done-button-focus {outline:1px dotted black;}
-
-.abu-process-button {
-    display:block; /* or inline-block */
-    width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
-    background:#1A75BB; border-bottom:1px solid #ddd;color:#fff;
-}
-.abu-process-button-hover {background:#0B6BE8;}
-.abu-process-button-focus {outline:1px dotted black;}
 
 .abu-upload-button {
-    display:block; /* or inline-block */
-    width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
-    background:#1A75BB; border-bottom:1px solid #ddd;color:#fff;
+    background:#f8f8f8 linear-gradient( #ffffff, #f0f0f0 );
+    border: 1px solid #848484;
+    border-radius: 3px;
+    cursor: pointer;
+    height: 18px; width: 105px;
+    margin-left:10px;
+    padding: 7px 0;
+    text-align:center;
 }
-.abu-upload-button-hover {background:#0B6BE8;}
-.abu-upload-button-focus {outline:1px dotted black;}
+.abu-upload-button:hover {}
 
 .abu-upload-drop-area {
     position:absolute; top:0; left:0; width:100%; height:100%; min-height: 70px; z-index:2;
@@ -94,23 +82,27 @@ div.abu-xnat-interactivity-area-sub {
 .abu-upload-duplicate {display:inline;color:#008800}
 .abu-upload-duplicate.abu-upload-duplicate-text {display:inline;color:#008800}
 
-.abu-uploader-instructions-sel {margin-bottom:0px; margin-right:10px; display:inline; float:right; background-color:#CCCCCC; border-style:solid; border-width:1px; width:auto; font-size:14px; font-weight: bold; padding:2px; }
+.abu-uploader-instructions-sel { float:right; padding:2px; }
 
 .abu-uploader-instructions {margin-bottom:10px; display:inline}
 
 .abu-return-floatmessage {position:absolute;z-index:10001;width:auto;cursor:pointer;background-color:#FFFFCC; }
 .abu-return-message {width:auto;cursor:pointer;background-color:#FFFFCC; }
 
-.abu-options-div { position: relative; float: left; width: 420px; margin-left: 10px; }
+.abu-options-div { margin-bottom: 1em; }
 .abu-options-cb {
-    display:block; /* or inline-block */
-    width: auto; padding: 7px 0; text-align:center; margin-left:10px; float:left; padding-top: 0px; padding-bottom: 0px;    
+    display: inline-block;
+    margin-right:10px;
 }
 
 .abu-progress { position:relative; display:inline-block; width:250px; height:15px; border: 1px solid #ddd; padding: 0px; border-radius: 0px; margin-left: 10px; }
 .abu-bar { background-color: #0854AB; opacity:0.40; width:0%; height:15px; border-radius: 0px; display: inline-block }
 .abu-percent { position:absolute; display:inline-block; top:0px; left:48%; line-height: 15px; }
 .abu-status { position:relative; display:none; }
+
+.abu-config-param-div { width:120px; text-align:right; margin-right:10px; float:left; }
+.abu-config-param-grp { margin-bottom:15px; float:left; border:1px solid #CCCCCC; width: 600px; padding:5px; }
+.abu-config-param-row { width:100%; margin-bottom:5px; float:left; margin-right:15px; }
 
 .opaque {
 	opacity:0.5;
@@ -133,7 +125,7 @@ div.abu-xnat-interactivity-area-sub {
 
 .passParamText { margin-left: 30px; margin-right: 10px; }
 
-.interactivityAreaSpan { margin-left: 15px; margin-right: 10px; }
+.interactivityAreaSpan { margin-right: 10px; }
 
 #configUploadDiv { overflow-x: hidden; }
 

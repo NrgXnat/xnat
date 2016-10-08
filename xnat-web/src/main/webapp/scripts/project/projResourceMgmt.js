@@ -181,7 +181,7 @@ XNAT.app.pResources={
 							dataType: 'json'
 						});
 						getUploadConfigAjax.done( function( data, textStatus, jqXHR ) {
-							if (typeof(data)!=undefined && $.isArray(data) && data.length>0) {
+							if (typeof(data)!=undefined && $.isArray(data)) {
 								var uploaderConfig = data; 
 								var alreadyConfig = false;
 								var NEW_HANDLER = "Uploaded " + props.name;

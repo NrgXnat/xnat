@@ -33,12 +33,11 @@ public abstract class AbstractInitializingTask implements InitializingTask {
             return true;
         } catch (InitializingTaskException e) {
             switch (e.getLevel()) {
+                case RequiresInitialization:
+                    manageSingleNotice("The system is not yet fully initialized. Delaying execution of the intializing task \"" + getTaskName() + "\" until initialization is completed.");
+                    break;
                 case SingleNotice:
-                    if (_executions == 1) {
-                        _log.info(e.getMessage());
-                    } else {
-                        _log.debug(e.getMessage());
-                    }
+                    manageSingleNotice(e.getMessage());
                     break;
                 case Info:
                     _log.info(e.getMessage());
@@ -92,6 +91,14 @@ public abstract class AbstractInitializingTask implements InitializingTask {
     }
 
     protected abstract void callImpl() throws InitializingTaskException;
+
+    private void manageSingleNotice(final String message) {
+        if (_executions == 1) {
+            _log.info(message);
+        } else {
+            _log.debug(message);
+        }
+    }
 
     private static final Logger _log = LoggerFactory.getLogger(AbstractInitializingTask.class);
 

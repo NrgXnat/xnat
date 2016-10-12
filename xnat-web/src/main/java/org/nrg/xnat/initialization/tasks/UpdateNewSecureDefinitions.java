@@ -37,7 +37,7 @@ public class UpdateNewSecureDefinitions extends AbstractInitializingTask {
                 _featureRepositoryService.updateNewSecureDefinitions();
             }
         } catch (Exception ignore) {
-            throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "An error occurred retrieving element security settings. This usually just means they haven't yet been initialized.");
+            throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
         }
     }
 

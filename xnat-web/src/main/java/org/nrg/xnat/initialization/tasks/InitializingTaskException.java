@@ -10,6 +10,10 @@
 package org.nrg.xnat.initialization.tasks;
 
 public class InitializingTaskException extends Exception {
+    public InitializingTaskException(final Level level) {
+        _level = level;
+    }
+
     public InitializingTaskException(final Level level, final String message) {
         super(message);
         _level = level;
@@ -25,6 +29,7 @@ public class InitializingTaskException extends Exception {
     }
 
     enum Level {
+        RequiresInitialization,
         SingleNotice,
         Info,
         Warn,

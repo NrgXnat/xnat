@@ -37,9 +37,7 @@ public class InitializingTasksExecutor {
 
     @EventListener
     public void executeOnContextRefresh(final ContextRefreshedEvent event) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Handling context refreshed event at " + event.getTimestamp());
-        }
+        _log.debug("Handling context refreshed event at {}", event.getTimestamp());
         if (_future == null || _future.isCancelled()) {
             _future = _scheduler.scheduleWithFixedDelay(new CheckTasks(), 15000);
         }
@@ -56,8 +54,10 @@ public class InitializingTasksExecutor {
                     }
                     try {
                         final boolean completed = task.call();
-                        if (_log.isInfoEnabled()) {
-                            _log.info("Task \"{}\" {}", task.getTaskName(), completed ? "completed at " + task.completedAt() : "did not complete.");
+                        if (completed) {
+                            _log.info("Task \"{}\" completed at {}", task.getTaskName(), task.completedAt());
+                        } else {
+                            _log.debug("Task \"{}\" not yet completed, {} executions attempted.", task.getTaskName(), task.executions());
                         }
                         results.put(task.getTaskName(), completed);
                     } catch (Exception e) {

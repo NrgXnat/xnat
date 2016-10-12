@@ -58,12 +58,12 @@ public class EncryptXnatPasswords extends AbstractInitializingTask {
                         _template.update("DELETE FROM xs_item_cache");
                     }
                 } catch (BadSqlGrammarException e) {
-                    throw new InitializingTaskException(InitializingTaskException.Level.Info, "Unable to execute user table password encryption. The table may not exist yet.", e);
+                    throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
                 } catch (Exception e) {
                     throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database and update the user table password encryption.", e);
                 }
             } else {
-                throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The xdat_user table does not exist yet, deferring password encryption.");
+                throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
             }
         } catch (SQLException e) {
             throw new InitializingTaskException(InitializingTaskException.Level.Error, "An SQL error occurred trying to test for the existence of the xdat_user table.", e);

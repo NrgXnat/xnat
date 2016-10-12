@@ -14,7 +14,6 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;

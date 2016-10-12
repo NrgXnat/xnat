@@ -44,7 +44,7 @@ public class GetSiteWidePETTracerList extends AbstractInitializingTask {
                 _petTracerUtils.setSiteWideTracerList(_adminUsername, path, siteWide);
             }
         } catch (ConfigServiceException e) {
-            throw new InitializingTaskException(InitializingTaskException.Level.Warn, "An error occurred access the configuration service, it may not be initialized yet.", e);
+            throw new InitializingTaskException(InitializingTaskException.Level.Warn, "An error occurred accessing the configuration service, it may not be initialized yet.", e);
         } catch (IOException e) {
             throw new InitializingTaskException(InitializingTaskException.Level.Error, "Unable to either find or retrieve the PET tracer list.", e);
         }

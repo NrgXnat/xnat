@@ -9,6 +9,8 @@
 
 package org.nrg.xapi.rest;
 
+import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -67,6 +69,16 @@ public class XapiRestControllerAdvice {
     @ExceptionHandler(ConfigServiceException.class)
     public ModelAndView handleConfigServiceException(final HttpServletRequest request, final ConfigServiceException exception) {
         return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, "An error occurred when accessing the configuration service: " + exception.getMessage(), exception);
+    }
+
+    @ExceptionHandler(ServerException.class)
+    public ModelAndView handleServerException(final HttpServletRequest request, final ConfigServiceException exception) {
+        return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, "An error occurred on the server during the request: " + exception.getMessage(), exception);
+    }
+
+    @ExceptionHandler(ClientException.class)
+    public ModelAndView handleClientException(final HttpServletRequest request, final ConfigServiceException exception) {
+        return handleException(HttpStatus.BAD_REQUEST, request, "There was an error in the request: " + exception.getMessage(), exception);
     }
 
     private ModelAndView handleException(final HttpServletRequest request, final String message) {

@@ -68,7 +68,7 @@ public class UpdateUserAuthTable extends AbstractInitializingTask {
             _log.debug("Updating the user auth table to set password updated to the current time for local users");
             _template.execute("UPDATE xhbm_xdat_user_auth SET password_updated=current_timestamp WHERE auth_method='" + XdatUserAuthService.LOCALDB + "' AND password_updated IS NULL");
         } catch (BadSqlGrammarException e) {
-            throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "Unable to execute user auth table update, the table probably doesn't exist yet.", e);
+            throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
         }
     }
 

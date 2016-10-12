@@ -10,7 +10,6 @@
 package org.nrg.xnat.services.archive.impl.legacy;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -52,7 +51,7 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public void refreshResourceCatalog(final UserI user, final String resource, final Operation... operations) throws ActionException {
+    public void refreshResourceCatalog(final UserI user, final String resource, final Operation... operations) throws ServerException, ClientException {
         _refreshCatalog(user, resource, Arrays.asList(operations));
     }
 
@@ -60,7 +59,7 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public void refreshResourceCatalog(final UserI user, final String resource, final Collection<Operation> operations) throws ActionException {
+    public void refreshResourceCatalog(final UserI user, final String resource, final Collection<Operation> operations) throws ServerException, ClientException {
         _refreshCatalog(user, resource, operations);
     }
 
@@ -68,7 +67,7 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public void refreshResourceCatalogs(final UserI user, final List<String> resources, final Operation... operations) throws ActionException {
+    public void refreshResourceCatalogs(final UserI user, final List<String> resources, final Operation... operations) throws ServerException, ClientException {
         for (final String resource : resources) {
             _refreshCatalog(user, resource, Arrays.asList(operations));
         }
@@ -78,7 +77,7 @@ public class DefaultCatalogService implements CatalogService {
      * {@inheritDoc}
      */
     @Override
-    public void refreshResourceCatalogs(final UserI user, final List<String> resources, final Collection<Operation> operations) throws ActionException {
+    public void refreshResourceCatalogs(final UserI user, final List<String> resources, final Collection<Operation> operations) throws ServerException, ClientException {
         for (final String resource : resources) {
             _refreshCatalog(user, resource, operations);
         }
@@ -91,9 +90,10 @@ public class DefaultCatalogService implements CatalogService {
      * @param resource      The archive path for the resource to refresh.
      * @param operations    The operations to be performed.
      *
-     * @throws ActionException When an error occurs during the refresh operation.
+     * @throws ClientException When an error occurs that is caused somehow by the requested operation.
+     * @throws ServerException When an error occurs in the system during the refresh operation.
      */
-    private void _refreshCatalog(final UserI user, final String resource, final Collection<Operation> operations) throws ActionException {
+    private void _refreshCatalog(final UserI user, final String resource, final Collection<Operation> operations) throws ServerException, ClientException {
         try {
             //parse passed URI parameter
             final URIManager.DataURIA uri = UriParserUtils.parseURI(resource);
@@ -223,7 +223,7 @@ public class DefaultCatalogService implements CatalogService {
 
     private static Collection<Operation> getOperations(final Collection<Operation> operations) {
         // The default is All, so if they specified nothing, give them all.
-        if (operations.size() == 0) {
+        if (operations == null || operations.size() == 0) {
             return Operation.ALL;
         }
 

@@ -47,7 +47,7 @@ public class SystemPathVerification extends AbstractInitializingTask {
     protected void callImpl() throws InitializingTaskException {
         try {
             if (!_appInfo.isInitialized() || !_helper.tableExists("xnat_abstractresource") || !_helper.tableExists("xdat_user")) {
-                throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The system is not yet fully initialized. Delaying system path verification until initialization is completed.");
+                throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
             }
         } catch (SQLException e) {
             throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "An error occurred trying to check for the existence of the abstract resource table. This probably means the system is not yet fully initialized. Delaying system path verification until initialization is completed.");

@@ -16,7 +16,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.ElementDisplay;
@@ -44,6 +43,8 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
@@ -59,8 +60,8 @@ import java.util.*;
 @SuppressWarnings({"unchecked"})
 public class XDATUser extends XdatUser implements UserI, Serializable {
     private static final long serialVersionUID = -8144623503683531831L;
-    static Logger logger = Logger.getLogger(XDATUser.class);
-    public static final String USER_ELEMENT = "xdat:user";
+    private static final Logger logger = LoggerFactory.getLogger(XDATUser.class);
+
     private Hashtable<String, ElementAccessManager> accessManagers = null;
     private final Map<String, UserGroupI> groups = Maps.newHashMap();
     private final Map<String, String> groupsByTag = Maps.newHashMap();
@@ -71,7 +72,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     private ArrayList<ElementDisplay> browseable = null;
 
-    long startTime = Calendar.getInstance().getTimeInMillis();
+    private long startTime = Calendar.getInstance().getTimeInMillis();
 
     private UserAuthI _authorization;
     private final Set<GrantedAuthority> _authorities = new HashSet<>();
@@ -84,10 +85,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public XDATUser(String login) throws UserNotFoundException, UserInitException {
         super((UserI) null);
         try {
-			SchemaElementI e = SchemaElement.GetElement(USER_ELEMENT);
+			SchemaElementI e = SchemaElement.GetElement(SCHEMA_ELEMENT_NAME);
 
 			ItemSearch search = new ItemSearch(null, e.getGenericXFTElement());
-			search.addCriteria(USER_ELEMENT + XFT.PATH_SEPARATOR + "login", login);
+			search.addCriteria(SCHEMA_ELEMENT_NAME + XFT.PATH_SEPARATOR + "login", login);
 			search.setLevel(ViewManager.ACTIVE);
 			ArrayList found = search.exec(true).items();
 
@@ -172,7 +173,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         final long startTime = Calendar.getInstance().getTimeInMillis();
         accessManagers = new Hashtable<>();
 
-        for (final Object o : this.getChildItems(USER_ELEMENT + ".element_access")) {
+        for (final Object o : this.getChildItems(SCHEMA_ELEMENT_NAME + ".element_access")) {
             final ItemI sub = (ItemI) o;
             final ElementAccessManager eam = new ElementAccessManager(sub);
             accessManagers.put(eam.getElement(), eam);
@@ -1027,46 +1028,61 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     private Map<String,List<PermissionCriteriaI>> criteria;
 
-    protected List<PermissionCriteriaI> getPermissionsByDataType( String type){
+    public List<PermissionCriteriaI> getPermissionsByDataType(final String type){
     	if(criteria==null){
     		criteria=Maps.newHashMap();
     	}
 
-    	if(criteria.get(type)==null){
-	    	criteria.put(type, new ArrayList<PermissionCriteriaI>());
+        if (criteria.get(type) == null) {
+            criteria.put(type, new ArrayList<PermissionCriteriaI>());
 
-	    	ElementAccessManager eam3;
-			try {
-				eam3 = this.getAccessManager(type);
+            try {
+                final ElementAccessManager elementAccessManager = getAccessManager(type);
 
-				if (eam3 != null) {
-			        criteria.get(type).addAll(eam3.getCriteria());
-		        }
+                if (elementAccessManager != null) {
+                    criteria.get(type).addAll(elementAccessManager.getCriteria());
+                }
 
-			try{
-				PoolDBUtils.CheckSpecialSQLChars(type);
-			}catch (Exception e){
-				return null;
-			}
+                try {
+                    PoolDBUtils.CheckSpecialSQLChars(type);
+                } catch (Exception e) {
+                    return null;
+                }
 
-			} catch (Exception e) {
-				logger.error("",e);
-			}
+            } catch (Exception e) {
+                logger.error("", e);
+            }
 
-	        for (UserGroupI group : Groups.getGroupsForUser(this).values()) {
-	            criteria.get(type).addAll(((UserGroup)group).getPermissionsByDataType(type));
-	        }
+            final Map<String, UserGroupI> userGroups = Groups.getGroupsForUser(this);
+            for (final String groupId : userGroups.keySet()) {
+                final UserGroupI group = userGroups.get(groupId);
+                if (group != null) {
+                    final List<PermissionCriteriaI> permissions = ((UserGroup) group).getPermissionsByDataType(type);
+                    if (permissions != null) {
+                        criteria.get(type).addAll(permissions);
+                    } else {
+                        logger.warn("Tried to retrieve permissions for data type {} for user {} in group {}, but this returned null.", type, getUsername(), groupId);
+                    }
+                } else {
+                    logger.warn("Tried to retrieve group {} for user {}, but this returned null.", groupId, getUsername());
+                }
+            }
 
-	        if(!this.isGuest()){
-		        try {
-					UserI guest=Users.getGuest();
-					criteria.get(type).addAll(((XDATUser)guest).getPermissionsByDataType(type));
-				} catch (Exception e) {
-					logger.error("",e);
-				}
-	        }
-
+            if (!isGuest()) {
+                try {
+                    final UserI guest = Users.getGuest();
+                    final List<PermissionCriteriaI> permissions = ((XDATUser) guest).getPermissionsByDataType(type);
+                    if (permissions != null) {
+                        criteria.get(type).addAll(permissions);
+                    } else {
+                        logger.warn("Tried to retrieve permissions for data type {} for the guest user, but this returned null.", type);
+                    }
+                } catch (Exception e) {
+                    logger.error("An error occurred trying to retrieve the guest user", e);
+                }
+            }
     	}
+
         return criteria.get(type);
     }
 

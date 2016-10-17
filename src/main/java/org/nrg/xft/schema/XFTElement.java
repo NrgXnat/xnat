@@ -9,24 +9,19 @@
 
 
 package org.nrg.xft.schema;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.meta.XFTMetaElement;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.schema.design.XFTNode;
 import org.nrg.xft.utils.NodeUtils;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import java.util.*;
 /**
  * @author Tim
  *
@@ -377,7 +372,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 *  schema target namespace prefix + local xml element name.
-	 * @return
+	 * @return Returns the XMLType of the element
 	 */
 	public XMLType getType()
 	{
@@ -395,28 +390,28 @@ public class XFTElement extends XFTNode{
 		fullDescription = NodeUtils.GetAttributeValue(nnm,"fulldescription","");
 	}
 	/**
-	 * @return
+	 * @return Returns the String brief description for the element
 	 */
 	public String getBriefDescription() {
 		return briefDescription;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the String code for this element
 	 */
 	public String getCode() {
 		return code;
 	}
 
 	/**
-	 * @return
+	 * @return Returns String full description of this element
 	 */
 	public String getFullDescription() {
 		return fullDescription;
 	}
 
 	/**
-	 * @return
+	 * @return Returns String name of this element
 	 */
 	public String getName() {
 		return name;
@@ -453,7 +448,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * key = XFTField.getName(), value = XFTField
-	 * @return
+	 * @return Returns Hastable of the fields for this element
 	 */
 	public Hashtable getFields() {
 		return fields;
@@ -503,7 +498,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * @param header
-	 * @return
+	 * @return Returns String representation of the element
 	 */
 	public String toString(String header)
 	{
@@ -573,7 +568,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * Object which stores specialized info about the element.
-	 * @return
+	 * @return Returns XFTSqlElement which stores specialized info about the element
 	 */
 	public XFTSqlElement getSqlElement() {
 		return sqlElement;
@@ -581,7 +576,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * Object which stores specialized info about the element.
-	 * @return
+	 * @return Returns XFTWebAppElement which stores specialized info about the element
 	 */
 	public XFTWebAppElement getWebAppElement() {
 		return webAppElement;
@@ -603,7 +598,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * sequence relative to other elements in the parent schema.
-	 * @return
+	 * @return Returns int sequence relative to other elements in the parent schema
 	 */
 	public int getSequence() {
 		return sequence;
@@ -694,7 +689,7 @@ public class XFTElement extends XFTNode{
 	/**
 	 * If this element was not defined at the root level of the schema, but was instead defined as a child
  	* of another element (usually with maxOccurs &#62;1), then its createdChild property will be true.
-	 * @return
+	 * @return Returns whether
 	 */
 	public boolean isCreatedChild() {
 		return createdChild;
@@ -711,14 +706,14 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * XMLNS property of the parent schema.
-	 * @return
+	 * @return Returns the schema prefix String
 	 */
 	public String getSchemaPrefix() {
 		return schemaPrefix;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the XFTSchema
 	 */
 	public XFTSchema getSchema() {
 		return schema;
@@ -726,7 +721,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * parent XFTDataModel
-	 * @return
+	 * @return Returns the XFTDataModel
 	 */
 	public XFTDataModel getDataModel() {
 		return this.schema.getDataModel();
@@ -734,7 +729,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * If this element does not correspond to a unique XML node then its isANoChildElement will be true.
-	 * @return
+	 * @return Returns true if this element does not correspond to a unique XML node
 	 */
 	public boolean isANoChildElement() {
 		return isANoChildElement;
@@ -754,7 +749,7 @@ public class XFTElement extends XFTNode{
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
 	 * will be true.
-	 * @return
+	 * @return Returns whether the element is an extension of another element
 	 */
 	public boolean isExtension() {
 		return extension;
@@ -766,7 +761,7 @@ public class XFTElement extends XFTNode{
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
 	 * will be true.
-	 * @return
+	 * @return Returns the extended element's XMLType
 	 */
 	public XMLType getExtensionType() {
 		return extensionType;
@@ -803,7 +798,7 @@ public class XFTElement extends XFTNode{
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
 	 * will be true.
-	 * @return
+	 * @return Returns whether the element is extended by another element
 	 */
 	public boolean isExtended() {
 		return isExtended;
@@ -850,7 +845,7 @@ public class XFTElement extends XFTNode{
 
 	/**
 	 * Get Meta Element which describes this item.
-	 * @return
+	 * @return Returns the XFTMetaElement
 	 */
 	public XFTMetaElement getMetaElement() {
 		return metaElement;
@@ -864,7 +859,7 @@ public class XFTElement extends XFTNode{
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the element has an extension element
 	 */
 	public boolean hasExtensionElement() {
 		return hasExtensionElement;

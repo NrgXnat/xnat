@@ -52,7 +52,7 @@ public class GenericWrapperUtils {
      * Generates the CREATE TABLE SQL statement for this element.
      * 
      * @param input
-     * @return
+     * @return Returns the CREATE TABLE SQL statement as a StringBuffer
      */
 	public static StringBuffer GetCreateStatement(GenericWrapperElement input) {
         StringBuffer sb = new StringBuffer();
@@ -501,9 +501,9 @@ public class GenericWrapperUtils {
 
     /**
      * Generates the CREATE TABLE SQL statement for this XFTManyToManyReference.
-     * 
+     *
      * @param input
-     * @return
+     * @return Returns the CREATE TABLE SQL statement as a StringBuffer
      * @throws XFTInitException
      */
 	public static StringBuffer GetCreateStatement(XFTManyToManyReference input)
@@ -1303,7 +1303,7 @@ public class GenericWrapperUtils {
     
     /**
      * @param input
-     * @return
+     * @return Returns ArrayList of activate functions
      * @throws ElementNotFoundException
      * @throws XFTInitException
      */
@@ -2277,7 +2277,7 @@ public class GenericWrapperUtils {
      * Generates ALTER TABLE SQL statements for this element.
      * 
      * @param input
-     * @return
+     * @return Returns a list of ALTER TABLE SQL statement Strings
      * @throws ElementNotFoundException
      * @throws XFTInitException
      */
@@ -2689,7 +2689,7 @@ public class GenericWrapperUtils {
      * Generates ALTER TABLE SQL statements for this element.
      * 
      * @param input
-     * @return
+     * @return Returns a list of ALTER TABLE SQL statement Strings
      * @throws XFTInitException
      */
     public static List GetAlterTableStatements(XFTManyToManyReference input)

@@ -9,9 +9,6 @@
 
 
 package org.nrg.xft.utils.ValidationUtils;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -20,6 +17,9 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 public class ValidationResults implements ValidationResultsI{
 	private ArrayList results = new ArrayList(); // FIELD (VWrapperField), MESSAGE (String)
 	/* (non-Javadoc)
@@ -38,7 +38,7 @@ public class ValidationResults implements ValidationResultsI{
 
 	/**
 	 * Gets results collection Object[VWrapperField,String(message)]
-	 * @return
+	 * @return Returns an ArrayList of the results
 	 */
 	public ArrayList<Object[]> getResults() {
 		return results;
@@ -91,7 +91,7 @@ public class ValidationResults implements ValidationResultsI{
 	
 	/**
 	 * basic iterator for the results collection.
-	 * @return
+	 * @return Returns the Iterator for the results collection
 	 */
 	public Iterator getResultsIterator()
 	{
@@ -102,7 +102,7 @@ public class ValidationResults implements ValidationResultsI{
 	 * If there is a message for this field (sql_name) in the results, its message
 	 * is returned.
 	 * @param s
-	 * @return
+	 * @return Returns the String message
 	 */
 	public String getField(String s)
 	{
@@ -134,7 +134,7 @@ public class ValidationResults implements ValidationResultsI{
 	
 	/**
 	 * Outputs the results collection as an Unordered List with HTML Tags.
-	 * @return
+	 * @return Returns a String containing the unordered list HTML
 	 */
 	public String toHTML()
 	{

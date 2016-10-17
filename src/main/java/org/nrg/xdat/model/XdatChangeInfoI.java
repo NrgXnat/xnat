@@ -14,8 +14,6 @@
  */
 package org.nrg.xdat.model;
 
-import java.util.List;
-
 /**
  * @author XDAT
  *
@@ -34,7 +32,6 @@ public interface XdatChangeInfoI {
 
 	/**
 	 * change_user
-	 * @return org.nrg.xdat.model.XdatUserI
 	 */
 	public <A extends org.nrg.xdat.model.XdatUserI> void setChangeUser(A item) throws Exception;
 

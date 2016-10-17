@@ -10,10 +10,10 @@
 
 package org.nrg.xft.schema;
 
-import java.text.ParseException;
-
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.text.ParseException;
 
 public class XMLType {
 	private static final String TIMESTAMP = "timestamp";
@@ -70,7 +70,7 @@ public class XMLType {
 	/**
 	 * Removes any characters before (and including) the ':' character.
 	 * @param xml
-	 * @return
+	 * @return Returns the type as a String without its prefix and the ':' character
 	 */
 	public static String CleanType(String xml)
 	{
@@ -99,7 +99,7 @@ public class XMLType {
 	/**
 	 * Removes any characters before (and including) the ':' character.
 	 * @param xml
-	 * @return
+	 * @return Returns the prefix String (including the ':')
 	 */
 	public static String GetPrefix(String xml)
 	{
@@ -115,7 +115,7 @@ public class XMLType {
 
 	/**
 	 * Locally defined prefix for this dataType.
-	 * @return
+	 * @return Returns the locally defined prefix for this dataType
 	 */
 	public String getLocalPrefix() {
 		return localPrefix;
@@ -123,7 +123,7 @@ public class XMLType {
 
 	/**
 	 * Locally defined dataType
-	 * @return
+	 * @return Returns the locally defined dataType
 	 */
 	public String getLocalType() {
 		return local;
@@ -150,7 +150,7 @@ public class XMLType {
 
 	/**
 	 * localPrefix + ':' + localType
-	 * @return
+	 * @return Returns the local type (including local prefix)
 	 */
 	public String getFullLocalType() {
 		return fullLocalType;
@@ -158,7 +158,7 @@ public class XMLType {
 
 	/**
 	 * foreignPrefix + ':' + localType
-	 * @return
+	 * @return Returns the local type (including foreign prefix)
 	 */
 	public String getFullForeignType() {
 		if (! this.getForeignPrefix().equalsIgnoreCase(""))
@@ -174,7 +174,7 @@ public class XMLType {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the XFTSchema
 	 */
 	public XFTSchema getSchema() {
 		return schema;
@@ -208,7 +208,7 @@ public class XMLType {
 	 * If the XMLType refers to a basic data type or a locally defined data type (based on
 	 * the schema's target namespace prefix), then the localPrefix is returned, else the 
 	 * valid original prefix is found and returned.
-	 * @return
+	 * @return Returns the foreign prefix
 	 */
 	public String getForeignPrefix()
 	{

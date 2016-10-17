@@ -9,13 +9,13 @@
 
 
 package org.nrg.xft.schema;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.nrg.xft.utils.NodeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 public class XFTRule {
 	private String baseType = "";
 	private String mask = "";
@@ -130,49 +130,49 @@ public class XFTRule {
 	}
 		
 	/**
-	 * @return
+	 * @return Returns the base type String
 	 */
 	public String getBaseType() {
 		return baseType;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the length String
 	 */
 	public String getLength() {
 		return length;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the mask String
 	 */
 	public String getMask() {
 		return mask;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the maximum length String
 	 */
 	public String getMaxLength() {
 		return maxLength;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the message String
 	 */
 	public String getMessage() {
 		return message;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the minimum length String
 	 */
 	public String getMinLength() {
 		return minLength;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the list of all possible values
 	 */
 	public ArrayList getPossibleValues() {
 		return possibleValues;
@@ -252,7 +252,7 @@ public class XFTRule {
 
 	/**
 	 * @param header
-	 * @return
+	 * @return Returns this XFTRule expressed as a String
 	 */
 	public String toString(String header)
 	{
@@ -318,14 +318,14 @@ public class XFTRule {
 		return main;
 	}
 	/**
-	 * @return
+	 * @return Returns the maximum inclusive String
 	 */
 	public String getMaxInclusive() {
 		return maxInclusive;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the minimum inclusive String
 	 */
 	public String getMinInclusive() {
 		return minInclusive;

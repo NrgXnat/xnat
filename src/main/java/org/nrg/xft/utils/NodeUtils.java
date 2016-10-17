@@ -10,15 +10,15 @@
 
 package org.nrg.xft.utils;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.references.XFTPseudonymManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.ArrayList;
+import java.util.Hashtable;
 
 /**
  * @author Tim
@@ -734,7 +734,7 @@ public class NodeUtils {
     /**
      * If Node has a child named complexType
      * @param node
-     * @return
+     * @return Returns whether the node has complex content
      */
     public static boolean NodeHasComplexContent(Node node, String prefix)
     {

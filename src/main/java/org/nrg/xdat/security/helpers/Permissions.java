@@ -381,7 +381,7 @@ public class Permissions {
      * @param elementName
      * @param xmlPath
      * @param action
-     * @return
+     * @return Returns whether the user can read any of the given elementName/xmlPath/action combination
      */
     public static boolean canAny(UserI user, String elementName, String xmlPath, String action) {
         return getPermissionsService().canAny(user, elementName, xmlPath, action);
@@ -393,7 +393,7 @@ public class Permissions {
      * @param user
      * @param elementName
      * @param action
-     * @return
+     * @return Returns whether the user can read any of the given elementName/action combination
      */
     public static boolean canAny(UserI user, String elementName, String action) {
         return getPermissionsService().canAny(user, elementName, action);
@@ -405,7 +405,7 @@ public class Permissions {
      * @param set
      * @param root
      * @param action
-     * @return
+     * @return Returns current XDAT criteria objects for current permission settings
      * @throws IllegalAccessException
      * @throws Exception
      */
@@ -443,7 +443,7 @@ public class Permissions {
      *
      * @param set
      * @param action
-     * @return
+     * @return Returns a collection of the current XFT criteria used when querying XFT items out of the database
      * @throws Exception
      */
     public static CriteriaCollection getXFTCriteria(PermissionSetI set, String action) throws Exception {
@@ -478,7 +478,7 @@ public class Permissions {
      *
      * @param user
      * @param elementName
-     * @return
+     * @return Returns whether the user can perform this query
      */
     public static boolean canQuery(final UserI user, final String elementName) {
         try {
@@ -494,7 +494,7 @@ public class Permissions {
      *
      * @param user
      * @param elementName
-     * @return
+     * @return Returns whether the user can access any items of this type
      */
     public static boolean canReadAny(final UserI user, final String elementName) {
         try {
@@ -513,7 +513,7 @@ public class Permissions {
      * @param elementName
      * @param xmlPath
      * @param action
-     * @return
+     * @return Returns a list of the values that this user can do the specified action on for the given element/xmlpath combo
      */
     public static List<Object> getAllowedValues(UserI user, String elementName, String xmlPath, String action) {
         return getPermissionsService().getAllowedValues(user, elementName, xmlPath, action);
@@ -525,7 +525,7 @@ public class Permissions {
      * @param user
      * @param elementName
      * @param action
-     * @return
+     * @return Returns a map of the xmlpath/value combos that this user can do the specified action on for the given element
      */
     public static Map<String, Object> getAllowedValues(UserI user, String elementName, String action) {
         return getPermissionsService().getAllowedValues(user, elementName, action);
@@ -559,7 +559,7 @@ public class Permissions {
      * @param forceInit
      * @param authenticatedUser
      * @param ci
-     * @return
+     * @return Returns whether the accessibility was set for entity
      * @throws Exception
      */
     public static boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception {
@@ -571,7 +571,7 @@ public class Permissions {
      *
      * @param user
      * @param dataType
-     * @return
+     * @return Returns a list of active permission criteria for this user account / data type combination (including group permissions, etc)
      */
     public static List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType) {
         return getPermissionsService().getPermissionsForUser(user, dataType);
@@ -582,7 +582,7 @@ public class Permissions {
      *
      * @param group
      * @param dataType
-     * @return
+     * @return Returns a list of active permission criteria for this user group / data type combination
      */
     public static List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType) {
         return getPermissionsService().getPermissionsForGroup(group, dataType);
@@ -592,7 +592,7 @@ public class Permissions {
      * Get all active permission criteria for this user group (organized by data type).
      *
      * @param group
-     * @return
+     * @return Returns a map of active permission criteria for this user group (organized by data type)
      */
     public static Map<String, List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group) {
         return getPermissionsService().getPermissionsForGroup(group);
@@ -617,7 +617,7 @@ public class Permissions {
      * Return an SQL statement that will return a list of this user's permissions
      *
      * @param user
-     * @return
+     * @return Returns the SQL statement that will return a list of this user's permissions
      */
     public static String getUserPermissionsSQL(UserI user) {
         return getPermissionsService().getUserPermissionsSQL(user);

@@ -9,16 +9,16 @@
 
 
 package org.nrg.xft.references;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.InvalidReference;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class XFTSuperiorReference implements org.nrg.xft.references.XFTReferenceI {
 	/**
@@ -63,7 +63,7 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the superior element name
 	 */
 	public String getSuperiorElementName()
 	{
@@ -71,7 +71,7 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the superior element's local name
 	 */
 	public String getSuperiorElementLocalName()
 	{
@@ -79,7 +79,7 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the subordinate element name
 	 */
 	public String getSubordinateElementName()
 	{
@@ -282,28 +282,28 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 		}
 	}
 	/**
-	 * @return
+	 * @return Returns the subordinate element as a GenericWrapperElement object
 	 */
 	public GenericWrapperElement getSubordinateElement() {
 		return subordinateElement;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the subordinate field as a GenericWrapperField object
 	 */
 	public GenericWrapperField getSubordinateField() {
 		return subordinateField;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the superior element as a GenericWrapperElement object
 	 */
 	public GenericWrapperElement getSuperiorElement() {
 		return superiorElement;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the superior field as a GenericWrapperField object
 	 */
 	public GenericWrapperField getSuperiorField() {
 		return superiorField;
@@ -338,28 +338,28 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 	}
 
 	/**
-	 * @return
+	 * @return Returns element1 (the superior element) as a GenericWrapperElement
 	 */
 	public GenericWrapperElement getElement1() {
 		return superiorElement;
 	}
 
 	/**
-	 * @return
+	 * @return Returns element2 (the subordinate element) as a GenericWrapperElement
 	 */
 	public GenericWrapperElement getElement2() {
 		return subordinateElement;
 	}
 
 	/**
-	 * @return
+	 * @return Returns field1 (the superior field) as a GenericWrapperField
 	 */
 	public GenericWrapperField getField1() {
 		return superiorField;
 	}
 
 	/**
-	 * @return
+	 * @return Returns field2 (the subordinate field) as a GenericWrapperField
 	 */
 	public GenericWrapperField getField2() {
 		return subordinateField;
@@ -375,14 +375,14 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 	
 	/**
 	 * ArrayList of XFTRelationSpecification
-	 * @return
+	 * @return Returns a list of the XFTRelationSpecifications
 	 */
 	public ArrayList<XFTRelationSpecification> getKeyRelations() {
 		return keyRelations;
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the SQL name String of the subordinate field
 	 */
 	public String getSubordinateFieldSQLName()
 	{
@@ -396,7 +396,7 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the SQL name String of the superior field
 	 */
 	public String getSuperiorFieldSQLName()
 	{

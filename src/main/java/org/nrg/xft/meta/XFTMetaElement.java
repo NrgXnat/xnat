@@ -70,35 +70,35 @@ public class XFTMetaElement {
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the element
 	 */
 	public XFTElement getElement() {
 		return element;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the element's prefix
 	 */
 	public String getPrefix() {
 		return prefix;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the element's java name
 	 */
 	public String getJavaName() {
 		return javaName;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the element's local xml name
 	 */
 	public String getLocalXMLName() {
 		return localXMLName;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the element's sql name
 	 */
 	public String getSqlName() {
 		return sqlName;
@@ -147,7 +147,7 @@ public class XFTMetaElement {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the element's code
 	 */
 	public String getCode() {
 		return code;

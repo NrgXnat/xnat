@@ -533,7 +533,7 @@ public  class FileUtils
 	 * @param src
 	 * @param dest
 	 * @param filter
-	 * @return
+	 * @return Returns a list of the files that match in the specified files/directories
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
@@ -555,12 +555,12 @@ public  class FileUtils
 
 
 	/**
-	 * Return a List of duplicate Files
+	 * Return the first duplicate File found
 	 * 
 	 * @param src
 	 * @param dest
 	 * @param filter
-	 * @return
+	 * @return Returns the first file that matches in the specified files/directories
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
@@ -785,7 +785,7 @@ public  class FileUtils
      * Populates list of files which do not match.
      * @param src
      * @param dest
-     * @return
+     * @return Returns a list of String messages about mismatches between the specified files/directories
      * @throws FileNotFoundException
      * @throws IOException
      */
@@ -797,7 +797,7 @@ public  class FileUtils
      * Populates list of files which do not match.
      * @param src
      * @param dest
-     * @return
+     * @return Returns a list of String messages about mismatches between the specified files/directories
      * @throws FileNotFoundException
      * @throws IOException
      */

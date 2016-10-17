@@ -34,7 +34,6 @@ public interface XdatElementSecurityI {
 
 	/**
 	 * primary_security_fields/primary_security_field
-	 * @return Returns an List of org.nrg.xdat.model.XdatPrimarySecurityFieldI
 	 */
 	public <A extends org.nrg.xdat.model.XdatPrimarySecurityFieldI> void addPrimarySecurityFields_primarySecurityField(A item) throws Exception;
 
@@ -46,7 +45,6 @@ public interface XdatElementSecurityI {
 
 	/**
 	 * element_actions/element_action
-	 * @return Returns an List of org.nrg.xdat.model.XdatElementActionTypeI
 	 */
 	public <A extends org.nrg.xdat.model.XdatElementActionTypeI> void addElementActions_elementAction(A item) throws Exception;
 
@@ -58,7 +56,6 @@ public interface XdatElementSecurityI {
 
 	/**
 	 * listing_actions/listing_action
-	 * @return Returns an List of org.nrg.xdat.model.XdatElementSecurityListingActionI
 	 */
 	public <A extends org.nrg.xdat.model.XdatElementSecurityListingActionI> void addListingActions_listingAction(A item) throws Exception;
 

@@ -9,22 +9,6 @@
 
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -42,6 +26,16 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.*;
 
 public class XMLWriter {
 	private static final Logger                 logger     = LoggerFactory.getLogger(XMLWriter.class);
@@ -182,7 +176,7 @@ public class XMLWriter {
 	/**
 	 * Translates item to a node and assigns it to a new Document.
 	 * @param item
-	 * @return
+	 * @return Returns the new Document
 	 * @throws org.nrg.xft.exception.XFTInitException
 	 * @throws org.nrg.xft.exception.ElementNotFoundException
 	 */
@@ -203,7 +197,7 @@ public class XMLWriter {
 	/**
 	 * Method used to translate an XFTItem to an XML DOM Document.
 	 * @param item
-	 * @return
+	 * @return Returns the XML DOM Document
 	 * @throws org.nrg.xft.exception.XFTInitException
 	 * @throws org.nrg.xft.exception.ElementNotFoundException
 	 */
@@ -269,7 +263,7 @@ public class XMLWriter {
 	/**
 	 * Method used to translate an XFTItem to an XML DOM Document.
 	 * @param item
-	 * @return
+	 * @return Returns the XML DOM Document
 	 * @throws org.nrg.xft.exception.XFTInitException
 	 * @throws org.nrg.xft.exception.ElementNotFoundException
 	 */
@@ -289,7 +283,7 @@ public class XMLWriter {
 	 * @param doc
 	 * @param alias
 	 * @param isRoot
-	 * @return
+	 * @return Returns the new XML DOM Node
 	 * @throws org.nrg.xft.exception.XFTInitException
 	 * @throws org.nrg.xft.exception.ElementNotFoundException
 	 */
@@ -435,7 +429,7 @@ public class XMLWriter {
 	 * @param item
 	 * @param doc
 	 * @param xmlAttr
-	 * @return
+	 * @return Returns the new attribute XML DOM Node
 	 */
 	private Node getAttribute(XFTItem item, Document doc, XMLWrapperField xmlAttr, boolean withPrefix) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
@@ -461,7 +455,7 @@ public class XMLWriter {
 	 * @param xmlField
 	 * @param parent
 	 * @param aliases
-	 * @return
+	 * @return Returns parent object after modification
 	 * @throws org.nrg.xft.exception.ElementNotFoundException
 	 */
 	private Node getChildElement(XFTItem item, Document doc, XMLWrapperField xmlField, Node parent,Hashtable aliases,boolean withPrefix,boolean limited) throws org.nrg.xft.exception.ElementNotFoundException,XFTInitException,FieldNotFoundException
@@ -670,7 +664,7 @@ public class XMLWriter {
 	 * Copies sub nodes from the 'from' to the 'to' node.
 	 * @param from
 	 * @param to
-	 * @return
+	 * @return Returns the 'to' Node after fields have been copied to it
 	 */
 	private static Node CopyFields(Node from, Node to)
 	{
@@ -694,7 +688,7 @@ public class XMLWriter {
 	/**
 	 * If node has child nodes or attributes then true.
 	 * @param node
-	 * @return
+	 * @return Returns whether the node has child nodes or attributes
 	 */
 	private static boolean NodeHasValue(Node node)
 	{
@@ -716,7 +710,7 @@ public class XMLWriter {
 	 * @param field
 	 * @param main
 	 * @param doc
-	 * @return
+	 * @return Returns main node after appending the specified doc child node
 	 */
 	private Node addChild(XFTItem item,XMLWrapperField field, Node main, Document doc) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
@@ -746,7 +740,7 @@ public class XMLWriter {
 	/**
 	 * Formats data types to XML output string
 	 * @param o
-	 * @return
+	 * @return Returns formatted data type
 	 */
 	public static String ValueParser(Object o,String type)
 	{
@@ -756,7 +750,7 @@ public class XMLWriter {
 	/**
 	 * Formats data types to XML output string
 	 * @param o
-	 * @return
+	 * @return Returns formatted data type
 	 */
 	@SuppressWarnings("deprecation")
     public static String ValueParser(Object o,String type,String appendRootPath,String relativizePath)
@@ -1001,7 +995,7 @@ public class XMLWriter {
 	/**
 	 * Formats data types to XML output string
 	 * @param o
-	 * @return
+	 * @return Returns formatted data type
 	 */
 	public static String ValueParser(Object o,XMLWrapperField field)
 	{
@@ -1029,7 +1023,7 @@ public class XMLWriter {
     /**
      * Formats data types to XML output string
      * @param o
-     * @return
+     * @return Returns formatted data type
      */
     public static String ValueParser(Object o,XMLWrapperField field,String appendRootPath,String relativizePath)
     {
@@ -1061,14 +1055,14 @@ public class XMLWriter {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the DocumentBuilderFactory
 	 */
 	private DocumentBuilderFactory getFactory() {
 		return factory;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the DocumentBuilder
 	 */
 	private DocumentBuilder getNewbuilder() {
 		return newbuilder;
@@ -1078,7 +1072,7 @@ public class XMLWriter {
 	 * Creates a XML DOM Document with a root element of type &#60;List&#62; and the items
 	 * as a sub nodes.
 	 * @param list
-	 * @return
+	 * @return Returns the created XML DOM Document
 	 */
 	public static Document XFTItemListToDOM(List list,boolean limited)
 	{
@@ -1106,7 +1100,7 @@ public class XMLWriter {
 	 * Creates a XML DOM Document with a root element of type &#60;List&#62; and the items
 	 * as a sub nodes.
 	 * @param list
-	 * @return
+	 * @return Returns the created XML DOM Document
 	 */
 	public static Document XFTItemListToDOM(List list)
 	{

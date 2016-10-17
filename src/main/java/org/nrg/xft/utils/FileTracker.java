@@ -197,7 +197,7 @@ public class FileTracker {
     
     /**
      * @param al ArrayList of Strings (Absolute Paths)
-     * @return
+     * @return Returns Hashtable mapping relative paths to absolute paths for the specified files
      */
     public Hashtable createPartialHashByAbsolutePaths(ArrayList al){
         Hashtable hash = new Hashtable();
@@ -224,7 +224,7 @@ public class FileTracker {
     
     /**
      * @param al ArrayList of Strings (Absolute Paths)
-     * @return
+     * @return Returns Hashtable mapping relative paths to absolute paths for the specified files
      */
     public Hashtable createPartialHashByIDs(ArrayList al){
         Hashtable hash = new Hashtable();
@@ -239,7 +239,7 @@ public class FileTracker {
     
     /**
      * @param al ArrayList of Strings (File IDs)
-     * @return
+     * @return Returns Hashtable mapping relative paths to File objects
      */
     public Hashtable<String,File> createPartialFileHashByIDs(ArrayList al,String rootFolder){
         String lowerCase = rootFolder.toLowerCase();
@@ -290,7 +290,7 @@ public class FileTracker {
     
     /**
      * @param al ArrayList of Strings (File IDs)
-     * @return
+     * @return Returns Hashtable mapping relative paths to absolute paths
      */
     public Hashtable createPartialHashByIDs(ArrayList al,String rootFolder){
         String lowerCase = rootFolder.toLowerCase();
@@ -341,7 +341,7 @@ public class FileTracker {
     
     /**
      * @param al ArrayList of Strings (Absolute Paths)
-     * @return
+     * @return Returns a Hashtable mapping relative paths to absolute paths
      */
     public Hashtable createPartialHashByAbsolutePaths(ArrayList al, String rootFolder){
         String lowerCase = rootFolder.toLowerCase();

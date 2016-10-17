@@ -468,7 +468,7 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getDataFieldValue(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("root_element_name")){
@@ -499,7 +499,7 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getReferenceField(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("search_field")){
@@ -518,7 +518,7 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public String getReferenceFieldName(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("search_field")){

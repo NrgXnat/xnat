@@ -45,7 +45,7 @@ public class TorqueElement extends XFTWebAppElement {
 	}
 	/**
 	 * alias for Torque Schema
-	 * @return
+	 * @return Returns alias String
 	 */
 	public String getAlias() {
 		return alias;
@@ -53,7 +53,7 @@ public class TorqueElement extends XFTWebAppElement {
 
 	/**
 	 * baseClass for Torque Schema
-	 * @return
+	 * @return Returns base class String
 	 */
 	public String getBaseClass() {
 		return baseClass;
@@ -61,7 +61,7 @@ public class TorqueElement extends XFTWebAppElement {
 
 	/**
 	 * basePeer for Torque Schema
-	 * @return
+	 * @return Returns base peer String
 	 */
 	public String getBasePeer() {
 		return basePeer;
@@ -70,7 +70,7 @@ public class TorqueElement extends XFTWebAppElement {
 	/**
 	 * @deprecated
 	 * isAbstract for Torque Schema
-	 * @return
+	 * @return Returns whether the element is abstract
 	 */
 	public boolean isAbstract() {
 		return isAbstract;
@@ -79,7 +79,7 @@ public class TorqueElement extends XFTWebAppElement {
 	/**
 	 * @deprecated
 	 * javaNamingMethod for Torque Schema
-	 * @return
+	 * @return Returns the java naming method String
 	 */
 	public String getJavaNamingMethod() {
 		return javaNamingMethod;

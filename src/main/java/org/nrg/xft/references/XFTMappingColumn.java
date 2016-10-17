@@ -23,28 +23,28 @@ public class XFTMappingColumn {
 	
 	
 	/**
-	 * @return
+	 * @return Returns the foreign element as an GenericWrapperElement object
 	 */
 	public GenericWrapperElement getForeignElement() {
 		return foreignElement;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the foreign key as a GenericWrapperField object
 	 */
 	public GenericWrapperField getForeignKey() {
 		return foreignKey;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the local sql name
 	 */
 	public String getLocalSqlName() {
 		return mapping_sql_name;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the xml type
 	 */
 	public XMLType getXmlType() {
 		return xml_type;

@@ -239,7 +239,7 @@ public class XdatSearchFieldBean extends BaseElement implements java.io.Serializ
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getDataFieldValue(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("element_name")){
@@ -264,7 +264,7 @@ public class XdatSearchFieldBean extends BaseElement implements java.io.Serializ
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getReferenceField(String xmlPath) throws BaseElement.UnknownFieldException{
 			return super.getReferenceField(xmlPath);
@@ -272,7 +272,7 @@ public class XdatSearchFieldBean extends BaseElement implements java.io.Serializ
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public String getReferenceFieldName(String xmlPath) throws BaseElement.UnknownFieldException{
 			return super.getReferenceFieldName(xmlPath);

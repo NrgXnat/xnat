@@ -190,7 +190,7 @@ public class XdatUsergroupBean extends BaseElement implements java.io.Serializab
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getDataFieldValue(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("ID")){
@@ -207,7 +207,7 @@ public class XdatUsergroupBean extends BaseElement implements java.io.Serializab
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getReferenceField(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("element_access")){
@@ -220,7 +220,7 @@ public class XdatUsergroupBean extends BaseElement implements java.io.Serializab
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public String getReferenceFieldName(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("element_access")){
@@ -233,6 +233,7 @@ public class XdatUsergroupBean extends BaseElement implements java.io.Serializab
 
 	/**
 	 * Returns whether or not this is a reference field
+	 * @param xmlPath XML path to check.
 	 */
 	public String getFieldType(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("element_access")){

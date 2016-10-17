@@ -9,17 +9,17 @@
 
 
 package org.nrg.xft.references;
+import org.apache.log4j.Logger;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.utils.FileUtils;
+
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
-
-import org.apache.log4j.Logger;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.utils.FileUtils;
 public class XFTPseudonymManager {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTPseudonymManager.class);
 	private String name = null;
@@ -146,7 +146,7 @@ public class XFTPseudonymManager {
 	
 	/**
 	 * Gets the collection of extension names for this parent type.
-	 * @return
+	 * @return Returns the collection of extension names for this parent type
 	 */
 	public ArrayList getExtentions()
 	{
@@ -170,7 +170,7 @@ public class XFTPseudonymManager {
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the XFTPseudonymManager name
 	 */
 	public String getName() {
 		return name;
@@ -178,7 +178,7 @@ public class XFTPseudonymManager {
 
 	/**
 	 * ArrayList of XFTPseudonymManagers
-	 * @return
+	 * @return Returns the list of XFTPseudonymManagers
 	 */
 	public ArrayList getPseudonyms() {
 		return pseudos;
@@ -202,7 +202,7 @@ public class XFTPseudonymManager {
 	/**
 	 * if this type has any pseudonyms.
 	 * @param s
-	 * @return
+	 * @return Returns whether this type has any pseudonyms
 	 */
 	public static boolean HasPseudonyms(String s)
 	{
@@ -223,7 +223,7 @@ public class XFTPseudonymManager {
 	/**
 	 * Gets pseudonyms for the given type.
 	 * @param s
-	 * @return
+	 * @return Returns a list of pseudonyms for the given type
 	 */
 	public static ArrayList GetPseudonyms(String s)
 	{
@@ -242,7 +242,7 @@ public class XFTPseudonymManager {
 	 * if alias is a pseudonym for the primary type.
 	 * @param primary
 	 * @param alias
-	 * @return
+	 * @return Returns whether the alias is a pseudonym for the primary type
 	 */
 	public static boolean IsAnAlias(String primary,String alias)
 	{

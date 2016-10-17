@@ -14,8 +14,6 @@
  */
 package org.nrg.xdat.model;
 
-import java.util.List;
-
 /**
  * @author XDAT
  *
@@ -78,7 +76,6 @@ public interface XdatUserLoginI {
 
 	/**
 	 * user
-	 * @return org.nrg.xdat.model.XdatUserI
 	 */
 	public <A extends org.nrg.xdat.model.XdatUserI> void setuserProperty(A item) throws Exception;
 

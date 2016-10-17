@@ -52,21 +52,21 @@ public class XFTRelationSpecification {
 		parent=p;
 	}
 	/**
-	 * @return
+	 * @return Returns the foreign column
 	 */
 	public String getForeignCol() {
 		return foreignCol;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the foreign table
 	 */
 	public String getForeignTable() {
 		return foreignTable;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the local column
 	 */
 	public String getLocalCol() {
 	    if (localCol != null)
@@ -80,21 +80,21 @@ public class XFTRelationSpecification {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the local table
 	 */
 	public String getLocalTable() {
 		return localTable;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the schema type
 	 */
 	public XMLType getSchemaType() {
 		return schemaType;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the foreign key
 	 */
 	public GenericWrapperField getForeignKey() {
 		return foreignKey;
@@ -108,7 +108,7 @@ public class XFTRelationSpecification {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the local key
 	 */
 	public GenericWrapperField getLocalKey() {
 		return localKey;

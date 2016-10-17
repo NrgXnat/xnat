@@ -34,7 +34,6 @@ public interface XdatFieldMappingSetI {
 
 	/**
 	 * allow
-	 * @return Returns an List of org.nrg.xdat.model.XdatFieldMappingI
 	 */
 	public <A extends org.nrg.xdat.model.XdatFieldMappingI> void addAllow(A item) throws Exception;
 
@@ -46,7 +45,6 @@ public interface XdatFieldMappingSetI {
 
 	/**
 	 * sub_set
-	 * @return Returns an List of org.nrg.xdat.model.XdatFieldMappingSetI
 	 */
 	public <A extends org.nrg.xdat.model.XdatFieldMappingSetI> void addSubSet(A item) throws Exception;
 

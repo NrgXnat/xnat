@@ -9,12 +9,12 @@
 
 
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.schema.XMLType;
+import org.nrg.xft.schema.design.XFTFactoryI;
+
 import java.util.ArrayList;
 import java.util.Iterator;
-
-import org.nrg.xft.schema.XMLType;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-import org.nrg.xft.schema.design.XFTFactoryI;
 public class XMLWrapperField extends GenericWrapperField implements XMLNode{
 
 	/* (non-Javadoc)
@@ -77,7 +77,7 @@ public class XMLWrapperField extends GenericWrapperField implements XMLNode{
 	/**
 	 * if wrapped field has a displayName then that is returned, else
 	 * the wrapped field's name is returned.
-	 * @return
+	 * @return Returns the String name of the wrapped field
 	 */
 	public String getName(boolean withPrefix)
 	{

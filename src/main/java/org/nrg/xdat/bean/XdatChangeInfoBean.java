@@ -68,7 +68,6 @@ public class XdatChangeInfoBean extends BaseElement implements java.io.Serializa
 
 	/**
 	 * change_user
-	 * @return org.nrg.xdat.model.XdatUserI
 	 */
 	public <A extends org.nrg.xdat.model.XdatUserI> void setChangeUser(A item) throws Exception{
 	setChangeUser((org.nrg.xdat.bean.XdatUserBean)item);
@@ -227,7 +226,7 @@ public class XdatChangeInfoBean extends BaseElement implements java.io.Serializa
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getDataFieldValue(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("comment")){
@@ -246,7 +245,7 @@ public class XdatChangeInfoBean extends BaseElement implements java.io.Serializa
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getReferenceField(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("change_user")){
@@ -259,7 +258,7 @@ public class XdatChangeInfoBean extends BaseElement implements java.io.Serializa
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public String getReferenceFieldName(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("change_user")){

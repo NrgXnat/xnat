@@ -31,7 +31,7 @@ public class XFTSqlElement {
 	
 	/**
 	 * sql name
-	 * @return
+	 * @return Returns this element's name
 	 */
 	public String getName() {
 		return name;
@@ -59,7 +59,7 @@ public class XFTSqlElement {
 
 	/**
 	 * @param header
-	 * @return
+	 * @return Returns a String representation of this element
 	 */
 	public String toString(String header)
 	{

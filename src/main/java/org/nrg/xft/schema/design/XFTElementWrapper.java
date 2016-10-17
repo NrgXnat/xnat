@@ -9,15 +9,15 @@
 
 
 package org.nrg.xft.schema.design;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTField;
 import org.nrg.xft.schema.XMLType;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 public abstract class XFTElementWrapper implements SchemaElementI {
 	private ArrayList attributes = null;
 	private ArrayList childElements = null;
@@ -40,7 +40,7 @@ public abstract class XFTElementWrapper implements SchemaElementI {
 	
 	/**
 	 * Gets the localType of the Wrapped element's XMLType
-	 * @return
+	 * @return Returns the localType of the Wrapped element's XMLType
 	 * @see XMLType
 	 */
 	public String getLocalXMLName()
@@ -50,7 +50,7 @@ public abstract class XFTElementWrapper implements SchemaElementI {
 	
 	/**
 	 * Gets the fullLocalType of the Wrapped element's XMLType
-	 * @return
+	 * @return Returns the fullLocalType of the Wrapped element's XMLType
 	 * @see XMLType
 	 */
 	public String getFullXMLName()

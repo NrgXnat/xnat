@@ -21,22 +21,22 @@ import java.util.Hashtable;
 public interface XFTTableI {
 	/**
 	 * returns all columns
-	 * @return
+	 * @return	Returns an array of all the column headers
 	 */
 	public abstract String[] getColumns();
 	/**
 	 * returns number of columns
-	 * @return
+	 * @return Returns the number of columns
 	 */
 	public abstract int getNumCols();
 	/**
 	 * returns true if more rows are available
-	 * @return
+	 * @return Returns whether there are more rows
 	 */
 	public abstract boolean hasMoreRows();
 	/**
 	 * Returns next row and increments row cursor.
-	 * @return returns next row.
+	 * @return Returns next row.
 	 */
 	public abstract Object[] nextRow();
 	public abstract Hashtable nextRowHash();
@@ -44,7 +44,7 @@ public interface XFTTableI {
 	 * If this header is found in the collection of column names, then that index
 	 * is used to return the Object from the current row at that index.
 	 * @param header
-	 * @return
+	 * @return Returns the cell value
 	 */
 	public abstract Object getCellValue(String header);
 	/**
@@ -54,13 +54,13 @@ public interface XFTTableI {
 	/**
 	 * Outputs table headers and contents as a delimited string
 	 * @param delimiter
-	 * @return
+	 * @return Returns a String containing the table headers and contents
 	 */
 	public abstract String toString(String delimiter);
 	public abstract String toHTML(boolean insertTDTags,String lightColor,String darkColor,Hashtable tableProperties,int startCount);
     public abstract void toHTML(boolean insertTDTags,String lightColor,String darkColor,Hashtable tableProperties,int startCount,OutputStream out);
 	/**
-	 * @return
+	 * @return Returns the number of rows
 	 */
 	public abstract int getNumRows();
 	public abstract int size();

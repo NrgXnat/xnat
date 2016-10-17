@@ -10,13 +10,13 @@
 
 package org.nrg.xft.schema;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-
 import org.nrg.xft.utils.NodeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
 
 /**
  * @author Tim
@@ -76,7 +76,7 @@ public class XFTDuplicateRelationship {
 	
 	/**
 	 * @param doc
-	 * @return
+	 * @return Returns the XML representation of the document, represented in a Node object
 	 */
 	public Node toXML(Document doc)
 	{

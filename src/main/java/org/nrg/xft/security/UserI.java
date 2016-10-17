@@ -10,12 +10,12 @@
 
 package org.nrg.xft.security;
 
-import java.io.Serializable;
-import java.util.Date;
-
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xft.exception.MetaDataException;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * @author Tim
@@ -26,22 +26,10 @@ public interface UserI extends UserDetails,Serializable{
 	String getUsername();
     String getLogin();
     boolean isGuest();
-	
-	/**
-	 * @return
-	 */
+
     String getFirstname();
-
-	/**
-	 * @return
-	 */
     String getLastname();
-
-	/**
-	 * @return
-	 */
     String getEmail();
-
     String getDBName();
     String getPassword();
     boolean isEnabled();

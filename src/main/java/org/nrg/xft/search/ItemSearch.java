@@ -10,13 +10,6 @@
 
 package org.nrg.xft.search;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -33,6 +26,8 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.*;
 
 public class ItemSearch implements SearchI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(ItemSearch.class);
@@ -106,7 +101,7 @@ public class ItemSearch implements SearchI {
 	 * Use the withChildren variable to specify whether or not the child items of the matching
 	 * elements should be loaded.
 	 * @param withChildren
-	 * @return
+	 * @return Returns a collection with the results of the search
 	 * @throws Exception
 	 */
 	public ItemCollection exec(boolean withChildren) throws Exception
@@ -139,7 +134,7 @@ public class ItemSearch implements SearchI {
 	 * elements should be loaded.
 	 * @param withChildren
 	 * @param extend
-	 * @return
+	 * @return Returns a collection with the results of the search
 	 * @throws Exception
 	 */
 	public ItemCollection exec(boolean withChildren,boolean extend) throws IllegalAccessException,Exception
@@ -741,7 +736,7 @@ public class ItemSearch implements SearchI {
 	 * @param xmlPath
 	 * @param v
 	 * @param user
-	 * @return
+	 * @return Returns a collections of the XFTItems matching specified criteria
 	 * @throws Exception
 	 */
 	public static ItemCollection GetItems(String xmlPath,String comparisonType, Object v, UserI user, boolean preLoad) throws Exception
@@ -760,7 +755,7 @@ public class ItemSearch implements SearchI {
 	 * @param xmlPath
 	 * @param v
 	 * @param user
-	 * @return
+	 * @return Returns collection of XFTItems matching specified criteria
 	 * @throws Exception
 	 */
 	public static ItemCollection GetItems(String xmlPath,Object v, UserI user, boolean preLoad) throws Exception
@@ -779,7 +774,7 @@ public class ItemSearch implements SearchI {
 	 * @param xmlPath
 	 * @param v
 	 * @param user
-	 * @return
+	 * @return Returns first XFTItem matching specified criteria
 	 * @throws Exception
 	 */
 	public static XFTItem GetItem(String xmlPath,Object v, UserI user,boolean preLoad) throws Exception
@@ -798,7 +793,7 @@ public class ItemSearch implements SearchI {
      * Gets the matching items based on the specified criteria.
      * @param cc
      * @param user
-     * @return
+     * @return Returns collection of items matching specified criteria
      * @throws Exception
      */
     public static ItemCollection GetItems(String elementName, CriteriaCollection cc, UserI user,boolean preLoad) throws Exception
@@ -817,7 +812,7 @@ public class ItemSearch implements SearchI {
 	 * Gets the matching items based on the specified criteria.
 	 * @param cc
 	 * @param user
-	 * @return
+	 * @return Returns collection of items matching specified criteria
 	 * @throws Exception
 	 */
 	public static ItemCollection GetItems(CriteriaCollection cc, UserI user,boolean preLoad) throws Exception
@@ -838,7 +833,7 @@ public class ItemSearch implements SearchI {
 	 * Get an empty ItemSearch object for the specified data type.
 	 * @param elementName
 	 * @param user
-	 * @return
+	 * @return Returns an empty ItemSearch object for the specified data type
 	 * @throws Exception
 	 */
 	public static ItemSearch GetItemSearch(String elementName,UserI user) throws Exception
@@ -852,7 +847,7 @@ public class ItemSearch implements SearchI {
 	 * Get all XFTItems of the specified data type.
 	 * @param elementName
 	 * @param user
-	 * @return
+	 * @return Returns collection of all items
 	 * @throws Exception
 	 */
 	public static ItemCollection GetAllItems(String elementName,UserI user,boolean preLoad) throws Exception

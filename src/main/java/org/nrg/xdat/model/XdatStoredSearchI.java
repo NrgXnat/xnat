@@ -45,7 +45,6 @@ public interface XdatStoredSearchI {
 
 	/**
 	 * search_field
-	 * @return Returns an List of org.nrg.xdat.model.XdatSearchFieldI
 	 */
 	public <A extends org.nrg.xdat.model.XdatSearchFieldI> void addSearchField(A item) throws Exception;
 
@@ -57,7 +56,6 @@ public interface XdatStoredSearchI {
 
 	/**
 	 * search_where
-	 * @return Returns an List of org.nrg.xdat.model.XdatCriteriaSetI
 	 */
 	public <A extends org.nrg.xdat.model.XdatCriteriaSetI> void addSearchWhere(A item) throws Exception;
 
@@ -91,7 +89,6 @@ public interface XdatStoredSearchI {
 
 	/**
 	 * allowed_user
-	 * @return Returns an List of org.nrg.xdat.model.XdatStoredSearchAllowedUserI
 	 */
 	public <A extends org.nrg.xdat.model.XdatStoredSearchAllowedUserI> void addAllowedUser(A item) throws Exception;
 
@@ -103,7 +100,6 @@ public interface XdatStoredSearchI {
 
 	/**
 	 * allowed_groups/groupID
-	 * @return Returns an List of org.nrg.xdat.model.XdatStoredSearchGroupidI
 	 */
 	public <A extends org.nrg.xdat.model.XdatStoredSearchGroupidI> void addAllowedGroups_groupid(A item) throws Exception;
 

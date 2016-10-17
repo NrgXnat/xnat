@@ -159,7 +159,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @param e
 	 * @param hash
 	 * @param throwException
-	 * @return
+	 * @return Returns the new XFTItem
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 * @throws InvalidValueException
@@ -175,7 +175,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @param n  elementName
 	 * @param hash  dot-sytax properties
 	 * @param throwException
-	 * @return
+	 * @return Returns the new XFTItem
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 * @throws InvalidValueException
@@ -193,7 +193,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * @param n elementName
-	 * @return
+	 * @return Returns the new XFTItem
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -205,7 +205,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * @param e
-	 * @return
+	 * @return Returns the new XFTItem
 	 */
 	public static XFTItem NewItem(GenericWrapperElement e,UserI user)
 	{
@@ -215,7 +215,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * @param user
 	 * @param name
-	 * @return
+	 * @return Returns the newly created meta data element
 	 */
 	public static XFTItem NewMetaDataElement(UserI user, String name, boolean quarantine, Date insert_date, Object xft_version)
 	{
@@ -254,7 +254,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * @param e
-	 * @return
+	 * @return Returns the new pre-formatted item
 	 */
 	private static XFTItem NewPreFormattedItem(GenericWrapperElement e, UserI user)
 	{
@@ -282,7 +282,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * @param name
-	 * @return
+	 * @return Returns the new pre-populated item.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
@@ -434,7 +434,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Full XML Type name
-	 * @return
+	 * @return Returns the item's XSI type
 	 */
 	public String getXSIType() {
 		return xmlType;
@@ -464,7 +464,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * If this element has a stored ProperName in the XFTReferenceManager's
 	 * proper names hashtable.
-	 * @return
+	 * @return Returns whether the element has a proper name
 	 * @throws ElementNotFoundException
 	 */
 	public String getProperName() throws ElementNotFoundException
@@ -480,7 +480,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the file name
 	 * @throws ElementNotFoundException
 	 */
 	public String getFileName() throws ElementNotFoundException
@@ -496,7 +496,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the unique field name
 	 * @throws ElementNotFoundException
 	 */
 	public String getUniqueFileName() throws ElementNotFoundException
@@ -540,7 +540,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * IF the corresponding element has a field of type ':ID' then that field's name is returned,
 	 * ELSE an empty string is returned.
-	 * @return
+	 * @return Returns the name of the element's ID field
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -569,7 +569,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * If the corresponding element has a field of type ':ID'
-	 * @return
+	 * @return Returns whether the element has an ID
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -587,7 +587,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * IF the coresponding element has an ':ID' field, then that field's value is returned.
 	 * Otherwise, null is returned.
-	 * @return
+	 * @return Returns this element's ID
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -603,7 +603,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * IF the corresponding element has any fields of type ':IDREF' then those field's names are returned,
 	 * ELSE an empty ArrayList is returned.
-	 * @return
+	 * @return Returns a list of the names of any IDREF fields this element has
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -626,7 +626,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * IF the coresponding element has any ':IDREF' fields, then those field's values are returned.
 	 * Otherwise, an empty hashtable is returned.
-	 * @return
+	 * @return Returns a hashtable of any IDREF fields this element has
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -708,7 +708,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * Translates the XFTItem to a simple XML DOM node.
 	 * @param doc
-	 * @return
+	 * @return Returns the item as a simple XML DOM node
 	 */
 	public Node toXML(Document doc)
 	{
@@ -767,7 +767,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Translates the XFTItem to a simple XML DOM document.
-	 * @return
+	 * @return Returns Web XML document for this item
 	 */
 	public Document toXML() throws Exception
 	{
@@ -776,7 +776,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Translates the XFTItem to a simple XML DOM document.
-	 * @return
+	 * @return Returns Web XML document for this item
 	 */
 	public Document toXML(boolean allowSchemaLocation) throws Exception
 	{
@@ -785,7 +785,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * @param location
-	 * @return
+	 * @return Returns Web XML document for this item
 	 * @throws Exception
 	 */
 	public Document toWebXML(String location,boolean limited) throws Exception
@@ -795,7 +795,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Outputs a debugging version of the XFTItem into XML format.
-	 * @return
+	 * @return Returns an XML version of the item
 	 */
 	public Document toXML_Item()
 	{
@@ -810,7 +810,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * Uses reflection to return a field from a sub item.
 	 * @param sub Item.subItem.itemToReturn
 	 * @param key
-	 * @return
+	 * @return Returns the value corresponding with the requested key in the requested sub item
 	 */
 	public Object findSubValue(String sub, String key)
 	{
@@ -844,7 +844,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * Searches for a field in this item and its extensions. (null if not found)
 	 * @param key sql_name
-	 * @return
+	 * @return Returns the value corresponding with the requested key
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
@@ -867,7 +867,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Populates any referenced items.
-	 * @return
+	 * @return Returns this item with referenced items populated
 	 */
 	public ItemI populateRefItems() throws Exception
 	{
@@ -931,7 +931,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Populates Child items.
-	 * @return
+	 * @return Returns this item with child items populated
 	 */
 	public ItemI populateChildItems(ArrayList parents, boolean rePopulateRefs) throws XFTInitException
 	{
@@ -1486,7 +1486,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the item has a primary key
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
@@ -1512,7 +1512,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Hashtable of primaryKeyName/value pairs
-	 * @return
+	 * @return Returns Hashtable of primaryKeyName/value pairs
 	 * @throws XFTInitException 
 	 * @throws FieldNotFoundException 
 	 * @throws ElementNotFoundException 
@@ -1558,7 +1558,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the primary key
 	 */
 	public Object getPK()
 	{
@@ -1581,7 +1581,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * ArrayList of SearchCriteria of primaryKeyName/value pairs
-	 * @return
+	 * @return Returns ArrayList of SearchCriteria of primaryKeyName/value pairs
 	 */
 	public CriteriaCollection getPkSearch(boolean withChildren) throws XFTInitException,ElementNotFoundException
 	{
@@ -1636,7 +1636,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * ArrayList of SearchCriteria of uniqueField/value pairs
-	 * @return
+	 * @return Returns ArrayList of SearchCriteria of uniqueField/value pairs
 	 */
 	public CriteriaCollection getUniqueSearch() throws XFTInitException,ElementNotFoundException,Exception
 	{
@@ -1757,7 +1757,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
     /**
-     * @return
+     * @return Returns whether the item has unique fields
      * @throws XFTInitException
      * @throws ElementNotFoundException
      */
@@ -1767,7 +1767,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     }
 
 	/**
-	 * @return
+	 * @return Returns whether the item has unique fields
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -1871,7 +1871,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Returns the GenericWrapperElement for this item from the schema
-	 * @return
+	 * @return Returns the GenericWrapperElement for this item from the schema
 	 */
 	public GenericWrapperElement getGenericSchemaElement() throws ElementNotFoundException
 	{
@@ -1966,7 +1966,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * primary key properties.
 	 * @param item2 Item to compare
 	 * @param ignorePK true to ignore primary keys in comparison
-	 * @return
+	 * @return Returns whether the two items have the same properties
 	 */
 	public boolean equals(XFTItem item2, boolean ignorePK) throws XFTInitException
 	{
@@ -2161,7 +2161,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	
 	/**
 	 * Returns ArrayList of XFTItems with matching pks. (DB ACCESS)
-	 * @return
+	 * @return Returns ArrayList of XFTItems with matching primary keys
 	 */
 	public ItemCollection getPkMatches(boolean extend) throws DBPoolException,ElementNotFoundException,XFTInitException,java.sql.SQLException,FieldNotFoundException,Exception
 	{
@@ -2272,7 +2272,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * ArrayList of SearchCriteria of primaryKeyName/value pairs
-	 * @return
+	 * @return Returns the ItemSearch object that searches for items with this item's properties
 	 */
 	public ItemSearch getFieldsMatchSearch(boolean includeParent) throws XFTInitException,ElementNotFoundException,Exception
 	{
@@ -2468,7 +2468,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Returns ArrayList of XFTItems with matching unique fields. (DB ACCESS)
-	 * @return
+	 * @return Returns ArrayList of XFTItems with matching unique fields
 	 */
 	public ItemCollection getUniqueMatches(boolean extend) throws DBPoolException,ElementNotFoundException,XFTInitException,java.sql.SQLException,FieldNotFoundException,Exception
 	{
@@ -2521,7 +2521,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Returns ArrayList of XFTItems where all fields match. (DB ACCESS)
-	 * @return
+	 * @return Returns ArrayList of XFTItems where all fields match
 	 */
 	public ItemCollection getFieldMatches(boolean extend) throws DBPoolException,ElementNotFoundException,XFTInitException,java.sql.SQLException,FieldNotFoundException,Exception
 	{
@@ -2564,7 +2564,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * can have a field of this fieldName, then it is added to the properties.
 	 * @param fieldName
 	 * @param value
-	 * @return
+	 * @return Returns whether the field was set
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
@@ -2611,7 +2611,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * @param f
-	 * @return
+	 * @return Returns whether the item has the specified field
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
@@ -2815,7 +2815,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 *
 	 * @param primary Maintained object
 	 * @param secondary object to reconcile into the primary object.
-	 * @return
+	 * @return Returns the primary object after the secondary object has been reconciled into it
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 * @throws Exception
@@ -2989,7 +2989,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * If the corresponding element is extended by another element and has an Extension Element.
 	 * (This means that this item is extended but does not extend anything itself.)
-	 * @return
+	 * @return Returns whether the corresponding element is extended by another element and has an Extension Element
 	 * @throws ElementNotFoundException
 	 */
 	public boolean hasExtendedField() throws ElementNotFoundException
@@ -3000,7 +3000,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * If this item is extended then it returns the extending item, otherwise
 	 * it returns this item.
-	 * @return
+	 * @return Returns the extending item, f this item is extended, otherwise it returns this item
 	 * @throws ElementNotFoundException
 	 */
 	private XFTItem getExtenderItem() throws ElementNotFoundException
@@ -3033,7 +3033,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * If this item is extended then it returns the extending item's name, otherwise
 	 * it returns this item's name.
-	 * @return
+	 * @return Returns the extending item's name, if this item is extended, otherwise it returns this item's name
 	 * @throws ElementNotFoundException
 	 */
 	private String getExtenderName() throws ElementNotFoundException
@@ -3161,7 +3161,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the extension element of teh extension item
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 * @throws Exception
@@ -3203,7 +3203,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the extension item
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 * @throws FieldNotFoundException
@@ -3215,7 +3215,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the item with given extension name, if one exists
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 * @throws FieldNotFoundException
@@ -3276,7 +3276,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns a clone of the item with field names and field IDs, but without properties
 	 */
 	public Object cloneFormat()
 	{
@@ -3297,7 +3297,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	
 	/**
 	 * Copies an XFTItem and its children.  All XNAT-generated fields (pk,fk, and meta-data) are ignored.  If you need an exact copy use clone().
-	 * @return
+	 * @return Returns a copy of an item and it's children (ignoring XNAT-generated fields)
 	 */
 	public XFTItem copy() {
 		XFTItem _new=null;
@@ -4267,7 +4267,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns a list of all xml field names
 	 */
 	public ArrayList getAllXMLFieldNames()
 	{
@@ -4284,7 +4284,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns a list of xml field names
 	 * @throws Exception
 	 */
 	public ArrayList getSingleXMLFieldNames() throws Exception
@@ -4323,7 +4323,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * @param xmlPath
-	 * @return
+	 * @return Returns the field name matching the supplied xmlPath if one exists and null otherwise
 	 */
 	public String getValidXMLProperty(String xmlPath)
 	{
@@ -5616,7 +5616,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	
 	/**
 	 * whether or not this Item has been activated.
-	 * @return
+	 * @return Returns whether this item has been activated
 	 */
 	public boolean isQuarantine() throws MetaDataException
 	{
@@ -5630,8 +5630,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 	
 	/**
-	 * whether or not this Item has been activated.
-	 * @return
+	 * whether or not this Item has been locked.
+	 * @return Returns whether this item has been locked
 	 */
 	public boolean isLocked() throws MetaDataException
 	{
@@ -5646,7 +5646,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	
 	/**
 	 * whether or not this Item has been activated.
-	 * @return
+	 * @return Returns whether this item has been activated
 	 */
 	public boolean isActive() throws MetaDataException
 	{
@@ -5775,7 +5775,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns a list of all history items
 	 * @throws FieldNotFoundException
 	 */
 	public ArrayList getHistoryItems() throws FieldNotFoundException
@@ -5784,7 +5784,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether there are one or more history items
 	 */
 	public boolean hasHistory() throws XFTInitException,ElementNotFoundException
 	{
@@ -5829,7 +5829,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the collection of history items
 	 */
 	public ItemCollection getHistory()
 	{
@@ -5837,7 +5837,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the first history item
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -6024,7 +6024,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether this is a history item
 	 * @throws Exception
 	 */
 	public boolean isHistory() throws Exception
@@ -6038,7 +6038,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the item is valid
 	 * @throws Exception
 	 */
 	public boolean isValid() throws Exception

@@ -10,14 +10,14 @@
 
 package org.nrg.xft.references;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import org.nrg.xft.schema.XFTReferenceField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.schema.XFTReferenceField;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferenceI{
 	private GenericWrapperElement element1 = null;
@@ -180,7 +180,7 @@ public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferen
 	
 	/**
 	 * Returns the name of the mapping table (the two elements' sql names in alphabetical order).
-	 * @return
+	 * @return Returns the name of the mapping table
 	 */
 	public String getMappingTable()
 	{
@@ -207,28 +207,28 @@ public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferen
 	}
 
 	/**
-	 * @return
+	 * @return Returns element1
 	 */
 	public GenericWrapperElement getElement1() {
 		return element1;
 	}
 
 	/**
-	 * @return
+	 * @return Returns element2
 	 */
 	public GenericWrapperElement getElement2() {
 		return element2;
 	}
 
 	/**
-	 * @return
+	 * @return Returns field1
 	 */
 	public GenericWrapperField getField1() {
 		return field1;
 	}
 
 	/**
-	 * @return
+	 * @return Returns field2
 	 */
 	public GenericWrapperField getField2() {
 		return field2;
@@ -272,7 +272,7 @@ public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferen
 
 	/**
 	 * ArrayList of XFTMappingColumn
-	 * @return
+	 * @return Returns an ArrayList of XFTMappingColumns
 	 */
 	public ArrayList getMappingColumns() {
 		return mappingColumns;
@@ -281,7 +281,7 @@ public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferen
 	/**
 	 * ArrayList of XFTMappingColumns for this element.
 	 * @param element
-	 * @return
+	 * @return Returns an ArrayList of XFTMappingColumns for this element
 	 */
 	public ArrayList<XFTMappingColumn> getMappingColumnsForElement(GenericWrapperElement element)
 	{

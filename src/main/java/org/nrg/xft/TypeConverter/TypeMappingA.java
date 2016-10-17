@@ -19,7 +19,7 @@ public abstract class TypeMappingA implements TypeMappingI {
 	private String name = "";
 
 	/**
-	 * @return
+	 * @return Returns the mapping
 	 */
 	public Hashtable getMapping() {
 		return mapping;
@@ -32,7 +32,7 @@ public abstract class TypeMappingA implements TypeMappingI {
 		mapping = hashtable;
 	}
 	/**
-	 * @return
+	 * @return Returns the type mapping name
 	 */
 	public String getName() {
 		return name;

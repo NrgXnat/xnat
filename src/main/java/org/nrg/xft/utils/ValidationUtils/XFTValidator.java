@@ -10,11 +10,6 @@
 
 package org.nrg.xft.utils.ValidationUtils;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
@@ -25,6 +20,11 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.DateUtils;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 public class XFTValidator {
 	private static final String EMPTY = "";
 	private static final String TRUE = "true";
@@ -39,7 +39,7 @@ public class XFTValidator {
 	 * comparisons, min length, max length and required.  The results of the validation are
 	 * returned in a ValidationResults object.
 	 * @param item
-	 * @return
+	 * @return Returns ValidationResults object
 	 * @throws org.nrg.xft.exception.XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -1194,7 +1194,7 @@ public class XFTValidator {
 	 * Gets the possible values for the specified field (sql_name) in the specified element.
 	 * @param element
 	 * @param field (sql_name)
-	 * @return
+	 * @return Returns an ArrayList of possible values for the specified field in the specified element
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException

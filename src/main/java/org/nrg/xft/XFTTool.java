@@ -10,29 +10,25 @@
 
 package org.nrg.xft;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.util.ArrayList;
-
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.ValidationException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.generators.SQLCreateGenerator;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XMLValidator;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
+import org.nrg.xft.utils.XMLValidator;
 import org.w3c.dom.Document;
+
+import java.io.File;
+import java.sql.SQLException;
+import java.util.ArrayList;
 public class XFTTool {
 	
 	/**
@@ -50,7 +46,7 @@ public class XFTTool {
 	 * As a 'simple' browse, this search does not join to any of the child elements 
 	 * of this element.
 	 * @param elementName (XML name of the element whose data will be returned)
-	 * @return
+	 * @return Returns the element's table without joining it to its child tables
 	 * @throws XFTInitException
 	 * @throws DBPoolException
 	 * @throws SQLException
@@ -70,7 +66,7 @@ public class XFTTool {
 	 * As a 'Grand' browse, this search will join the primary table to all of its child 
 	 * tables (Ref Elements).
 	 * @param elementName
-	 * @return
+	 * @return Returns the element's table joined to all of its child tables
 	 * @throws XFTInitException
 	 * @throws DBPoolException
 	 * @throws SQLException

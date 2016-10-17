@@ -179,7 +179,7 @@ public class XdatRoleTypeBean extends BaseElement implements java.io.Serializabl
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getDataFieldValue(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("role_name")){
@@ -196,7 +196,7 @@ public class XdatRoleTypeBean extends BaseElement implements java.io.Serializabl
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getReferenceField(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("allowed_actions/allowed_action")){
@@ -209,7 +209,7 @@ public class XdatRoleTypeBean extends BaseElement implements java.io.Serializabl
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public String getReferenceFieldName(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("allowed_actions/allowed_action")){

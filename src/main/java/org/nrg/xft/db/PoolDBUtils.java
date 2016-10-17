@@ -42,7 +42,7 @@ public class PoolDBUtils {
 	 * @param db
 	 * @param table
 	 * @param pk
-	 * @return
+	 * @return Returns the currval of the sequence after running the query
 	 * @throws SQLException
 	 * @throws Exception
 	 */
@@ -281,7 +281,7 @@ public class PoolDBUtils {
 	/**
 	 * Check if the database type exists
 	 * @param _class
-	 * @return
+	 * @return Returns whether the database type exists
 	 * @throws Exception
 	 */
 	public static boolean checkIfTypeExists(String _class) throws Exception{
@@ -292,7 +292,7 @@ public class PoolDBUtils {
 	/**
 	 * Check if the database class exists
 	 * @param _class
-	 * @return
+	 * @return Returns whether the database class exists
 	 * @throws Exception
 	 */
 	public static boolean checkIfClassExists(String _class) throws Exception{
@@ -412,7 +412,7 @@ public class PoolDBUtils {
 	 * a XFTTable.
 	 * @param query
 	 * @param db
-	 * @return
+	 * @return Returns the XFTTable containing the results of the query
 	 * @throws SQLException
 	 * @throws DBPoolException
 	 */
@@ -520,7 +520,7 @@ public class PoolDBUtils {
 	/**
 	 * Returns the number of Rows in a given ResultSet
 	 * @param rs
-	 * @return
+	 * @return Returns the number of Rows in a given ResultSet
 	 */
 	public static int GetResultSetSize(ResultSet rs)
 	{
@@ -622,7 +622,7 @@ public class PoolDBUtils {
      * @param functionQuery
      * @param functionName
      * @param login
-     * @return
+     * @return Returns the item expressed as a string
      */
     public static String RetrieveItemString(String rootElement, String ids,String functionQuery, String functionName, String login){
         String itemString=null;
@@ -767,7 +767,7 @@ public class PoolDBUtils {
      * @param login
      * @param search_xml
      * @param dbname
-     * @return
+     * @return Returns the ID of the newly logged custom search
      */
     public static Object LogCustomSearch(String login,String search_xml, String dbname)throws SQLException,DBPoolException,Exception{
         CreateCustomSearchLog(dbname, login);
@@ -782,7 +782,7 @@ public class PoolDBUtils {
      * @param login
      * @param dbname
      * @param search_id
-     * @return
+     * @return Returns the logged custom search xml
      */
     public static String RetrieveLoggedCustomSearch(String login,String dbname,Object search_id)throws SQLException,DBPoolException,Exception{
         CreateCustomSearchLog(dbname, login);

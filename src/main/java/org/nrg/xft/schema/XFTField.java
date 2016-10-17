@@ -10,13 +10,6 @@
 
 package org.nrg.xft.schema;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.schema.design.XFTNode;
@@ -24,6 +17,8 @@ import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import java.util.*;
 public abstract class XFTField extends XFTNode implements Identifier{
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTField.class);
 	public abstract String toString(String header);
@@ -89,7 +84,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 		this.localMap = localMap;
 	}
 	/**
-	 * @return
+	 * @return Returns the description for this field
 	 */
 	public String getDescription() {
 		return description;
@@ -97,42 +92,42 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * Display label for this field
-	 * @return
+	 * @return Returns the display label for this field
 	 */
 	public String getDisplayName() {
 		return displayName;
 	}
 
 	/**
-	 * @return
+	 * @return Returns fixed for this field
 	 */
 	public String getFixed() {
 		return fixed;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the maximum number of times a field can occur
 	 */
 	public String getMaxOccurs() {
 		return maxOccurs;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the minimum number of times a field can occur
 	 */
 	public String getMinOccurs() {
 		return minOccurs;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the size
 	 */
 	public String getSize() {
 		return size;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the use
 	 */
 	public String getUse() {
 		return use;
@@ -193,7 +188,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * (never null)
-	 * @return
+	 * @return Returns the XFTRule for this field
 	 */
 	public XFTRule getRule() {
 		if (rule == null)
@@ -204,7 +199,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * (never null)
-	 * @return
+	 * @return Returns the XFTSqlField for this field
 	 */
 	public XFTSqlField getSqlField() {
 		if (sqlField == null)
@@ -216,7 +211,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * (never null)
-	 * @return
+	 * @return Returns the XFTWebAppField for this field
 	 */
 	public XFTWebAppField getWebAppField() {
 		if (webAppField == null)
@@ -249,7 +244,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * sequence in relation to other fields at this level in this element.
-	 * @return
+	 * @return Returns this field's sequence in relation to other fields at this level
 	 */
 	public int getSequence() {
 		return sequence;
@@ -273,13 +268,13 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	}
 
 	/**
-	 * @return
+	 * @return Returns this field's name
 	 */
 	public abstract String getName();
 
 	/**
 	 * whether or not this field is an XML attribute.
-	 * @return
+	 * @return Returns whether or not this field is an XML attribute
 	 */
 	public boolean isAttribute() {
 		return isAttribute;
@@ -310,7 +305,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	 * @param parent XFTField or XFTElement
 	 * @param prefix XMLNS prefix
 	 * @param s owner Schema
-	 * @return
+	 * @return Returns a Hastbale of elements and attributes from the XML DOM Node turned into XFTFields
 	 */
 	public static Hashtable GetFields(Node node,String header,XFTNode parent, String prefix,XFTSchema s)
 	{
@@ -364,7 +359,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	}
 
 	/**
-	 * @return
+	 * @return Returns a Hastable of childFields
 	 */
 	public Hashtable getChildFields() {
 		return childFields;
@@ -389,7 +384,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * 'Attribute:' if it is an attribute, otherwise 'Element:'
-	 * @return
+	 * @return Returns 'Attribute:' if it is an attribute, otherwise 'Element:'
 	 */
 	public String displayAttribute()
 	{
@@ -402,7 +397,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	/**
 	 * If this field is the child of another XFTField, then that parent's xml name
 	 * will be joined to this field's xml name to create a 'full' name.
-	 * @return
+	 * @return Returns the field's full name (containing the parent's xml name)
 	 */
 	public String getFullName() {
 		return fullName;
@@ -430,7 +425,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	}
 
 	/**
-	 * @return
+	 * @return Returns the XFTRelation for this field
 	 */
 	public XFTRelation getRelation() {
 	    return relation;
@@ -478,28 +473,28 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	  }
 	};
 	/**
-	 * @return
+	 * @return Returns the expose String
 	 */
 	public String getExpose() {
 		return expose;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the required String
 	 */
 	public String getRequired() {
 		return required;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the unique String
 	 */
 	public String getUnique() {
 		return unique;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the unique composite String
 	 */
 	public String getUniqueComposite() {
 		return uniqueComposite;
@@ -535,7 +530,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * If field has children which ARE NOT attributes, then true, else false.
-	 * @return
+	 * @return Returns whether the field has children which ARE NOT attributes
 	 */
 	public boolean hasChildren()
 	{
@@ -561,7 +556,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * If field has children which ARE attributes, then true, else false.
-	 * @return
+	 * @return Returns whether the field has children which are attributes
 	 */
 	public boolean hasAttributes()
 	{
@@ -584,7 +579,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * if this field is displayed in XML only (not in SQL)
-	 * @return
+	 * @return Returns whether this field is displayed in XML only (not in SQL)
 	 */
 	public String getXmlOnly() {
 		return xmlOnly;
@@ -600,7 +595,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * name of the field which this field relates to.
-	 * @return
+	 * @return Returns the name of the field which this field relates to
 	 */
 	public String getBaseCol() {
 		return baseCol;
@@ -608,7 +603,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * dot Syntax specification of the element which this field relates to.
-	 * @return
+	 * @return Returns the dot Syntax specification of the element which this field relates to
 	 */
 	public String getBaseElement() {
 		return baseElement;
@@ -794,7 +789,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	 * @param n Node to search
 	 * @param prefix XMLNS
 	 * @param s parent schema
-	 * @return
+	 * @return Returns whether the given Node is only a reference to another Node
 	 */
 	public static boolean IsRefOnly(Node n,String prefix,XFTSchema s)
 	{
@@ -1046,7 +1041,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	 * @param n Node to search
 	 * @param prefix XMLNS
 	 * @param s parent schema
-	 * @return
+	 * @return Returns the name of the first referenced element
 	 */
 	public static String GetRefName(Node n, String prefix,XFTSchema s)
 	{
@@ -1558,7 +1553,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	 * @param parent XFTField or XFTElement
 	 * @param prefix XMLNS
 	 * @param s parent schema
-	 * @return
+	 * @return Returns the XFTField that was just added
 	 */
 	public static XFTField AddField(Node node,String header,XFTNode parent, String prefix,XFTSchema s)
 	{
@@ -1574,7 +1569,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	 * @param parent XFTField or XFTElement
 	 * @param prefix XMLNS
 	 * @param s parent schema
-	 * @return
+	 * @return Returns the XFTField that was just added
 	 */
 	public static XFTField AddField(Node node,String header,XFTNode parent, String prefix,XFTSchema s, boolean allowMaxOccursElement)
 	{
@@ -1974,7 +1969,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 
 	/**
-	 * @return
+	 * @return Returns the XMLType of the field
 	 */
 	public abstract XMLType getXMLType();
 
@@ -1990,7 +1985,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 * if field is an extension of the parent element which was a created child.
-	 * @return
+	 * @return Returns whether the field is an extension of the parent element
 	 */
 	public boolean isExtension() {
 		return extension;
@@ -2006,7 +2001,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 
 	/**
 	 *'always','never' or 'root' (only displayed when parent element is root element)
-	 * @return
+	 * @return Returns String XML display value ('always','never' or 'root')
 	 */
 	public String getXmlDisplay() {
 		return xmlDisplay;

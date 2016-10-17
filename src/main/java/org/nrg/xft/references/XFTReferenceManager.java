@@ -9,23 +9,23 @@
 
 
 package org.nrg.xft.references;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
+
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
 public class XFTReferenceManager {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTReferenceManager.class);
 	private static XFTReferenceManager instance = null;
@@ -44,7 +44,7 @@ public class XFTReferenceManager {
 	
 	/**
 	 * Gets singleton object
-	 * @return
+	 * @return Returns the singleton XFTReferenceManager object
 	 */
 	public static XFTReferenceManager GetInstance()
 	{
@@ -167,7 +167,7 @@ public class XFTReferenceManager {
 
 	/**
 	 * ArrayList(0:element,1:field,2:XFTManyToManyReference)
-	 * @return
+	 * @return Returns the manyToManys list
 	 */
 	private ArrayList getManyToManys() {
 		return manyToManys;
@@ -175,7 +175,7 @@ public class XFTReferenceManager {
 
 	/**
 	 * ArrayList of (XFTManyToManyReference)
-	 * @return
+	 * @return Returns the list of unique mappings
 	 */
 	public ArrayList getUniqueMappings() {
 		ArrayList al = new ArrayList();
@@ -196,7 +196,7 @@ public class XFTReferenceManager {
 
 	/**
 	 * ArrayList(0:subordinateElement,1:superiorElement,2:XFTSuperiorReference)
-	 * @return
+	 * @return Returns the manyToOnes list
 	 */
 	private ArrayList getManyToOnes() {
 		return manyToOnes;
@@ -207,7 +207,7 @@ public class XFTReferenceManager {
 	 * @param subordinateFieldName
 	 * @param superiorElementName
 	 * @param superiorFieldName
-	 * @return
+	 * @return Returns whether the fields are linked in the manyToOnes object
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -256,7 +256,7 @@ public class XFTReferenceManager {
 	/**
 	 * @param elementName
 	 * @param fieldSQLName
-	 * @return
+	 * @return Returns whether the elementName and fieldSQLName are linked in the manyToManys object
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -281,7 +281,7 @@ public class XFTReferenceManager {
 	/**
 	 * Finds the XFTReferenceI for the given reference field.
 	 * @param f
-	 * @return
+	 * @return Returns the XFTReferenceI for the given reference field
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -393,7 +393,7 @@ public class XFTReferenceManager {
 	 * Find elements that reference this given element without being referenced within the given element
 	 * but will result in an implied column in the given element.
 	 * @param e
-	 * @return
+	 * @return Returns an array list of the elements that reference this element without being referenced within the element
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -616,14 +616,14 @@ public class XFTReferenceManager {
 	}
 
 	/**
-	 * @return
+	 * @return Returns a hastable of the proper names
 	 */
 	public Hashtable getProperNames() {
 		return properNames;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the element type
 	 */
 	private Hashtable getElementType() {
 		return elementType;
@@ -687,7 +687,7 @@ public class XFTReferenceManager {
 	
 	/**
 	 * @param item
-	 * @return
+	 * @return Returns the count of the number of references in the item
 	 * @throws Exception
 	 */
 	public static Integer NumberOfReferences(XFTItem item) throws Exception

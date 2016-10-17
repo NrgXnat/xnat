@@ -10,12 +10,8 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.security;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
@@ -31,8 +27,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.util.*;
 
 public class UserGroup implements UserGroupI{
     private Logger logger = Logger.getLogger(UserGroup.class);
@@ -149,7 +144,7 @@ public class UserGroup implements UserGroupI{
 
     private List<XdatStoredSearch> stored_searches = null;
     /**
-     * @return
+     * @return Returns a list of stored search objects
      */
     protected List<XdatStoredSearch> getStoredSearches()
     {
@@ -167,7 +162,7 @@ public class UserGroup implements UserGroupI{
 
     /**
      * @param id
-     * @return
+     * @return Returns the stored search for the given ID
      */
     protected XdatStoredSearch getStoredSearch(String id)
     {
@@ -203,7 +198,7 @@ public class UserGroup implements UserGroupI{
 
     /**
      * ArrayList: 0:elementName 1:ArrayList of PermissionItems
-     * @return
+     * @return Returns a list of the lists of PermissionItems for each element
      * @throws Exception
      */
     @SuppressWarnings("unchecked")

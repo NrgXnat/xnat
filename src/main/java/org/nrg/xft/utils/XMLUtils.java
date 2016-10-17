@@ -11,17 +11,6 @@
 
 package org.nrg.xft.utils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
@@ -32,6 +21,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.*;
 
 public  class XMLUtils
 {	
@@ -170,7 +163,7 @@ public  class XMLUtils
 	/**
 	 * Translates the given DOM Document to a ByteArrayOutputStream
 	 * @param doc
-	 * @return
+	 * @return Returns the ByteArrayOutputStream translation of the DOM element
 	 */
 	public static ByteArrayOutputStream DOMToBAOS(Document doc)
 	{

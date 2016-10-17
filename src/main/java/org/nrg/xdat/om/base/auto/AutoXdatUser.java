@@ -9,20 +9,16 @@
 
 
 package org.nrg.xdat.om.base.auto;
-import java.util.ArrayList;
-import java.util.Hashtable;
-
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.om.XdatElementAccess;
-import org.nrg.xdat.om.XdatRoleType;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.om.XdatUserGroupid;
-import org.nrg.xdat.om.XdatUserI;
+import org.nrg.xdat.om.*;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ResourceFile;
+
+import java.util.ArrayList;
+import java.util.Hashtable;
 
 /**
  * @author XDAT
@@ -234,7 +230,8 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
     private String _Salt=null;
 
     /**
-     * {@inheritDoc}
+     * Gets the salt from the user object.
+	 * @return Returns this user's salt
      */
     public String getSalt(){
         try{
@@ -248,7 +245,8 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
     }
 
     /**
-     * {@inheritDoc}
+     * Sets the salt for the user object.
+	 * @param v New salt to set for this user.
      */
     public void setSalt(String v){
         try{

@@ -10,23 +10,19 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xft;
 
+import org.apache.log4j.Logger;
+import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.SecurityValues;
+import org.nrg.xft.exception.*;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.utils.XftStringUtils;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Map;
-
-import org.apache.log4j.Logger;
-import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.SecurityValues;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidItemException;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.utils.XftStringUtils;
 
 public abstract class GenericItemObject implements ItemI {
 	private static final String TRUE = "true";
@@ -39,7 +35,7 @@ public abstract class GenericItemObject implements ItemI {
 
 	/**
 	 * properties hashtable
-	 * @return
+	 * @return	Returns a hashtable of properties
 	 */
 	public Hashtable getProps() {
 		return props;
@@ -47,7 +43,7 @@ public abstract class GenericItemObject implements ItemI {
 	
 	/**
 	 * returns number of populated properties
-	 * @return
+	 * @return Returns property count
 	 */
 	public int getPropertyCount()
 	{
@@ -55,7 +51,7 @@ public abstract class GenericItemObject implements ItemI {
 	}
 	
 	/**
-	 * @return
+	 * @return Returns whether there ae any properties
 	 */
 	public boolean hasProperties()
 	{
@@ -107,7 +103,7 @@ public abstract class GenericItemObject implements ItemI {
 	/**
 	 * Get field from hashtable of properties (null if not found)
 	 * @param key
-	 * @return
+	 * @return Returns the field from hashtable of properties
 	 */
 	public Object getField(final String key) 
 	{
@@ -119,7 +115,7 @@ public abstract class GenericItemObject implements ItemI {
     /**
      * Get field from hashtable of properties (null if not found)
      * @param key
-     * @return
+     * @return Return field from hashtable of properties
      */
 	protected Object getField(final String key,final boolean allowMultipleValues) 
     {
@@ -220,7 +216,7 @@ public abstract class GenericItemObject implements ItemI {
 	
 	/**
 	 * @param xmlPath
-	 * @return
+	 * @return Return property as integer
 	 */
 	public Integer getIntegerProperty(final String xmlPath)
 	{
@@ -234,7 +230,7 @@ public abstract class GenericItemObject implements ItemI {
 	
 	/**
 	 * @param xmlPath
-	 * @return
+	 * @return Return property as float
 	 */
 	public Float getFloatProperty(final String xmlPath)
 	{
@@ -248,7 +244,7 @@ public abstract class GenericItemObject implements ItemI {
 	
 	/**
 	 * @param xmlPath
-	 * @return
+	 * @return Return property as double
 	 */
 	public Double getDoubleProperty(final String xmlPath)
 	{

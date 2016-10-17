@@ -19,7 +19,7 @@ import java.util.ArrayList;
 public interface SecurityManagerI {
     /**
      * ArrayList of Strings (fullXMLNames of secured elements i.e. xnat:investigatorData)
-     * @return
+     * @return Returns a list of the fullXMLNames of secured elements
      */
     public ArrayList getSecurityElements();
     public boolean isSecurityElement(String elementName);

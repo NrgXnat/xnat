@@ -100,7 +100,6 @@ public interface XdatUserI {
 
 	/**
 	 * element_access
-	 * @return Returns an List of org.nrg.xdat.model.XdatElementAccessI
 	 */
 	public <A extends org.nrg.xdat.model.XdatElementAccessI> void addElementAccess(A item) throws Exception;
 
@@ -112,7 +111,6 @@ public interface XdatUserI {
 
 	/**
 	 * assigned_roles/assigned_role
-	 * @return Returns an List of org.nrg.xdat.model.XdatRoleTypeI
 	 */
 	public <A extends org.nrg.xdat.model.XdatRoleTypeI> void addAssignedRoles_assignedRole(A item) throws Exception;
 
@@ -135,7 +133,6 @@ public interface XdatUserI {
 
 	/**
 	 * groups/groupID
-	 * @return Returns an List of org.nrg.xdat.model.XdatUserGroupidI
 	 */
 	public <A extends org.nrg.xdat.model.XdatUserGroupidI> void addGroups_groupid(A item) throws Exception;
 

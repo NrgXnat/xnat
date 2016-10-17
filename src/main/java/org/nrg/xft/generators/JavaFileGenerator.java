@@ -965,7 +965,7 @@ public class JavaFileGenerator {
     
     /**
      * @param e
-     * @return
+     * @return Returns the class name for the generated class
      */
     public String getClassName(GenericWrapperElement e)
     {

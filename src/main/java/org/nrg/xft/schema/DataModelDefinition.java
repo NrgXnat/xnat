@@ -16,23 +16,23 @@ package org.nrg.xft.schema;
 public interface DataModelDefinition {
 	
 	/**
-	 * Defines teh 
-	 * @return
+	 * Defines the schema path
+	 * @return Returns the schema path String
 	 */
 	public String getSchemaPath();
 	
 	/**
-	 * @return
+	 * @return Returns an array of display doc Strings
 	 */
 	public String[] getDisplayDocs();
 	
 	/**
-	 * @return
+	 * @return Returns an array of secured elements as Strings
 	 */
 	public String[] getSecuredElements();
 	
     /**
-     * @return
+     * @return Returns whether it is required
      */
     public boolean required();
 }

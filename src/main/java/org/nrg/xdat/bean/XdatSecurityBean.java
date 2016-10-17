@@ -288,7 +288,6 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 
 	/**
 	 * newsList/news
-	 * @return org.nrg.xdat.model.XdatNewsentryI
 	 */
 	public <A extends org.nrg.xdat.model.XdatNewsentryI> void setNewslist_news(A item) throws Exception{
 	setNewslist_news((org.nrg.xdat.bean.XdatNewsentryBean)item);
@@ -343,7 +342,6 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 
 	/**
 	 * infoList/info
-	 * @return org.nrg.xdat.model.XdatInfoentryI
 	 */
 	public <A extends org.nrg.xdat.model.XdatInfoentryI> void setInfolist_info(A item) throws Exception{
 	setInfolist_info((org.nrg.xdat.bean.XdatInfoentryBean)item);
@@ -473,7 +471,7 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getDataFieldValue(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("system")){
@@ -488,7 +486,7 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getReferenceField(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("groups/group")){
@@ -513,7 +511,7 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public String getReferenceFieldName(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("groups/group")){

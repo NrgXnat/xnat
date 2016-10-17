@@ -35,7 +35,7 @@ public class TorqueSchema extends XFTWebAppSchema {
 	
 	/**
 	 * @deprecated
-	 * @return
+	 * @return Returns the base class String
 	 */
 	public String getBaseClass() {
 		return baseClass;
@@ -43,7 +43,7 @@ public class TorqueSchema extends XFTWebAppSchema {
 
 	/**
 	 * @deprecated
-	 * @return
+	 * @return Returns the base peer String
 	 */
 	public String getBasePeer() {
 		return basePeer;
@@ -51,7 +51,7 @@ public class TorqueSchema extends XFTWebAppSchema {
 
 	/**
 	 * @deprecated
-	 * @return
+	 * @return Returns the default ID method
 	 */
 	public String getDefaultIdMethod() {
 		return defaultIdMethod;
@@ -59,7 +59,7 @@ public class TorqueSchema extends XFTWebAppSchema {
 
 	/**
 	 * @deprecated
-	 * @return
+	 * @return Returns the java package String
 	 */
 	public String getJavaPackage() {
 		return javaPackage;

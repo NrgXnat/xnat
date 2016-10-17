@@ -45,35 +45,35 @@ public class TorqueField extends XFTWebAppField {
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the default value String
 	 */
 	public String getDefaultValue() {
 		return defaultValue;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the inheritance String
 	 */
 	public String getInheritance() {
 		return inheritance;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the inheritance class String
 	 */
 	public String getInheritanceClass() {
 		return inheritanceClass;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the inheritance extends String
 	 */
 	public String getInheritanceExtends() {
 		return inheritanceExtends;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the inheritance key String
 	 */
 	public String getInheritanceKey() {
 		return inheritanceKey;

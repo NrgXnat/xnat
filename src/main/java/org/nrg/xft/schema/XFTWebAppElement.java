@@ -18,7 +18,7 @@ public class XFTWebAppElement {
 	private String javaName = "";
 	private String idMethod = "native";
 	/**
-	 * @return
+	 * @return Returns the java name as a String
 	 */
 	public String getJavaName() {
 		return javaName;
@@ -32,7 +32,7 @@ public class XFTWebAppElement {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the method ID as a String
 	 */
 	public String getIdMethod() {
 		return idMethod;
@@ -59,7 +59,7 @@ public class XFTWebAppElement {
 
 	/**
 	 * @param header
-	 * @return
+	 * @return Returns the element expressed as a String
 	 */
 	public String toString(String header)
 	{

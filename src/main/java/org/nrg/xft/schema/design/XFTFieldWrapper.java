@@ -9,13 +9,13 @@
 
 
 package org.nrg.xft.schema.design;
-import java.util.ArrayList;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.schema.XFTDataField;
 import org.nrg.xft.schema.XFTField;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.ArrayList;
 
 public abstract class XFTFieldWrapper implements Identifier{
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTFieldWrapper.class);
@@ -45,7 +45,7 @@ public abstract class XFTFieldWrapper implements Identifier{
 	}
 	/**
 	 * Get wrapped field
-	 * @return
+	 * @return Returns the wrapped field
 	 */
 	public XFTField getWrapped() {
 		return wrapped;
@@ -62,7 +62,7 @@ public abstract class XFTFieldWrapper implements Identifier{
 	
 	/**
 	 * Specifies if the current wrapped element is of type org.nrg.xft.schema.XFTDataField
-	 * @return
+	 * @return Returns whether the current wrapped element is a reference (e.g. of type org.nrg.xft.schema.XFTDataField)
 	 */
 	public boolean isReference()
 	{
@@ -109,7 +109,7 @@ public abstract class XFTFieldWrapper implements Identifier{
 	}
 
 	/**
-	 * @return
+	 * @return Returns the wrapped field's parent element
 	 */
 	protected XFTElementWrapper getParentE() throws ClassCastException
 	{
@@ -118,7 +118,7 @@ public abstract class XFTFieldWrapper implements Identifier{
 	
 	/**
 	 * Get name from wrapped field.
-	 * @return
+	 * @return Returns the wrapped field's name
 	 */
 	public String getName()
 	{
@@ -127,7 +127,7 @@ public abstract class XFTFieldWrapper implements Identifier{
 	
 	/**
 	 * Checks if the item is shown in XML version only (i.e. output only)
-	 * @return
+	 * @return Returns whether the item is shown in XML version only (i.e. output only)
 	 */
 	public boolean isHidden()
 	{

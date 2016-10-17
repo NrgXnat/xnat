@@ -9,10 +9,10 @@
 
 
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
-import java.util.ArrayList;
-
 import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
+
+import java.util.ArrayList;
 /**
  * Data field used to summarize information for XML display.
  * 
@@ -32,7 +32,7 @@ public class XMLFieldData {
 	private boolean required = false;
 	private XFTFieldWrapper field = null;
 	/**
-	 * @return
+	 * @return Returns whether the field is an attribute
 	 */
 	public boolean isAttribute() {
 		return attribute;
@@ -41,28 +41,28 @@ public class XMLFieldData {
 
 	/**
 	 * number of levels down from the element that the field can be found.
-	 * @return
+	 * @return Returns the Integer number of levels down from the element that the field can be found
 	 */
 	public Integer getLevels() {
 		return levels;
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the field is a multiple
 	 */
 	public boolean isMultiple() {
 		return multiple;
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the field is a reference
 	 */
 	public boolean isReference() {
 		return reference;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the XML field name (with optional prefix)
 	 */
 	public String getXmlFieldName(String prefix) {
 	    if (prefix==null)
@@ -74,7 +74,7 @@ public class XMLFieldData {
 	}
 
 	/**
-	 * @return
+	 * @return Returns XMLType
 	 */
 	public XMLType getXmlType() {
 		return xmlType;
@@ -125,7 +125,7 @@ public class XMLFieldData {
 
 	/**
 	 * [0]
-	 * @return
+	 * @return Returns sql name
 	 */
 	public String getSqlName() {
 		return sqlName;
@@ -140,7 +140,7 @@ public class XMLFieldData {
 
 	/**
 	 * Names of nodes which a reader will have to pass through to get the child node.
-	 * @return
+	 * @return Returns ArrayList of names of nodes which a reader will have to pass through to get the child node
 	 */
 	public ArrayList getLayers() {
 		return layers;
@@ -155,7 +155,7 @@ public class XMLFieldData {
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the field is a child XML node
 	 */
 	public boolean isChildXMLNode() {
 		return childXMLNode;
@@ -169,7 +169,7 @@ public class XMLFieldData {
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the field is an extension
 	 */
 	public boolean isExtension() {
 		return extension;
@@ -183,7 +183,7 @@ public class XMLFieldData {
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the field is required
 	 */
 	public boolean isRequired() {
 		return required;
@@ -209,7 +209,7 @@ public class XMLFieldData {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the field
 	 */
 	public XFTFieldWrapper getField() {
 		return field;

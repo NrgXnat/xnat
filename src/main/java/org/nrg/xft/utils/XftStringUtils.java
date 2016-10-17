@@ -9,14 +9,14 @@
 
 
 package org.nrg.xft.utils;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 public class XftStringUtils {
 
 	public static String WhiteSpace(int i)
@@ -33,7 +33,7 @@ public class XftStringUtils {
 	/**
 	 * Returns a substring of all characters after the last File.seperator.
 	 * @param path
-	 * @return
+	 * @return Returns the String file name
 	 */
 	public static String GetFileName(String path)
 	{
@@ -47,7 +47,7 @@ public class XftStringUtils {
 	/**
 	 * Returns a substring with all characters before the last File.seperator.
 	 * @param path
-	 * @return
+	 * @return Returns the String directory name
 	 */
 	public static String GetDirName(String path)
 	{
@@ -59,7 +59,7 @@ public class XftStringUtils {
 	 * Reformats a Java Method Name into an acceptable header.  It removes 'get', makes
 	 * the first letter capitalized, and adds spaces before other capitalized letters.
 	 * @param method
-	 * @return
+	 * @return Returns the specified name after it's formatted
 	 */
 	public static String FormatMethodNameToHeader(String method)
 	{
@@ -94,7 +94,7 @@ public class XftStringUtils {
 	/**
 	 * removes 'get' and un-capitalizes every character and inserts a '_'.
 	 * @param method
-	 * @return
+	 * @return Returns the specified name after it's formatted
 	 */
 	public static String FormatMethodNameToSQL(String method)
 	{
@@ -130,7 +130,7 @@ public class XftStringUtils {
 	 * Removes '_' characters and capitalizes the next character, and inserts the prefix before it.
 	 * @param prefix
 	 * @param name
-	 * @return
+	 * @return Returns the specified name after it's formatted
 	 */
 	public static String FormatStringToMethodName(String prefix,String name)
 	{
@@ -162,7 +162,7 @@ public class XftStringUtils {
 	/**
 	 * Removes '_' characters and capitalizes the next character.
 	 * @param name
-	 * @return
+	 * @return Returns the specified name after it's formatted
 	 */
 	public static String FormatStringToClassName(String name)
 	{
@@ -198,7 +198,7 @@ public class XftStringUtils {
 	/**
 	 * Removes '_' characters and capitalizes the next character.
 	 * @param name
-	 * @return
+	 * @return Returns the specified name after it's formatted
 	 */
 	public static String FormatStringToMethodSignature(String name)
 	{
@@ -234,7 +234,7 @@ public class XftStringUtils {
 	/**
 	 * Returns just the class name (without its package).
 	 * @param c
-	 * @return
+	 * @return Returns the String class name
 	 */
 	public static String getLocalClassName(Class c)
 	{
@@ -359,7 +359,7 @@ public class XftStringUtils {
 	/**
 	 * Translates the comma-delimited string to an ArrayList of strings.
 	 * @param s
-	 * @return
+	 * @return Returns an ArrayList of the Strings in the specified comma-delimited String
 	 */
 	public static ArrayList<String> CommaDelimitedStringToArrayList(String s)
 	{
@@ -369,7 +369,7 @@ public class XftStringUtils {
 	/**
 	 * Translates the comma-delimited string to an ArrayList of strings.
 	 * @param s
-	 * @return
+	 * @return Returns an ArrayList of the Strings in the specified comma-delimited String
 	 */
 	public static ArrayList<String> DelimitedStringToArrayList(String s, String delimiter)
 	{
@@ -392,7 +392,7 @@ public class XftStringUtils {
     /**
      * Translates the comma-delimited string to an ArrayList of strings.
      * @param s
-     * @return
+     * @return Returns an ArrayList of the Strings in the specified comma-delimited String
      */
     public static ArrayList<String> CommaDelimitedStringToArrayList(String s,boolean trim)
     {
@@ -402,7 +402,7 @@ public class XftStringUtils {
     /**
      * Translates the comma-delimited string to an ArrayList of strings.
      * @param s
-     * @return
+     * @return Returns an ArrayList of the Strings in the specified comma-delimited String
      */
     public static ArrayList<String> DelimitedStringToArrayList(String s, String delimiter,boolean trim)
     {

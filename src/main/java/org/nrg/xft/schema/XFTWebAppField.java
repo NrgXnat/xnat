@@ -18,7 +18,7 @@ public abstract class XFTWebAppField {
 	private String javaName = "";
 	public abstract String toString(String header);
 	/**
-	 * @return
+	 * @return Returns the field's java name String
 	 */
 	public String getJavaName() {
 		return javaName;

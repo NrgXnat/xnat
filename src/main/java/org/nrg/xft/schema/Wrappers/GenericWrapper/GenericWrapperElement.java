@@ -9,19 +9,12 @@
 
 
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.nrg.xft.XFT;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.TypeConverter.PGSQLMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
+import org.nrg.xft.XFT;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.MetaFieldCollection;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.ViewManager;
@@ -29,25 +22,16 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
-import org.nrg.xft.references.XFTManyToManyReference;
-import org.nrg.xft.references.XFTReferenceI;
-import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.references.XFTRelationSpecification;
-import org.nrg.xft.references.XFTSuperiorReference;
-import org.nrg.xft.schema.TorqueElement;
-import org.nrg.xft.schema.XFTDataField;
-import org.nrg.xft.schema.XFTField;
-import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.XFTReferenceField;
-import org.nrg.xft.schema.XFTSchema;
-import org.nrg.xft.schema.XFTSqlField;
-import org.nrg.xft.schema.XMLType;
+import org.nrg.xft.references.*;
+import org.nrg.xft.schema.*;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.*;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 public class GenericWrapperElement extends XFTElementWrapper implements SchemaElementI{	
@@ -82,7 +66,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * Get GenericWrapperElement with a matching XMLType
 	 * @param t
-	 * @return
+	 * @return Returns the GenericWrapperElement with a matching XMLType
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -113,7 +97,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * 
 	 * @param name
 	 * @param URI
-	 * @return
+	 * @return Returns the GenericWrapperElement with a matching name
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -145,7 +129,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * Gets the GenericWrapperElement with a matching name (Must have prefix, unless it is a proper name).
 	 * @param name
-	 * @return
+	 * @return Returns the GenericWrapperElement with a matching name
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -189,7 +173,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
     }
 
 	/**
-	 * @return
+	 * @return Returns whether the element contains the stated key
 	 */
 	public boolean containsStatedKey() {
 		boolean hasKey = false;
@@ -230,7 +214,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Returns the Alias defined in the TorqueElement
-	 * @return
+	 * @return Returns the Alias defined in the TorqueElement
 	 */
 	public String getAlias() {
 		return getTorqueElement().getAlias();
@@ -307,7 +291,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 	/**
 	 * Hashtable of all possible fieldIds (including extension fields) with (DATA,SINGLE,or MULTI) as the value
-	 * @return Hashtable
+	 * @return Returns Hashtable of all possible fieldIds
 	 */
 	public Hashtable getAllFieldIDs()throws ElementNotFoundException, XFTInitException 
 	{
@@ -346,7 +330,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * Returns Hashtable of all possible root xml-field names.
 	 * <BR>Value is the GenericWrapperField;
-	 * @return
+	 * @return Returns Hashtable of all possible root xml-field names
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
@@ -416,7 +400,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Returns all 'leaf nodes' fields including addIn fields.
-	 * @return
+	 * @return Returns all 'leaf nodes' fields including addIn fields
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -495,7 +479,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 	/**
 	 * Returns period-delimited string of data types which this element extends.
-	 * @return
+	 * @return Returns period-delimited string of data types which this element extends
 	 */
 	private String getPrimaryElements()
 	{
@@ -511,14 +495,14 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the base class String
 	 */
 	public String getBaseClass() {
 		return getTorqueElement().getBaseClass();
 	}
 
 	/**
-	 * @return
+	 * @return Returns the base peer String
 	 */
 	public String getBasePeer() {
 		return getTorqueElement().getBasePeer();
@@ -526,7 +510,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Gets the DB name from the elements parent XFTDataModel.
-	 * @return
+	 * @return	Returns the DB name from the elements parent XFTDataModel
 	 */
 	public String getDbName() {
 		return this.wrapped.getDataModel().getDb();
@@ -534,7 +518,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Get default key for this element.  (Defaults to (getSQLName() + "_id")
-	 * @return 
+	 * @return Returns the default key for this element wrapped in a XFTFieldWrapper
 	 */
 	public XFTFieldWrapper getDefaultKey() {
 		XFTDataField data =
@@ -738,7 +722,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Get level 1 (direct child) fields for this element
-	 * @return
+	 * @return Returns a list of this element's children (but not their children's children)
 	 */
 	
 	public synchronized ArrayList<XFTFieldWrapper> getDirectFieldsNoFilter() {
@@ -1061,7 +1045,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 	/**
 	 * ArrayList of GenericWrapperFields (DOES NOT CALL XFTReferenceManager)
-	 * @return
+	 * @return Returns an ArrayList of hidden superior elements
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
@@ -1143,7 +1127,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * if the element had a defined javaName in its WebAppElement, then that is returned.
 	 * Otherwise, the localXMLName is returned (formated to remove '_' characters).
-	 * @return
+	 * @return Returns the element's javaName in its WebAppElement, or the localXMLName if no javaName is defined
 	 */
 	public String getJAVAName() {
 		if (this.getXMLJavaNameValue() != "") {
@@ -1199,9 +1183,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 	
 	/**
-	 * returns true if this element directly references the forieign element.
+	 * returns true if this element directly references the foreign element.
 	 * @param foreign
-	 * @return
+	 * @return Returns whether this element directly references the foreign element
 	 */
 	public boolean hasReferenceTo(GenericWrapperElement foreign)
 	{
@@ -1331,21 +1315,21 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * parent schema
-	 * @return
+	 * @return Returns schema
 	 */
 	public XFTSchema getSchema() {
 		return this.wrapped.getSchema();
 	}
 
 	/**
-	 * @return
+	 * @return Returns the schema's target namespace prefix
 	 */
 	public String getSchemaTargetNamespacePrefix() {
 		return this.wrapped.getSchema().getTargetNamespacePrefix();
 	}
 
 	/**
-	 * @return
+	 * @return Returns the schema's target namespace URI
 	 */
 	public String getSchemaTargetNamespaceURI() {
 		return this.wrapped.getSchema().getTargetNamespaceURI();
@@ -1370,7 +1354,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * Get SQL Select statement as SELECT * FROM view_name.  allowMultiples 
 	 * determines if the view contains all multi-reference field joins.
 	 * @param allowMultiples
-	 * @return
+	 * @return Returns an SQL select statement to get the contents of the view
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
@@ -1394,7 +1378,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * valid sql name for this element.
-	 * @return
+	 * @return Returns the element's SQL name
 	 */
 	public synchronized String getSQLName() {
 	    if (_finalSqlName==null)
@@ -1435,7 +1419,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * valid sql name for this element.
-	 * @return
+	 * @return Returns the formatted SQL name for this element
 	 */
 	public synchronized String getFormattedName() {
 	    if (_finalFormattedName==null)
@@ -1572,7 +1556,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * this element.
 	 * @param subElementName
 	 * @param sqlName
-	 * @return
+	 * @return Returns the SQL select-grand name for the referenced field as a sub item of this element
 	 * @throws FieldNotFoundException
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
@@ -1824,7 +1808,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * @deprecated
-	 * @return
+	 * @return Returns torque element
 	 */
 	private TorqueElement getTorqueElement() {
 		if (te == null) {
@@ -1838,7 +1822,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 	/**
 	 * Gets the value of the wrapped element's code.
-	 * @return
+	 * @return Returns the value of the wrapped element's code
 	 */
 	public String getTypeCode() {
 		return wrapped.getCode();
@@ -2140,7 +2124,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Gets defined javaName or an empty string
-	 * @return
+	 * @return Returns wrapped element's defined javaName
 	 */
 	public String getXMLJavaNameValue() {
 		String _return = "";
@@ -2152,7 +2136,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Gets name property of the wrapped element.
-	 * @return
+	 * @return Returns wrapped element's name property
 	 */
 	public String getXMLName() {
 		return wrapped.getName();
@@ -2160,7 +2144,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Gets the defined sqlName or an empty string.
-	 * @return
+	 * @return Returns wrapped element's name property
 	 */
 	public String getXMLSqlNameValue() {
 		String _return = "";
@@ -2172,7 +2156,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * If this element does not correspond to a unique XML node then its isANoChildElement will be true.
-	 * @return
+	 * @return Returns whether the wrapped element is a child element
 	 */
 	public boolean isANoChildElement() {
 		return this.wrapped.isANoChildElement();
@@ -2184,7 +2168,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
 	 * will be true.
-	 * @return
+	 * @return Returns whether the wrapped element is an extension of another element
 	 */
 	public boolean isExtension() {
 		return wrapped.isExtension();
@@ -2196,7 +2180,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
 	 * will be true.
-	 * @return
+	 * @return Returns whether the wrapped element is extended
 	 */
 	public boolean isExtended()
 	{
@@ -2209,7 +2193,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
 	 * will be true.
-	 * @return
+	 * @return Returns whether the wrapped element has an extension element
 	 */
 	public boolean hasExtendedField()
 	{
@@ -2256,7 +2240,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * The name of the element, and its schema's target namespace prefix are used to generate a XMLType which
 	 * is used to uniquely identify an element.
-	 * @return
+	 * @return Returns whether the wrapped element has storeHistory set to true
 	 */
 	public boolean storeHistory()
 	{
@@ -2266,7 +2250,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * The name of the element, and its schema's target namespace prefix are used to generate a XMLType which
 	 * is used to uniquely identify an element.
-	 * @return
+	 * @return Returns the XMLType used to uniquely identify the element
 	 */
 	public XMLType getType()
 	{
@@ -2275,7 +2259,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 	/**
 	 * localType of the XMLType
-	 * @return
+	 * @return Returns this element's local XML name
 	 */
 	public String getName()
 	{
@@ -2323,7 +2307,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * Parses XML Dot Syntax to find field's select-grand name. Object[2] 0:grand sql name 1:GenericWrapperField
 	 * @param s
-	 * @return 
+	 * @return Returns the field's select-grand name
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws Exception
@@ -2352,7 +2336,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * Parses XML Dot Syntax to find field's select-grand name. Object[2] 0:grand sql name 1:GenericWrapperField
 	 * @param s
-	 * @return 
+	 * @return Returns the field's select-grand name
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws Exception
@@ -2376,7 +2360,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * Returns the validated dot-syntax reference.  (Inserts extension elements)
 	 * @param s
-	 * @return
+	 * @return Returns the validated dot-syntax reference
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws Exception
@@ -2428,7 +2412,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * Finds the type of relationship between this element and the foreign element
 	 * @param foreign XFTReferenceI
-	 * @return
+	 * @return Returns the type of relationship between this element and the foreign element
 	 */
 	public XFTReferenceI getRelationType(GenericWrapperElement foreign) throws XFTInitException,ElementNotFoundException
 	{
@@ -2489,7 +2473,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 	/**
 	 * ArrayList of sql-names
-	 * @return
+	 * @return Returns an ArrayList of the dependency names
 	 */
 	public ArrayList getDependencies() throws XFTInitException, ElementNotFoundException
 	{
@@ -2748,7 +2732,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
     /**
      * Get the XMLType of the Element which this one extends.
-     * @return
+     * @return Returns the XMLType of the Element which this one extends
      */
     public XMLType getExtensionType() {
         return wrapped.getExtensionType();
@@ -2764,7 +2748,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
     /**
      * Get the XMLType of the Element which this one extends.
-     * @return
+     * @return Returns the meta-data field
      */
     public GenericWrapperField getMetaDataField() {
     	GenericWrapperField meta = null;
@@ -3132,7 +3116,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * Returns the dot-syntax for the first reference field which references 
 	 * the element.
 	 * @param e
-	 * @return
+	 * @return Returns the dot-syntax for the first reference field which references the element
 	 */
 	public String findReferencedField(GenericWrapperElement e, ArrayList searched, boolean allowExtension, boolean isRoot)
 	{
@@ -3225,7 +3209,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * 1: local dot-syntax
 	 * the element.
 	 * @param e
-	 * @return
+	 * @return Returns the dot-syntax for the first reference field which references
 	 */
 	public String[] findExtensionReferencedField(GenericWrapperElement e, ArrayList searched, boolean isRoot)
 	{
@@ -3268,7 +3252,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 	/**
 	 * Returns the dot syntax reference to a field which is defined as a filter field (as defined using an XDAT tag in the XML Schema).
-	 * @return
+	 * @return Returns the dot syntax reference to a field which is defined as a filter field
 	 */
 	public String getFilter()
 	{

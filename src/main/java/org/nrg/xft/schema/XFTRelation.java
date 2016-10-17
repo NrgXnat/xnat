@@ -10,12 +10,12 @@
 
 package org.nrg.xft.schema;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.nrg.xft.utils.NodeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 public class XFTRelation {
     public final static String DEFAULT_RELATION_TYPE = "single";
 	private String foreignKeyName = "";
@@ -97,42 +97,42 @@ public class XFTRelation {
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the foreign column String
 	 */
 	public String getForeignCol() {
 		return foreignCol;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the foreign key name String
 	 */
 	public String getForeignKeyName() {
 		return foreignKeyName;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the foreign key table String
 	 */
 	public String getForeignKeyTable() {
 		return foreignKeyTable;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the on delete String
 	 */
 	public String getOnDelete() {
 		return onDelete;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the on update String
 	 */
 	public String getOnUpdate() {
 		return onUpdate;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the relation type String
 	 */
 	public String getRelationType() {
 		if (relationType == null || relationType.equalsIgnoreCase(""))
@@ -207,7 +207,7 @@ public class XFTRelation {
 
 	/**
 	 * @param header
-	 * @return
+	 * @return Returns a String representation of this relation
 	 */
 	public String toString(String header)
 	{

@@ -117,7 +117,7 @@ public class XFTMetaManager {
     /**
      * Singleton reference to the XFTMetaManager instance.
      *
-     * @return
+     * @return Returns a singleton reference to the XFTMetaManager instance
      * @throws XFTInitException
      */
     public static XFTMetaManager GetInstance() throws XFTInitException {

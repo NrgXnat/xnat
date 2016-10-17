@@ -34,7 +34,6 @@ public interface XdatRoleTypeI {
 
 	/**
 	 * allowed_actions/allowed_action
-	 * @return Returns an List of org.nrg.xdat.model.XdatActionTypeI
 	 */
 	public <A extends org.nrg.xdat.model.XdatActionTypeI> void addAllowedActions_allowedAction(A item) throws Exception;
 

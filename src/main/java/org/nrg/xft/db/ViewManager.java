@@ -523,7 +523,7 @@ public class ViewManager {
 	 * @param e
 	 * @param level
 	 * @param allowMultiples
-	 * @return
+	 * @return Returns a list of fields
 	 */
 	public static ArrayList GetFields(GenericWrapperElement e, String level, boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException
 	{
@@ -890,7 +890,7 @@ public class ViewManager {
 	 * String[] {0=field-sql-name,1=XML dot syntax
 	 * @param e
 	 * @param isRoot
-	 * @return
+	 * @return Returns a field map hashtable
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -940,7 +940,7 @@ public class ViewManager {
 	 * Returns XMLPath names of all child fields
 	 * @param e
 	 * @param isRoot
-	 * @return
+	 * @return Returns XMLPath names of all child fields
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -954,7 +954,7 @@ public class ViewManager {
 	 * @param e
 	 * @param isRoot
 	 * @param loadHistory
-	 * @return
+	 * @return Returns XMLPath names of all child fields
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -972,7 +972,7 @@ public class ViewManager {
 	 * @param level
 	 * @param allowMultiples
 	 * @param isRoot
-	 * @return
+	 * @return Returns XMLPath names of all child fields
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */

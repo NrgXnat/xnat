@@ -34,7 +34,6 @@ public interface XdatSecurityI {
 
 	/**
 	 * groups/group
-	 * @return Returns an List of org.nrg.xdat.model.XdatUsergroupI
 	 */
 	public <A extends org.nrg.xdat.model.XdatUsergroupI> void addGroups_group(A item) throws Exception;
 
@@ -46,7 +45,6 @@ public interface XdatSecurityI {
 
 	/**
 	 * users/user
-	 * @return Returns an List of org.nrg.xdat.model.XdatUserI
 	 */
 	public <A extends org.nrg.xdat.model.XdatUserI> void addUsers_user(A item) throws Exception;
 
@@ -58,7 +56,6 @@ public interface XdatSecurityI {
 
 	/**
 	 * roles/role
-	 * @return Returns an List of org.nrg.xdat.model.XdatRoleTypeI
 	 */
 	public <A extends org.nrg.xdat.model.XdatRoleTypeI> void addRoles_role(A item) throws Exception;
 
@@ -70,7 +67,6 @@ public interface XdatSecurityI {
 
 	/**
 	 * actions/action
-	 * @return Returns an List of org.nrg.xdat.model.XdatActionTypeI
 	 */
 	public <A extends org.nrg.xdat.model.XdatActionTypeI> void addActions_action(A item) throws Exception;
 
@@ -82,7 +78,6 @@ public interface XdatSecurityI {
 
 	/**
 	 * element_security_set/element_security
-	 * @return Returns an List of org.nrg.xdat.model.XdatElementSecurityI
 	 */
 	public <A extends org.nrg.xdat.model.XdatElementSecurityI> void addElementSecuritySet_elementSecurity(A item) throws Exception;
 
@@ -94,7 +89,6 @@ public interface XdatSecurityI {
 
 	/**
 	 * newsList/news
-	 * @return org.nrg.xdat.model.XdatNewsentryI
 	 */
 	public <A extends org.nrg.xdat.model.XdatNewsentryI> void setNewslist_news(A item) throws Exception;
 
@@ -111,7 +105,6 @@ public interface XdatSecurityI {
 
 	/**
 	 * infoList/info
-	 * @return org.nrg.xdat.model.XdatInfoentryI
 	 */
 	public <A extends org.nrg.xdat.model.XdatInfoentryI> void setInfolist_info(A item) throws Exception;
 

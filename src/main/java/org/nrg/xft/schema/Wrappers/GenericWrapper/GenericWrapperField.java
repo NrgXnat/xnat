@@ -9,40 +9,23 @@
 
 
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-
 import org.apache.log4j.Logger;
-import org.nrg.xft.XFT;
 import org.nrg.xft.TypeConverter.TypeConverter;
+import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidReference;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.references.XFTReferenceI;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.references.XFTRelationSpecification;
 import org.nrg.xft.references.XFTSuperiorReference;
-import org.nrg.xft.schema.TorqueField;
-import org.nrg.xft.schema.XFTDataField;
-import org.nrg.xft.schema.XFTElement;
-import org.nrg.xft.schema.XFTField;
-import org.nrg.xft.schema.XFTReferenceField;
-import org.nrg.xft.schema.XFTRelation;
-import org.nrg.xft.schema.XFTRule;
-import org.nrg.xft.schema.XFTSqlField;
-import org.nrg.xft.schema.XMLType;
+import org.nrg.xft.schema.*;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLFieldData;
-import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.schema.design.SchemaFieldI;
-import org.nrg.xft.schema.design.XFTElementWrapper;
-import org.nrg.xft.schema.design.XFTFactoryI;
-import org.nrg.xft.schema.design.XFTFieldWrapper;
-import org.nrg.xft.schema.design.XFTNode;
+import org.nrg.xft.schema.design.*;
 import org.nrg.xft.utils.XftStringUtils;
+
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
 @SuppressWarnings({"unchecked","rawtypes"})
 public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperField.class);
@@ -67,7 +50,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * If the wrapped field has a TorqueField, it is returned.  Else, a new one is created and returned.
-	 * @return
+	 * @return Returns the wrapped field's TorqueField, creating one if one does not exist
 	 */
 	public TorqueField getTorqueField()
 	{
@@ -87,7 +70,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	/**
 	 * Returns Hashtable of all possible root xml-field names.
 	 * <BR>Value is the GenericWrapperField;
-	 * @return
+	 * @return Returns Hashtable of all possible root xml-field names
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
@@ -107,7 +90,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	}
 	
 	/**
-	 * @return
+	 * @return Returns parent element
 	 */
 	public SchemaElementI getParentElement() throws ClassCastException
 	{
@@ -116,7 +99,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * If the wrapped field has a Sql Field, it is returned.  Else, a new one is created and returned.
-	 * @return
+	 * @return Returns wrapped field's XFTSqlField, creating one if one does not yet exist
 	 */
 	public XFTSqlField getSqlField()
 	{
@@ -135,7 +118,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * If this field has a specified java name it is returned, Else an empty string is returned.
-	 * @return
+	 * @return Returns this field's specified java name if one exists, or else returns the empty string
 	 */
 	public String getXMLJavaNameValue()
 	{
@@ -149,7 +132,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * If this field has a specified sql name it is returned, Else an empty string is returned.
-	 * @return
+	 * @return Returns this field's specified sql name if one exists, or else returns the empty string
 	 */	
 	public String getXMLSqlNameValue()
 	{
@@ -164,7 +147,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Returns the xml name of the given field.
-	 * @return
+	 * @return Returns this field's xml name
 	 */
 	public String getXMLName()
 	{
@@ -173,7 +156,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * If this field has a specified sql name, it is returned (lower case).  Else, the full name of the field is returned.
-	 * @return
+	 * @return Returns this field's specified sql name if one exists, or else returns the field's full name
 	 */
 	public String getSQLName()
 	{
@@ -203,7 +186,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * If this field has a specified java name, it is returned.  Else, the xml name is returned.
-	 * @return
+	 * @return Returns this field's specified java name if one exists, or else returns the field's xml name
 	 */
 	public String getJAVAName()
 	{
@@ -272,7 +255,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * if the primary key for this field's sql field is set to 'true'
-	 * @return
+	 * @return Returns whether the field is a primary key
 	 */
 	public boolean isPrimaryKey()
 	{
@@ -289,7 +272,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * if the xml only property for this field is set to 'true'
-	 * @return
+	 * @return Returns whether this field is XML only
 	 */
 	public boolean isXMLOnly()
 	{
@@ -303,7 +286,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 
 	/**
 	 * If the size is not defined and the type is a string then '255' is returned.  If the size is greater than 256, then an empty string is returned.  Else the defined size is returned.
-	 * @return
+	 * @return Returns the defined size as a String, if valid (returning an empty string if the size is greater than 256 or returning 255 if the size is not defined)
 	 */
 	public String getAdjustedSize()
 	{
@@ -350,7 +333,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Defined size
-	 * @return
+	 * @return Returns the size as a String
 	 */
 	public String getSize()
 	{
@@ -377,7 +360,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 
 	/**
 	 * if the unique property for this field is set to 'true'
-	 * @return
+	 * @return Returns whether this field is unique
 	 */
 	public boolean isUnique()
 	{
@@ -391,7 +374,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 
 	/**
 	 * if the unique composite property for this field is set to 'true'
-	 * @return
+	 * @return Returns whether this field is a unique composite
 	 */
 	public String getUniqueComposite()
 	{
@@ -440,7 +423,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Return the specified type.
-	 * @return
+	 * @return Returns the field's XMLType
 	 */
 	public XMLType getXMLType()
 	{
@@ -449,7 +432,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Returns if this field is an xml attribute.
-	 * @return
+	 * @return Returns whether this field is an xml attribute
 	 */
 	public boolean isAttribute()
 	{
@@ -458,7 +441,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * TRUE if this item was created from a maxOccurs=unbounded reference and was not a root node.
-	 * @return
+	 * @return Returns whether the field is a child node
 	 */
 	public boolean isCreatedChild()
 	{
@@ -473,7 +456,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	/**
 	 * Returns the type formatted by the specified type converter.
 	 * @param tc
-	 * @return
+	 * @return Returns the String type after running it through the specified TypeConverter
 	 */
 	public String getType(TypeConverter tc)
 	{
@@ -535,7 +518,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Returns true if this field is a primary key, is required, or has use=required.
-	 * @return
+	 * @return Returns whether this field is a primary key, is required, or has use=required
 	 */
 	public String getRequired()
 	{
@@ -574,7 +557,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Returns true if this field is required or has use=required.
-	 * @return
+	 * @return Returns whether this field is required, or has use=required
 	 */
 	public String getRequiredWOPk()
 	{
@@ -593,7 +576,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Returns true if this field is specified as required.
-	 * @return
+	 * @return Returns whether this field is specified as required
 	 */
 	
 	public boolean isRequired()
@@ -609,7 +592,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Returns true if this field is specified as auto-increment.
-	 * @return
+	 * @return Returns whether this field is specified as auto-increment.
 	 */
 	public String getAutoIncrement()
 	{
@@ -618,7 +601,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Returns the default value of the field's sql field.
-	 * @return
+	 * @return Returns the default value of the field's sql field
 	 */
 	public String getDefaultValue()
 	{
@@ -627,7 +610,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Returns the primary key value of the field's sql field.
-	 * @return
+	 * @return Returns the primary key value of the field's sql field
 	 */
 	public String getPrimaryKey()
 	{
@@ -638,7 +621,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	/**
 	 * if wrapped field has a displayName then that is returned, else
 	 * the wrapped field's name is returned.
-	 * @return
+	 * @return Returns the field's displayName, if one exists, otherwise returns the wrapped field's name
 	 */
 	public String getName(boolean withPrefix)
 	{
@@ -666,7 +649,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * if wrapped field's expose equals 'false' then false is returned, else true is returned.
-	 * @return
+	 * @return Returns whether the field is exposed
 	 */
 	public boolean getExpose()
 	{
@@ -681,7 +664,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * wrapped field's relation's onDelete (default 'setnull')
-	 * @return
+	 * @return Returns the field's relation's onDelete (default 'setnull')
 	 */
 	public String getOnDelete()
 	{
@@ -697,7 +680,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * wrapped field's relation's foreignKeyTable (default empty string)
-	 * @return
+	 * @return Returns the field's relation's foreignKeyTable (default empty string)
 	 */
 	public String getForeignKeyTable()
 	{
@@ -713,7 +696,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * wrapped field's relation's foreignCol (default empty string)
-	 * @return
+	 * @return Returns the field's relation's foreignCol (default empty string)
 	 */
 	public String getForeignCol()
 	{
@@ -729,7 +712,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * if wrapped field has a relation
-	 * @return
+	 * @return Returns whether the field has a relation
 	 */
 	public boolean hasRelation()
 	{
@@ -745,7 +728,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	 * if the field is a XFTDataField with a defined XMLType or a field with no children 
 	 * (including attributes).
 	 * @param xf
-	 * @return
+	 * @return Returns whether the field is a XFTDataField with a defined XMLType or a field with no children
 	 */
 	public static boolean IsLeafNode(XFTField xf)
 	{
@@ -794,7 +777,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
     
 	/**
 	 * returns the GenericWrapperElement referenced by the getRefElement() method.
-	 * @return
+	 * @return Returns the GenericWrapperElement referenced by the getRefElement() method
 	 * @throws org.nrg.xft.exception.XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -816,7 +799,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * If this field is a reference, then the field's XFTReferenceI is returned.
-	 * @return
+	 * @return Returns the field's XFTReferenceI (if the field is a reference)
 	 * @throws org.nrg.xft.exception.XFTInitException
 	 * @throws ElementNotFoundException
 	 */
@@ -837,7 +820,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * returns the XMLType of the wrapped column.
-	 * @return
+	 * @return Returns the XMLType of the wrapped column
 	 */
 	public XMLType getReferenceElementName()
 	{
@@ -1011,8 +994,8 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	}
 	
 	/**
-	 * Gets lower-case version of base element property fo the wrapped field
-	 * @return
+	 * Gets lower-case version of base element property of the wrapped field
+	 * @return Returns lower-case version of base element property of the wrapped field
 	 */
 	public String getBaseElement()
 	{
@@ -1021,7 +1004,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * Gets baseCol property of wrapped field
-	 * @return
+	 * @return Returns baseCol property of wrapped field
 	 */
 	public String getBaseCol()
 	{
@@ -1030,7 +1013,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * if baseCol and baseElement are empty.
-	 * @return
+	 * @return Returns whether baseCol and baseElement are empty
 	 */
 	public boolean hasBase()
 	{
@@ -1046,7 +1029,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * ArrayList of String (possibleValue)
-	 * @return
+	 * @return Returns an ArrayList of the field's possible values
 	 */
 	public ArrayList getPossibleValues()
 	{
@@ -1756,7 +1739,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * if wrapped field isExtension()
-	 * @return
+	 * @return Returns whether the field is an extension
 	 */
 	public boolean isExtension()
 	{
@@ -1782,7 +1765,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * if field's reference element will have its own distinct XML Node.
-	 * @return
+	 * @return Returns whether the field's reference element will have its own distinct XML Node
 	 */
 	public boolean isChildXMLNode()
 	{
@@ -1797,7 +1780,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * if field is an in-line-repeater-element.
-	 * @return
+	 * @return Returns whether the field is an in-line-repeater-element
 	 */
 	public boolean isInLineRepeaterElement()
 	{
@@ -1812,7 +1795,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	
 	/**
 	 * gets XmlDisplay property of the wrapped field.
-	 * @return
+	 * @return Returns the XmlDisplay property of the wrapped field
 	 */
 	public String getXMLDisplay()
 	{
@@ -1852,7 +1835,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the type of this field's relation
 	 */
 	public String getRelationType()
 	{
@@ -1866,7 +1849,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the name of this field's relation
 	 */
 	public String getRelationName()
 	{
@@ -1900,7 +1883,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	}
 	
 	/**
-	 * @return
+	 * @return Returns whether this field's relation is unique
 	 */
 	public boolean getRelationUnique()
 	{
@@ -1914,7 +1897,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the unique composite of this field's relation
 	 */
 	public String getRelationUniqueComposite()
 	{
@@ -2018,7 +2001,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 
 
 	/**
-	 * @return
+	 * @return Returns the parent element
 	 */
 	protected XFTElementWrapper getParentE() throws ClassCastException
 	{

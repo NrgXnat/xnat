@@ -56,7 +56,6 @@ public interface XdatElementAccessI {
 
 	/**
 	 * secure_ip
-	 * @return Returns an List of org.nrg.xdat.model.XdatElementAccessSecureIpI
 	 */
 	public <A extends org.nrg.xdat.model.XdatElementAccessSecureIpI> void addSecureIp(A item) throws Exception;
 
@@ -68,7 +67,6 @@ public interface XdatElementAccessI {
 
 	/**
 	 * permissions/allow_set
-	 * @return Returns an List of org.nrg.xdat.model.XdatFieldMappingSetI
 	 */
 	public <A extends org.nrg.xdat.model.XdatFieldMappingSetI> void addPermissions_allowSet(A item) throws Exception;
 

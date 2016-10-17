@@ -10,12 +10,6 @@
 
 package org.nrg.xft.collections;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -27,6 +21,8 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.security.UserI;
+
+import java.util.*;
 
 /**
  * @author Tim
@@ -178,7 +174,7 @@ public class ItemCollection {
     /**
 	 * Sorts items by the field specified (via XML stype dot-syntax).  Field's value must be Comparable
 	 * @param sortBy
-	 * @return
+	 * @return Returns a list of items sorted by the field specified
 	 * @throws FieldNotFoundException
 	 */
 	public ArrayList<ItemI> getItems(String sortBy) throws FieldNotFoundException,ClassCastException
@@ -209,7 +205,7 @@ public class ItemCollection {
 	
 	/**
 	 * @param xmlPath
-	 * @return
+	 * @return Returns item iterator
 	 * @throws FieldNotFoundException
 	 */
 	public Iterator getItemIterator(String xmlPath) throws FieldNotFoundException,ClassCastException
@@ -222,7 +218,7 @@ public class ItemCollection {
 	 * Return ItemCollection of items where this value is found at the specified xml location
 	 * @param xmlPath
 	 * @param value
-	 * @return
+	 * @return Returns ItemCollection of items where this value is found at the specified xml location
 	 */
 	public ItemCollection getItems(String xmlPath, Object value)
 	{

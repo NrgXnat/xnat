@@ -55,14 +55,14 @@ public class XFTSqlField {
 		return clone;
 	}
 	/**
-	 * @return
+	 * @return Returns the default value
 	 */
 	public String getDefaultValue() {
 		return defaultValue;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the key
 	 */
 	public String getKey() {
 		return key;
@@ -83,7 +83,7 @@ public class XFTSqlField {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the type
 	 */
 	public String getType() {
 		return type;
@@ -97,7 +97,7 @@ public class XFTSqlField {
 	}
 
 	/**
-	 * @return
+	 * @return Returns the sql name
 	 */
 	public String getSqlName() {
 		return sqlName;
@@ -130,7 +130,7 @@ public class XFTSqlField {
 
 	/**
 	 * @param header
-	 * @return
+	 * @return Returns a String representation of the field
 	 */
 	public String toString(String header)
 	{
@@ -178,21 +178,21 @@ public class XFTSqlField {
 	}
 
 	/**
-	 * @return
+	 * @return Returns whether the field should auto increment (expressed as a String)
 	 */
 	public String getAutoIncrement() {
 		return autoIncrement;
 	}
 
 	/**
-	 * @return
+	 * @return Returns index as a String
 	 */
 	public String getIndex() {
 		return index;
 	}
 
 	/**
-	 * @return
+	 * @return Returns primary key
 	 */
 	public String getPrimaryKey() {
 		return primaryKey;

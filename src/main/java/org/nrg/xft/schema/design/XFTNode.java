@@ -17,7 +17,7 @@ public abstract class XFTNode {
 
 	/**
 	 * Checks if this item has a Parent
-	 * @return
+	 * @return Returns whether the item has a parent
 	 */
 	public boolean hasParent() {
 		if (getParent() == null)
@@ -30,7 +30,7 @@ public abstract class XFTNode {
 	}
 	/**
 	 * Gets the XDATNode referenced as the parent.
-	 * @return
+	 * @return Returns the parent XDATNode
 	 */
 	public XFTNode getParent() {
 		return parent;
@@ -46,7 +46,7 @@ public abstract class XFTNode {
 
 	/**
 	 * Gets the highest parent in this items chain of parent items.
-	 * @return
+	 * @return Returns the highest parent in this items chain of parent items
 	 */
 	public XFTElement getAbsoluteParent()
 	{
@@ -61,7 +61,7 @@ public abstract class XFTNode {
 	
 	/**
 	 * Returns the next parent Element in this items chain of parent items (rather than any field item)
-	 * @return
+	 * @return Returns the next parent Element in this items chain of parent items
 	 */
 	public XFTElement getParentElement() throws ClassCastException
 	{

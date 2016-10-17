@@ -100,7 +100,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
      * Stops loading document after specified tag is reached.  Allows for the partial loading of an item.
      * @param data
      * @param stopAtXMLPath
-     * @return
+     * @return Returns the XFTItem
      * @throws IOException
      * @throws SAXException
      */

@@ -18,42 +18,42 @@ public class XFTCodeMapping {
 	private String fullDescription = "";
 	private String logLocation = "";
 	/**
-	 * @return
+	 * @return  Returns the brief description String
 	 */
 	public String getBriefDescription() {
 		return briefDescription;
 	}
 
 	/**
-	 * @return
+	 * @return  Returns the code String
 	 */
 	public String getCode() {
 		return code;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the full description String
 	 */
 	public String getFullDescription() {
 		return fullDescription;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the log location String
 	 */
 	public String getLogLocation() {
 		return logLocation;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the model element String
 	 */
 	public String getModelElement() {
 		return modelElement;
 	}
 
 	/**
-	 * @return
+	 * @return Returns the model ID String
 	 */
 	public String getModelId() {
 		return modelId;

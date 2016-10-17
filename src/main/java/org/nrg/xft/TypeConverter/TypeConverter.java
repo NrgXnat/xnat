@@ -49,7 +49,7 @@ public class TypeConverter {
 	}
 	
 	/**
-	 * @return
+	 * @return Returns the name of the type mapping
 	 */
 	public String getName() {
 		return mapping.getName();

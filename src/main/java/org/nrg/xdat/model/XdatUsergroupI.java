@@ -34,7 +34,6 @@ public interface XdatUsergroupI {
 
 	/**
 	 * element_access
-	 * @return Returns an List of org.nrg.xdat.model.XdatElementAccessI
 	 */
 	public <A extends org.nrg.xdat.model.XdatElementAccessI> void addElementAccess(A item) throws Exception;
 

@@ -10,8 +10,6 @@
 
 package org.nrg.xft.schema;
 
-import java.util.Iterator;
-
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.utils.NodeUtils;
@@ -20,6 +18,8 @@ import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import java.util.Iterator;
 public class XFTReferenceField extends XFTField {
 	private String name = "";
 	private XFTElement refElement = null;
@@ -192,7 +192,7 @@ public class XFTReferenceField extends XFTField {
 	}
 	/**
 	 * Gets the refElement using the XMLType
-	 * @return
+	 * @return Returns the XFTElement refElement
 	 */
 	public XFTElement getRefElement() throws org.nrg.xft.exception.ElementNotFoundException,org.nrg.xft.exception.XFTInitException{
 		if (refElement == null)
@@ -312,7 +312,7 @@ public class XFTReferenceField extends XFTField {
 
 	/**
 	 * Get an empty reference (onDelete defaults to cascade)
-	 * @return
+	 * @return Returns an empty reference
 	 */
 	public static XFTReferenceField GetEmptyRef()
 	{
@@ -325,7 +325,7 @@ public class XFTReferenceField extends XFTField {
 	
 	/**
 	 * Gets the XMLType for the referenced element
-	 * @return
+	 * @return Returns the XMLType
 	 */
 	public XMLType getXMLType() {
 		return type;
@@ -348,7 +348,7 @@ public class XFTReferenceField extends XFTField {
 
 	/**
 	 * Whether the referenced element will have its own XML DOM Node.
-	 * @return
+	 * @return Returns whether the referenced element will have its own XML DOM Node
 	 */
 	public boolean isChildXMLNode() {
 		return childXMLNode;
@@ -364,7 +364,7 @@ public class XFTReferenceField extends XFTField {
 
 	/**
 	 * Whether the referenced element is a repeating basic data type.
-	 * @return
+	 * @return Returns whether the referenced element is a repeating basic data type
 	 */
 	public boolean isInLineRepeaterElement() {
 		return isInLineRepeaterElement;
@@ -380,7 +380,7 @@ public class XFTReferenceField extends XFTField {
 
 	/**
 	 * if this field references a created Child Element then true, else false.
-	 * @return
+	 * @return Returns whether the field references a created Child Element
 	 */
 	public boolean isCreatedChild() {
 		return createdChild;

@@ -11,7 +11,6 @@
 package org.nrg.xdat.bean.reader;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.bean.ClassMapping;
 import org.nrg.xdat.bean.ClassMappingFactory;
 import org.nrg.xdat.bean.base.BaseElement;
 import org.nrg.xdat.bean.base.BaseElement.UnknownFieldException;
@@ -22,7 +21,6 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -451,7 +449,7 @@ public class XDATXMLReader extends DefaultHandler {
      * Convert null unicode characters into spaces. The given InputStream is iterated and 
      * mark set to the beginning afterwards.
      * @param i
-     * @return
+     * @return InputStream with null characters removed
      * @throws IOException
      */
     public static InputStream removeNullUnicodeChars (InputStream i) throws IOException {

@@ -34,7 +34,6 @@ public interface XdatCriteriaSetI {
 
 	/**
 	 * criteria
-	 * @return Returns an List of org.nrg.xdat.model.XdatCriteriaI
 	 */
 	public <A extends org.nrg.xdat.model.XdatCriteriaI> void addCriteria(A item) throws Exception;
 
@@ -46,7 +45,6 @@ public interface XdatCriteriaSetI {
 
 	/**
 	 * child_set
-	 * @return Returns an List of org.nrg.xdat.model.XdatCriteriaSetI
 	 */
 	public <A extends org.nrg.xdat.model.XdatCriteriaSetI> void addChildSet(A item) throws Exception;
 

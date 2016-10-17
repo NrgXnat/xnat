@@ -106,7 +106,7 @@ public class Users {
     /**
      * Return a freshly created (empty) user.
      *
-     * @return
+     * @return Returns the newly created (empty) user object
      */
     public static UserI createUser() {
         final UserManagementServiceI service = getUserManagementService();
@@ -118,7 +118,7 @@ public class Users {
      *
      * Object may or may not already exist in the database.
      *
-     * @return
+     * @return Returns the newly created user
      */
     public static UserI createUser(Map<String, ? extends Object> params) throws UserFieldMappingException, UserInitException {
         final UserManagementServiceI service = getUserManagementService();
@@ -128,7 +128,7 @@ public class Users {
     /**
      * Return a User object for the referenced username.
      *
-     * @return
+     * @return Returns the user object with the given username
      *
      * @throws UserNotFoundException
      */
@@ -140,7 +140,7 @@ public class Users {
     /**
      * Return a User object for the referenced user id.
      *
-     * @return
+     * @return Returns the user object that has the given ID
      */
     public static UserI getUser(Integer user_id) throws UserNotFoundException, UserInitException {
         final UserManagementServiceI service = getUserManagementService();
@@ -150,7 +150,7 @@ public class Users {
     /**
      * Return the user objects with matching email addresses
      *
-     * @return
+     * @return Returns a list of users who have the given email
      */
     public static List<? extends UserI> getUsersByEmail(String email) {
         final UserManagementServiceI service = getUserManagementService();
@@ -183,7 +183,7 @@ public class Users {
     /**
      * Return a complete list of all the users in the database.
      *
-     * @return
+     * @return Returns a list of all users
      */
     public static List<? extends UserI> getUsers() {
         final UserManagementServiceI service = getUserManagementService();
@@ -193,7 +193,7 @@ public class Users {
     /**
      * Return the guest user for this server
      *
-     * @return
+     * @return Returns the guest user
      *
      * @throws UserNotFoundException
      * @throws UserInitException
@@ -206,7 +206,7 @@ public class Users {
     /**
      * Return a string identifying the type of user implementation that is being used (xdat:user)
      *
-     * @return
+     * @return Returns the string identifying the user implementation
      */
     public static String getUserDataType() {
         final UserManagementServiceI service = getUserManagementService();
@@ -258,7 +258,7 @@ public class Users {
      *
      * @param user
      *
-     * @return
+     * @return Returns whether the user meets whatever requirements have been met by the system
      *
      * @throws Exception
      */
@@ -303,7 +303,7 @@ public class Users {
      * @param u
      * @param cred
      *
-     * @return
+     * @return Returns whether authentication was successful
      *
      * @throws PasswordAuthenticationException
      * @throws Exception
@@ -318,7 +318,7 @@ public class Users {
      *
      * @param xdat_user_id
      *
-     * @return
+     * @return Returns the username for a given user ID
      */
     public static String getUsername(Object xdat_user_id) {
         if (xdat_user_id == null) {
@@ -335,7 +335,7 @@ public class Users {
      *
      * @param xdat_user_id
      *
-     * @return
+     * @return The user's username
      */
     public static String getUsername(Integer xdat_user_id) {
         if (xdat_user_id == null) {
@@ -363,7 +363,7 @@ public class Users {
      *
      * @param username The username.
      *
-     * @return
+     * @return The user's ID
      */
     public static Integer getUserid(String username) {
         if (username == null) {
@@ -413,7 +413,7 @@ public class Users {
     /**
      * Get all usernames on this server
      *
-     * @return
+     * @return Returns a collection of the usernames on this server
      */
     public static java.util.Collection<String> getAllLogins() {
         try {
@@ -427,7 +427,7 @@ public class Users {
     /**
      * Retrn a random string for use as a salt
      *
-     * @return
+     * @return Returns the new salt created by this method
      */
     public static String createNewSalt() {
         String salt = RandomStringUtils.random(64, 0, 0, true, true, null, new SecureRandom());
@@ -439,7 +439,7 @@ public class Users {
      *
      * @param user
      *
-     * @return
+     * @return Returns the last login date/time for the user account
      *
      * @throws SQLException
      * @throws Exception

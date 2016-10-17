@@ -176,7 +176,6 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 
 	/**
 	 * user
-	 * @return org.nrg.xdat.model.XdatUserI
 	 */
 	public <A extends org.nrg.xdat.model.XdatUserI> void setuserProperty(A item) throws Exception{
 	setuserProperty((org.nrg.xdat.bean.XdatUserBean)item);
@@ -254,7 +253,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getDataFieldValue(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("login_date")){
@@ -273,7 +272,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public Object getReferenceField(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("user")){
@@ -286,7 +285,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 
 	/**
 	 * Gets the value for a field via the XMLPATH.
-	 * @param v Value to Set.
+	 * @param xmlPath XML path to check.
 	 */
 	public String getReferenceFieldName(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("user")){

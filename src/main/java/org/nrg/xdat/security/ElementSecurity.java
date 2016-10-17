@@ -289,7 +289,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param elementName
-     * @return
+     * @return Returns whether element security has been defined for this element
      */
     public static boolean HasDefinedElementSecurity(String elementName) {
         try {
@@ -305,7 +305,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns a list of all the secure elements
      * @throws Exception When something goes wrong. 
      */
     public static ArrayList<ElementSecurity> GetSecureElements() throws Exception {
@@ -380,7 +380,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param elementName
-     * @return
+     * @return Whether the element is in the system's list of secure elements
      * @throws Exception When something goes wrong. 
      */
     public static boolean IsSecureElement(String elementName) throws Exception {
@@ -396,7 +396,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param elementName
-     * @return
+     * @return Whether the element is in the system's list of secure elements and the supplied action is secure
      * @throws Exception When something goes wrong. 
      */
     public static boolean IsSecureElement(String elementName, String action) throws Exception {
@@ -412,7 +412,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param elementName
-     * @return
+     * @return Whether the element is in the system's list of insecure elements
      * @throws Exception When something goes wrong. 
      */
     public static boolean IsInSecureElement(String elementName) throws Exception {
@@ -440,7 +440,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param elementName
-     * @return
+     * @return Whether element is browseable
      * @throws Exception When something goes wrong. 
      */
     public static boolean IsBrowseableElement(String elementName) throws Exception {
@@ -454,7 +454,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param elementName
-     * @return
+     * @return Whether element is searchable
      * @throws Exception When something goes wrong. 
      */
     public static boolean IsSearchable(String elementName) throws Exception {
@@ -469,7 +469,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param elementName
-     * @return
+     * @return Whether element has primary security fields
      * @throws Exception When something goes wrong. 
      */
     public static boolean HasPrimarySecurityFields(String elementName) throws Exception {
@@ -526,7 +526,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return The element's name
      * @throws XFTInitException When an error occurs in XFT.
      * @throws ElementNotFoundException When a specified element isn't found on the object.
      * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
@@ -541,7 +541,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return The sequence for this element
      * @throws XFTInitException When an error occurs in XFT.
      * @throws ElementNotFoundException When a specified element isn't found on the object.
      * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
@@ -556,7 +556,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns the element
      * @throws Exception When something goes wrong. 
      */
     public SchemaElement getSchemaElement() throws Exception {
@@ -564,7 +564,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether element is secure
      */
     public boolean isSecure() {
         try {
@@ -584,7 +584,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether action is secure
      */
     public boolean isSecure(String action) {
         if (this.isSecure()) {
@@ -609,7 +609,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether read is secure
      */
     public boolean isSecureRead() {
         try {
@@ -629,7 +629,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether edit is secure
      */
     public boolean isSecureEdit() {
         try {
@@ -649,7 +649,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether creation is secure
      */
     public boolean isSecureCreate() {
         try {
@@ -669,7 +669,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether deletion is secure.
      */
     public boolean isSecureDelete() {
         try {
@@ -689,7 +689,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return  Returns whether the element is browsable.
      */
     public boolean isBrowseable() {
         try {
@@ -710,7 +710,7 @@ public class ElementSecurity extends ItemWrapper {
 
 
     /**
-     * @return
+     * @return Returns whether the element is searchable.
      */
     public boolean isSearchable() {
         try {
@@ -731,7 +731,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether the password is secure.
      */
     public boolean isSecurePassword() {
         try {
@@ -751,7 +751,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether the IP is secure
      */
     public boolean isSecureIP() {
         try {
@@ -778,14 +778,14 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns the list of primary security fields
      */
     public ArrayList<String> getPrimarySecurityFields() {
         return primarySecurityFields;
     }
 
     /**
-     * @return
+     * @return Returns the list of element actions.
      */
     public ArrayList<ElementAction> getElementActions() {
         return elementActions;
@@ -841,7 +841,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns the list of listing actions
      */
     public ArrayList<XdatElementSecurityListingAction> getListingActions() {
         return listingActions;
@@ -911,7 +911,7 @@ public class ElementSecurity extends ItemWrapper {
     private ArrayList permissionItems = null;
 
     /**
-     * @return
+     * @return Returns a list of the PermissionsItems for the user
      * @throws Exception When something goes wrong. 
      */
     public List<PermissionItem> getPermissionItems(String login) throws Exception {
@@ -951,7 +951,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * @return Returns whether the element has a displayField
      * @throws Exception When something goes wrong. 
      */
     public boolean hasDisplayValueOption() throws Exception {
@@ -969,7 +969,7 @@ public class ElementSecurity extends ItemWrapper {
     /**
      * @param elementName
      * @param fieldName
-     * @return
+     * @return Returns a hastable of the distinct id values for the supplied information
      * @throws Exception When something goes wrong. 
      */
     public static Hashtable GetDistinctIdValuesFor(String elementName, String fieldName, String login) throws Exception {
@@ -1111,7 +1111,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param item
-     * @return
+     * @return Returns a SecurityValues object containing a map of item membership
      * @throws Exception When something goes wrong. 
      */
     public static SecurityValues GetSecurityValues(ItemI item) throws InvalidItemException, Exception {
@@ -1125,7 +1125,7 @@ public class ElementSecurity extends ItemWrapper {
 
     /**
      * @param item
-     * @return
+     * @return Returns a SecurityValues object containing a map of item membership
      * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
      */
     public SecurityValues getSecurityValues(ItemI item) throws FieldNotFoundException, InvalidItemException {

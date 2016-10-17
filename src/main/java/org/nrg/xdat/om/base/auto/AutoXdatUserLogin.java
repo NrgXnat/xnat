@@ -9,9 +9,6 @@
 
 
 package org.nrg.xdat.om.base.auto;
-import java.util.ArrayList;
-import java.util.Hashtable;
-
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.om.XdatUserI;
 import org.nrg.xdat.om.XdatUserLogin;
@@ -21,6 +18,9 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ResourceFile;
+
+import java.util.ArrayList;
+import java.util.Hashtable;
 
 /**
  * @author XDAT
@@ -118,7 +118,7 @@ public abstract class AutoXdatUserLogin extends org.nrg.xdat.base.BaseElement im
 	 * user
 	 * @return org.nrg.xdat.om.XdatUserI
 	 */
-	public org.nrg.xdat.om.XdatUserI getuserProperty() {
+	public org.nrg.xdat.om.XdatUserI getUserProperty() {
 		try{
 			if (_userProperty==null){
 				_userProperty=((XdatUserI)org.nrg.xdat.base.BaseElement.GetGeneratedItem((XFTItem)getProperty("user")));
@@ -163,7 +163,7 @@ public abstract class AutoXdatUserLogin extends org.nrg.xdat.base.BaseElement im
 	/**
 	 * @return Returns the xdat:user_login/user_xdat_user_id.
 	 */
-	public Integer getuserPropertyFK(){
+	public Integer getUserPropertyFK(){
 		try{
 			if (_userPropertyFK==null){
 				_userPropertyFK=getIntegerProperty("xdat:user_login/user_xdat_user_id");
@@ -291,7 +291,7 @@ public ArrayList<ResourceFile> getFileResources(String rootPath, boolean prevent
 	        localLoop = preventLoop;
 	
 	        //user
-	        XdatUser childuserProperty = (XdatUser)this.getuserProperty();
+	        XdatUser childuserProperty = (XdatUser)this.getUserProperty();
 	            for(ResourceFile rf: childuserProperty.getFileResources(rootPath, localLoop)) {
 	                 rf.setXpath("user[" + childuserProperty.getItem().getPKString() + "]/" + rf.getXpath());
 	                 rf.setXdatPath("user/" + childuserProperty.getItem().getPKString() + "/" + rf.getXpath());

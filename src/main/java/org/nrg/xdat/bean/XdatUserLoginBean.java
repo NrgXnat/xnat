@@ -151,7 +151,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 	 * user
 	 * @return org.nrg.xdat.bean.XdatUserBean
 	 */
-	public org.nrg.xdat.bean.XdatUserBean getuserProperty() {
+	public org.nrg.xdat.bean.XdatUserBean getUserProperty() {
 		return _userProperty;
 	}
 
@@ -159,7 +159,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 	 * Sets the value for user.
 	 * @param v Value to Set.
 	 */
-	public void setuserProperty(org.nrg.xdat.bean.XdatUserBean v){
+	public void setUserProperty(org.nrg.xdat.bean.XdatUserBean v){
 		_userProperty =v;
 	}
 
@@ -167,7 +167,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 	 * Sets the value for user.
 	 * @param v Value to Set.
 	 */
-	public void setuserProperty(Object v) {
+	public void setUserProperty(Object v) {
 		if (v instanceof org.nrg.xdat.bean.XdatUserBean)
 			_userProperty =(org.nrg.xdat.bean.XdatUserBean)v;
 		else
@@ -177,8 +177,8 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 	/**
 	 * user
 	 */
-	public <A extends org.nrg.xdat.model.XdatUserI> void setuserProperty(A item) throws Exception{
-	setuserProperty((org.nrg.xdat.bean.XdatUserBean)item);
+	public <A extends org.nrg.xdat.model.XdatUserI> void setUserProperty(A item) throws Exception{
+	setUserProperty((org.nrg.xdat.bean.XdatUserBean)item);
 	}
 
 	//FIELD
@@ -188,7 +188,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 	/**
 	 * @return Returns the xdat:user_login/user_xdat_user_id.
 	 */
-	public Integer getuserPropertyFK(){
+	public Integer getUserPropertyFK(){
 		return _userPropertyFK;
 	}
 
@@ -244,7 +244,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 	 */
 	public void setReferenceField(String xmlPath,BaseElement v) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("user")){
-			setuserProperty(v);
+			setUserProperty(v);
 		}
 		else{
 			super.setReferenceField(xmlPath,v);
@@ -276,7 +276,7 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 	 */
 	public Object getReferenceField(String xmlPath) throws BaseElement.UnknownFieldException{
 		if (xmlPath.equals("user")){
-			return getuserProperty();
+			return getUserProperty();
 		}
 		else{
 			return super.getReferenceField(xmlPath);

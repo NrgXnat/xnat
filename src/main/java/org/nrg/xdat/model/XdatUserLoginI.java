@@ -72,17 +72,17 @@ public interface XdatUserLoginI {
 	 * user
 	 * @return org.nrg.xdat.model.XdatUserI
 	 */
-	public org.nrg.xdat.model.XdatUserI getuserProperty();
+	public org.nrg.xdat.model.XdatUserI getUserProperty();
 
 	/**
 	 * user
 	 */
-	public <A extends org.nrg.xdat.model.XdatUserI> void setuserProperty(A item) throws Exception;
+	public <A extends org.nrg.xdat.model.XdatUserI> void setUserProperty(A item) throws Exception;
 
 	/**
 	 * @return Returns the xdat:user_login/user_xdat_user_id.
 	 */
-	public Integer getuserPropertyFK();
+	public Integer getUserPropertyFK();
 
 	/**
 	 * @return Returns the xdat_user_login_id.

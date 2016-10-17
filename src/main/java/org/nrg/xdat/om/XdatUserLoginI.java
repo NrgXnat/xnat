@@ -53,7 +53,7 @@ public interface XdatUserLoginI {
 	 * user
 	 * @return XdatUserI
 	 */
-	XdatUserI getuserProperty();
+	XdatUserI getUserProperty();
 
 	/**
 	 * Sets the value for user.
@@ -67,7 +67,7 @@ public interface XdatUserLoginI {
 	 * @return Returns the xdat:user_login/user_xdat_user_id.
 	 */
     @SuppressWarnings("unused")
-    Integer getuserPropertyFK();
+    Integer getUserPropertyFK();
 
 	/**
 	 * Sets the value for xdat:user_login/user_xdat_user_id.

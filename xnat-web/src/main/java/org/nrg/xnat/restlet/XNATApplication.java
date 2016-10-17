@@ -21,10 +21,7 @@ import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.restlet.actions.UserSessionId;
 import org.nrg.xnat.restlet.guard.XnatSecureGuard;
 import org.nrg.xnat.restlet.resources.*;
-import org.nrg.xnat.restlet.resources.files.CatalogResource;
-import org.nrg.xnat.restlet.resources.files.CatalogResourceList;
-import org.nrg.xnat.restlet.resources.files.DIRResource;
-import org.nrg.xnat.restlet.resources.files.FileList;
+import org.nrg.xnat.restlet.resources.files.*;
 import org.nrg.xnat.restlet.resources.prearchive.*;
 import org.nrg.xnat.restlet.resources.search.*;
 import org.nrg.xnat.restlet.services.*;
@@ -209,7 +206,6 @@ public class XNATApplication extends Application {
         attachArchiveURI(router, "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources", CatalogResourceList.class);
         attachArchiveURI(router, "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources", CatalogResourceList.class);
         attachArchiveURI(router, "/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/resources", CatalogResourceList.class);
-
         attachArchiveURI(router, "/subjects/{SUBJECT_ID}/resources", CatalogResourceList.class);
 
         //resources (catalogs)
@@ -227,7 +223,6 @@ public class XNATApplication extends Application {
         attachArchiveURI(router, "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources/{RESOURCE_ID}", CatalogResource.class);
         attachArchiveURI(router, "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources/{RESOURCE_ID}", CatalogResource.class);
         attachArchiveURI(router, "/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/resources/{RESOURCE_ID}", CatalogResource.class);
-
         attachArchiveURI(router, "/subjects/{SUBJECT_ID}/resources/{RESOURCE_ID}", CatalogResource.class);
 
         //resource files

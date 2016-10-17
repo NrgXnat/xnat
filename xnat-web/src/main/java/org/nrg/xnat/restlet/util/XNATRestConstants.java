@@ -9,10 +9,14 @@
 
 package org.nrg.xnat.restlet.util;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
 /**
  * @author Timothy R. Olsen <olsent@wustl.edu>
  *
  */
+@SuppressWarnings("unused")
 public class XNATRestConstants {
 	public static final String PULL_DATA_FROM_HEADERS = "pullDataFromHeaders";
 	public static final String PULL_SESSION_DATA_FROM_HEADERS = "pullSessionDataFromHeaders";
@@ -29,4 +33,10 @@ public class XNATRestConstants {
 	
 	public static final String XML_PATH_REGEXP=".*:.*/.*";
 	public static final String XML_PATH_REGEXP2=".*:.*\\..*";
+
+	public static String getPrearchiveTimestamp() {
+		return DATE_FORMAT.format(Calendar.getInstance().getTime());
+	}
+
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(PREARCHIVE_TIMESTAMP);
 }

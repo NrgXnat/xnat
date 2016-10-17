@@ -9,11 +9,13 @@
 
 package org.nrg.xnat.restlet.extensions;
 
+import com.noelios.restlet.ext.servlet.ServletCall;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.restlet.XnatRestlet;
+import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.security.XnatProviderManager;
 import org.restlet.Context;
 import org.restlet.data.*;
@@ -24,6 +26,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
@@ -79,7 +82,7 @@ public class AuthenticationRestlet extends Resource {
             return;
         }
 
-        XnatProviderManager manager = XDAT.getContextService().getBean(XnatProviderManager.class);
+        final XnatProviderManager manager = XDAT.getContextService().getBean(XnatProviderManager.class);
 
         if(StringUtils.isEmpty(_authMethod) && !StringUtils.isEmpty(_username)){
             //try to guess the auth method
@@ -93,6 +96,7 @@ public class AuthenticationRestlet extends Resource {
         Authentication authentication = manager.authenticate(authRequest);
         if (authentication.isAuthenticated()) {
             succeed(authentication);
+            getResponse().setEntity(ServletCall.getRequest(getRequest()).getSession().getId(), MediaType.TEXT_PLAIN);
         } else {
             fail();
         }

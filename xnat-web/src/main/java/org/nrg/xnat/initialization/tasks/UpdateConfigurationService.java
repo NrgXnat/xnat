@@ -11,6 +11,7 @@ package org.nrg.xnat.initialization.tasks;
 
 import org.hibernate.SessionFactory;
 import org.nrg.config.entities.Configuration;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
@@ -58,7 +59,7 @@ public class UpdateConfigurationService extends AbstractInitializingTask {
                     final XnatProjectdata project = projects.get(0);
                     final String targetId = project.getId();
                     _log.warn("Updating configuration with project set to {} metadata ID to use project ID {} as entity ID.", projectId, targetId);
-                    _template.update(UPDATE, targetId, projectId);
+                    _template.update(UPDATE, targetId, Scope.Project.ordinal(), projectId);
                 }
             }
             _sessionFactory.getCache().evictEntityRegion(Configuration.class);
@@ -67,7 +68,7 @@ public class UpdateConfigurationService extends AbstractInitializingTask {
 
     private static final Logger _log   = LoggerFactory.getLogger(UpdateConfigurationService.class);
     private static final String QUERY  = "SELECT DISTINCT project FROM xhbm_configuration WHERE entity_id IS null AND project IS NOT NULL";
-    private static final String UPDATE = "UPDATE xhbm_configuration SET entity_id = ?, SET project = DEFAULT WHERE project = ?";
+    private static final String UPDATE = "UPDATE xhbm_configuration SET entity_id = ?, scope = ?, project = 0 WHERE project = ?";
 
     private final JdbcTemplate     _template;
     private final SessionFactory   _sessionFactory;

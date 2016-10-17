@@ -25,7 +25,6 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.representations.BeanRepresentation;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
 import org.nrg.xnat.restlet.resources.ScanResource;
@@ -149,44 +148,8 @@ public class CatalogResource extends XNATCatalogTemplate {
 							}
 						}
 
-						if(this.getQueryVariable("description")!=null){
-							catResource.setDescription(this.getQueryVariable("description"));
-						}
-						if(this.getQueryVariable("format")!=null){
-							catResource.setFormat(this.getQueryVariable("format"));
-						}
-						if(this.getQueryVariable("content")!=null){
-							catResource.setContent(this.getQueryVariable("content"));
-						}
+						setCatalogAttributes(user, catResource);
 
-						if(this.getQueryVariables("tags")!=null){
-							String[] tags = this.getQueryVariables("tags");
-							for(String tag: tags){
-								tag = tag.trim();
-								if(!tag.equals("")){
-									for(String s:XftStringUtils.CommaDelimitedStringToArrayList(tag)){
-										s=s.trim();
-										if(!s.equals("")){
-											XnatAbstractresourceTag t = new XnatAbstractresourceTag((UserI)user);
-											if(s.indexOf("=")>-1){
-												t.setName(s.substring(0,s.indexOf("=")));
-												t.setTag(s.substring(s.indexOf("=")+1));
-											}else{
-												if(s.indexOf(":")>-1){
-													t.setName(s.substring(0,s.indexOf(":")));
-													t.setTag(s.substring(s.indexOf(":")+1));
-												}else{
-													t.setTag(s);
-												}
-											}
-											catResource.setTags_tag(t);
-										}
-									}
-
-								}
-							}
-						}
-						
 						catResource.setLabel(resource_ids.get(0));
 
 						PersistentWorkflowI wrk=PersistentWorkflowUtils.getWorkflowByEventId(user,getEventId());
@@ -214,9 +177,10 @@ public class CatalogResource extends XNATCatalogTemplate {
 							wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, getSecurityItem().getItem(), newEventInstance(EventUtils.CATEGORY.DATA,(getAction()!=null)?getAction():EventUtils.CREATE_RESOURCE));
 						}
 
+						assert wrk != null;
 						EventMetaI ci=wrk.buildEvent();
 
-						this.insertCatalag(catResource,ci);
+						this.insertCatalog(catResource, ci);
 
 						if(isNew){
 							WorkflowUtils.complete(wrk, ci);
@@ -376,8 +340,6 @@ public class CatalogResource extends XNATCatalogTemplate {
 			} catch (ElementNotFoundException e) {
 	            logger.error("",e);
 			}
-		}else{
-			//multiple resources
 		}
 
 		return null;

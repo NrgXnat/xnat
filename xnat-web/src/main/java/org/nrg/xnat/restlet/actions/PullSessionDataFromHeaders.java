@@ -9,33 +9,27 @@
 
 package org.nrg.xnat.restlet.actions;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
-import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatImagescandata;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatResource;
+import org.nrg.xdat.om.*;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.exceptions.ValidationException;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.Callable;
 
 
 /**
@@ -81,7 +75,7 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 		final File sessionDir=new File(derivedSessionDir);
 
 		//build session xml document for data in the session directory
-		final String timestamp=(new java.text.SimpleDateFormat(XNATRestConstants.PREARCHIVE_TIMESTAMP)).format(Calendar.getInstance().getTime());
+		final String timestamp= XNATRestConstants.getPrearchiveTimestamp();
 		final File xml = new File(sessionDir,tempMR.getLabel()+ "_"+ timestamp+".xml");
 
 		final XNATSessionBuilder builder= new XNATSessionBuilder(sessionDir,xml,tempMR.getProject(),isInPrearchive);
@@ -89,7 +83,7 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 
 		//this should really throw a specific execution object
 		if (!xml.exists() || xml.length()==0) {
-			new Exception("Unable to locate DICOM or ECAT files");
+			throw new Exception("Unable to locate DICOM or ECAT files");
 		}
 
 		//build image session object from generated xml
@@ -114,7 +108,7 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 				//if oldScan is null, then a new scan has been discovered and old values are not present to maintain.
 				if(oldScan!=null){
 					if(!oldScan.getXSIType().equals(newscan.getXSIType())){
-						throw new Exception(String.format("Modification of scan modality ({} to {}) not supported.",oldScan.getXSIType(),newscan.getXSIType()));
+						throw new Exception(String.format("Modification of scan modality (%s to %s) not supported.",oldScan.getXSIType(),newscan.getXSIType()));
 					}
 					
 					((XnatImagescandata)newscan).setXnatImagescandataId(oldScan.getXnatImagescandataId());

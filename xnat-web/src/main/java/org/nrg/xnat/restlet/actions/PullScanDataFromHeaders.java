@@ -61,17 +61,16 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 	 * 
 	 * @throws IOException: Error accessing files
 	 * @throws SAXException: Error parsing generated xml
-	 * @throws MultipleSessionException
 	 * @throws MultipleScanException
      * @throws ValidationException: Scan invalid according to schema requirements (including xdat tags)
-	 * @throws Exception
+	 * @throws Exception When something goes wrong.
 	 */
 	public Boolean call() throws IOException,SAXException,MultipleScanException,ValidationException,Exception{
 		final File scanDir=new File(tempMR.deriveScanDir());
         
 		//build timestamped file for SessionBuilder output.
-		final String timestamp=(new java.text.SimpleDateFormat(XNATRestConstants.PREARCHIVE_TIMESTAMP)).format(Calendar.getInstance().getTime());
-		final File xml= new File(scanDir,tempMR.getId()+ "_"+ timestamp+".xml");
+		final String timestamp = XNATRestConstants.getPrearchiveTimestamp();
+		final File xml = new File(scanDir, tempMR.getId() + "_" + timestamp + ".xml");
 		
 		//run DICOM builder
 		final XNATSessionBuilder builder= new XNATSessionBuilder(scanDir,xml,tempMR.getImageSessionData().getProject(),isInPrearchive);

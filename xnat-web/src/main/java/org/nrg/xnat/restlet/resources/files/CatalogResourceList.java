@@ -21,7 +21,6 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.resources.ScanList;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
@@ -100,45 +99,7 @@ public class CatalogResourceList extends XNATTemplate {
                     }
                 }
 
-                if(getQueryVariable("description")!=null){
-                    catResource.setDescription(getQueryVariable("description"));
-                }
-
-                if(getQueryVariable("format")!=null){
-                    catResource.setFormat(getQueryVariable("format"));
-                }
-
-                if(getQueryVariable("content")!=null){
-                    catResource.setContent(getQueryVariable("content"));
-                }
-
-                if(getQueryVariables("tags")!=null){
-                    String[] tags = getQueryVariables("tags");
-                    for(String tag: tags){
-                        tag = tag.trim();
-                        if(!tag.equals("")){
-                            for(String s:XftStringUtils.CommaDelimitedStringToArrayList(tag)){
-                                s=s.trim();
-                                if(!s.equals("")){
-                                    XnatAbstractresourceTag t = new XnatAbstractresourceTag(user);
-                                    if(s.contains("=")){
-                                        t.setName(s.substring(0,s.indexOf("=")));
-                                        t.setTag(s.substring(s.indexOf("=")+1));
-                                    }else{
-                                        if(s.contains(":")){
-                                            t.setName(s.substring(0,s.indexOf(":")));
-                                            t.setTag(s.substring(s.indexOf(":")+1));
-                                        }else{
-                                            t.setTag(s);
-                                        }
-                                    }
-                                    catResource.setTags_tag(t);
-                                }
-                            }
-
-                        }
-                    }
-                }
+                setCatalogAttributes(user, catResource);
 
                 PersistentWorkflowI wrk=PersistentWorkflowUtils.getWorkflowByEventId(user,getEventId());
                 if(wrk==null && "SNAPSHOTS".equals(catResource.getLabel())){
@@ -163,7 +124,7 @@ public class CatalogResourceList extends XNATTemplate {
                 assert wrk != null;
                 EventMetaI ci=wrk.buildEvent();
 
-                insertCatalag(catResource, ci);
+                insertCatalog(catResource, ci);
 
                 if(isNew){
                     WorkflowUtils.complete(wrk, ci);

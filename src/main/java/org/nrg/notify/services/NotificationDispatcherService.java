@@ -15,6 +15,7 @@ public interface NotificationDispatcherService {
     /**
      * Dispatches the submitted notification to the renderers requested by subscribers.
      *
+     * @param notification The notification to be dispatched.
      * @throws UnknownChannelRendererException    An unknown error occurred.
      * @throws InvalidChannelRendererException    The channel renderer is not specified correctly.
      * @throws ChannelRendererNotFoundException   The requested channel renderer wasn't found.

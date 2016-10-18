@@ -1333,7 +1333,6 @@ misc:
     kind: panel.form
     name: misc
     label: Miscellaneous
-    footer: false
     method: POST
     contentType: json
     url: /xapi/siteConfig

@@ -26,6 +26,7 @@ if(typeof XNAT.app.abu.abuConfigs === 'undefined'){
 			id: 'xmodal-abu',
 			title: "Automation-Based Launcher/Uploader",
 			content: "<div id='modalUploadDiv'></div>",
+			closeBtn: "hide",
 			buttons: {
 				done: {
 					label: 'OK',
@@ -634,7 +635,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					// Force press of processing button after upload is started so workflow is created.  Only want one workflow per upload.
 					// Don't want cancellation of process during upload or incomplete file could end up in resource
 					if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)<0) {
-						$("#xmodal-abu-done-button").prop("disabled","disabled");
+						$("#xmodal-abu-done-button").hide();
 					}
 					$("#resourceSelect").prop('disabled','disabled');
 					if ($("#whatToDoSelect").val() != "") {
@@ -647,10 +648,15 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					if (typeof eventHandler !== 'undefined' && eventHandler != null && eventHandler.length>0) {
 						if ($(".abu-upload-complete-text").length==0) {
 							// $("#abu-done-button").removeClass("abu-button-disabled");
+							$("#abu-done-button").show();
+							$('#xmodal-abu-process-button').hide();
 						} else {
 							// $("#abu-done-button").addClass("abu-button-disabled");
+							$("#abu-done-button").hide();
+							$("#xmodal-abu-cancel-button").hide();
 						}
 						$("#xmodal-abu-process-button").prop("disabled",false);
+						$("#xmodal-abu-process-button").show();
 						//$("#abu-process-button-text").html("Process Files");
 						//$("#abu-process-button").css("visibility","visible");
 					} else {
@@ -658,11 +664,14 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 						// $("#abu-done-button-text").addClass("abu-done-button-done");
 						// $("#abu-done-button-text").removeClass("abu-done-button-cancel");
 						// $("#abu-done-button").removeClass("abu-button-disabled");
+						$("#xmodal-abu-cancel-button").hide();
 						$('#xmodal-abu-done-button').show();
+						$('#xmodal-abu-process-button').hide();
 					}
 				},
 			processFunction:function(){
 					XNAT.app.abu.processFiles();
+					$('#xmodal-abu-process-button').hide();
 				},
 			showEmailOption:true,
 			showCloseOption:true,
@@ -686,6 +695,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					// $("#abu-done-button-text").html("Done");
 					// $("#abu-done-button-text").addClass("abu-done-button-done");
 					// $("#abu-done-button-text").removeClass("abu-done-button-cancel");
+					$("#xmodal-abu-process-button").prop("disabled",false);
 					$('#xmodal-abu-done-button').show();
 				}
 				$(".upload-area").hide();
@@ -698,7 +708,8 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 				// $("#abu-done-button-text").html("Cancel");
 				// $("#abu-done-button-text").addClass("abu-done-button-cancel");
 				// $("#abu-done-button-text").removeClass("abu-done-button-done");
-				$('#xmodal-abu-done-button').show();
+				$("#xmodal-abu-done-button").hide();
+				$("#xmodal-abu-process-button").show();
 				if ($('#eventHandlerSelect option').size()>1 && $('#eventHandlerSelect').val()=="") {
 					$("#xmodal-abu-process-button").prop("disabled","disabled");
 					// $("#abu-process-button-text").html("&nbsp;");
@@ -708,7 +719,8 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			} else {
 				XNAT.app.abu.populateWhatToDoSelect();
 				if ($('#whatToDoSelect option').size()>1 && $('#whatToDoSelect').val()=="") {
-					$(".abu-upload-button").prop("disabled","disabled");
+					$("#abu-upload-button").prop("disabled","disabled");
+					$("#abu-upload-button").addClass("abu-button-disabled");
 					abu._fileUploader.DRAG_AND_DROP_ON = false;
 				} 
 				$("#xmodal-abu-process-button").prop("disabled","disabled");
@@ -739,6 +751,7 @@ XNAT.app.abu.usageSelectAction = function(){
 			.show()
 			.prop("disabled",false);
 		$(".abu-upload-button").prop("disabled",false);
+		$("#abu-upload-button").removeClass("abu-button-disabled");
 		abu._fileUploader.DRAG_AND_DROP_ON = true;
 		$("#xmodal-abu-process-button")
 			.hide()
@@ -749,8 +762,8 @@ XNAT.app.abu.usageSelectAction = function(){
 		$(".response_text").html('');
 	} else if (XNAT.app.abu.usageSelect=='Launch') { 
 		XNAT.app.abu.populateEventHandlerSelect();
-		$("#xmodal-abu-done-button").show();
 		$(".abu-upload-button").prop("disabled","disabled");
+		$("#abu-upload-button").addClass("abu-button-disabled");
 		abu._fileUploader.DRAG_AND_DROP_ON = false;
 		var eventHandler = $('#eventHandlerSelect').val();
 		if (eventHandler != undefined && eventHandler != null && eventHandler.length>0) {
@@ -759,6 +772,8 @@ XNAT.app.abu.usageSelectAction = function(){
 		}
 		$("#script-select-text").html("Script to launch:");
 		$("#xmodal-abu-process-button").html("Run script");
+		$("#xmodal-abu-done-button").hide();
+		$("#xmodal-abu-process-button").show();
 		$("#resourceSelect").prop('disabled','disabled');
 		$(".response_text").html('');
 	}
@@ -804,9 +819,11 @@ XNAT.app.abu.whatToDoChange = function(){
 	}
 	if (XNAT.app.abu.usageSelect == 'Upload' && $('#whatToDoSelect option').size()>1 && $('#whatToDoSelect').val()=="") {
 		$(".abu-upload-button").prop("disabled","disabled");
+		$("#abu-upload-button").addClass("abu-button-disabled");
 		abu._fileUploader.DRAG_AND_DROP_ON = false;
 	} else if (typeof abu == 'undefined' || abu._fileUploader.uploadsStarted==0) {
 		$(".abu-upload-button").prop("disabled",false);
+		$("#abu-upload-button").removeClass("abu-button-disabled");
 		abu._fileUploader.DRAG_AND_DROP_ON = true;
 	} 
 	XNAT.app.abu.filesProcessed = false;
@@ -1099,7 +1116,7 @@ XNAT.app.abu.continueProcessing=function() {
 			//	$("#abu-process-button").prop("disabled",false);
 			//}
 		});
-		$("#xmodal-abu-done-button").prop("disabled",false);
+		$("#xmodal-abu-done-button").show();
 		setTimeout(function(){
 			if (document.getElementById("closeBox")!=null && document.getElementById("closeBox").checked) {
 				xmodal.message('Notice',"You will be sent an e-mail upon completion");

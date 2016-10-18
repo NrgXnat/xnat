@@ -197,6 +197,7 @@ abu.FileUploader = function(o){
 		// $("#abu-done-button-text").addClass("abu-done-button-done");
 		// $("#abu-done-button-text").removeClass("abu-done-button-cancel");
 		// $("#abu-upload-button").css("display","None");
+		$("#xmodal-abu-cancel-button").hide();
 		$("#xmodal-abu-done-button")
 			.prop("disabled",false)
 			.show();

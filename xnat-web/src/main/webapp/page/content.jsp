@@ -21,7 +21,7 @@
 
 <div id="page-wrapper">
     <div class="pad">
-        <div id="page-content">loading...</div>
+        <div id="page-content"></div>
     </div>
 </div>
 
@@ -29,13 +29,13 @@
     (function(){
 
         var customPage = XNAT.app.customPage;
-        var $pageContent = $('#page-content');
+        var $pageContent = $('#page-content').html('loading...');
 
-        customPage.getPage(['', '/#'], $pageContent);
+        customPage.getPage(null, $pageContent);
 
-//        window.onhashchange = function(){
-//            customPage.getPage('', $pageContent);
-//        }
+        //        window.onhashchange = function(){
+        //            customPage.getPage('', $pageContent);
+        //        }
 
     })();
 </script>

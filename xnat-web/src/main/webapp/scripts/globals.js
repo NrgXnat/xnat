@@ -1209,7 +1209,7 @@ function writeCSS( href ){
 function loadCSS( url, parent ){
     // use CSS-style selector for 'parent'
     parent = parent ? document.querySelector(parent) : document.querySelector('head');
-    parent.appendChild(scriptElement(url, min, name));
+    parent.appendChild(cssElement(url));
 }
 
 // basic indentation formatting only
@@ -1243,8 +1243,14 @@ function prettifyJSON(data, indent) {
 // call 'test' at 'interval' until it returns true
 // then execute 'callback' -- basic but useful
 function waitForIt(interval, test, callback){
+    var _test = test;
+    if (typeof test !== 'function') {
+        _test = function(){
+            return !!test
+        }
+    }
     var waiting = setInterval(function(){
-        if (test()) {
+        if (_test()) {
             var called = callback();
             clearInterval(waiting);
             return called;

@@ -1,10 +1,82 @@
 <!-- Sequence: 10 -->
-##<li><a href="/page/admin/">Site Administration</a></li>
-<li><a href="${SITE_ROOT}/app/template/Page.vm?view=admin">Site Administration</a></li>
-<li><a href="$link.setPage("XDATScreen_admin.vm")">Users</a></li>
-<li><a href="$link.setPage("XDATScreen_groups.vm")">Groups</a></li>
-<li><a href="$link.setPage("XDATScreen_dataTypes.vm")">Data Types</a></li>
-<li><a href="$link.setPage("XDATScreen_email.vm")">Email</a></li>
-<li><a href="$link.setPage("XDATScreen_manage_pipeline.vm")">Pipelines</a></li>
-<li><a href="$link.setPage("Scripts.vm")">Automation</a></li>
-<li><a href="$link.setPage("XDATScreen_admin_options.vm")">More...</a></li>
+
+<!-- xnat-templates/screens/topBar/Administer/Default.vm -->
+
+####<li><a href="/page/admin/">Site Administration</a></li>
+##<li><a href="${SITE_ROOT}/app/template/Page.vm?view=admin">Site Administration</a></li>
+##<li id="view-plugin-settings" class="hidden"><a href="${SITE_ROOT}/app/template/Page.vm?view=admin/plugins">Plugin Settings</a></li>
+##<li><a href="$link.setPage("XDATScreen_admin.vm")">Users</a></li>
+##<li><a href="$link.setPage("XDATScreen_groups.vm")">Groups</a></li>
+##<li><a href="$link.setPage("XDATScreen_dataTypes.vm")">Data Types</a></li>
+##<li><a href="$link.setPage("XDATScreen_email.vm")">Email</a></li>
+##<li><a href="$link.setPage("XDATScreen_manage_pipeline.vm")">Pipelines</a></li>
+##<li><a href="$link.setPage("Scripts.vm")">Automation</a></li>
+##<li><a href="$link.setPage("XDATScreen_admin_options.vm")">More...</a></li>
+##
+##<script src="${SITE_ROOT}/scripts/xnat/admin/pluginSettings.js"></script>
+##
+##<script>
+##    XNAT.xhr.get(XNAT.url.restUrl('/xapi/plugins'), function(plugins){
+##
+##        console.log('/xapi/plugins response');
+##        console.log(plugins);
+##
+##        var hideMenuItem = true;
+##
+##        if (!isEmpty(plugins)) {
+##
+##            var setPaths = function(names){
+##                var paths = [];
+##                [].concat(names).forEach(function(name){
+##                    paths.push(name + '/siteSettings');
+##                    paths.push(name + '/admin');
+##                });
+##                return paths;
+##            };
+##
+##            // calling forOwn() returns the key names
+##            var pluginNames = forOwn(plugins);
+##            var pluginSettingsPaths = setPaths(pluginNames);
+##
+##            function getPluginSpawnerElements(path){
+##                var _url = XNAT.url.restUrl('/xapi/spawner/resolve/' + path)
+##                return XNAT.xhr.get(_url);
+##            }
+##
+##            function lookForSettings(i) {
+##                if (i === pluginSettingsPaths.length){
+##                    // console.log("couldn't do it");
+##                    return false;
+##                }
+##                // recursively try to get settings at different places
+##                getPluginSpawnerElements(pluginSettingsPaths[i])
+##                        .done(function(){
+##                            $('#view-plugin-settings').removeClass('hidden');
+##                        })
+##                        .fail(function(){
+##                            lookForSettings(++i)
+##                        });
+##            }
+##
+##            // do the stuff
+##            lookForSettings(0);
+##
+##//            forOwn(plugins, function(name, obj){
+##//                if (hideMenuItem) return;
+##//                getPluginSpawnerElements(name + '/siteSettings')
+##//                        .done(function(){
+##//                            showMenuItem = true;
+##//                            $('#view-plugin-settings').removeClass('hidden');
+##//                        })
+##//                        .fail(function(){
+##//                            getPluginSpawnerElements(name + '/admin')
+##//                                    .done(function(){
+##//                                        showMenuItem = true;
+##//                                        $('#view-plugin-settings').removeClass('hidden');
+##//                                    })
+##//                        });
+##//            });
+##        }
+##
+##    });
+##</script>

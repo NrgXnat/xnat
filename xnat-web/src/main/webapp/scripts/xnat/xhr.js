@@ -593,11 +593,19 @@ var XNAT = getObject(XNAT||{}),
         var inputs = $inputs.toArray();
 
         if (/POST|PUT/i.test(opts.method)) {
+            if ($form.hasAnyClass('json-text text-json')) {
+                opts.contentType = 'text/json';
+            }
             if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
                 // opts.data = formToJSON($form, true);
                 opts.data = JSON.stringify(form2js(inputs, opts.delimiter||opts.delim||':', false));
                 opts.processData = false;
-                opts.contentType = 'application/json';
+                if (opts.contentType === 'text/json') {
+                    opts.contentType = 'text/plain';
+                }
+                else {
+                    opts.contentType = 'application/json';
+                }
             }
             else {
                 opts.data = $form.find(':input').not('.ignore').serialize();

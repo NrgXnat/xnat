@@ -560,7 +560,12 @@ var XNAT = getObject(XNAT || {});
                 // ajaxConfig.data = JSON.stringify(form2js(this, /[:\[\]]/));
                 ajaxConfig.data = JSON.stringify(form2js(inputs, ':', false));
                 ajaxConfig.processData = false;
-                ajaxConfig.contentType = 'application/json';
+                if (opts.contentType === 'text/json') {
+                    ajaxConfig.contentType = opts.contentType;
+                }
+                else {
+                    ajaxConfig.contentType = 'application/json';
+                }
                 //$.ajax(ajaxConfig);
                 // XNAT.xhr.form($form, ajaxConfig);
             }

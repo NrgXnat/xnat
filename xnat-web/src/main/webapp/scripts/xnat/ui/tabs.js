@@ -50,6 +50,8 @@ var XNAT = getObject(XNAT || {});
     tab.group = function(obj){
         var id = toDashed(obj.id || obj.name);
         if (!id) return; // a tab group MUST have an id
+        // return if the group already exists
+        if ($('ul#' + id + '.nav.tab-group').length) return;
         return spawn('ul.nav.tab-group', { id: id }, [
             ['li.label', (obj.label || obj.title || obj.text || 'Tab Group')]
         ]);
@@ -194,24 +196,23 @@ var XNAT = getObject(XNAT || {});
 
         // use existing tabs if already present
         if ($container.find(NAV_TABS).length) {
-            navTabs = $container.find(NAV_TABS)[0]
+            $navTabs = $container.find(NAV_TABS);
         }
         else {
-            navTabs = spawn(NAV_TABS);
-            $container.append(navTabs);
+            $navTabs = $.spawn(NAV_TABS);
+            $container.append($navTabs);
         }
+        navTabs = $navTabs[0];
 
         // use existing content container if already present
         if ($container.find(TAB_CONTENT).length) {
-            tabContent = $container.find(TAB_CONTENT)[0];
+            $tabContent = $container.find(TAB_CONTENT);
         }
         else {
-            tabContent = spawn(TAB_CONTENT);
-            $container.append(tabContent);
+            $tabContent = $.spawn(TAB_CONTENT);
+            $container.append($tabContent);
         }
-
-        $navTabs = $(navTabs);
-        $tabContent = $(tabContent);
+        tabContent = $tabContent[0];
 
         layout = obj.layout || tabs.layout || 'left';
 

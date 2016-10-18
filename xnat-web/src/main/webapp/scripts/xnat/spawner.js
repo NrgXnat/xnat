@@ -344,8 +344,6 @@ var XNAT = getObject(XNAT);
         // you can pass a config object as the only argument
         opts = cloneObject(firstDefined(opts, getObject(nsPath)));
 
-        console.log(opts);
-
         var url = opts.url || XNAT.url.restUrl('/xapi/spawner/resolve/' + nsPath);
 
         var request = XNAT.xhr.getJSON(extend(true, {

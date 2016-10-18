@@ -34,12 +34,24 @@ var XNAT = getObject(XNAT);
     // as methods and properties to the function
     select = getObject(XNAT.ui.select || {});
 
-    function addOption(el, opt){
-        el.appendChild(spawn('option', extend(true, {
-            value: opt.value !== undefined ? opt.value : '',
-            html: opt.html || opt.text || opt.label || opt.value,
-            selected: opt.selected || false
-        }, opt.element )));
+    function addOption(el, opt, sel){
+        var val, txt;
+        if (typeof opt === 'string') {
+            val = opt;
+            txt = opt;
+        }
+        else {
+            val = opt.value !== undefined ? opt.value : '';
+            txt = opt.html || opt.text || opt.label || val;
+        }
+        var option = spawn('option', extend(true, {
+            value: val,
+            html: txt,
+            selected: val === sel || [].concat(sel).indexOf(val) > -1 || opt.selected || false
+        }, opt.element, {
+            //selected: val === sel || [].concat(sel).indexOf(val) > -1 || opt.selected || false
+        }));
+        el.appendChild(option);
     }
     
     // generate JUST the options
@@ -62,7 +74,7 @@ var XNAT = getObject(XNAT);
     select.menu = function(config){
 
         var frag = document.createDocumentFragment(),
-            menu, label;
+            $menu, menu, label;
 
         config = cloneObject(config);
 
@@ -71,22 +83,24 @@ var XNAT = getObject(XNAT);
 
         config.id = config.id || toDashed(config.name) || randomID('menu-', false);
         config.name = config.name || '';
+        config.value = config.value !== undefined ? config.value : '';
 
         config.element = extend(true, {
             id: config.id,
             name: config.name,
-            value: config.value !== undefined ? config.value : '',
+            value: config.value,
             title: config.title || ''
         }, config.element);
 
-        menu = spawn('select', config.element);
+        $menu = $.spawn('select', config.element);
+        menu = $menu[0];
 
         addOption(menu, { html: 'Select' });
         
         if (config.options){
             if (Array.isArray(config.options)) {
                 forEach(config.options, function(opt){
-                    addOption(menu, opt);
+                    addOption(menu, opt, config.value);
                 })    
             }
             else {
@@ -99,14 +113,15 @@ var XNAT = getObject(XNAT);
                     else {
                         opt = txt;
                     }
-                    addOption(menu, opt);
+                    addOption(menu, opt, config.value);
                 });
             }
         }
         
         // force menu change event to select 'selected' option
-        $(menu).change();
-        
+        $menu.changeVal(config.value);
+        // $menu.find('[value="' + config.value + '"]').prop('selected', true);
+
         // if there's no label, wrap the 
         // <select> inside a <label> element
         if (!config.label) {

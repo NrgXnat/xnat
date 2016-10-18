@@ -72,10 +72,11 @@ div.xmodal .body > .inner > iframe {
 div.xmodal .body .inner { display: none ; padding: 20px ; font-size: 13px ; line-height: 17px ; }
 div.xmodal.nopad .body .inner { padding: 0 ; }
 div.xmodal.open .body .inner { display: block ; }
+/* Only styles for the dialog elements should be in this file */
 div.xmodal .body h1,
 div.xmodal .body h2,
 div.xmodal .body h3,
-div.xmodal .body h4 { margin-bottom: 1em !important; }
+div.xmodal .body h4 { /* margin-bottom: 1em !important; */ }
 div.xmodal .body p { margin: 0 0 1em ; }
 
 div.xmodal .footer {

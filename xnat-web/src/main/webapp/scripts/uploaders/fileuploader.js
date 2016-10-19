@@ -44,32 +44,32 @@ abu.FileUploader = function(o){
 					'<div class="abu-xnat-interactivity-area-contents"></div>' +
 					'<div class="abu-options-div">' +
 					((this._options.showExtractOption) ?
-						'<div class="abu-options-cb" title = "Extract compressed files on upload (zip, tar, gz)"?>' +
+						'<div class="abu-options-cb" id="extractRequestBoxDiv" title = "Extract compressed files on upload (zip, tar, gz)"?>' +
 						'<input id="extractRequestBox" type="checkbox" value="1" checked="checked">' +
 						'Extract compressed files' +
 						'</div>' :
 							'<div class="abu-extract-zip"><input id="extractRequestBox" type="hidden" value="1"/></div>'
 					) +
 					((this._options.showCloseOption) ?
-						'<div class="abu-options-cb" title = "Close window upon submit and send e-mail upon completion">' +
+						'<div class="abu-options-cb" id="closeBoxDiv" title = "Close window upon submit and send e-mail upon completion">' +
 						'<input id="closeBox" type="checkbox" value="1">' +
 						'Close window upon submit' +
 						'</div>' : ""
 					) +
 					((this._options.showEmailOption) ?
-						'<div class="abu-options-cb" title = "Send e-mail upon completion">' +
+						'<div class="abu-options-cb" id="emailBoxDiv" title = "Send e-mail upon completion">' +
 						'<input id="emailBox" type="checkbox" value="1">' +
 						'Send e-mail upon completion' +
 						'</div>' : ""
 					) +
 					((this._options.showUpdateOption) ?
-						'<div class="abu-options-cb" title = "Update existing records?">' +
+						'<div class="abu-options-cb" id="updateBoxDiv" title = "Update existing records?">' +
 						'<input id="updateBox" type="checkbox" value="1">' +
 						'Update existing records?' +
 						'</div>' : ""
 					) +
 					((this._options.showVerboseOption) ?
-						'<div class="abu-options-cb" title = "Verbose status output?">' +
+						'<div class="abu-options-cb" id="verboseBoxDiv" title = "Verbose status output?">' +
 						'<input id="verboseBox" type="checkbox" value="1"' +
 						'Verbose status output?' +
 						'</div>' : ""
@@ -89,13 +89,10 @@ abu.FileUploader = function(o){
 		// replaced #abu-process-button with #xmodal-abu-process-button, which is defined in the xmodal options
 		$("#xmodal-abu-process-button").click(this._options.processFunction);
 		$('#closeBox').change(function(){ 
-			if ($('#closeBox').is(':checked')) { 
-				$('#emailBox').prop('checked', true);
-				$('#emailBox').attr('disabled', true);
-			} else {
-				$('#emailBox').attr('disabled', false);
-			}
-		 });
+			this.updateOptionStatus();
+		 }.bind(this));
+
+		this.updateOptionStatus();
 
 		if (this.ALLOW_DRAG_AND_DROP) {
 			$(".abu-upload-drop-area").on('dragleave',function(e) { 
@@ -242,6 +239,15 @@ abu.FileUploader = function(o){
 			this.manageUploads();
 		}
 	}.bind(this)
+
+	this.updateOptionStatus = function() {
+		if ($('#closeBox').is(':checked')) { 
+			$('#emailBox').prop('checked', true);
+			$('#emailBox').attr('disabled', true);
+		} else {
+			$('#emailBox').attr('disabled', false);
+		}
+	}
 
 	this.bytesToSize = function(bytes) {
 	   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];

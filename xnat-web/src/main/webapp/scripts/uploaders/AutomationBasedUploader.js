@@ -304,6 +304,7 @@ XNAT.app.abu.hasContextEvents = function(usage,dataType){
 
 XNAT.app.abu.eventHandlerChange = function(){
 	var eventHandler = $('#eventHandlerSelect').val();
+	XNAT.app.abu.updateOptionsCheckboxes(eventHandler);
 	if (typeof eventHandler === 'undefined' || eventHandler == null || eventHandler.length<1 && ($("#handlerDefaultOption").html() == 'NONE DEFINED' || $("#handlerDefaultOption").html() == 'SELECT')) {
 		$("#xmodal-abu-process-button").prop("disabled","disabled");
 		//$("#abu-process-button-text").html("&nbsp;");
@@ -439,7 +440,7 @@ XNAT.app.abu.populateEventHandlerSelect = function(){
 					}
 					if (doAssign) {
 						$('#eventHandlerSelect').append('<option value="' + currEvent.triggerId + '" class="' + currEvent.scope + '">' +
-						 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
+						 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.event) + '</option>');
 					}
 					continue outerLoop;
 				}
@@ -497,7 +498,7 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
  											? (resourceConfigs[h].name + " --> ") : ""
 										) +
 
-									 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
+									 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.event) + '</option>');
 									resourceMatch = true;
 								}
 								continue outerLoop;
@@ -535,7 +536,7 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 					}
 					if (doAssign) {
 						$('#whatToDoSelect').append('<option value="resource-' + XNAT.app.abu.cacheConstant + ':launch-' + currEvent.triggerId + '" class="' + currEvent.scope + '">' + /*"Upload --> " +*/ 
-						 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
+						 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.event) + '</option>');
 					}
 					continue outerLoop;
 				}
@@ -803,6 +804,85 @@ XNAT.app.abu.updateModalAction = function(){
 	XNAT.app.abu.populateEventHandlerSelect();
 }
 
+XNAT.app.abu.updateOptionsCheckboxes = function(selectVal) {
+	// First set default values that will take effect if there is no event handlers (e.g. configured resource uploads with no scripts);
+	$("#extractRequestBoxDiv").show();
+	$("#extractRequestBox").attr('checked',true);
+	$("#closeBoxDiv").hide();
+	$("#closeBox").attr('checked',false);
+	$("#emailBoxDiv").hide();
+	$("#emailBox").attr('checked',false);
+	// Now we'll set values for upload requests with associated event handlers
+	for (var i=0;i<this.uploaderConfig.length;i++) {
+		if (this.uploaderConfig[i].eventTriggerId==selectVal) { // && this.uploaderConfig[i].eventScope==eventHandlerScope) {
+			var uploaderConfig = this.uploaderConfig[i];
+
+			if (typeof uploaderConfig.showExtractOption !== 'undefined') {
+				if (uploaderConfig.showExtractOption) {
+					$("#extractRequestBoxDiv").show();
+				} else {
+					$("#extractRequestBoxDiv").hide();
+				}
+			} else {
+				$("#extractRequestBox").show();
+			}
+			if (typeof uploaderConfig.extractOptionChecked !== 'undefined') {
+				if (uploaderConfig.extractOptionChecked) {
+					$("#extractRequestBox").attr('checked',true);
+				} else {
+					$("#extractRequestBox").attr('checked',false);
+				}
+			} else {
+				$("#extractRequestBox").attr('checked',true);
+			}
+
+			if (typeof uploaderConfig.showCloseWindowOption !== 'undefined') {
+				if (uploaderConfig.showCloseWindowOption) {
+					$("#closeBoxDiv").show();
+				} else {
+					$("#closeBoxDiv").hide();
+				}
+			} else {
+				$("#closeBoxDiv").show();
+			}
+			if (typeof uploaderConfig.closeWindowOptionChecked !== 'undefined') {
+				if (uploaderConfig.closeWindowOptionChecked) {
+					$("#closeBox").attr('checked',true);
+				} else {
+					$("#closeBox").attr('checked',false);
+				}
+			} else {
+				$("#closeBox").attr('checked',false);
+			}
+
+			if (typeof uploaderConfig.showEmailOption !== 'undefined') {
+				if (uploaderConfig.showEmailOption) {
+					$("#emailBoxDiv").show();
+				} else {
+					$("#emailBoxDiv").hide();
+				}
+			} else {
+				$("#emailBoxDiv").show();
+			}
+			if (typeof uploaderConfig.emailOptionChecked !== 'undefined') {
+				if (uploaderConfig.emailOptionChecked) {
+					$("#emailBox").attr('checked',true);
+				} else {
+					$("#emailBox").attr('checked',false);
+				}
+			} else {
+				$("#emailBox").attr('checked',false);
+			}
+			//console.log($("#extractRequestBox").is(":checked"));
+			//console.log($("#closeBox").is(":checked"));
+			//console.log($("#emailBox").is(":checked"));
+
+			break;
+		}
+	}
+	abu._fileUploader.updateOptionStatus();
+}
+
 XNAT.app.abu.whatToDoChange = function(){
 	XNAT.app.abu.whatToDo = $('#whatToDoSelect').val();
         var whatToDo = XNAT.app.abu.whatToDo;
@@ -811,6 +891,7 @@ XNAT.app.abu.whatToDoChange = function(){
 	$('#resourceSelect').val(resourceSelect);
 	XNAT.app.abu.updateModalAction();
 	$('#eventHandlerSelect').val(launchSelect);
+	XNAT.app.abu.updateOptionsCheckboxes(launchSelect);
 	if (typeof abu !== 'undefined' && abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
 		$("#xmodal-abu-process-button")
 			.prop("disabled","disabled")
@@ -1152,6 +1233,14 @@ XNAT.app.abu.saveUploaderConfiguration=function(configTriggerId, configEvent, sc
 	newConfigObj.launchWithoutUploads = $('#ULC_RB_launchWithoutUploads').is(':checked');
 	newConfigObj.doNotUseUploader = $('#ULC_RB_doNotUseUploader').is(':checked');
 	newConfigObj.escapeHtml = $('#ULC_RB_outputText').is(':checked');
+
+	newConfigObj.showExtractOption = $('#ULC_RB_showExtractOption').is(':checked');
+	newConfigObj.extractOptionChecked = $('#ULC_RB_extractOptionChecked').is(':checked');
+	newConfigObj.showCloseWindowOption = $('#ULC_RB_showCloseWindowOption').is(':checked');
+	newConfigObj.closeWindowOptionChecked = $('#ULC_RB_closeWindowOptionChecked').is(':checked');
+	newConfigObj.showEmailOption = $('#ULC_RB_showEmailOption').is(':checked');
+	newConfigObj.emailOptionChecked = $('#ULC_RB_emailOptionChecked').is(':checked');
+
 	newConfigObj.parameters = undefined;
 	$(".ULC_parametersDiv").each(function() {
 		var parameterField = $(this).find(".ULC_parametersField").val();
@@ -1299,6 +1388,14 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 		configObj.launchWithoutUploads = false;
 		configObj.doNotUseUploader = true;
 		configObj.escapeHtml = false;
+
+		configObj.showExtractOption = true;
+		configObj.extractOptionChecked = true;
+		configObj.showCloseWindowOption = true;
+		configObj.closeWindowOptionChecked = false;
+		configObj.showEmailOption = true;
+		configObj.emailOptionChecked = false;
+
 		// best to leave these undefined, I think
 		//configObj.parameters = [  ];
 		//configObj.contexts = [ 'xnat:projectData','xnat:subjectAssessorData','xnat:imageAssessorData','xnat:imageSessionData','xnat:imageScanData','xnat:subjectData' ];
@@ -1316,6 +1413,8 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 				close: false,
 				action: function( obj ){
 					if (XNAT.app.abu.validateUploaderConfiguration()) {
+						$('#ULC_RB_emailOptionChecked').prop("disabled",false);
+						$('#ULC_RB_showCloseWindowOption').prop("disabled",false);
 						XNAT.app.abu.saveUploaderConfiguration(configTriggerId, configEvent, scope);
 						obj.close();
 					}
@@ -1354,7 +1453,27 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_outputText" name="ULC_RB_OUTPUT" value="outputText"' +
 				 ((configObj.escapeHtml) ? ' checked' : '') + '> <b> Text (escape HTML characters) </b> </div>';
 	configHtml+='</div></p>';
+
 	configHtml+='<p>';
+	configHtml+='<div style="margin-left:20px;width:100%"><p><b>Upload window options:</b>';
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_showExtractOption" name="ULC_RB_SHOWEXTRACT" value="showExtractOption"' +
+				 ((configObj.showExtractOption) ? ' checked' : '') + '> <b> Show <i>Extract compressed files</i> option?</b> </div>';
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_extractOptionChecked" name="ULC_RB_EXTRACTCHECKED" value="extractOptionChecked"' +
+				 ((configObj.extractOptionChecked) ? ' checked' : '') + '> <b> <i>Extract compressed files</i> option checked?</b> </div>';
+
+
+	configHtml+='<div style="margin-left:20px;width:100%;margin-top:10px;"><input type="checkbox" id="ULC_RB_showCloseWindowOption" name="ULC_RB_SHOWCLOSE" value="showCloseWindowOption"' +
+				 ((configObj.showCloseWindowOption) ? ' checked' : '') + '> <b> Show <i>Close window upon submit</i> option?</b> </div>';
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_closeWindowOptionChecked" name="ULC_RB_CLOSECHECKED" value="closeWindowOptionChecked"' +
+				 ((configObj.closeWindowOptionChecked) ? ' checked' : '') + '> <b> <i>Close window upon submit</i> option checked?</b> </div>';
+
+
+	configHtml+='<div style="margin-left:20px;width:100%;margin-top:10px;"><input type="checkbox" id="ULC_RB_showEmailOption" name="ULC_RB_SHOWEMAIL" value="showEmailOption"' +
+				 ((configObj.showEmailOption) ? ' checked' : '') + '> <b> Show <i>Send e-mail upon completion</i> option?</b> </div>';
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_emailOptionChecked" name="ULC_RB_EMAILCHECKED" value="emailOptionChecked"' +
+				 ((configObj.emailOptionChecked) ? ' checked' : '') + '> <b> <i>Send e-mail upon completion</i> option checked?</b> </div>';
+	configHtml+='<p>';
+
 	configHtml+='<div style="margin-left:20px;width:100%"><p><b>User Supplied Parameters:</b><p><div id="ULC_parameters">';
 	for (var i=0;i<((typeof(configObj.parameters)!=='undefined' && configObj.parameters.length>0) ? configObj.parameters.length : 0);i++) {
 		var hasValue = (typeof(configObj.parameters)!=='undefined' && configObj.parameters.length>=(i+1));
@@ -1431,6 +1550,7 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 	configHtml+='</div><span style="margin-left:20px"><button class="ULC_contextsAdd">Add Context</button></span></div></p>';
 
 	$('#configUploadDiv').html(configHtml); 
+	XNAT.app.abu.updateEmailOptionStatus();
 	$(".ULC_contextsDiv :input,.ULC_contextsAdd").prop('disabled',$('#ULC_contextsAllCB').is(':checked') || !( $('#ULC_RB_launchFromResourceUploads').is(':checked') || 
 		$('#ULC_RB_launchFromCacheUploads').is(':checked') || $('#ULC_RB_launchWithoutUploads').is(':checked')) );
 
@@ -1472,6 +1592,12 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 		$(".ULC_contextsDiv :input,.ULC_contextsAdd").prop('disabled',$('#ULC_contextsAllCB').is(':checked') || !( $('#ULC_RB_launchFromResourceUploads').is(':checked') || 
 			$('#ULC_RB_launchFromCacheUploads').is(':checked') || $('#ULC_RB_launchWithoutUploads').is(':checked')) );
 	 });
+	$('#ULC_RB_closeWindowOptionChecked').change(function() {
+		XNAT.app.abu.updateEmailOptionStatus()
+		});
+	$('#ULC_RB_showEmailOption').change(function() {
+		XNAT.app.abu.updateEmailOptionStatus()
+		});
 
 	var ULC_addParameter = function(){
 
@@ -1531,6 +1657,22 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 		});
 		$('#ULC_contextsContext' + i).focus();
 
+	}
+}
+
+XNAT.app.abu.updateEmailOptionStatus=function() {
+	if ($('#ULC_RB_closeWindowOptionChecked').is(":checked")) {
+		$('#ULC_RB_emailOptionChecked').prop("checked",true);
+		$('#ULC_RB_emailOptionChecked').prop("disabled",true);
+		if ($('#ULC_RB_showEmailOption').is(":checked")) {
+			$('#ULC_RB_showCloseWindowOption').prop("checked",true);
+			$('#ULC_RB_showCloseWindowOption').prop("disabled",true);
+		} else {
+			$('#ULC_RB_showCloseWindowOption').prop("disabled",false);
+		}
+	} else {
+		$('#ULC_RB_emailOptionChecked').prop("disabled",false);
+		$('#ULC_RB_showCloseWindowOption').prop("disabled",false);
 	}
 }
 

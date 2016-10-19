@@ -1064,6 +1064,7 @@ XNAT.app.abu.processFiles=function() {
 				id: 'xmodal-passed-param',  
 				title: "Information required",
 				content: "<div id='modalParamsToPassDiv'></div>",
+				overflow: "hidden",
 				ok: 'show',
 				okLabel: 'Continue',
 				okAction: function(modl){ 
@@ -1457,19 +1458,19 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEv
 	configHtml+='<p>';
 	configHtml+='<div style="margin-left:20px;width:100%"><p><b>Upload window options:</b>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_showExtractOption" name="ULC_RB_SHOWEXTRACT" value="showExtractOption"' +
-				 ((configObj.showExtractOption) ? ' checked' : '') + '> <b> Show <i>Extract compressed files</i> option?</b> </div>';
+				 ((configObj.showExtractOption) ? ' checked' : '') + '> <b> Show <i>extract compressed files</i> option?</b> </div>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_extractOptionChecked" name="ULC_RB_EXTRACTCHECKED" value="extractOptionChecked"' +
 				 ((configObj.extractOptionChecked) ? ' checked' : '') + '> <b> <i>Extract compressed files</i> option checked?</b> </div>';
 
 
 	configHtml+='<div style="margin-left:20px;width:100%;margin-top:10px;"><input type="checkbox" id="ULC_RB_showCloseWindowOption" name="ULC_RB_SHOWCLOSE" value="showCloseWindowOption"' +
-				 ((configObj.showCloseWindowOption) ? ' checked' : '') + '> <b> Show <i>Close window upon submit</i> option?</b> </div>';
+				 ((configObj.showCloseWindowOption) ? ' checked' : '') + '> <b> Show <i>close window upon submit</i> option?</b> </div>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_closeWindowOptionChecked" name="ULC_RB_CLOSECHECKED" value="closeWindowOptionChecked"' +
 				 ((configObj.closeWindowOptionChecked) ? ' checked' : '') + '> <b> <i>Close window upon submit</i> option checked?</b> </div>';
 
 
 	configHtml+='<div style="margin-left:20px;width:100%;margin-top:10px;"><input type="checkbox" id="ULC_RB_showEmailOption" name="ULC_RB_SHOWEMAIL" value="showEmailOption"' +
-				 ((configObj.showEmailOption) ? ' checked' : '') + '> <b> Show <i>Send e-mail upon completion</i> option?</b> </div>';
+				 ((configObj.showEmailOption) ? ' checked' : '') + '> <b> Show <i>send e-mail upon completion</i> option?</b> </div>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="checkbox" id="ULC_RB_emailOptionChecked" name="ULC_RB_EMAILCHECKED" value="emailOptionChecked"' +
 				 ((configObj.emailOptionChecked) ? ' checked' : '') + '> <b> <i>Send e-mail upon completion</i> option checked?</b> </div>';
 	configHtml+='<p>';

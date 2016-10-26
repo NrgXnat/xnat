@@ -578,16 +578,17 @@ var XNAT = getObject(XNAT||{}),
         // stop here if there are errors
         if (errors.length) {
             console.log('ERRORS: ' + errors);
-            // errors = errors.map(function(field){
-            //     return '<li>' + field + '</li>'
-            // });
-            // xmodal.message({
-            //     title: 'Validation Failed',
-            //     content: '' +
-            //         '<p>Please correct errors with the following fields:</p> ' +
-            //         '<ul>' + errors.join('') + '</ul>'
-            // });
-            // return false;
+            // VALIDATION ERRORS WILL STOP FORM SUBMISSION
+            errors = errors.map(function(field){
+                return '<li>' + field + '</li>'
+            });
+            xmodal.message({
+                title: 'Validation Failed',
+                content: '' +
+                    '<p>Please correct errors with the following fields:</p> ' +
+                    '<ul>' + errors.join('') + '</ul>'
+            });
+            return false;
         }
 
         var inputs = $inputs.toArray();
@@ -636,7 +637,7 @@ var XNAT = getObject(XNAT||{}),
     $.fn.submitJSON = function(opts){
         var $form = $(this);
         $form.addClass('json');
-        return xhr.form(this, extend(true, {
+        return xhr.form($form, extend(true, {
             method: $form.data('method') || this.method || 'POST',
             processData: false,
             contentType: 'application/json'

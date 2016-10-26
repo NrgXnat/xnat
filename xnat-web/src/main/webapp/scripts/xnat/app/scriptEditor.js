@@ -300,8 +300,9 @@ var XNAT = getObject(XNAT || {});
 
         var opts = {};
         opts.width = 880;
-        opts.height = 720;
-        //opts.top = 100;
+        opts.height = 600;
+        // opts.maxHeight = '98%';
+        // opts.top = 100;
         opts.scroll = false;
         opts.template = $('#script-editor-template');
         opts.title = 'XNAT Script Editor';

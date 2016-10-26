@@ -21,7 +21,7 @@ div.xmodal-mask { background: transparent url(data:image/png;base64,iVBORw0KGgoA
 /*div.xmodal-mask.open { display: block ; z-index: 100 ; }*/
 
 div.xmodal {
-    display: none ; min-width: 200px ; min-height: 128px ; max-width: 98% ; max-height: 98% ;
+    display: none ; min-width: 200px ; min-height: 128px ; max-width: 92% ; max-height: 92% ;
     position: fixed ; top: 0 ; right: 0 ; bottom: 0 ; left: 0 ; margin: auto ; overflow: hidden ;
     background: #fff ; border: 1px solid #a0a0a0 ; box-shadow: 0 10px 30px rgba(0,0,0,0.5) ;
     font-family: Arial, Helvetica, sans-serif ; }

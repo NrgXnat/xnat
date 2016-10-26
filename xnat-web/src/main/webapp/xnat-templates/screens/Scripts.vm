@@ -451,7 +451,7 @@
                 </tr>
             </table>
             <br>
-            <div class="editor-wrapper" style="width:840px;height:440px;position:relative;">
+            <div class="editor-wrapper" style="width:840px;height:320px;position:relative;">
                 <!-- the '.editor-content' div gets replaced when the script content is loaded -->
                 <div class="editor-content" style="position:absolute;top:0;right:0;bottom:0;left:0;border:1px solid #ccc;"></div>
             </div>

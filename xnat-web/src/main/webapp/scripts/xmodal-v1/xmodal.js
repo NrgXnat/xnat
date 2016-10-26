@@ -450,7 +450,7 @@ if (typeof jQuery == 'undefined') {
 
             resizeBody($modal, modal);
 
-            $(window).resize(function () {
+            $(window).off('resize').on('resize', function(){
                 resizeBody($modal, modal);
             });
 
@@ -711,12 +711,12 @@ if (typeof jQuery == 'undefined') {
             this.top = firstDefined(_opts.top||undefined, '22px');
 
             this.width = 600;
-            this.minWidth = 'inherit';
-            this.maxWidth = 'inherit';
+            //this.minWidth = 'inherit';
+            //this.maxWidth = 'inherit';
 
             this.height = 400;
-            this.minHeight = 'inherit';
-            this.maxHeight = 'inherit';
+            //this.minHeight = 'inherit';
+            //this.maxHeight = 'inherit';
 
             // support for 'preset' sizes
             if (_opts.kind || _opts.size){
@@ -724,8 +724,8 @@ if (typeof jQuery == 'undefined') {
                     var kinds = {
                         dialog:  [600, 400],
                         message: [400, 200],
-                        max:     ['98%', '96%'],
-                        full:    ['98%', '96%'],
+                        max:     ['98%', '98%'],
+                        full:    ['98%', '98%'],
                         large:   ['80%', '80%'],
                         med:     ['60%', '60%'],
                         small:   ['40%', '40%'],

@@ -95,7 +95,8 @@ var XNAT = getObject(XNAT);
         $menu = $.spawn('select', config.element);
         menu = $menu[0];
 
-        addOption(menu, { html: 'Select' });
+        // DO NOT add default 'Select' option
+        //addOption(menu, { html: 'Select' });
         
         if (config.options){
             if (Array.isArray(config.options)) {

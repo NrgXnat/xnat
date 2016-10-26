@@ -705,6 +705,26 @@ table.ruled tr:nth-child(2n+1) {
     font-family: Courier, monospace;
 }
 
+.center,
+.centered {
+    text-align: center;
+}
+
+.align-left,
+.text-left {
+    text-align: left;
+}
+
+.align-right,
+.text-right {
+    text-align: right;
+}
+
+.nowrap,
+.no-wrap {
+    white-space: nowrap;
+}
+
 textarea.full {
     width: 100%; height: 100%;
     position: absolute;

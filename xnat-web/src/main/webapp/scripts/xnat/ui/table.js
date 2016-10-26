@@ -201,7 +201,7 @@ var XNAT = getObject(XNAT);
     Table.p.rows = function(data, opts){
         var _this = this,
             rows  = [],
-            cols = data[0].length; // first array length determines how many columns
+            cols = (data[0]||[]).length; // first array length determines how many columns
         data = data || [];
         data.forEach(function(row){
             row = row.slice(0, cols);

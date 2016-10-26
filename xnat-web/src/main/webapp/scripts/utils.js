@@ -816,11 +816,11 @@ $.fn.superSimpleAccordion = function(){
     // add styling to <head> element
     $('head').append('<style type="text/css" id="accordion-styles">' +
         '#accordion { font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 17px; }' +
-        '#accordion .active { display: block; }' +
-        '#accordion h3 { font-size: 13px; font-weight: bold; color: #222; padding: 5px 10px; border: 1px solid #d0d0d0; }' +
-        '#accordion h3:hover { cursor: pointer; }' +
-        '#accordion h3.active { background: #1A75BB; color: #fff; } ' +
-        '#accordion .content { padding: 1em; border: 1px solid #d0d0d0; }' +
+        '#accordion > .active { display: block; }' +
+        '#accordion > h3 { font-size: 13px; font-weight: bold; color: #222; padding: 5px 10px; border: 1px solid #d0d0d0; }' +
+        '#accordion > h3:hover { cursor: pointer; }' +
+        '#accordion > h3.active { background: #1A75BB; color: #fff; } ' +
+        '#accordion > .content { padding: 1em; border: 1px solid #d0d0d0; }' +
         '</style>');
 
 };

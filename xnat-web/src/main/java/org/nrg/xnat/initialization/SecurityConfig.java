@@ -10,6 +10,7 @@
 package org.nrg.xnat.initialization;
 
 import org.nrg.config.exceptions.SiteConfigurationException;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
@@ -155,13 +156,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProviderAggregator providerAggregator(final List<AuthenticationProvider> providers, final List<AuthenticationProviderConfigurator> configurators) {
+    public AuthenticationProviderAggregator providerAggregator(final List<AuthenticationProvider> providers, final List<AuthenticationProviderConfigurator> configurators, final ConfigPaths configFolderPaths) {
         final Map<String, AuthenticationProviderConfigurator> configuratorMap = new HashMap<>();
         for (final AuthenticationProviderConfigurator configurator : configurators) {
             configuratorMap.put(configurator.getConfiguratorId(), configurator);
         }
 
-        return new AuthenticationProviderAggregator(providers, configuratorMap);
+        return new AuthenticationProviderAggregator(providers, configuratorMap, configFolderPaths);
     }
 
     @Bean

@@ -156,25 +156,23 @@ public class XnatPipelineLauncher {
     }
 
     public XnatPipelineLauncher(RunData data, Context context) {
-        user = XDAT.getUserDetails();
-        host = TurbineUtils.GetFullServerPath();
-        startAt = null;
-        supressNotification = false;
-        this.needsBuildDir = true;
-        waitFor = false;
-        addUserEmailForNotification();
-        parameterFile = null;
+        this(XDAT.getUserDetails());
     }
 
     public XnatPipelineLauncher(UserI user) {
         this.user = user;
-        host = TurbineUtils.GetFullServerPath();
+        host = getHostFromSiteConfig();
         startAt = null;
         supressNotification = false;
         waitFor = false;
         needsBuildDir = true;
         addUserEmailForNotification();
         parameterFile = null;
+    }
+
+    private String getHostFromSiteConfig() {
+        final String pipelineUrl = XDAT.safeSiteConfigProperty("processingUrl", "");
+        return StringUtils.isNotBlank(pipelineUrl) ? pipelineUrl : TurbineUtils.GetFullServerPath();
     }
 
     private void addUserEmailForNotification() {

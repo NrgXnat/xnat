@@ -135,6 +135,16 @@ siteUrl:
         come to the site). localhost only works if the web browser is located on the same machine.
         You are required to guarantee that this address is functional for reaching the site.
 
+processingUrl:
+    kind: panel.input.text
+    name: processingUrl
+    label: Processing Url
+    validation: url onblur
+    description: >
+        The address to be used for processing. If this is left blank, pipelines will use the site
+        URL. If your pipelines need to connect to an internal URL, different from your external
+        site URL, provide one here.
+
 adminEmail:
     kind: panel.input.email
     name: adminEmail
@@ -259,6 +269,7 @@ siteInfo:
     contents:
         ${siteId}
         ${siteUrl}
+        ${processingUrl}
         ${siteDescriptionType}
         ${siteLoginLanding}
 #        ${siteLandingLayout}

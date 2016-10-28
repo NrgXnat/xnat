@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -48,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -79,6 +81,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         _preferenceService = preferenceService;
         _configFolderPaths = configFolderPaths == null ? new ConfigPaths() : configFolderPaths;
         _preferences.putAll(PreferenceBeanHelper.getPreferenceInfoMap(getClass()));
+        PreferenceBeanHelper.getAliases(_preferences.values(), _aliases, _aliasedPreferences);
     }
 
     @Autowired
@@ -139,7 +142,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         final Map<String, Object> preferences = Maps.newHashMap();
         for (final String preferenceName : _preferences.keySet()) {
             if (!isFiltered || preferenceNames.contains(preferenceName)) {
-                final PreferenceInfo info = _preferences.get(preferenceName);
+                final PreferenceInfo info = getPreferenceInfo(preferenceName);
                 if (info != null) {
                     allKeys.remove(preferenceName);
                     try {
@@ -355,7 +358,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public <T> Map<String, T> getMapValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
-        final PreferenceInfo info = _preferences.get(preferenceName);
+        final PreferenceInfo info = getPreferenceInfo(preferenceName);
         @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) info.getValueType(), String.class, info.getItemType());
         try {
             final Map<String, Object> map = deserialize("{}", mapType);
@@ -381,7 +384,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public <T> List<T> getListValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
-        final PreferenceInfo info = _preferences.get(preferenceName);
+        final PreferenceInfo info = getPreferenceInfo(preferenceName);
         @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List>) info.getValueType(), info.getItemType());
         try {
             if (BeanUtils.isSimpleValueType(info.getItemType())) {
@@ -442,7 +445,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         if (_preferences.containsKey(namespacedPropertyId)) {
             try {
                 final Properties existing = _preferenceService.getToolProperties(getToolId(), Collections.singletonList(namespacedPropertyId));
-                final Properties properties = convertValueForPreference(_preferences.get(namespacedPropertyId), value);
+                final Properties properties = convertValueForPreference(getPreferenceInfo(namespacedPropertyId), value);
                 for (final String property : properties.stringPropertyNames()) {
                     _preferenceService.setPreferenceValue(getToolId(), property, scope, entityId, properties.getProperty(property));
                     if (existing.containsKey(property)) {
@@ -596,7 +599,19 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public Map<String, PreferenceInfo> getDefaultPreferences() {
-        return _preferences;
+        return ImmutableMap.copyOf(_preferences);
+    }
+
+    protected String getNamespacedPropertyId(final String key, final String... names) {
+        return Joiner.on(NAMESPACE_DELIMITER).join(Lists.asList(resolveAlias(key), names));
+    }
+
+    protected PreferenceInfo getPreferenceInfo(final String preference) {
+        return _preferences.get(resolveAlias(preference));
+    }
+
+    protected <T> String serialize(final T instance) throws IOException {
+        return getObjectMapper().writeValueAsString(instance);
     }
 
     protected <T> T deserialize(final String json, Class<? extends T> clazz) throws IOException {
@@ -607,23 +622,15 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return getObjectMapper().readValue(json, type);
     }
 
-    protected <T> String serialize(final T instance) throws IOException {
-        return getObjectMapper().writeValueAsString(instance);
-    }
-
-    private static ObjectMapper getObjectMapper() {
-        return _mapper;
-    }
-
-    private static TypeFactory getTypeFactory() {
-        return _typeFactory;
-    }
-
     private NrgPreferenceBean getNrgPreferenceBean() {
         if (_annotation == null) {
             _annotation = Reflection.findAnnotationInClassHierarchy(getClass(), NrgPreferenceBean.class);
         }
         return _annotation;
+    }
+
+    private String resolveAlias(final String preferenceName) {
+        return _aliases.containsKey(preferenceName) ? _aliases.get(preferenceName) : preferenceName;
     }
 
     private void processDefaultPreferences() {
@@ -636,34 +643,54 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
 
         final Properties initializationProperties = getInitializationProperties();
+        final Properties overrideProperties = getPreferenceIniProperties("prefs-override.ini");
 
         if (!_preferences.isEmpty()) {
             if (_log.isInfoEnabled()) {
                 _log.info("Found {} default values to add to tool {}", _preferences.size(), getToolId());
             }
             for (final String preference : _preferences.keySet()) {
-                if (initializationProperties.containsKey(preference)) {
-                    // Use this.
-                    if (_log.isDebugEnabled()) {
-                        final String value = initializationProperties.getProperty(preference);
-                        _log.debug("Found initialization property value for {} of {}.", preference, value);
-                    }
-                }
                 final PreferenceInfo info = _preferences.get(preference);
+
                 if (info != null) {
-                    final String defaultValue = initializationProperties.containsKey(preference) ? initializationProperties.getProperty(preference) : info.getDefaultValue();
+                    // We'll take, in order of precedence, the override value, the initialization value, then the default value.
+                    final boolean hasOverrideValue = overrideProperties.containsKey(preference);
+                    final String overrideValue = hasOverrideValue ? overrideProperties.getProperty(preference) : null;
+                    final boolean hasInitializationValue = initializationProperties.containsKey(preference);
+                    final String initializationValue = hasInitializationValue ? initializationProperties.getProperty(preference) : null;
+                    final String defaultValue = hasOverrideValue ? overrideValue : (hasInitializationValue ? initializationValue : info.getDefaultValue());
+
                     if (_log.isDebugEnabled()) {
-                        _log.debug("Found initialization property value for {} of {}.", preference, defaultValue);
+                        final String message = hasOverrideValue
+                                               ? "Found preference override value for property {} with value {}." :
+                                               (hasInitializationValue
+                                                ? "Found initialization override value for property {} with value {}."
+                                                : "Setting property {} to default value of {}.");
+                        _log.debug(message, preference, defaultValue);
                     }
+
                     try {
                         final Properties properties = convertValueForPreference(info, defaultValue);
 
                         for (final String property : properties.stringPropertyNames()) {
                             if (!_preferenceService.hasPreference(getToolId(), property)) {
+                                // If we have this preference, but it's under an alias...
+                                final String alias = findAliasedPreference(property);
+                                if (alias != null) {
+                                    // Migrate it from the alias to the primary name.
+                                    migrateAliasedPreference(alias, overrideValue);
+                                } else {
+                                    try {
+                                        create(properties.getProperty(property), property);
+                                    } catch (InvalidPreferenceName invalidPreferenceName) {
+                                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info + " preference for the " + getToolId() + " tool.");
+                                    }
+                                }
+                            } else if (hasOverrideValue && !StringUtils.equals(overrideValue, _preferenceService.getPreferenceValue(getToolId(), preference))) {
                                 try {
-                                    create(properties.getProperty(property), property);
+                                    _preferenceService.setPreferenceValue(getToolId(), preference, overrideValue);
                                 } catch (InvalidPreferenceName invalidPreferenceName) {
-                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info + " preference for the " + getToolId() + " tool.");
+                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to set the " + property + " value for the " + getToolId() + " tool to the override value " + overrideValue + ".");
                                 }
                             }
                         }
@@ -692,28 +719,72 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
-    protected String getNamespacedPropertyId(final String key, final String... names) {
-        return Joiner.on(NAMESPACE_DELIMITER).join(Lists.asList(key, names));
+    private String findAliasedPreference(final String property) {
+        if (!_aliasedPreferences.keySet().contains(property)) {
+            return null;
+        }
+        for (final String alias : _aliasedPreferences.get(property)) {
+            if (_preferenceService.hasPreference(getToolId(), alias)) {
+                return alias;
+            }
+        }
+        return null;
     }
 
-    private static String getPreferencePrimaryKey(final String preferenceName) {
-        if (StringUtils.isBlank(preferenceName)) {
-            return "";
+    private void migrateAliasedPreference(final String alias, final String overrideValue) {
+        if (_aliases.containsKey(alias)) {
+            final String property = getPreferenceInfo(alias).getProperty();
+            final Preference preference = _preferenceService.migrate(getToolId(), alias, property);
+            final String value = preference.getValue();
+            if (overrideValue != null && !StringUtils.equals(value, overrideValue)) {
+                try {
+                    _preferenceService.setPreferenceValue(getToolId(), property, overrideValue);
+                } catch (InvalidPreferenceName invalidPreferenceName) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to override the value of the " + property + " preference for the " + getToolId() + " tool.");
+                }
+            }
         }
-        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
-        return atoms[0];
-    }
-
-    private static String getPreferenceSubkey(final String preferenceName) {
-        if (StringUtils.isBlank(preferenceName)) {
-            return "";
-        }
-        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
-        return atoms.length == 1 ? "" : atoms[1];
     }
 
     private Properties getInitializationProperties() {
-        final File iniFile = _configFolderPaths.findFile("prefs-init.ini");
+        // Create the properties object.
+        final Properties properties = new Properties();
+
+        // Add any properties found in the prefs-init.ini file.
+        properties.putAll(getPreferenceIniProperties("prefs-init.ini"));
+
+        // If we found any properties there, then return those.
+        if (properties.size() > 0) {
+            return properties;
+        }
+
+        // If we didn't find the prefs-init.ini or, if we did but it didn't contain a section for the current prefs
+        // tools, fall back to looking for the tool-specific properties file.
+        final String propertiesFile = StringUtils.isNotBlank(_annotation.properties()) ? _annotation.properties() : propertize(getClass().getName());
+        final File file = _configFolderPaths.findFile(propertiesFile);
+        if (file != null && file.exists() && file.isFile()) {
+            try (final InputStream input = new FileInputStream(file)) {
+                properties.load(input);
+                for (final String property : properties.stringPropertyNames()) {
+                    if (_aliases.containsKey(property)) {
+                        properties.setProperty(getPreferenceInfo(property).getProperty(), properties.getProperty(property));
+                        properties.remove(property);
+                    }
+                }
+            } catch (FileNotFoundException ignored) {
+                // Nothing to do here: we've already checked that the file exists.
+            } catch (IOException e) {
+                _log.warn("An error occurred attempting to read the file " + file.getAbsolutePath(), e);
+            }
+        }
+
+        return properties;
+    }
+
+    @Nonnull
+    private Properties getPreferenceIniProperties(final String iniFileSpec) {
+        final Properties properties = new Properties();
+        final File iniFile = _configFolderPaths.findFile(iniFileSpec);
         if (iniFile != null && iniFile.exists()) {
             try {
                 // If we find the prefs-init.ini, we'll favor that over tool-specific configurations...
@@ -724,38 +795,24 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                 final String toolId = _annotation.toolId();
                 if (ini.getSections().contains(toolId)) {
                     // If so, we'll use this...
-                    final Properties properties = new Properties();
                     final SubnodeConfiguration section = ini.getSection(toolId);
                     final Iterator<String> keys = section.getKeys();
                     while (keys.hasNext()) {
-                        final String key = keys.next();
-                        properties.setProperty(key, section.getString(key));
+                        final String property = keys.next();
+                        // If this property is actually an alias reference...
+                        if (_aliases.containsKey(property)) {
+                            // Then convert the alias to primary.
+                            properties.setProperty(getPreferenceInfo(property).getProperty(), section.getString(property));
+                        } else {
+                            properties.setProperty(property, section.getString(property));
+                        }
                     }
-                    return properties;
                 }
             } catch (IOException | ConfigurationException e) {
                 _log.error("An error occurred trying to read the ini file " + iniFile.getAbsolutePath(), e);
             }
         }
-
-        // If we didn't find the prefs-init.ini or, if we did but it didn't contain a section for the current prefs
-        // tools, fall back to looking for the tool-specific properties file.
-        final String propertiesFile = StringUtils.isNotBlank(_annotation.properties()) ? _annotation.properties() : propertize(getClass().getName());
-        final File file = _configFolderPaths.findFile(propertiesFile);
-        if (file != null && file.exists() && file.isFile()) {
-            try (final InputStream input = new FileInputStream(file)) {
-                final Properties properties = new Properties();
-                properties.load(input);
-                return properties;
-            } catch (FileNotFoundException ignored) {
-                // Nothing to do here: we've already checked that the file exists.
-            } catch (IOException e) {
-                _log.warn("An error occurred attempting to read the file " + file.getAbsolutePath(), e);
-            }
-        }
-
-        // We didn't find anything, so just return an empty properties object.
-        return new Properties();
+        return properties;
     }
 
     private String propertize(final String name) {
@@ -839,6 +896,30 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return properties;
     }
 
+    private static ObjectMapper getObjectMapper() {
+        return _mapper;
+    }
+
+    private static TypeFactory getTypeFactory() {
+        return _typeFactory;
+    }
+
+    private static String getPreferencePrimaryKey(final String preferenceName) {
+        if (StringUtils.isBlank(preferenceName)) {
+            return "";
+        }
+        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
+        return atoms[0];
+    }
+
+    private static String getPreferenceSubkey(final String preferenceName) {
+        if (StringUtils.isBlank(preferenceName)) {
+            return "";
+        }
+        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
+        return atoms.length == 1 ? "" : atoms[1];
+    }
+
     private static final Logger       _log    = LoggerFactory.getLogger(AbstractPreferenceBean.class);
     private static final ObjectMapper _mapper = new ObjectMapper() {{
         configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
@@ -850,8 +931,10 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     private       NrgPreferenceService _preferenceService;
     private final ConfigPaths          _configFolderPaths;
 
-    private final Map<String, PreferenceInfo> _preferences = new HashMap<>();
-    private final Map<String, Method>         _methods     = new HashMap<>();
+    private final Map<String, PreferenceInfo> _preferences        = new HashMap<>();
+    private final Map<String, String>         _aliases            = new HashMap<>();
+    private final Map<String, List<String>>   _aliasedPreferences = new HashMap<>();
+    private final Map<String, Method>         _methods            = new HashMap<>();
 
     private boolean _resolverInitialized = false;
 

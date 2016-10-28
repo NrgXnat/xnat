@@ -17,6 +17,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @Import(PreferenceServiceTestsConfiguration.class)
-@ComponentScan("org.nrg.prefs.tools")
+@ComponentScan({"org.nrg.prefs.tools.basic", "org.nrg.prefs.tools.beans", "org.nrg.prefs.tools.properties", "org.nrg.prefs.tools.relaxed", "org.nrg.prefs.tools.strict"})
 public class NrgPrefsServiceTestsConfiguration {
 }

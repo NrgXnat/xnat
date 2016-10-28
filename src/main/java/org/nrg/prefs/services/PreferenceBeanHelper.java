@@ -9,6 +9,7 @@
 
 package org.nrg.prefs.services;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NotConcreteTypeException;
 import org.nrg.framework.exceptions.NotParameterizedTypeException;
@@ -36,32 +37,17 @@ import static org.reflections.ReflectionUtils.*;
  * Utility methods for working with preference beans.
  */
 public class PreferenceBeanHelper {
-    /**
-     * Returns all of the {@link NrgPreference}-annotated properties on the submitted class along with the default
-     * values for each property. This uses the {@link #getPreferenceInfoMap(Class)} call to extract each property's
-     * {@link PreferenceInfo} bean.
-     *
-     * @param clazz The {@link AbstractPreferenceBean preference bean class} to process.
-     * @return The properties and their default values found on the submitted bean.
-     */
-    public static Properties getPreferenceBeanProperties(final Class<? extends AbstractPreferenceBean> clazz) {
-        final Map<String, PreferenceInfo> preferences = getPreferenceInfoMap(clazz);
-        final Properties                  properties  = new Properties();
-        for (final String preference : preferences.keySet()) {
-            properties.setProperty(preference, preferences.get(preference).getDefaultValue());
-        }
-        return properties;
-    }
 
     /**
      * Walks the methods on the submitted class annotated with {@link NrgPreference} and extracts {@link PreferenceInfo}
      * objects for each preference setting.
      *
      * @param clazz The {@link AbstractPreferenceBean preference bean class} to process.
+     *
      * @return The preferences found on the class, stored by the preference property or name.
      */
     public static Map<String, PreferenceInfo> getPreferenceInfoMap(final Class<? extends AbstractPreferenceBean> clazz) {
-        final String     uri      = clazz.getAnnotation(NrgPreferenceBean.class).properties();
+        final String uri = clazz.getAnnotation(NrgPreferenceBean.class).properties();
         final Properties defaults = new Properties();
         if (StringUtils.isNotBlank(uri)) {
             try {
@@ -74,16 +60,16 @@ public class PreferenceBeanHelper {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Unable to load the properties bundle specified by the URI " + uri + " on the class " + clazz.getName(), e);
             }
         }
-        final Map<String, PreferenceInfo>                preferences = new HashMap<>();
-        @SuppressWarnings("unchecked") final Set<Method> properties  = ReflectionUtils.getAllMethods(clazz, withAnnotation(NrgPreference.class));
+        final Map<String, PreferenceInfo> preferences = new HashMap<>();
+        @SuppressWarnings("unchecked") final Set<Method> properties = ReflectionUtils.getAllMethods(clazz, withAnnotation(NrgPreference.class));
         for (final Method method : properties) {
             final NrgPreference annotation = method.getAnnotation(NrgPreference.class);
-            final String        name;
-            final String        property;
-            final Class<?>      type;
-            final Type          genericType;
-            final Method        getter;
-            final Method        setter;
+            final String name;
+            final String property;
+            final Class<?> type;
+            final Type genericType;
+            final Method getter;
+            final Method setter;
             if (Reflection.isGetter(method)) {
                 name = propertize(method.getName(), "get");
                 property = annotation.property();
@@ -107,8 +93,8 @@ public class PreferenceBeanHelper {
             }
 
             final boolean isArray = type.isArray();
-            final boolean isList  = List.class.isAssignableFrom(type);
-            final boolean isMap   = Map.class.isAssignableFrom(type);
+            final boolean isList = List.class.isAssignableFrom(type);
+            final boolean isMap = Map.class.isAssignableFrom(type);
 
             // If this is a list or a map, then the type should be the type of map and the generic type should be the
             // parameterized type. If they're equal, that means it's just a List or Map with no type set, which means we
@@ -123,7 +109,7 @@ public class PreferenceBeanHelper {
             // Here we get the default value, favoring the property value over the annotated value.
             final String defaultValue = defaults.getProperty(propertyName, annotation.defaultValue());
 
-            final PreferenceInfo info = new PreferenceInfo(name, property, defaultValue, annotation.key(), type, getter, setter);
+            final PreferenceInfo info = new PreferenceInfo(name, property, defaultValue, annotation.key(), type, getter, setter, annotation.aliases());
 
             if (isArray || isList) {
                 final Class<?> itemType;
@@ -159,6 +145,31 @@ public class PreferenceBeanHelper {
             preferences.put(info.getProperty(), info);
         }
         return preferences;
+    }
+
+    /**
+     * Iterates through the collection of preferences and populates the submitted maps. The aliases map is populated
+     * with any aliases specified in the preferences and the corresponding preference object. This allows for easily
+     * locating the current preference information for any preference alias. Note that the resulting map may include
+     * individual preference objects multiple times if that preference has more than one alias. The aliased preferences
+     * is populated with the name of preference that contains aliases, along with a list of all aliases. This allows for
+     * easily checking whether a preference already exists under one of the given aliases.
+     *
+     * @param preferences           The preferences to sort by aliases.
+     * @param aliases               A map of all preferences that have aliases, keyed by the alias names.
+     * @param aliasedPreferences    A map of preference names with a list of applicable aliases.
+     */
+    public static void getAliases(final Collection<PreferenceInfo> preferences, final Map<String, String> aliases, final Map<String, List<String>> aliasedPreferences) {
+        for (final PreferenceInfo preference : preferences) {
+            for (final String alias : preference.getAliases()) {
+                aliases.put(alias, preference.getProperty());
+                final String property = preference.getProperty();
+                if (!aliasedPreferences.containsKey(property)) {
+                    aliasedPreferences.put(property, Lists.<String>newArrayList());
+                }
+                aliasedPreferences.get(property).add(alias);
+            }
+        }
     }
 
     private static String propertize(final String name, final String type) {

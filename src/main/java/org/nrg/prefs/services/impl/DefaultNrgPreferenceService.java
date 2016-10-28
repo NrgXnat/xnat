@@ -131,6 +131,29 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
      * {@inheritDoc}
      */
     @Override
+    public Preference migrate(final String toolId, final String alias, final String preference) throws UnknownToolId {
+        return migrate(toolId, alias, preference, EntityId.Default.getScope(), EntityId.Default.getEntityId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Preference migrate(final String toolId, final String alias, final String preferenceName, final Scope scope, final String entityId) throws UnknownToolId {
+        final Preference preference = getPreference(toolId, alias, scope, entityId);
+        if (preference == null) {
+            return null;
+        }
+        preference.setName(preferenceName);
+        _preferenceService.update(preference);
+        _log.info("Migrated preference entry in tool {} from alias {} to preference name {}.", toolId, alias, preferenceName);
+        return preference;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getPreferenceValue(final String toolId, final String preferenceName) throws UnknownToolId {
         return getPreferenceValue(toolId, preferenceName, EntityId.Default.getScope(), EntityId.Default.getEntityId());
     }

@@ -12,19 +12,11 @@ package org.nrg.prefs.entities;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.prefs.annotations.NrgPreference;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 
 public class PreferenceInfo {
-    private String   _name;
-    private String   _property;
-    private String   _defaultValue;
-    private Class<?> _valueType;
-    private Class<?> _itemType;
-    private String   _key;
-    private Method   _getter;
-    private Method   _setter;
-
-    public PreferenceInfo(final String name, final String property, final String defaultValue, final String key, final Class<?> valueType, final Method getter, final Method setter) {
+    public PreferenceInfo(final String name, final String property, final String defaultValue, final String key, final Class<?> valueType, final Method getter, final Method setter, final String[] aliases) {
         setName(name);
         setProperty(property);
         setDefaultValue(defaultValue);
@@ -32,6 +24,7 @@ public class PreferenceInfo {
         setValueType(valueType);
         setGetter(getter);
         setSetter(setter);
+        setAliases(aliases);
     }
 
     /**
@@ -188,8 +181,38 @@ public class PreferenceInfo {
         _setter = setter;
     }
 
+    /**
+     * Gets the aliases for this preference.
+     *
+     * @return The aliases if any for this preference.
+     */
+    @Nonnull
+    public String[] getAliases() {
+        return _aliases;
+    }
+
+    /**
+     * Sets the aliases for this preference.
+     *
+     * @param aliases The aliases to set for this preference.
+     */
+    public void setAliases(final String[] aliases) {
+        _aliases = aliases == null ? NO_ALIASES : aliases;
+    }
+
     @Override
     public String toString() {
         return _name + (StringUtils.isNotBlank(_property) ? " (stored as " + _property + ")" : "");
     }
+
+    private static final String[] NO_ALIASES = {};
+    private String   _name;
+    private String   _property;
+    private String   _defaultValue;
+    private Class<?> _valueType;
+    private Class<?> _itemType;
+    private String   _key;
+    private Method   _getter;
+    private Method   _setter;
+    private String[] _aliases;
 }

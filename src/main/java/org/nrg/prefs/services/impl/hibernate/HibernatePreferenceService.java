@@ -17,6 +17,7 @@ import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
+import org.nrg.prefs.entities.PreferenceInfo;
 import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.repositories.PreferenceRepository;
@@ -24,10 +25,10 @@ import org.nrg.prefs.services.PreferenceService;
 import org.nrg.prefs.services.ToolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,11 @@ import java.util.Properties;
 
 @Service
 public class HibernatePreferenceService extends AbstractHibernateEntityService<Preference, PreferenceRepository> implements PreferenceService {
+    @Autowired
+    public HibernatePreferenceService(final ToolService toolService) {
+        _toolService = toolService;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -160,7 +166,8 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
             }
             return false;
         }
-        return getBeansById().get(toolId).getDefaultPreferences().containsKey(preferenceName) || getBeansById().get(toolId).getDefaultPreferences().containsKey(getPreferenceKey(preferenceName));
+        final Map<String, PreferenceInfo> defaultPreferences = getBeansById().get(toolId).getDefaultPreferences();
+        return defaultPreferences.containsKey(preferenceName) || defaultPreferences.containsKey(getPreferenceKey(preferenceName));
     }
 
     private Map<String, PreferenceBean> getBeansById() {
@@ -180,8 +187,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
 
     private static final Logger _log = LoggerFactory.getLogger(HibernatePreferenceService.class);
 
-    @Inject
-    private ToolService _toolService;
+    private final ToolService _toolService;
 
-    private Map<String, PreferenceBean> _beansById = new HashMap<>();
+    private final Map<String, PreferenceBean> _beansById = new HashMap<>();
 }

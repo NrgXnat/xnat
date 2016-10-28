@@ -10,6 +10,7 @@
 package org.nrg.prefs.repositories;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Query;
 import org.hibernate.type.StandardBasicTypes;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
@@ -27,14 +28,18 @@ import java.util.List;
 @Repository
 public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
     public Preference findByToolIdNameAndEntity(final String toolId, final String preferenceName, final Scope scope, final String entityId) {
+        final boolean hasEntityId = StringUtils.isNotBlank(entityId);
+        final Query query = getSession().createSQLQuery("select pref.id as id from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.name = :preferenceName and pref.scope = :scope" + (hasEntityId ? " and pref.entity_id = :entityId" : ""))
+                                        .addScalar("id", StandardBasicTypes.LONG)
+                                        .setString("toolId", toolId)
+                                        .setString("preferenceName", preferenceName)
+                                        .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal());
+        if (hasEntityId) {
+            query.setString("entityId", resolveEntityId(entityId));
+        }
+
         @SuppressWarnings("all")
-        final Object results = getSession().createSQLQuery("select pref.id as id from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.name = :preferenceName and pref.scope = :scope and pref.entity_id = :entityId")
-                                           .addScalar("id", StandardBasicTypes.LONG)
-                                           .setString("toolId", toolId)
-                                           .setString("preferenceName", preferenceName)
-                                           .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal())
-                                           .setString("entityId", resolveEntityId(entityId))
-                                           .uniqueResult();
+        final Object results = query.uniqueResult();
         if (results == null) {
             return null;
         }
@@ -44,6 +49,7 @@ public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
         return null;
     }
 
+    @SuppressWarnings("unused")
     public Preference findByToolNameAndEntity(final Tool tool, final String preferenceName, final Scope scope, final String entityId) {
         // TODO: This doesn't work. It seems like a bug. With two tools, this will find existing preferences for the first tool when trying to create preferences for the second, even though the tool is set to the second instance.
         // final Preference example = new Preference();
@@ -58,13 +64,17 @@ public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
     }
 
     public List<Preference> findByToolIdAndEntity(final String toolId, final Scope scope, final String entityId) {
+        final boolean hasEntityId = StringUtils.isNotBlank(entityId);
+        final Query query = getSession().createSQLQuery("select * from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.scope = :scope" + (hasEntityId ? " and pref.entity_id = :entityId" : ""))
+                                        .addScalar("id", StandardBasicTypes.LONG)
+                                        .setString("toolId", toolId)
+                                        .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal());
+        if (hasEntityId) {
+            query.setString("entityId", resolveEntityId(entityId));
+        }
+
         @SuppressWarnings("all")
-        final List results = getSession().createSQLQuery("select * from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.scope = :scope and pref.entity_id = :entityId")
-                .addScalar("id", StandardBasicTypes.LONG)
-                .setString("toolId", toolId)
-                .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal())
-                .setString("entityId", resolveEntityId(entityId))
-                .list();
+        final List results = query.list();
         if (results == null || results.size() == 0) {
             return new ArrayList<>();
         }

@@ -21,7 +21,7 @@ public @interface NrgPreference {
      * property name <b>foo</b>. Specifying the <b>property</b> attribute will use that property name instead.
      *
      * <b>Note:</b> This is mainly provided for compatibility with existing systems that may have properties stored with
-     * names that can't be converted to properties easily, such as <b>UI.show-left-bar</b>. You can also set those
+     * names that can't be converted to properties easily, such as <b>uiShowLeftBarBrowse</b>. You can also set those
      * original names as values for the {@link #aliases()} attribute, in which case the alias names will be converted to
      * the standard preference property name.
      *

@@ -22,9 +22,12 @@ import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.entities.PreferenceInfo;
 import org.reflections.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.io.Resource;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -56,6 +59,8 @@ public class PreferenceBeanHelper {
                         defaults.load(input);
                     }
                 }
+            } catch (FileNotFoundException e) {
+                _log.info("Didn't find the properties bundle specified by the URI {} on the class {}, proceeding without initializing.", uri, clazz.getName());
             } catch (IOException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Unable to load the properties bundle specified by the URI " + uri + " on the class " + clazz.getName(), e);
             }
@@ -95,11 +100,12 @@ public class PreferenceBeanHelper {
             final boolean isArray = type.isArray();
             final boolean isList = List.class.isAssignableFrom(type);
             final boolean isMap = Map.class.isAssignableFrom(type);
+            final boolean isProperties = Properties.class.isAssignableFrom(type);
 
             // If this is a list or a map, then the type should be the type of map and the generic type should be the
             // parameterized type. If they're equal, that means it's just a List or Map with no type set, which means we
             // can't determine what type of object is inside the list or map.
-            if ((isList || isMap) && type.equals(genericType)) {
+            if ((isList || isMap) && type.equals(genericType) && !isProperties) {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method must use a parameterized " + (isList ? "list" : "map") + " type so that I can determine the type of preference in the collection.");
             }
 
@@ -124,6 +130,8 @@ public class PreferenceBeanHelper {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying an array or list of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
                 }
                 info.setItemType(itemType);
+            } else if (isProperties) {
+                info.setItemType(String.class);
             } else if (isMap) {
                 final List<Class<?>> classes;
                 try {
@@ -188,4 +196,6 @@ public class PreferenceBeanHelper {
         final Set<Method> methods = ReflectionUtils.getAllMethods(clazz, withName(type + StringUtils.capitalize(name)), withParametersCount(typeArgsCount));
         return methods.size() > 0 ? methods.toArray(new Method[methods.size()])[0] : null;
     }
+
+    private static final Logger _log = LoggerFactory.getLogger(PreferenceBeanHelper.class);
 }

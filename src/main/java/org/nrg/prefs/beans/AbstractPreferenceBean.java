@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -50,6 +51,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -115,7 +117,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public Set<String> getPreferenceKeys() {
         final Set<String> primaryKeys = new TreeSet<>();
-        final Set<String> rawKeys = _preferenceService.getToolPropertyNames(getToolId());
+        final Set<String> rawKeys     = _preferenceService.getToolPropertyNames(getToolId());
         for (final String rawKey : rawKeys) {
             primaryKeys.add(getPreferencePrimaryKey(rawKey));
         }
@@ -138,29 +140,41 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public Map<String, Object> getPreferenceMap(final Set<String> preferenceNames) {
         final boolean isFiltered = preferenceNames != null && preferenceNames.size() > 0;
-        final Set<String> allKeys = getPreferenceKeys();
-        final Map<String, Object> preferences = Maps.newHashMap();
-        for (final String preferenceName : _preferences.keySet()) {
-            if (!isFiltered || preferenceNames.contains(preferenceName)) {
-                final PreferenceInfo info = getPreferenceInfo(preferenceName);
-                if (info != null) {
-                    allKeys.remove(preferenceName);
-                    try {
-                        preferences.put(preferenceName, info.getGetter().invoke(this));
-                    } catch (IllegalAccessException e) {
-                        _log.error("An error occurred trying to access the value for the preference " + preferenceName + " in the tool " + getToolId(), e);
-                    } catch (InvocationTargetException e) {
-                        _log.error("An error occurred trying to access the getter method for the preference " + preferenceName + " in the tool " + getToolId(), e);
+        if (_preferenceMap.size() == 0) {
+            final Set<String>         allKeys     = getPreferenceKeys();
+            final Map<String, Object> preferences = Maps.newHashMap();
+            for (final String preferenceName : _preferences.keySet()) {
+                if (!isFiltered || preferenceNames.contains(preferenceName)) {
+                    final PreferenceInfo info = getPreferenceInfo(preferenceName);
+                    if (info != null) {
+                        allKeys.remove(preferenceName);
+                        try {
+                            preferences.put(preferenceName, info.getGetter().invoke(this));
+                        } catch (IllegalAccessException e) {
+                            _log.error("An error occurred trying to access the value for the preference " + preferenceName + " in the tool " + getToolId(), e);
+                        } catch (InvocationTargetException e) {
+                            _log.error("An error occurred trying to access the getter method for the preference " + preferenceName + " in the tool " + getToolId(), e);
+                        }
                     }
                 }
             }
-        }
-        if (allKeys.size() > 0) {
-            for (final String preferenceName : allKeys) {
-                preferences.put(preferenceName, getValue(preferenceName));
+            if (allKeys.size() > 0) {
+                for (final String preferenceName : allKeys) {
+                    preferences.put(preferenceName, getValue(preferenceName));
+                }
             }
+            return preferences;
+        } else {
+            if (preferenceNames == null || preferenceNames.size() == 0) {
+                return _preferenceMap;
+            }
+            return Maps.filterEntries(_preferenceMap, new Predicate<Map.Entry<String, Object>>() {
+                @Override
+                public boolean apply(@Nullable final Map.Entry<String, Object> entry) {
+                    return entry != null && preferenceNames.contains(entry.getKey());
+                }
+            });
         }
-        return preferences;
     }
 
     @JsonIgnore
@@ -358,14 +372,14 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public <T> Map<String, T> getMapValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
-        final PreferenceInfo info = getPreferenceInfo(preferenceName);
+        final PreferenceInfo                         info    = getPreferenceInfo(preferenceName);
         @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) info.getValueType(), String.class, info.getItemType());
         try {
-            final Map<String, Object> map = deserialize("{}", mapType);
-            final Set<String> propertyNames = Sets.filter(_preferenceService.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
+            final Map<String, Object> map           = deserialize("{}", mapType);
+            final Set<String>         propertyNames = Sets.filter(_preferenceService.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
             for (final String propertyName : propertyNames) {
-                final String value = _preferenceService.getPreferenceValue(getToolId(), propertyName);
-                @SuppressWarnings("unchecked") final Object item = deserialize(value, info.getItemType());
+                final String                                value = _preferenceService.getPreferenceValue(getToolId(), propertyName);
+                @SuppressWarnings("unchecked") final Object item  = deserialize(value, info.getItemType());
                 map.put(getPreferenceSubkey(propertyName), item);
             }
             //noinspection unchecked
@@ -384,18 +398,18 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public <T> List<T> getListValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
-        final PreferenceInfo info = getPreferenceInfo(preferenceName);
+        final PreferenceInfo                                info     = getPreferenceInfo(preferenceName);
         @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List>) info.getValueType(), info.getItemType());
         try {
             if (BeanUtils.isSimpleValueType(info.getItemType())) {
                 final String value = _preferenceService.getPreferenceValue(getToolId(), preferenceName);
-                return deserialize(value, listType);
+                return deserialize(StringUtils.defaultIfBlank(value, "[]"), listType);
             } else {
-                final List<T> list = deserialize("[]", listType);
+                final List<T>     list          = deserialize("[]", listType);
                 final Set<String> propertyNames = Sets.filter(_preferenceService.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
                 for (final String propertyName : propertyNames) {
-                    final String value = _preferenceService.getPreferenceValue(getToolId(), propertyName);
-                    @SuppressWarnings("unchecked") final T item = deserialize(value, (Class<? extends T>) info.getItemType());
+                    final String                           value = _preferenceService.getPreferenceValue(getToolId(), propertyName);
+                    @SuppressWarnings("unchecked") final T item  = deserialize(value, (Class<? extends T>) info.getItemType());
                     list.add(item);
                 }
                 return list;
@@ -423,12 +437,14 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public void create(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _preferenceService.create(getToolId(), getNamespacedPropertyId(key, subkeys), value);
+        _preferenceMap.clear();
     }
 
     @JsonIgnore
     @Override
     public void create(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _preferenceService.create(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId, value);
+        _preferenceMap.clear();
     }
 
     @JsonIgnore
@@ -441,10 +457,10 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public String set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         final String namespacedPropertyId = getNamespacedPropertyId(key, subkeys);
-        final String current = getValue(namespacedPropertyId);
+        final String current              = getValue(namespacedPropertyId);
         if (_preferences.containsKey(namespacedPropertyId)) {
             try {
-                final Properties existing = _preferenceService.getToolProperties(getToolId(), Collections.singletonList(namespacedPropertyId));
+                final Properties existing   = _preferenceService.getToolProperties(getToolId(), Collections.singletonList(namespacedPropertyId));
                 final Properties properties = convertValueForPreference(getPreferenceInfo(namespacedPropertyId), value);
                 for (final String property : properties.stringPropertyNames()) {
                     _preferenceService.setPreferenceValue(getToolId(), property, scope, entityId, properties.getProperty(property));
@@ -634,16 +650,15 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     private void processDefaultPreferences() {
+        final Tool tool;
         if (!_preferenceService.getToolIds().contains(getToolId())) {
-            try {
-                _preferenceService.createTool(this);
-            } catch (InvalidPreferenceName invalidPreferenceName) {
-                _log.error("Invalid preference name error", invalidPreferenceName);
-            }
+            tool = _preferenceService.createTool(this);
+        } else {
+            tool = _preferenceService.getTool(getToolId());
         }
 
         final Properties initializationProperties = getInitializationProperties();
-        final Properties overrideProperties = getPreferenceIniProperties("prefs-override.ini");
+        final Properties overrideProperties       = getPreferenceIniProperties("prefs-override.ini");
 
         if (!_preferences.isEmpty()) {
             if (_log.isInfoEnabled()) {
@@ -654,11 +669,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
                 if (info != null) {
                     // We'll take, in order of precedence, the override value, the initialization value, then the default value.
-                    final boolean hasOverrideValue = overrideProperties.containsKey(preference);
-                    final String overrideValue = hasOverrideValue ? overrideProperties.getProperty(preference) : null;
+                    final boolean hasOverrideValue       = overrideProperties.containsKey(preference);
+                    final String  overrideValue          = hasOverrideValue ? (String) overrideProperties.remove(preference) : null;
                     final boolean hasInitializationValue = initializationProperties.containsKey(preference);
-                    final String initializationValue = hasInitializationValue ? initializationProperties.getProperty(preference) : null;
-                    final String defaultValue = hasOverrideValue ? overrideValue : (hasInitializationValue ? initializationValue : info.getDefaultValue());
+                    final String  initializationValue    = hasInitializationValue ? (String) initializationProperties.remove(preference) : null;
+                    final String  defaultValue           = hasOverrideValue ? overrideValue : (hasInitializationValue ? initializationValue : info.getDefaultValue());
 
                     if (_log.isDebugEnabled()) {
                         final String message = hasOverrideValue
@@ -717,6 +732,45 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                 }
             }
         }
+        if (initializationProperties.size() > 0) {
+            if (tool.isStrict()) {
+                _log.warn("Extra initialization properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
+                        tool.getToolId(),
+                        Joiner.on(", ").join(initializationProperties.stringPropertyNames()));
+            } else {
+                for (final String property : initializationProperties.stringPropertyNames()) {
+                    if (!_preferenceService.hasPreference(getToolId(), property)) {
+                        final String value = initializationProperties.getProperty(property);
+                        _preferenceService.create(tool.getToolId(), property, value);
+                        _log.info("Created a new preference entry from the initialization settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
+                    }
+                }
+            }
+        }
+        if (overrideProperties.size() > 0) {
+            if (tool.isStrict()) {
+                _log.warn("Extra override properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
+                        tool.getToolId(),
+                        Joiner.on(", ").join(overrideProperties.stringPropertyNames()));
+            } else {
+                for (final String property : overrideProperties.stringPropertyNames()) {
+                    final String value = overrideProperties.getProperty(property);
+                    if (!_preferenceService.hasPreference(getToolId(), property)) {
+                        _preferenceService.create(tool.getToolId(), property, value);
+                        _log.info("Created a new preference entry from the override settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
+                    } else {
+                        try {
+                            if (!StringUtils.equals(_preferenceService.getPreferenceValue(tool.getToolId(), property), value)) {
+                                _preferenceService.setPreferenceValue(tool.getToolId(), property, value);
+                                _log.info("Updated a preference entry from the override settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
+                            }
+                        } catch (InvalidPreferenceName invalidPreferenceName) {
+                            _log.error("Attempted to override the value for tool {} preference {} with the value {}, but something went wrong.", tool.getToolId(), property, value);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private String findAliasedPreference(final String property) {
@@ -733,9 +787,9 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     private void migrateAliasedPreference(final String alias, final String overrideValue) {
         if (_aliases.containsKey(alias)) {
-            final String property = getPreferenceInfo(alias).getProperty();
+            final String     property   = getPreferenceInfo(alias).getProperty();
             final Preference preference = _preferenceService.migrate(getToolId(), alias, property);
-            final String value = preference.getValue();
+            final String     value      = preference.getValue();
             if (overrideValue != null && !StringUtils.equals(value, overrideValue)) {
                 try {
                     _preferenceService.setPreferenceValue(getToolId(), property, overrideValue);
@@ -761,7 +815,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         // If we didn't find the prefs-init.ini or, if we did but it didn't contain a section for the current prefs
         // tools, fall back to looking for the tool-specific properties file.
         final String propertiesFile = StringUtils.isNotBlank(_annotation.properties()) ? _annotation.properties() : propertize(getClass().getName());
-        final File file = _configFolderPaths.findFile(propertiesFile);
+        final File   file           = _configFolderPaths.findFile(propertiesFile);
         if (file != null && file.exists() && file.isFile()) {
             try (final InputStream input = new FileInputStream(file)) {
                 properties.load(input);
@@ -784,7 +838,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Nonnull
     private Properties getPreferenceIniProperties(final String iniFileSpec) {
         final Properties properties = new Properties();
-        final File iniFile = _configFolderPaths.findFile(iniFileSpec);
+        final File       iniFile    = _configFolderPaths.findFile(iniFileSpec);
         if (iniFile != null && iniFile.exists()) {
             try {
                 // If we find the prefs-init.ini, we'll favor that over tool-specific configurations...
@@ -796,7 +850,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                 if (ini.getSections().contains(toolId)) {
                     // If so, we'll use this...
                     final SubnodeConfiguration section = ini.getSection(toolId);
-                    final Iterator<String> keys = section.getKeys();
+                    final Iterator<String>     keys    = section.getKeys();
                     while (keys.hasNext()) {
                         final String property = keys.next();
                         // If this property is actually an alias reference...
@@ -841,12 +895,12 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
         // TODO: For now creates a site-wide preference only.
         final Class<?> valueType = info.getValueType();
-        final Class<?> itemType = info.getItemType();
-        final String key = info.getKey();
+        final Class<?> itemType  = info.getItemType();
+        final String   key       = info.getKey();
 
         final boolean isArray = valueType.isArray();
-        final boolean isList = List.class.isAssignableFrom(valueType);
-        final boolean isMap = Map.class.isAssignableFrom(valueType);
+        final boolean isList  = List.class.isAssignableFrom(valueType);
+        final boolean isMap   = Map.class.isAssignableFrom(valueType);
 
         // For persistence purposes, we treat arrays and lists the same.
         if (isArray || isList) {
@@ -855,16 +909,16 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                 if (StringUtils.isBlank(key)) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying an array or list of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
                 }
-                final List<?> list = deserialize(value, listType);
-                final String getterName = "get" + StringUtils.capitalize(key);
-                final Method getter;
+                final List<?> list       = deserialize(StringUtils.defaultIfBlank(value, "[]"), listType);
+                final String  getterName = "get" + StringUtils.capitalize(key);
+                final Method  getter;
                 try {
                     getter = itemType.getMethod(getterName);
                 } catch (NoSuchMethodException e) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preference " + info + " specifies a key " + key + " that doesn't exist on the object type.");
                 }
                 for (final Object item : list) {
-                    final String keyValue = getter.invoke(item).toString();
+                    final String keyValue   = getter.invoke(item).toString();
                     final String propertyId = getNamespacedPropertyId(info.getProperty(), keyValue);
                     properties.setProperty(propertyId, _mapper.writeValueAsString(item));
                 }
@@ -873,7 +927,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
             }
         } else if (isMap) {
             @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) valueType, String.class, itemType);
-            final Map<String, ?> map = deserialize(value, mapType);
+            final Map<String, ?>                         map     = deserialize(StringUtils.defaultIfBlank(value, "{}"), mapType);
             if (!BeanUtils.isSimpleValueType(itemType)) {
                 if (StringUtils.isBlank(key)) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying a map of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
@@ -932,6 +986,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     private final ConfigPaths          _configFolderPaths;
 
     private final Map<String, PreferenceInfo> _preferences        = new HashMap<>();
+    private final Map<String, Object>         _preferenceMap      = new HashMap<>();
     private final Map<String, String>         _aliases            = new HashMap<>();
     private final Map<String, List<String>>   _aliasedPreferences = new HashMap<>();
     private final Map<String, Method>         _methods            = new HashMap<>();

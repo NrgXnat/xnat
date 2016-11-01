@@ -68,13 +68,16 @@ public class Users {
             final ContextService contextService = XDAT.getContextService();
             if (contextService != null) {
                 try {
-                    return singleton = contextService.getBean(UserManagementServiceI.class);
+                    singleton = contextService.getBean(UserManagementServiceI.class);
+                    if (singleton != null) {
+                        return singleton;
+                    }
                 } catch (NoSuchBeanDefinitionException ignored) {
                     // This is OK, we'll just create it from the indicated class.
                 }
             }
             try {
-                List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.safeSiteConfigProperty("security.userManagementService.package", "org.nrg.xdat.security.user.custom"));
+                final List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.safeSiteConfigProperty("security.userManagementService.package", "org.nrg.xdat.security.user.custom"));
 
                 if (classes != null && classes.size() > 0) {
                     for (Class<?> clazz : classes) {

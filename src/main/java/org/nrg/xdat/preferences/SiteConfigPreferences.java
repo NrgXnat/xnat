@@ -14,15 +14,22 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatMixIn;
 import org.nrg.framework.beans.ProxiedBeanMixIn;
 import org.nrg.framework.configuration.ConfigPaths;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
 import org.nrg.xdat.security.services.RoleServiceI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xft.security.UserI;
 import org.postgresql.util.PGInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -374,7 +381,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "true")
+    @NrgPreference(defaultValue = "false")
     public boolean getRequireSaltedPasswords() {
         return getBooleanValue("requireSaltedPasswords");
     }
@@ -439,7 +446,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(property = "sitewideAnonymizationScript")
+    @NrgPreference
     public String getSitewideAnonymizationScript() {
         return getValue("sitewideAnonymizationScript");
     }
@@ -465,7 +472,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "blacklist", property = "sitewideSeriesImportFilterMode")
+    @NrgPreference(defaultValue = "blacklist")
     public String getSitewideSeriesImportFilterMode() {
         return getValue("sitewideSeriesImportFilterMode");
     }
@@ -478,7 +485,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(property = "sitewideSeriesImportFilter")
+    @NrgPreference
     public String getSitewideSeriesImportFilter() {
         return getValue("sitewideSeriesImportFilter");
     }
@@ -491,7 +498,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(property = "sitewidePetTracers")
+    @NrgPreference
     public String getSitewidePetTracers() {
         return getValue("sitewidePetTracers");
     }
@@ -504,7 +511,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(property = "sitewidePetMr")
+    @NrgPreference
     public String getSitewidePetMr() {
         return getValue("sitewidePetMr");
     }
@@ -582,16 +589,16 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "org.nrg.dcm.DicomSCPSiteConfigurationListener", property = "enableDicomReceiver.property.changed.listener")
+    @NrgPreference(defaultValue = "org.nrg.dcm.DicomSCPSiteConfigurationListener", aliases = "enableDicomReceiver.property.changed.listener")
     public String getEnableDicomReceiverPropertyChangedListener() {
-        return getValue("enableDicomReceiver.property.changed.listener");
+        return getValue("enableDicomReceiverPropertyChangedListener");
     }
 
     public void setEnableDicomReceiverPropertyChangedListener(final String enableDicomReceiverPropertyChangedListener) {
         try {
-            set(enableDicomReceiverPropertyChangedListener, "enableDicomReceiver.property.changed.listener");
+            set(enableDicomReceiverPropertyChangedListener, "enableDicomReceiverPropertyChangedListener");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'enableDicomReceiver.property.changed.listener': something is very wrong here.", e);
+            _log.error("Invalid preference name 'enableDicomReceiverPropertyChangedListener': something is very wrong here.", e);
         }
     }
 
@@ -602,45 +609,53 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
 
     public void setReceivedFileUser(final String receivedFileUser) {
         try {
+            final UserI user = Users.getUser(receivedFileUser);
+            if (!Roles.isSiteAdmin(user)) {
+                throw new NrgServiceRuntimeException(NrgServiceError.PermissionsViolation, receivedFileUser);
+            }
             set(receivedFileUser, "receivedFileUser");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'receivedFileUser': something is very wrong here.", e);
+        } catch (UserNotFoundException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UserNotFoundError, receivedFileUser);
+        } catch (UserInitException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the user " + receivedFileUser, e);
         }
     }
 
-    @NrgPreference(defaultValue = "Session", property = "displayNameForGenericImageSession.singular")
+    @NrgPreference(defaultValue = "Session", aliases = "displayNameForGenericImageSession.singular")
     public String getImageSessionDisplayNameSingular() {
-        return getValue("displayNameForGenericImageSession.singular");
+        return getValue("imageSessionDisplayNameSingular");
     }
 
     public void setImageSessionDisplayNameSingular(final String displayNameForGenericImageSessionSingular) {
         try {
-            set(displayNameForGenericImageSessionSingular, "displayNameForGenericImageSession.singular");
+            set(displayNameForGenericImageSessionSingular, "imageSessionDisplayNameSingular");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'displayNameForGenericImageSession.singular': something is very wrong here.", e);
+            _log.error("Invalid preference name 'imageSessionDisplayNameSingular': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "Sessions", property = "displayNameForGenericImageSession.plural")
+    @NrgPreference(defaultValue = "Sessions", aliases = "displayNameForGenericImageSession.plural")
     public String getImageSessionDisplayNamePlural() {
-        return getValue("displayNameForGenericImageSession.plural");
+        return getValue("imageSessionDisplayNamePlural");
     }
 
     public void setImageSessionDisplayNamePlural(final String displayNameForGenericImageSessionPlural) {
         try {
-            set(displayNameForGenericImageSessionPlural, "displayNameForGenericImageSession.plural");
+            set(displayNameForGenericImageSessionPlural, "imageSessionDisplayNamePlural");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'displayNameForGenericImageSession.plural': something is very wrong here.", e);
+            _log.error("Invalid preference name 'imageSessionDisplayNamePlural': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "security.require_image_assessor_labels")
+    @NrgPreference(defaultValue = "false", aliases = "security.require_image_assessor_labels")
     public boolean getRequireImageAssessorLabels() {
-        return getBooleanValue("security.require_image_assessor_labels");
+        return getBooleanValue("requireImageAssessorLabels");
     }
 
     public void setRequireImageAssessorLabels(final boolean requireImageAssessorLabels) throws InvalidPreferenceName {
-        setBooleanValue(requireImageAssessorLabels, "security.require_image_assessor_labels");
+        setBooleanValue(requireImageAssessorLabels, "requireImageAssessorLabels");
     }
 
     @NrgPreference(defaultValue = "zip,jar,rar,ear,gar,mrb")
@@ -740,29 +755,29 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "any", property = "security.channel")
+    @NrgPreference(defaultValue = "any", aliases = "security.channel")
     public String getSecurityChannel() {
-        return getValue("security.channel");
+        return getValue("securityChannel");
     }
 
     public void setSecurityChannel(final String channel) {
         try {
-            set(channel, "security.channel");
+            set(channel, "securityChannel");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'security.channel': something is very wrong here.", e);
+            _log.error("Invalid preference name 'securityChannel': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "1000", property = "sessions.concurrent_max")
+    @NrgPreference(defaultValue = "1000", aliases = "sessions.concurrent_max")
     public int getConcurrentMaxSessions() {
-        return getIntegerValue("sessions.concurrent_max");
+        return getIntegerValue("concurrentMaxSessions");
     }
 
     public void setConcurrentMaxSessions(final int concurrentMaxSessions) {
         try {
-            setIntegerValue(concurrentMaxSessions, "sessions.concurrent_max");
+            setIntegerValue(concurrentMaxSessions, "concurrentMaxSessions");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'sessions.concurrent_max': something is very wrong here.", e);
+            _log.error("Invalid preference name 'concurrentMaxSessions': something is very wrong here.", e);
         }
     }
 
@@ -818,250 +833,238 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "UI.debug-extension-points")
+    @NrgPreference(defaultValue = "false", aliases = "UI.debug-extension-points")
     public boolean getUiDebugExtensionPoints() {
-        return getBooleanValue("UI.debug-extension-points");
+        return getBooleanValue("uiDebugExtensionPoints");
     }
 
     public void setUiDebugExtensionPoints(final boolean uiDebugExtensionPoints) {
         try {
-            setBooleanValue(uiDebugExtensionPoints, "UI.debug-extension-points");
+            setBooleanValue(uiDebugExtensionPoints, "uiDebugExtensionPoints");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.debug-extension-points': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiDebugExtensionPoints': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.allow-advanced-search")
+    @NrgPreference(defaultValue = "true", aliases = "UI.allow-advanced-search")
     public boolean getUiAllowAdvancedSearch() {
-        return getBooleanValue("UI.allow-advanced-search");
+        return getBooleanValue("uiAllowAdvancedSearch");
     }
 
     public void setUiAllowAdvancedSearch(final boolean uiAllowAdvancedSearch) {
         try {
-            setBooleanValue(uiAllowAdvancedSearch, "UI.allow-advanced-search");
+            setBooleanValue(uiAllowAdvancedSearch, "uiAllowAdvancedSearch");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.allow-advanced-search': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiAllowAdvancedSearch': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.allow-new-user-comments")
+    @NrgPreference(defaultValue = "true", aliases = "UI.allow-new-user-comments")
     public boolean getUiAllowNewUserComments() {
-        return getBooleanValue("UI.allow-new-user-comments");
+        return getBooleanValue("uiAllowNewUserComments");
     }
 
     public void setUiAllowNewUserComments(final boolean uiAllowNewUserComments) {
         try {
-            setBooleanValue(uiAllowNewUserComments, "UI.allow-new-user-comments");
+            setBooleanValue(uiAllowNewUserComments, "uiAllowNewUserComments");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.allow-new-user-comments': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiAllowNewUserComments': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.allow-scan-addition")
+    @NrgPreference(defaultValue = "true", aliases = "UI.allow-scan-addition")
     public boolean getUiAllowScanAddition() {
-        return getBooleanValue("UI.allow-scan-addition");
+        return getBooleanValue("uiAllowScanAddition");
     }
 
     public void setUiAllowScanAddition(final boolean uiAllowScanAddition) {
         try {
-            setBooleanValue(uiAllowScanAddition, "UI.allow-scan-addition");
+            setBooleanValue(uiAllowScanAddition, "uiAllowScanAddition");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.allow-scan-addition': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiAllowScanAddition': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.show-left-bar")
+    @NrgPreference(defaultValue = "true", aliases = "UI.show-left-bar")
     public boolean getUiShowLeftBar() {
-        return getBooleanValue("UI.show-left-bar");
+        return getBooleanValue("uiShowLeftBar");
     }
 
     public void setUiShowLeftBar(final boolean uiShowLeftBar) {
         try {
-            setBooleanValue(uiShowLeftBar, "UI.show-left-bar");
+            setBooleanValue(uiShowLeftBar, "uiShowLeftBar");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.show-left-bar': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiShowLeftBar': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.show-left-bar-projects")
+    @NrgPreference(defaultValue = "true", aliases = "UI.show-left-bar-projects")
     public boolean getUiShowLeftBarProjects() {
-        return getBooleanValue("UI.show-left-bar-projects");
+        return getBooleanValue("uiShowLeftBarProjects");
     }
 
     public void setUiShowLeftBarProjects(final boolean uiShowLeftBarProjects) {
         try {
-            setBooleanValue(uiShowLeftBarProjects, "UI.show-left-bar-projects");
+            setBooleanValue(uiShowLeftBarProjects, "uiShowLeftBarProjects");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.show-left-bar-projects': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiShowLeftBarProjects': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.show-left-bar-favorites")
+    @NrgPreference(defaultValue = "true", aliases = "UI.show-left-bar-favorites")
     public boolean getUiShowLeftBarFavorites() {
-        return getBooleanValue("UI.show-left-bar-favorites");
+        return getBooleanValue("uiShowLeftBarFavorites");
     }
 
     public void setUiShowLeftBarFavorites(final boolean uiShowLeftBarFavorites) {
         try {
-            setBooleanValue(uiShowLeftBarFavorites, "UI.show-left-bar-favorites");
+            setBooleanValue(uiShowLeftBarFavorites, "uiShowLeftBarFavorites");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.show-left-bar-favorites': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiShowLeftBarFavorites': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.show-left-bar-search")
+    @NrgPreference(defaultValue = "true", aliases = "UI.show-left-bar-search")
     public boolean getUiShowLeftBarSearch() {
-        return getBooleanValue("UI.show-left-bar-search");
+        return getBooleanValue("uiShowLeftBarSearch");
     }
 
     public void setUiShowLeftBarSearch(final boolean uiShowLeftBarSearch) {
         try {
-            setBooleanValue(uiShowLeftBarSearch, "UI.show-left-bar-search");
+            setBooleanValue(uiShowLeftBarSearch, "uiShowLeftBarSearch");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.show-left-bar-search': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiShowLeftBarSearch': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.show-left-bar-browse")
+    @NrgPreference(defaultValue = "true", aliases = "UI.show-left-bar-browse")
     public boolean getUiShowLeftBarBrowse() {
-        return getBooleanValue("UI.show-left-bar-browse");
+        return getBooleanValue("uiShowLeftBarBrowse");
     }
 
     public void setUiShowLeftBarBrowse(final boolean uiShowLeftBarBrowse) {
         try {
-            setBooleanValue(uiShowLeftBarBrowse, "UI.show-left-bar-browse");
+            setBooleanValue(uiShowLeftBarBrowse, "UiShowLeftBarBrowse");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.show-left-bar-browse': something is very wrong here.", e);
+            _log.error("Invalid preference name 'UiShowLeftBarBrowse': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.show-manage-files")
+    @NrgPreference(defaultValue = "true", aliases = "UI.show-manage-files")
     public boolean getUiShowManageFiles() {
-        return getBooleanValue("UI.show-manage-files");
+        return getBooleanValue("uiShowManageFiles");
     }
 
     public void setUiShowManageFiles(final boolean uiShowManageFiles) {
         try {
-            setBooleanValue(uiShowManageFiles, "UI.show-manage-files");
+            setBooleanValue(uiShowManageFiles, "UiShowManageFiles");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.show-manage-files': something is very wrong here.", e);
+            _log.error("Invalid preference name 'UiShowManageFiles': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "UI.allow-non-admin-project-creation")
+    @NrgPreference(defaultValue = "true", aliases = "UI.allow-non-admin-project-creation")
     public boolean getUiAllowNonAdminProjectCreation() {
-        return getBooleanValue("UI.allow-non-admin-project-creation");
+        return getBooleanValue("uiAllowNonAdminProjectCreation");
     }
 
     public void setUiAllowNonAdminProjectCreation(final boolean uiAllowNonAdminProjectCreation) {
         try {
-            setBooleanValue(uiAllowNonAdminProjectCreation, "UI.allow-non-admin-project-creation");
+            setBooleanValue(uiAllowNonAdminProjectCreation, "uiAllowNonAdminProjectCreation");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.allow-non-admin-project-creation': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiAllowNonAdminProjectCreation': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "Your login attempt failed because the username and password combination you provided was invalid or your user already has the maximum number of user sessions open. After %d failed login attempts, your user account will be locked. If you believe your account is currently locked, you can:<ul><li>Unlock it by resetting your password</li><li>Wait one hour for it to unlock automatically</li></ul>", property = "UI.login_failure_message")
+    @NrgPreference(defaultValue = "Your login attempt failed because the username and password combination you provided was invalid or your user already has the maximum number of user sessions open. After %d failed login attempts, your user account will be locked. If you believe your account is currently locked, you can:<ul><li>Unlock it by resetting your password</li><li>Wait one hour for it to unlock automatically</li></ul>",
+            aliases = "UI.login_failure_message")
     public String getUiLoginFailureMessage() {
-        return getValue("UI.login_failure_message");
+        return getValue("uiLoginFailureMessage");
     }
 
     public void setUiLoginFailureMessage(final String uiLoginFailureMessage) {
         try {
-            set(uiLoginFailureMessage, "UI.login_failure_message");
+            set(uiLoginFailureMessage, "uiLoginFailureMessage");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.login_failure_message': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiLoginFailureMessage': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "UI.allow-blocked-subject-assessor-view")
+    @NrgPreference(defaultValue = "false", aliases = "UI.allow-blocked-subject-assessor-view")
     public boolean getUiAllowBlockedSubjectAssessorView() {
-        return getBooleanValue("UI.allow-blocked-subject-assessor-view");
+        return getBooleanValue("uiAllowBlockedSubjectAssessorView");
     }
 
     public void setUiAllowBlockedSubjectAssessorView(final boolean uiAllowBlockedSubjectAssessorView) {
         try {
-            setBooleanValue(uiAllowBlockedSubjectAssessorView, "UI.allow-blocked-subject-assessor-view");
+            setBooleanValue(uiAllowBlockedSubjectAssessorView, "uiAllowBlockedSubjectAssessorView");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UI.allow-blocked-subject-assessor-view': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiAllowBlockedSubjectAssessorView': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = FeatureServiceI.DEFAULT_FEATURE_SERVICE, property = "security.services.feature.default")
+    @NrgPreference(defaultValue = FeatureServiceI.DEFAULT_FEATURE_SERVICE, aliases = "security.services.feature.default")
     public String getFeatureService() {
-        return getValue("security.services.feature.default");
+        return getValue("featureService");
     }
 
     public void setFeatureService(final String featureService) {
         try {
-            set(featureService, "security.services.feature.default");
+            set(featureService, "featureService");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'security.services.feature.default': something is very wrong here.", e);
+            _log.error("Invalid preference name 'featureService': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = FeatureRepositoryServiceI.DEFAULT_FEATURE_REPO_SERVICE, property = "security.services.featureRepository.default")
+    @NrgPreference(defaultValue = FeatureRepositoryServiceI.DEFAULT_FEATURE_REPO_SERVICE, aliases = "security.services.featureRepository.default")
     public String getFeatureRepositoryService() {
-        return getValue("security.services.featureRepository.default");
+        return getValue("featureRepositoryService");
     }
 
     public void setFeatureRepositoryService(final String featureRepositoryService) {
         try {
-            set(featureRepositoryService, "security.services.featureRepository.default");
+            set(featureRepositoryService, "featureRepositoryService");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'security.services.featureRepository.default': something is very wrong here.", e);
+            _log.error("Invalid preference name 'featureRepositoryService': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = RoleServiceI.DEFAULT_ROLE_SERVICE, property = "security.services.role.default")
+    @NrgPreference(defaultValue = RoleServiceI.DEFAULT_ROLE_SERVICE, aliases = "security.services.role.default")
     public String getRoleService() {
-        return getValue("security.services.role.default");
+        return getValue("roleService");
     }
 
     public void setRoleService(final String roleService) {
         try {
-            set(roleService, "security.services.role.default");
+            set(roleService, "roleService");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'security.services.role.default': something is very wrong here.", e);
+            _log.error("Invalid preference name 'roleService': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = RoleRepositoryServiceI.DEFAULT_ROLE_REPO_SERVICE, property = "security.services.roleRepository.default")
+    @NrgPreference(defaultValue = RoleRepositoryServiceI.DEFAULT_ROLE_REPO_SERVICE, aliases = "security.services.roleRepository.default")
     public String getRoleRepositoryService() {
-        return getValue("security.services.roleRepository.default");
+        return getValue("roleRepositoryService");
     }
 
     public void setRoleRepositoryService(final String roleRepositoryService) {
         try {
-            set(roleRepositoryService, "security.services.roleRepository.default");
+            set(roleRepositoryService, "roleRepositoryService");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'security.services.roleRepository.default': something is very wrong here.", e);
+            _log.error("Invalid preference name 'roleRepositoryService': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "true", property = "security.allow-HTML-resource-rendering")
+    @NrgPreference(defaultValue = "true", aliases = "security.allow-HTML-resource-rendering")
     public boolean getAllowHtmlResourceRendering() {
-        return getBooleanValue("security.allow-HTML-resource-rendering");
+        return getBooleanValue("allowHtmlResourceRendering");
     }
 
     public void setAllowHtmlResourceRendering(final String allowHtmlResourceRendering) {
         try {
-            set(allowHtmlResourceRendering, "security.allow-HTML-resource-rendering");
+            set(allowHtmlResourceRendering, "allowHtmlResourceRendering");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'security.allow-HTML-resource-rendering': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "org.nrg.config.services.impl.PrefsBasedSiteConfigurationService", property = "admin.siteConfig.service")
-    public String getSiteConfigurationService() {
-        return getValue("admin.siteConfig.service");
-    }
-
-    public void setSiteConfigurationService(final String siteConfigurationService) {
-        try {
-            set(siteConfigurationService, "admin.siteConfig.service");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'admin.siteConfig.service': something is very wrong here.", e);
+            _log.error("Invalid preference name 'allowHtmlResourceRendering': something is very wrong here.", e);
         }
     }
 
@@ -1209,42 +1212,42 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "audit.show_change_justification")
+    @NrgPreference(defaultValue = "false", aliases = "audit.show_change_justification")
     public boolean getShowChangeJustification(){
-        return getBooleanValue("audit.show_change_justification");
+        return getBooleanValue("showChangeJustification");
     }
 
     public void setShowChangeJustification(final boolean showChangeJustification) {
         try {
-            setBooleanValue(showChangeJustification, "audit.show_change_justification");
+            setBooleanValue(showChangeJustification, "showChangeJustification");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'audit.show_change_justification': something is very wrong here.", e);
+            _log.error("Invalid preference name 'showChangeJustification': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "audit.require_change_justification")
+    @NrgPreference(defaultValue = "false", aliases = "audit.require_change_justification")
     public boolean getRequireChangeJustification(){
-        return getBooleanValue("audit.require_change_justification");
+        return getBooleanValue("requireChangeJustification");
     }
 
     public void setRequireChangeJustification(final boolean requireChangeJustification) {
         try {
-            setBooleanValue(requireChangeJustification, "audit.require_change_justification");
+            setBooleanValue(requireChangeJustification, "requireChangeJustification");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'audit.require_change_justification': something is very wrong here.", e);
+            _log.error("Invalid preference name 'requireChangeJustification': something is very wrong here.", e);
         }
     }
 
-    @NrgPreference(defaultValue = "false", property = "audit.require_event_name")
+    @NrgPreference(defaultValue = "false", aliases = "audit.require_event_name")
     public boolean getRequireEventName(){
-        return getBooleanValue("audit.require_event_name");
+        return getBooleanValue("requireEventName");
     }
 
     public void setRequireEventName(final boolean requireEventName) {
         try {
-            setBooleanValue(requireEventName, "audit.require_event_name");
+            setBooleanValue(requireEventName, "requireEventName");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'audit.require_event_name': something is very wrong here.", e);
+            _log.error("Invalid preference name 'requireEventName': something is very wrong here.", e);
         }
     }
 
@@ -1270,8 +1273,4 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     private static final Logger _log = LoggerFactory.getLogger(SiteConfigPreferences.class);
-
-    private static final String STR_REQUIRE_EVENT_NAME = "audit.require_event_name";
-    private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";
-    private static final String SHOW_CHANGE_JUSTIFICATION = "audit.show_change_justification";
 }

@@ -1031,7 +1031,7 @@ public class DisplayManager {
      */
     public String getSingularDisplayNameForImageSession() throws ConfigServiceException {
         return StringUtils.defaultIfEmpty(
-                XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.singular"), "Session");
+                XDAT.getSiteConfigurationProperty("imageSessionDisplayNameSingular"), "Session");
     }
 
     /**
@@ -1042,7 +1042,7 @@ public class DisplayManager {
      */
     public String getPluralDisplayNameForImageSession() throws ConfigServiceException {
         return StringUtils.defaultIfEmpty(
-                XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.plural"), "Sessions");
+                XDAT.getSiteConfigurationProperty("imageSessionDisplayNamePlural"), "Sessions");
     }
 
     /**

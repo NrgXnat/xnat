@@ -266,13 +266,10 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 		}
 	}
 
-	
-
 	@Override
 	public ValidationResultsI validate(UserI user) throws Exception{
 		return ((XDATUser)user).validate();
 	}
-
 
 	@Override
 	public void enableUser(UserI user, UserI authenticatedUser, EventDetails event) throws Exception {

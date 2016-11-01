@@ -21,7 +21,6 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
-import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -33,6 +32,7 @@ import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -94,7 +94,6 @@ public class XDAT implements Initializable, Configurable{
     private static NotificationService _notificationService;
 	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
-    private static SiteConfigurationService _siteConfigurationService;
 	private static SiteConfigPreferences _siteConfigPreferences;
 	private static NotificationsPreferences _notificationsPreferences;
 	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
@@ -518,35 +517,34 @@ public class XDAT implements Initializable, Configurable{
 	    return _configurationService;
 	}
 
-	/**
-	 * Returns an instance of the currently supported site configuration service.
-	 * @return An instance of the {@link SiteConfigurationService} service.
-	 */
-	private static SiteConfigurationService getSiteConfigurationService() {
-	    if (_siteConfigurationService == null) {
-	    	_siteConfigurationService = getContextService().getBean(SiteConfigurationService.class);
-	    }
-	    return _siteConfigurationService;
-	}
-
     public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
         if (preferences != null) {
 			final Object preference = preferences.getPreferenceMap().get(property);
 			return preference != null ? preference.toString() : null;
         }
-        return getSiteConfigurationService().getSiteConfigurationProperty(property);
+        return getSiteConfigPreferences().getValue(property);
     }
 
     public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
 		final UserI userDetails = getUserDetails();
 		if (userDetails != null) {
-			getSiteConfigurationService().setSiteConfigurationProperty(userDetails.getUsername(), property, value);
+			try {
+				getSiteConfigPreferences().set(value, property);
+			} catch (InvalidPreferenceName invalidPreferenceName) {
+				throw new ConfigServiceException("Unknown preference setting: " + invalidPreferenceName.getMessage(), invalidPreferenceName);
+			}
 		}
 	}
 
     public static Properties getSiteConfiguration() throws ConfigServiceException {
-    	return getSiteConfigurationService().getSiteConfiguration();
+		final Properties properties = new Properties();
+		final Map<String, Object> preferences = getSiteConfigPreferences().getPreferenceMap();
+		for (final String preference : preferences.keySet()) {
+			final Object value = preferences.get(preference);
+			properties.setProperty(preference, value != null ? value.toString() : "");
+		}
+		return properties;
     }
 
     /**

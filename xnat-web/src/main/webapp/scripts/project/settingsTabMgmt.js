@@ -60,8 +60,8 @@ function fullConfigHandler() {
     };
 
     var data = buildSettingsUpdateRequestBody([
-        'siteId','UI.debug-extension-points', 'siteDescriptionType', 'siteDescriptionText', 'siteDescriptionPage', 'siteUrl', 'siteAdminEmail', 'siteLoginLanding', 'siteLandingLayout', 'siteHome', 'siteHomeLayout'
-        , 'enableCsrfToken', 'enableCsrfEmail', 'restrictUserListAccessToAdmins', 'UI.allow-non-admin-project-creation', 'requireSaltedPasswords', 'passwordExpirationType', 'passwordExpirationInterval', 'passwordExpirationDate'
+        'siteId','uiDebugExtensionPoints', 'siteDescriptionType', 'siteDescriptionText', 'siteDescriptionPage', 'siteUrl', 'siteAdminEmail', 'siteLoginLanding', 'siteLandingLayout', 'siteHome', 'siteHomeLayout'
+        , 'enableCsrfToken', 'enableCsrfEmail', 'restrictUserListAccessToAdmins', 'uiAllowNonAdminProjectCreation', 'requireSaltedPasswords', 'passwordExpirationType', 'passwordExpirationInterval', 'passwordExpirationDate'
         , 'archivePath', 'checksums', 'prearchivePath', 'cachePath', 'ftpPath', 'buildPath', 'pipelinePath'
         , 'requireLogin', 'enableNewRegistrations', 'emailVerification'
         , 'error', 'issue', 'newUser', 'update', 'emailAllowNonuserSubscribers', 'smt.enabled'

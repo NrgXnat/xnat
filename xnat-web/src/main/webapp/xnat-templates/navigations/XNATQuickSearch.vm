@@ -42,7 +42,7 @@ function submitQuickSearch(){
 	</select>
 	<input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="$!field"/>
     <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
-#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-advanced-search","true")))
+#if($turbineUtils.toBoolean($siteConfig.getProperty("uiAllowAdvancedSearch","true")))
 
     <script>
 

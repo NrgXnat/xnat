@@ -10,8 +10,9 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
-import org.nrg.mail.services.MailService;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.preferences.NotificationsPreferences;
+import org.nrg.xdat.preferences.SmtpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Component;
@@ -21,10 +22,9 @@ import java.util.*;
 @Component
 public class SmtpHandlerMethod extends AbstractNotificationsPreferenceHandlerMethod {
     @Autowired
-    public SmtpHandlerMethod(final NotificationsPreferences preferences, final JavaMailSenderImpl mailSender, final MailService mailService) {
+    public SmtpHandlerMethod(final NotificationsPreferences preferences, final JavaMailSenderImpl mailSender) {
         _preferences = preferences;
-        this._mailSender = mailSender;
-        _mailService = mailService;
+        _mailSender = mailSender;
     }
 
     @Override
@@ -34,48 +34,44 @@ public class SmtpHandlerMethod extends AbstractNotificationsPreferenceHandlerMet
 
     @Override
     public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateSmtp();
-        }
+        updateSmtp();
     }
 
     @Override
     public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateSmtp();
-        }
+        updateSmtp();
     }
 
     private void updateSmtp() {
-        final Properties oldMailProperties = _mailSender.getJavaMailProperties();
+        final SmtpServer smtpServer = _preferences.getSmtpServer();
 
-        final boolean smtpEnabled = _preferences.getSmtpEnabled();
-        final boolean smtpAuth = _preferences.getSmtpAuth();
-        final boolean startTls = _preferences.getSmtpStartTls();
-        final String sslTrust = _preferences.getSmtpSSLTrust();
+        _mailSender.setHost(smtpServer.getHostname());
+        _mailSender.setPort(smtpServer.getPort());
+        _mailSender.setUsername(smtpServer.getUsername());
+        _mailSender.setPassword(smtpServer.getPassword());
+        _mailSender.setProtocol(smtpServer.getProtocol());
 
-        _mailSender.setHost(_preferences.getHostname());
-        _mailSender.setPort(_preferences.getPort());
-        _mailSender.setUsername(_preferences.getUsername());
-        _mailSender.setPassword(_preferences.getPassword());
-        _mailSender.setProtocol(_preferences.getProtocol());
-        _mailService.setSmtpEnabled(smtpEnabled);
-
-        oldMailProperties.setProperty("smtp.enabled", String.valueOf(smtpEnabled));
-        oldMailProperties.setProperty("mail.smtp.auth", String.valueOf(smtpAuth));
-        oldMailProperties.setProperty("mail.smtp.starttls.enable", String.valueOf(startTls));
-
-        if (sslTrust != null) {
-            oldMailProperties.setProperty("mail.smtp.ssl.trust", sslTrust);
+        if (!smtpServer.getSmtpAuth()) {
+            _mailSender.setJavaMailProperties(SMTP_AUTH_DISABLED);
+        } else {
+            final Properties properties = new Properties();
+            properties.setProperty(SmtpServer.SMTP_KEY_AUTH, "true");
+            if (smtpServer.getSmtpStartTls()) {
+                properties.setProperty(SmtpServer.SMTP_KEY_STARTTLS_ENABLE, "true");
+            }
+            if (StringUtils.isNotBlank(smtpServer.getSmtpSslTrust())) {
+                properties.setProperty(SmtpServer.SMTP_KEY_SSL_TRUST, smtpServer.getSmtpSslTrust());
+            }
+            properties.putAll(smtpServer.getMailProperties());
+            _mailSender.setJavaMailProperties(properties);
         }
-
-        _mailSender.setJavaMailProperties(oldMailProperties);
     }
 
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("smtp.enabled", "host", "port", "username", "password", "protocol", "smtp.enabled", "mail.smtp.auth", "mail.smtp.starttls.enable", "mail.smtp.ssl.trust"));
+    private static final List<String> PREFERENCES        = ImmutableList.copyOf(Arrays.asList("smtpEnabled", "smtpHostname", "smtpPort", "smtpUsername", "smtpPassword", "smtpProtocol", "smtpAuth", "smtpStartTls", "smtpSslTrust"));
+    private static final Properties   SMTP_AUTH_DISABLED = new Properties() {{
+        setProperty(SmtpServer.SMTP_KEY_AUTH, "false");
+    }};
 
     private final NotificationsPreferences _preferences;
     private final JavaMailSenderImpl       _mailSender;
-    private final MailService              _mailService;
-
 }

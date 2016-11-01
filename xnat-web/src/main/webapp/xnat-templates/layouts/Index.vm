@@ -9,7 +9,7 @@ $navigation.setTemplate("/bodyOpen.vm")
 
         $navigation.setTemplate("/DefaultTop.vm")
 
-        #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.show-left-bar","true")))
+        #if($turbineUtils.toBoolean($siteConfig.getProperty("uiShowLeftBarBrowse","true")))
 
                 <!-- DefaultLeft -->
                 $navigation.setTemplate("/DefaultLeft.vm")

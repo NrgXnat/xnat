@@ -8,7 +8,7 @@ $navigation.setTemplate("/bodyOpen.vm")
 <!-- path: xdat-templates/layouts/Default -->
 
             $navigation.setTemplate("/DefaultTop.vm")
-        #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.show-left-bar","true")))
+        #if($turbineUtils.toBoolean($siteConfig.getProperty("uiShowLeftBarBrowse","true")))
                 $navigation.setTemplate("/DefaultLeft.vm")
         #end
             $navigation.setTemplate("/Breadcrumb.vm")

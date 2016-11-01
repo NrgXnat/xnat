@@ -15,6 +15,7 @@ import org.nrg.xdat.model.ArcProjectI;
 import org.nrg.xdat.om.ArcArchivespecification;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.preferences.SmtpServer;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
@@ -31,7 +32,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author timo
@@ -65,7 +65,9 @@ public class ArcSpecManager {
                     String cachePath = arcSpec.getGlobalCachePath();
                     if (cachePath!=null){
                         File f = new File(cachePath,"archive_specification.xml");
-                        f.getParentFile().mkdirs();
+                        if (!f.getParentFile().mkdirs()) {
+                            throw new RuntimeException("Failed to create working file " + f.getAbsolutePath() + ", please check permissions and file system.");
+                        }
                         FileWriter fw = new FileWriter(f);
 
                         arcSpec.toXML(fw, true);
@@ -120,12 +122,11 @@ public class ArcSpecManager {
             arcSpec.setSiteUrl(siteConfigPreferences.getSiteUrl());
         }
 
-        final Map<String, String> smtpServer = notificationsPreferences.getSmtpServer();
-        if (smtpServer != null && smtpServer.containsKey("host")) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting SMTP host to: {}", smtpServer.get("host"));
-            }
-            arcSpec.setSmtpHost(smtpServer.get("host"));
+        final SmtpServer smtpServer = notificationsPreferences.getSmtpServer();
+        if (smtpServer != null) {
+            final String hostname = smtpServer.getHostname();
+            logger.info("Setting SMTP host to: {}", hostname);
+            arcSpec.setSmtpHost(hostname);
         }
 
         if (logger.isInfoEnabled()) {

@@ -15,6 +15,7 @@ import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.framework.constants.Scope;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.ArcProjectI;
 import org.nrg.xdat.om.ArcProject;
@@ -223,12 +224,11 @@ public class PrearcUtils {
     public static File getPrearcDir(final UserI user, final String project, final boolean allowUnassigned) throws Exception {
         String prearcPath;
         String prearchRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();
-        String prearchRootArcSpec = ArcSpecManager.GetInstance().getGlobalPrearchivePath();
         if (project == null || project.equals(COMMON)) {
             if (allowUnassigned || user == null || Roles.isSiteAdmin(user)) {
                 prearcPath = prearchRootPref;
             } else {
-                throw new InvalidPermissionException("user " + user.getUsername() + " does not have permission to access the Unassigned directory ");
+                throw new InsufficientPrivilegesException(user.getUsername());
             }
         } else {
             //Refactored to remove unnecessary database hits.  It only needs to hit the xnat_projectdata table if the query is using a project alias rather than a project id.  TO
@@ -306,8 +306,8 @@ public class PrearcUtils {
      * @param project If the project is null, it is the unassigned project
      *                project abbreviation or alias
      * @return true if the user has permissions to access the project, false otherwise
-     * @throws Exception
-     * @throws IOException
+     * @throws Exception When something goes wrong.
+     * @throws IOException When an error occurs reading or writing data.
      */
     @SuppressWarnings("unused")
     public static boolean validUser(final UserI user, final String project, final boolean allowUnassigned) throws Exception {
@@ -525,7 +525,7 @@ public class PrearcUtils {
     }
 
     public static String makeUri(final String urlBase, final String timestamp, final String folderName) {
-        return StringUtils.join(new String[]{urlBase, "/", timestamp, "/", folderName});
+        return StringUtils.join(urlBase, "/", timestamp, "/", folderName);
     }
 
     public static Map<String, Object> parseURI(final String uri) throws MalformedURLException {
@@ -533,7 +533,7 @@ public class PrearcUtils {
     }
 
     public static String buildURI(final String project, final String timestamp, final String folderName) {
-        return StringUtils.join(new String[]{"/prearchive/projects/", (project == null) ? PrearcUtils.COMMON : project, "/", timestamp, "/", folderName});
+        return StringUtils.join("/prearchive/projects/", (project == null) ? PrearcUtils.COMMON : project, "/", timestamp, "/", folderName);
     }
 
     public static XFTTable convertArrayLtoTable(ArrayList<ArrayList<Object>> rows) {
@@ -809,8 +809,8 @@ public class PrearcUtils {
      * @param session  The session to be locked.
      * @param filename The filename to be locked.
      * @return PrearcFileLock
-     * @throws SessionFileLockException
-     * @throws IOException
+     * @throws SessionFileLockException When an attempt is made to access a locked file.
+     * @throws IOException When an error occurs reading or writing data.
      */
     public static PrearcFileLock lockFile(final SessionDataTriple session, final String filename) throws SessionFileLockException, IOException {
         //putting these in a subdirectory of the cache space
@@ -858,19 +858,26 @@ public class PrearcUtils {
 
         synchronized (syncLock) {
             //synchronized to prevent overlap with .lockFile()
-            if (name.exists() && (name.list() == null || name.list().length == 0)) {
-                try {
-                    FileUtils.deleteDirectory(name);
-
-                    if (timestamp.exists() && (timestamp.list() == null || timestamp.list().length == 0)) {
-                        FileUtils.deleteDirectory(timestamp);
-
-                        if (project.exists() && (project.list() == null || project.list().length == 0)) {
-                            FileUtils.deleteDirectory(project);
+            if (name.exists()) {
+                final String[] names = name.list();
+                if (names == null || names.length == 0) {
+                    try {
+                        FileUtils.deleteDirectory(name);
+                        if (timestamp.exists()) {
+                            final String[] timestamps = timestamp.list();
+                            if (timestamps == null || timestamps.length == 0) {
+                                FileUtils.deleteDirectory(timestamp);
+                                if (project.exists()) {
+                                    final String[] projects = project.list();
+                                    if (projects == null || projects.length == 0) {
+                                        FileUtils.deleteDirectory(project);
+                                    }
+                                }
+                            }
                         }
+                    } catch (IOException e) {
+                        logger.error("Couldn't clean temporary lock directories in the cache folder.", e);
                     }
-                } catch (IOException e) {
-                    logger.error("Couldn't clean temporary lock directories in the cache folder.", e);
                 }
             }
         }

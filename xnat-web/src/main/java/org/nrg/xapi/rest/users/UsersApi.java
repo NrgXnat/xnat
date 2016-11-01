@@ -134,20 +134,30 @@ public class UsersApi extends AbstractXapiRestController {
             } else {
                 username = principal.toString();
             }
-            final Map<String, Object> sessionData = new HashMap<>();
             final List<SessionInformation> sessions = _sessionRegistry.getAllSessions(principal, false);
+
+            // Sometimes there are no sessions, which is weird but OK, we don't want to see those entries.
+            final int count = sessions.size();
+            if (count == 0) {
+                continue;
+            }
+
+            // Now add user with a session or more to the list of active users.
             final ArrayList<String> sessionIds = new ArrayList<>();
             for (final SessionInformation session : sessions) {
                 sessionIds.add(session.getSessionId());
             }
+
+            final Map<String, Object> sessionData = new HashMap<>();
             sessionData.put("sessions", sessionIds);
-            sessionData.put("count", sessions.size());
+            sessionData.put("count", count);
+
             activeUsers.put(username, sessionData);
         }
         return new ResponseEntity<>(activeUsers, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Get information about active sessions for the indicated user.", notes = "Returns a map containing a list of session IDs usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. This also includes the number of active sessions for each user.", response = String.class, responseContainer = "List")
+    @ApiOperation(value = "Get information about active sessions for the indicated user.", notes = "Returns a map containing a list of session IDs and usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. This also includes the number of active sessions for each user.", response = String.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "A list of active users."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),

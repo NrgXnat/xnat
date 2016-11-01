@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.security.helpers.Users;
@@ -27,7 +28,8 @@ import javax.inject.Provider;
 @Component
 public class XnatUserProvider implements Provider<UserI> {
     public XnatUserProvider(final String login) {
-        _login = login;
+        _logger.debug("Initializing user provider with login {}", login);
+        setLogin(login);
     }
 
     /**
@@ -35,16 +37,17 @@ public class XnatUserProvider implements Provider<UserI> {
      */
     @Override
     public UserI get() {
-        if (null == user) {
+        if (null == _user) {
             try {
-                user = Users.getUser(_login);
+                _user = Users.getUser(_login);
+                _logger.debug("Retrieved user with login {}", _login);
             } catch (UserInitException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "User object for name " + _login + " could not be initialized.");
             } catch (UserNotFoundException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.UserNotFoundError, "User with name " + _login + " could not be found.");
             }
         }
-        return user;
+        return _user;
     }
 
     /**
@@ -57,7 +60,20 @@ public class XnatUserProvider implements Provider<UserI> {
         return _login;
     }
 
+    /**
+     * Sets the configured login name for the default user.
+     *
+     * @param login    The user login name to configure.
+     */
+    public void setLogin(final String login) {
+        if (!StringUtils.equals(_login, login)) {
+            _login = login;
+            _user = null;
+        }
+    }
+
     private final Logger _logger = LoggerFactory.getLogger(XnatUserProvider.class);
-    private final String _login;
-    private UserI user = null;
+
+    private String _login;
+    private UserI _user = null;
 }

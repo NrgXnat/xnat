@@ -308,7 +308,7 @@ generalSecuritySettings:
     contents:
         securityChannel:
             kind: panel.select.single
-            name: ":security.channel"
+            name: ":securityChannel"
             label: Security Channel
             options:
                 any: Any
@@ -332,7 +332,7 @@ generalSecuritySettings:
             description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
         uiAllowNonAdminProjectCreation:
             kind: panel.input.switchbox
-            name: ":UI.allow-non-admin-project-creation"
+            name: ":uiAllowNonAdminProjectCreation"
             label: "Allow non-administrators <br>to create projects?"
             onText: Allow
             offText: Do Not Allow
@@ -384,17 +384,17 @@ userLoginsSessionControls:
 #            description: Allow user to resume where they left off, if logging back in after a session timeout?
         maximumConcurrentSessions:
             kind: panel.input.number
-            name: ":sessions.concurrent_max"
+            name: ":concurrentMaxSessions"
             label: Maximum Concurrent Sessions
             validation: integer gte:1 onblur
             description: The maximum number of permitted sessions a user can have open simultaneously. You must restart Tomcat for changes to this to take effect.
         loginFailureMessage:
             kind: panel.textarea
-            name: ":UI.login_failure_message"
+            name: ":uiLoginFailureMessage"
             label: Login Failure Message
             code: html
             description: Text to show when a user fails to login
-#            value: "?? XNAT:data:siteConfig:UI.login_failure_message"
+#            value: "?? XNAT:data:siteConfig:uiLoginFailureMessage"
         maximumFailedLogins:
             kind: panel.input.number
             name: maxFailedLogins
@@ -559,25 +559,25 @@ securityServices:
         securityServicesFeatureDefault:
             kind: panel.input.text
 #            id: securityServicesFeatureDefault
-            name: ":security.services.feature.default"
+            name: ":featureService"
             label: Feature Default
             size: 50
         securityServicesFeatureRepoDefault:
             kind: panel.input.text
 #            id: securityServicesFeatureRepoDefault
-            name: ":security.services.featureRepository.default"
+            name: ":featureRepositoryService"
             label: Feature Repository Default
             size: 50
         securityServicesRoleDefault:
             kind: panel.input.text
 #            id: securityServicesRoleDefault
-            name: ":security.services.role.default"
+            name: ":roleService"
             label: Role Default
             size: 50
         securityServicesRoleRepositoryDefault:
             kind: panel.input.text
 #            id: securityServicesRoleRepositoryDefault
-            name: ":security.services.roleRepository.default"
+            name: ":roleRepositoryService"
             label: Role Repository Default
             size: 50
 
@@ -591,33 +591,33 @@ emailServerSettings:
     contents:
         smtpEnabled:
             kind: panel.input.switchbox
-            name: ":smtp.enabled"
+            name: ":smtpEnabled"
             label: "Enable SMTP?"
             onText: Enabled
             offText: Disabled
         hostname:
             kind: panel.input.text
-            name: host
+            name: smtpHostname
             label: Host
             placeholder: localhost
         port:
             kind: panel.input.number
-            name: port
+            name: smtpPort
             label: Port
             validation: allow-empty integer onblur
             placeholder: 587
         username:
             kind: panel.input.text
-            name: username
+            name: smtpUsername
             label: Username
             placeholder: name@host.org
         password:
             kind: panel.input.password
-            name: password
+            name: smtpPassword
             label: Password
         protocol:
             kind: panel.input.text
-            name: protocol
+            name: smtpProtocol
             label: Protocol
             placeholder: smtp
         # subhead breaks up panel items
@@ -627,19 +627,19 @@ emailServerSettings:
             label: Properties
         smtpAuth:
             kind: panel.input.switchbox
-            name: ":mail.smtp.auth"
+            name: ":smtpAuth"
             label: SMTP Auth?
             onText: Enabled
             offText: Disabled
         smtpStartTls:
             kind: panel.input.switchbox
-            name: ":mail.smtp.starttls.enable"
+            name: ":smtpStartTls"
             label: Start TLS?
             onText: Enabled
             offText: Disabled
-        smtpSSLTrust:
+        smtpSslTrust:
             kind: panel.input.text
-            name: ":mail.smtp.ssl.trust"
+            name: ":smtpSslTrust"
             label: SSL Trust
             placeholder: localhost
         emailPrefix:
@@ -1000,7 +1000,7 @@ registrationOptions:
                 when a user registers.
         uiAllowNewUserComments:
             kind: panel.input.switchbox
-            name: ":UI.allow-new-user-comments"
+            name: ":uiAllowNewUserComments"
             label: "Allow User Comments <br>on Registration?"
             onText: Allow
             offText: Do Not Allow
@@ -1015,11 +1015,11 @@ manageDataTypes:
     contents:
         displayNameForGenericImageSessionSingular:
             kind: panel.input.text
-            name: ":displayNameForGenericImageSession.singular"
+            name: ":imageSessionDisplayNameSingular"
             label: "Singular Display Name For Generic Image Session Singular"
         displayNameForGenericImageSessionPlural:
             kind: panel.input.text
-            name: ":displayNameForGenericImageSession.plural"
+            name: ":imageSessionDisplayNamePlural"
             label: "Plural Display Name For Generic Image Session Singular"
 
 sessionBuilder:
@@ -1030,6 +1030,15 @@ sessionBuilder:
     contentType: json
     url: /xapi/siteConfig
     contents:
+        receivedFileUser:
+            kind: panel.input.text
+            name: receivedFileUser
+            label: Received File User
+            validation: id-strict max-length:40 onblur
+            placeholder: User account for performing import and archiving operations
+            description: >
+                This should be the login name of an enabled and valid user. The specified user must be a site
+                administrator.
         sessionXmlRebuilderRepeat:
             kind: panel.input.number
             name: sessionXmlRebuilderRepeat

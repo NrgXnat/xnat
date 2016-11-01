@@ -7,7 +7,7 @@
 #end
 <DIV class="edit_header1" style="margin-bottom:16px">Scans &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
-#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-scan-addition","true")))
+#if($turbineUtils.toBoolean($siteConfig.getProperty("uiAllowScanAddition","true")))
 <input type="button" value="Add Scan" onclick="addScan(this)"/>
 #end
 </DIV>
@@ -107,7 +107,7 @@
     listing.render();
   });
       
-  #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-scan-addition","true")))
+  #if($turbineUtils.toBoolean($siteConfig.getProperty("uiAllowScanAddition","true")))
       if(window.scanSet.scans.length==0){
         for(var newC=0;newC<2;newC++){
           var tempScan = window.classMapping.newInstance("xnat:petScanData");

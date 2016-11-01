@@ -50,7 +50,7 @@ public class RequiredChannelHandlerMethod extends AbstractSiteConfigPreferenceHa
         _filter.setRequiredChannel(_preferences.getSecurityChannel());
     }
 
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList("security.channel"));
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList("securityChannel"));
 
     private final SiteConfigPreferences              _preferences;
     private final TranslatingChannelProcessingFilter _filter;

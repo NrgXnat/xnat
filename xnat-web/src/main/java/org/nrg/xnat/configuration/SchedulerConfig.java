@@ -71,12 +71,12 @@ public class SchedulerConfig implements SchedulingConfigurer {
         _service.triggerEvent(new PreferenceEvent("inactivityBeforeLockout", String.valueOf(_siteConfigPreferences.getInactivityBeforeLockout())));
         _service.triggerEvent(new PreferenceEvent("maxFailedLoginsLockoutDuration", String.valueOf(_siteConfigPreferences.getMaxFailedLoginsLockoutDuration())));
         _service.triggerEvent(new PreferenceEvent("emailPrefix", String.valueOf(_notificationsPreferences.getEmailPrefix())));
-        _service.triggerEvent(new PreferenceEvent("host", String.valueOf(_notificationsPreferences.getHostname())));
+        _service.triggerEvent(new PreferenceEvent("smtpHostname", String.valueOf(_notificationsPreferences.getSmtpHostname())));
         _service.triggerEvent(new PreferenceEvent("requireLogin", String.valueOf(_siteConfigPreferences.getRequireLogin())));
-        _service.triggerEvent(new PreferenceEvent("security.channel", String.valueOf(_siteConfigPreferences.getSecurityChannel())));
+        _service.triggerEvent(new PreferenceEvent("securityChannel", String.valueOf(_siteConfigPreferences.getSecurityChannel())));
         _service.triggerEvent(new PreferenceEvent("passwordExpirationType", String.valueOf(_siteConfigPreferences.getPasswordExpirationType())));
         _service.triggerEvent(new PreferenceEvent("archivePath", String.valueOf(_siteConfigPreferences.getArchivePath())));
-        _service.triggerEvent(new PreferenceEvent("security.services.role.default", String.valueOf(_siteConfigPreferences.getRoleService())));
+        _service.triggerEvent(new PreferenceEvent("roleService", String.valueOf(_siteConfigPreferences.getRoleService())));
         _service.triggerEvent(new PreferenceEvent("checksums", String.valueOf(_siteConfigPreferences.getChecksums())));
         _service.triggerEvent(new PreferenceEvent("sitewidePetTracers", String.valueOf(_siteConfigPreferences.getSitewidePetTracers())));
 

@@ -175,31 +175,31 @@ siteSetup:
 
                 host:
                     kind: panel.input.text
-                    name: host
+                    name: smtpHostname
                     label: Host
                     placeholder: localhost
                     validation: required
 
                 port:
                     kind: panel.input.number
-                    name: port
+                    name: smtpPort
                     label: Port
                     placeholder: 25
                     validation: required number
 
                 username:
                     kind: panel.input.text
-                    name: username
+                    name: smtpUsername
                     label: Username
 
                 password:
                     kind: panel.input.password
-                    name: password
+                    name: smtpPassword
                     label: Password
 
                 protocol:
                     kind: panel.input.text
-                    name: protocol
+                    name: smtpProtocol
                     label: Protocol
 
                 mailServerProperties:
@@ -208,21 +208,21 @@ siteSetup:
 
                 smtpAuth:
                     kind: panel.input.switchbox
-                    name: mail.smtp.auth
+                    name: smtpAuth
                     label: SMTP Auth?
                     onText: Enabled
                     offText: Disabled
 
                 smtpStartTls:
                     kind: panel.input.switchbox
-                    name: mail.smtp.starttls.enable
+                    name: smtpStartTls
                     label: Start TLS?
                     onText: Enabled
                     offText: Disabled
 
-                smtpSSLTrust:
+                smtpSslTrust:
                     kind: panel.input.text
-                    name: mail.smtp.ssl.trust
+                    name: smtpSslTrust
                     label: SSL Trust
 
         # =========================

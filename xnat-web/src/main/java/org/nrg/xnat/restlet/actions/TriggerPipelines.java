@@ -64,7 +64,7 @@ public class TriggerPipelines implements Callable<Boolean> {
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
         xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
-        xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().getHostname());
         xnatPipelineLauncher.setParameter("sessionType", expt.getXSIType());
         xnatPipelineLauncher.setParameter("xnat_project", expt.getProject());
 

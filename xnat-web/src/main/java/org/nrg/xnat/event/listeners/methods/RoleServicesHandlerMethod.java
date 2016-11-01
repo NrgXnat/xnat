@@ -77,7 +77,7 @@ public class RoleServicesHandlerMethod extends AbstractSiteConfigPreferenceHandl
     }
 
     private static final Logger       _log        = LoggerFactory.getLogger(RoleServicesHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("security.services.role.default", "security.services.roleRepository.default"));
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("roleService", "roleRepositoryService"));
 
     private final SiteConfigPreferences _preferences;
     private final RoleHolder            _roleHolder;

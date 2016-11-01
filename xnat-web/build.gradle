@@ -465,7 +465,7 @@ dependencies {
     runtime "org.codehaus.groovy.modules.http-builder:http-builder:0.7.2"
     runtime "net.imagej:ij:1.50e"
     runtime "net.bull.javamelody:javamelody-core:1.58.0"
-    runtime "org.javassist:javassist:3.20.0-GA"
+    runtime "org.javassist:javassist:3.21.0-GA"
 
     providedCompile "javax.servlet:javax.servlet-api:${vServletApi}"
 

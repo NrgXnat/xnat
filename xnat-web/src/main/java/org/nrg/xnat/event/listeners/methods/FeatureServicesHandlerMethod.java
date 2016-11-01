@@ -11,8 +11,6 @@ package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
 import org.nrg.xdat.security.helpers.Features;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -46,7 +44,6 @@ public class FeatureServicesHandlerMethod extends AbstractSiteConfigPreferenceHa
         Features.setFeatureRepositoryServiceToSiteConfigPreference();
     }
 
-    private static final Logger       _log        = LoggerFactory.getLogger(FeatureServicesHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("security.services.feature.default", "security.services.featureRepository.default"));
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("featureService", "featureRepositoryService"));
 
 }

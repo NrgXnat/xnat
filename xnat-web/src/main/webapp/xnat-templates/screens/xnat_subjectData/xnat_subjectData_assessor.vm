@@ -2,8 +2,8 @@
 ##handles data that is not viewable by this user.  On some servers, users can see that these exist (but not view the actual data)
 ##on other servers, they shouldn't see that it exists at all.
 ##By default, the user shouldn't see these.
-##To allow, site administrators should configure the UI.allow-blocked-subject-assessor-view peroprty in siteConfiguration.properties
-    #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-blocked-subject-assessor-view","false")))
+##To allow, site administrators should configure the uiLoginFailureMessage peroprty in siteConfiguration.properties
+    #if($turbineUtils.toBoolean($siteConfig.getProperty("uiLoginFailureMessage","false")))
         #set($denied=true)
     <TR BGCOLOR="FF9999">
         <TD>$!assessor.getProperty("date")</TD>

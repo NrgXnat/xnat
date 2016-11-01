@@ -17,6 +17,8 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xapi.exceptions.DataFormatException;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +47,11 @@ public class XapiRestControllerAdvice {
         return handleException(request, exception.getMessage(), exception);
     }
 
+    @ExceptionHandler(InsufficientPrivilegesException.class)
+    public ModelAndView handleInsufficientPrivilegesException(final HttpServletRequest request, final DataFormatException exception) {
+        return handleException(request, exception.getMessage(), exception);
+    }
+
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     public ModelAndView handleDataFormatException(final HttpServletRequest request, final ResourceAlreadyExistsException exception) {
         return handleException(request, exception.getMessage(), exception);
@@ -64,6 +71,11 @@ public class XapiRestControllerAdvice {
     @ExceptionHandler(FileNotFoundException.class)
     public ModelAndView handleFileNotFoundException(final HttpServletRequest request, final FileNotFoundException exception) {
         return handleException(HttpStatus.BAD_REQUEST, request, "Unable to find requested file or resource: " + exception.getMessage(), exception);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ModelAndView handleNotFoundException(final HttpServletRequest request, final NotFoundException exception) {
+        return handleException(HttpStatus.BAD_REQUEST, request, exception.getMessage(), exception);
     }
 
     @ExceptionHandler(ConfigServiceException.class)

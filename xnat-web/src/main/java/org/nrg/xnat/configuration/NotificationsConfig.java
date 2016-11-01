@@ -18,6 +18,7 @@ import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.renderers.NrgMailChannelRenderer;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.preferences.SmtpServer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 @Configuration
 @ComponentScan({"org.nrg.mail.services", "org.nrg.notify.services.impl", "org.nrg.notify.daos"})
@@ -35,20 +35,16 @@ public class NotificationsConfig {
 
     @Bean
     public JavaMailSenderImpl mailSender(final NotificationsPreferences preferences) throws IOException, SiteConfigurationException {
-        final Map<String, String> smtp = preferences.getSmtpServer();
+        final SmtpServer         smtp   = preferences.getSmtpServer();
         final JavaMailSenderImpl sender = new JavaMailSenderImpl();
         if(smtp!=null) {
-            sender.setHost(StringUtils.defaultIfBlank(smtp.remove("host"), "localhost"));
-            sender.setPort(Integer.parseInt(StringUtils.defaultIfBlank(smtp.remove("port"), "25")));
-            sender.setUsername(StringUtils.defaultIfBlank(smtp.remove("username"), ""));
-            sender.setPassword(StringUtils.defaultIfBlank(smtp.remove("password"), ""));
-            sender.setProtocol(StringUtils.defaultIfBlank(smtp.remove("protocol"), "smtp"));
-            if (smtp.size() > 0) {
-                final Properties properties = new Properties();
-                for (final String property : smtp.keySet()) {
-                    properties.setProperty(property, smtp.get(property));
-                }
-                sender.setJavaMailProperties(properties);
+            sender.setHost(StringUtils.defaultIfBlank(smtp.getHostname(), "localhost"));
+            sender.setPort(smtp.getPort());
+            sender.setUsername(StringUtils.defaultIfBlank(smtp.getUsername(), ""));
+            sender.setPassword(StringUtils.defaultIfBlank(smtp.getPassword(), ""));
+            sender.setProtocol(StringUtils.defaultIfBlank(smtp.getProtocol(), "smtp"));
+            if (smtp.getMailProperties().size() > 0) {
+                sender.setJavaMailProperties(smtp.getMailProperties());
             }
         }
         return sender;

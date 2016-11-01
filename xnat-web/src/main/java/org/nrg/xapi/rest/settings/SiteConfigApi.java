@@ -13,14 +13,17 @@ import com.google.common.base.Joiner;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xapi.exceptions.ApiException;
 import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,7 +105,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST)
-    public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) throws InitializationException {
+    public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) throws ApiException, InitializationException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -116,6 +119,12 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 if (isInitializing && name.equals("initialized")) {
                     continue;
                 }
+                if (name.equals("receivedFileUser")) {
+                    final HttpStatus setStatus = setReceivedFileUser(properties.get(name));
+                    if (setStatus != null) {
+                        return new ResponseEntity<>(setStatus);
+                    }
+                }
                 _preferences.set(properties.get(name), name);
                 if (_log.isInfoEnabled()) {
                     _log.info("Set property {} to value: {}", name, properties.get(name));
@@ -127,10 +136,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
 
         // If we're initializing...
         if (isInitializing) {
-            // Make the final initialization call.
-            initialize();
-
-            // Now make the initialized setting true.
+            // Now make the initialized setting true. This will kick off the initialized event handler.
             _preferences.setInitialized(true);
         }
 
@@ -191,7 +197,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "{property}", consumes = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
-    public ResponseEntity<Void> setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property, @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException {
+    public ResponseEntity<Void> setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property,
+                                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException, ApiException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -202,8 +209,12 @@ public class SiteConfigApi extends AbstractXapiRestController {
         }
 
         if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
-            initialize();
             _preferences.setInitialized(true);
+        } else if (StringUtils.equals("receivedFileUser", property)) {
+            final HttpStatus setStatus = setReceivedFileUser(value);
+            if (setStatus != null) {
+                return new ResponseEntity<>(setStatus);
+            }
         } else {
             try {
                 _preferences.set(value, property);
@@ -268,6 +279,24 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_appInfo.getFormattedUptime(), HttpStatus.OK);
     }
 
+    private HttpStatus setReceivedFileUser(final String value) throws InsufficientPrivilegesException, NotFoundException {
+        try {
+            _preferences.setReceivedFileUser(value);
+        } catch (NrgServiceRuntimeException e) {
+            switch (e.getServiceError()) {
+                case PermissionsViolation:
+                    throw new InsufficientPrivilegesException(e.getMessage());
+                case UserNotFoundError:
+                    throw new NotFoundException("No user with the name " + e.getMessage() + " was found.");
+                case Unknown:
+                default:
+                    _log.error("An unknown error occurred trying to set the received file user to value " + value, e);
+                    return HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+        }
+        return null;
+    }
+
     private Map<String, Object> getPreferences() {
         if (!_hasFoundPreferences) {
             return _preferences.getPreferenceMap();
@@ -275,17 +304,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
         final Map<String, Object> preferences = new HashMap<>(_preferences.getPreferenceMap());
         preferences.putAll(_found);
         return preferences;
-    }
-
-    private void initialize() throws InitializationException {
-        // In the case where the application hasn't yet been initialized, this operation should mean that the system is
-        // being initialized from the set-up page. In that case, we need to propagate a few properties to the arc-spec
-        // persistence to support
-        try {
-            ArcSpecManager.initialize(getSessionUser());
-        } catch (Exception e) {
-            throw new InitializationException(e);
-        }
     }
 
     private static final Logger _log = LoggerFactory.getLogger(SiteConfigApi.class);

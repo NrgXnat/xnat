@@ -621,7 +621,7 @@ public class XnatPipelineLauncher {
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
         xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
-        xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().getHostname());
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
 
         xnatPipelineLauncher.setId(imageSession.getId());
@@ -648,24 +648,6 @@ public class XnatPipelineLauncher {
                 xnatPipelineLauncher.notify(email);
             }
         }
-        return xnatPipelineLauncher;
-    }
-
-    public static XnatPipelineLauncher GetBareLauncherForExperiment(RunData data, Context context, XnatExperimentdata imageSession) throws Exception {
-        XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(data, context);
-        xnatPipelineLauncher.setSupressNotification(true);
-        UserI user = XDAT.getUserDetails();
-        xnatPipelineLauncher.setParameter("useremail", user.getEmail());
-        xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
-        xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
-        xnatPipelineLauncher.setParameter("mailhost", XDAT.getNotificationsPreferences().getSmtpServer().get("host"));
-        xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
-
-        xnatPipelineLauncher.setId(imageSession.getId());
-        xnatPipelineLauncher.setLabel(imageSession.getLabel());
-        xnatPipelineLauncher.setDataType(imageSession.getXSIType());
-        xnatPipelineLauncher.setExternalId(imageSession.getProject());
-
         return xnatPipelineLauncher;
     }
 

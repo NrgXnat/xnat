@@ -155,6 +155,16 @@ adminEmail:
         on system events, such as errors, processing completion, new user registration and so on. These emails
         can be configured on the Notifications tab.
 
+primaryAdminUsername:
+    kind: panel.input.text
+    name: primaryAdminUsername
+    label: Primary Admin Username
+    validation: id-strict max-length:40 onblur
+    placeholder: User account to use when performing system functions
+    description: >
+        This should be the login name of an enabled and valid user. The specified user must be a site
+        administrator.
+
 siteWideAlertStatus:
     kind: panel.select.single
     name: siteWideAlertStatus
@@ -285,6 +295,7 @@ adminInfo:
     url: /xapi/siteConfig
     contents:
         ${adminEmail}
+        ${primaryAdminUsername}
 
 siteWideAlerts:
     kind: panel.form

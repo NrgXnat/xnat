@@ -50,7 +50,7 @@
         <label for="lab">Study Site or Lab</label>
         <input type="text" name="lab" value="$!lab">
     </p>
-    #if($siteConfig.getUiAllowNewUserComments())
+    #if($siteConfig.uiAllowNewUserComments)
         <hr/>
         <p>Please include a brief description of how you plan to use this site.</p>
         <p>

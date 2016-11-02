@@ -5,7 +5,7 @@
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 #* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
 <!-- Sequence: 10 -->
-    #if ($turbineUtils.isSiteAdmin($user) || $siteConfig.getUiAllowNonAdminProjectCreation() || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData/project"))
+    #if ($turbineUtils.isSiteAdmin($user) || $siteConfig.uiAllowNonAdminProjectCreation || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData/project"))
     <li><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">$displayManager.getSingularDisplayNameForProject()</a></li>
     #end
     <!-- -->

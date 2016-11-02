@@ -61,22 +61,22 @@ public class ArcSpecManager {
             arcSpec = GetFreshInstance();
 
             try {
-                if (arcSpec!=null){
-                    String cachePath = arcSpec.getGlobalCachePath();
-                    if (cachePath!=null){
-                        File f = new File(cachePath,"archive_specification.xml");
-                        if (!f.getParentFile().mkdirs()) {
-                            throw new RuntimeException("Failed to create working file " + f.getAbsolutePath() + ", please check permissions and file system.");
+                if (arcSpec != null) {
+                    final String cachePath = arcSpec.getGlobalCachePath();
+                    if (StringUtils.isNotBlank(cachePath)) {
+                        final File arcSpecFile       = new File(cachePath, "archive_specification.xml");
+                        final File arcSpecFileFolder = arcSpecFile.getParentFile();
+                        if (!arcSpecFileFolder.exists() && !arcSpecFileFolder.mkdirs()) {
+                            throw new RuntimeException("Failed to create working file " + arcSpecFile.getAbsolutePath() + ", please check permissions and file system.");
                         }
-                        FileWriter fw = new FileWriter(f);
-
-                        arcSpec.toXML(fw, true);
-                        fw.flush();
-                        fw.close();
+                        logger.debug("Initializing arcspec to cache file {}", arcSpecFile.getAbsolutePath());
+                        try (FileWriter writer = new FileWriter(arcSpecFile)) {
+                            arcSpec.toXML(writer, true);
+                        }
                     }
                 }
             } catch (IllegalArgumentException | IOException | SAXException e) {
-                logger.error("",e);
+                logger.error("", e);
             }
             logger.debug("Done writing out arc spec.");
    

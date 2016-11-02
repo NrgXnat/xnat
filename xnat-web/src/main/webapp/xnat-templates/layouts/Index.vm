@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 $navigation.setTemplate("/htmlOpen.vm")
 ## insert any template-specific <head> code here
 
@@ -9,7 +10,7 @@ $navigation.setTemplate("/bodyOpen.vm")
 
         $navigation.setTemplate("/DefaultTop.vm")
 
-        #if($turbineUtils.toBoolean($siteConfig.getProperty("uiShowLeftBarBrowse","true")))
+        #if($siteConfig.uiShowLeftBarBrowse)
 
                 <!-- DefaultLeft -->
                 $navigation.setTemplate("/DefaultLeft.vm")

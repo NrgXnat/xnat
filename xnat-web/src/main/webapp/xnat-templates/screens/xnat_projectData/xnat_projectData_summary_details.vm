@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 <table>
     <tr>
         <th align="left">ID:</th>
@@ -53,8 +54,7 @@
     "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
     "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Edit Details</A>
     #if($data.getSession().getAttribute(
-        "userHelper").canDelete($project) && $turbineUtils.toBoolean($siteConfig.getProperty(
-        "UI.allow-project-delete","true")))
+        "userHelper").canDelete($project) && $siteConfig.uiAllowProjectDelete)
     <A ID="button3" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","delete").addPathInfo(
         "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
         "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Delete</A>

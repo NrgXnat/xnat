@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="userObject" type="org.nrg.xdat.security.XDATUser" *#
 #* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
 #* @vtlvariable name="hasFailedLoginAttempts" type="java.lang.Boolean" *#
@@ -664,7 +665,7 @@ addGroup("$!groupid.getGroupid()");
 
 							  #set($groupCounter=0)
 
-                                #if($turbineUtils.toBoolean($siteConfig.getProperty("security.allow-data-admins","true")))
+                                #if($siteConfig.allowDataAdmins)
                                     <tr>
                                         <th align=left colspan="2"><br>Allow All Data Access: </th>
                                     </tr>

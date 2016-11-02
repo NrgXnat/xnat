@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="timeLeft" type="java.lang.String" *#
 <!-- START: xnat-templates/navigations/DefaultTop.vm -->
@@ -216,10 +217,10 @@
 
 <div id="header" class="main_header"><div class="pad">
 
-    #if($siteConfig.getProperty("siteWideAlertStatus","")=="2")
-        <div class="$siteConfig.getProperty("siteWideAlertType","") headNotification hidden">
+    #if($siteConfig.siteWideAlertStatus == "2")
+        <div class="$siteConfig.siteWideAlertType" headNotification hidden">
             <span class="closeNotification"><img src="$content.getURI('images/close.gif')"></span>
-            <span>$siteConfig.getProperty("siteWideAlertMessage","")</span>
+            <span>$siteConfig.siteWideAlertMessage</span>
         </div>
 
         <script>

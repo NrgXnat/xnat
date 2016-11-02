@@ -5,7 +5,7 @@
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatCtsessiondata" *#
 #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
 <!-- BEGIN /xnat-templates/screens/xnat_ctSessionData/edit/scans.vm -->
-#if($turbineUtils.toBoolean($siteConfig.getProperty("uiAllowScanAddition","true")))
+#if($siteConfig.uiAllowScanAddition)
 <DIV class="edit_header1" style="margin-bottom:16px">Scans &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" value="Add Scan" onclick="addScan(this)"/>
 </DIV>
@@ -112,7 +112,7 @@
   });
       
       
-#if($turbineUtils.toBoolean($siteConfig.getProperty("uiAllowScanAddition","true")))
+#if($siteConfig.uiAllowScanAddition)
   
   if(window.scanSet.scans.length==0){
     for(var newC=0;newC<5;newC++){
@@ -122,7 +122,7 @@
   }
 #end
   
-XNAT.app.sTMod=$turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-scan-type-modification","true"))
+XNAT.app.sTMod=$siteConfig.uiAllowScanTypeModification;
        
   window.scanSet.onLoad.fire();
 </script>

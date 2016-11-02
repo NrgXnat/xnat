@@ -7,9 +7,9 @@
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #set ($template = $data.getTemplateInfo())
 #if($data.getParameters().getString("login").equals("true"))
-    $!template.setLayoutTemplate($siteConfig.getProperty("siteLandingLayout","/Index.vm"))
+    $!template.setLayoutTemplate($siteConfig.siteLandingLayout)
 #else
-    $!template.setLayoutTemplate($siteConfig.getProperty("siteHomeLayout","/Index.vm"))
+    $!template.setLayoutTemplate($siteConfig.siteHomeLayout)
 #end
 #if ($data.message)
 <div class="note" id="messageToDisplay">$data.message</div><br>
@@ -28,14 +28,14 @@
 <div style="line-height:6px">&nbsp;</div>
 #end
 #if($data.getParameters().getString("login").equals("true"))
-    #if($turbineUtils.resourceExists($siteConfig.getProperty("siteLoginLanding", "/screens/QuickSearch.vm")))
-        #parse($siteConfig.getProperty("siteLoginLanding","/screens/QuickSearch.vm"))
+    #if($turbineUtils.resourceExists($siteConfig.siteLoginLanding))
+        #parse($siteConfig.siteLoginLanding)
     #else
         <div>Custom site login landing page cannot be found!<br/><br/>Contact the site administrator.</div>
     #end
 #else
-    #if($turbineUtils.resourceExists($siteConfig.getProperty("siteHome","/screens/QuickSearch.vm")))
-        #parse($siteConfig.getProperty("siteHome","/screens/QuickSearch.vm"))
+    #if($turbineUtils.resourceExists($siteConfig.siteHome))
+        #parse($siteConfig.siteHome)
     #else
         <div>Custom site home page cannot be found!<br/><br/>Contact the site administrator.</div>
     #end

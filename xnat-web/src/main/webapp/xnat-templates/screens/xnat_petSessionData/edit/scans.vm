@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
 #* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
 <!-- BEGIN /xnat-templates/screens/xnat_petSessionData/edit/scans.vm -->
@@ -7,7 +8,7 @@
 #end
 <DIV class="edit_header1" style="margin-bottom:16px">Scans &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
-#if($turbineUtils.toBoolean($siteConfig.getProperty("uiAllowScanAddition","true")))
+#if($siteConfig.uiAllowScanAddition)
 <input type="button" value="Add Scan" onclick="addScan(this)"/>
 #end
 </DIV>
@@ -107,7 +108,7 @@
     listing.render();
   });
       
-  #if($turbineUtils.toBoolean($siteConfig.getProperty("uiAllowScanAddition","true")))
+  #if($siteConfig.uiAllowScanAddition)
       if(window.scanSet.scans.length==0){
         for(var newC=0;newC<2;newC++){
           var tempScan = window.classMapping.newInstance("xnat:petScanData");
@@ -116,7 +117,7 @@
       }
     #end
 
-  XNAT.app.sTMod=$turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-scan-type-modification","true"))
+  XNAT.app.sTMod=$siteConfig.uiAllowScanTypeModification
       
   window.scanSet.onLoad.fire();
 </script>

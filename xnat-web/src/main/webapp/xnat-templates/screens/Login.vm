@@ -8,7 +8,7 @@
 #* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
-#set ($siteId = $siteConfig.getProperty("siteId",""))
+#set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Please Login")
     $page.setBgColor($ui.bgcolor)
     $page.addAttribute("onLoad", "document.getElementById('username').focus();")
@@ -28,24 +28,24 @@ $page.setTitle("$siteId - Please Login")
     </div>
     <![endif]-->
 
-#if($siteConfig.getProperty("siteWideAlertStatus","")!="0" && $siteConfig.getProperty("siteWideAlertStatus","")!="off")
-    <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;" data-status="$siteConfig.getProperty("siteWideAlertStatus","")">$siteConfig.getProperty("siteWideAlertMessage","")</div>
+#if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
+    <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;" data-status="$siteConfig.siteWideAlertStatus">$siteConfig.siteWideAlertMessage</div>
 #end
 
 #if($turbineUtils.GetPassedParameter("par",$data))
 ## create custom layout when parameters are passed to the login page from an external link.
     <div id="login_welcome">
-        #if($siteConfig.getProperty("siteDescriptionType","")=="Text")
+        #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
-            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.getProperty("siteDescriptionText","")</textarea>
+            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
             <script>
                 var mdtext = jq('#siteDescriptionMd').text();
                 var markedText = marked(mdtext);
                 jq('#siteDescription').html(markedText);
             </script>
         #else
-            #if($turbineUtils.resourceExists($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm")))
-                #parse($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm"))
+            #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
+                #parse($siteConfig.siteDescriptionPage)
             #else
                 <p>Custom site description page not found!</p>
             #end
@@ -68,7 +68,7 @@ $page.setTitle("$siteId - Please Login")
     <div id="login_box_container" class="hidden">
         <h3>Existing User Login <span class="btn btn-xs btn-inline right" onclick="showRegistration()">Register?</span> </h3>
         <div class="message">
-            <p><strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.getProperty("siteId","") account. </p>
+            <p><strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account. </p>
             <p>&nbsp;</p>
             <p>Not what you want? <a href="$content.getURI('/app/template/Login.vm')"><strong>Default Log In Page</strong></a></p>
         </div>
@@ -125,17 +125,17 @@ $page.setTitle("$siteId - Please Login")
 ## standard layout for login page
 
     <div id="login_welcome">
-        #if($siteConfig.getProperty("siteDescriptionType","")=="Text")
+        #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
-            <div id="siteDescriptionMd" style="display: none;">$siteConfig.getProperty("siteDescriptionText","")</div>
+            <div id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</div>
             <script>
                 var mdtext = jq('#siteDescriptionMd').text();
                 var markedText = marked(mdtext);
                 jq('#siteDescription').html(markedText);
             </script>
         #else
-            #if($turbineUtils.resourceExists($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm")))
-                #parse($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm"))
+            #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
+                #parse($siteConfig.siteDescriptionPage)
             #else
                 <p>Custom site description page not found!</p>
             #end

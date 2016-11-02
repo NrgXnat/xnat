@@ -36,6 +36,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -86,33 +87,49 @@ public class XnatAppInfo {
         }
 
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
-            final Manifest manifest = new Manifest(input);
-            final Attributes attributes = manifest.getMainAttributes();
-            _properties.setProperty("buildNumber", attributes.getValue("Build-Number"));
-            _properties.setProperty("buildDate", attributes.getValue("Build-Date"));
-            _properties.setProperty("version", attributes.getValue("Implementation-Version"));
-            _properties.setProperty("commit", attributes.getValue("Implementation-Sha"));
-            if (_log.isDebugEnabled()) {
-                _log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
-                           _properties.getProperty("version"),
-                           _properties.getProperty("buildNumber"),
-                           _properties.getProperty("buildDate"),
-                           _properties.getProperty("commit"));
-            }
-            for (final Object key : attributes.keySet()) {
-                final String name = key.toString();
-                if (!PRIMARY_MANIFEST_ATTRIBUTES.contains(name)) {
-                    _properties.setProperty(name, attributes.getValue(name));
+            if (input != null) {
+                final Manifest manifest = new Manifest(input);
+                final Attributes attributes = manifest.getMainAttributes();
+                _properties.setProperty("buildNumber", attributes.getValue("Build-Number"));
+                _properties.setProperty("buildDate", attributes.getValue("Build-Date"));
+                _properties.setProperty("version", attributes.getValue("Implementation-Version"));
+                _properties.setProperty("commit", attributes.getValue("Implementation-Sha"));
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
+                               _properties.getProperty("version"),
+                               _properties.getProperty("buildNumber"),
+                               _properties.getProperty("buildDate"),
+                               _properties.getProperty("commit"));
                 }
-            }
-            final Map<String, Attributes> entries = manifest.getEntries();
-            for (final String key : entries.keySet()) {
-                final Map<String, String> keyedAttributes = new HashMap<>();
-                _attributes.put(key, keyedAttributes);
-                final Attributes entry = entries.get(key);
-                for (final Object subkey : entry.keySet()) {
-                    final String property = (String) subkey;
-                    keyedAttributes.put(property, attributes.getValue(property));
+                for (final Object key : attributes.keySet()) {
+                    final String name = key.toString();
+                    if (!PRIMARY_MANIFEST_ATTRIBUTES.contains(name)) {
+                        _properties.setProperty(name, attributes.getValue(name));
+                    }
+                }
+                final Map<String, Attributes> entries = manifest.getEntries();
+                for (final String key : entries.keySet()) {
+                    final Map<String, String> keyedAttributes = new HashMap<>();
+                    _attributes.put(key, keyedAttributes);
+                    final Attributes entry = entries.get(key);
+                    for (final Object subkey : entry.keySet()) {
+                        final String property = (String) subkey;
+                        keyedAttributes.put(property, attributes.getValue(property));
+                    }
+                }
+            } else {
+                _log.warn("Attempted to load /META-INF/MANIFEST.MF but couldn't find it, all version information is unknown.");
+                _properties.setProperty("buildNumber", "Unknown");
+                _properties.setProperty("buildDate", FORMATTER.format(new Date()));
+                _properties.setProperty("version", "Unknown");
+                _properties.setProperty("commit", "Unknown");
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
+                               _properties.getProperty("version"),
+                               _properties.getProperty("buildNumber"),
+                               _properties.getProperty("buildDate"),
+                               _properties.getProperty("commit"));
+
                 }
             }
             if (!isInitialized()) {
@@ -240,6 +257,7 @@ public class XnatAppInfo {
      *
      * @return The value of the property if found, null otherwise.
      */
+    @SuppressWarnings("unused")
     public String getConfiguredProperty(final String property) {
         return getConfiguredProperty(property, (String) null);
     }
@@ -265,6 +283,7 @@ public class XnatAppInfo {
      *
      * @return The value of the property if found, null otherwise.
      */
+    @SuppressWarnings("unused")
     public <T> T getConfiguredProperty(final String property, final Class<T> type) {
         return getConfiguredProperty(property, type, null);
     }
@@ -511,8 +530,9 @@ public class XnatAppInfo {
 
     private static final Logger _log = LoggerFactory.getLogger(XnatAppInfo.class);
 
-    private static final List<String>   PRIMARY_MANIFEST_ATTRIBUTES = Arrays.asList("Build-Number", "Build-Date", "Implementation-Version", "Implementation-Sha");
-    private static final ResourceLoader RESOURCE_LOADER             = new DefaultResourceLoader();
+    private static final List<String>     PRIMARY_MANIFEST_ATTRIBUTES = Arrays.asList("Build-Number", "Build-Date", "Implementation-Version", "Implementation-Sha");
+    private static final ResourceLoader   RESOURCE_LOADER             = new DefaultResourceLoader();
+    private static final SimpleDateFormat FORMATTER                   = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss a");
 
     private final JdbcTemplate _template;
     private final Environment  _environment;

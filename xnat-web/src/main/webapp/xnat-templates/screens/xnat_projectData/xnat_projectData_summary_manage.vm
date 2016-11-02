@@ -184,7 +184,7 @@
 </div>
 
 <div id="accordion">
-    #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-quarantine","true")))
+    #if($siteConfig.uiAllowQuarantine)
         <h3 class="active">Define Quarantine Settings</h3>
         <div class="active">
             <table id="quarantine_table">
@@ -227,7 +227,7 @@
             </script>
         </div>
     #end
-    #if($turbineUtils.toBoolean($siteConfig.getProperty("project.allow-auto-archive","true")))
+    #if($siteConfig.projectAllowAutoArchive)
         <h3>Define Prearchive Settings</h3>
         <div>
             <table id="prearchive_table">
@@ -431,7 +431,7 @@
             filtersGet.get();
         </script>
     </div>
-    #if($turbineUtils.toBoolean($siteConfig.getProperty("enableProjectAppletScript", "false")))
+    #if($siteConfig.enableProjectAppletScript)
         <h3>Applet Configuration Script</h3>
         <div>
             <table id="applet_script_table">

@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #set($target=$content.getURI("/REST/services/archive"))
 #set($allowDataDeletion="false")
 #set($isUpload="true")
@@ -57,7 +58,7 @@ dd.valMessage 	{	width:630px;	}
 <script type="text/javascript" src="$content.getURI("scripts/imageSessionData/archive.js")"></script>
 <script>	
 	//validation CODES that are not allowed to be overidden
-	XNAT.app.archiveValidator.fail_merge_on=$siteConfig.getProperty("security.fail_merge_on","[]");
+	XNAT.app.archiveValidator.fail_merge_on=$siteConfig.formattedFailMergeOn;
 	XNAT.app.archiveValidator.xsiType="$om.getXSIType()";
 	#if($src)
 		XNAT.app.archiveValidator.url="$!src";

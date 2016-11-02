@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #if($popup=="true")
 	#set ($template = $data.getTemplateInfo())
 	$!template.setLayoutTemplate("Popup.vm")
@@ -244,10 +245,10 @@ dd.valMessage 	{	width:630px;	}
 
         #if($allowArchive)
 	//validation CODES that are not allowed to be overidden
-	XNAT.app.validator.fail_merge_on=$siteConfig.getProperty("security.fail_merge_on","[]");
+	XNAT.app.validator.fail_merge_on=$siteConfig.formattedFailMergeOn;
 	XNAT.app.validator.xsiType="$session.getXSIType()";
 	
-	XNAT.app.archiveValidator.fail_merge_on=$siteConfig.getProperty("security.fail_merge_on","[]");
+	XNAT.app.archiveValidator.fail_merge_on=$siteConfig.formattedFailMergeOn;
 	XNAT.app.archiveValidator.xsiType="$session.getXSIType()";
 	#if($url)
 		XNAT.app.archiveValidator.url="$!url";

@@ -10,16 +10,16 @@ $page.setTitle("Register A New User Account")
 $page.setBgColor($ui.bgcolor)
 
 <div id="login_area">
-    #if($siteConfig.getProperty("siteWideAlertStatus","")!="0")
-        <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;"><strong>$siteConfig.getProperty("siteWideAlertMessage","")</strong></div>
+    #if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
+        <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;"><strong>$siteConfig.siteWideAlertMessage</strong></div>
     #end
 
     <div id="login_welcome">
-        #if($siteConfig.getProperty("siteDescriptionType","")=="Text")
-            <div>$siteConfig.getProperty("siteDescriptionText","")</div>
+        #if($siteConfig.siteDescriptionType == "Text")
+            <div>$siteConfig.siteDescriptionText</div>
         #else
-            #if($turbineUtils.resourceExists($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm")))
-                <div>#parse($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm"))</div>
+            #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
+                <div>#parse($siteConfig.siteDescriptionPage)</div>
             #else
                 <div>Custom site description page not found!</div>
             #end

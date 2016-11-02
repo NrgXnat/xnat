@@ -1,14 +1,11 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 #set ($template = $data.getTemplateInfo())
 $!template.setLayoutTemplate("Login.vm")
-#set ($siteId = $siteConfig.getProperty("siteId",""))
+#set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Register")
 
 <div id="login_area">
-##    #if($siteConfig.getProperty("siteWideAlertStatus","")!="0")
-##        <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;"><strong>$siteConfig.getProperty("siteWideAlertMessage","")</strong></div>
-##    #end
-
     <div id="register_box_container">
         <div id="register_box">
             <form name="form2" method="post" action="$link.setAction("XDATForgotLogin")" class="friendlyForm" id="register_form">

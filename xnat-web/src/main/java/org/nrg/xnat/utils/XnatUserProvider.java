@@ -12,6 +12,7 @@ package org.nrg.xnat.utils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -27,9 +28,10 @@ import javax.inject.Provider;
  */
 @Component
 public class XnatUserProvider implements Provider<UserI> {
-    public XnatUserProvider(final String login) {
-        _logger.debug("Initializing user provider with login {}", login);
-        setLogin(login);
+    public XnatUserProvider(final SiteConfigPreferences preferences, final String userKey) {
+        _logger.debug("Initializing user provider with preference key {}", userKey);
+        _preferences = preferences;
+        _userKey = userKey;
     }
 
     /**
@@ -38,16 +40,21 @@ public class XnatUserProvider implements Provider<UserI> {
     @Override
     public UserI get() {
         if (null == _user) {
+            final String login = getLogin();
             try {
-                _user = Users.getUser(_login);
-                _logger.debug("Retrieved user with login {}", _login);
+                _user = Users.getUser(login);
+                _logger.debug("Retrieved user with login {}", login);
             } catch (UserInitException e) {
-                throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "User object for name " + _login + " could not be initialized.");
+                throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "User object for name " + login + " could not be initialized.");
             } catch (UserNotFoundException e) {
-                throw new NrgServiceRuntimeException(NrgServiceError.UserNotFoundError, "User with name " + _login + " could not be found.");
+                throw new NrgServiceRuntimeException(NrgServiceError.UserNotFoundError, "User with name " + login + " could not be found.");
             }
         }
         return _user;
+    }
+
+    public String getUserKey() {
+        return _userKey;
     }
 
     /**
@@ -57,22 +64,20 @@ public class XnatUserProvider implements Provider<UserI> {
      * @return The configured user login name.
      */
     public String getLogin() {
+        if (StringUtils.isBlank(_login)) {
+            _login = _preferences.getValue(_userKey);
+        }
         return _login;
     }
 
-    /**
-     * Sets the configured login name for the default user.
-     *
-     * @param login    The user login name to configure.
-     */
     public void setLogin(final String login) {
-        if (!StringUtils.equals(_login, login)) {
-            _login = login;
-            _user = null;
-        }
+        _login = login;
     }
 
     private final Logger _logger = LoggerFactory.getLogger(XnatUserProvider.class);
+
+    private final SiteConfigPreferences _preferences;
+    private final String                _userKey;
 
     private String _login;
     private UserI _user = null;

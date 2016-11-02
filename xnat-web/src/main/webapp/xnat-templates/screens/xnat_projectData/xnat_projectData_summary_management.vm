@@ -2,8 +2,7 @@
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
-#set($showUserList = !$turbineUtils.toBoolean($siteConfig.getProperty(
-    "restrictUserListAccessToAdmins", "true")) || $turbineUtils.isSiteAdmin($user))
+#set($showUserList = !$siteConfig.restrictUserListAccessToAdmins || $turbineUtils.isSiteAdmin($user))
 <script type="text/javascript" src="$content.getURI("scripts/project/userMgmt.js")"></script>
 
 <table class="mgmt_container">

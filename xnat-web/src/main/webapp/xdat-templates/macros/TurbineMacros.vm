@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="tipText" type="java.util.List" *#
@@ -1636,7 +1637,7 @@ $!turbineUtils.escapeJS($s)
 
 ##Used to load globally scoped VM files and inject them into parent VMs.
 #macro(addGlobalCustomScreenJS $subFolder)
-	#if($turbineUtils.toBoolean($siteConfig.getProperty("uiDebugExtensionPoints","false")))document.write("<div class='extension_js'>/templates/screens/$subFolder</div>")#end
+	#if($siteConfig.uiDebugExtensionPoints)document.write("<div class='extension_js'>/templates/screens/$subFolder</div>")#end
 	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
 		#if($user.isGuest())
@@ -1655,7 +1656,7 @@ $!turbineUtils.escapeJS($s)
 
 ##Used to load  VM files for specfic data-types and their extensions and inject them into parent VMs.
 #macro(addCustomScreenJS $dataType $subFolder)
-	#if($turbineUtils.toBoolean($siteConfig.getProperty("uiDebugExtensionPoints","false")))document.write("<div class='extension_js'>/templates/screens/$dataType/$subFolder</div>")#end
+	#if($siteConfig.uiDebugExtensionPoints)document.write("<div class='extension_js'>/templates/screens/$dataType/$subFolder</div>")#end
 	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
 		#if($user.isGuest())
@@ -1674,7 +1675,7 @@ $!turbineUtils.escapeJS($s)
 
 ##Used to load globally scoped VM files and inject them into parent VMs.
 #macro(addGlobalCustomScreens $subFolder)
-	#if($turbineUtils.toBoolean($siteConfig.getProperty("uiDebugExtensionPoints","false")))<div class="extension">/templates/screens/$subFolder</div>#end
+	#if($siteConfig.uiDebugExtensionPoints)<div class="extension">/templates/screens/$subFolder</div>#end
 	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
 		#if($user.isGuest())
@@ -1693,7 +1694,7 @@ $!turbineUtils.escapeJS($s)
 
 ##Used to load  VM files for specfic data-types and their extensions and inject them into parent VMs.
 #macro(addCustomScreens $dataType $subFolder)
-	#if($turbineUtils.toBoolean($siteConfig.getProperty("uiDebugExtensionPoints","false")))<div class="extension">/templates/screens/$dataType/$subFolder</div>#end
+	#if($siteConfig.uiDebugExtensionPoints)<div class="extension">/templates/screens/$dataType/$subFolder</div>#end
 	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
 		#if($user.isGuest())

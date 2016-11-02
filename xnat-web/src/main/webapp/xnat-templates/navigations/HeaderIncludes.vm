@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="om" type="org.nrg.xdat.base.BaseElement" *#
 #* @vtlvariable name="project" type="java.lang.String" *#
 #* @vtlvariable name="requireReason" type="java.lang.String" *#
@@ -89,11 +90,11 @@ $navigation.setTemplate("/BaseJS.vm")
     // 'page' object is same as 'context' - easier to remember?
     XNAT.data.page = XNAT.data.context;
 
-    XNAT.app.showLeftBar = $turbineUtils.toBoolean($siteConfig.getProperty("uiShowLeftBarBrowse","true"));
-    XNAT.app.showLeftBarProjects = $turbineUtils.toBoolean($siteConfig.getProperty("uiShowLeftBarProjects","true"));
-    XNAT.app.showLeftBarFavorites = $turbineUtils.toBoolean($siteConfig.getProperty("uiShowLeftBarFavorites","true"));
-    XNAT.app.showLeftBarSearch = $turbineUtils.toBoolean($siteConfig.getProperty("uiShowLeftBarSearch","true"));
-    XNAT.app.showLeftBarBrowse = $turbineUtils.toBoolean($siteConfig.getProperty("uiShowLeftBarBrowse","true"));
+    XNAT.app.showLeftBar = $siteConfig.uiShowLeftBarBrowse;
+    XNAT.app.showLeftBarProjects = $siteConfig.uiShowLeftBarProjects;
+    XNAT.app.showLeftBarFavorites = $siteConfig.uiShowLeftBarFavorites;
+    XNAT.app.showLeftBarSearch = $siteConfig.uiShowLeftBarSearch;
+    XNAT.app.showLeftBarBrowse = $siteConfig.uiShowLeftBarBrowse;
 
     window.available_elements = [];
 

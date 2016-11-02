@@ -22,8 +22,10 @@ import java.util.Map;
 @Component
 public class XnatUserProviderPreferenceHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
     @Autowired
-    public XnatUserProviderPreferenceHandlerMethod(final Map<String, XnatUserProvider> providers) {
-        _providers = Maps.newHashMap(providers);
+    public XnatUserProviderPreferenceHandlerMethod(final List<XnatUserProvider> providers) {
+        for (final XnatUserProvider provider : providers) {
+            _providers.put(provider.getUserKey(), provider);
+        }
     }
 
     @Override
@@ -48,5 +50,5 @@ public class XnatUserProviderPreferenceHandlerMethod extends AbstractSiteConfigP
         }
     }
 
-    private final Map<String, XnatUserProvider> _providers;
+    private final Map<String, XnatUserProvider> _providers = Maps.newHashMap();
 }

@@ -109,12 +109,12 @@ public class ApplicationConfig {
 
     @Bean
     public XnatUserProvider primaryAdminUserProvider(final SiteConfigPreferences preferences) throws SiteConfigurationException {
-        return new XnatUserProvider(preferences.getPrimaryAdminUsername());
+        return new XnatUserProvider(preferences, "primaryAdminUsername");
     }
 
     @Bean
     public XnatUserProvider receivedFileUserProvider(final SiteConfigPreferences preferences) throws SiteConfigurationException {
-        return new XnatUserProvider(preferences.getReceivedFileUser());
+        return new XnatUserProvider(preferences, "receivedFileUser");
     }
 
     @Bean

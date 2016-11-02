@@ -1,3 +1,4 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 <table>
  <tr>
   <td>
@@ -20,7 +21,7 @@
     if(window.subjectEditor==undefined){
       var config=new Object();
 	  
-	  #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-subject-create-from-expt-edit","true")))
+	  #if($siteConfig.uiAllowSubjectCreateFromExptEdit)
 	  	config.create_subject_link=create_subject_link;
 	  #end
 

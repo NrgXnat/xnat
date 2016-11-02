@@ -71,7 +71,6 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
      * @param smtpServer The SMTP values to set.
      */
     public void setSmtpServer(final SmtpServer smtpServer) {
-        setSmtpEnabled(smtpServer.getSmtpEnabled());
         setSmtpHostname(smtpServer.getHostname());
         setSmtpPort(smtpServer.getPort());
         setSmtpProtocol(smtpServer.getProtocol());

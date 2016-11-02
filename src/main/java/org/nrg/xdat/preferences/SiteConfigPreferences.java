@@ -10,6 +10,7 @@
 package org.nrg.xdat.preferences;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatMixIn;
 import org.nrg.framework.beans.ProxiedBeanMixIn;
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.sql.SQLException;
+import java.util.List;
 
 @SuppressWarnings("unused")
 @NrgPreferenceBean(toolId = SiteConfigPreferences.SITE_CONFIG_TOOL_ID,
@@ -768,6 +770,40 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "true", aliases = "security.allow-data-admins")
+    public boolean getAllowDataAdmins() {
+        return getBooleanValue("allowDataAdmins");
+    }
+
+    public void setAllowDataAdmins(final boolean allowDataAdmins) {
+        try {
+            setBooleanValue(allowDataAdmins, "allowDataAdmins");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'allowDataAdmins': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "[]", aliases = "security.fail_merge_on")
+    public List<String> getFailMergeOn() {
+        return getListValue("failMergeOn");
+    }
+
+    public String getFormattedFailMergeOn() {
+        final List<String> values = getListValue("failMergeOn");
+        if (values == null || values.size() == 0) {
+            return "[]";
+        }
+        return "['" + Joiner.on("', '").join(values) + "']";
+    }
+
+    public void setFailMergeOn(final List<String> failMergeOn) {
+        try {
+            setListValue("failMergeOn", failMergeOn);
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'failMergeOn': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "1000", aliases = "sessions.concurrent_max")
     public int getConcurrentMaxSessions() {
         return getIntegerValue("concurrentMaxSessions");
@@ -846,6 +882,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "true", aliases = "UI.display-series-description")
+    public boolean getUiDisplaySeriesDescription() {
+        return getBooleanValue("uiDisplaySeriesDescription");
+    }
+
+    public void setUiDisplaySeriesDescription(final boolean uiDisplaySeriesDescription) {
+        try {
+            setBooleanValue(uiDisplaySeriesDescription, "uiDisplaySeriesDescription");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiDisplaySeriesDescription': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true", aliases = "UI.allow-advanced-search")
     public boolean getUiAllowAdvancedSearch() {
         return getBooleanValue("uiAllowAdvancedSearch");
@@ -856,6 +905,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             setBooleanValue(uiAllowAdvancedSearch, "uiAllowAdvancedSearch");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'uiAllowAdvancedSearch': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true", aliases = "UI.allow-project-delete")
+    public boolean getUiAllowProjectDelete() {
+        return getBooleanValue("uiAllowProjectDelete");
+    }
+
+    public void setUiAllowProjectDelete(final boolean uiAllowProjectDelete) {
+        try {
+            setBooleanValue(uiAllowProjectDelete, "uiAllowProjectDelete");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiAllowProjectDelete': something is very wrong here.", e);
         }
     }
 
@@ -882,6 +944,45 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             setBooleanValue(uiAllowScanAddition, "uiAllowScanAddition");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'uiAllowScanAddition': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true", aliases = "project.allow-auto-archive")
+    public boolean getProjectAllowAutoArchive() {
+        return getBooleanValue("projectAllowAutoArchive");
+    }
+
+    public void setProjectAllowAutoArchive(final boolean projectAllowAutoArchive) {
+        try {
+            setBooleanValue(projectAllowAutoArchive, "projectAllowAutoArchive");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'projectAllowAutoArchive': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true", aliases = "UI.allow-quarantine")
+    public boolean getUiAllowQuarantine() {
+        return getBooleanValue("uiAllowQuarantine");
+    }
+
+    public void setUiAllowQuarantine(final boolean uiAllowQuarantine) {
+        try {
+            setBooleanValue(uiAllowQuarantine, "uiAllowQuarantine");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiAllowQuarantine': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true", aliases = "UI.allow-scan-type-modification")
+    public boolean getUiAllowScanTypeModification() {
+        return getBooleanValue("uiAllowScanTypeModification");
+    }
+
+    public void setUiAllowScanTypeModification(final boolean uiAllowScanTypeModification) {
+        try {
+            setBooleanValue(uiAllowScanTypeModification, "uiAllowScanTypeModification");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiAllowScanTypeModification': something is very wrong here.", e);
         }
     }
 
@@ -950,6 +1051,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false", aliases = "showapplet")
+    public boolean getUiShowLeftBarAppletButton() {
+        return getBooleanValue("uiShowLeftBarAppletButton");
+    }
+
+    public void setUiShowLeftBarAppletButton(final boolean uiShowLeftBarAppletButton) {
+        try {
+            setBooleanValue(uiShowLeftBarAppletButton, "uiShowLeftBarAppletButton");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiShowLeftBarAppletButton': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true", aliases = "UI.show-manage-files")
     public boolean getUiShowManageFiles() {
         return getBooleanValue("uiShowManageFiles");
@@ -957,9 +1071,35 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
 
     public void setUiShowManageFiles(final boolean uiShowManageFiles) {
         try {
-            setBooleanValue(uiShowManageFiles, "UiShowManageFiles");
+            setBooleanValue(uiShowManageFiles, "uiShowManageFiles");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'UiShowManageFiles': something is very wrong here.", e);
+            _log.error("Invalid preference name 'uiShowManageFiles': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true", aliases = "UI.show-project-manage-files")
+    public boolean getUiShowProjectManageFiles() {
+        return getBooleanValue("uiShowProjectManageFiles");
+    }
+
+    public void setUiShowProjectManageFiles(final boolean uiShowProjectManageFiles) {
+        try {
+            setBooleanValue(uiShowProjectManageFiles, "uiShowProjectManageFiles");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiShowProjectManageFiles': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true", aliases = "UI.allow-subject-create-from-expt-edit")
+    public boolean getUiAllowSubjectCreateFromExptEdit() {
+        return getBooleanValue("uiAllowSubjectCreateFromExptEdit");
+    }
+
+    public void setUiAllowSubjectCreateFromExptEdit(final boolean uiAllowSubjectCreateFromExptEdit) {
+        try {
+            setBooleanValue(uiAllowSubjectCreateFromExptEdit, "uiAllowSubjectCreateFromExptEdit");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'uiAllowSubjectCreateFromExptEdit': something is very wrong here.", e);
         }
     }
 

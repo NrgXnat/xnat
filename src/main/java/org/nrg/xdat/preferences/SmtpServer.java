@@ -5,9 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Properties;
 
+@SuppressWarnings("unused")
 public class SmtpServer {
-
-    public static final String SMTP_KEY_ENABLED         = "mail.smtp.enabled";
     public static final String SMTP_KEY_AUTH            = "mail.smtp.auth";
     public static final String SMTP_KEY_STARTTLS_ENABLE = "mail.smtp.starttls.enable";
     public static final String SMTP_KEY_SSL_TRUST       = "mail.smtp.ssl.trust";
@@ -88,18 +87,6 @@ public class SmtpServer {
         _password = password;
     }
 
-    public boolean getSmtpEnabled() {
-        return _smtpEnabled;
-    }
-
-    public void setSmtpEnabled(final boolean smtpEnabled) {
-        _smtpEnabled = smtpEnabled;
-    }
-
-    public void setSmtpEnabled(final String smtpEnabled) {
-        setSmtpEnabled(Boolean.parseBoolean(smtpEnabled));
-    }
-
     public boolean getSmtpAuth() {
         return Boolean.parseBoolean(_mailProperties.getProperty(SMTP_KEY_AUTH));
     }
@@ -137,9 +124,6 @@ public class SmtpServer {
     }
 
     public void setMailProperties(final Properties properties) {
-        if (properties.containsKey(SmtpServer.SMTP_KEY_ENABLED)) {
-            setSmtpEnabled((String) properties.remove(SmtpServer.SMTP_KEY_AUTH));
-        }
         if (properties.containsKey(SmtpServer.SMTP_KEY_HOSTNAME)) {
             setHostname((String) properties.remove(SmtpServer.SMTP_KEY_HOSTNAME));
         }
@@ -170,27 +154,6 @@ public class SmtpServer {
         if (properties.containsKey(SmtpServer.SMTP_KEY_SMTP_PASSWORD)) {
             setPassword((String) properties.remove(SmtpServer.SMTP_KEY_SMTP_PASSWORD));
         }
-        if (properties.containsKey(SmtpServer.SMTP_KEY_AUTH)) {
-            final boolean smtpAuth = Boolean.parseBoolean((String) properties.remove(SmtpServer.SMTP_KEY_AUTH));
-            setSmtpAuth(smtpAuth);
-            if (!smtpAuth) {
-                setSmtpSslTrust("");
-                setSmtpStartTls(false);
-            } else {
-                if (properties.containsKey(SmtpServer.SMTP_KEY_SSL_TRUST)) {
-                    setSmtpSslTrust((String) properties.remove(SmtpServer.SMTP_KEY_SSL_TRUST));
-                }
-                if (properties.containsKey(SmtpServer.SMTP_KEY_STARTTLS_ENABLE)) {
-                    setSmtpStartTls((String) properties.remove(SmtpServer.SMTP_KEY_STARTTLS_ENABLE));
-                }
-            }
-        }
-        if (properties.containsKey(SmtpServer.SMTP_KEY_SSL_TRUST)) {
-            properties.remove(SmtpServer.SMTP_KEY_SSL_TRUST);
-        }
-        if (properties.containsKey(SmtpServer.SMTP_KEY_STARTTLS_ENABLE)) {
-            properties.remove(SmtpServer.SMTP_KEY_STARTTLS_ENABLE);
-        }
         _mailProperties.clear();
         _mailProperties.putAll(properties);
     }
@@ -213,7 +176,6 @@ public class SmtpServer {
     @JsonIgnore
     public Properties asProperties() {
         final Properties properties = new Properties();
-        properties.setProperty(SMTP_KEY_ENABLED, Boolean.toString(_smtpEnabled));
         if (StringUtils.isNotBlank(_hostname)) {
             properties.setProperty(SMTP_KEY_HOSTNAME, _hostname);
         }
@@ -236,6 +198,5 @@ public class SmtpServer {
     private String  _protocol;
     private String  _username;
     private String  _password;
-    private boolean _smtpEnabled;
     private final Properties _mailProperties = new Properties();
 }

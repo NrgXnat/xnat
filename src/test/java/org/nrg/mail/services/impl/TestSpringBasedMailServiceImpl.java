@@ -22,6 +22,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.nrg.mail.config.TestSpringBasedMailServiceImplConfig;
 import org.nrg.mail.services.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = TestSpringBasedMailServiceImplConfig.class)
 public class TestSpringBasedMailServiceImpl {
     @Test
     public void testBasicMessageSend() throws MessagingException {
@@ -48,13 +49,13 @@ public class TestSpringBasedMailServiceImpl {
         Map<String, File> attachments = new HashMap<>();
         try {
             _service.sendHtmlMessage("test@yahoo.com",                      // From address
-                                     new String[] { "test@gmail.com" },     // To address(es)
-                                     new String[] { "test@hotmail.com" },   // Cc address(es)
-                                     new String[] { "test@hushmail.com" },  // Bcc address(es)
-                                     "Email subject",
-                                     "<html><body>This is <b>some</b> HTML text for the message.</body></html>",
-                                     "This is some plain text for the message.",
-                                     attachments);
+                    new String[]{"test@gmail.com"},     // To address(es)
+                    new String[]{"test@hotmail.com"},   // Cc address(es)
+                    new String[]{"test@hushmail.com"},  // Bcc address(es)
+                    "Email subject",
+                    "<html><body>This is <b>some</b> HTML text for the message.</body></html>",
+                    "This is some plain text for the message.",
+                    attachments);
         } catch (MessagingException exception) {
             fail("Failed with an exception: " + exception);
         }
@@ -64,6 +65,7 @@ public class TestSpringBasedMailServiceImpl {
 
     @Autowired
     private MockJavaMailSender _sender;
+
     @Autowired
-    private MailService _service;
+    private MailService        _service;
 }

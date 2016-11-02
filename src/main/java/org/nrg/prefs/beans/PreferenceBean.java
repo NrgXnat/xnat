@@ -16,10 +16,7 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public interface PreferenceBean {
@@ -34,6 +31,8 @@ public interface PreferenceBean {
     Map<String, Object> getPreferenceMap(final String... preferenceNames);
 
     Map<String, Object> getPreferenceMap(final Set<String> preferenceNames);
+
+    Properties asProperties();
 
     Class<? extends PreferenceEntityResolver> getResolver();
 

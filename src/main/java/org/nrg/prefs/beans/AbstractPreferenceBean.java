@@ -86,11 +86,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         PreferenceBeanHelper.getAliases(_preferences.values(), _aliases, _aliasedPreferences);
     }
 
+    @JsonIgnore
     @Autowired
     public void setNrgPreferenceService(final NrgPreferenceService service) {
         _preferenceService = service;
     }
 
+    @JsonIgnore
     @PostConstruct
     public PreferenceBean initialize() {
         if (_preferenceService == null) {
@@ -175,6 +177,18 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                 }
             });
         }
+    }
+
+    @JsonIgnore
+    @Override
+    public Properties asProperties() {
+        final Properties properties = new Properties();
+        final Map<String, Object> preferences = getPreferenceMap();
+        for (final String preference : preferences.keySet()) {
+            final Object value = preferences.get(preference);
+            properties.setProperty(preference, value != null ? value.toString() : "");
+        }
+        return properties;
     }
 
     @JsonIgnore

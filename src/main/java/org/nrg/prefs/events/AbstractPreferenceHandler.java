@@ -30,9 +30,11 @@ public abstract class AbstractPreferenceHandler<T extends StructuredEvent> exten
     }
 
     public abstract String getToolId();
+
     public abstract void setToolId(String toolId);
 
     public abstract List<PreferenceHandlerMethod> getMethods();
+
     public abstract void addMethod(PreferenceHandlerMethod method);
 
     @Override
@@ -53,11 +55,12 @@ public abstract class AbstractPreferenceHandler<T extends StructuredEvent> exten
     public Future<Void> handleEvent(final T event) {
         final Map<String, String> fields = event.getEventSpecificFieldsAsMap();
         if (fields != null) {
-            final List<PreferenceHandlerMethod> methods = getMethodsForPreferences(new ArrayList<>(fields.keySet()));
-            for (final PreferenceHandlerMethod method : methods) {
-                final List<String>        preferences = method.getHandledPreferences();
-                final Map<String, String> values      = new HashMap<>();
-                for (final String preference : preferences) {
+            final Set<String>                               preferences = fields.keySet();
+            final Map<PreferenceHandlerMethod, Set<String>> methods     = getMethodsForPreferences(new ArrayList<>(preferences));
+            for (final PreferenceHandlerMethod method : methods.keySet()) {
+                final Set<String>         handled = methods.get(method);
+                final Map<String, String> values  = new HashMap<>();
+                for (final String preference : handled) {
                     values.put(preference, fields.get(preference));
                 }
                 method.handlePreferences(values);
@@ -67,11 +70,14 @@ public abstract class AbstractPreferenceHandler<T extends StructuredEvent> exten
         return new AsyncResult<>(null);
     }
 
-    private List<PreferenceHandlerMethod> getMethodsForPreferences(final List<String> preferences) {
-        final List<PreferenceHandlerMethod> resolved = new ArrayList<>();
+    private Map<PreferenceHandlerMethod, Set<String>> getMethodsForPreferences(final List<String> preferences) {
+        final Map<PreferenceHandlerMethod, Set<String>> resolved = new HashMap<>();
         for (final PreferenceHandlerMethod method : getMethods()) {
-            if ((!Collections.disjoint(method.getHandledPreferences(), preferences)) && !(resolved.contains(method))) {
-                resolved.add(method);
+            if (!resolved.containsKey(method)) {
+                final Set<String> handled = method.findHandledPreferences(preferences);
+                if (handled.size() > 0) {
+                    resolved.put(method, handled);
+                }
             }
         }
         return resolved;

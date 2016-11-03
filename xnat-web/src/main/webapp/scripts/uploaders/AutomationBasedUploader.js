@@ -619,10 +619,8 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 							XNAT.app.abu.sendWorkflowWhenDone();
 						}
 					}
-					var isCancel = ($(".abu-done-button-cancel").length>0);
-					var fileUploaded = ($(".abu-done-button-file-uploaded").length>0);
 					xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
-					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0 && !isCancel && fileUploaded) {
+					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
 						setTimeout(function(){
 							window.location.reload(true);
 						},20);

@@ -131,20 +131,30 @@ var XNAT = getObject(XNAT);
 
     // checkboxes are special
     input.checkbox = function(config){
-        otherTypes.push('checkbox');
         config = extend(true, {}, config, config.element);
         // config.onchange = function(){
         //     this.value = this.checked || $(this).data('uncheckedValue') || '';
         // };
         return setupType('checkbox', '', config);
     };
+    otherTypes.push('checkbox');
+
+    input.switchbox = function(config){
+        return spawn('label.switchbox', [
+            input.checkbox(config).get(),
+            ['span.switchbox-outer', [['span.switchbox-inner']]],
+            ['span.switchbox-on', config.onText||''],
+            ['span.switchbox-off', config.offText||'']
+        ])
+    };
+    otherTypes.push('switchbox');
 
     // radio buttons are special too
     input.radio = function(config){
-        otherTypes.push('radio');
         config = extend(true, {}, config, config.element);
         return setupType('radio', '', config);
     };
+    otherTypes.push('radio');
 
     // save a list of all available input types
     input.types = [].concat(textTypes, numberTypes, otherTypes);

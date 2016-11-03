@@ -189,10 +189,10 @@ var XNAT = getObject(XNAT);
                     spawnedElement = method(prop);
 
                     // add spawnedElement to the master frag
-                    $frag.append(spawnedElement.element);
+                    $frag.append(spawnedElement.element||spawnedElement.get());
 
                     // save a reference to spawnedElement
-                    spawner.spawnedElements.push(spawnedElement.element);
+                    spawner.spawnedElements.push(spawnedElement.element||spawnedElement.get());
 
                 }
                 else {
@@ -214,7 +214,7 @@ var XNAT = getObject(XNAT);
                     $spawnedElement = $(spawnedElement.target || spawnedElement.inner);
                 }
                 else {
-                    $spawnedElement = $(spawnedElement.element);
+                    $spawnedElement = $(spawnedElement.element||spawnedElement.get());
                 }
 
                 // if a string, number, or boolean is passed as 'contents'

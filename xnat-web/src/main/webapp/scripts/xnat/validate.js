@@ -89,22 +89,22 @@ var XNAT = getObject(XNAT);
         //numeric: /^-?\d*\d{3}[,]*\d[.]*\d+$/,
         integer: /^-?[0-9]+$/,              // positive or negative whole number
         natural: /^[0-9]+$/,                // positive whole number
-        naturalNoZero: /^([1-9]+[0-9]*)$/,  // positive whole number, no leading 0s
-        decimal: /^(-?[0-9]*\.?[0-9])$/,
-        hexadecimal: /^[0-9a-f]$/i,
+        naturalNoZero: /^([1-9]+[0-9]*)+$/,  // positive whole number, no leading 0s
+        decimal: /^(-?[0-9]*\.?[0-9])+$/,
+        hexadecimal: /^[0-9a-f]+$/i,
         email: /^([a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))$/i,
-        alpha: /^[a-z]$/i,                 // ONLY letters
-        alphaSafe: /^[a-z_]$/i,            // ONLY letters and underscores
-        alphaDash: /^[a-z_\-]$/i,          // ONLY letters, underscore, and dash
-        alphaNum: /^[a-z0-9]$/i,           // ONLY letters and numbers
-        alphaNumSafe: /^[a-z0-9_]$/i,      // ONLY letters, numbers, and underscore
-        alphaNumDash: /^[a-z0-9_\-]$/i,    // ONLY letters, numbers, underscore, and dash
-        alphaNumDashSpace: /^[a-z0-9_\- ]$/i, // ONLY letters, numbers, underscore, dash, and space
+        alpha: /^[a-z]+$/i,                 // ONLY letters
+        alphaSafe: /^[a-z_]+$/i,            // ONLY letters and underscores
+        alphaDash: /^[a-z_\-]+$/i,          // ONLY letters, underscore, and dash
+        alphaNum: /^[a-z0-9]+$/i,           // ONLY letters and numbers
+        alphaNumSafe: /^[a-z0-9_]+$/i,      // ONLY letters, numbers, and underscore
+        alphaNumDash: /^[a-z0-9_\-]+$/i,    // ONLY letters, numbers, underscore, and dash
+        alphaNumDashSpace: /^[a-z0-9_\- ]+$/i, // ONLY letters, numbers, underscore, dash, and space
         idSafe: /^([a-z][a-z0-9_\-]*)$/i,     // safe to use as an ID - alphasafe and must start with a letter
         idStrict: /^([a-z][a-z0-9_]*)$/i,    // 'idSafe' without hyphens
         ip: /^(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2}))$/i,
-        base64: /^([^a-zA-Z0-9\/+=])$/i,
-        numericDash: /^[\d\-\s]$/,
+        base64: /^([^a-zA-Z0-9\/+=])+$/i,
+        numericDash: /^[\d\-\s]+$/,
         //url: /^(((http|https):\/\/(\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?)$/,
         //url: /^(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&/=]*))$/i,
         url: /^(https?:\/\/[^\/\s]+(\/.*)?)$/i, // keep it simple for less strict url validation
@@ -401,6 +401,10 @@ var XNAT = getObject(XNAT);
         return inArray;
     };
 
+    test.lookup = function(value, obj){
+        // TODO: use special syntax to check a value via REST or object value lookup
+    };
+
     // auto-generate alternate property names from camelCase names
     // creates hyphen-ated and under_score aliases
     forOwn(test, function(name){
@@ -487,6 +491,7 @@ var XNAT = getObject(XNAT);
 
     // explicitly set a value to check
     // XNAT.validate().val('bar@foo.org').is('email').check();
+    // XNAT.validate().val('bar@foo.org').check('email');
     // -> true
     Validator.fn.val = function(value){
         this.value = value;
@@ -622,7 +627,7 @@ var XNAT = getObject(XNAT);
     };
 
     Validator.fn.none = function(type){
-        // make sure NONE of the elements match the type
+        // TODO: make sure NONE of the elements match the type
     };
 
     Validator.fn.pattern = function(regex){

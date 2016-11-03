@@ -59,6 +59,38 @@ var XNAT = getObject(XNAT||{});
     }
     url.rootUrl = rootUrl;
 
+    url.getProtocol = function(){
+        var docUrl = document.URL;
+        if (window.location.protocol) {
+            return window.location.protocol;
+        }
+        return /^(https:)/.test(docUrl) ? 'https:' : 'http:'
+    };
+
+    url.protocol = url.getProtocol();
+
+    url.getDomain = function(){
+        if (window.location.hostname) {
+            return window.location.hostname;
+        }
+        if (document.domain) {
+            return document.domain
+        }
+    };
+
+    url.domain = url.getDomain();
+
+    url.getPort = function(){
+        return window.location.port;
+    };
+
+    url.fullUrl = function(_url){
+        if (window.location.origin) {
+            return window.location.origin + rootUrl(_url);
+        }
+        return url.getProtocol() + '//' + url.getDomain() + ':' + url.getPort() + rootUrl(_url);
+    };
+
     // better encodeURIComponent() that catches
     // these additional characters: !'()*
     url.encodeURIComponent = function(str) {
@@ -315,9 +347,61 @@ var XNAT = getObject(XNAT||{});
             newUrl += ('?' + _url.query);
         }
         if (newHash){
-            newUrl += ('#' + newHash).replace(/^#+/,'#');
+            // newUrl += ('#' + newHash).replace(/^#+/,'#');
+            newUrl += newHash.replace(/^#*/,'#');
         }
         return newUrl ;
+    };
+
+
+    // replace ANY part of the url hash with another value
+    url.updateHashPart = function(hash, key, value, delim){
+
+        var oldPart, newPart, undefined;
+
+        hash = hash || window.location.hash || '#';
+        hash = '#' + hash.split('#').slice(1).join('#');
+
+        // both key and value are REQUIRED
+        if (!key || value === undefined) return hash;
+
+        if (hash.indexOf(key) === -1) {
+            hash = (hash + key + value);
+        }
+        else {
+            delim = delim !== undefined ? delim : '/#';
+            oldPart = key + hash.split(key)[1].split(delim)[0];
+            newPart = key + value;
+            hash = hash.replace(oldPart, newPart);
+        }
+
+        hash = hash.replace(/^#*/,'#'); // only one '#' at the beginning, please
+
+        return hash
+
+    };
+
+
+    // update parameter(s) stored in the url hash in the format
+    // #foo=bar
+    url.updateHashQuery = function(hash, key, value, delim){
+        // make sure key starts with '#' and ends with '='
+        key = key.replace(/^#*/, '#').replace(/=*$/, '=');
+        return XNAT.url.updateHashPart(hash, key, value, delim);
+    };
+
+
+    // trigger a custom 'reload-hash' event on hash change
+    $(window).on('reload-hash', function(e, callback, args){
+        callback.apply(e, [].concat(args));
+    });
+
+
+    url.reloadHash = function(key, value, delim){
+        var newHash = XNAT.url.updateHashPart('', key, value, delim);
+        //window.location.replace(newHash);
+        //window.location.reload();
+        $(window).trigger('reload-hash', [callback, args]);
     };
 
 

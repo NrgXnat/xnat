@@ -255,17 +255,17 @@ var XNAT = getObject(XNAT);
 
 
         // special stuff for switchbox elements
-        if (/switchbox/i.test(opts.kind)) {
-            inner.push(spawn('label.switchbox', [
-                element,
-                ['span.switchbox-outer', [['span.switchbox-inner']]],
-                ['span.switchbox-on', opts.onText||''],
-                ['span.switchbox-off', opts.offText||'']
-            ]))
-        }
-        else {
+        // if (/switchbox/i.test(opts.kind)) {
+        //     inner.push(spawn('label.switchbox', [
+        //         element,
+        //         ['span.switchbox-outer', [['span.switchbox-inner']]],
+        //         ['span.switchbox-on', opts.onText||''],
+        //         ['span.switchbox-off', opts.offText||'']
+        //     ]))
+        // }
+        // else {
             inner.push(element);
-        }
+        // }
 
 
         // add 'after' content after the core element

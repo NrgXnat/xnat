@@ -144,7 +144,7 @@ var XNAT = getObject(XNAT || {});
             button.classes.push('disabled');
             button.disabled = true
         }
-        return spawn('button', button);
+        return $.spawn('button', button);
     }
 
     // populate the data fields if this panel is in the 'active' tab
@@ -296,11 +296,14 @@ var XNAT = getObject(XNAT || {});
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
 
-            _resetBtn = footerButton('Discard Changes', 'button', false, 'revert pull-right'),
-            //_resetBtn = spawn('button.btn.btn-sm.revert.pull-right|type=button', 'Discard Changes'),
+            $saveBtn = footerButton('Save', 'button', true, 'submit save pull-right'),
+            _saveBtn = $saveBtn[0],
+
+            $resetBtn = footerButton('Discard Changes', 'button', true, 'revert pull-right'),
+            _resetBtn = $resetBtn[0],
 
             _footer = [
-                footerButton('Save', 'submit', false, 'submit save pull-right'),
+                _saveBtn,
                 ['span.pull-right', '&nbsp;&nbsp;&nbsp;'],
                 _resetBtn,
                 //['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
@@ -308,7 +311,7 @@ var XNAT = getObject(XNAT || {});
             ],
 
             // TODO: use opts.element for the panel itself
-            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', extend(true, {
+            $formPanel = $.spawn('form.xnat-form-panel.panel.panel-default', extend(true, {
                 id: toDashed(opts.id || opts.element.id || opts.name) + '-panel',
                 name: opts.name,
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
@@ -327,6 +330,9 @@ var XNAT = getObject(XNAT || {});
 
             ]);
 
+        // expose the raw form element
+        var _formPanel = $formPanel[0];
+
         // add [method] attribute ONLY for POST or GET
         if (/POST|GET/i.test(opts.method+'')) {
             _formPanel.method = opts.method;
@@ -337,9 +343,6 @@ var XNAT = getObject(XNAT || {});
             addClassName(_formPanel, 'validate');
             addDataObjects()
         }
-
-        // cache a jQuery-wrapped element
-        var $formPanel = $(_formPanel);
 
         // // set form element values from an object map
         // // HANDLED BY $('form').setValues({name:'value'}) now
@@ -387,9 +390,9 @@ var XNAT = getObject(XNAT || {});
         //
         // }
 
-        // if (opts.load) {
-        //     loadData(_formPanel, opts)
-        // }
+        if (opts.load) {
+            loadData(_formPanel, opts)
+        }
 
         opts.onload = opts.onload || callback;
 
@@ -403,11 +406,11 @@ var XNAT = getObject(XNAT || {});
         });
 
         // click 'Discard Changes' button to reload data
-        _resetBtn.onclick = function(){
+        $resetBtn.on('click', function(){
             if (!/^#/.test($formPanel.attr('action'))){
                 $formPanel.triggerHandler('reload-data');
             }
-        };
+        });
 
         opts.callback = opts.callback || callback || diddly;
 
@@ -421,15 +424,18 @@ var XNAT = getObject(XNAT || {});
         multiform.errors = 0;
 
         // keep an eye on the inputs
-        // $formPanel.on('change', 'input, select, textarea', function(){
-        //     setDisabled($formPanel.find('.panel-footer button'), false);
-        // });
+        $formPanel.on('change', ':input', function(){
+            setDisabled($formPanel.find('.panel-footer button'), false);
+        });
 
         // intercept the form submit to do it via REST instead
         $formPanel.on('submit', function(e){
-
             e.preventDefault();
             e.stopImmediatePropagation();
+            return false;
+        });
+
+        $formPanel.on('submit-data', function(e){
 
             var $form = $(this).removeClass('error'),
                 silent = $form.hasClass('silent'),
@@ -489,38 +495,38 @@ var XNAT = getObject(XNAT || {});
 
                     // TODO: enable this after testing validation methods more thoroughly
 
-                    // var errors = [],
-                    //     errorCount = 0,
-                    //     valid = true;
-                    //
-                    // // validate inputs before moving on
-                    // $form.find(':input[data-validate]').not('.ignore').each(function(){
-                    //     valid = XNAT.validate(this).check();
-                    //     if (!valid) {
-                    //         errorCount++;
-                    //         errors.push(this.title||this.name||this.id||this.tagName);
-                    //     }
-                    // });
-                    //
-                    // $form.dataAttr('errorCount', errorCount);
-                    //
-                    // if (errorCount) {
-                    //     $form.addClass('error');
-                    //     if (!silent) {
-                    //         xmodal.message({
-                    //             title: 'Error',
-                    //             content: '' +
-                    //             //'<div style="font-size:15px;">' +
-                    //             '<p>Please correct the following fields and re-submit the form:</p>' +
-                    //             '<ul><li><b>' + errors.join('</b></li><li><b>') + '</b></li></ul>' +
-                    //             //'</div>' +
-                    //             '',
-                    //             width: 500,
-                    //             height: 300
-                    //         });
-                    //     }
-                    //     return false;
-                    // }
+                    var errors = [],
+                        errorCount = 0,
+                        valid = true;
+
+                    // validate inputs before moving on
+                    $form.find(':input[data-validate]').not('.ignore').each(function(){
+                        valid = XNAT.validate(this).check();
+                        if (!valid) {
+                            errorCount++;
+                            errors.push(this.title||this.name||this.id||this.tagName);
+                        }
+                    });
+
+                    $form.dataAttr('errorCount', errorCount);
+
+                    if (errorCount) {
+                        $form.addClass('error');
+                        if (!silent) {
+                            xmodal.message({
+                                title: 'Error',
+                                content: '' +
+                                //'<div style="font-size:15px;">' +
+                                '<p>Please correct the following fields and re-submit the form:</p>' +
+                                '<ul><li><b>' + errors.join('</b></li><li><b>') + '</b></li></ul>' +
+                                //'</div>' +
+                                '',
+                                width: 500,
+                                height: 300
+                            });
+                        }
+                        return false;
+                    }
 
                     return true;
 
@@ -566,17 +572,20 @@ var XNAT = getObject(XNAT || {});
                 else {
                     ajaxConfig.contentType = 'application/json';
                 }
-                //$.ajax(ajaxConfig);
-                // XNAT.xhr.form($form, ajaxConfig);
             }
-            // else {
-            //     $(this).ajaxSubmit(ajaxConfig);
-            // }
 
+            // submit data with XNAT's AJAX form submit method
             XNAT.xhr.form($form, ajaxConfig);
 
             return false;
 
+        });
+
+        // 'Save' button triggers a custom 'submit-data' event
+        $saveBtn.on('click', function(){
+            if (!/^#/.test($formPanel.attr('action'))){
+                $formPanel.triggerHandler('submit-data');
+            }
         });
 
         // this object is returned to the XNAT.spawner() method
@@ -657,7 +666,7 @@ var XNAT = getObject(XNAT || {});
 
                     // submit ALL enclosed forms
                     $forms.each(function(){
-                        $(this).addClass('silent').trigger('submit');
+                        $(this).addClass('silent').trigger('submit-data');
                     });
 
                     if (multiform.errors) {
@@ -723,6 +732,11 @@ var XNAT = getObject(XNAT || {});
 
     panel.info = function(opts){};
     panel.info.dialog = {};
+
+    //
+    function panelElementInfo(opts){
+
+    }
 
     // create a single generic panel element
     panel.element = function(opts){
@@ -897,9 +911,8 @@ var XNAT = getObject(XNAT || {});
 
     panel.input.switchbox = function panelInputSwitchbox(opts){
         opts = cloneObject(opts);
-        opts.type = 'checkbox';
-        addClassName(opts, 'switchbox');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        var _switchbox = XNAT.ui.input.switchbox(opts);
+        return XNAT.ui.template.panelInput(opts, _switchbox).spawned;
     };
 
     panel.input.radio = function panelInputRadio(opts){

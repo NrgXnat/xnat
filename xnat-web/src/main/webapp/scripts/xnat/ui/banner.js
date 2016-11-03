@@ -210,7 +210,7 @@ var XNAT = getObject(XNAT || {});
                     bottom: 'auto',
                     width: width||'400px',
                     margin: '0 auto',
-                    zIndex: 999
+                    zIndex: 99999
                 }
             }
         };

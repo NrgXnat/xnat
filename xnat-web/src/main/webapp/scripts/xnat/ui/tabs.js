@@ -26,7 +26,7 @@ var XNAT = getObject(XNAT || {});
 }(function(){
 
     var ui, tab, tabs, page,
-        urlHashValue = getUrlHashValue('#',':');
+        urlHashValue = getUrlHashValue('#tab=','/#');
     
     XNAT.ui = ui =
         getObject(XNAT.ui || {});
@@ -221,6 +221,8 @@ var XNAT = getObject(XNAT || {});
             $tabContent.addClass('side pull-right');
         }
 
+        $navTabs.addClass(layout);
+
         // copy values to XNAT.tabs object for use elsewhere
         tabs.container = container;
         tabs.layout = layout;
@@ -246,7 +248,8 @@ var XNAT = getObject(XNAT || {});
             $container.find('[data-tab="' + clicked + '"]').addClass('active');
             // set the url hash
             //var baseUrl = window.location.href.split('#')[0];
-            window.location.replace('#' + clicked);
+            var newUrl = XNAT.url.updateHashQuery('', 'tab', clicked);
+            window.location.replace(newUrl);
         });
 
         function onRender($element){

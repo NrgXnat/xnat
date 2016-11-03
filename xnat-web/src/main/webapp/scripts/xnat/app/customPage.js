@@ -43,7 +43,7 @@ XNAT.app = getObject(XNAT.app||{});
 
         var pagePaths = [],
             themePaths = [],
-            end = ';';
+            end = '/#';
 
         // use an array for the name param
         // to specify a start AND end for the page string

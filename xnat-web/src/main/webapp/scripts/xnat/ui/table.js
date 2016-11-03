@@ -403,6 +403,7 @@ var XNAT = getObject(XNAT);
 
         // initialize the table
         var newTable = new Table(opts.element);
+        var $table = newTable.$table;
 
         // create a div to hold the table
         // or message (if no data or error)
@@ -421,11 +422,20 @@ var XNAT = getObject(XNAT);
         // }
 
         function createTable(rows){
-            var props = [], objRows = [];
+
+            var props = [], objRows = [],
+                DATAREGEX = /^(~data)/,
+                HIDDENREGEX = /^(~!)/,
+                hiddenItems = [],
+                filterColumns = [];
+
             // convert object list to array list
             if (isPlainObject(rows)) {
                 forOwn(rows, function(name, stuff){
                     objRows.push(stuff);
+                    // var _obj = {};
+                    // _obj[name] = stuff;
+                    // objRows.push(_obj);
                 });
                 rows = objRows; // now it's an array
             }
@@ -439,13 +449,15 @@ var XNAT = getObject(XNAT);
                     props.push(name);
 
                     // don't create <th> for items labeled as '~data'
-                    if (/^~data/.test(val)) {
+                    if (DATAREGEX.test(val)) {
+                        hiddenItems.push(name);
                         return;
                     }
 
-                    newTable.th(val.label || val);
+                    newTable.th(extend({ html: (val.label || val)}, val.th));
 
-                    if (/^~!/.test(val.label || val)) {
+                    if (HIDDENREGEX.test(val.label || val)) {
+                        hiddenItems.push(name);
                         $(newTable.last.th).html(name)
                                 .addClass('hidden')
                                 .dataAttr('prop', name);
@@ -456,6 +468,12 @@ var XNAT = getObject(XNAT);
                         addClassName(newTable.last.th, 'sort');
                         newTable.last.th.appendChild(spawn('i', '&nbsp;'))
                     }
+
+                    // does this column have a filter field?
+                    if (val.filter || (opts.filter && opts.filter.indexOf(name) > -1)){
+                        filterColumns.push(name);
+                    }
+
                 });
             }
             else {
@@ -465,13 +483,70 @@ var XNAT = getObject(XNAT);
                 forOwn(rows[0], function(name, val){
                     if (allItems) {
                         newTable.th(name);
-                        if (/^~!/.test(val)) {
+                        if (HIDDENREGEX.test(val)) {
                             addClassName(newTable.last.th, 'hidden');
                         }
                     }
                     props.push(name);
                 });
             }
+
+            // define columns to filter, if specified
+            if (typeof opts.filter === 'string') {
+                opts.filter.split(',').forEach(function(item){
+                    item = item.trim();
+                    if (filterColumns.indexOf(item) === -1) {
+                        filterColumns.push(item);
+                    }
+                });
+            }
+
+            // if we have filters, create a row for them
+            if (filterColumns.length) {
+
+                newTable.tr({ className: 'filter' });
+
+                props.forEach(function(name){
+
+                    var tdElement = {},
+                        $filterInput = '',
+                        tdContent = [];
+
+                    // don't create a <td> for hidden items
+                    if (hiddenItems.indexOf(name) > -1) {
+                        return;
+                    }
+
+                    if (filterColumns.indexOf(name) > -1){
+                        tdElement.className = 'filter ' + name;
+                        $filterInput = $.spawn('input.filter-data', {
+                            type: 'text',
+                            title: name + ':filter',
+                            placeholder: 'filter'
+                        });
+                        $filterInput.on('keyup', function(e){
+                            var VAL = this.value;
+                            var $trs = $table.find('tr[data-id]');
+                            // console.log(VAL);
+                            if (!VAL || e.keyCode == 27) {  // key 27 = 'esc'
+                                this.value = '';
+                                $trs.show();
+                                return false;
+                            }
+                            // filter the rows
+                            $trs.not(function(){
+                                return $(this).find('td.'+ name + ':containsNC(' + VAL + ')').length
+                            }).hide();
+
+                        });
+                        tdContent.push($filterInput[0]);
+                    }
+
+                    newTable.td(tdElement, tdContent);
+
+                });
+            }
+
             rows.forEach(function(item){
                 newTable.tr();
                 // iterate properties for each row
@@ -480,9 +555,11 @@ var XNAT = getObject(XNAT);
                     var hidden = false;
                     var itemVal = item[name];
                     var cellObj = {};
+                    var cellContent = '';
                     var tdElement = {
                         className: name,
-                        html: itemVal
+                        html: ''
+                        // html: itemVal
                     };
 
                     if (opts.items) {
@@ -490,12 +567,13 @@ var XNAT = getObject(XNAT);
                         if (typeof cellObj === 'string') {
                             // set item label to '~data' to add as a
                             // [data-*] attribute to the <tr>
-                            if (/^~data/.test(cellObj)) {
-                                var dataName = cellObj.split('.')[1] || name;
+                            if (DATAREGEX.test(cellObj)) {
+                                var dataName = cellObj.split(/[.-]/).slice(1).join('-') || name;
                                 newTable.last$('tr').dataAttr(dataName, itemVal);
                                 return;
                             }
-                            hidden = /^~!/.test(cellObj);
+                            cellContent = itemVal;
+                            hidden = HIDDENREGEX.test(cellObj);
                         }
                         else {
                             if (cellObj.td || cellObj.element) {
@@ -520,19 +598,20 @@ var XNAT = getObject(XNAT);
                                 }
                             }
                             // special __VALUE__ string gets replaced
-                            if (cellObj.html || cellObj.content) {
-                                tdElement.html = (cellObj.html || cellObj.content).replace(/__VALUE__/g, itemVal);
+                            cellContent = cellObj.content || cellObj.html;
+                            if (isString(cellContent)) {
+                                cellContent = cellContent.replace(/__VALUE__/g, itemVal);
                             }
                             else {
-                                tdElement.html = itemVal;
+                                cellContent = itemVal;
                             }
-                            hidden = /^~!/.test(cellObj.label);
+                            hidden = HIDDENREGEX.test(cellObj.label);
                         }
                     }
 
                     newTable.td(tdElement);
 
-                    var $td = $(newTable.last.td);
+                    var $td = newTable.last$('td').empty().append(cellContent);
 
                     // evaluate jQuery methods
                     if (cellObj.$) {
@@ -609,7 +688,7 @@ var XNAT = getObject(XNAT);
             });
         }
         else {
-            createTable(tableData.data||tableData);
+            createTable(opts.data||tableData.data||tableData);
             // newTable.init(tableData);
         }
 

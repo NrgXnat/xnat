@@ -489,7 +489,7 @@ var XNAT = getObject(XNAT||{}),
                 if (this.value === '') {
                     this.value = val;
                 }
-                changeValue($this, val);
+                //changeValue($this, val);
             }
             else if (/radio/i.test(this.type)) {
                 this.checked = isEqual(this.value, val);

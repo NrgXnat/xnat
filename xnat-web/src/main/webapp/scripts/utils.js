@@ -157,6 +157,14 @@ function validEmailFormat(email) {
     return re.test(email);
 }
 
+// create new case-insensitive :contains selector
+// usage - jq('.this_selector:containsNC("hello")').click(function() { ... });
+jQuery.extend(jQuery.expr[":"], {
+    "containsNC": function (elem, i, match, array) {
+        return (elem.textContent || elem.innerText || "").toLowerCase().indexOf((match[3] || "").toLowerCase()) >= 0;
+    }
+});
+
 jQuery.loadScript = function (url, arg1, arg2) {
     var cache = false, callback = null;
     //arg1 and arg2 can be interchangable

@@ -190,7 +190,7 @@
             // property names to skip later
             skip = [
                 'innerHTML', 'html', 'attr', 'config',
-                'kind', 'tag', 'tagName',
+                'kind', 'tag', 'tagName', 'on',
                 'prepend', 'append', 'appendTo',
                 'classes', 'className', 'addClass',
                 'style', 'data', 'fn', 'label', 'done'
@@ -413,19 +413,84 @@
             });
         }
 
-        // execute jQuery methods from the `$` property
-        if (opts.$ && window.jQuery){
-            $el = jQuery(el);
-            // use an array to call the same method more than once
-            if (Array.isArray(opts.$)){
-                forEach(opts.$, function(item){
-                    $el[item[0]].apply($el, [].concat(item[1]))
-                });
-            }
-            else {
-                forOwn(opts.$, function(method, args){
+        // function for recursively chaining
+        // nested objects for jQuery methods
+        function chain$($el, obj){
+            forOwn(obj, function(method, args){
+                if (isPlainObject(args)) {
+                    chain$($el, args);
+                }
+                else {
                     $el[method].apply($el, [].concat(args));
-                });
+                }
+            });
+        }
+
+        // put event listeners in 'on' property as a 2-D array or array of objects
+        // var events = [];
+        // events.push([ 'click', function(){ alert('foo') } ]);
+        // events.push({ mouseover: function(){ alert('bar') } }); // objects are preferred for clarity
+        //
+        // to handle a SINGLE event
+        // on: [ 'click', '.child-element', function(){alert('click')} ]
+        // --or--
+        // on: { click: function(){alert('click')} }
+        //
+        // to handle MULTIPLE events
+        // on: {
+        //    click: function(){ alert('foo') },
+        //    mouseover: function(){ console.log('bar') }
+        // };
+        // --or--
+        // on: [
+        //     ['mouseover', function(){ console.log('over') }],
+        //     ['click', '.child-element', function(){ console.log('child-click') }],
+        //     ['click', function(){ console.log('element-click') }]
+        // ];
+
+        // stuff that uses jQuery - event handlers and $ methods
+        if ((opts.on || opts.$) && window.jQuery) {
+            $el = jQuery(el);
+            if (opts.on) {
+                [].concat(opts.on).forEach(function(handler){
+                    // handles ['click', function(){ alert('foo') }]
+                    // and ['click', '.child-element', function(){}]
+                    if (Array.isArray(handler)) {
+                        $el.on.apply($el, handler);
+                    }
+                    // handles {mouseover: function(){ alert('bar') }}
+                    else {
+                        forOwn(handler, function(event, args){
+                            $el.on.apply($el, [].concat(event, args));
+                        });
+                    }
+                })
+            }
+            // execute jQuery methods from the '$' property
+            if (opts.$){
+                // use a 2-D array or array of objects
+                // to call the same method MORE THAN ONCE
+                // $: [['addClass', 'foo'], ['addClass', 'bar']]
+                // $: [{ addClass: 'foo' }, { addClass: 'bar' }]
+                if (Array.isArray(opts.$)){
+                    forEach(opts.$, function(item){
+                        if (Array.isArray(item)) {
+                            $el[item[0]].apply($el, [].concat(item[1]))
+                        }
+                        else {
+                            forOwn(item, function(method, args){
+                                $el[method].apply($el, [].concat(args));
+                            });
+                        }
+                    });
+                }
+                // use an object map to call seperate methods ONCE
+                // $: { addClass: 'foo', fadeIn: 200 }
+                else {
+                    forOwn(opts.$, function(method, args){
+                        $el[method].apply($el, [].concat(args));
+                    });
+                }
             }
         }
 

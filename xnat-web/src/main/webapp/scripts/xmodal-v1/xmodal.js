@@ -874,19 +874,24 @@ if (typeof jQuery == 'undefined') {
             //    modal.height = modal.height-10
             //}
 
-            modal.$modal.css({
+            var _css = {
                 'top': top_,
                 'bottom': (top_ !== 0) ? modal.bottom || 'auto' : 0,
                 'left': left_,
                 'right': (left_ !== 0) ? 'auto' : 0,
                 'width': modal.width,
-                'min-width': modal.minWidth,
-                'max-width': modal.maxWidth,
                 'height': modal.height,
-                'min-height': modal.minHeight,
-                'max-height': modal.maxHeight,
                 'z-index': ++xmodal.topZ
+            };
+
+            // only set min/max if defined
+            ['minWidth', 'maxWidth', 'minHeight', 'maxHeight'].forEach(function(prop){
+                if (modal[prop]) {
+                    _css[prop] = modal[prop]
+                }
             });
+
+            modal.$modal.css(_css);
 
             if ( isTrue(modal.scroll) ) {
                 modal.$modal.find('> .body').addClass('scroll');

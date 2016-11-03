@@ -140,6 +140,7 @@ var XNAT = getObject(XNAT);
     otherTypes.push('checkbox');
 
     input.switchbox = function(config){
+        addClassName(config, 'switchbox');
         return spawn('label.switchbox', [
             input.checkbox(config).get(),
             ['span.switchbox-outer', [['span.switchbox-inner']]],

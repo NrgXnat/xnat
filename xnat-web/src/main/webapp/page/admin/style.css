@@ -1,25 +1,26 @@
-/*
- * web: style.css
+/**
+ * XNAT Admin UI custom styles
  * XNAT http://www.xnat.org
  * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- */
-
-/**
-    XNAT Admin UI custom styles
 */
 
 .xnat-nav-tabs { position: relative; z-index: 1; }
-.xnat-nav-tabs li {
+.xnat-nav-tabs > ul,
+.xnat-nav-tabs ul.tabs {
+    list-style-type: none;
+    padding: 0 30px;
+}
+.xnat-nav-tabs li.tab {
     float: left; margin-right: -1px; margin-bottom: -1px;
     padding: 0;
     border: 1px solid #c8c8c8;
     box-sizing: border-box;
 }
-.xnat-nav-tabs li:hover { background: #f0f0f0; }
-.xnat-nav-tabs li > a {
+.xnat-nav-tabs li.tab:hover { background: #f0f0f0; }
+.xnat-nav-tabs li.tab > a {
     display: block;
     padding: 8px 18px;
     font-size: 15px; color: #444;
@@ -27,27 +28,32 @@
     background: #f0f0f0 top repeat-x url('data:image/gif;base64,R0lGODlhBAAiAKIAAPf39/Hx8fX19fPz8/Dw8PLy8vT09Pb29iH5BAAAAAAALAAAAAAEACIAAAMhCLp6/jDKJ6q9WJjNu/dDKI7kUJxoqqpB675wQMx0bRMJADs=');
     background-image: linear-gradient( #f8f8f8, #f0f0f0 );
 }
-.xnat-nav-tabs li > a:active { /*outline: none !important;*/ }
-.xnat-nav-tabs li > a:hover { background: inherit; }
-.xnat-nav-tabs li.active { background: #2fa4e7; border-color: #c8c8c8; z-index: 2; }
-.xnat-nav-tabs li.active > a { color: #000; background: #fff !important; }
-.xnat-nav-tabs li.active > a:hover { background: inherit; cursor: default; }
+.xnat-nav-tabs li.tab > a:active { /*outline: none !important;*/ }
+.xnat-nav-tabs li.tab > a:hover { background: inherit; }
+.xnat-nav-tabs li.tab.active { background: #2fa4e7; border-color: #c8c8c8; z-index: 2; }
+.xnat-nav-tabs li.tab.active > a { color: #000; background: #fff !important; }
+.xnat-nav-tabs li.tab.active > a:hover { background: inherit; cursor: default; }
 
 /* TOP TABS */
 .xnat-nav-tabs.top {  }
-.xnat-nav-tabs.top li { border-bottom: none; }
-.xnat-nav-tabs.top li > a { border-bottom: 1px solid #c8c8c8; }
-.xnat-nav-tabs.top li.active > a {
-    top: 5px; padding-top: 3px; padding-bottom: 13px;
+.xnat-nav-tabs.top li.tab { border-bottom: none; }
+.xnat-nav-tabs.top li.tab > a { border-bottom: 1px solid #c8c8c8; }
+.xnat-nav-tabs.top li.tab.active > a {
+    top: 5px; padding-top: 3px;
+    /*padding-bottom: 13px;*/
+    border-top: 5px solid #2fa4e7;
     border-bottom-color: #fff;
 }
 
 /* LEFT-SIDE TABS */
 .xnat-nav-tabs.side { width: 25%; right: -1px; padding-top: 12px; }
-.xnat-nav-tabs.side li { width: 100%; border-right: none; }
-.xnat-nav-tabs.side li > a { border-right: 1px solid #c8c8c8; }
-.xnat-nav-tabs.side li.active { /* border-bottom-color: #d0d0d0; */ }
-.xnat-nav-tabs.side li.active > a { padding-left: 12px; padding-right: 24px; border-left: 6px solid #2fa4e7; border-right-color: #fff; }
+.xnat-nav-tabs.side li.tab { width: 100%; border-right: none; }
+.xnat-nav-tabs.side li.tab > a { border-right: 1px solid #c8c8c8; }
+.xnat-nav-tabs.side li.tab.active { /* border-bottom-color: #d0d0d0; */ }
+.xnat-nav-tabs.side li.tab.active > a {
+    padding-left: 12px; padding-right: 24px;
+    border-left: 6px solid #2fa4e7; border-right-color: #fff;
+}
 /*.xnat-tab-content.side.pull-right .panel { padding: 24px; }*/
 /* (if we ever need right-side tabs, new style rules will be needed ) */
 
@@ -60,11 +66,29 @@
 .xnat-nav-tabs.side .tab-group:first-of-type { margin-top: 0; }
 .xnat-nav-tabs.side .tab-group:first-of-type li.label { padding-top: 0; }
 
+/* top tabs CANNOT have groups */
+.xnat-nav-tabs.top .tab-group li.label {
+    display: none;
+}
+
 /* TAB CONTENT AND PANES */
 .xnat-tab-content {
-    padding: 0 30px; margin-bottom: 30px;
-    background: #fff; border-left: 1px solid #c8c8c8;
+    padding: 30px 0;
+    margin-bottom: 30px;
+    clear: left;
+    background: #fff;
+    border-top: 1px solid #c8c8c8;
     box-sizing: border-box;
+}
+.xnat-tab-content.side {
+    width: 75%; min-height: 800px;
+    padding: 0 30px;
+    margin-bottom: 30px;
+    border-top: none;
+}
+.xnat-tab-content.side.pull-right {
+    clear: right;
+    border-left: 1px solid #c8c8c8;
 }
 .xnat-tab-content .tab-pane { display: none; min-height: 500px; height: auto; overflow: auto; background: #fff; }
 .xnat-tab-content .tab-pane > .pad { margin-bottom: 20px; padding: 20px 20px 0 20px; }
@@ -72,7 +96,6 @@
     width: 100%; position: absolute; bottom: 0; padding: 10px 15px; overflow: auto;
     background: #f0f0f0; border-top: 1px solid #c8c8c8; }
 .xnat-tab-content .tab-pane.active { display: block; }
-.xnat-tab-content.side { width: 75%; min-height: 800px; }
 
 /* PANELS */
 body.xnat .panel { margin-bottom: 30px; background: /* #f8f8f8 */ inherit; border-radius: 0; }

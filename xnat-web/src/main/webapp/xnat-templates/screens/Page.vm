@@ -37,12 +37,26 @@
 
 <script>
 
-    XNAT.app.customPage.container = $('#view-page');
-    XNAT.app.customPage.getPage();
+    (function(){
 
-    window.onhashchange = function(){
-        XNAT.app.customPage.getPage();
-    }
+        var sampleUrl = '/page/#/foo/#tab=bar/#panel=baz'
+
+        // save the value for the initial page that's loaded
+        var page = getUrlHashValue('#/', '/#');
+
+        XNAT.app.customPage.container = $('#view-page');
+        XNAT.app.customPage.getPage(['', '/#']);
+
+        $(window).on('hashchange', function(e){
+            e.preventDefault();
+            var newPage = getUrlHashValue('#/', '/#');
+            // only get a new page if the page part has changed
+            if (newPage !== page) {
+                XNAT.app.customPage.getPage([newPage, '/#']);
+            }
+        })
+
+    })();
 
 </script>
 

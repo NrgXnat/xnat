@@ -368,45 +368,79 @@ var XNAT = getObject(XNAT);
     Investigators.fn.dataTable = function(container){
 
         var self = this;
-        
+
+        container = container || $('#investigators-list-container');
+
+        function investigatorFieldValue(val){
+            return val || '<div class="center">&mdash;</div>'
+        }
+
+        function investigatorProjectList(projects){
+            return projects && projects.map ? projects.map(function(proj){
+                return '<a title="Go to project page for ' + proj + '" class="link" href="/data/projects/' + proj + '">' + proj + '</a>'
+            }).join(', ') : '&mdash;';
+        }
+
         var tableConfig = {
-            "investigatorsTable": {
-                kind: "table.dataTable",
-                load: "/xapi/investigators",
-                "items": {
-                    "xnatInvestigatordataId": {
+            investigatorsTable: {
+                kind: 'table.dataTable',
+                id: 'xnat-investigators-list',
+                load: '/xapi/investigators',
+                items: {
+                    xnatInvestigatordataId: {
                         label: '<div class="hidden"></div>',
                         className: "center",
-                        content: '<a href="#!" class="view-investigator" data-id="__VALUE__">View</a>',
-                        call: function(id){}
+                        call: function(ID){
+                            return spawn('a.view-investigator.link', {
+                                href: '#!',
+                                data: { id: ID },
+                                on: { click: function(e){
+                                    e.preventDefault();
+                                    console.log(ID);
+                                    self.dialog(ID)
+                                }}
+                            }, 'View')
+                        }//,
+                        //content: '<a href="#!" class="view-investigator" data-id="__VALUE__">View</a>'
                     },
                     // "title": {
                     //     label: "Title",
                     //     call: function(val){ return val || '-' }
                     // },
-                    "firstname": {
-                        label: "First Name",
-                        call: function(val){ return val || '-' }
+                    fullName: {
+                        label: 'Name',
+                        sort: true,
+                        call: function(){
+                            return this.lastname + ', ' + this.firstname
+                        }
                     },
-                    "lastname": {
-                        label: "Last Name",
-                        call: function(val){ return val || '-' }
+                    // firstname: {
+                    //     label: "First Name",
+                    //     sort: true,
+                    //     call: investigatorFieldValue
+                    // },
+                    // lastname: {
+                    //     label: "Last Name",
+                    //     sort: true,
+                    //     call: investigatorFieldValue
+                    // },
+                    email: {
+                        label: 'Email',
+                        sort: true,
+                        call: investigatorFieldValue
                     },
-                    "email": {
-                        label: "Email",
-                        call: function(val){ return val || '-' }
+                    institution: {
+                        label: 'Institution',
+                        sort: true,
+                        call: investigatorFieldValue
                     },
-                    "institution": {
-                        label: "Institution",
-                        call: function(val){ return val || '-' }
+                    primaryProjects: {
+                        label: 'PI',
+                        call: investigatorProjectList
                     },
-                    "primaryProjects": {
-                        label: "PI",
-                        call: function(val){ return val.join(', ') }
-                    },
-                    "investigatorProjects": {
-                        label: "~!",
-                        call: function(val){ return val.join(', ') }
+                    investigatorProjects: {
+                        label: '~!',
+                        call: investigatorProjectList
                     }
                 }
             }
@@ -419,13 +453,7 @@ var XNAT = getObject(XNAT);
             this.spawnedTable.render(container);
         }
 
-        var $body = $('body');
-
-        $body.on('click', 'a.view-investigator', function(){
-            self.dialog($(this).data('id'));
-        });
-
-        $body.on('click', 'button#new-investigator', function(){
+        $('body').on('click', '#create-new-investigator', function(){
             self.dialog();
         });
 
@@ -439,12 +467,23 @@ var XNAT = getObject(XNAT);
         return new Investigators(opts);
     };
 
+    investigators.dataTable = function(container){
+        var _dataTable = investigators.init().dataTable(container);
+        return {
+            spawned: _dataTable.table,
+            element: _dataTable.table,
+            get: function(){
+                return _dataTable.table
+            }
+        } ;
+    };
+
     investigators.getAll = function(opts){
-        return this.init().getAll(opts).xhr;
+        return investigators.init().getAll(opts).xhr;
     };
 
     investigators.get = function(id){
-        return this.init().get(id).xhr;
+        return investigators.init().get(id).xhr;
     };
 
     // JUST the REST call to create new investigator

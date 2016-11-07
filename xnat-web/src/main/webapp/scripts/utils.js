@@ -432,7 +432,7 @@ jQuery.fn.tableSort = function(){
               $this.find('i').remove();
               $this.append('<i>&nbsp;</i>');
               // don't overwrite existing title
-              this.title += ' (click to sort) ';
+              //this.title += ' (click to sort) ';
               $this.on('click.sort', function(){
                   var $th = $(this),
                       thIndex = $th.index(),
@@ -453,7 +453,7 @@ jQuery.fn.tableSort = function(){
                   $th.addClass(sortClass);
                   sortOrder = (sortClass === 'desc') ? -1 : 1;
                   sorted = !!sortClass;
-                  $table.find('td').filter(function(){
+                  $table.find('tr').not('.filter, .no-sort').find('td').filter(function(){
                       return $(this).index() === thIndex;
                   }).sortElements(function(a, b){
                       a = $.text([a]).toLowerCase(); // make comparison case-insensitive

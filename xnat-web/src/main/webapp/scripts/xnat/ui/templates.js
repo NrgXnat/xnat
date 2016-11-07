@@ -293,7 +293,7 @@ var XNAT = getObject(XNAT);
             // add [data-value] attribute
             $hiddenInput.dataAttr('value', hiddenInput.value);
 
-            element.onclick = function(e){
+            $element.on('click', function(e){
                 var _val = this.value+'';
                 // shift-click a checkbox (or switchbox) to
                 // switch between boolean true/false and 1/0
@@ -306,11 +306,11 @@ var XNAT = getObject(XNAT);
                     }
                 }
                 this.value = _val;
-            };
+            });
 
             // change the value of the hidden input
             // when 'controller' input changes
-            element.onchange = function(){
+            $element.on('change', function(e){
                 var _val = this.value+'';
                 if (/^(1|0)$/g.test(_val)) {
                     _val = this.checked ? '1' : '0';
@@ -320,7 +320,7 @@ var XNAT = getObject(XNAT);
                 }
                 this.value = hiddenInput.value = _val;
                 $hiddenInput.toggleClass('dirty');
-            };
+            });
 
             // copy name to title
             element.title = element.name;

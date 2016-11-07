@@ -404,6 +404,8 @@ var XNAT = getObject(XNAT);
         // initialize the table
         var newTable = new Table(opts.element);
         var $table = newTable.$table;
+        var $dataRows = [];
+
 
         // create a div to hold the table
         // or message (if no data or error)
@@ -506,6 +508,17 @@ var XNAT = getObject(XNAT);
 
                 newTable.tr({ className: 'filter' });
 
+                function filterRows(val, name){
+                    if (!val) { return false }
+                    // save the rows if there are none
+                    if (!$dataRows.length) {
+                        $dataRows = $table.find('tr[data-id]');
+                    }
+                    $dataRows.not(function(){
+                        return $(this).find('td.'+ name + ':containsNC(' + val + ')').length
+                    }).hide();
+                }
+
                 props.forEach(function(name){
 
                     var tdElement = {},
@@ -524,20 +537,27 @@ var XNAT = getObject(XNAT);
                             title: name + ':filter',
                             placeholder: 'filter'
                         });
-                        $filterInput.on('keyup', function(e){
-                            var VAL = this.value;
-                            var $trs = $table.find('tr[data-id]');
-                            // console.log(VAL);
-                            if (!VAL || e.keyCode == 27) {  // key 27 = 'esc'
-                                this.value = '';
-                                $trs.show();
-                                return false;
-                            }
-                            // filter the rows
-                            $trs.not(function(){
-                                return $(this).find('td.'+ name + ':containsNC(' + VAL + ')').length
-                            }).hide();
 
+                        $filterInput.on('focus', function(){
+                            // save reference to the data rows on focus
+                            // (should make filtering slightly faster)
+                            $dataRows = $table.find('tr[data-id]').show();
+                        });
+
+                        $filterInput.on('keyup', function(e){
+                            var val = this.value;
+                            var key = e.which;
+                            if (key == 27){ // key 27 = 'esc'
+                                this.value = val = '';
+                            }
+                            if (!val || key == 8) {
+                                $dataRows.show();
+                            }
+                            if (!val) {
+                                // no value, no filter
+                                return false
+                            }
+                            filterRows(val, name);
                         });
                         tdContent.push($filterInput[0]);
                     }
@@ -553,14 +573,16 @@ var XNAT = getObject(XNAT);
                 props.forEach(function(name){
 
                     var hidden = false;
-                    var itemVal = item[name];
+                    var _name = name.replace(/^_*/,'');
+                    var itemVal = item[_name];
                     var cellObj = {};
                     var cellContent = '';
                     var tdElement = {
-                        className: name,
+                        className: _name,
                         html: ''
                         // html: itemVal
                     };
+                    var _tr = newTable.last.tr;
 
                     if (opts.items) {
                         cellObj = opts.items[name];
@@ -591,10 +613,10 @@ var XNAT = getObject(XNAT);
                             // }
                             if (cellObj['call']) {
                                 if (isFunction(cellObj['call'])) {
-                                    itemVal = cellObj['call'].call(item, itemVal) || itemVal;
+                                    itemVal = cellObj['call'].call(item, itemVal, _tr) || itemVal;
                                 }
                                 else {
-                                    itemVal = eval('('+cellObj['call'].trim()+')').call(item, itemVal) || itemVal;
+                                    itemVal = eval('('+cellObj['call'].trim()+')').call(item, itemVal, _tr) || itemVal;
                                 }
                             }
                             // special __VALUE__ string gets replaced
@@ -631,6 +653,7 @@ var XNAT = getObject(XNAT);
 
                 });
             });
+
         }
 
 
@@ -691,6 +714,10 @@ var XNAT = getObject(XNAT);
             createTable(opts.data||tableData.data||tableData);
             // newTable.init(tableData);
         }
+
+        // save a reference to generated rows for
+        // (hopefully) better performance when filtering
+        $dataRows = $table.find('tr[data-id]');
 
         if (opts.container) {
             $$(opts.container).append(tableContainer);

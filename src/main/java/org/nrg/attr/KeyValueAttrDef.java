@@ -1,5 +1,10 @@
-/**
- * Copyright (c) 2012 Washington University
+/*
+ * ExtAttr: org.nrg.attr.KeyValueAttrDef
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -10,7 +15,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 
 /**
- * @author Kevin A. Archie <karchie@wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public class KeyValueAttrDef<S,V,A> extends AbstractExtAttrDef<S,V,A> {

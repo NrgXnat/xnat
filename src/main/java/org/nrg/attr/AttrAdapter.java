@@ -1,14 +1,18 @@
-/**
- * Copyright (c) 2009 Washington University
+/*
+ * ExtAttr: org.nrg.attr.AttrAdapter
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * @author Kevin A. Archie <karchie@wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public interface AttrAdapter<S,V> {
@@ -42,15 +46,15 @@ public interface AttrAdapter<S,V> {
     /**
      * Get the single value for each external attribute that has been defined
      * for this adapter
+     *
+     * @param failed    Values with throwables if attribute fails.
+     *
      * @return List of external attribute values, in the order they were added
-     * @throws NoUniqueValueException if different datasets have different values for
+     * @throws ExtAttrException if different datasets have different values for
      *   an attribute, or if no value was found for an attribute.
      */
+    // TODO: Not sure what the "failed" part of this is supposed to do.
     List<ExtAttrValue> getValues(Map<ExtAttrDef<S>,Throwable> failed) throws ExtAttrException;
 
     List<ExtAttrValue> getValuesGiven(Map<S,V> given, Map<ExtAttrDef<S>,Throwable> failed) throws ExtAttrException;
-
-    /*
-    List<Set<ExtAttrValue>> getMultipleValuesGiven(Map<S,V> given, Map<ExtAttrDef<S>,Exception> failed) throws ExtAttrException;
-     */
 }

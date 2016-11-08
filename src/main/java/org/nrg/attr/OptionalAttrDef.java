@@ -1,5 +1,10 @@
-/**
- * Copyright (c) 2012 Washington University
+/*
+ * ExtAttr: org.nrg.attr.OptionalAttrDef
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -11,7 +16,7 @@ import java.util.Map;
  * that prevents any Exceptions from being thrown by foldl or apply; if
  * any exceptions are thrown from the underlying method, no exception is
  * thrown, but the eventual apply will return empty.
- * @author Kevin A. Archie <karchie@wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public class OptionalAttrDef<S,V,A> extends AbstractExtAttrDef<S,V,A> {

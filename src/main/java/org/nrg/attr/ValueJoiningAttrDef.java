@@ -1,5 +1,10 @@
-/**
- * Copyright (c) 2012 Washington University
+/*
+ * ExtAttr: org.nrg.attr.ValueJoiningAttrDef
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -14,7 +19,7 @@ import com.google.common.collect.Sets;
 /**
  * Wrapper attribute that joins the text values of the contained attribute,
  * using the provided separator.
- * @author Kevin A. Archie <karchie@wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public class ValueJoiningAttrDef<S,V,A> extends AbstractExtAttrDef<S,V,Set<A>> {

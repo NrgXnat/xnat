@@ -1,15 +1,25 @@
+<!--
+  ~ ExtAttr: pom.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2016, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.nrg</groupId>
-        <artifactId>nrg</artifactId>
-        <version>1.7.0-SNAPSHOT</version>
+        <artifactId>parent</artifactId>
+        <version>1.7.1-SNAPSHOT</version>
+        <relativePath></relativePath>
     </parent>
 
     <artifactId>ExtAttr</artifactId>
-    <version>4.1.0</version>
+    <version>4.2.0-SNAPSHOT</version>
 
     <name>External Attribute library</name>
     <description>
@@ -47,6 +57,22 @@
         <url>http://nrg.wustl.edu</url>
     </organization>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -64,44 +90,62 @@
         </plugins>
     </build>
 
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-    </dependencies>
-
     <repositories>
         <repository>
-            <id>xnat-maven-release</id>
-            <name>XNAT Maven Library Release</name>
-            <url>http://maven.xnat.org/libs-release</url>
-            <releases/>
+            <id>jcenter</id>
+            <name>JCenter</name>
+            <url>http://jcenter.bintray.com</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
         <repository>
-            <id>xnat-maven-snapshot</id>
-            <name>XNAT Maven Library Snapshots</name>
-            <url>http://maven.xnat.org/libs-snapshot</url>
-            <snapshots/>
+            <id>dcm4che</id>
+            <name>dcm4che</name>
+            <url>http://www.dcm4che.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>imagej</id>
+            <name>imagej</name>
+            <url>http://maven.imagej.net/content/groups/public</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>org.nrg.xnat.maven.libraries.release</id>
+            <name>XNAT Maven Release Libraries</name>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>org.nrg.xnat.maven.libraries.snapshot</id>
+            <name>XNAT Maven Snapshot Libraries</name>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
-
-    <distributionManagement>
-        <repository>
-            <id>xnat-maven-release</id>
-            <name>XNAT Maven Library Release</name>
-            <url>http://maven.xnat.org/libs-release</url>
-        </repository>
-        <snapshotRepository>
-            <id>xnat-maven-snapshot</id>
-            <name>XNAT Maven Library Snapshots</name>
-            <url>http://maven.xnat.org/libs-snapshot</url>
-        </snapshotRepository>
-    </distributionManagement>
 
 </project>

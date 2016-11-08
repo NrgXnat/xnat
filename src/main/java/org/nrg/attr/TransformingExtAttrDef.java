@@ -1,5 +1,10 @@
-/**
- * Copyright (c) 2012,2014 Washington University School of Medicine
+/*
+ * ExtAttr: org.nrg.attr.TransformingExtAttrDef
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -11,7 +16,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 /**
- * @author Kevin A. Archie <karchie@wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public class TransformingExtAttrDef<S,V,A> extends AbstractExtAttrDef<S,V,A> {

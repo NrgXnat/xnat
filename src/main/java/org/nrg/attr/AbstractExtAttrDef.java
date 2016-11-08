@@ -1,5 +1,10 @@
-/**
- * Copyright (c) 2012 Washington University
+/*
+ * ExtAttr: org.nrg.attr.AbstractExtAttrDef
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -14,7 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 /**
- * @author Kevin A. Archie <karchie@wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public abstract class AbstractExtAttrDef<S,V,A>
@@ -52,6 +57,7 @@ implements ExtAttrDef<S>,EvaluableAttrDef<S,V,A> {
      * Basic apply implementation for subclasses with A=String
      * @param value content
      * @return ExtAttrValue representing the content
+     * @throws ExtAttrException When an error occurs trying to apply the submitted value.
      */
     protected Iterable<ExtAttrValue> applyString(final String value) throws ExtAttrException {
         if (Strings.isNullOrEmpty(value)) {
@@ -65,7 +71,7 @@ implements ExtAttrDef<S>,EvaluableAttrDef<S,V,A> {
      * Basic apply implementation for subclasses with A=Double
      * @param a content
      * @return ExtAttrValue representing the content
-     * @throws ExtAttrException
+     * @throws ExtAttrException When an error occurs trying to apply the submitted value.
      */
     protected Iterable<ExtAttrValue> applyDouble(final Double a) throws ExtAttrException {
         if (null == a) {
@@ -79,7 +85,7 @@ implements ExtAttrDef<S>,EvaluableAttrDef<S,V,A> {
      * Basic apply implementation for subclasses with A=Integer
      * @param a content
      * @return ExtAttrValue representing the content
-     * @throws ExtAttrException
+     * @throws ExtAttrException When an error occurs trying to apply the submitted value.
      */
     protected Iterable<ExtAttrValue> applyInteger(final Integer a) throws ExtAttrException {
         if (null == a) {

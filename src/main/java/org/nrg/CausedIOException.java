@@ -1,12 +1,17 @@
-/**
- * Copyright (c) 2009 Washington University
+/*
+ * ExtAttr: org.nrg.CausedIOException
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg;
 
 import java.io.IOException;
 
 /**
- * @author Kevin A. Archie <karchie@npg.wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public class CausedIOException extends IOException {

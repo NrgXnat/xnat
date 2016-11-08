@@ -1,33 +1,38 @@
-/**
- * Copyright (c) 2008 Washington University
+/*
+ * ExtAttr: org.nrg.attr.ExtAttrException
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
 /**
  * Represents an error in retrieving or translating an external attribute value
- * @author Kevin A. Archie <karchie@npg.wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public class ExtAttrException extends Exception {
   private final static long serialVersionUID = 1L;
   
   /**
-   * @param message
+   * @param message    The message to set for the exception.
    */
   public ExtAttrException(String message) {
     super(message);
   }
 
   /**
-   * @param cause
+   * @param cause    The root exception for the error.
    */
   public ExtAttrException(Throwable cause) {
     super(cause);
   }
 
   /**
-   * @param message
-   * @param cause
+   * @param message    The message to set for the exception.
+   * @param cause      The root exception for the error.
    */
   public ExtAttrException(String message, Throwable cause) {
     super(message, cause);

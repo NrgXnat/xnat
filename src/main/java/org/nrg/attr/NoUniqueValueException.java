@@ -1,6 +1,10 @@
-/**
- * $Id: NoUniqueValueException.java,v 1.1 2006/12/21 18:27:04 karchie Exp $
- * Copyright (c) 2006 Washington University
+/*
+ * ExtAttr: org.nrg.attr.NoUniqueValueException
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -13,7 +17,7 @@ import java.util.Map;
  * Indicates that an attribute that was expected to have a unique value
  * over some subset of a native file set is either undefined or has
  * multiple values.
- * @author Kevin A. Archie <karchie@npg.wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  * @version $Revision: 1.1 $
  */
 public class NoUniqueValueException extends ExtAttrException {

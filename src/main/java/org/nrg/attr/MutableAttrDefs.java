@@ -1,5 +1,10 @@
-/**
- * Copyright (c) 2006-2012 Washington University
+/*
+ * ExtAttr: org.nrg.attr.MutableAttrDefs
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -16,14 +21,13 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 
-
 /**
  * Describes a group of external attributes and their conversions from native fields
- * @author Kevin A. Archie <karchie@wustl.edu>
  *
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  */
 public class MutableAttrDefs<S> implements AttrDefs<S> {
-    final private Multimap<String,ExtAttrDef<S>> extAttrs = LinkedHashMultimap.create();
+    final private Multimap<String, ExtAttrDef<S>> extAttrs = LinkedHashMultimap.create();
     final private Set<S> nativeAttrs;
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
@@ -32,17 +36,18 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
         this(null);
     }
 
-    public MutableAttrDefs(final AttrDefs<S> base, final ExtAttrDef<S>...adds) {
+    @SafeVarargs
+    public MutableAttrDefs(final AttrDefs<S> base, final ExtAttrDef<S>... adds) {
         this(null, base, adds);
     }
 
     public MutableAttrDefs(final Comparator<S> comparator) {
-        nativeAttrs = new TreeSet<S>(comparator);
+        nativeAttrs = new TreeSet<>(comparator);
     }
 
     @SuppressWarnings("unchecked")
     public MutableAttrDefs(final Comparator<S> comparator,
-            final AttrDefs<S> base, final ExtAttrDef<S>...adds) {
+                           final AttrDefs<S> base, final ExtAttrDef<S>... adds) {
         this(comparator);
         this.add(base);
         this.addAll(Arrays.asList(adds));
@@ -51,9 +56,13 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
     /**
      * Copies all the attributes from another set to this one.
      * There should be no overlapping attribute definitions.
-     * @param other AttrDefSet from which attributes are to be copied.
+     *
+     * @param others AttrDefSet from which attributes are to be copied.
+     *
+     * @return This collection of mutable attribute definitions.
      */
-    public MutableAttrDefs<S> add(AttrDefs<S>...others) {
+    @SafeVarargs
+    public final MutableAttrDefs<S> add(AttrDefs<S>... others) {
         for (final AttrDefs<S> other : others) {
             for (final ExtAttrDef<S> ea : other) {
                 add(ea);
@@ -61,12 +70,8 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
 
             // All of the native attributes from the old set should
             // have been implicitly transferred.
-            boolean assertionsActive = false;
-            assert assertionsActive = true;
-            if (assertionsActive) {
-                for (final S attr : other.getNativeAttrs()) {
-                    assert nativeAttrs.contains(attr);
-                }
+            for (final S attr : other.getNativeAttrs()) {
+                assert nativeAttrs.contains(attr);
             }
         }
         return this;
@@ -74,10 +79,13 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
 
     /**
      * Adds a new external attribute to this set.
+     *
      * @param a external attribute specification
+     *
+     * @return The newly added external attribute.
      */
     public ExtAttrDef<S> add(ExtAttrDef<S> a) {
-       synchronized (this) {
+        synchronized (this) {
             extAttrs.put(a.getName(), a);
             nativeAttrs.addAll(a.getAttrs());
         }
@@ -87,7 +95,10 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
     /**
      * Defines a new placeholder external attribute:
      * no value is assigned from the native information
+     *
      * @param name name of the external attribute
+     *
+     * @return The newly added external attribute.
      */
     public ExtAttrDef<S> add(String name) {
         return add(new ConstantAttrDef<S>(name, null));
@@ -95,17 +106,23 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
 
     /**
      * Defines a new external attribute, using the default (null) converter
+     *
      * @param name name of the external attribute
      * @param attr identifier of the native attribute
+     *
+     * @return The newly added external attribute.
      */
     public ExtAttrDef<S> add(String name, S attr) {
-        return add(new SingleValueTextAttr<S>(name, attr));
+        return add(new SingleValueTextAttr<>(name, attr));
     }
 
     /**
      * Defines a new external attribute with a fixed value
-     * @param name
-     * @param value 
+     *
+     * @param name  The name of the new external attribute.
+     * @param value The value of the new external attribute.
+     *
+     * @return The newly added external attribute.
      */
     public ExtAttrDef<S> add(final String name, final String value) {
         return add(new ConstantAttrDef<S>(name, value));
@@ -113,17 +130,21 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
 
     /**
      * Adds multiple external attributes to this set.
-     * @param Collection of external attribute specifications
+     *
+     * @param extAttrDefs Collection of external attribute specifications
+     *
+     * @return This collection of mutable attribute definitions.
      */
-    public MutableAttrDefs<S> addAll(Collection<? extends ExtAttrDef<S>> as) {
-        for (final ExtAttrDef<S> a : as) {
-            this.add(a);
+    public MutableAttrDefs<S> addAll(Collection<? extends ExtAttrDef<S>> extAttrDefs) {
+        for (final ExtAttrDef<S> a : extAttrDefs) {
+            add(a);
         }
         return this;
     }
 
     /**
      * Gets the tag values for all native attributes used in this set.
+     *
      * @return Set of native tag values
      */
     public Set<S> getNativeAttrs() {
@@ -138,18 +159,19 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
         return Iterators.unmodifiableIterator(extAttrs.values().iterator());
     }
 
-
     /**
      * Removes any external attributes using the indicated native attribute from this set.
+     *
      * @param attr native attribute to be removed
+     *
      * @return The number of external attributes removed
      */
     public int remove(final S attr) {
         int count = 0;
 
         synchronized (this) {
-            for (final Iterator<Map.Entry<String,ExtAttrDef<S>>> i = extAttrs.entries().iterator(); i.hasNext(); ) {
-                final Map.Entry<String,ExtAttrDef<S>> e = i.next();
+            for (final Iterator<Map.Entry<String, ExtAttrDef<S>>> i = extAttrs.entries().iterator(); i.hasNext(); ) {
+                final Map.Entry<String, ExtAttrDef<S>> e = i.next();
                 if (e.getValue().getAttrs().contains(attr)) {
                     i.remove();
                     count++;
@@ -168,7 +190,9 @@ public class MutableAttrDefs<S> implements AttrDefs<S> {
 
     /**
      * Removes the named attribute from this set.
-     * @param attr name of the external attribute
+     *
+     * @param name The name of the external attribute
+     *
      * @return The number of attributes removed (1 if present, 0 otherwise)
      */
     public int remove(String name) {

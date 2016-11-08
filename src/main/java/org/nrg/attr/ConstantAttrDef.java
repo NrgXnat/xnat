@@ -1,5 +1,10 @@
-/**
- * Copyright (c) 2012 Washington University
+/*
+ * ExtAttr: org.nrg.attr.ConstantAttrDef
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -10,7 +15,7 @@ import com.google.common.base.Objects;
 
 /**
  * ExtAttrDef that always produces a fixed value.
- * @author Kevin A. Archie <karchie@wustl.edu>
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public class ConstantAttrDef<S>
@@ -37,39 +42,34 @@ extends AbstractExtAttrDef<S,Object,Object> {
         this(new BasicExtAttrValue(name, value));
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.attr.ExtAttrDef#start()
+    /**
+     * {@inheritDoc}
      */
     public Object start() { return null; }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.attr.ExtAttrDef#fold(java.lang.Object, java.util.Map)
+    /**
+     * {@inheritDoc}
      */
-    public Object foldl(final Object o, final Map<? extends S,? extends Object> m) {
+    public Object foldl(final Object o, final Map<? extends S,?> m) {
         return null;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.attr.ExtAttrDef#eval(java.lang.Object)
+    /**
+     * {@inheritDoc}
      */
-    public Iterable<ExtAttrValue> apply(final Object _) {
+    public Iterable<ExtAttrValue> apply(final Object object) {
         return Collections.singleton(v);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#hashCode()
+    /**
+     * {@inheritDoc}
      */
     public int hashCode() {
         return Objects.hashCode(getName(), v);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
+    /**
+     * {@inheritDoc}
      */
     public boolean equals(final Object o) {
         if (o instanceof ConstantAttrDef) {

@@ -1,5 +1,10 @@
-/**
- * Copyright (c) 2007-2012 Washington University
+/*
+ * ExtAttr: org.nrg.attr.ExtAttrDefTest
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 package org.nrg.attr;
 
@@ -21,24 +26,21 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 /**
- * @author Kevin A. Archie <karchie@wustl.edu>
- *
+ * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  */
 public class ExtAttrDefTest {
-    public final static String A_VALUE = "a-value";
-    public final static String B_VALUE = "b-value";
-    public final static String C_VALUE = "c-value";
-    public final static Map<NativeAttr,String> values = ImmutableMap.of(NativeAttr.A, A_VALUE,
-            NativeAttr.B, B_VALUE, NativeAttr.C, C_VALUE);
-    public final static List<Map<NativeAttr,String>> valslist = ImmutableList.of(values);
+    public final static String                        A_VALUE  = "a-value";
+    public final static String                        B_VALUE  = "b-value";
+    public final static String                        C_VALUE  = "c-value";
+    public final static Map<NativeAttr, String>       values   = ImmutableMap.of(NativeAttr.A, A_VALUE, NativeAttr.B, B_VALUE, NativeAttr.C, C_VALUE);
+    public final static List<Map<NativeAttr, String>> valslist = ImmutableList.of(values);
 
     /**
-     * Test method for {@link org.nrg.attr.ExtAttrDefString.AttributesOnly#convert(java.util.Map)}.
+     * Test method for {@link AttributesOnlyAttrDef#foldl(Object, Map)}.
      */
     @Test
     public final void testAttributesOnlyConvert() throws ExtAttrException {
-        final EvaluableAttrDef<NativeAttr,String,?> ao = new AttributesOnlyAttrDef<NativeAttr,String>("ao",
-                Collections.singletonMap("A", NativeAttr.A), false, Collections.<NativeAttr>emptySet());
+        final EvaluableAttrDef<NativeAttr, String, ?> ao = new AttributesOnlyAttrDef<>("ao", Collections.singletonMap("A", NativeAttr.A), false, Collections.<NativeAttr>emptySet());
         final Iterable<ExtAttrValue> vals = ao.foldl(valslist);
         final ExtAttrValue val = Iterables.getOnlyElement(vals);
         assertEquals(A_VALUE, val.getAttrs().get("A"));
@@ -46,14 +48,14 @@ public class ExtAttrDefTest {
     }
 
     /**
-     * Test method for {@link org.nrg.attr.ExtAttrDefString.TextWithAttributes#convert(java.util.Map)}.
+     * Test method for {@link TextWithAttrsAttrDef#foldl(Object, Map)}.
      */
     @Test
     public final void testTextWithAttributesConvert() throws ExtAttrException {
-        final EvaluableAttrDef<NativeAttr,String,?> twa =
-                new TextWithAttrsAttrDef<NativeAttr,String>("A", NativeAttr.A,
-                        ImmutableMap.of("B", NativeAttr.B, "C", NativeAttr.C), false,
-                        Collections.<NativeAttr>emptySet());
+        final EvaluableAttrDef<NativeAttr, String, ?> twa =
+                new TextWithAttrsAttrDef<>("A", NativeAttr.A,
+                                           ImmutableMap.of("B", NativeAttr.B, "C", NativeAttr.C), false,
+                                           Collections.<NativeAttr>emptySet());
         final Iterable<ExtAttrValue> vals = twa.foldl(valslist);
         final ExtAttrValue val = Iterables.getOnlyElement(vals);
         assertEquals(A_VALUE, val.getText());
@@ -62,40 +64,37 @@ public class ExtAttrDefTest {
         assertNull(val.getAttrs().get("D"));
     }
 
-
-
-
-
     /**
-     * Arguably there should be convertText() tests, but the convert() tests usually cover that code 
-     * Test method for {@link org.nrg.attr.ExtAttrDef#convertText(java.util.Map)}.
-     */
-
-    /**
-     * Test method for {@link org.nrg.attr.ExtAttrDefString#getName()}.
+     * Test method for {@link AbstractExtAttrDef#getName()}.
      */
     @Test
     public final void testGetName() {
         final String name = "myAttr";
-        final ExtAttrDef<NativeAttr> ead = new AbstractExtAttrDef<NativeAttr,String,Object>(name, new HashSet<NativeAttr>()) {
-            public Object start() { throw new UnsupportedOperationException("start"); }
+        final ExtAttrDef<NativeAttr> ead = new AbstractExtAttrDef<NativeAttr, String, Object>(name, new HashSet<NativeAttr>()) {
+            public Object start() {
+                throw new UnsupportedOperationException("start");
+            }
 
-            public Object foldl(Object o, Map<? extends NativeAttr,? extends String> s) { throw new UnsupportedOperationException("foldl(o,s)"); }
+            public Object foldl(Object o, Map<? extends NativeAttr, ? extends String> s) {
+                throw new UnsupportedOperationException("foldl(o,s)");
+            }
 
-            public Iterable<ExtAttrValue> apply(Object _) { throw new UnsupportedOperationException("apply"); }
+            public Iterable<ExtAttrValue> apply(final Object object) {
+                throw new UnsupportedOperationException("apply");
+            }
         };
         assertEquals(name, ead.getName());
     }
 
     /**
-     * Test method for {@link org.nrg.attr.ExtAttrDefString#getAttrs()}.
+     * Test method for {@link TextWithAttrsAttrDef#getAttrs()}.
      */
     @Test
     public final void testGetAttrs() {
         final ExtAttrDef<NativeAttr> twa =
-                new TextWithAttrsAttrDef<NativeAttr,String>("attributes", NativeAttr.A,
-                        ImmutableMap.of("B", NativeAttr.B, "C", NativeAttr.C), false,
-                        Collections.<NativeAttr>emptySet());
+                new TextWithAttrsAttrDef<NativeAttr, String>("attributes", NativeAttr.A,
+                                                             ImmutableMap.of("B", NativeAttr.B, "C", NativeAttr.C), false,
+                                                             Collections.<NativeAttr>emptySet());
         final Collection<NativeAttr> attrs = twa.getAttrs();
         assertEquals(3, attrs.size());
         assertTrue(attrs.contains(NativeAttr.A));

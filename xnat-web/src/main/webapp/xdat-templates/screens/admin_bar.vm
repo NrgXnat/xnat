@@ -1,72 +1,72 @@
 
-    <table id="admin-nav"#* class="dark" *#>
-        <tr>
+##    <table id="admin-nav"#* class="dark" *#>
+##        <tr>
 
         ##        <th style="border-style:none;"><font face="$ui.sansSerifFonts">View</font></th>
 
-            #if($data.getScreenTemplate().equals("XDATScreen_admin.vm"))
-                <td class="active">
-                    <b>Users</b>
-                </td>
-            #else
-                <td>
-                    <a href="$link.setPage("XDATScreen_admin.vm")">Users</a>
-                </td>
-            #end
+##            #if($data.getScreenTemplate().equals("XDATScreen_admin.vm"))
+##                <td class="active">
+##                    <b>Users</b>
+##                </td>
+##            #else
+##                <td>
+##                    <a href="$link.setPage("XDATScreen_admin.vm")">Users</a>
+##                </td>
+##            #end
+##
+##
+##            #if($data.getScreenTemplate().equals("XDATScreen_groups.vm"))
+##                <td class="active">
+##                    <b>Groups</b>
+##                </td>
+##            #else
+##            <td>
+##                <a href="$link.setPage("XDATScreen_groups.vm")">Groups</a>
+##            #end
+##
+##
+##            #if($data.getScreenTemplate().equals("XDATScreen_dataTypes.vm"))
+##                <td class="active">
+##                    <b>Data Types</b>
+##                </td>
+##            #else
+##                <td>
+##                    <a href="$link.setPage("XDATScreen_dataTypes.vm")">Data Types</a>
+##                </td>
+##            #end
+##
+####            <!--
+####				#if($data.getScreenTemplate().equals("XDATScreen_roles.vm"))
+####                    <td class="active">
+####                            <b>Roles</b>
+####                    </td>
+####                #else
+####				    <td>
+####					    <a class=b href="$link.setPage("XDATScreen_roles.vm")" onmouseover="return true;">Roles</a>
+####                    </td>
+####                #end
+####            -->
+##
+##            #if($data.getScreenTemplate().equals("XDATScreen_email.vm"))
+##                <td class="active">
+##                    <b>Email</b>
+##                </td>
+##            #else
+##                <td>
+##                    <a href="$link.setPage("XDATScreen_email.vm")">Email</a>
+##                </td>
+##            #end
 
 
-            #if($data.getScreenTemplate().equals("XDATScreen_groups.vm"))
-                <td class="active">
-                    <b>Groups</b>
-                </td>
-            #else
-            <td>
-                <a href="$link.setPage("XDATScreen_groups.vm")">Groups</a>
-            #end
-
-
-            #if($data.getScreenTemplate().equals("XDATScreen_dataTypes.vm"))
-                <td class="active">
-                    <b>Data Types</b>
-                </td>
-            #else
-                <td>
-                    <a href="$link.setPage("XDATScreen_dataTypes.vm")">Data Types</a>
-                </td>
-            #end
-
-##            <!--
-##				#if($data.getScreenTemplate().equals("XDATScreen_roles.vm"))
-##                    <td class="active">
-##                            <b>Roles</b>
-##                    </td>
-##                #else
-##				    <td>
-##					    <a class=b href="$link.setPage("XDATScreen_roles.vm")" onmouseover="return true;">Roles</a>
-##                    </td>
-##                #end
-##            -->
-
-            #if($data.getScreenTemplate().equals("XDATScreen_email.vm"))
-                <td class="active">
-                    <b>Email</b>
-                </td>
-            #else
-                <td>
-                    <a href="$link.setPage("XDATScreen_email.vm")">Email</a>
-                </td>
-            #end
-
-
-            #if($data.getScreenTemplate().equals("XDATScreen_bundles.vm"))
-                <td class="active">
-                    <b>Bundles</b>
-                </td>
-            #else
-                <td>
-                    <a href="$link.setPage("XDATScreen_bundles.vm")">Bundles</a>
-                </td>
-            #end
+##            #if($data.getScreenTemplate().equals("XDATScreen_bundles.vm"))
+##                <td class="active">
+##                    <b>Bundles</b>
+##                </td>
+##            #else
+##                <td>
+##                    <a href="$link.setPage("XDATScreen_bundles.vm")">Bundles</a>
+##                </td>
+##            #end
 
 
 ##            #if($data.getScreenTemplate().equals("XDATScreen_manage_news.vm"))
@@ -91,47 +91,45 @@
 ##            #end
 
 
-            #if($data.getScreenTemplate().equals("XDATScreen_manage_pipeline.vm"))
-                <td class="active">
-                    <b>Pipelines</b>
-                </td>
-            #else
-                <td>
-                    <a href="$link.setPage("XDATScreen_manage_pipeline.vm")">Pipelines</a>
-                </td>
-            #end
+##            #if($data.getScreenTemplate().equals("XDATScreen_manage_pipeline.vm"))
+##                <td class="active">
+##                    <b>Pipelines</b>
+##                </td>
+##            #else
+##                <td>
+##                    <a href="$link.setPage("XDATScreen_manage_pipeline.vm")">Pipelines</a>
+##                </td>
+##            #end
 
 
-            #if($data.getScreenTemplate().equals("XDATScreen_admin_options.vm"))
-                <td class="active">
-                    <b>More...</b>
-                </td>
-            #else
-                <td>
-                    <a href="$link.setPage("XDATScreen_admin_options.vm")">More...</a>
-                </td>
-            #end
+##            #if($data.getScreenTemplate().equals("XDATScreen_admin_options.vm"))
+##                <td class="active">
+##                    <b>More...</b>
+##                </td>
+##            #else
+##                <td>
+##                    <a href="$link.setPage("XDATScreen_admin_options.vm")">More...</a>
+##                </td>
+##            #end
 
-        </tr>
-
-    </table>
+##        </tr>
+##
+##    </table>
 
     <script type="text/javascript">
 
         var server = "$content.getURI("images")/";
 
-        XNAT.app.adminPopupDialog = function(url){
+        XNAT.app.adminPopupDialog = function(url, opts){
             if (url.indexOf('/popup/true') === -1){
                 url.replace(/\/popup\/false/,''); // get rid of '/popup/false'
                 url = url + '/popup/true';
             }
             url = url.replace(/\/\/popup/,'/popup/'); // watch out for '//popup'
-            xmodal.iframe({
+            xmodal.iframe(extend(true, {
                 src: url,
-                width: '80%',
-                height: '80%',
-                minHeight: 540,
-                minWidth: 840,
+                width: 800,
+                height: 800,
 //                maxWidth: 960,
                 padding: '20px',
                 title: url,
@@ -141,7 +139,7 @@
                     xmodal.loading.open('#wait');
                     window.top.location.reload(true);
                 }
-            });
+            }, opts||{}));
         }
 
     </script>

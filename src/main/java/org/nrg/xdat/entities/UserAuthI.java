@@ -9,14 +9,13 @@
 
 package org.nrg.xdat.entities;
 
-import java.util.Collection;
-import java.util.Date;
+import org.springframework.security.core.GrantedAuthority;
 
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-
-import org.springframework.security.core.GrantedAuthority;
+import java.util.Collection;
+import java.util.Date;
 
 public interface UserAuthI {
 
@@ -53,6 +52,12 @@ public interface UserAuthI {
 
 	@Temporal(TemporalType.TIMESTAMP)
 	void setPasswordUpdated(Date timestamp);
+
+	@Temporal(TemporalType.TIMESTAMP)
+	Date getLockoutTime();
+
+	@Temporal(TemporalType.TIMESTAMP)
+	void setLockoutTime(Date timestamp);
 
 	@Transient
 	Collection<GrantedAuthority> getAuthorities();

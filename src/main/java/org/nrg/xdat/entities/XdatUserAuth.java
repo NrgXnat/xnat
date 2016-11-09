@@ -38,6 +38,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	private Integer _failedLoginAttempts;
 	private Date    _lastLoginAttempt;
 	private Date    _lastSuccessfulLogin;
+	private Date    _lockoutTime;
 	
 	public XdatUserAuth() {
 	}
@@ -60,6 +61,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		_xdatUsername = xdat;
 		_passwordUpdated = new Date();
 		_failedLoginAttempts =failedLoginAttempts;
+		_lockoutTime = null;
 	}
 
     @SuppressWarnings("unused")
@@ -73,6 +75,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		_xdatUsername = xdatUsername;
 		_passwordUpdated = new Date();
 		_failedLoginAttempts =failedLoginAttempts;
+		_lockoutTime = null;
 	}
 	
 	public XdatUserAuth(String user, String method, String methodId, String xdat, boolean enabled,Integer failedLoginAttempts) {
@@ -86,10 +89,11 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		_xdatUsername = xdat;
 		_passwordUpdated = new Date();
 		_failedLoginAttempts =failedLoginAttempts;
+		_lockoutTime = null;
 	}
 
-	@SuppressWarnings("unused")
-	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts, Date lastSuccessfulLogin) {
+
+	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts, Date lastSuccessfulLogin, Date lockoutTime) {
 		_authUser = user;
 		_authMethod = method;
 		_authMethodId = methodId;
@@ -101,6 +105,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		_passwordUpdated = new Date();
 		_failedLoginAttempts=failedLoginAttempts;
 		_lastSuccessfulLogin = lastSuccessfulLogin;
+		_lockoutTime = lockoutTime;
 	}
 
 	public XdatUserAuth(XdatUserAuth other)
@@ -116,6 +121,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		_passwordUpdated = other._passwordUpdated;
 		_failedLoginAttempts = other._failedLoginAttempts;
 		_lastSuccessfulLogin = other._lastSuccessfulLogin;
+		_lockoutTime = other._lockoutTime;
 	}
 
 	/* (non-Javadoc)
@@ -251,6 +257,24 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
     public void setPasswordUpdated(Date timestamp) {
 		_passwordUpdated = timestamp;
     }
+
+	/* (non-Javadoc)
+     * @see org.nrg.xdat.entities.UserAuthI#getLockoutTime()
+     */
+	@Override
+	@Temporal(TemporalType.TIMESTAMP)
+	public Date getLockoutTime() {
+		return _lockoutTime;
+	}
+
+	/* (non-Javadoc)
+     * @see org.nrg.xdat.entities.UserAuthI#setLockoutTime(java.util.Date)
+     */
+	@Override
+	@Temporal(TemporalType.TIMESTAMP)
+	public void setLockoutTime(Date timestamp) {
+		_lockoutTime = timestamp;
+	}
 	
     @Override
     public boolean equals(Object object) {

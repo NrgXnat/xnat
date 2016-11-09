@@ -103,11 +103,13 @@ public class AdminUtils {
 		final String lastName = user.getLastname();
 		final String email = user.getEmail();
 
+		boolean verificationRequired = XDAT.getSiteConfigPreferences().getEmailVerification();
+
 		//If auto approval is false, send a notification to the administrator for each user we just verified.
 		if(!XDAT.getSiteConfigPreferences().getUserRegistration()){
 			// Send admin email
 			AdminUtils.sendNewUserRequestNotification(username, firstName, lastName, email, comments, phone, organization, context);
-		} else if((!XDAT.getSiteConfigPreferences().getEmailVerification()) || user.isVerified()) {
+		} else if((!verificationRequired) || user.isVerified()) {
 			AdminUtils.sendNewUserCreationNotification(username, firstName, lastName, email, comments, phone, organization, context);
 			AdminUtils.sendNewUserEmailMessage(username, email);
 		}

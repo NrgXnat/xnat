@@ -291,18 +291,18 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "365")
-    public int getEmailVerificationExpiration() {
-        return getIntegerValue("emailVerificationExpiration");
-    }
-
-    public void setEmailVerificationExpiration(final int emailVerificationExpiration) {
-        try {
-            setIntegerValue(emailVerificationExpiration, "emailVerificationExpiration");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'emailVerificationExpiration': something is very wrong here.", e);
-        }
-    }
+//    @NrgPreference(defaultValue = "365")
+//    public int getEmailVerificationExpiration() {
+//        return getIntegerValue("emailVerificationExpiration");
+//    }
+//
+//    public void setEmailVerificationExpiration(final int emailVerificationExpiration) {
+//        try {
+//            setIntegerValue(emailVerificationExpiration, "emailVerificationExpiration");
+//        } catch (InvalidPreferenceName e) {
+//            _log.error("Invalid preference name 'emailVerificationExpiration': something is very wrong here.", e);
+//        }
+//    }
 
     @NrgPreference(defaultValue = "false")
     public boolean getUserRegistration() {
@@ -316,7 +316,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             _log.error("Invalid preference name 'userRegistration': something is very wrong here.", e);
         }
     }
-
 
     @NrgPreference(defaultValue = "true")
     public boolean getPar() {

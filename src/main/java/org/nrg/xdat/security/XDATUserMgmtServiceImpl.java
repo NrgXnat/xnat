@@ -226,16 +226,20 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 				}
             }
 
-		    if (Roles.isSiteAdmin(authenticatedUser) || overrideSecurity) {
-		        SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, false, false, event);
-		    } else if (user.getLogin().equals(authenticatedUser.getLogin())) {
-		    	//not-admin user is modifying his own account.
-		    	//we only allow him to modify specific fields.
-		    	XDATUser toSave=(XDATUser)createUser();
-		        toSave.setLogin(authenticatedUser.getLogin());
-		        toSave.setPassword(user.getPassword());
-                toSave.setSalt(user.getSalt());
-		        toSave.setEmail(user.getEmail());
+			if (overrideSecurity){
+				SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, true, false, event);
+			}
+			else if (Roles.isSiteAdmin(authenticatedUser)){
+				SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, false, false, event);
+			}
+			else if (user.getLogin().equals(authenticatedUser.getLogin())) {
+				//not-admin user is modifying his own account.
+				//we only allow him to modify specific fields.
+				XDATUser toSave=(XDATUser)createUser();
+				toSave.setLogin(authenticatedUser.getLogin());
+				toSave.setPassword(user.getPassword());
+				toSave.setSalt(user.getSalt());
+				toSave.setEmail(user.getEmail());
 		        
 		        if(!user.isEnabled()){
 		        	//allowed to disable his own account (but not enable)

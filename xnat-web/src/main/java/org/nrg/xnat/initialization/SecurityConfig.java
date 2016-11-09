@@ -167,8 +167,8 @@ public class SecurityConfig {
 
     @Bean
     @Primary
-    public XnatProviderManager customAuthenticationManager(final AuthenticationProviderAggregator aggregator, final XdatUserAuthService userAuthService, @SuppressWarnings("SpringJavaAutowiringInspection") final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource) {
-        return new XnatProviderManager(aggregator, userAuthService, anonymousAuthenticationProvider, dataSource);
+    public XnatProviderManager customAuthenticationManager(final SiteConfigPreferences preferences, final AuthenticationProviderAggregator aggregator, final XdatUserAuthService userAuthService, @SuppressWarnings("SpringJavaAutowiringInspection") final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource) {
+        return new XnatProviderManager(preferences, aggregator, userAuthService, anonymousAuthenticationProvider, dataSource);
     }
 
     @Bean

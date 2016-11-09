@@ -980,12 +980,6 @@ registrationOptions:
             label: "Email Verification Message"
             code: html
             description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
-        emailVerificationExpiration:
-            kind: panel.input.number
-            name: emailVerificationExpiration
-            label: "Email Verification Expiration"
-            afterElement: "<span class='after'>Days</span>"
-            validation: integer onblur
         autoEnableUserRegistration:
             kind: panel.input.switchbox
             name: userRegistration

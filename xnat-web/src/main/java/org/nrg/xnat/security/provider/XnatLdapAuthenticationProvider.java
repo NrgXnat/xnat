@@ -11,11 +11,13 @@ package org.nrg.xnat.security.provider;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.tokens.XnatLdapUsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -60,7 +62,12 @@ public class XnatLdapAuthenticationProvider extends LdapAuthenticationProvider i
 		    + userDetails.getClass());
 	}
 	final UserI xdatUserDetails = (UserI) userDetails;
-	Users.validateUserLogin(xdatUserDetails);
+	if (!xdatUserDetails.isEnabled()) {
+		throw new DisabledException("Attempted login to disabled account: " + xdatUserDetails.getUsername());
+	}
+	if ((XDAT.getSiteConfigPreferences().getEmailVerification() && !xdatUserDetails.isVerified()) || !xdatUserDetails.isAccountNonLocked()) {
+		throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + xdatUserDetails.getUsername());
+	}
 
 	return auth;
     }

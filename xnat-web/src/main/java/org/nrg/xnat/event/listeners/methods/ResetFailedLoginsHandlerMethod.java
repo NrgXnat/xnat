@@ -56,7 +56,7 @@ public class ResetFailedLoginsHandlerMethod extends AbstractSiteConfigPreference
             temp.cancel(false);
         }
         scheduledResetFailedLogins.clear();
-        scheduledResetFailedLogins.add(_scheduler.schedule(new ResetFailedLogins(_template, _preferences.getMaxFailedLoginsLockoutDuration()), new CronTrigger(_preferences.getResetFailedLoginsSchedule())));
+        scheduledResetFailedLogins.add(_scheduler.schedule(new ResetFailedLogins(_template, _preferences), new CronTrigger(_preferences.getResetFailedLoginsSchedule())));
     }
 
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("maxFailedLoginsLockoutDuration", "resetFailedLoginsSchedule"));

@@ -47,11 +47,13 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class XnatProviderManager extends ProviderManager {
-    public XnatProviderManager(final List<AuthenticationProvider> providers, final XdatUserAuthService userAuthService, final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource) {
+    public XnatProviderManager(final SiteConfigPreferences preferences, final List<AuthenticationProvider> providers, final XdatUserAuthService userAuthService, final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource) {
         super(providers);
         _userAuthService = userAuthService;
         _anonymousAuthenticationProvider = anonymousAuthenticationProvider;
         _dataSource = dataSource;
+        _preferences = preferences;
+        _eventPublisher = new AuthenticationAttemptEventPublisher(this, _preferences);
     }
 
     @Override
@@ -275,8 +277,8 @@ public class XnatProviderManager extends ProviderManager {
         private final FailedAttemptsManager      failedAttemptsManager;
         private final LastSuccessfulLoginManager lastSuccessfulLoginManager;
 
-        private AuthenticationAttemptEventPublisher(final XnatProviderManager manager) {
-            failedAttemptsManager = new FailedAttemptsManager(manager);
+        private AuthenticationAttemptEventPublisher(final XnatProviderManager manager, final SiteConfigPreferences preferences) {
+            failedAttemptsManager = new FailedAttemptsManager(manager, preferences);
             lastSuccessfulLoginManager = new LastSuccessfulLoginManager(manager);
         }
 
@@ -319,9 +321,11 @@ public class XnatProviderManager extends ProviderManager {
 
     private static final class FailedAttemptsManager {
         private final XnatProviderManager _manager;
+        private final SiteConfigPreferences _preferences;
 
-        public FailedAttemptsManager(final XnatProviderManager manager) {
+        public FailedAttemptsManager(final XnatProviderManager manager, final SiteConfigPreferences preferences) {
             _manager = manager;
+            _preferences = preferences;
         }
 
         /**
@@ -334,7 +338,11 @@ public class XnatProviderManager extends ProviderManager {
             if (ua != null && !ua.getXdatUsername().equals("guest")) {
                 if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
                     ua.setFailedLoginAttempts(ua.getFailedLoginAttempts() + 1);
-                    ua.setLastLoginAttempt(new Date());
+                    Date currTime = new Date();
+                    ua.setLastLoginAttempt(currTime);
+                    if(ua.getFailedLoginAttempts()==_preferences.getMaxFailedLogins()) {
+                        ua.setLockoutTime(currTime);
+                    }
                     XDAT.getXdatUserAuthService().update(ua);
                 }
 
@@ -376,9 +384,10 @@ public class XnatProviderManager extends ProviderManager {
 
     protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
 
-    private final AuthenticationEventPublisher _eventPublisher = new AuthenticationAttemptEventPublisher(this);
+    private final AuthenticationEventPublisher _eventPublisher;
 
     private final XdatUserAuthService             _userAuthService;
     private final AnonymousAuthenticationProvider _anonymousAuthenticationProvider;
     private final DataSource                      _dataSource;
+    private final SiteConfigPreferences _preferences;
 }

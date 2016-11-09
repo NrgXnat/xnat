@@ -9,21 +9,22 @@
 
 package org.nrg.xnat.security;
 
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 public class ResetFailedLogins implements Runnable {
 
-    public ResetFailedLogins(final JdbcTemplate template, final String interval) {
+    public ResetFailedLogins(final JdbcTemplate template, final SiteConfigPreferences preferences) {
         _template = template;
-        _interval = interval;
+        _preferences = preferences;
     }
 
     @Override
     public void run() {
         if (_template.queryForObject("SELECT count(*) from xhbm_xdat_user_auth", Integer.TYPE) > 0) {
-            final int updated = _template.update("UPDATE xhbm_xdat_user_auth SET failed_login_attempts = 0 WHERE failed_login_attempts > 0 AND last_login_attempt < NOW() - INTERVAL '" + _interval + "'");
+            final int updated = _template.update("UPDATE xhbm_xdat_user_auth SET failed_login_attempts = 0, lockout_time = NULL WHERE failed_login_attempts >= "+_preferences.getMaxFailedLogins()+" AND lockout_time < NOW() - INTERVAL '" + _preferences.getMaxFailedLoginsLockoutDuration() + "'");
             if (_log.isInfoEnabled()) {
                 _log.info("Reset {} failed login attempts.", updated);
             }
@@ -35,5 +36,5 @@ public class ResetFailedLogins implements Runnable {
     private static final Logger _log = LoggerFactory.getLogger(ResetFailedLogins.class);
 
     private final JdbcTemplate _template;
-    private final String       _interval;
+    private final SiteConfigPreferences _preferences;
 }

@@ -49,9 +49,9 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 	private final UserI user;
 	final Map<String,Object> params;
 	private final ArrayList<String> urlList;
-	
+
 	/**
-	 * 
+	 *
 	 * @param listenerControl     The listener.
 	 * @param u                   The user.
      * @param fw                  The file writer wrapper.
@@ -66,10 +66,10 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 		this.params=params;
 		this.urlList= new ArrayList<>();
 	}
-	
+
 	//@SuppressWarnings("serial")
 	public List<String> call() throws ClientException,ServerException{
-		
+
 		try {
 			final List<String> returnList = processXarFile();
 			this.completed("Successfully imported session from XAR");
@@ -84,11 +84,11 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 			logger.error("",e);
 			throw new ServerException(e.getMessage(),new Exception());
 		}
-		
+
 	}
-		
+
 	private List<String> processXarFile() throws ClientException,ServerException {
-    	
+
         String cachepath = ArcSpecManager.GetInstance().getGlobalCachePath();
         Date d = Calendar.getInstance().getTime();
         java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyyMMdd_HHmmss");
@@ -100,26 +100,26 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 
         final String fileName = fw.getName();
 		ZipI zipper = getZipper(fileName);
-        
+
         try {
         	zipper.extract(fw.getInputStream(),cachepath);
         } catch (Exception e) {
         	throw new ClientException("Archive file is corrupt or not a valid archive file type.");
         }
-        
+
         String[] fileList=destination.list();
         if (fileList==null || fileList.length==0) {
         	throw new ClientException("Archive file contains no files.");
         }
-        
+
         if (destination.listFiles().length==1 && destination.listFiles()[0].isDirectory()){
             destination = destination.listFiles()[0];
         }
-        
-    	// 
+
+    	//
     	// PROCESS EXTRACTED FILE
-    	// 
-        
+    	//
+
         final Hashtable<String,ArrayList<ItemI>> itemsByType = new Hashtable<String,ArrayList<ItemI>>();
 
         final ArrayList<File> dirs = new ArrayList<File>();
@@ -198,7 +198,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
             XnatImagesessiondata session = null;
 
             if (itemsByType.containsKey("SESSION")){
-            	
+
                 if (items.size()==1){
                     session =(XnatImagesessiondata)items.get(0);
                     this.populateSession(session);
@@ -211,26 +211,26 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                     if (session.getSubjectData()==null){
                     	throw new ClientException("Could not process XAR file - Invalid subject.");
                     }
-                    
+
                     try {
                     	dest_path = session.getCurrentSessionFolder(true);
                     } catch (Exception e) {
 						throw new ServerException("Server Error:  Invalid Archive Structure");
 					}
-        
+
                 }else{
                     multiSession=true;
                 }
-                
+
                 for (XFTItem resource: session.getItem().getChildrenOfType("xnat:abstractResource")){
                     XnatAbstractresource res =(XnatAbstractresource) org.nrg.xdat.base.BaseElement.GetGeneratedItem(resource);
                     res.prependPathsWith(FileUtils.AppendSlash(dest_path));
                 }
-                
+
             }else if (itemsByType.containsKey("SCAN")){
-            	
+
                 for(ItemI om : items){
-                	
+
                     XnatImagescandata scan = (XnatImagescandata)om;
 
                     if (session==null){
@@ -252,17 +252,17 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 					else{
                     	throw new ClientException("All XNAT xml documents must reference a valid Imaging Session.");
                     }
-                    
+
                     for (XFTItem resource: scan.getItem().getChildrenOfType("xnat:abstractResource")){
                         XnatAbstractresource res =(XnatAbstractresource) org.nrg.xdat.base.BaseElement.GetGeneratedItem(resource);
                         res.prependPathsWith(FileUtils.AppendSlash(dest_path));
                     }
                 }
-                
+
             }else if (itemsByType.containsKey("RECON")){
-            	
+
                 for(ItemI om : items){
-                	
+
                     XnatReconstructedimagedata scan = (XnatReconstructedimagedata)om;
 
                     if (session==null){
@@ -283,17 +283,17 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 					else{
                     	throw new ClientException("All XNAT xml documents must reference a valid Imaging Session.");
                     }
-                    
+
                     for (XFTItem resource: scan.getItem().getChildrenOfType("xnat:abstractResource")){
                         XnatAbstractresource res =(XnatAbstractresource) org.nrg.xdat.base.BaseElement.GetGeneratedItem(resource);
                         res.prependPathsWith(FileUtils.AppendSlash(dest_path));
                     }
                 }
-                
+
             }else if (itemsByType.containsKey("ASSESSOR")){
-            	
+
                 for(ItemI om : items){
-                	
+
                     XnatImageassessordata scan = (XnatImageassessordata)om;
                     this.populateAssessor(scan);
 
@@ -304,7 +304,8 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                             multiSession=true;
                         }
                     }
-                   	urlList.add("/archive/experiments/" + session.getId());
+                   	//urlList.add("/archive/experiments/" + session.getId());
+					urlList.add("/archive/experiments/" + session.getId() + "/assessors/" + scan.getId());
 
                     if (scan.getProject()==null){
                     	throw new ClientException("Could not process XAR file - Invalid project tag.");
@@ -323,17 +324,17 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                         XnatAbstractresource res =(XnatAbstractresource) org.nrg.xdat.base.BaseElement.GetGeneratedItem(resource);
                         res.prependPathsWith(FileUtils.AppendSlash(dest_path));
                     }
-                    
+
                 }
-                
+
             }
 
             if (multiSession){
-            	
+
                	throw new ClientException("XAR can only include data for one imaging session.");
-               	
+
             }else{
-            	
+
                 //COPY ALL UPLOADED FILES
                 File dest = new File(dest_path);
                 if (!dest.exists())
@@ -374,21 +375,21 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 					throw new ServerException("ERROR:  Server-side exception (" + e.toString() + ")");
 				}
             }
-            
+
         }else{
-        	
+
             //MULTIPLE DOCUMENT TYPEs... so files must be moved separately
           	throw new ClientException("Multiple data types cannot share a single XAR.  Please separate files into separate XARs");
-          	
+
         }
 
         FileUtils.DeleteFile(original);
 		return urlList;
-        
+
 	}
 
 	private ZipI getZipper(String fileName) {
-		
+
 		// Assume file name represents correct compression method
         String file_extension = null;
         if (fileName!=null && fileName.indexOf(".")!=-1) {
@@ -405,9 +406,9 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
         }
         // Assume zip-compression for unnamed inbody files
         return new ZipUtils();
-        
+
 	}
-	
+
     private void populateSession(XnatImagesessiondata session){
 
         if (session.getProject()==null){
@@ -425,7 +426,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
         if (session.getProject()==null){
             session.setProject(subject.getProject());
         }
-        
+
         try {
             if (session.getId()==null || session.getId().equals("")){
                 session.setId(XnatExperimentdata.CreateNewID());
@@ -435,9 +436,9 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
         }
 
     }
-	
+
     private void populateAssessor(XnatImageassessordata temp){
-    	
+
         if (temp.getProject()==null){
             return;
         }

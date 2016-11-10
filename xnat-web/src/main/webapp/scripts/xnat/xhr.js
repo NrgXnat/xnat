@@ -261,10 +261,10 @@ var XNAT = getObject(XNAT||{}),
         if (!opts.yui || opts.jquery){
 
             $ajax = $.ajax(opts);
-            
+
             // save jQuery's fail method
             $ajax.$fail = $ajax.fail;
-            
+
             // remap the arguments for consistency with .done()
             $ajax.fail = function(callback){
                 return $ajax.$fail(function(jqXHR, textStatus, errorThrown) {
@@ -446,7 +446,7 @@ var XNAT = getObject(XNAT||{}),
         }
         return $el;
     }
-    
+
     // set form element values from an object map
     // 'form' can be a form element, selector, or array of inputs
     function setValues(inputs, dataObj){
@@ -538,12 +538,12 @@ var XNAT = getObject(XNAT||{}),
             if (!opts.validate.call(_form, opts)) {
                 $form.removeClass('valid').addClass('invalid');
                 return false;
-            }    
+            }
             else {
                 $form.removeClass('invalid').addClass('valid');
             }
         }
-        
+
         // set opts.callback:false to prevent the
         // 'standard' method callback from running
         if (opts.callback !== false) {
@@ -580,9 +580,11 @@ var XNAT = getObject(XNAT||{}),
             console.log('ERRORS: ' + errors);
             // VALIDATION ERRORS WILL STOP FORM SUBMISSION
             errors = errors.map(function(field){
-                return '<li>' + field + '</li>'
+                return '<li><b>' + field + '</b></li>'
             });
             xmodal.message({
+                width: 400,
+                height: 300,
                 title: 'Validation Failed',
                 content: '' +
                     '<p>Please correct errors with the following fields:</p> ' +

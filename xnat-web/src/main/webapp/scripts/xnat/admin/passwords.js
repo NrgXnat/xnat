@@ -29,18 +29,19 @@ console.log('passwords.js');
                 container$.find('[name="passwordExpirationDate"]')
                     .attr({
                         size: 10,
-                        placeholder: 'MM/DD/YYYY'
+                        placeholder: 'YYYY-MM-DD'
                     })
                     .css({
                         marginTop: '10px',
                         fontFamily: 'Courier, monospace'
                     })
-                    .mask('99/99/9999', { placeholder: 'MM/DD/YYYY' })
+                    .mask('9999-99-99', { placeholder: 'YYYY-MM-DD' })
                     .datetimepicker({
                         timepicker: false,
                         // today is max date, disallow future date selection
                         // maxDate:    '+1970/01/01',
-                        format:     'm/d/Y'
+                        //format:     'm/d/Y'
+                        format: 'Y-m-d' // ISO standard date format
                     });
 
         var openCal$ =
@@ -80,25 +81,23 @@ console.log('passwords.js');
         var durationContainer$ = $('div[data-name="passwordHistoryDuration"]');
         var durationInput$ = durationContainer$.find('[name="passwordHistoryDuration"]');
 
-        $('#passwordReuseRestriction').on('change', function(){
+        $('#password-reuse-restriction').on('change', function(){
             changePasswordReuseType(this.value);
         });
 
         changePasswordReuseType(XNAT.data.siteConfig.passwordReuseRestriction);
 
         function changePasswordReuseType(value){
-            value = (value || 'none').toLowerCase();
-            if (value === 'historical'){
-                durationContainer$.removeClass('disabled');
+            if (/historical/i.test(value)){
                 durationInput$.prop('disabled', false).removeClass('disabled');
+                durationContainer$.slideDown(100).removeClass('disabled');
             }
             else {
-                durationContainer$.addClass('disabled');
                 durationInput$.prop('disabled', true).addClass('disabled');
+                durationContainer$.slideUp(100).addClass('disabled');
             }
         }
 
     })();
-
 
 })();

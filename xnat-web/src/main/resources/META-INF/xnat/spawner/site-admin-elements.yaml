@@ -49,14 +49,15 @@ passwordExpirationDate:
 #    id: passwordExpirationDate
     name: passwordExpirationDate
     label: Password Expiration (Date)
-    validation: date-us onblur
+    validation: allow-empty date-iso onblur
     after:
         datePicker:
             tag: span#datePicker
             content: >
               &nbsp;&nbsp;<span id='openCal-passwordExpirationDate' class='icon icon-sm icon-calendar'></span>
               <br>
-              <p class='description'>Expire passwords that were last changed before this date and require those users to change them.</p>
+              <p class='description'>Expire passwords that were last changed before this date and
+              require those users to change them.</p>
 
 siteDescriptionType:
     kind: panel.element
@@ -64,7 +65,10 @@ siteDescriptionType:
     #name: siteDescriptionType
     label: Site Description
     info: >
-        <p>The site description will show up on the login page and can be utilized to describe the purpose of this site, or notify users of important application status messages (ie. "The system is down for maintenance").</p><p>Administrators can opt to display a simple text message, or specify a velocity template reference containing the content to be displayed.</p>
+        <p>The site description will show up on the login page and can be utilized to describe the purpose of this
+        site, or notify users of important application status messages (ie. "The system is down for maintenance").</p>
+        <p>Administrators can opt to display a simple text message, or specify a velocity template reference containing
+        the content to be displayed.</p>
     contents:
         info:
             tag: p
@@ -139,7 +143,7 @@ processingUrl:
     kind: panel.input.text
     name: processingUrl
     label: Processing Url
-    validation: url onblur
+    validation: allow-empty url onblur
     description: >
         The address to be used for processing. If this is left blank, pipelines will use the site
         URL. If your pipelines need to connect to an internal URL, different from your external
@@ -279,7 +283,7 @@ siteInfo:
     contents:
         ${siteId}
         ${siteUrl}
-        ${processingUrl}
+#        ${processingUrl}
         ${siteDescriptionType}
         ${siteLoginLanding}
 #        ${siteLandingLayout}
@@ -332,20 +336,28 @@ generalSecuritySettings:
             label: Require User Login
             onText: Required
             offText: Not Required
-            description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
+            description: >
+                If required, then only registered users will be able to access your site. If not required, anyone
+                visiting your site will automatically be logged in as 'guest' with access to public data.
         restrictUserListAccessToAdmins:
             kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins
             label: "Restrict user list access <br>to site administrators?"
             onText: Restricted
             offText: Not Restricted
-            description: "Should this site restrict access to the list of system users to site administrators only? If turned on, the site is more secure, but this restricts project owners from being able to administer users in their projects directly."
+            description: >
+                Should this site restrict access to the list of system users to site administrators only?
+                If enabled, the site is more secure, but this restricts project owners from being able to
+                administer users in their projects directly.
         uiAllowNonAdminProjectCreation:
             kind: panel.input.switchbox
             label: "Allow non-administrators <br>to create projects?"
             onText: Allow
             offText: Do Not Allow
-            description: "Should this site allow non-administrator users to create new projects? If turned on, the site is more secure, but this can make it more difficult for regular users to create new projects for their research efforts."
+            description: >
+                Should this site allow non-administrator users to create new projects?
+                If enabled, the site is more secure, but this can make it more difficult for
+                regular users to create new projects for their research efforts.
 
 userLoginsSessionControls:
     kind: panel.form
@@ -507,11 +519,9 @@ passwords:
                     tag: div.input-bundle.date
                     contents:
                         ${passwordExpirationDate}
-                pwExpTypeJs:
-                    tag: script|src=/scripts/xnat/admin/passwords.js
         passwordReuseRestriction:
             kind: panel.select.single
-            id: passwordReuseRestriction
+            id: password-reuse-restriction
             name: passwordReuseRestriction
             label: Password Reuse Restriction
             options:
@@ -519,7 +529,7 @@ passwords:
                 Historical: Historical
         passwordHistoryDuration:
             kind: panel.input.text
-            id: passwordHistoryDuration
+            id: password-history-duration
             name: passwordHistoryDuration
             label: Password History
             validation: allow-empty interval onblur
@@ -528,11 +538,14 @@ passwords:
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         requireSaltedPasswords:
             kind: panel.input.switchbox
-            id: requireSaltedPasswords
+            id: require-salted-passwords
             name: requireSaltedPasswords
             label: Require Passwords To Be Salted
             onText: Required
             offText: Not Required
+        passwordsjs:
+            tag: script|src=/scripts/xnat/admin/passwords.js
+
 
 csrf:
     kind: panel.form
@@ -1199,6 +1212,15 @@ sessionUploadMethod:
                 Details on how to configure an Upload Applet script may be found
                 <a href="https://wiki.xnat.org/display/XKB/Adding+parameters+and+launch+requirements+for+the+upload+applet" target="_blank">here</a>.
 
+pipelineSettings:
+    kind: panel.form
+    label: Pipeline Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${processingUrl}
+
 dicomScpReceivers:
     kind: panel
     name: dicomScpReceivers
@@ -1521,16 +1543,20 @@ adminPage:
                 ${petTracers}
                 ${petMr}
                 ${sessionUploadMethod}
-        dicomScpReceivers:
+        pipelinesTab:
             kind: tab
-            name: dicomScpReceivers
+            label: Pipeline Settings
+            group: advanced
+            contents:
+                ${pipelineSettings}
+        dicomScpReceiversTab:
+            kind: tab
             label: DICOM SCP Receivers
             group: advanced
             contents:
                 ${dicomScpReceivers}
-        fileSystem:
+        fileSystemTab:
             kind: tab
-            name: fileSystem
             label: File System
             group: advanced
             contents:
@@ -1544,14 +1570,12 @@ adminPage:
 #                ${automationSettings}
         manageInvestigators:
             kind: tab
-            name: manageInvestigators
             label: Manage Investigators
             group: other
             contents:
                 ${investigators}
         misc:
             kind: tab
-            name: misc
             label: Miscellaneous
             contents:
                 ${misc}

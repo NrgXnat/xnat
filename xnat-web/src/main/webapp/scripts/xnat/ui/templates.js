@@ -183,6 +183,10 @@ var XNAT = getObject(XNAT);
         if (opts.element.type !== 'password'){
             opts.data.value = opts.data.value || opts.value;
         }
+        else {
+            opts.data.value = '!';
+            opts.element.autocomplete = 'new-password';
+        }
 
         if (opts.validation || opts.validate) {
             opts.data.validate = opts.validation || opts.validate;

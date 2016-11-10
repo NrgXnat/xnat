@@ -111,9 +111,9 @@ var XNAT = getObject(XNAT);
         //uri: /^(([\/](\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/])))$/,
         uri: /^(\/\w*)/i, // simpler URI check only requires string start with a single '/'
         // these date regexes can't check leap years or other incorrect MM/DD combos
-        dateISO: /^((19|20)\d\d([- /.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01]))$/,
-        dateUS: /^((0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d)$/,
-        dateEU: /^((0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.](19|20)\d\d)$/,
+        // dateISO: /^((19|20)\d\d([- /.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01]))$/,
+        //dateUS: /^((0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d)$/,
+        //dateEU: /^((0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.](19|20)\d\d)$/,
         // CRON!!!!!  (Say it like "KHAN!!!!!")
         cronWords: /^@(reboot|yearly|annually|monthly|weekly|daily|midnight|hourly)$/i,
         cronSeconds: /^((\*|\?|0|([1-9]|[1-5][0-9]))(\/\d+)?)$/,
@@ -141,7 +141,7 @@ var XNAT = getObject(XNAT);
     regex.ipAddr = regex.ipAddress = regex.ip;
     regex.fullUrl = regex.url;
     regex.path = regex.uri;
-    regex.date = regex.dateISO;
+    // regex.date = regex.dateISO;
 
     // auto-generate alternate property names from camelCase names
     // creates hyphen-ated and under_score aliases
@@ -175,6 +175,95 @@ var XNAT = getObject(XNAT);
     test.numeric = test.number = function(value){
         console.log('numeric');
         return isNumeric(value);
+    };
+
+    test.dateISO = function(value){
+
+        // allow / - or . for separators
+        var parts = typeof value === 'string' ?
+                value.replace(/\s+/g,'-').split(/[-/.]/) :
+                value.slice();
+
+        // there must be exactly 3 parts
+        // year, month, date
+        if (parts.length !== 3) {
+            return false;
+        }
+
+        var year = parts[0].trim();
+        var mo   = parts[1].trim();
+        var day  = parts[2].trim();
+
+        if (year.length !== 4 || mo.length !== 2 || day.length !== 2){
+            return false;
+        }
+
+        year = +(year.replace(/^0+/, ''));
+        mo   = +(mo.replace(/^0+/, ''));
+        day  = +(day.replace(/^0+/, ''));
+
+        if (year < 1850 || year > 2100) {
+            return false;
+        }
+        if (mo < 1 || mo > 12){
+            return false;
+        }
+        if (day < 1 || day > 31){
+            return false;
+        }
+
+        var isLeapYear = year % 4 === 0;
+        var febMax = isLeapYear ? 29 : 28;
+
+        // test for valid day value for February
+        if (mo === 2 && day > febMax) {
+            return false;
+        }
+
+        // months with 30 days
+        // April, June, September, November
+        var shortMonths = [4, 6, 9, 11];
+
+        if (shortMonths.indexOf(mo) > -1) {
+            if (day > 30) {
+                return false;
+            }
+        }
+
+        // made it to the end - must be valid
+        return true;
+
+    };
+
+    test.dateUS = function(value){
+        var parts = value.replace(/\s+/g,'-').split(/[-/.]/);
+        var mo   = parts[0] || '';
+        var day  = parts[1] || '';
+        var year = parts[2] || '';
+        return test.dateISO([year, mo, day]);
+    };
+
+    test.dateEU = function(value){
+        var parts = value.replace(/\s+/g,'-').split(/[-/.]/);
+        var day  = parts[0] || '';
+        var mo   = parts[1] || '';
+        var year = parts[2] || '';
+        return test.dateISO([year, mo, day]);
+    };
+
+    // plain 'date' validation defaults
+    // to ISO: 2001-12-31 (YYYY-MM-DD)
+    test.date = function(value, format){
+        format = format || 'iso';
+        if (/iso/i.test(format)){
+            return test.dateISO(value);
+        }
+        if (/us/i.test(format)){
+            return test.dateUS(value);
+        }
+        if (/eu/i.test(format)){
+            return test.dateEU(value);
+        }
     };
 
     test.interval = function(value){

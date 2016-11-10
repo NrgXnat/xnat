@@ -341,7 +341,7 @@ var XNAT = getObject(XNAT || {});
         // if there's a 'validation' (or 'validate') property, add 'validate' class
         if (opts.validation || opts.validate) {
             addClassName(_formPanel, 'validate');
-            addDataObjects()
+            // addDataObjects()
         }
 
         // // set form element values from an object map
@@ -888,8 +888,18 @@ var XNAT = getObject(XNAT || {});
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
+    panel.input.username = function panelInputUsername(opts){
+        opts = cloneObject(opts);
+        opts.element = getObject(opts.element||{});
+        opts.element.autocomplete = 'off';
+        addClassName(opts, 'input-text username');
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+
     panel.input.password = function panelInputPassword(opts){
         opts = cloneObject(opts);
+        opts.element = getObject(opts.element);
+        opts.element.autocomplete = 'new-password';
         opts.type = 'password';
         addClassName(opts, 'input-text password');
         return XNAT.ui.template.panelInput(opts).spawned;

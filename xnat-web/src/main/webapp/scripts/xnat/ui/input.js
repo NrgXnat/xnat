@@ -112,7 +112,9 @@ var XNAT = getObject(XNAT);
         }
     });
 
-    numberTypes = ['number', 'int', 'integer', 'float'];
+    numberTypes = [
+        'number', 'int', 'integer', 'float'
+    ];
     numberTypes.forEach(function(type){
         input[type] = function(config){
             return setupType('number', type, config);
@@ -120,14 +122,28 @@ var XNAT = getObject(XNAT);
     });
 
     otherTypes = [
-        'password', 'date', 'file',
-        'button', 'hidden'
+        'date', 'file', 'button', 'hidden'
     ];
     otherTypes.forEach(function(type){
         input[type] = function(config){
             return setupType(type, type, config);
         }
     });
+
+    input.username = function(config){
+        config = extend(true, {}, config, config.element);
+        config.autocomplete = 'off';
+        return setupType('text', 'username', config);
+    };
+    otherTypes.push('username');
+
+    input.password = function(config){
+        config = extend(true, {}, config, config.element);
+        config.data = { value: '!' };
+        config.autocomplete = 'new-password';
+        return setupType('password', 'password', config);
+    };
+    otherTypes.push('password');
 
     // checkboxes are special
     input.checkbox = function(config){

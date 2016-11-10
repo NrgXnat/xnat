@@ -11,6 +11,10 @@ package org.nrg.xnat.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -24,9 +28,10 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -40,22 +45,12 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.regex.Pattern;
 
 @Component
 public class XnatAppInfo {
 
     public static final String NON_RELEASE_VERSION_REGEX  = "(?i:^.*(SNAPSHOT|BETA|RC).*$)";
     public static final String XNAT_PRIMARY_MODE_PROPERTY = "xnat.is_primary_node";
-
-    private static final int           MILLISECONDS_IN_A_DAY    = (24 * 60 * 60 * 1000);
-    private static final int           MILLISECONDS_IN_AN_HOUR  = (60 * 60 * 1000);
-    private static final int           MILLISECONDS_IN_A_MINUTE = (60 * 1000);
-    private static final DecimalFormat SECONDS_FORMAT           = new DecimalFormat("##.000");
-    private static final String        DAYS                     = "days";
-    private static final String        HOURS                    = "hours";
-    private static final String        MINUTES                  = "minutes";
-    private static final String        SECONDS                  = "seconds";
 
     @Inject
     public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
@@ -66,24 +61,16 @@ public class XnatAppInfo {
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         try (final InputStream inputStream = configuredUrls.getInputStream()) {
-            final HashMap<String, ArrayList<String>> urlMap = serializerService.deserializeYaml(inputStream, SerializerService.TYPE_REF_MAP_STRING_LIST_STRING);
-            populate(_openUrls, urlMap.get("openUrls"));
-            populate(_adminUrls, urlMap.get("adminUrls"));
-        }
-
-        final Resource initializationUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/initialization-urls.yaml");
-        try (final InputStream inputStream = initializationUrls.getInputStream()) {
             final JsonNode paths = serializerService.deserializeYaml(inputStream);
+
             _configPath = paths.get("configPath").asText();
-            _configPathPattern = getPathPattern(_configPath);
-            _configPathMatcher = new AntPathRequestMatcher(_configPath);
-
+            _configPathPatterns = Arrays.asList(asAntPattern(_configPath), asAntPattern(_configPath + "/"));
             _nonAdminErrorPath = paths.get("nonAdminErrorPath").asText();
-            _nonAdminErrorPathPattern = getPathPattern(_nonAdminErrorPath);
-            _nonAdminErrorPathMatcher = new AntPathRequestMatcher(_nonAdminErrorPath);
+            _nonAdminErrorPathPattern = asAntPattern(_nonAdminErrorPath);
 
-            populate(_initPaths, nodeToList(paths.get("initPaths")));
-            populate(_exemptedPaths, nodeToList(paths.get("exemptedPaths")));
+            _initUrls.addAll(asAntPatterns(nodeToList(paths.get("initUrls"))));
+            _openUrls.addAll(asAntPatterns(nodeToList(paths.get("openUrls"))));
+            _adminUrls.addAll(asAntPatterns(nodeToList(paths.get("adminUrls"))));
         }
 
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
@@ -162,17 +149,6 @@ public class XnatAppInfo {
                 }
             }
         }
-    }
-
-    private String translateIntToBoolean(String oldProperty){
-        String translation = oldProperty;
-        if(oldProperty.equals("0")){
-            translation="false";
-        }
-        else if(oldProperty.equals("1")){
-            translation="true";
-        }
-        return translation;
     }
 
     public Map<String, String> getFoundPreferences() {
@@ -293,7 +269,7 @@ public class XnatAppInfo {
      * environment.
      *
      * @param property     The name of the property to retrieve.
-     * @param type     The type of the property to retrieve.
+     * @param type         The type of the property to retrieve.
      * @param defaultValue The default value to return if the property isn't set in the environment.
      *
      * @return The value of the property if found, the specified default value otherwise.
@@ -444,8 +420,8 @@ public class XnatAppInfo {
      *
      * @return A set of the system's open URLs.
      */
-    public HashMap<String, AntPathRequestMatcher> getOpenUrls() {
-        return new HashMap<>(_openUrls);
+    public List<String> getOpenUrls() {
+        return ImmutableList.copyOf(_openUrls);
     }
 
     /**
@@ -453,45 +429,63 @@ public class XnatAppInfo {
      *
      * @return A set of administrator-only URLs.
      */
-    public HashMap<String, AntPathRequestMatcher> getAdminUrls() {
-        return new HashMap<>(_adminUrls);
-    }
-
-    public boolean isOpenUrlRequest(final HttpServletRequest request) {
-        return checkUrls(request, _openUrls.values());
+    public List<String> getAdminUrls() {
+        return ImmutableList.copyOf(_adminUrls);
     }
 
     public boolean isInitPathRequest(final HttpServletRequest request) {
-        return checkUrls(request, _initPaths.values());
+        return checkUrls(request, _initUrls);
     }
 
-    public boolean isExemptedPathRequest(final HttpServletRequest request) {
-        return checkUrls(request, _exemptedPaths.values());
+    public boolean isOpenUrlRequest(final HttpServletRequest request) {
+        return checkUrls(request, _openUrls);
     }
 
-    public boolean isExemptedPathRequest(final String path) {
-        for (final String exemptedPath : _exemptedPaths.keySet()) {
-            if (path.split("\\?")[0].endsWith(exemptedPath)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isOpenUrlRequest(final String path) {
+        return checkUrls(path, _openUrls);
     }
 
     public boolean isConfigPathRequest(final HttpServletRequest request) {
-        return _configPathMatcher.matches(request);
+        return isConfigPathRequest(request.getRequestURI());
     }
 
     public boolean isConfigPathRequest(final String path) {
-        return _configPathPattern.matcher(path).matches();
+        return checkUrls(path, _configPathPatterns);
     }
 
     public boolean isNonAdminErrorPathRequest(final HttpServletRequest request) {
-        return _nonAdminErrorPathMatcher.matches(request);
+        return isNonAdminErrorPathRequest(request.getRequestURI());
     }
 
     public boolean isNonAdminErrorPathRequest(final String path) {
-        return _nonAdminErrorPathPattern.matcher(path).matches();
+        return PATH_MATCHER.match(_nonAdminErrorPathPattern, path);
+    }
+
+    private String translateIntToBoolean(String oldProperty) {
+        String translation = oldProperty;
+        if (oldProperty.equals("0")) {
+            translation = "false";
+        } else if (oldProperty.equals("1")) {
+            translation = "true";
+        }
+        return translation;
+    }
+
+    private Collection<? extends String> asAntPatterns(final List<String> urls) {
+        return Lists.transform(urls, new Function<String, String>() {
+            @Nullable
+            @Override
+            public String apply(@Nullable final String url) {
+                if (StringUtils.isBlank(url)) {
+                    return null;
+                }
+                return asAntPattern(url);
+            }
+        });
+    }
+
+    private String asAntPattern(final String url) {
+        return url.endsWith("/") ? url + "**" : url + "*";
     }
 
     private List<String> nodeToList(final JsonNode node) {
@@ -509,23 +503,17 @@ public class XnatAppInfo {
         return list;
     }
 
-    private void populate(final Map<String, AntPathRequestMatcher> matchers, final List<String> urls) {
-        for (final String url : urls) {
-            matchers.put(url, new AntPathRequestMatcher(url));
-        }
+    private boolean checkUrls(final HttpServletRequest request, final Collection<String> urls) {
+        return checkUrls(request.getRequestURI(), urls);
     }
 
-    private boolean checkUrls(final HttpServletRequest request, final Collection<AntPathRequestMatcher> matchers) {
-        for (final AntPathRequestMatcher matcher : matchers) {
-            if (matcher.matches(request)) {
+    private boolean checkUrls(final String path, final Collection<String> urls) {
+        for (final String url : urls) {
+            if (PATH_MATCHER.match(url, path)) {
                 return true;
             }
         }
         return false;
-    }
-
-    private Pattern getPathPattern(final String path) {
-        return Pattern.compile("^(https*://.*)?" + path + "/*");
     }
 
     private static final Logger _log = LoggerFactory.getLogger(XnatAppInfo.class);
@@ -533,26 +521,31 @@ public class XnatAppInfo {
     private static final List<String>     PRIMARY_MANIFEST_ATTRIBUTES = Arrays.asList("Build-Number", "Build-Date", "Implementation-Version", "Implementation-Sha");
     private static final ResourceLoader   RESOURCE_LOADER             = new DefaultResourceLoader();
     private static final SimpleDateFormat FORMATTER                   = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss a");
+    private static final AntPathMatcher   PATH_MATCHER                = new AntPathMatcher();
+    private static final int              MILLISECONDS_IN_A_DAY       = (24 * 60 * 60 * 1000);
+    private static final int              MILLISECONDS_IN_AN_HOUR     = (60 * 60 * 1000);
+    private static final int              MILLISECONDS_IN_A_MINUTE    = (60 * 1000);
+    private static final DecimalFormat    SECONDS_FORMAT              = new DecimalFormat("##.000");
+    private static final String           DAYS                        = "days";
+    private static final String           HOURS                       = "hours";
+    private static final String           MINUTES                     = "minutes";
+    private static final String           SECONDS                     = "seconds";
 
-    private final JdbcTemplate _template;
-    private final Environment  _environment;
-
+    private final JdbcTemplate          _template;
+    private final Environment           _environment;
     private final String                _configPath;
-    private final Pattern               _configPathPattern;
-    private final AntPathRequestMatcher _configPathMatcher;
+    private final List<String>          _configPathPatterns;
     private final String                _nonAdminErrorPath;
-    private final Pattern               _nonAdminErrorPathPattern;
-    private final AntPathRequestMatcher _nonAdminErrorPathMatcher;
+    private final String                _nonAdminErrorPathPattern;
     private final SiteConfigPreferences _preferences;
     private final boolean               _primaryNode;
 
-    private final Map<String, AntPathRequestMatcher> _openUrls         = new HashMap<>();
-    private final Map<String, AntPathRequestMatcher> _adminUrls        = new HashMap<>();
-    private final Map<String, AntPathRequestMatcher> _initPaths        = new HashMap<>();
-    private final Map<String, AntPathRequestMatcher> _exemptedPaths    = new HashMap<>();
-    private final Map<String, String>                _foundPreferences = new HashMap<>();
-    private final Date                               _startTime        = new Date();
-    private final Properties                         _properties       = new Properties();
-    private final Map<String, Map<String, String>>   _attributes       = new HashMap<>();
-    private       boolean                            _initialized      = false;
+    private final List<String>                     _initUrls         = new ArrayList<>();
+    private final List<String>                     _openUrls         = new ArrayList<>();
+    private final List<String>                     _adminUrls        = new ArrayList<>();
+    private final Map<String, String>              _foundPreferences = new HashMap<>();
+    private final Date                             _startTime        = new Date();
+    private final Properties                       _properties       = new Properties();
+    private final Map<String, Map<String, String>> _attributes       = new HashMap<>();
+    private       boolean                          _initialized      = false;
 }

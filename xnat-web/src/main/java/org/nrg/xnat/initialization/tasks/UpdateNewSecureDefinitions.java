@@ -11,6 +11,7 @@ package org.nrg.xnat.initialization.tasks;
 
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
+import org.nrg.xft.schema.XFTManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class UpdateNewSecureDefinitions extends AbstractInitializingTask {
     @Override
     protected void callImpl() throws InitializingTaskException {
         try {
+            // Try to get te XFTManager instance here. If XFT isn't yet initialized, this will throw an XFTException
+            // that will get caught below and used to defer processing for this task.
+            XFTManager.GetInstance();
             if (ElementSecurity.GetElementSecurities() != null) {
                 _log.debug("Found element securities, running update new secure definitions.");
                 _featureRepositoryService.updateNewSecureDefinitions();

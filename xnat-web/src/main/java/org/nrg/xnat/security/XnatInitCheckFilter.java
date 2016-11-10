@@ -9,6 +9,9 @@
 
 package org.nrg.xnat.security;
 
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.security.UserI;
@@ -26,6 +29,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class XnatInitCheckFilter extends GenericFilterBean {
     @Autowired
@@ -36,7 +41,7 @@ public class XnatInitCheckFilter extends GenericFilterBean {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-        final HttpServletRequest  request  = (HttpServletRequest) req;
+        final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
 
         if (_appInfo.isInitialized()) {
@@ -44,10 +49,8 @@ public class XnatInitCheckFilter extends GenericFilterBean {
             chain.doFilter(req, res);
         } else {
             // We're going to use the user for logging.
-            final UserI   user        = XDAT.getUserDetails();
+            final UserI user = XDAT.getUserDetails();
             final boolean isAnonymous = user == null || user.isGuest();
-
-            final String uri  = request.getRequestURI();
 
             if (isAnonymous) {
                 String header = request.getHeader("Authorization");
@@ -59,20 +62,14 @@ public class XnatInitCheckFilter extends GenericFilterBean {
                 }
             }
 
-            final String referer = request.getHeader("Referer");
-
-            if (_appInfo.isInitPathRequest(request) ||
-                _appInfo.isConfigPathRequest(request) ||
-                _appInfo.isNonAdminErrorPathRequest(request) ||
-                _appInfo.isExemptedPathRequest(request)) {
-                //If you're already on the configuration page, error page, or expired password page, continue on without redirect.
-                chain.doFilter(req, res);
-            } else if (referer != null && (_appInfo.isConfigPathRequest(referer) || _appInfo.isNonAdminErrorPathRequest(referer) || _appInfo.isExemptedPathRequest(referer)) && !uri.contains("/app/template") && !uri.contains("/app/screen") && !uri.endsWith(".vm") && !uri.equals("/")) {
-                //If you're on a request within the configuration page (or error page or expired password page), continue on without redirect. This checks that the referer is the configuration page and that
-                // the request is not for another page (preventing the user from navigating away from the Configuration page via the menu bar).
-                chain.doFilter(req, res);
-            } else {
-                if (isAnonymous) {
+            try {
+                if (_appInfo.isInitPathRequest(request) ||
+                    _appInfo.isConfigPathRequest(request) ||
+                    _appInfo.isNonAdminErrorPathRequest(request) ||
+                    isPermittedReferer(request)) {
+                    //If you're already on the configuration page, error page, or expired password page, continue on without redirect.
+                    chain.doFilter(req, res);
+                } else if (isAnonymous) {
                     // user not authenticated, let another filter handle the redirect
                     // (NB: I tried putting this check up with the basic auth check,
                     // but you get this weird redirect with 2 login pages on the same screen.  Seems to work here).
@@ -93,7 +90,43 @@ public class XnatInitCheckFilter extends GenericFilterBean {
                         response.sendRedirect(serverPath + _appInfo.getNonAdminErrorPath());
                     }
                 }
+            } catch (NrgServiceRuntimeException e) {
+                if (e.getServiceError().equals(NrgServiceError.SecurityViolation)) {
+                    final String referer = request.getHeader("Referer");
+                    _log.error("A possible security violation has occurred. An attempt to access {} specifying {} as the referer was made by user {}.", request.getRequestURL().toString(), referer, user == null ? "Unknown" : user.getLogin());
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                }
             }
+        }
+    }
+
+    private boolean isPermittedReferer(final HttpServletRequest request) {
+        final String referer = request.getHeader("Referer");
+        if (StringUtils.isBlank(referer)) {
+            return false;
+        }
+
+        final String uri = request.getRequestURI();
+        if (uri.contains("/app/template") || uri.contains("/app/screen") || uri.endsWith(".vm") || uri.equals("/")) {
+            return false;
+        }
+
+        try {
+            // This checks that the referer is the configuration page and that the request is not for another page
+            // (preventing the user from navigating away from the Configuration page via the menu bar).
+            final URI refererUri = new URI(referer);
+            final URI requestUri = new URI(request.getRequestURL().toString());
+            if (!(StringUtils.equals(refererUri.getScheme(), requestUri.getScheme()) && StringUtils.equals(refererUri.getHost(), requestUri.getHost()) && (refererUri.getPort() == requestUri.getPort()))) {
+                throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation);
+            }
+
+            // If you're on a request within the configuration page (or error page or expired password page), continue
+            // on without redirect.
+            final String path = refererUri.getPath();
+            return _appInfo.isConfigPathRequest(path) || _appInfo.isNonAdminErrorPathRequest(path) || _appInfo.isOpenUrlRequest(path);
+        } catch (URISyntaxException e) {
+            _log.warn("Unable to construct a URI from the referer specified: {}", referer);
+            return false;
         }
     }
 

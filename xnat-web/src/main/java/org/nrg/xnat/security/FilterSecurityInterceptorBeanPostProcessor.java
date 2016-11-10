@@ -59,18 +59,18 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
     public ExpressionBasedFilterInvocationSecurityMetadataSource getMetadataSource(boolean requiredLogin) {
         final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
 
-        for (final AntPathRequestMatcher matcher : _appInfo.getOpenUrls().values()) {
+        for (final String url : _appInfo.getOpenUrls()) {
             if (_log.isDebugEnabled()) {
-                _log.debug("Setting permitAll on the open URL: " + matcher.getPattern());
+                _log.debug("Setting permitAll on the open URL: " + url);
             }
-            map.put(matcher, SecurityConfig.createList(PERMIT_ALL));
+            map.put(new AntPathRequestMatcher(url), SecurityConfig.createList(PERMIT_ALL));
         }
 
-        for (final AntPathRequestMatcher matcher : _appInfo.getAdminUrls().values()) {
+        for (final String adminUrl: _appInfo.getAdminUrls()) {
             if (_log.isDebugEnabled()) {
-                _log.debug("Setting permissions on the admin URL: " + matcher.getPattern());
+                _log.debug("Setting permissions on the admin URL: " + adminUrl);
             }
-            map.put(matcher, SecurityConfig.createList(ADMIN_EXPRESSION));
+            map.put(new AntPathRequestMatcher(adminUrl), SecurityConfig.createList(ADMIN_EXPRESSION));
         }
 
         final String secure = requiredLogin ? DEFAULT_EXPRESSION : PERMIT_ALL;

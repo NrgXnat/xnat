@@ -75,7 +75,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getSiteConfigProperties(final HttpServletRequest request) {
         if (!_appInfo.isOpenUrlRequest(request)) {
-            final HttpStatus status = isPermitted(request, _appInfo.getOpenUrls().values());
+            final HttpStatus status = isPermitted();
             if (status != null) {
                 return new ResponseEntity<>(status);
             }

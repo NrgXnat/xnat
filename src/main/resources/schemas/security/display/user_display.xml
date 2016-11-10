@@ -67,10 +67,6 @@
 		<DisplayFieldElement name="Field1" viewName="LAST_LOGIN" viewColumn="LOGIN_DATE"/>
 		<Content type="sql">CAST (@Field1 AS VARCHAR)</Content>
 	</DisplayField>
-	<DisplayField id="SESSION_ID" header="Session Id" visible="true" sort-order="ASC">
-		<DisplayFieldElement name="Field1" viewName="SESSION_ID" viewColumn="SESSION_ID"/>
-		<Content type="sql">CAST (@Field1 AS VARCHAR)</Content>
-	</DisplayField>
 	<DisplayField id="ENABLED" header="Enabled" visible="true" sort-order="DESC" image="true">
 		<DisplayFieldElement name="Field1" schema-element="xdat:user.enabled"/>
 		<Content type="sql">CASE @Field1 WHEN 1 THEN '/@WEBAPP/images/cg.gif' WHEN 0 THEN '/@WEBAPP/images/cr.gif' END</Content>

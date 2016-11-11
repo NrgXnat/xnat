@@ -532,7 +532,7 @@ passwords:
             id: password-history-duration
             name: passwordHistoryDuration
             label: Password History
-            validation: allow-empty interval onblur
+            validation: interval onblur
             description: >
               Interval for which users cannot reuse an old password of theirs. Uses
               <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.

@@ -89,11 +89,11 @@ console.log('passwords.js');
 
         function changePasswordReuseType(value){
             if (/historical/i.test(value)){
-                durationInput$.prop('disabled', false).removeClass('disabled');
+                durationInput$.prop('disabled', false).removeClass('disabled ignore');
                 durationContainer$.slideDown(100).removeClass('disabled');
             }
             else {
-                durationInput$.prop('disabled', true).addClass('disabled');
+                durationInput$.prop('disabled', true).addClass('disabled ignore');
                 durationContainer$.slideUp(100).addClass('disabled');
             }
         }

@@ -11,13 +11,19 @@ $page.setVlinkColor($ui.vlink)
 <div class="error">$data.message</div><br>
 #end
 #parse("/screens/LoadProjectsJS.vm")
+<style type="text/css">
+    #userform table table th,
+    #userform table table td {
+        padding: 1px 5px;
+    }
+</style>
 <form id="userform" name="form1" method="post" action="$link.setAction("ModifyUserGroups")">
     <table width=100% align="left" border="0">
         <tr>
             <td align="left">
                 #addCustomScreens($om.getXSIType() "report/preDetails")
                 <div id="subject_summary_module" style="display:none">
-                    <div id="subjectSummary" class="yui-navset" style="min-width:480px;max-width:650px;">
+                    <div id="subjectSummary" class="yui-navset" style="min-width:480px;">
                         <ul class="yui-nav" style="">
                             <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
                         ##<!-- inject additional tabs-->
@@ -27,12 +33,12 @@ $page.setVlinkColor($ui.vlink)
                             #end
                         </ul>
 
-                        <div class="yui-content">
+                        <div class="yui-content" style="clear:both;overflow:auto;">
 
                         ##<!-- details tab -->
-                            <div id="tab1"><p>
+                            <div id="tab1">
                                 #parse($turbineUtils.getTemplateName("details","xdat:user",$!project))
-                            </p></div>
+                            </div>
 
                         ##<!-- inject additional tabs -->
                             #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
@@ -42,221 +48,412 @@ $page.setVlinkColor($ui.vlink)
                                 </div>
                             #end
 
-                        </div>
+                            <script type="text/javascript">
 
+                                function goToUsersPage(){
+                                    xmodal.loading.open('#wait');
+                                    window.top.location.href = serverRoot + '/app/template/XDATScreen_admin.vm';
+                                }
+
+                                function clearFailedLogins(){
+                                    var callback = {
+                                        cache: false, // Turn off caching for IE
+                                        success: function(response){
+                                            document.getElementById("reset_user").style.display = 'none';
+                                            closeModalPanel("resetting");
+                                        },
+                                        failure: function(response){
+                                            closeModalPanel("resetting");
+                                            xmodal.message('User Validation', 'Failed to reset user $userObject.getUsername(): ' + response);
+                                        }
+                                    };
+
+                                    openModalPanel("resetting", "Resetting failed user login attempts for user $userObject.getUsername()...");
+                                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$userObject.getUsername()/reset?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
+                                }
+
+                                function clearEmailRequests(){
+                                    var callback = {
+                                        cache: false, // Turn off caching for IE
+                                        success: function(response){
+                                            document.getElementById("reset_user").style.display = 'none';
+                                            closeModalPanel("resetting");
+                                        },
+                                        failure: function(response){
+                                            closeModalPanel("resetting");
+                                            xmodal.message('User Validation', 'Failed to reset user $userObject.getUsername(): ' + response);
+                                        }
+                                    };
+
+                                    openModalPanel("resetting", "Resetting email requests for user $userObject.getUsername()...");
+                                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$userObject.getUsername()/resetEmailRequests?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
+                                }
+
+                                function summaryIndexChanged(){
+                                    var activeIndex = this.get("activeIndex");
+                                    YAHOO.util.Cookie.set("${project.getId()}.summary.index", activeIndex);
+                                }
+
+                                function summaryTabManagerInit(){
+                                    window.summaryTabView = new YAHOO.widget.TabView('subjectSummary');
+                                    window.subject_summary_module = new YAHOO.widget.Module("subject_summary_module", {
+                                        visible: false,
+                                        zIndex: 5
+                                    });
+
+                                    #addCustomScreenJS($om.getXSIType() "report/tabs_js")
+
+                                    window.subject_summary_module.show();
+
+                                    var tabIndex = YAHOO.util.Cookie.get("${om.getId()}.summary.index");
+                                    window.summaryTabView.set('activeIndex', tabIndex || 0);
+
+                                    window.summaryTabView.subscribe("activeTabChange", summaryIndexChanged);
+                                }
+                                summaryTabManagerInit();
+                            </script>
+
+                            #if($dataPopup)
+                            #else
+                                #set ($dataPopup = "false")
+                            #end
+                            #set ($elementSecurity = $element.getElementSecurity())
+                            #if ($elementSecurity)
+                                #set ($actions = $elementSecurity.getElementActions())
+                                #if ($actions.size() > 0)
+
+                                ## moving the "Actions" to inside the Details tab
+
+
+
+
+
+
+                                    <div id="actionsMenu" class="yuimenu" style="float:right;margin:5px;">
+                                        <div class="bd">
+                                            <ul class="first-of-type">
+                                                <li class="yuimenuitem first-of-type">
+                                                    <a class="yuimenuitemlabel">Actions</a>
+                                                </li>
+                                            </ul>
+                                            <ul>
+                                                #if ($item.getBooleanProperty("enabled") && $hasFailedLoginAttempts)
+                                                    <li class="yuimenuitem" id="reset_user">
+                                                        <a class="yuimenuitemlabel" href="#" onclick="clearFailedLogins()">Clear Failed Logins</a>
+                                                    </li>
+                                                #end
+                                                #if ($item.getBooleanProperty("enabled") && $emailRequestsBlocked)
+                                                    <li class="yuimenuitem" id="reset_user">
+                                                        <a class="yuimenuitemlabel" href="#" onclick="clearEmailRequests()">Clear Email Requests</a>
+                                                    </li>
+                                                #end
+                                                #foreach ($actionObject in $actions)
+                                                    #if ($actionObject.getName().equalsIgnoreCase("activate"))
+                                                        #if ($user.checkRole("Bossman"))
+                                                            #if($item.needsActivation())
+                                                                <li class="yuimenuitem">
+                                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                                                        "XDATActionRouter").addPathInfo(
+                                                                        "xdataction",$actionObject.getName()).addPathInfo(
+                                                                        "search_element",
+                                                                        "$element.getFullXMLName()").addPathInfo(
+                                                                        "search_field","$search_field").addPathInfo(
+                                                                        "search_value","$search_value").addPathInfo(
+                                                                        "popup",$dataPopup)">
+                                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                        $actionObject.getDisplayName()
+                                                                    </a>
+                                                                </li>
+                                                            #end
+                                                        #end
+                                                    #elseif ($actionObject.getName().equalsIgnoreCase("edit"))
+                                                        #if ($item.canEdit($user))
+##                                                            <li class="yuimenuitem">
+##                                                                <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+##                                                                    "XDATActionRouter").addPathInfo(
+##                                                                    "xdataction",$actionObject.getName()).addPathInfo(
+##                                                                    "search_element",
+##                                                                    "$element.getFullXMLName()").addPathInfo(
+##                                                                    "search_field","$search_field").addPathInfo(
+##                                                                    "search_value","$search_value").addPathInfo(
+##                                                                    "popup",$dataPopup)">
+##                                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+##                                                                    $actionObject.getDisplayName()
+##                                                                </a>
+##                                                            </li>
+                                                            <li class="yuimenuitem">
+                                                                <a class="yuimenuitemlabel edit-user-account" href="#!" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()">
+                                                                    $actionObject.getDisplayName()
+                                                                </a>
+                                                            </li>
+                                                            <script>
+                                                                $('a.edit-user-account').on('click', function(e){
+                                                                    e.preventDefault();
+                                                                    // fake the scope since we just need the
+                                                                    // username as an 'innerText' property
+                                                                    var scope = { innerText: '$search_value' }
+                                                                    window.top.XNAT.admin.usersGroups.editUser.call(scope, e, function(){
+                                                                        // reload this iframe
+                                                                        window.location.reload(true);
+                                                                    });
+                                                                });
+                                                            </script>
+                                                        #end
+                                                    #elseif ($actionObject.getName().equalsIgnoreCase("enable"))
+##                                                        #if ($item.canEdit($user))
+##                                                            #if ($item.getBooleanProperty("enabled"))
+##                                                                <li class="yuimenuitem">
+##                                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+##                                                                        "XDATActionRouter").addPathInfo(
+##                                                                        "xdataction",$actionObject.getName()).addPathInfo(
+##                                                                        "search_element",
+##                                                                        "$element.getFullXMLName()").addPathInfo(
+##                                                                        "search_field","$search_field").addPathInfo(
+##                                                                        "search_value","$search_value").addPathInfo(
+##                                                                        "popup",$dataPopup)">
+##                                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+##                                                                        Disable Login
+##                                                                    </a>
+##                                                                </li>
+##                                                            #else
+##                                                                <li class="yuimenuitem">
+##                                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+##                                                                        "XDATActionRouter").addPathInfo(
+##                                                                        "xdataction",$actionObject.getName()).addPathInfo(
+##                                                                        "search_element",
+##                                                                        "$element.getFullXMLName()").addPathInfo(
+##                                                                        "search_field","$search_field").addPathInfo(
+##                                                                        "search_value","$search_value").addPathInfo(
+##                                                                        "popup",$dataPopup)">
+##                                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+##                                                                        Enable Login
+##                                                                    </a>
+##                                                                </li>
+##                                                            #end
+##                                                        #end
+                                                    #elseif ($actionObject.getName().equalsIgnoreCase("print_activate"))
+                                                        #if($item.needsActivation())
+                                                            <li class="yuimenuitem">
+                                                                <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                                                    "XDATActionRouter").addPathInfo(
+                                                                    "xdataction",$actionObject.getName()).addPathInfo(
+                                                                    "search_element",
+                                                                    "$element.getFullXMLName()").addPathInfo(
+                                                                    "search_field","$search_field").addPathInfo(
+                                                                    "search_value","$search_value").addPathInfo(
+                                                                    "popup",$dataPopup)">
+                                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                    $actionObject.getDisplayName()
+                                                                </a>
+                                                            </li>
+                                                        #end
+                                                    #elseif ($actionObject.getName().equalsIgnoreCase("email_activate"))
+                                                        #if($item.needsActivation())
+                                                            <li class="yuimenuitem">
+                                                                <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                                                    "XDATActionRouter").addPathInfo(
+                                                                    "xdataction",$actionObject.getName()).addPathInfo(
+                                                                    "search_element",
+                                                                    "$element.getFullXMLName()").addPathInfo(
+                                                                    "search_field","$search_field").addPathInfo(
+                                                                    "search_value","$search_value").addPathInfo(
+                                                                    "popup",$dataPopup)">
+                                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                    $actionObject.getDisplayName()
+                                                                </a>
+                                                            </li>
+                                                        #end
+                                                    #else
+                                                        <li class="yuimenuitem">
+                                                            <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                                                "XDATActionRouter").addPathInfo(
+                                                                "xdataction",$actionObject.getName()).addPathInfo(
+                                                                "search_element",
+                                                                "$element.getFullXMLName()").addPathInfo(
+                                                                "search_field","$search_field").addPathInfo(
+                                                                "search_value","$search_value").addPathInfo(
+                                                                "popup",$dataPopup)">
+                                                            ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                $actionObject.getDisplayName()
+                                                            </a>
+                                                        </li>
+                                                    #end
+                                                #end
+
+                                            </ul>
+                                        </div>
+                                    </div>
+
+
+
+
+
+
+
+                                ##                                    <table border="0" align="left" style="margin-left:50px;">
+                                ##                                        <tr>
+                                ##                                            <th align="left">Actions</th>
+                                ##                                        </tr>
+                                ##                                        #if ($item.getBooleanProperty("enabled") && $hasFailedLoginAttempts)
+                                ##                                            <tr>
+                                ##                                                <td>
+                                ##                                                    <div class="reset_user" id="clear-failed-logins">
+                                ##                                                        <a class="link" href="#!" onclick="clearFailedLogins()">Clear Failed Logins</a>
+                                ##                                                    </div>
+                                ##                                                </td>
+                                ##                                            </tr>
+                                ##                                        #end
+                                ##                                        #if ($item.getBooleanProperty("enabled") && $emailRequestsBlocked)
+                                ##                                            <tr>
+                                ##                                                <td>
+                                ##                                                    <div class="reset_user" id="clear-email-requests">
+                                ##                                                        <a class="link" href="#!" onclick="clearEmailRequests()">Clear Email Requests</a>
+                                ##                                                    </div>
+                                ##                                                </td>
+                                ##                                            </tr>
+                                ##                                        #end
+                                ##
+                                ##                                        #foreach ($actionObject in $actions)
+                                ##                                            #if ($actionObject.getName().equalsIgnoreCase("activate"))
+                                ##                                                #if ($user.checkRole("Bossman"))
+                                ##                                                    #if($item.needsActivation())
+                                ##                                                        <tr>
+                                ##                                                            <td>
+                                ##                                                                <a class="link" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                ##                                                                    "XDATActionRouter").addPathInfo(
+                                ##                                                                    "xdataction",$actionObject.getName()).addPathInfo(
+                                ##                                                                    "search_element",
+                                ##                                                                    "$element.getFullXMLName()").addPathInfo(
+                                ##                                                                    "search_field","$search_field").addPathInfo(
+                                ##                                                                    "search_value","$search_value").addPathInfo(
+                                ##                                                                    "popup",$dataPopup)">
+                                ##                                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                ##                                                        $actionObject.getDisplayName()
+                                ##                                                                </a>
+                                ##                                                            </td>
+                                ##                                                        </tr>
+                                ##                                                    #end
+                                ##                                                #end
+                                ##                                            #elseif ($actionObject.getName().equalsIgnoreCase("edit"))
+                                ##                                                #if ($item.canEdit($user))
+                                ##                                                    <tr>
+                                ##                                                        <td>
+                                ##                                                            <a class="link" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                ##                                                                "XDATActionRouter").addPathInfo(
+                                ##                                                                "xdataction",$actionObject.getName()).addPathInfo(
+                                ##                                                                "search_element",
+                                ##                                                                "$element.getFullXMLName()").addPathInfo(
+                                ##                                                                "search_field","$search_field").addPathInfo(
+                                ##                                                                "search_value","$search_value").addPathInfo(
+                                ##                                                                "popup",$dataPopup)">
+                                ##                                                            ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                ##                                                    $actionObject.getDisplayName()
+                                ##                                                            </a>
+                                ##                                                        </td>
+                                ##                                                    </tr>
+                                ##                                                #end
+                                ##                                            #elseif ($actionObject.getName().equalsIgnoreCase("enable"))
+                                ##                                                #if ($item.canEdit($user))
+                                ##                                                    #if ($item.getBooleanProperty("enabled"))
+                                ##                                                        <tr>
+                                ##                                                            <td>
+                                ##                                                                <a class="link" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                ##                                                                    "XDATActionRouter").addPathInfo(
+                                ##                                                                    "xdataction",$actionObject.getName()).addPathInfo(
+                                ##                                                                    "search_element",
+                                ##                                                                    "$element.getFullXMLName()").addPathInfo(
+                                ##                                                                    "search_field","$search_field").addPathInfo(
+                                ##                                                                    "search_value","$search_value").addPathInfo(
+                                ##                                                                    "popup",$dataPopup)">
+                                ##                                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                ##                                                                    Disable Login
+                                ##                                                                </a>
+                                ##                                                            </td>
+                                ##                                                        </tr>
+                                ##                                                    #else
+                                ##                                                        <tr>
+                                ##                                                            <td>
+                                ##                                                                <a class="link" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                ##                                                                    "XDATActionRouter").addPathInfo(
+                                ##                                                                    "xdataction",$actionObject.getName()).addPathInfo(
+                                ##                                                                    "search_element",
+                                ##                                                                    "$element.getFullXMLName()").addPathInfo(
+                                ##                                                                    "search_field","$search_field").addPathInfo(
+                                ##                                                                    "search_value","$search_value").addPathInfo(
+                                ##                                                                    "popup",$dataPopup)">
+                                ##                                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                ##                                                                    Enable Login
+                                ##                                                                </a>
+                                ##                                                            </td>
+                                ##                                                        </tr>
+                                ##                                                    #end
+                                ##                                                #end
+                                ##                                            #elseif ($actionObject.getName().equalsIgnoreCase("print_activate"))
+                                ##                                                #if($item.needsActivation())
+                                ##                                                    <tr>
+                                ##                                                        <td>
+                                ##                                                            <a class="link" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                ##                                                                "XDATActionRouter").addPathInfo(
+                                ##                                                                "xdataction",$actionObject.getName()).addPathInfo(
+                                ##                                                                "search_element",
+                                ##                                                                "$element.getFullXMLName()").addPathInfo(
+                                ##                                                                "search_field","$search_field").addPathInfo(
+                                ##                                                                "search_value","$search_value").addPathInfo(
+                                ##                                                                "popup",$dataPopup)">
+                                ##                                                            ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                ##                                                    $actionObject.getDisplayName()
+                                ##                                                            </a>
+                                ##                                                        </td>
+                                ##                                                    </tr>
+                                ##                                                #end
+                                ##                                            #elseif ($actionObject.getName().equalsIgnoreCase("email_activate"))
+                                ##                                                #if($item.needsActivation())
+                                ##                                                    <tr>
+                                ##                                                        <td>
+                                ##                                                            <a class="link" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                ##                                                                "XDATActionRouter").addPathInfo(
+                                ##                                                                "xdataction",$actionObject.getName()).addPathInfo(
+                                ##                                                                "search_element",
+                                ##                                                                "$element.getFullXMLName()").addPathInfo(
+                                ##                                                                "search_field","$search_field").addPathInfo(
+                                ##                                                                "search_value","$search_value").addPathInfo(
+                                ##                                                                "popup",$dataPopup)">
+                                ##                                                            ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                ##                                                    $actionObject.getDisplayName()
+                                ##                                                            </a>
+                                ##                                                        </td>
+                                ##                                                    </tr>
+                                ##                                                #end
+                                ##                                            #else
+                                ##                                                <tr>
+                                ##                                                    <td>
+                                ##                                                        <a class="link" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+                                ##                                                            "XDATActionRouter").addPathInfo(
+                                ##                                                            "xdataction",$actionObject.getName()).addPathInfo(
+                                ##                                                            "search_element","$element.getFullXMLName()").addPathInfo(
+                                ##                                                            "search_field","$search_field").addPathInfo(
+                                ##                                                            "search_value","$search_value").addPathInfo(
+                                ##                                                            "popup",$dataPopup)">
+                                ##                                                        ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                ##                                                $actionObject.getDisplayName()
+                                ##                                                        </a>
+                                ##                                                    </td>
+                                ##                                                </tr>
+                                ##                                            #end
+                                ##                                        #end
+                                ##
+                                ##                                    </table>
+
+                                    <div class="clear"></div>
+
+                                #end
+                            #end
+
+                        </div>
 
                     </div>
                 </div>
-                <script type="text/javascript">
 
-                    function goToUsersPage(){
-                        xmodal.loading.open('#wait');
-                        window.top.location.href = serverRoot + '/app/template/XDATScreen_admin.vm';
-                    }
-
-                    function clearFailedLogins(){
-                        var callback = {
-                            cache: false, // Turn off caching for IE
-                            success: function(response){
-                                document.getElementById("reset_user").style.display = 'none';
-                                closeModalPanel("resetting");
-                            },
-                            failure: function(response){
-                                closeModalPanel("resetting");
-                                xmodal.message('User Validation', 'Failed to reset user $userObject.getUsername(): ' + response);
-                            }
-                        };
-
-                        openModalPanel("resetting", "Resetting failed user login attempts for user $userObject.getUsername()...");
-                        YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$userObject.getUsername()/reset?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
-                    }
-
-                    function clearEmailRequests(){
-                        var callback = {
-                            cache: false, // Turn off caching for IE
-                            success: function(response){
-                                document.getElementById("reset_user").style.display = 'none';
-                                closeModalPanel("resetting");
-                            },
-                            failure: function(response){
-                                closeModalPanel("resetting");
-                                xmodal.message('User Validation', 'Failed to reset user $userObject.getUsername(): ' + response);
-                            }
-                        };
-
-                        openModalPanel("resetting", "Resetting email requests for user $userObject.getUsername()...");
-                        YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$userObject.getUsername()/resetEmailRequests?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
-                    }
-
-                    function summaryIndexChanged(){
-                        var activeIndex = this.get("activeIndex");
-                        YAHOO.util.Cookie.set("${project.getId()}.summary.index", activeIndex);
-                    }
-
-                    function summaryTabManagerInit(){
-                        window.summaryTabView = new YAHOO.widget.TabView('subjectSummary');
-                        window.subject_summary_module = new YAHOO.widget.Module("subject_summary_module", {
-                            visible: false,
-                            zIndex: 5
-                        });
-
-                        #addCustomScreenJS($om.getXSIType() "report/tabs_js")
-
-                        window.subject_summary_module.show();
-
-                        var tabIndex = YAHOO.util.Cookie.get("${om.getId()}.summary.index");
-                        window.summaryTabView.set('activeIndex', tabIndex || 0);
-
-                        window.summaryTabView.subscribe("activeTabChange", summaryIndexChanged);
-                    }
-                    summaryTabManagerInit();
-                </script>
-            </td>
-            <td valign="top">
-                #if($dataPopup)
-                #else
-                    #set ($dataPopup = "false")
-                #end
-                #set ($elementSecurity = $element.getElementSecurity())
-                #if ($elementSecurity)
-                    #set ($actions = $elementSecurity.getElementActions())
-                    #if ($actions.size() > 0)
-                        <div id="actionsMenu" class="yuimenu">
-                            <div class="bd">
-                                <ul class="first-of-type">
-                                    <li class="yuimenuitem first-of-type">
-                                        <a class="yuimenuitemlabel">Actions</a>
-                                    </li>
-                                </ul>
-                                <ul>
-                                    #if ($item.getBooleanProperty("enabled") && $hasFailedLoginAttempts)
-                                        <li class="yuimenuitem" id="reset_user">
-                                            <a class="yuimenuitemlabel" href="#" onclick="clearFailedLogins()">Clear Failed Logins</a>
-                                        </li>
-                                    #end
-                                    #if ($item.getBooleanProperty("enabled") && $emailRequestsBlocked)
-                                        <li class="yuimenuitem" id="reset_user">
-                                            <a class="yuimenuitemlabel" href="#" onclick="clearEmailRequests()">Clear Email Requests</a>
-                                        </li>
-                                    #end
-                                    #foreach ($actionObject in $actions)
-                                        #if ($actionObject.getName().equalsIgnoreCase("activate"))
-                                            #if ($user.checkRole("Bossman"))
-                                                #if($item.needsActivation())
-                                                    <li class="yuimenuitem">
-                                                        <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
-                                                            "XDATActionRouter").addPathInfo(
-                                                            "xdataction",$actionObject.getName()).addPathInfo(
-                                                            "search_element","$element.getFullXMLName()").addPathInfo(
-                                                            "search_field","$search_field").addPathInfo(
-                                                            "search_value","$search_value").addPathInfo(
-                                                            "popup",$dataPopup)">
-                                                        ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
-                                                        $actionObject.getDisplayName()
-                                                        </a>
-                                                    </li>
-                                                #end
-                                            #end
-                                        #elseif ($actionObject.getName().equalsIgnoreCase("edit"))
-                                            #if ($item.canEdit($user))
-                                                <li class="yuimenuitem">
-                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
-                                                        "XDATActionRouter").addPathInfo(
-                                                        "xdataction",$actionObject.getName()).addPathInfo(
-                                                        "search_element","$element.getFullXMLName()").addPathInfo(
-                                                        "search_field","$search_field").addPathInfo(
-                                                        "search_value","$search_value").addPathInfo(
-                                                        "popup",$dataPopup)">
-                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
-                                                    $actionObject.getDisplayName()
-                                                    </a>
-                                                </li>
-                                            #end
-                                        #elseif ($actionObject.getName().equalsIgnoreCase("enable"))
-                                            #if ($item.canEdit($user))
-                                                #if ($item.getBooleanProperty("enabled"))
-                                                    <li class="yuimenuitem">
-                                                        <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
-                                                            "XDATActionRouter").addPathInfo(
-                                                            "xdataction",$actionObject.getName()).addPathInfo(
-                                                            "search_element","$element.getFullXMLName()").addPathInfo(
-                                                            "search_field","$search_field").addPathInfo(
-                                                            "search_value","$search_value").addPathInfo(
-                                                            "popup",$dataPopup)">
-                                                        ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
-                                                            Disable Login
-                                                        </a>
-                                                    </li>
-                                                #else
-                                                    <li class="yuimenuitem">
-                                                        <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
-                                                            "XDATActionRouter").addPathInfo(
-                                                            "xdataction",$actionObject.getName()).addPathInfo(
-                                                            "search_element","$element.getFullXMLName()").addPathInfo(
-                                                            "search_field","$search_field").addPathInfo(
-                                                            "search_value","$search_value").addPathInfo(
-                                                            "popup",$dataPopup)">
-                                                        ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
-                                                            Enable Login
-                                                        </a>
-                                                    </li>
-                                                #end
-                                            #end
-                                        #elseif ($actionObject.getName().equalsIgnoreCase("print_activate"))
-                                            #if($item.needsActivation())
-                                                <li class="yuimenuitem">
-                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
-                                                        "XDATActionRouter").addPathInfo(
-                                                        "xdataction",$actionObject.getName()).addPathInfo(
-                                                        "search_element","$element.getFullXMLName()").addPathInfo(
-                                                        "search_field","$search_field").addPathInfo(
-                                                        "search_value","$search_value").addPathInfo(
-                                                        "popup",$dataPopup)">
-                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
-                                                    $actionObject.getDisplayName()
-                                                    </a>
-                                                </li>
-                                            #end
-                                        #elseif ($actionObject.getName().equalsIgnoreCase("email_activate"))
-                                            #if($item.needsActivation())
-                                                <li class="yuimenuitem">
-                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
-                                                        "XDATActionRouter").addPathInfo(
-                                                        "xdataction",$actionObject.getName()).addPathInfo(
-                                                        "search_element","$element.getFullXMLName()").addPathInfo(
-                                                        "search_field","$search_field").addPathInfo(
-                                                        "search_value","$search_value").addPathInfo(
-                                                        "popup",$dataPopup)">
-                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
-                                                    $actionObject.getDisplayName()
-                                                    </a>
-                                                </li>
-                                            #end
-                                        #else
-                                            <li class="yuimenuitem">
-                                                <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
-                                                    "XDATActionRouter").addPathInfo(
-                                                    "xdataction",$actionObject.getName()).addPathInfo(
-                                                    "search_element","$element.getFullXMLName()").addPathInfo(
-                                                    "search_field","$search_field").addPathInfo(
-                                                    "search_value","$search_value").addPathInfo("popup",$dataPopup)">
-                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
-                                                $actionObject.getDisplayName()
-                                                </a>
-                                            </li>
-                                        #end
-                                    #end
-
-                                </ul>
-                            </div>
-                        </div>
-                    #end
-                #end
-
-            </td>
-        </tr>
-        <tr>
-            <td align=left colspan=2 valign=top>&nbsp;
             </td>
         </tr>
         <tr>
@@ -265,75 +462,34 @@ $page.setVlinkColor($ui.vlink)
             </td>
         </tr>
         <tr>
-            <td align=left colspan=2>
-                <table style="width:100%;max-width:670px;background:#f0f0f0;border:1px solid #ccc">
-                    <tr>
-                        <td valign="top">
-                            <table border="0" width="100%">
-                                <tr>
-                                    <th align=left colspan="3">STEP 1: Enable and Verify Account</th>
-                                </tr>
-                                <tr>
-                                    <td align=left style="width:80px">
-                                        <input type="radio" id="enabledRadio" name="xdat:user.enabled" value="true" #if($item.getBooleanProperty(
-                                            "enabled"))checked #end/><label for="enabledRadio">Enabled</label>
-                                    </td>
-                                    <td align=left>
-                                        <input type="radio" id="disabledRadio" name="xdat:user.enabled" value="false" #if(!$item.getBooleanProperty(
-                                            "enabled"))checked #end/><label for="disabledRadio">Disabled</label>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align=left style="width:80px">
-                                        <input type="radio" id="verifiedRadio" name="xdat:user.verified" value="true" #if($item.getBooleanProperty(
-                                            "verified"))checked #end/><label for="verifiedRadio">Verified</label>
-                                    </td>
-                                    <td align=left>
-                                        <input type="radio" id="unverifiedRadio" name="xdat:user.verified" value="false" #if(!$item.getBooleanProperty(
-                                            "verified"))checked #end/><label for="unverifiedRadio">Unverified</label>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align=right colspan="2">
-                                        <input type="submit" class="btn1" name="eventSubmit_doPerform" value="Submit">
-                                    ##                                        <button type="submit" class="btn1" name="eventSubmit_doPerform">Save</button>&nbsp;
-                                        #if ($turbineUtils.GetPassedParameter("popup",$data)=="true")
-                                        ##                                        <button type="button" onclick="javascript:window.close()">Close</button>
-                                            <button type="button" onclick="goToUsersPage()">Done</button>
-                                        #else
-                                            <button type="button" onclick="goToUsersPage()">Done</button>
-                                        #end
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-        <tr>
-            <td align=left colspan=2 valign=top>&nbsp;</td>
-        </tr>
-        <tr>
-            <td align=left colspan=2 valign=top>
-                <table style="width:100%;max-width:670px;background:#f0f0f0;border:1px solid #ccc">
-                    <tr>
-                        <td valign="top">
-                            <table border="0" width="100%">
-                                <tr>
-                                    <th align=left colspan="2">STEP 2: Assign $displayManager.getSingularDisplayNameForProject().toLowerCase() membership and roles</th>
-                                </tr>
-                                <tr>
-                                    <td align=left colspan=2 valign=top>
-                                        <div id="groupDIV"></div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align=left colspan=2 valign=top>
-                                        <div id="addGroupDIV"></div>
-                                    </td>
-                                </tr>
+            <td>
+                <div style="padding:10px;background:#f0f0f0;border:1px solid #ccc">
+                    <h3>Assign $displayManager.getSingularDisplayNameForProject().toLowerCase() membership and roles</h3>
+                    <table width="100%" border="0">
+                        <tr>
+                            <td valign="top">
+                                <table border="0" width="100%">
+                                    <tr>
+                                        <td>
+                                            <div id="groupDIV"></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div id="addGroupDIV"></div>
+                                        </td>
+                                    </tr>
 
+                                    #xdatEditProps($item $edit_screen)
+
+                                    <tr>
+                                        <td align="right">
+                                            <input type="hidden" name="xdat:user.login" value="$!item.getProperty("login")">
+                                            <input type="submit" class="btn1" name="eventSubmit_doPerform" value="Save">
+                                        </td>
+                                    </tr>
+
+                                </table>
                                 <script type="text/javascript">
                                     var selectedgroups = new Array();
                                     var selectedtags = new Array();
@@ -394,7 +550,6 @@ $page.setVlinkColor($ui.vlink)
                                                 t = allgroups[tgx].tag;
                                             }
                                         }
-
                                         return t;
                                     }
 
@@ -405,7 +560,6 @@ $page.setVlinkColor($ui.vlink)
                                                 t = true;
                                             }
                                         }
-
                                         return t;
                                     }
 
@@ -417,7 +571,6 @@ $page.setVlinkColor($ui.vlink)
                                                 break;
                                             }
                                         }
-
                                         return t;
                                     }
 
@@ -428,7 +581,6 @@ $page.setVlinkColor($ui.vlink)
                                                 t = true;
                                             }
                                         }
-
                                         return t;
                                     }
 
@@ -440,7 +592,6 @@ $page.setVlinkColor($ui.vlink)
                                                 groupArray.push(allgroups[gGFTi]);
                                             }
                                         }
-
                                         return groupArray;
                                     }
 
@@ -477,9 +628,9 @@ $page.setVlinkColor($ui.vlink)
                                             found = false;
                                             for (i = 0; i < selectedtags.length - 1; i++) {
                                                 if (window.projectTracker.getProjectById(selectedtags[i])
-                                                          .getDisplayName()
-                                                          .toLowerCase() > window.projectTracker.getProjectById(selectedtags[i + 1])
-                                                                                 .getDisplayName().toLowerCase()) {
+                                                                .getDisplayName()
+                                                                .toLowerCase() > window.projectTracker.getProjectById(selectedtags[i + 1])
+                                                                .getDisplayName().toLowerCase()) {
                                                     found = true;
                                                     tempGroup = selectedgroups[i + 1];
                                                     tempTag = selectedtags[i + 1];
@@ -501,7 +652,7 @@ $page.setVlinkColor($ui.vlink)
                                             td = document.createElement("TH");
                                             td.align = "left";
                                             td.innerHTML = window.projectTracker.getProjectById(selectedtags[stX])
-                                                                 .getDisplayName();
+                                                    .getDisplayName();
                                             tr.appendChild(td);
 
                                             var name = selectedgroups[stX];
@@ -665,141 +816,128 @@ $page.setVlinkColor($ui.vlink)
                                     }
 
                                     renderGroups();
-                                </script>
-                                <input type="hidden" name="xdat:user.login" value="$!item.getProperty("login")"/>
-                                #xdatEditProps($item $edit_screen)
 
-                                <tr>
-                                    <td align="right">
-                                        <input type="submit" class="btn1" name="eventSubmit_doPerform" value="Submit">
-                                        #if ($turbineUtils.GetPassedParameter("popup",$data)=="true")
-                                        ##                    <button type="button" onclick="javascript:window.close()">Close</button>
-                                            <button type="button" onclick="goToUsersPage()">Done</button>
-                                        #else
-                                            <button type="button" onclick="goToUsersPage()">Done</button>
-                                        #end
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
+                                </script>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
             </td>
         </tr>
         <tr>
-            <td align=left colspan=2 valign=top>&nbsp;</td>
+            <td></td>
         </tr>
         <tr>
-            <td align=left colspan=2 valign=top>
-                <table style="width:100%;max-width:670px;background:#f0f0f0;border:1px solid #ccc">
-                    <tr>
-                        <td valign="top">
-                            <table width="100%">
-                                <tr>
-                                    <th align=left colspan="4">STEP 3: Define security settings</th>
-                                </tr>
-                                <tr>
-                                    <th align=left colspan="4"><br>System Roles</th>
-                                </tr>
-                                #foreach($role in $allRoles)
+            <td>
+                <div style="padding:10px;background:#f0f0f0;border:1px solid #ccc">
+                    <h3>Define security settings</h3>
+                    <table width="100%" border="0">
+                        <tr>
+                            <td valign="top">
+                                <table border="0" width="100%" style="margin-top:10px;">
                                     <tr>
-                                        <td align=left colspan="4">
-                                            <input type="checkbox" id="role_$role.getKey()" name="custom_role" value="$role.getKey()" #if($userObject.checkRole($role.getKey()))checked#end/>
-                                            <label for="role_">$role.getName()</label>
-                                            : $!role.getDescription()
-                                        </td>
+                                        <th align="left">System Roles:</th>
                                     </tr>
-                                    #if($role.getWarning())
+                                    #foreach($role in $allRoles)
                                         <tr>
-                                            <td align="center" valign="top"><img src="$content.getURI(
-                                                "images/rc.gif")" border="0"></td>
-                                            <td align="left" colspan="3">$role.getWarning()</td>
+                                            <td align="left">
+                                                <input type="checkbox" id="role_$role.getKey()" name="custom_role" value="$role.getKey()" #if($userObject.checkRole($role.getKey()))checked#end/>
+                                                <label for="role_">$role.getName()</label>
+                                                : $!role.getDescription()
+                                            </td>
                                         </tr>
-                                        <tr>
-                                            <td colspan="2">&nbsp;</td>
-                                        </tr>
+                                        #if($role.getWarning())
+                                            <tr>
+                                            ## <td align="center" valign="top"><img src="$content.getURI("images/rc.gif")" border="0"></td>
+                                                <td align="left">
+                                                    <div class="warning">
+                                                        $role.getWarning()
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td></td>
+                                            </tr>
+                                        #end
                                     #end
-                                #end
-
+                                </table>
 
                                 #set($groupCounter=0)
 
                                 #if($siteConfig.allowDataAdmins)
-                                    <tr>
-                                        <th align=left colspan="2"><br>Allow All Data Access:</th>
-                                    </tr>
-                                    <tr>
-                                        <td align="center" valign="top" style="width:20px"><img src="$content.getURI(
-                                            "images/rc.gif")" border="0"></td>
-                                        <td align="left">WARNING: Allowing 'All Data Access' will allow this user to see ALL data stored in this system. It supersedes project membership. Most accounts on your server should NOT have All Data Access allowed.</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="2">
-                                            <span align=left nowrap>
-                                                <input type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="" checked/><label for="data_none">No</label>
-                                            </span>
-                                            &nbsp;&nbsp;&nbsp;
-                                            <span align=left nowrap>
-                                                <input type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember(
-                                                    "ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
-                                            </span>
-                                            &nbsp;&nbsp;&nbsp;
-                                            <span align=left nowrap>
-                                                <input type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember(
-                                                    "ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
-                                            </span>
-                                        </td>
-                                    </tr>
+                                    <table border="0" width="100%" style="margin-top:20px;">
+                                        <tr>
+                                            <th align="left">Allow All Data Access:</th>
+                                        </tr>
+                                        <tr>
+                                        ## <td align="center" valign="top" style="width:20px"><img src="$content.getURI("images/rc.gif")" border="0"></td>
+                                            <td align="left">
+                                                <div class="warning">
+                                                    WARNING: Allowing 'All Data Access' will allow this user to see ALL data stored in this system.
+                                                    It supersedes project membership. Most accounts on your server should NOT have All Data Access allowed.
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left">
+                                                <label style="margin-right:10px;white-space:nowrap;">
+                                                    <input type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="" checked/><label for="data_none">No</label>
+                                                </label>
+                                                <label style="margin-right:10px;white-space:nowrap;">
+                                                    <input type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
+                                                </label>
+                                                <label style="margin-right:10px;white-space:nowrap;">
+                                                    <input type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 #end
-                                <tr>
-                                    <td align=right colspan="2">
-                                        <input type="button" class="btn1" onclick="XNAT.app.userRoles.update();" name="eventSubmit_doPerform" value="Submit">
-                                        #if ($turbineUtils.GetPassedParameter("popup",$data)=="true")
-                                        ##                                            <button type="button" onclick="javascript:window.close()">Close</button>
-                                            <button type="button" onclick="goToUsersPage()">Done</button>
-                                        #else
-                                            <button type="button" onclick="goToUsersPage()">Done</button>
-                                        #end
-                                    </td>
-                                </tr>
-                                #set($groupCounter=$groupCounter+1)
-                            </table>
-                        </td>
-                    </tr>
-                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="right">
+
+                                <script>
+                                    XNAT.app.userRoles = new Object();
+                                    XNAT.app.userRoles.update = function(){
+                                        var urString = "";
+                                        var urBoxs = document.getElementsByName("custom_role");
+                                        for (var urC = 0; urC < urBoxs.length; urC++) {
+                                            if (urBoxs[urC].checked) {
+                                                if (urC > 0) {
+                                                    urString += ",";
+                                                }
+                                                urString += urBoxs[urC].value;
+                                            }
+                                        }
+
+                                        openModalPanel("role_mod", "Modifying Roles");
+
+                                        YAHOO.util.Connect.asyncRequest('POST', serverRoot + "/REST/user/$userObject.getLogin()/roles$?XNAT_CSRF=" + csrfToken + "&roles=" + urString, {
+                                            success: function(){
+                                                document.getElementById("userform").submit();
+                                                closeModalPanel('role_mod');
+                                            },
+                                            failure: function(){
+                                                closeModalPanel('role_mod');
+                                                alert("Failed to store roles.");
+                                            },
+                                            cache: false, // Turn off caching for IE
+                                            scope: this
+                                        });
+                                    }
+                                </script>
+
+                                <button type="submit" class="btn1" onclick="XNAT.app.userRoles.update();" name="eventSubmit_doPerform">Save</button>
+
+                            </td>
+                        </tr>
+                        #set($groupCounter=$groupCounter+1)
+                    </table>
+                </div>
             </td>
         </tr>
-        <script>
-            XNAT.app.userRoles = new Object();
-            XNAT.app.userRoles.update = function(){
-                var urString = "";
-                var urBoxs = document.getElementsByName("custom_role");
-                for (var urC = 0; urC < urBoxs.length; urC++) {
-                    if (urBoxs[urC].checked) {
-                        if (urC > 0) {
-                            urString += ",";
-                        }
-                        urString += urBoxs[urC].value;
-                    }
-                }
-
-                openModalPanel("role_mod", "Modifying Roles");
-
-                YAHOO.util.Connect.asyncRequest('POST', serverRoot + "/REST/user/$userObject.getLogin()/roles$?XNAT_CSRF=" + csrfToken + "&roles=" + urString, {
-                    success: function(){
-                        document.getElementById("userform").submit();
-                        closeModalPanel('role_mod');
-                    },
-                    failure: function(){
-                        closeModalPanel('role_mod');
-                        alert("Failed to store roles.");
-                    },
-                    cache: false, // Turn off caching for IE
-                    scope: this
-                });
-            }
-
-        </script>
         <tr>
             <td>
                 #addCustomScreens($om.getXSIType() "report/postContent")

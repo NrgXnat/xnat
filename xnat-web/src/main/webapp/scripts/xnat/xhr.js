@@ -568,6 +568,12 @@ var XNAT = getObject(XNAT||{}),
 
             $inputs.filter('[data-validate]').not('.ignore').each(function(){
                 var valid = XNAT.validate(this).check();
+                var $input = $(this);
+                if ($input.hasClass('allow-empty') && !this.value) {
+                    // allow validation of empty fields
+                    // if set to 'allow-empty'
+                    valid = true;
+                }
                 if (!valid) {
                     errors.push(this.title||this.name||this.id)
                 }

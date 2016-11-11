@@ -809,6 +809,9 @@ var XNAT = getObject(XNAT);
                 })
             }
         }
+        if (this.allowEmpty && !this.value) {
+            this.validated = true;
+        }
         return this.isValid(true);
     };
 

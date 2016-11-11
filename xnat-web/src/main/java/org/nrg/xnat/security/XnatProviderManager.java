@@ -155,17 +155,25 @@ public class XnatProviderManager extends ProviderManager {
         }
     }
 
-    public XdatUserAuth getUserByAuth(Authentication authentication) {
+    public XdatUserAuth getUserByAuth(final Authentication authentication) {
         if (authentication == null) {
             return null;
         }
 
-        final String u;
-        if (authentication.getPrincipal() instanceof String) {
-            u = (String) authentication.getPrincipal();
+        final String username;
+        final Object principal = authentication.getPrincipal();
+        if (principal == null) {
+            username = authentication.getName();
+        } else if (principal instanceof String) {
+            username = (String) principal;
         } else {
-            u = ((UserI) authentication.getPrincipal()).getLogin();
+            username = ((UserI) principal).getLogin();
         }
+
+        if (StringUtils.isBlank(username)) {
+            throw new RuntimeException("An error occurred trying to get user from authentication: no principal or user name was found.");
+        }
+
         final String method;
         final String provider;
         if (authentication instanceof XnatLdapUsernamePasswordAuthenticationToken) {
@@ -177,9 +185,8 @@ public class XnatProviderManager extends ProviderManager {
         }
 
         try {
-            return _userAuthService.getUserByNameAndAuth(u, method, provider);
+            return _userAuthService.getUserByNameAndAuth(username, method, provider);
         } catch (DataException exception) {
-            _log.error("An error occurred trying to retrieve the auth method", exception);
             throw new RuntimeException("An error occurred trying to validate the given information. Please check your username and password. If this problem persists, please contact your system administrator.");
         }
     }

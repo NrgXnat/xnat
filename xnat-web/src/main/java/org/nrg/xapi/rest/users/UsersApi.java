@@ -10,7 +10,6 @@
 package org.nrg.xapi.rest.users;
 
 import io.swagger.annotations.*;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.nrg.framework.annotations.XapiRestController;
@@ -42,7 +41,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -244,10 +242,8 @@ public class UsersApi extends AbstractXapiRestController {
         if (model.isVerified() != null) {
             user.setVerified(model.isVerified());
         }
-        user.setPassword(model.getPassword());
+        user.setPassword(model.getPassword());//Salt creation and password hashing will happen on save. We do not want to try to duplicate that here.
         user.setAuthorization(model.getAuthorization());
-
-        fixPassword(user);
 
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
@@ -303,7 +299,7 @@ public class UsersApi extends AbstractXapiRestController {
         // Don't do password compare: we can't.
         if (StringUtils.isNotBlank(model.getPassword())) {
             user.setPassword(model.getPassword());
-            fixPassword(user);
+            //Salt creation and password hashing will happen on save. We do not want to try to duplicate that here.
             isDirty = true;
         }
         if (model.getAuthorization() != null && !model.getAuthorization().equals(user.getAuthorization())) {
@@ -730,21 +726,6 @@ public class UsersApi extends AbstractXapiRestController {
         if (exception.hasDataFormatErrors()) {
             throw exception;
         }
-    }
-
-    private void fixPassword(final UserI user) throws PasswordComplexityException {
-        final String password = user.getPassword();
-        if (StringUtils.isNotBlank(password)) {
-            if (!_passwordValidator.isValid(password, user)) {
-                throw new PasswordComplexityException(_passwordValidator.getMessage());
-            }
-        } else {
-            user.setPassword(RandomStringUtils.randomAscii(32));
-        }
-        final String salt = Users.createNewSalt();
-        user.setPassword(new ShaPasswordEncoder(256).encodePassword(password, salt));
-        user.setPrimaryPassword_encrypt(true);
-        user.setSalt(salt);
     }
 
     @SuppressWarnings("unused")

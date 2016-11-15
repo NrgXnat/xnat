@@ -9,7 +9,9 @@
 
 package org.nrg.xapi.rest.users;
 
+import com.google.common.collect.Lists;
 import io.swagger.annotations.*;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.nrg.framework.annotations.XapiRestController;
@@ -41,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -242,8 +245,10 @@ public class UsersApi extends AbstractXapiRestController {
         if (model.isVerified() != null) {
             user.setVerified(model.isVerified());
         }
-        user.setPassword(model.getPassword());//Salt creation and password hashing will happen on save. We do not want to try to duplicate that here.
+        user.setPassword(model.getPassword());
         user.setAuthorization(model.getAuthorization());
+
+        fixPassword(user);
 
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
@@ -299,7 +304,7 @@ public class UsersApi extends AbstractXapiRestController {
         // Don't do password compare: we can't.
         if (StringUtils.isNotBlank(model.getPassword())) {
             user.setPassword(model.getPassword());
-            //Salt creation and password hashing will happen on save. We do not want to try to duplicate that here.
+            fixPassword(user);
             isDirty = true;
         }
         if (model.getAuthorization() != null && !model.getAuthorization().equals(user.getAuthorization())) {
@@ -522,6 +527,94 @@ public class UsersApi extends AbstractXapiRestController {
         return roles != null ? new ResponseEntity<>(roles, HttpStatus.OK) : new ResponseEntity<Collection<String>>(HttpStatus.FORBIDDEN);
     }
 
+    @ApiOperation(value = "Adds one or more roles to a user.", notes = "Assigns one or more new roles to a user.", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "All specified user roles successfully added."),
+                   @ApiResponse(code = 202, message = "Some user roles successfully added, but some may have failed. Check the return value for roles that the service was unable to add."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
+                   @ApiResponse(code = 404, message = "User not found."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @RequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    public ResponseEntity<Collection<String>> usersIdAddRoles(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable("username") final String username,
+                                                              @ApiParam(value = "The user's new roles.", required = true) @RequestBody final List<String> roles) {
+        HttpStatus status = isPermitted(username);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+
+        final Collection<String> failed = Lists.newArrayList();
+
+        try {
+            final UserI user = getUserManagementService().getUser(username);
+            if (user == null) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            for (final String role : roles) {
+                try {
+                    getRoleHolder().addRole(getSessionUser(), user, role);
+                } catch (Exception e) {
+                    failed.add(role);
+                    _log.error("Error occurred adding role " + role + " to user " + user.getLogin() + ".", e);
+                }
+            }
+        } catch (UserInitException e) {
+            _log.error("An error occurred initializing the user " + username, e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (failed.size() == 0) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(failed, HttpStatus.ACCEPTED);
+    }
+
+    @ApiOperation(value = "Removes one or more roles from a user.", notes = "Removes one or more new roles from a user.", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "All specified user roles successfully removed."),
+                   @ApiResponse(code = 202, message = "Some user roles successfully removed, but some may have failed. Check the return value for roles that the service was unable to remove."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
+                   @ApiResponse(code = 404, message = "User not found."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @RequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    public ResponseEntity<Collection<String>> usersIdRemoveRoles(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable("username") final String username,
+                                                                 @ApiParam(value = "The roles to be removed.", required = true) @RequestBody final List<String> roles) {
+        HttpStatus status = isPermitted(username);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+
+        final Collection<String> failed = Lists.newArrayList();
+
+        try {
+            final UserI user = getUserManagementService().getUser(username);
+            if (user == null) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            for (final String role : roles) {
+                try {
+                    getRoleHolder().deleteRole(getSessionUser(), user, role);
+                } catch (Exception e) {
+                    failed.add(role);
+                    _log.error("Error occurred remove role " + role + " from user " + user.getLogin() + ".", e);
+                }
+            }
+        } catch (UserInitException e) {
+            _log.error("An error occurred initializing the user " + username, e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (failed.size() == 0) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(failed, HttpStatus.ACCEPTED);
+    }
+
     @ApiOperation(value = "Adds a role to a user.", notes = "Assigns a new role to a user.", response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User role successfully added."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -562,7 +655,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
-    public ResponseEntity<Boolean> usersIdRemoveRole(@ApiParam(value = "ID of the user to delete a role from", required = true) @PathVariable("username") final String username, @ApiParam(value = "The user role to delete.", required = true) @PathVariable("role") String role) {
+    public ResponseEntity<Boolean> usersIdRemoveRole(@ApiParam(value = "ID of the user to delete a role from", required = true) @PathVariable("username") final String username,
+                                                     @ApiParam(value = "The user role to delete.", required = true) @PathVariable("role") String role) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -614,6 +708,94 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
+    @ApiOperation(value = "Adds the user to one or more groups.", notes = "Assigns the user to one or more new groups.", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "User successfully added for all specified groups."),
+                   @ApiResponse(code = 202, message = "User was successfully added to some of the specified groups, but some may have failed. Check the return value for groups that the service was unable to add."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
+                   @ApiResponse(code = 404, message = "User not found."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @RequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    public ResponseEntity<Collection<String>> usersIdAddGroups(@ApiParam(value = "ID of the user to add to the specified groups", required = true) @PathVariable("username") final String username,
+                                                               @ApiParam(value = "The groups to which the user should be added.", required = true) @RequestBody final List<String> groups) {
+        HttpStatus status = isPermitted(username);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+
+        final Collection<String> failed = Lists.newArrayList();
+
+        try {
+            final UserI user = getUserManagementService().getUser(username);
+            if (user == null) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            for (final String group : groups) {
+                try {
+                    Groups.addUserToGroup(group, user, getSessionUser(), EventUtils.ADMIN_EVENT(getSessionUser()));
+                } catch (Exception e) {
+                    failed.add(group);
+                    _log.error("Error occurred adding user " + user.getLogin() + " to group " + group + ".", e);
+                }
+            }
+        } catch (UserInitException e) {
+            _log.error("An error occurred initializing the user " + username, e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (failed.size() == 0) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(failed, HttpStatus.ACCEPTED);
+    }
+
+    @ApiOperation(value = "Removes the user from one or more groups.", notes = "Removes the user from one or more groups.", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "User successfully removed from all specified groups."),
+                   @ApiResponse(code = 202, message = "User was successfully removed from some of the specified groups, but some may have failed. Check the return value for groups that the service was unable to remove."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
+                   @ApiResponse(code = 404, message = "User not found."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @RequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    public ResponseEntity<Collection<String>> usersIdRemoveGroups(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable("username") final String username,
+                                                                  @ApiParam(value = "The groups from which the user should be removed.", required = true) @RequestBody final List<String> groups) {
+        HttpStatus status = isPermitted(username);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+
+        final Collection<String> failed = Lists.newArrayList();
+
+        try {
+            final UserI user = getUserManagementService().getUser(username);
+            if (user == null) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            for (final String group : groups) {
+                try {
+                    Groups.removeUserFromGroup(user, getSessionUser(), group, EventUtils.ADMIN_EVENT(getSessionUser()));
+                } catch (Exception e) {
+                    failed.add(group);
+                    _log.error("Error occurred removing group " + group + " from user " + user.getLogin() + ".", e);
+                }
+            }
+        } catch (UserInitException e) {
+            _log.error("An error occurred initializing the user " + username, e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (failed.size() == 0) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(failed, HttpStatus.ACCEPTED);
+    }
+
     @ApiOperation(value = "Adds a user to a group.", notes = "Assigns user to a group.", response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User successfully added to group."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -631,7 +813,7 @@ public class UsersApi extends AbstractXapiRestController {
             if (user == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-            if(user.getID().equals(Users.getGuest().getID())){
+            if (user.getID().equals(Users.getGuest().getID())) {
                 return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
             }
             try {
@@ -728,6 +910,21 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
+    private void fixPassword(final UserI user) throws PasswordComplexityException {
+        final String password = user.getPassword();
+        if (StringUtils.isNotBlank(password)) {
+            if (!_passwordValidator.isValid(password, user)) {
+                throw new PasswordComplexityException(_passwordValidator.getMessage());
+            }
+        } else {
+            user.setPassword(RandomStringUtils.randomAscii(32));
+        }
+        final String salt = Users.createNewSalt();
+        user.setPassword(new ShaPasswordEncoder(256).encodePassword(password, salt));
+        user.setPrimaryPassword_encrypt(true);
+        user.setSalt(salt);
+    }
+
     @SuppressWarnings("unused")
     public static class Event {
         public static String Added                 = "Added User";
@@ -747,5 +944,5 @@ public class UsersApi extends AbstractXapiRestController {
     private final SiteConfigPreferences  _preferences;
     private final SessionRegistry        _sessionRegistry;
     private final PasswordValidatorChain _passwordValidator;
-    private final AliasTokenService _aliasTokenService;
+    private final AliasTokenService      _aliasTokenService;
 }

@@ -169,14 +169,15 @@ $page.setVlinkColor($ui.vlink)
                                                     #elseif ($actionObject.getName().equalsIgnoreCase("edit"))
                                                         #if ($item.canEdit($user))
 ##                                                            <li class="yuimenuitem">
-##                                                                <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
+##                                                                <a class="yuimenuitemlabel edit-account" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction(
 ##                                                                    "XDATActionRouter").addPathInfo(
 ##                                                                    "xdataction",$actionObject.getName()).addPathInfo(
 ##                                                                    "search_element",
 ##                                                                    "$element.getFullXMLName()").addPathInfo(
 ##                                                                    "search_field","$search_field").addPathInfo(
 ##                                                                    "search_value","$search_value").addPathInfo(
-##                                                                    "popup",$dataPopup)">
+##                                                                    "popup","true")">
+##                                                                ##"popup",$dataPopup)">
 ##                                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
 ##                                                                    $actionObject.getDisplayName()
 ##                                                                </a>
@@ -191,7 +192,8 @@ $page.setVlinkColor($ui.vlink)
                                                                     e.preventDefault();
                                                                     // fake the scope since we just need the
                                                                     // username as an 'innerText' property
-                                                                    var scope = { innerText: '$search_value' }
+                                                                    var scope = { innerText: '$!item.getProperty("login")' }
+                                                                    window.top.XNAT.admin.usersGroups.showAdvanced = false;
                                                                     window.top.XNAT.admin.usersGroups.editUser.call(scope, e, function(){
                                                                         // reload this iframe
                                                                         window.location.reload(true);
@@ -898,38 +900,53 @@ $page.setVlinkColor($ui.vlink)
                         <tr>
                             <td align="right">
 
+                                <button id="update-user-roles" type="button" class="btn1">Save</button>
+
                                 <script>
-                                    XNAT.app.userRoles = new Object();
-                                    XNAT.app.userRoles.update = function(){
-                                        var urString = "";
-                                        var urBoxs = document.getElementsByName("custom_role");
-                                        for (var urC = 0; urC < urBoxs.length; urC++) {
-                                            if (urBoxs[urC].checked) {
-                                                if (urC > 0) {
-                                                    urString += ",";
-                                                }
-                                                urString += urBoxs[urC].value;
+                                    $('#update-user-roles').on('click', function(e){
+
+                                        e.preventDefault();
+
+                                        xmodal.loading.open();
+
+                                        var roleCheckboxes = document.getElementsByName('custom_role');
+                                        var i = -1;
+
+                                        function setRole(i){
+
+                                            if (i === roleCheckboxes.length) {
+                                                document.getElementById('userform').submit();
+                                                //xmodal.loading.close();
+                                                return false;
                                             }
+
+                                            var _val = roleCheckboxes[i].value;
+                                            var _url = '/xapi/users/$userObject.getLogin()/roles/' + _val;
+                                            var mthd = 'PUT';
+
+                                            console.log(_val);
+
+                                            // DELETE if not checked
+                                            if (!roleCheckboxes[i].checked) {
+                                                mthd = 'DELETE'
+                                            }
+
+                                            return XNAT.xhr.request({
+                                                method: mthd,
+                                                url: _url,
+                                                success: function(){
+                                                    setRole(++i)
+                                                }
+                                            });
+
                                         }
 
-                                        openModalPanel("role_mod", "Modifying Roles");
+                                        // set roles
+                                        // start at index 0
+                                        setRole(0);
 
-                                        YAHOO.util.Connect.asyncRequest('POST', serverRoot + "/REST/user/$userObject.getLogin()/roles$?XNAT_CSRF=" + csrfToken + "&roles=" + urString, {
-                                            success: function(){
-                                                document.getElementById("userform").submit();
-                                                closeModalPanel('role_mod');
-                                            },
-                                            failure: function(){
-                                                closeModalPanel('role_mod');
-                                                alert("Failed to store roles.");
-                                            },
-                                            cache: false, // Turn off caching for IE
-                                            scope: this
-                                        });
-                                    }
+                                    })
                                 </script>
-
-                                <button type="submit" class="btn1" onclick="XNAT.app.userRoles.update();" name="eventSubmit_doPerform">Save</button>
 
                             </td>
                         </tr>

@@ -692,7 +692,8 @@ notifications:
             kind: panel.textarea
             label: "User Registration"
             code: html
-            description: "Text of message emailed to users upon registration. Link for email validation is auto-populated."
+            description: >
+                Text of message emailed to users upon registration. Link for email validation is auto-populated.
         emailMessageForgotUsernameRequest:
             kind: panel.textarea
             label: "Forgot Username Request"
@@ -741,25 +742,29 @@ notifications:
             kind: panel.input.email
             label: "Error Messages"
             description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
-            validation: allow-empty email onblur
+            size: 50
+            validation: allow-empty emails onblur
             value: "!? XNAT.data.notifications['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             label: "Issue Reports"
             description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
-            validation: allow-empty email onblur
+            size: 50
+            validation: allow-empty emails onblur
             value: "!? XNAT.data.notifications['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             label: "New User Alert"
             description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
-            validation: allow-empty email onblur
+            size: 50
+            validation: allow-empty emails onblur
             value: "!? XNAT.data.notifications['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             label: "Updates"
             description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
-            validation: allow-empty email onblur
+            size: 50
+            validation: allow-empty emails onblur
             value: "!? XNAT.data.notifications['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
         copyAdminOnNotifications:
             kind: panel.input.switchbox
@@ -1047,7 +1052,6 @@ sessionBuilder:
     contents:
         receivedFileUser:
             kind: panel.input.text
-            name: receivedFileUser
             label: Received File User
             validation: id-strict max-length:40 onblur
             placeholder: User account for performing import and archiving operations
@@ -1056,7 +1060,6 @@ sessionBuilder:
                 administrator.
         sessionXmlRebuilderRepeat:
             kind: panel.input.number
-            name: sessionXmlRebuilderRepeat
             label: Session Idle Check Interval
             validation: integer onblur
             placeholder: Interval in milliseconds
@@ -1067,7 +1070,6 @@ sessionBuilder:
                 milliseconds and defaults to 60,000 ms or one minute.
         sessionXmlRebuilderInterval:
             kind: panel.input.number
-            name: sessionXmlRebuilderInterval
             label: Session Idle Time
             validation: integer onblur
             placeholder: Time in minutes
@@ -1087,13 +1089,11 @@ anonymization:
     contents:
         enableSitewideAnonymizationScript:
             kind: panel.input.switchbox
-            name: enableSitewideAnonymizationScript
             label: "Enable Site-wide <br>Anonymization Script?"
             onText: Enabled
             offText: Disabled
         sitewideAnonymizationScript:
             kind: panel.textarea
-            name: sitewideAnonymizationScript
             label: "Edit Anonymization Script"
             code: text
             description: >

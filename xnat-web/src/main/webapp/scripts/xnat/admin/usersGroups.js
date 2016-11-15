@@ -33,6 +33,7 @@ var XNAT = getObject(XNAT);
     XNAT.admin.usersGroups = usersGroups =
         getObject(XNAT.admin.usersGroups || {});
 
+    usersGroups.showAdvanced = true;
 
     function setupTabs(){
 
@@ -235,8 +236,39 @@ var XNAT = getObject(XNAT);
         }
 
         function userAccountForm(data){
+
             var _load = data ? '/xapi/users/' + data.username : false;
+
             data = data || {};
+
+            // username could be text or input element
+            function usernameField(){
+                var obj = {
+                    label: 'Username'
+                };
+                if (data && data.username) {
+                    obj.kind = 'panel.element';
+                    obj.contents = {
+                        usernameText: {
+                            kind: 'html',
+                            content: data.username
+                        },
+                        usernameInput: {
+                            kind: 'input.hidden',
+                            name: 'username',
+                            value: data.username || ''
+                        }
+                    };
+                }
+                else {
+                    obj.kind = 'panel.input.text';
+                    obj.name = 'username';
+                    obj.validate = 'alpha-num-safe required';
+                    obj.value = '';
+                }
+                return obj;
+            }
+
             var form = {
                 kind: 'panel.form',
                 label: 'Account Information',
@@ -252,15 +284,20 @@ var XNAT = getObject(XNAT);
                     //     kind: 'panel.subhead',
                     //     label: 'User Details'
                     // },
-                    username: {
-                        kind: 'panel.input.text',
-                        label: 'Username',
-                        validate: 'alpha-num-safe required',
-                        value: data.username || ''
+                    // id: {
+                    //     kind: 'panel.input.hidden',
+                    //     validate: _load ? 'number required' : 'allow-empty',
+                    //     value: data.id || ''
+                    // },
+                    pad: {
+                        kind: 'html',
+                        content: '<br>'
                     },
+                    usernameField: usernameField(),
                     password: {
                         kind: 'panel.input.password',
                         label: 'Password',
+                        element: { placeholder: '********' },
                         validate: 'allow-empty alpha-num-dash'//,
                         //value: data.password || ''
                     },
@@ -305,7 +342,40 @@ var XNAT = getObject(XNAT);
                 }
             };
 
+            // add 'Advanced Settings' when editing existing user
+            if (_load && usersGroups.showAdvanced) {
+                form.contents.advancedSettings = {
+                    kind: 'panel.element',
+                    label: 'Advanced',
+                    contents: {
+                        advancedLink: {
+                            tag: 'a.edit-advanced-settings.link',
+                            element: {
+                                href: '#!',
+                                title: data.username + ':advanced',
+                                on: {
+                                    click: function(e){
+                                        e.preventDefault();
+                                        var modalId = $(this).closest('div.xmodal').attr('id');
+                                        xmodal.modals[modalId].close();
+                                        userProjectsAndSecurity(e, data.username);
+                                    }
+                                }
+                            },
+                            content: 'Edit Advanced Settings'
+                        },
+                        description: {
+                            tag: 'div.description',
+                            content: "Edit this user's project and security settings."
+                        }
+                    }
+                }
+            }
+
+            usersGroups.showAdvanced = true;
+
             return form;
+
         }
 
         // use this to spawn the user account form separately
@@ -483,7 +553,7 @@ var XNAT = getObject(XNAT);
             }
             return xmodal.open({
                 width: 600,
-                height: 500,
+                height: 600,
                 title: 'User Properties for <b>' + data.username + '</b>',
                 content: '<div class="user-data"></div>',
                 beforeShow: function(obj){
@@ -535,7 +605,10 @@ var XNAT = getObject(XNAT);
         // open a dialog to edit user properties
         function editUser(e, onclose){
             e.preventDefault();
-            var username = (this.innerText||'').trim();
+            var username =
+                    (this.title||'').split(':')[0] ||
+                    $(this).data('username') ||
+                    (this.innerText||'').trim();
             getUserData(username).done(function(data){
                 getUserRoles(username).done(function(roles){
                     data.roles = roles;
@@ -602,10 +675,12 @@ var XNAT = getObject(XNAT);
             var username = this.title;
         }
 
-        function userProjectsAndSecurity(){
-            var _username = $(this).data('username');
+        function userProjectsAndSecurity(e, usr){
+            var _username = usr || $(this).data('username');
             var _url = XNAT.url.rootUrl('/app/action/DisplayItemAction/search_value/' + _username + '/search_element/xdat:user/search_field/xdat:user.login/popup/true');
-            return xmodal.iframe(_url, {
+            return xmodal.iframe({
+                src: _url,
+                name: 'advanced-user-settings',
                 width: 800,
                 height: '100%',
                 title: 'Edit User Info',
@@ -632,13 +707,14 @@ var XNAT = getObject(XNAT);
             return {
                 kind: 'table.dataTable',
                 name: 'userProfiles',
+                classes: 'highlight',
                 id: 'user-profiles',
                 load: '/xapi/users/profiles',
                 element: {
                     on: [
                         ['click', 'a.select-all', selectAllUsers],
-                        ['click', 'a.username', editUser],
-                        ['click', 'a.full-name', userProjectsAndSecurity],
+                        ['click', 'a.username, a.full-name', editUser],
+                        // ['click', 'a.full-name', userProjectsAndSecurity],
                         ['click', 'a.send-email', goToEmail],
                         ['change', 'input.user-verified', setVerified],
                         ['change', 'input.user-enabled', setEnabled],
@@ -670,7 +746,7 @@ var XNAT = getObject(XNAT);
                         filter: true, // add filter: true to individual items to add a filter
                         call: function(username, tr){
                             //console.log(tr);
-                            return '<a href="#!" title="edit user details" class="username link">' + username + '</a>'
+                            return '<a href="#!" title="' + username + ': details" class="username link">' + username + '</a>'
                         }
                     },
                     fullName: {
@@ -678,7 +754,7 @@ var XNAT = getObject(XNAT);
                         call: function(){
                             return spawn('a.full-name.link', {
                                 href: '#!',
-                                title: 'edit user project and security settings',
+                                title: this.username + ': project and security settings',
                                 html: this.lastName + ', ' + this.firstName,
                                 data: { username: this.username }
                             });

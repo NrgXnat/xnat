@@ -3,6 +3,7 @@ $page.setTitle("XDAT")
 $page.setLinkColor($ui.alink)
 $page.setVlinkColor($ui.vlink)
 #set ($template = $data.getTemplateInfo())
+#set ($SITE_ROOT = $content.getURI(''))
 $!template.setLayoutTemplate("DefaultExptList.vm")
 #if ($data.message)
 <div class="error">$data.message</div><br>
@@ -64,8 +65,8 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
             var link = this.href;
             XNAT.ui.dialog.iframe({
                 src: link,
-                width: '80%',
-                height: '80%',
+                width: 800,
+                height: 800,
                 minHeight: 540,
                 minWidth: 720,
                 maxWidth: 1160,

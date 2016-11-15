@@ -3,7 +3,7 @@
  * XNAT http://www.xnat.org
  * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *  
+ *
  * Released under the Simplified BSD.
  */
 
@@ -1034,7 +1034,7 @@ if (typeof jQuery == 'undefined') {
 
             // fade out then remove the modal
             $modal.fadeOut(fade, function(){
-                
+
                 // then if there's a mask that goes with it
                 // get rid of that too
                 if ($mask.length){
@@ -1483,6 +1483,9 @@ if (typeof jQuery == 'undefined') {
                 };
 
             iframe.attrs.push('src="' + url + '"');
+            if (opts.name) {
+                iframe.attrs.push('name="' + opts.name + '"');
+            }
             iframe.attrs.push('seamless');
             iframe.attrs.push('style="width:100%;height:100%;position:absolute;border:none;"');
 

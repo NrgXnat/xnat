@@ -43,8 +43,8 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
         <a href="$link.setAction("RefreshAction").addPathInfo("refresh","ClearStudyRoutings")">Clear Study Routings</a>
 
         <a href="$link.setAction("SearchAction").addPathInfo("element","wrk:workflowData").addPathInfo("querytype","new")">View All Workflows</a>
-
-        <a class="iframe-dialog" href="$link.setPage("XDATScreen_active_sessions.vm").addPathInfo("popup","true")">Monitor $displayManager.getPluralDisplayNameForImageSession()</a>
+##
+##        <a class="iframe-dialog" href="$link.setPage("XDATScreen_active_sessions.vm").addPathInfo("popup","true")">Monitor $displayManager.getPluralDisplayNameForImageSession()</a>
 
         <a class="iframe-dialog" href="$link.setPage("XDATScreen_admin_projectAccess.vm").addPathInfo("popup","true")">$displayManager.getSingularDisplayNameForProject() Accessibility</a>
 

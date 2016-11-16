@@ -10,8 +10,8 @@
 package org.nrg.xdat.display;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.collections.DisplayFieldCollection;
@@ -28,6 +28,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.nrg.xft.utils.XftStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.w3c.dom.Document;
@@ -43,17 +45,14 @@ import java.util.*;
  * @author Tim
  */
 public class DisplayManager {
-    static Logger logger = Logger.getLogger(DisplayManager.class);
-    public static final String DISPLAY_FIELDS_VIEW = "displayfields_";
-    //	private static final String LINKED_TABLE = "linked_";
-//	private static final String SCHEMA_LINK = "schemaLink_";
-//	private static final String SCHEMA_LINK_MAPPING = "schemaLink_mapping_";
-    public static final String ARC_MAP = "arc_map_";
-    private final Hashtable<String, ElementDisplay> elements = new Hashtable<>();
-    private static DisplayManager instance = null;
-    private final List<Object[]> schemaLinks = new ArrayList<>();
-    private final Map<String, ArcDefinition> arcDefinitions = new HashMap<>();
-    private static final Map<String, SQLFunction> SQL_FUNCTIONS = new HashMap<>();
+    public static final  String                            DISPLAY_FIELDS_VIEW = "displayfields_";
+    public static final  String                            ARC_MAP             = "arc_map_";
+    private static final Logger                            logger              = LoggerFactory.getLogger(DisplayManager.class);
+    private final        Hashtable<String, ElementDisplay> elements            = new Hashtable<>();
+    private static       DisplayManager                    instance            = null;
+    private final        List<Object[]>                    schemaLinks         = new ArrayList<>();
+    private final        Map<String, ArcDefinition>        arcDefinitions      = new HashMap<>();
+    private static final Map<String, SQLFunction>          SQL_FUNCTIONS       = new HashMap<>();
 
     /**
      * Gets the elements set in the display manager.
@@ -447,6 +446,7 @@ public class DisplayManager {
 //        }
 
         final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
+        final Map<String, Exception> errors = Maps.newHashMap();
         try {
 			final Resource[] resources = resolver.getResources("classpath*:schemas/*/display/*_display.xml");
 			logger.info("Discovered " + resources.length + " display documents on classpath.");
@@ -461,13 +461,23 @@ public class DisplayManager {
 						    
 						    loaded.add(resource.getFilename());
 						}
-					} catch (IOException e) {
-						logger.error("Unable to parse display.xml from classpath: "+ resource.getFilename(),e);
+					} catch (IOException | RuntimeException e) {
+                        //noinspection ThrowableResultOfMethodCallIgnored
+                        errors.put(resource.getURI().toString(), e);
                     }
                 }
             }
 		} catch (IOException e1) {
 			logger.error("Unable to discover display.xml's from classpath.",e1);
+        }
+
+        if (errors.size() > 0) {
+            logger.error("{} errors occurred while processing the following display documents:", errors.size());
+            for (final String filename : errors.keySet()) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                final String message = errors.get(filename).getMessage();
+                logger.error(" * {}:\n{}", filename, message.replaceAll("(?m)^", "\t"));
+            }
         }
 
         try {

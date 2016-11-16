@@ -21,6 +21,7 @@ import org.springframework.core.io.FileSystemResource;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -188,46 +189,27 @@ public class GenerateResources {
             beanGenerator.setProject(PACKAGE);
 
             for (final XFTDataModel model : XFTManager.GetDataModels().values()) {
+                //only build resources for schema that are on the file system
                 if (model.getResource() instanceof FileSystemResource) {
-                    final String prefix = model.getSchemaAbbr();
-                    //only build resources for schema that are on the file system
-                    for (String elementName : model.getSchema().getSortedElementNames()) {
-                        GenericWrapperElement e = GenericWrapperElement.GetElement(prefix + ":" + elementName);
-                        if (e.getAddin().equalsIgnoreCase("")) {
-                            generator.generateJavaFile(e, javaDir, srcControlDir);
-                            if (!e.getProperName().equals(e.getFullXMLName())) {
-                                generator.generateDisplayFile(e);
-                            }
-                        }
-                    }
-                }
-            }
-
-            //not sure why this had to run in 2 iterations... but I remember that being a requirement.  So, we run it again.
-            for (final XFTDataModel model : XFTManager.GetDataModels().values()) {
-                if (model.getResource() instanceof FileSystemResource) {
-                    //only build resources for schema that are on the file system
-                    final PrefixTransform transform = new PrefixTransform(model.getSchemaAbbr());
-                    for (String elementName : model.getSchema().getSortedElementNames()) {
-                        GenericWrapperElement e = GenericWrapperElement.GetElement(elementName);
-
-                        if (e.getAddin().equalsIgnoreCase("")) {
-                            generator.generateJavaFile(e, javaDir, srcControlDir);
-                            if (!e.getProperName().equals(e.getFullXMLName())) {
-                                generator.generateJavaReportFile(e, javaDir);
-                                generator.generateVMReportFile(e, templatesDir);
-                                generator.generateJavaEditFile(e, javaDir);
-                                generator.generateVMEditFile(e, templatesDir);
-                                generator.generateVMSearchFile(e, templatesDir);
+                    final String modelDisplayPath = Paths.get(beanPropsDir, "schemas", model.getResource().getFile().getParentFile().getName()).toFile().getAbsolutePath();
+                    final List<String> qualifiedElementNames = Lists.transform(model.getSchema().getSortedElementNames(), new PrefixTransform(model.getSchemaAbbr()));
+                    for (final String qualifiedElementName : qualifiedElementNames) {
+                        final GenericWrapperElement element = GenericWrapperElement.GetElement(qualifiedElementName);
+                        if (element.getAddin().equalsIgnoreCase("")) {
+                            generator.generateJavaFile(element, javaDir, srcControlDir);
+                            if (!element.getProperName().equals(element.getFullXMLName())) {
+                                generator.generateDisplayFile(element, modelDisplayPath);
+                                generator.generateJavaReportFile(element, javaDir);
+                                generator.generateVMReportFile(element, templatesDir);
+                                generator.generateJavaEditFile(element, javaDir);
+                                generator.generateVMEditFile(element, templatesDir);
+                                generator.generateVMSearchFile(element, templatesDir);
                                 if (hasJavascriptDir) {
-                                    jsGenerator.generateJSFile(e, javascriptDir);
+                                    jsGenerator.generateJSFile(element, javascriptDir);
                                 }
                             }
                         }
-
                     }
-
-                    final List<String> qualifiedElementNames = Lists.transform(model.getSchema().getSortedElementNames(), transform);
                     beanGenerator.generateJavaFiles(qualifiedElementNames, name + "-" + model.getSchemaAbbr(), beanDir, PACKAGE, beanPropsDir);
                 }
             }

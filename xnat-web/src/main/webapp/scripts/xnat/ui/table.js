@@ -429,7 +429,8 @@ var XNAT = getObject(XNAT);
                 DATAREGEX = /^(~data)/,
                 HIDDENREGEX = /^(~!)/,
                 hiddenItems = [],
-                filterColumns = [];
+                filterColumns = [],
+                customFilters = {};
 
             // convert object list to array list
             if (isPlainObject(rows)) {
@@ -474,6 +475,10 @@ var XNAT = getObject(XNAT);
                     // does this column have a filter field?
                     if (val.filter || (opts.filter && opts.filter.indexOf(name) > -1)){
                         filterColumns.push(name);
+                        // pass a function that returns an element for a 'custom' filter
+                        if (typeof val.filter === 'function'){
+                            customFilters[name] = val.filter;
+                        }
                     }
 
                 });
@@ -532,34 +537,43 @@ var XNAT = getObject(XNAT);
 
                     if (filterColumns.indexOf(name) > -1){
                         tdElement.className = 'filter ' + name;
-                        $filterInput = $.spawn('input.filter-data', {
-                            type: 'text',
-                            title: name + ':filter',
-                            placeholder: 'filter'
-                        });
 
-                        $filterInput.on('focus', function(){
-                            // save reference to the data rows on focus
-                            // (should make filtering slightly faster)
-                            $dataRows = $table.find('tr[data-id]').show();
-                        });
+                        if (typeof customFilters[name] === 'function'){
+                            tdContent.push(customFilters[name].call(newTable, newTable.table));
+                        }
+                        else {
+                            $filterInput = $.spawn('input.filter-data', {
+                                type: 'text',
+                                title: name + ':filter',
+                                placeholder: 'filter'
+                            });
 
-                        $filterInput.on('keyup', function(e){
-                            var val = this.value;
-                            var key = e.which;
-                            if (key == 27){ // key 27 = 'esc'
-                                this.value = val = '';
-                            }
-                            if (!val || key == 8) {
-                                $dataRows.show();
-                            }
-                            if (!val) {
-                                // no value, no filter
-                                return false
-                            }
-                            filterRows(val, name);
-                        });
-                        tdContent.push($filterInput[0]);
+                            $filterInput.on('focus', function(){
+                                $(this).select();
+                                // clear all filters on focus
+                                //$table.find('input.filter-data').val('');
+                                // save reference to the data rows on focus
+                                // (should make filtering slightly faster)
+                                $dataRows = $table.find('tr[data-id]');
+                            });
+
+                            $filterInput.on('keyup', function(e){
+                                var val = this.value;
+                                var key = e.which;
+                                if (key == 27){ // key 27 = 'esc'
+                                    this.value = val = '';
+                                }
+                                if (!val || key == 8) {
+                                    $dataRows.show();
+                                }
+                                if (!val) {
+                                    // no value, no filter
+                                    return false
+                                }
+                                filterRows(val, name);
+                            });
+                            tdContent.push($filterInput[0]);
+                        }
                     }
 
                     newTable.td(tdElement, tdContent);
@@ -724,12 +738,19 @@ var XNAT = getObject(XNAT);
         }
 
         // add properties for Spawner compatibility
-        newTable.element = newTable.spawned = tableContainer;
-        newTable.get = function(){
-            return tableContainer;
-        };
+        // newTable.element = newTable.spawned = tableContainer;
+        // newTable.get = function(){
+        //     return tableContainer;
+        // };
 
-        return tableContainer;
+        return {
+            table: newTable.table,
+            element: tableContainer,
+            spawned: tableContainer,
+            get: function(){
+                return tableContainer;
+            }
+        };
 
     };
 

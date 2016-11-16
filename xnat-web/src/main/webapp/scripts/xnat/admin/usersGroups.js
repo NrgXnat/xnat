@@ -37,6 +37,8 @@ var XNAT = getObject(XNAT);
 
     function setupTabs(){
 
+        var userTableContainer = 'div#user-table-container';
+
         function tabs(){
             return {
                 kind: 'tabs',
@@ -92,11 +94,13 @@ var XNAT = getObject(XNAT);
                     // },
                     userActions: {
                         tag: 'div.user-actions',
-                        element: { style: {
-                            marginBottom: '30px',
-                            paddingTop: '30px',
-                            borderTop: '1px solid #c8c8c8'
-                        }},
+                        element: {
+                            style: {
+                                marginBottom: '30px',
+                                paddingTop: '30px',
+                                borderTop: '1px solid #c8c8c8'
+                            }
+                        },
                         contents: {
                             createUserButton: createUserButton()
                         }
@@ -107,7 +111,7 @@ var XNAT = getObject(XNAT);
                         footer: false,
                         contents: {
                             tableContainer: {
-                                tag: 'div#user-table-container',
+                                tag: userTableContainer,
                                 contents: {
                                     usersTable: usersTable()
                                 }
@@ -133,97 +137,115 @@ var XNAT = getObject(XNAT);
             }
         }
 
-        XNAT.tabs.container.on('click', '#view-active-users', function(){
-            // var getActiveUsers = XNAT.xhr.get(XNAT.url.restUrl('/xapi/users/active'));
-            getActiveUsers().done(function(data){
-                var dataArray = [];
-                forOwn(data, function(prop, obj){
-                    // only add users with listed sessions
-                    if (obj.sessions && obj.sessions.length) {
-                        dataArray.push({
-                            username: prop,
-                            userdata: obj
-                        })
-                    }
-                });
-                xmodal.message({
-                    width: 600,
-                    height: 400,
-                    maximize: true,
-                    title: 'Active Users',
-                    content: '<div class="active-users"></div>',
-                    okLabel: 'Close',
-                    beforeShow: function(){
-                        var activeUsersTable = XNAT.table.dataTable(dataArray, {
-                            items: {
-                                username: 'User',
-                                actions: {
-                                    label: 'Actions',
-                                    td: { className: 'actions center' },
-                                    call: function(){
-                                        var self          = this;
-                                        var closeSessions = spawn('button.close-sessions', {
-                                            type: 'button',
-                                            title: this.username,
-                                            html: 'Deactivate Sessions',
-                                            on: { click: function(){
-                                                    xmodal.confirm({
-                                                        title: 'Close sessions?',
-                                                        content: 'Deactivate all open sessions for <b>' + self.username + '</b>?',
-                                                        okLabel: 'Deactivate Sessions',
-                                                        okAction: function(){
-                                                            XNAT.xhr.delete({
-                                                                url: XNAT.url.rootUrl('/xapi/users/active/' + self.username),
-                                                                success: function(){
-                                                                    XNAT.ui.banner.top(2000, 'Sessions deactivated', 'success')
-                                                                }
-                                                            })
-                                                        }
-                                                    })
-                                                }}
-                                        });
-                                        return spawn('div.user-actions', [
-                                            closeSessions
-                                        ])
-                                    }
-                                }//,
-                                //userdata: {
-                                //    label: 'Data',
-                                //    call: function(data){
-                                //        return '' +
-                                //                '<textarea class="mono" style="width:100%" rows="8">' +
-                                //                    JSON.stringify(data, null, 4) +
-                                //                '</textarea>';
-                                //    }
-                                //}
-                            }
-                        });
-                        this.__modal.find('div.active-users').append(activeUsersTable);
-                    }
-                });
-            })
-        });
+        /*
+         XNAT.tabs.container.on('click', '#view-active-users', function(){
+         // var getActiveUsers = XNAT.xhr.get(XNAT.url.restUrl('/xapi/users/active'));
+         getActiveUsers().done(function(data){
+         var dataArray = [];
+         forOwn(data, function(prop, obj){
+         // only add users with listed sessions
+         if (obj.sessions && obj.sessions.length) {
+         dataArray.push({
+         username: prop,
+         userdata: obj
+         })
+         }
+         });
+         xmodal.message({
+         width: 600,
+         height: 400,
+         maximize: true,
+         title: 'Active Users',
+         content: '<div class="active-users"></div>',
+         okLabel: 'Close',
+         beforeShow: function(){
+         var activeUsersTable = XNAT.table.dataTable(dataArray, {
+         items: {
+         username: 'User',
+         actions: {
+         label: 'Actions',
+         td: { className: 'actions center' },
+         call: function(){
+         var self          = this;
+         var closeSessions = spawn('button.close-sessions', {
+         type: 'button',
+         title: this.username,
+         html: 'Deactivate Sessions',
+         on: { click: function(){
+         xmodal.confirm({
+         title: 'Close sessions?',
+         content: 'Deactivate all open sessions for <b>' + self.username + '</b>?',
+         okLabel: 'Deactivate Sessions',
+         okAction: function(){
+         XNAT.xhr.delete({
+         url: XNAT.url.rootUrl('/xapi/users/active/' + self.username),
+         success: function(){
+         XNAT.ui.banner.top(2000, 'Sessions deactivated', 'success')
+         }
+         })
+         }
+         })
+         }}
+         });
+         return spawn('div.user-actions', [
+         closeSessions
+         ])
+         }
+         }//,
+         //userdata: {
+         //    label: 'Data',
+         //    call: function(data){
+         //        return '' +
+         //                '<textarea class="mono" style="width:100%" rows="8">' +
+         //                    JSON.stringify(data, null, 4) +
+         //                '</textarea>';
+         //    }
+         //}
+         }
+         });
+         this.__modal.find('div.active-users').append(activeUsersTable);
+         }
+         });
+         })
+         });
+         */
 
-        function userSwitch(className, value){
-            var item = this;
-            var _checked = !!realValue(value);
-            return XNAT.ui.input.switchbox({
-                // 'element' applies to inner checkbox
-                // disabled: _checked,
-                element: {
-                    name: className,
-                    className: 'user-' + className,
-                    checked: _checked,
-                    title: item.username + ':' + className
-                },
-                onText: '',
-                offText: ''
-            })
+        // common config function for DOM and Spawner elements
+        function userSwitchConfig(username, type, status){
+            status = !!realValue(status);
+            return {
+                config: {
+                    element: {
+                        name: type,
+                        className: 'user-' + type,
+                        checked: status,
+                        title: username + ':' + type
+                    },
+                    onText: '',
+                    offText: ''
+                }
+            }
         }
 
+        // RETURNS A DOM ELEMENT
+        function userSwitch(type, status){
+            var element = userSwitchConfig(this.username, type, status);
+            return XNAT.ui.input.switchbox(element.config)
+        }
+
+        // spawns a status switchbox element
+        // RETURNS A SPAWNER INSTANCE
+        usersGroups.userSwitchElement = function(username, type, status){
+            var element = userSwitchConfig(username, type, status);
+            element.config.kind = 'input.switchbox'; // add 'kind' property for spawner function
+            element.config.onText = 'Yes';
+            element.config.offText = 'No';
+            return XNAT.spawner.spawn(element);
+        };
+
         function selectAllUsers(){
-            var $this   = $(this);
-            var $table  = $this.closest('table');
+            var $this = $(this);
+            var $table = $this.closest('table');
             var $inputs = $table.find('input.select-user');
             if ($this.hasClass('selected')) {
                 $inputs.prop('checked', false);
@@ -322,7 +344,7 @@ var XNAT = getObject(XNAT);
                     verified: {
                         kind: 'panel.input.switchbox',
                         label: 'Verified',
-                        value: data.verified !== undefined ? data.verified+'' : 'false',
+                        value: data.verified !== undefined ? data.verified + '' : 'false',
                         element: {
                             //disabled: !!_load,
                             title: data.username + ':verified'//,
@@ -332,7 +354,7 @@ var XNAT = getObject(XNAT);
                     enabled: {
                         kind: 'panel.input.switchbox',
                         label: 'Enabled',
-                        value: data.enabled !== undefined ? data.enabled+'' : 'false',
+                        value: data.enabled !== undefined ? data.enabled + '' : 'false',
                         element: {
                             //disabled: !!_load,
                             title: data.username + ':enabled'//,
@@ -445,6 +467,8 @@ var XNAT = getObject(XNAT);
                     }
                 }
             }
+
+            // TODO: replace old 'advanced' project settings with this
             function userProjects(){
                 return {
                     kind: 'panel.form',
@@ -457,6 +481,8 @@ var XNAT = getObject(XNAT);
                     }
                 }
             }
+
+            // TODO: replace old 'advanced' security settings with this
             function userSecurity(){
                 return {
                     kind: 'panel.form',
@@ -485,12 +511,11 @@ var XNAT = getObject(XNAT);
                             element: {
                                 checked: (data.roles.indexOf('Administrator') > -1)
                             },
-                            description:
-                                '<p>This allows users to access the Administrative pages of the web interface.</p>' +
-                                '<div class="warning">' +
-                                '<b>WARNING:</b> Granting administrative privileges allows this user great power ' +
-                                'over the entire site.' +
-                                '</div>'
+                            description: '<p>This allows users to access the Administrative pages of the web interface.</p>' +
+                            '<div class="warning">' +
+                            '<b>WARNING:</b> Granting administrative privileges allows this user great power ' +
+                            'over the entire site.' +
+                            '</div>'
                         },
                         nonExpiring: {
                             kind: 'panel.input.switchbox',
@@ -501,14 +526,13 @@ var XNAT = getObject(XNAT);
                             element: {
                                 checked: (data.roles.indexOf('non_expiring') > -1)
                             },
-                            description:
-                                '<p>This prevents this accounts password from expiring.</p>' +
-                                '<div class="warning">' +
-                                '<b>WARNING:</b> Granting a user account a non-expiring password is a security risk ' +
-                                'and should be limited to accounts that perform automated system tasks. In addition, ' +
-                                'if any users are designated as non-expiring access to the user list should be ' +
-                                'restricted to administrators.' +
-                                '</div>'
+                            description: '<p>This prevents this accounts password from expiring.</p>' +
+                            '<div class="warning">' +
+                            '<b>WARNING:</b> Granting a user account a non-expiring password is a security risk ' +
+                            'and should be limited to accounts that perform automated system tasks. In addition, ' +
+                            'if any users are designated as non-expiring access to the user list should be ' +
+                            'restricted to administrators.' +
+                            '</div>'
                         },
                         allDataSubhead: {
                             kind: 'panel.subhead',
@@ -543,14 +567,14 @@ var XNAT = getObject(XNAT);
                         },
                         allDataWarning: {
                             tag: 'div.warning',
-                            content:
-                            'WARNING: Allowing full access to data will allow this user to see ALL data ' +
+                            content: 'WARNING: Allowing full access to data will allow this user to see ALL data ' +
                             'stored in this system. It supersedes project membership. Most accounts on your server ' +
                             'should NOT have All Data Access allowed.'
                         }
                     }
                 }
             }
+
             return xmodal.open({
                 width: 600,
                 height: 600,
@@ -571,7 +595,7 @@ var XNAT = getObject(XNAT);
                 },
                 onClose: function(obj){
                     renderUsersTable();
-                    if (typeof onclose === 'function'){
+                    if (typeof onclose === 'function') {
                         onclose(obj)
                     }
                 }
@@ -596,9 +620,10 @@ var XNAT = getObject(XNAT);
                 success: function(data){
                     XNAT.data['/xapi/users/active'] = data;
                     if (isFunction(success)) {
-                        success(data);
+                        success.apply(this, arguments);
                     }
-                }
+                },
+                failure: failure
             })
         }
 
@@ -606,9 +631,9 @@ var XNAT = getObject(XNAT);
         function editUser(e, onclose){
             e.preventDefault();
             var username =
-                    (this.title||'').split(':')[0] ||
-                    $(this).data('username') ||
-                    (this.innerText||'').trim();
+                (this.title || '').split(':')[0] ||
+                $(this).data('username') ||
+                (this.innerText || '').trim();
             getUserData(username).done(function(data){
                 getUserRoles(username).done(function(roles){
                     data.roles = roles;
@@ -618,13 +643,13 @@ var XNAT = getObject(XNAT);
                 })
             });
         }
-        XNAT.admin.usersGroups.editUser = editUser;
+        usersGroups.editUser = editUser;
 
         // immediately toggles user's "Verified" status
-        function setVerified(){
-            var username = this.title.split(':')[0];
-            var flag     = this.checked;
-            XNAT.xhr.put({
+        function setVerified(e, username, flag){
+            username = username || this.title.split(':')[0];
+            flag = flag || this.checked;
+            return XNAT.xhr.put({
                 url: XNAT.url.rootUrl('/xapi/users/' + username + '/verified/' + flag),
                 success: function(){
                     XNAT.ui.banner.top(2000, 'User has been set to ' + (flag ? '"verified"' : '"unverified"') + '.', 'success')
@@ -634,12 +659,14 @@ var XNAT = getObject(XNAT);
                 }
             })
         }
+        usersGroups.setVerified = setVerified;
+
 
         // immediately toggles user's "Enabled" status
-        function setEnabled(){
-            var username = this.title.split(':')[0];
-            var flag     = this.checked;
-            XNAT.xhr.put({
+        function setEnabled(e, username, flag){
+            username = username || this.title.split(':')[0];
+            flag = flag || this.checked;
+            return XNAT.xhr.put({
                 url: XNAT.url.rootUrl('/xapi/users/' + username + '/enabled/' + flag),
                 success: function(){
                     XNAT.ui.banner.top(2000, 'User status has been set to ' + (flag ? '"enabled"' : '"disabled"') + '.', 'success')
@@ -649,6 +676,8 @@ var XNAT = getObject(XNAT);
                 }
             })
         }
+        usersGroups.setEnabled = setEnabled;
+
 
         // kill all active sessions for the specified user
         function killActiveSessions(username){
@@ -699,7 +728,38 @@ var XNAT = getObject(XNAT);
             window.location.href = _url + _email;
         }
 
-        // userProjectsAndSecurity
+        // set up custom filter menus
+        function filterMenuElement(prop, notProp){
+            if (!prop) return false;
+            // call this function in context of the table
+            var $userProfilesTable = $(this);
+            var FILTERCLASS = 'filter-' + prop;
+            return {
+                id: 'user-filter-select-' + prop,
+                // style: { width: '100%' },
+                on: {
+                    change: function(){
+                        var selectedValue = $(this).val();
+                        console.log(selectedValue);
+                        $userProfilesTable.find('input.user-'+prop).each(function(){
+                            var $row = $(this).closest('tr');
+                            if (selectedValue === 'all') {
+                                $row.removeClass(FILTERCLASS);
+                                return;
+                            }
+                            $row.addClass(FILTERCLASS);
+                            if (this.checked && selectedValue === prop) {
+                                $row.removeClass(FILTERCLASS);
+                                return;
+                            }
+                            if (!this.checked && selectedValue === notProp) {
+                                $row.removeClass(FILTERCLASS);
+                            }
+                        })
+                    }
+                }
+            };
+        }
 
         // Spawner element config for the users list table
         function usersTable(){
@@ -710,6 +770,17 @@ var XNAT = getObject(XNAT);
                 classes: 'highlight',
                 id: 'user-profiles',
                 load: '/xapi/users/profiles',
+                before: {
+                    filterCss: {
+                        tag: 'style|type=text/css',
+                        content: '\n' +
+                        'tr.filter-verified, \n' +
+                        'tr.filter-enabled, \n' +
+                        'tr.filter-active { \n' +
+                        '   display: none !important; \n' +
+                        '}'
+                    }
+                },
                 element: {
                     on: [
                         ['click', 'a.select-all', selectAllUsers],
@@ -721,6 +792,7 @@ var XNAT = getObject(XNAT);
                         ['click', 'a.session-info', viewSessionInfo]
                     ]
                 },
+                onRender: function($table){},
                 //data: _data,
                 sortable: 'username, fullName, email',
                 filter: 'fullName, email',
@@ -741,6 +813,17 @@ var XNAT = getObject(XNAT);
                     //     }
                     // },
                     //
+                    id: {
+                        label: 'ID',
+                        sort: true,
+                        td: { className: 'user-id center' },
+                        call: function(id){
+                            return [
+                                spawn('i.hidden', zeroPad(id, 6)),
+                                id
+                            ]
+                        }
+                    },
                     username: {
                         label: 'Username',
                         filter: true, // add filter: true to individual items to add a filter
@@ -768,6 +851,18 @@ var XNAT = getObject(XNAT);
                     verified: {
                         label: 'Verified',
                         td: { className: 'verified center' },
+                        // custom filter menu
+                        filter: function(table){
+                            return spawn('div.center', [XNAT.ui.select.menu({
+                                value: 'all',
+                                options: {
+                                    all: 'Show All',
+                                    verified: 'Show Verified',
+                                    unverified: 'Show Unverified'
+                                },
+                                element: filterMenuElement.call(table, 'verified', 'unverified')
+                            }).element])
+                        },
                         call: function(value){
                             return userSwitch.call(this, 'verified', value);
                         }
@@ -775,6 +870,17 @@ var XNAT = getObject(XNAT);
                     enabled: {
                         label: 'Enabled',
                         td: { className: 'enabled center' },
+                        filter: function(table){
+                            return spawn('div.center', [XNAT.ui.select.menu({
+                                value: 'all',
+                                options: {
+                                    all: 'Show All',
+                                    enabled: 'Show Enabled',
+                                    disabled: 'Show Disabled'
+                                },
+                                element: filterMenuElement.call(table, 'enabled', 'disabled')
+                            }).element])
+                        },
                         call: function(value){
                             return userSwitch.call(this, 'enabled', value);
                         }
@@ -786,10 +892,47 @@ var XNAT = getObject(XNAT);
                         label: 'Active',
                         sort: true,
                         td: { className: 'active center' },
+                        filter: function(table){
+                            var $table = $(table);
+                            return spawn('div.center', [XNAT.ui.select.menu({
+                                value: 'all',
+                                options: {
+                                    all: 'Show All',
+                                    active: 'Show Active',
+                                    inactive: 'Show Inactive'
+                                },
+                                element: {
+                                    id: 'user-filter-select-active',
+                                    on: {
+                                        change: function(){
+                                            var selectedValue = $(this).val();
+                                            var $rows = $table.find('tr[data-id]');
+                                            var FILTERCLASS = 'filter-active';
+                                            if (selectedValue === 'all') {
+                                                $rows.removeClass(FILTERCLASS);
+                                                return;
+                                            }
+                                            $rows.addClass(FILTERCLASS);
+                                            $rows.each(function(){
+                                                var $row = $(this);
+                                                var isActive = $row.find('a.active-user').length > 0;
+                                                if (isActive && selectedValue === 'active') {
+                                                    $row.removeClass(FILTERCLASS);
+                                                    return;
+                                                }
+                                                if (!isActive && selectedValue === 'inactive') {
+                                                    $row.removeClass(FILTERCLASS);
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            }).element])
+                        },
                         call: function(){
                             var username = this.username;
                             var sessionCount = 0;
-                            if (username && activeUsers[username] && activeUsers[username].sessions.length) {
+                            if (username && activeUsers && activeUsers[username] && activeUsers[username].sessions.length) {
                                 sessionCount = activeUsers[username].sessions.length
                             }
                             if (sessionCount) {
@@ -799,10 +942,12 @@ var XNAT = getObject(XNAT);
                                         title: 'click to kill ' + sessionCount + ' active session(s)',
                                         href: '#!',
                                         style: { display: 'block', padding: '2px' },
-                                        on: { click: function(e){
-                                            e.preventDefault();
-                                            killActiveSessions(username);
-                                        }}
+                                        on: {
+                                            click: function(e){
+                                                e.preventDefault();
+                                                killActiveSessions(username);
+                                            }
+                                        }
                                     }, [['img', { src: XNAT.url.rootUrl('/images/cg.gif') }]]]
                                 ])
                             }
@@ -869,10 +1014,19 @@ var XNAT = getObject(XNAT);
 
         // render or update the users table
         function renderUsersTable(container){
-            var $container = $$(container || '#user-table-container').empty();
-            return XNAT.spawner.spawn({
-                usersTable: usersTable()
-            }).render($container);
+            var $container = container ? $$(container) : $(userTableContainer);
+            var _usersTable;
+            if ($container.length) {
+
+                _usersTable = XNAT.spawner.spawn({
+                    usersTable: usersTable()
+                });
+
+                _usersTable.render($container.empty());
+
+                return _usersTable;
+
+            }
         }
 
         function updateUsersTable(){
@@ -912,8 +1066,12 @@ var XNAT = getObject(XNAT);
 
     var tabsConfig = setupTabs();
 
-    XNAT.spawner.spawn(tabsConfig).render(XNAT.tabs.container);
+    usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
 
+    // only render tabs if XNAT.tabs.container is defined
+    if (XNAT.tabs && XNAT.tabs.container) {
+        usersGroups.tabs.render(XNAT.tabs.container);
+    }
 
     // this script has loaded
     usersGroups.loaded = true;

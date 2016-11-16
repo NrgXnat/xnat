@@ -1,4 +1,4 @@
-<table border="0" align="left">
+<table id="user-account-details" border="0" align="left">
     <tr>
         <td align="left" width="90"><h3>User Details</h3></td>
         <td>&nbsp;
@@ -25,13 +25,59 @@
     </tr>
     <tr>
         <td align=left>Verified: </td>
-        <td>#if($item.getBooleanProperty("verified"))YES #else NO #end</td>
+        <td id="user-verified-switch"></td>
+##        <td>#if($item.getBooleanProperty("verified"))YES #else NO #end</td>
     </tr>
     <tr>
         <td align=left>Enabled: </td>
-        <td>#if($item.getBooleanProperty("enabled"))YES #else NO #end</td>
+        <td id="user-enabled-switch"></td>
+    ##        <td>#if($item.getBooleanProperty("enabled"))YES #else NO #end</td>
     </tr>
 ##    <tr>
 ##        <td align=left>Authenticated:</td><td>#if($item.isActive())YES #else NO #end</td>
 ##    </tr>
 </table>
+<script>
+
+    (function(){
+
+        var usersGroups;
+        var topXNAT = window.top.XNAT;
+        var USERNAME = '$!item.getProperty("login")';
+        var isVerified = #if ($item.getBooleanProperty("verified")) true #else false #end;
+        var isEnabled = #if ($item.getBooleanProperty("enabled")) true #else false #end;
+
+        var userVerifiedSwitch = $('#user-verified-switch').empty();
+        var userEnabledSwitch = $('#user-enabled-switch').empty();
+
+        function setupSwitches(){
+
+            usersGroups = topXNAT.admin.usersGroups;
+
+            var verifiedSwitch = usersGroups.userSwitchElement(USERNAME, 'verified', isVerified);
+            verifiedSwitch.render(userVerifiedSwitch);
+
+            var enabledSwitch = usersGroups.userSwitchElement(USERNAME, 'enabled', isEnabled);
+            enabledSwitch.render(userEnabledSwitch);
+
+            var userAccountDetailsTable = $('#user-account-details');
+            userAccountDetailsTable.on('change', 'input.user-verified', usersGroups.setVerified);
+            userAccountDetailsTable.on('change', 'input.user-enabled', usersGroups.setEnabled);
+        }
+
+        if (topXNAT && topXNAT.admin && topXNAT.admin.usersGroups && topXNAT.admin.usersGroups.loaded) {
+            setupSwitches();
+        }
+        else {
+            loadjs(XNAT.url.rootUrl('/scripts/xnat/admin/usersGroups.js'), function(){
+                usersGroups = topXNAT.admin.usersGroups;
+                setupSwitches();
+            }, function(){
+                userVerifiedSwitch.html(isVerified ? 'Yes' : 'No');
+                userEnabledSwitch.html(isEnabled ? 'Yes' : 'No');
+            })
+        }
+
+    })();
+
+</script>

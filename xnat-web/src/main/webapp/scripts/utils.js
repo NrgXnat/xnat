@@ -420,7 +420,7 @@ jQuery.fn.tableSort = function(){
         var $tr = $(this);
         // but only if an index column is not already present
         if ($tr.find('> th, > td').first().hasClass('index')) return;
-        $tr.prepend('<td class="index hidden" style="display:none;">' + i + '</td>');
+        $tr.prepend('<td class="index hidden" style="display:none;">' + zeroPad(i, 6) + '</td>');
     });
     // $table.find('th').not('.sort').filter(function(){
     //     return this.innerHTML.trim() > '';

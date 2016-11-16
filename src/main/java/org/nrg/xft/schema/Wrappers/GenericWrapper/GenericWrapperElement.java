@@ -10,7 +10,6 @@
 
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.xft.TypeConverter.PGSQLMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
 import org.nrg.xft.XFT;
@@ -30,13 +29,15 @@ import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.utils.XftStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 public class GenericWrapperElement extends XFTElementWrapper implements SchemaElementI{	
-	static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperElement.class);
-	private static Hashtable HIDDEN_SUPERIOR_FIELDS = new Hashtable();
+	private static final Logger    logger                 = LoggerFactory.getLogger(GenericWrapperElement.class);
+	private static       Hashtable HIDDEN_SUPERIOR_FIELDS = new Hashtable();
 	
     
 	private ArrayList allFields = null;
@@ -58,8 +59,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	private ArrayList<XFTFieldWrapper> directNoFilter = null;
 	private ArrayList<SchemaElementI> _possibleExtenders = null;
 	
-	private static Map<String,GenericWrapperElement> ALL_ELEMENTS_CACHE = new Hashtable<String,GenericWrapperElement>();
-	private static Hashtable XMLPATH_TABLES_CACHE = new Hashtable();
+	private final static Map<String,GenericWrapperElement> ALL_ELEMENTS_CACHE = new HashMap<>();
+	private final static Map<String, String[]> XMLPATH_TABLES_CACHE = new HashMap<>();
 
 	private String _finalSqlName=null;
 	private String _finalFormattedName=null;
@@ -2229,7 +2230,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					GenericWrapperElement e = GenericWrapperElement.GetElement(getFullXMLName() + "_history");
 					e.getWrapped().initializeExtensionField();
 				} catch (ElementNotFoundException e) {
-					logger.error(e);	
+					logger.error("", e);
 				}
 
 				GenericWrapperElement.ClearElementCache();
@@ -3898,9 +3899,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
         return properName;
 	}
 	
-	public static void ClearElementCache()
-	{
-		GenericWrapperElement.ALL_ELEMENTS_CACHE = new Hashtable();
+	public static void ClearElementCache() {
+		GenericWrapperElement.ALL_ELEMENTS_CACHE.clear();
 	}
 	
 	public SchemaElementI getOtherElement(String s)
@@ -3913,27 +3913,16 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
         }
 	}
 	
-	public boolean equals(Object e)
-	{
-	    if(e instanceof GenericWrapperElement){
-	    	return ((GenericWrapperElement)e).getFullXMLName().equals(this.getFullXMLName());	   
-	    }else{
-	    	return false;
-	    }
+	public boolean equals(Object e) {
+		return e instanceof GenericWrapperElement && ((GenericWrapperElement) e).getFullXMLName().equals(this.getFullXMLName());
 	}
 	
 	public int hashCode(){
 		return this.getFullXMLName().hashCode();
 	}
 	
-	public boolean canBeRootWithBase()
-	{
-	    if (this.getWrapped().canBeRoot())
-	    {
-	        return hasBase();
-	    }else{
-	        return false;
-	    }
+	public boolean canBeRootWithBase() {
+		return this.getWrapped().canBeRoot() && hasBase();
 	}
     
     public boolean canBeRoot()
@@ -3949,13 +3938,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	        return true;
 	    }else{
 	        try {
-                if (this.isExtension())
-                {
-                    return ((GenericWrapperElement)this.getExtensionField().getReferenceElement()).hasBase();
-                }else{
-                    return false;
-                }
-            } catch (Exception e) {
+				return this.isExtension() && ((GenericWrapperElement) this.getExtensionField().getReferenceElement()).hasBase();
+			} catch (Exception e) {
                 return false;
             }
 	    }
@@ -3972,16 +3956,14 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	    ArrayList keys = getAllPrimaryKeys();
 		Object[][] keyArray= new Object[keys.size()][4];
 		int counter = 0;
-		Iterator keyIter = keys.iterator();
-		while (keyIter.hasNext())
-		{
-		    GenericWrapperField gwf = (GenericWrapperField)keyIter.next();
-		    keyArray[counter][0] = gwf.getSQLName();
-		    keyArray[counter][1] = gwf.getType(converter);
-		    keyArray[counter][2] = "$"+(counter+1);
-		    keyArray[counter][3] = gwf;
-		    
-		    counter++;
+		for (final Object key : keys) {
+			GenericWrapperField gwf = (GenericWrapperField) key;
+			keyArray[counter][0] = gwf.getSQLName();
+			keyArray[counter][1] = gwf.getType(converter);
+			keyArray[counter][2] = "$" + (counter + 1);
+			keyArray[counter][3] = gwf;
+
+			counter++;
 		}
 		return keyArray;
 	}
@@ -3993,7 +3975,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	{
 	    if (_possibleExtenders==null)
 	    {
-	        _possibleExtenders = new ArrayList<SchemaElementI>();
+	        _possibleExtenders = new ArrayList<>();
 	        
 	        try {
                 Iterator iter= XFTMetaManager.GetElementNames().iterator();

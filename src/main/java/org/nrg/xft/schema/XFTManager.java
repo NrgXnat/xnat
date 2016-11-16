@@ -13,7 +13,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -274,13 +273,13 @@ public class XFTManager {
     private final List<String> ignoredSchemaNames = Lists.newArrayList("xdat.xsd", "build.xsd", "display.xsd", "instance.xsd", "PlexiViewer.xsd");
 
     private List<SchemaWrapper> discoverSchema(String source) throws XFTInitException, ElementNotFoundException {
-        List<String> schemaLoaded = Lists.newArrayList();
+        final List<String> schemaLoaded = Lists.newArrayList();
+        final List<SchemaWrapper> toLoad = Lists.newArrayList();
 
-        List<SchemaWrapper> toLoad = Lists.newArrayList();
-
-        if (source != null) {
+        if (StringUtils.isNotBlank(source)) {
             //load schema from file system
-            final File schemasFolder = new File(source, "schemas");
+            final File sourceFile = new File(source);
+            final File schemasFolder = sourceFile.getName().equals("schemas") ? sourceFile : new File(sourceFile, "schemas");
             if (schemasFolder.exists()) {
                 final File[] files = schemasFolder.listFiles();
                 if (files != null) {
@@ -292,12 +291,9 @@ public class XFTManager {
                                     if (!schemaLoaded.contains(level2.getName()) && !ignoredSchemaNames.contains(level2.getName())) {
                                         if (level2.getName().endsWith(".xsd")) {
                                             schemaLoaded.add(level2.getName());
-
                                             try {
-                                                List<String> dependencies = getDependentSchema(new FileInputStream(level2));
-                                                SchemaWrapper schema = new SchemaWrapper("file", level2.getParentFile().getAbsolutePath(), level2.getName(), new FileSystemResource(level2), dependencies);
-
-                                                toLoad.add(schema);
+                                                final List<String> dependencies = getDependentSchema(new FileInputStream(level2));
+                                                toLoad.add(new SchemaWrapper("file", level2.getParentFile().getAbsolutePath(), level2.getName(), new FileSystemResource(level2), dependencies));
                                             } catch (Exception e) {
                                                 logger.error("", e);
                                             }

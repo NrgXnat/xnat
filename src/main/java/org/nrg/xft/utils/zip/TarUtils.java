@@ -7,7 +7,6 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xft.utils.zip;
 
 import edu.sdsc.grid.io.GeneralFile;
@@ -58,7 +57,6 @@ public class TarUtils implements ZipI {
         }
         out.setLongFileMode(TarOutputStream.LONGFILE_POSIX);
     }
-
 
     public ArrayList extract(InputStream is, String dir) throws IOException {
         return extract(is, dir, true, null);
@@ -155,7 +153,7 @@ public class TarUtils implements ZipI {
              final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destF))) {
 
             byte[] buff = new byte[FileUtils.LARGE_DOWNLOAD];
-            int    bytesRead;
+            int bytesRead;
 
             if (_log.isDebugEnabled()) {
                 _log.debug("Uploading file: " + destF.getAbsolutePath());
@@ -177,6 +175,7 @@ public class TarUtils implements ZipI {
     /**
      * @param relativePath path name for zip file
      * @param absolutePath Absolute path used to load file.
+     *
      * @throws IOException When an error occurs writing the file.
      */
     public void write(String relativePath, String absolutePath) throws IOException {
@@ -187,6 +186,7 @@ public class TarUtils implements ZipI {
     /**
      * @param relativePath path name for zip file
      * @param in           The input stream.
+     *
      * @throws IOException When an error occurs writing the file.
      */
     public void write(String relativePath, InputStream in) throws IOException {
@@ -209,6 +209,7 @@ public class TarUtils implements ZipI {
     /**
      * @param relativePath path name for zip file
      * @param file         The file
+     *
      * @throws IOException When an error occurs writing the file.
      */
     public void write(String relativePath, File file) throws IOException {
@@ -230,14 +231,13 @@ public class TarUtils implements ZipI {
         out.closeEntry();
     }
 
-
     public void writeDirectory(File dir) throws IOException {
         writeDirectory("", dir);
     }
 
     private void writeDirectory(String parentPath, File dir) throws IOException {
-        String       dirName = dir.getName() + "/";
-        final File[] files   = dir.listFiles();
+        String dirName = dir.getName() + "/";
+        final File[] files = dir.listFiles();
         if (files != null) {
             for (final File child : files) {
                 if (child.isDirectory()) {
@@ -274,14 +274,14 @@ public class TarUtils implements ZipI {
     }
 
     public void write(XNATDirectory dir) throws IOException {
-        ArrayList files          = dir.getFiles();
+        ArrayList files = dir.getFiles();
         ArrayList subDirectories = dir.getSubdirectories();
 
         String path = dir.getPath();
         for (Object file1 : files) {
-            long        startTime    = Calendar.getInstance().getTimeInMillis();
-            GeneralFile file         = (GeneralFile) file1;
-            String      relativePath = path + "/" + file.getName();
+            long startTime = Calendar.getInstance().getTimeInMillis();
+            GeneralFile file = (GeneralFile) file1;
+            String relativePath = path + "/" + file.getName();
             if (file instanceof XNATSrbFile) {
                 if (relativePath.contains(((XNATSrbFile) file).getSession())) {
                     relativePath = relativePath.substring(relativePath.indexOf(((XNATSrbFile) file).getSession()));
@@ -322,7 +322,9 @@ public class TarUtils implements ZipI {
     }
 
     /**
-     * @throws IOException
+     * Closes the output stream.
+     *
+     * @throws IOException When the output stream is not defined.
      */
     public void close() throws IOException {
         if (out == null) {

@@ -34,6 +34,7 @@ import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
@@ -433,12 +434,21 @@ public class UsersApi extends AbstractXapiRestController {
         }
         try {
             final UserI user = getUserManagementService().getUser(username);
+            boolean oldEnabledFlag = user.isEnabled();
             if (user == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             user.setEnabled(flag);
             try {
                 getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, flag ? Event.Enabled : Event.Disabled, "", ""));
+                if (flag && !oldEnabledFlag && user.isVerified()) {
+                    //When a user is enabled, send a new user email if they're also verified
+                    try {
+                        AdminUtils.sendNewUserEmailMessage(username, user.getEmail());
+                    } catch (Exception e) {
+                        _log.error("", e);
+                    }
+                }
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
                 _log.error("Error occurred " + (flag ? "enabling" : "disabling") + " user " + user.getLogin());
@@ -495,9 +505,18 @@ public class UsersApi extends AbstractXapiRestController {
             if (user == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
+            boolean oldVerifiedFlag = user.isVerified();
             user.setVerified(flag);
             try {
                 getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, flag ? Event.Enabled : Event.Disabled, "", ""));
+                if (flag && !oldVerifiedFlag && user.isEnabled()) {
+                    //When a user is verified, send a new user email if they're also enabled
+                    try {
+                        AdminUtils.sendNewUserEmailMessage(username, user.getEmail());
+                    } catch (Exception e) {
+                        _log.error("", e);
+                    }
+                }
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
                 _log.error("Error occurred " + (flag ? "enabling" : "disabling") + " user " + user.getLogin());

@@ -188,8 +188,10 @@
 
         <!-- Plugin versions -->
         <antlr4-maven-plugin.version>4.5.3</antlr4-maven-plugin.version>
+        <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
         <jacoco-maven-plugin.version>0.7.7.201606060606</jacoco-maven-plugin.version>
-        <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
+        <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
+        <maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
         <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
         <maven-jarsigner-plugin.version>1.4</maven-jarsigner-plugin.version>
@@ -198,7 +200,7 @@
         <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
-        <maven-war-plugin.version>2.6</maven-war-plugin.version>
+        <maven-war-plugin.version>3.0</maven-war-plugin.version>
         <webstart-maven-plugin.version>1.0-beta-7</webstart-maven-plugin.version>
     </properties>
 
@@ -1378,6 +1380,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${maven-assembly-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin.version}</version>
                     <configuration>
@@ -1431,14 +1438,6 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>webstart-maven-plugin</artifactId>
                     <version>${webstart-maven-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>jnlp-inline</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                     <configuration>
                         <outputJarVersions>true</outputJarVersions>
                         <jnlp>
@@ -1578,6 +1577,11 @@
                             <exclude>*-javadoc.jar</exclude>
                         </excludes>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.install4j</groupId>
+                    <artifactId>install4j-maven-plugin</artifactId>
+                    <version>${install4j-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>

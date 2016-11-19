@@ -64,6 +64,7 @@
         <nrg.mail.version>${xnatdev.version}</nrg.mail.version>
         <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
         <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
+        <nrg.test.version>${xnatdev.version}</nrg.test.version>
         <nrg.transaction.version>${xnatdev.version}</nrg.transaction.version>
         <nrg.dicomedit.version>6.0</nrg.dicomedit.version>
         <nrg.dicomutils.version>1.4.0-SNAPSHOT</nrg.dicomutils.version>
@@ -257,6 +258,12 @@
                 <groupId>org.nrg</groupId>
                 <artifactId>anonymize</artifactId>
                 <version>${nrg.anonymize.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>test</artifactId>
+                <version>${nrg.test.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

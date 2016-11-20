@@ -29,7 +29,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
-import org.nrg.xnat.helpers.uri.archive.ResourceURII;
+import org.nrg.xnat.helpers.uri.archive.*;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
@@ -124,22 +124,27 @@ public class DefaultCatalogService implements CatalogService {
         } else {
             uploadId = StringUtils.isNotBlank(catalog.getLabel()) ? catalog.getLabel() : XNATRestConstants.getPrearchiveTimestamp();
         }
-
-        if (parent.getItem().instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
-            insertExperimentResourceCatalog(user, (XnatExperimentdata) parent, catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
-        } else if (parent.getItem().instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
-            insertScanResourceCatalog(user, (XnatImagescandata) parent, catalog, uploadId, event);
-        } else if (parent.getItem().instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME)) {
-            insertProjectResourceCatalog(user, (XnatProjectdata) parent, catalog, uploadId, event);
-        } else if (parent.getItem().instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
-            insertSubjectResourceCatalog(user, (XnatSubjectdata) parent, catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
-        } else if (parent.getItem().instanceOf(XnatReconstructedimagedata.SCHEMA_ELEMENT_NAME)) {
-            insertReconstructionResourceCatalog(user, (XnatReconstructedimagedata) parent, catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
+        final Class<? extends URIManager.ArchiveItemURI> parentClass = resourceURI.getClass();
+        try {
+            if (AssessorURII.class.isAssignableFrom(parentClass) || ExperimentURII.class.isAssignableFrom(parentClass)) {
+                final XnatExperimentdata experiment = AssessorURII.class.isAssignableFrom(parentClass)
+                                                      ? ((AssessorURII) resourceURI).getAssessor()
+                                                      : ((ExperimentURII) resourceURI).getExperiment();
+                insertExperimentResourceCatalog(user, experiment, catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
+            } else if (ScanURII.class.isAssignableFrom(parentClass)) {
+                insertScanResourceCatalog(user, ((ScanURII) resourceURI).getScan(), catalog, uploadId, event);
+            } else if (ProjectURII.class.isAssignableFrom(parentClass)) {
+                insertProjectResourceCatalog(user, ((ProjectURII) resourceURI).getProject(), catalog, uploadId, event);
+            } else if (SubjectURII.class.isAssignableFrom(parentClass)) {
+                insertSubjectResourceCatalog(user, ((SubjectURII) resourceURI).getSubject(), catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
+            } else if (ReconURII.class.isAssignableFrom(parentClass)) {
+                insertReconstructionResourceCatalog(user, ((ReconURII) resourceURI).getRecon(), catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
+            }
+            return catalog;
+        } catch (Exception e) {
+            _log.error("An error occurred creating the catalog with label {} for resource {}, please check the server logs.", catalog.getLabel(), parentUri);
+            return null;
         }
-
-        _log.error("An error occurred creating the catalog with label {} for resource {}, please check the server logs.", catalog.getLabel(), parentUri);
-
-        return catalog;
     }
 
     /**
@@ -374,7 +379,7 @@ public class DefaultCatalogService implements CatalogService {
 
         final XnatImagesessiondata session = scan.getImageSessionData();
 
-        final Path path = Paths.get(session.getCurrentSessionFolder(true), "SCANS", uploadId);
+        final Path path = Paths.get(session.getCurrentSessionFolder(true), "SCANS", scan.getId());
         final File destination = resourceFolder != null
                                  ? path.resolve(Paths.get(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
                                  : path.resolve(catalog.getId() + "_catalog.xml").toFile();

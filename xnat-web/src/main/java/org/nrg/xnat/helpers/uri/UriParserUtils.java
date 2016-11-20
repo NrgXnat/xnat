@@ -129,12 +129,6 @@ public final class UriParserUtils {
         return StrSubstitutor.replace(format, parameters);
     }
 
-    private static List<String> getTypeList(final String[] types) {
-        final List<String> list = Arrays.asList(types);
-        Collections.sort(list, TYPE_COMPARATOR);
-        return list;
-    }
-
     /**
      * A base parser that reads a uri using the given template.
      *
@@ -167,6 +161,12 @@ public final class UriParserUtils {
             }
             return so;
         }
+    }
+
+    private static List<String> getTypeList(final String[] types) {
+        final List<String> list = Arrays.asList(types);
+        Collections.sort(list, TYPE_COMPARATOR);
+        return list;
     }
 
     private static final Logger logger = LoggerFactory.getLogger(UriParserUtils.class);

@@ -198,8 +198,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) throws IOException {
-        return new XnatInitCheckFilter(appInfo);
+    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo, final SiteConfigPreferences preferences) throws IOException {
+        return new XnatInitCheckFilter(appInfo, preferences);
     }
 
     @Bean

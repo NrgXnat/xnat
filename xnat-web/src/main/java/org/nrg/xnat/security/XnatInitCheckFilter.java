@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -34,14 +35,15 @@ import java.net.URISyntaxException;
 
 public class XnatInitCheckFilter extends GenericFilterBean {
     @Autowired
-    public XnatInitCheckFilter(final XnatAppInfo appInfo) {
+    public XnatInitCheckFilter(final XnatAppInfo appInfo, final SiteConfigPreferences preferences) {
         super();
         _appInfo = appInfo;
+        _preferences = preferences;
     }
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-        final HttpServletRequest request = (HttpServletRequest) req;
+        final HttpServletRequest  request  = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
 
         if (_appInfo.isInitialized()) {
@@ -49,7 +51,7 @@ public class XnatInitCheckFilter extends GenericFilterBean {
             chain.doFilter(req, res);
         } else {
             // We're going to use the user for logging.
-            final UserI user = XDAT.getUserDetails();
+            final UserI   user        = XDAT.getUserDetails();
             final boolean isAnonymous = user == null || user.isGuest();
 
             if (isAnonymous) {
@@ -112,12 +114,16 @@ public class XnatInitCheckFilter extends GenericFilterBean {
         }
 
         try {
-            // This checks that the referer is the configuration page and that the request is not for another page
-            // (preventing the user from navigating away from the Configuration page via the menu bar).
             final URI refererUri = new URI(referer);
+
+            // This validates the request against the referer to ensure they match (no CSRF).
             final URI requestUri = new URI(request.getRequestURL().toString());
-            if (!(StringUtils.equals(refererUri.getScheme(), requestUri.getScheme()) && StringUtils.equals(refererUri.getHost(), requestUri.getHost()) && (refererUri.getPort() == requestUri.getPort()))) {
-                throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation);
+            if ((_preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererUri.getScheme(), requestUri.getScheme())) ||
+                !StringUtils.equals(refererUri.getHost(), requestUri.getHost()) ||
+                refererUri.getPort() != requestUri.getPort()) {
+                final String message = String.format("The referer and request URIs were different:\n * Request: scheme %s, host %s, port %d\n * Referer: scheme %s, host %s, port %d",
+                        requestUri.getScheme(), requestUri.getHost(), requestUri.getPort(), refererUri.getScheme(), refererUri.getHost(), refererUri.getPort());
+                throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
             }
 
             // If you're on a request within the configuration page (or error page or expired password page), continue
@@ -132,5 +138,6 @@ public class XnatInitCheckFilter extends GenericFilterBean {
 
     private static Logger _log = LoggerFactory.getLogger(XnatInitCheckFilter.class);
 
-    private final XnatAppInfo _appInfo;
+    private final XnatAppInfo           _appInfo;
+    private final SiteConfigPreferences _preferences;
 }

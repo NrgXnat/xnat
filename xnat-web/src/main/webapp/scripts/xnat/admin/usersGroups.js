@@ -26,6 +26,8 @@ var XNAT = getObject(XNAT);
 }(function(){
 
     var undefined, usersGroups, newUser = '',
+        passwordComplexity = XNAT.data.siteConfig.passwordComplexity,
+        passwordComplexityMessage = XNAT.data.siteConfig.passwordComplexityMessage,
         activeUsers = XNAT.data['/xapi/users/active'];
 
     XNAT.admin = getObject(XNAT.admin || {});
@@ -319,8 +321,11 @@ var XNAT = getObject(XNAT);
                     password: {
                         kind: 'panel.input.password',
                         label: 'Password',
-                        element: { placeholder: '********' },
-                        validate: 'allow-empty alpha-num-dash'//,
+                        element: {
+                            placeholder: '********',
+                            data: { message: passwordComplexityMessage }
+                        },
+                        validate: 'allow-empty pattern:' + passwordComplexity + ' max-length:255'//,
                         //value: data.password || ''
                     },
                     firstName: {
@@ -412,9 +417,11 @@ var XNAT = getObject(XNAT);
             var username = $form.find('input#username').val();
             opts = cloneObject(opts);
             var doSubmit = $form.submitJSON(opts);
-            doSubmit.done(function(){
-                XNAT.ui.banner.top(2000, 'User info saved.', 'success')
-            });
+            if (doSubmit.done) {
+                doSubmit.done(function(){
+                    XNAT.ui.banner.top(2000, 'User info saved.', 'success')
+                });
+            }
             return doSubmit;
         }
 

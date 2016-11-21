@@ -575,7 +575,10 @@ var XNAT = getObject(XNAT||{}),
                     valid = true;
                 }
                 if (!valid) {
-                    errors.push(this.title||this.name||this.id)
+                    errors.push({
+                        field: this.title||this.name||this.id,
+                        message: $input.data('message') || ''
+                    })
                 }
             });
 
@@ -585,18 +588,26 @@ var XNAT = getObject(XNAT||{}),
         if (errors.length) {
             console.log('ERRORS: ' + errors);
             // VALIDATION ERRORS WILL STOP FORM SUBMISSION
-            errors = errors.map(function(field){
-                return '<li><b>' + field + '</b></li>'
+            errors = errors.map(function(error){
+                return '' +
+                    '<li>' +
+                    '<b>' + error.field + (error.message ? ':</b> ' + error.message : '</b>') +
+                    '</li>'
             });
             xmodal.message({
-                width: 400,
+                width: 500,
                 height: 300,
                 title: 'Validation Failed',
                 content: '' +
                     '<p>Please correct errors with the following fields:</p> ' +
                     '<ul>' + errors.join('') + '</ul>'
             });
-            return false;
+            // return noop functions if validation fails
+            return {
+                done: function(){},
+                fail: function(){},
+                always: function(){}
+            };
         }
 
         var inputs = $inputs.toArray();

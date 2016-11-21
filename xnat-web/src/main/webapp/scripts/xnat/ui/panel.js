@@ -501,10 +501,13 @@ var XNAT = getObject(XNAT || {});
 
                     // validate inputs before moving on
                     $form.find(':input[data-validate]').not('.ignore').each(function(){
-                        valid = XNAT.validate(this).check();
-                        if (!valid) {
+                        valid = XNAT.validate(this);
+                        if (!valid.check()) {
                             errorCount++;
-                            errors.push(this.title||this.name||this.id||this.tagName);
+                            errors.push({
+                                field: this.title||this.name||this.id||this.tagName,
+                                message: $(this).data('message') || ''
+                            });
                         }
                     });
 
@@ -513,12 +516,18 @@ var XNAT = getObject(XNAT || {});
                     if (errorCount) {
                         $form.addClass('error');
                         if (!silent) {
+                            errors = errors.map(function(error){
+                                return '' +
+                                    '<li>' +
+                                    '<b>' + error.field + (error.message ? ':</b> ' + error.message : '</b>') +
+                                    '</li>'
+                            });
                             xmodal.message({
-                                title: 'Error',
+                                title: 'Validation Error',
                                 content: '' +
                                 //'<div style="font-size:15px;">' +
                                 '<p>Please correct the following fields and re-submit the form:</p>' +
-                                '<ul><li><b>' + errors.join('</b></li><li><b>') + '</b></li></ul>' +
+                                '<ul>' + errors.join('') + '</ul>' +
                                 //'</div>' +
                                 '',
                                 width: 500,

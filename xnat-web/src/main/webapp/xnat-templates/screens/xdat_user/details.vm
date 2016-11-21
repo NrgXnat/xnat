@@ -65,18 +65,28 @@
             userAccountDetailsTable.on('change', 'input.user-enabled', usersGroups.setEnabled);
         }
 
-        if (topXNAT && topXNAT.admin && topXNAT.admin.usersGroups && topXNAT.admin.usersGroups.loaded) {
-            setupSwitches();
-        }
-        else {
-            loadjs(XNAT.url.rootUrl('/scripts/xnat/admin/usersGroups.js'), function(){
-                usersGroups = topXNAT.admin.usersGroups;
+
+        XNAT.xhr.get(XNAT.url.rootUrl('/xapi/siteConfig')).done(function(siteConfig){
+
+            XNAT.data = extend(true, XNAT.data||{}, {
+                siteConfig: siteConfig
+            });
+
+            if (topXNAT && topXNAT.admin && topXNAT.admin.usersGroups && topXNAT.admin.usersGroups.loaded) {
                 setupSwitches();
-            }, function(){
-                userVerifiedSwitch.html(isVerified ? 'Yes' : 'No');
-                userEnabledSwitch.html(isEnabled ? 'Yes' : 'No');
-            })
-        }
+            }
+            else {
+                loadjs(XNAT.url.rootUrl('/scripts/xnat/admin/usersGroups.js'), function(){
+                    usersGroups = topXNAT.admin.usersGroups;
+                    setupSwitches();
+                }, function(){
+                    userVerifiedSwitch.html(isVerified ? 'Yes' : 'No');
+                    userEnabledSwitch.html(isEnabled ? 'Yes' : 'No');
+                })
+            }
+
+        });
+
 
     })();
 

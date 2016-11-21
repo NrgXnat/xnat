@@ -642,6 +642,11 @@ var XNAT = getObject(XNAT);
             }
         }
 
+        if (/^(regex|pattern)$/i.test(type)) {
+            this.pattern(args);
+            return this;
+        }
+
         // start with '!' for negation
         // !eq:0
         if (/^![^!]/.test(type)){
@@ -721,7 +726,7 @@ var XNAT = getObject(XNAT);
 
     Validator.fn.pattern = function(regex){
         this.regex = (typeof regex === 'string') ? new RegExp(regex) : regex;
-        this.validated = regex.test(this.value);
+        this.validated = this.regex.test(this.value);
         this.setClass();
         return this;
     };

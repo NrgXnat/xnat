@@ -51,6 +51,7 @@
 
                 <c:import url="/xapi/users/profiles" var="userProfiles"/>
                 <c:import url="/xapi/users/active" var="activeUsers"/>
+                <c:import url="/xapi/siteConfig" var="siteConfig"/>
 
                 <script>
                     (function(){
@@ -71,10 +72,15 @@
                             XNAT.data['/xapi/users/active'] = XNAT.xapi.users.active;
                         </c:if>
 
-                        XNAT.data = extend(true, {
+                        XNAT.data = extend(true, XNAT.data||{}, {
                             userProfiles: XNAT.xapi.users.profiles,
                             activeUsers: XNAT.xapi.users.active
-                        }, XNAT.data||{});
+                        });
+
+                        <c:if test="${not empty siteConfig}">
+                            XNAT.data.siteConfig = ${siteConfig};
+                            XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
+                        </c:if>
 
                         // these properties MUST be set before spawning 'tabs' widgets
                         XNAT.tabs.container = $('#users-groups-tabs').find('div.content-tabs');

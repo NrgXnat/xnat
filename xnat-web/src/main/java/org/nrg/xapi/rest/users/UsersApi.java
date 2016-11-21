@@ -246,6 +246,7 @@ public class UsersApi extends AbstractXapiRestController {
         if (model.isVerified() != null) {
             user.setVerified(model.isVerified());
         }
+
         user.setPassword(model.getPassword());
         user.setAuthorization(model.getAuthorization());
 
@@ -253,6 +254,15 @@ public class UsersApi extends AbstractXapiRestController {
 
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
+
+            if (model.isVerified() && model.isEnabled()) {
+                //When a user is enabled and verified, send a new user email
+                try {
+                    AdminUtils.sendNewUserEmailMessage(user.getUsername(), user.getEmail());
+                } catch (Exception e) {
+                    _log.error("", e);
+                }
+            }
             return new ResponseEntity<>(new User(user), HttpStatus.CREATED);
         } catch (Exception e) {
             _log.error("Error occurred modifying user " + user.getLogin());
@@ -284,6 +294,8 @@ public class UsersApi extends AbstractXapiRestController {
         if (user == null) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Failed to retrieve user object for user " + username);
         }
+        boolean oldEnabledFlag = user.isEnabled();
+        boolean oldVerifiedFlag = user.isVerified();
 
         boolean isDirty = false;
         if ((StringUtils.isNotBlank(model.getUsername())) && (!StringUtils.equals(user.getUsername(), model.getUsername()))) {
@@ -334,8 +346,17 @@ public class UsersApi extends AbstractXapiRestController {
         if (!isDirty) {
             return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
         }
+
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Modified, "", ""));
+            if (model.isVerified() && model.isEnabled() && (!oldEnabledFlag || !oldVerifiedFlag)) {
+                //When a user is enabled and verified, send a new user email
+                try {
+                    AdminUtils.sendNewUserEmailMessage(user.getUsername(), user.getEmail());
+                } catch (Exception e) {
+                    _log.error("", e);
+                }
+            }
             return new ResponseEntity<>(new User(user), HttpStatus.OK);
         } catch (Exception e) {
             _log.error("Error occurred modifying user " + user.getLogin());

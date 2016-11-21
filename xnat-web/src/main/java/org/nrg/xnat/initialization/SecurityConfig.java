@@ -22,6 +22,7 @@ import org.nrg.xnat.security.config.DatabaseAuthenticationProviderConfigurator;
 import org.nrg.xnat.security.config.LdapAuthenticationProviderConfigurator;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.nrg.xnat.services.XnatAppInfo;
+import org.nrg.xnat.services.validation.DateValidation;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -183,8 +184,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatExpiredPasswordFilter expiredPasswordFilter(final SiteConfigPreferences preferences, final JdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService) {
-        return new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService) {{
+    public XnatExpiredPasswordFilter expiredPasswordFilter(final SiteConfigPreferences preferences, final JdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
+        return new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService, dateValidation) {{
             setChangePasswordPath("/app/template/XDATScreen_UpdateUser.vm");
             setChangePasswordDestination("/app/action/ModifyPassword");
             setLogoutDestination("/app/action/LogoutUser");

@@ -36,6 +36,7 @@ public class PasswordExpirationHandlerMethod extends AbstractSiteConfigPreferenc
     @Override
     public void handlePreferences(final Map<String, String> values) {
         if (!Collections.disjoint(PREFERENCES, values.keySet())) {
+            _log.debug("Found updated password expiration preferences, updating expired password filter");
             updatePasswordExpiration();
         }
     }
@@ -43,6 +44,7 @@ public class PasswordExpirationHandlerMethod extends AbstractSiteConfigPreferenc
     @Override
     public void handlePreference(final String preference, final String value) {
         if (PREFERENCES.contains(preference)) {
+            _log.debug("Found updated password expiration preference {}, updating expired password filter", preference);
             updatePasswordExpiration();
         }
     }

@@ -769,6 +769,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getMatchSecurityProtocol() {
+        return getBooleanValue("matchSecurityProtocol");
+    }
+
+    public void setMatchSecurityProtocol(final boolean matchSecurityProtocol) {
+        try {
+            setBooleanValue(matchSecurityProtocol, "matchSecurityProtocol");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'matchSecurityProtocol': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true", aliases = "security.allow-data-admins")
     public boolean getAllowDataAdmins() {
         return getBooleanValue("allowDataAdmins");

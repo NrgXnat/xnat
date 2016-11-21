@@ -11,6 +11,7 @@ package org.nrg.xnat.services.archive;
 
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
@@ -88,6 +89,37 @@ public interface CatalogService {
      * @throws Exception Thrown when an error occurs at some stage of creating the resource catalog.
      */
     XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog, final EventMetaI event, final Map<String, String> parameters) throws Exception;
+
+    /**
+     * Inserts the resource catalog into the resource specified by the parent URI parameter. If you need to pass
+     * parameters into the insert function, you should use the {@link #insertResourceCatalog(UserI, String,
+     * XnatResourcecatalog, EventMetaI, Map)} version of this method.
+     *
+     * @param user        The user creating the resource catalog.
+     * @param parent      The resource parent.
+     * @param catalog     The catalog object to insert.
+     * @param event       The event meta data to process.
+     *
+     * @return The newly inserted resource catalog.
+     *
+     * @throws Exception Thrown when an error occurs at some stage of creating the resource catalog.
+     */
+    XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog, final EventMetaI event) throws Exception;
+
+    /**
+     * Inserts the resource catalog into the resource specified by the parent URI parameter.
+     *
+     * @param user        The user creating the resource catalog.
+     * @param parent      The resource parent.
+     * @param parameters  One or more parameters to be passed into the create method.
+     * @param catalog     The catalog object to insert.
+     * @param event       The event meta data to process.
+     *
+     * @return The newly inserted resource catalog.
+     *
+     * @throws Exception Thrown when an error occurs at some stage of creating the resource catalog.
+     */
+    XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog, final EventMetaI event, final Map<String, String> parameters) throws Exception;
 
     /**
      * Refreshes the catalog for the specified resource. The resource should be identified by standard archive-relative

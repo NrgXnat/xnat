@@ -109,10 +109,10 @@ public class DefaultCatalogService implements CatalogService {
             catalog.setDescription(description);
         }
         if (StringUtils.isNotBlank(format)) {
-            catalog.setDescription(format);
+            catalog.setFormat(format);
         }
         if (StringUtils.isNotBlank(content)) {
-            catalog.setDescription(content);
+            catalog.setContent(content);
         }
         for (final String tag : tags) {
             if (StringUtils.isNotBlank(tag)) {
@@ -123,7 +123,7 @@ public class DefaultCatalogService implements CatalogService {
                         resourceTag.setName(atoms[0]);
                         resourceTag.setTag(atoms[1]);
                     } else if (subtag.contains(":")) {
-                        final String[] atoms = subtag.split("=", 2);
+                        final String[] atoms = subtag.split(":", 2);
                         resourceTag.setName(atoms[0]);
                         resourceTag.setTag(atoms[1]);
                     } else {

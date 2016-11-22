@@ -1,7 +1,7 @@
 ## Main JavaScript and CSS files for XNAT
 
-#set ($SITE_ROOT = $content.getURI(''))
-#set ($versionString = "v=1.7.0a2")
+#set($versionString = "v=1.7.1")
+#set($SITE_ROOT = $content.getURI(""))
 
 ## only load once
 #if (!$appJS)

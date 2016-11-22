@@ -20,6 +20,8 @@
 ## pull in the base JavaScript files
 $navigation.setTemplate("/BaseJS.vm")
 
+#set($versionString = "v=1.7.1")
+#set($SITE_ROOT = $content.getURI(""))
 
 <script>
 
@@ -171,30 +173,30 @@ $navigation.setTemplate("/BaseJS.vm")
     // the jQuery DOM-ready queue
     jq(function(){menuInit()});
 </script>
-<script src="$content.getURI('scripts/xdat.js')"></script>
-<script src="$content.getURI('scripts/DynamicJSLoad.js')"></script>
+<script src="${SITE_ROOT}/scripts/xdat.js"></script>
+<script src="${SITE_ROOT}/scripts/DynamicJSLoad.js"></script>
 
 <!-- YAHOO USER INTERFACE files below here -->
-<script src="$content.getURI('scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js')"></script>
-##<script src="$content.getURI('scripts/yui/build/event/event.js')"></script>
-<script src="$content.getURI('scripts/yui/build/event/event-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/container/container-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/menu/menu-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/element/element-beta-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/button/button-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/connection/connection-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/treeview/treeview-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/cookie/cookie-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/tabview/tabview-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/datasource/datasource-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/resize/resize-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/dragdrop/dragdrop-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/datatable/datatable-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/paginator/paginator-min.js')"></script>
-<script src="$content.getURI('scripts/yui/build/json/json-min.js')"></script>
-<script src="$content.getURI('scripts/yui/xnat_loader.js')"></script>
-<script src="$content.getURI('scripts/LeftBarTreeView.js')"></script>
-<script src="$content.getURI('scripts/justification/justification.js')"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+##<script src="${SITE_ROOT}/scripts/yui/build/event/event.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/event/event-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/container/container-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/menu/menu-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/element/element-beta-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/button/button-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/connection/connection-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/treeview/treeview-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/cookie/cookie-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/tabview/tabview-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/datasource/datasource-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/resize/resize-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/dragdrop/dragdrop-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/datatable/datatable-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/paginator/paginator-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/json/json-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/xnat_loader.js"></script>
+<script src="${SITE_ROOT}/scripts/LeftBarTreeView.js"></script>
+<script src="${SITE_ROOT}/scripts/justification/justification.js"></script>
 <script>
 
     // The YUIDOM alias is used throughout XNAT
@@ -219,24 +221,24 @@ $navigation.setTemplate("/BaseJS.vm")
 </script>
 
 <!-- YUI css -->
-<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/yui/build/assets/skins/xnat/xnat.css?v=1.7.0a1')">
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/xnat/xnat.css?${versionString}">
 
 <!-- date input stuff -->
-<link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.min.css?${versionString}">
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.min.css?${versionString}">
 <script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.min.js"></script>
 
-<link type="text/css" rel="stylesheet" href="$content.getURI('scripts/yui/build/calendar/assets/skins/sam/calendar.css?v=1.7.0a1')">
-##<script src="$content.getURI('scripts/yui/build/calendar/calendar.js')"></script>
-<script src="$content.getURI('scripts/yui/build/calendar/calendar-min.js')"></script>
-<script src="$content.getURI('scripts/ezCalendar.js')"></script>
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/calendar/assets/skins/sam/calendar.css?${versionString}">
+##<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-min.js"></script>
+<script src="${SITE_ROOT}/scripts/ezCalendar.js"></script>
 
 
 ## pull in the XNAT app JavaScript files
 $navigation.setTemplate("/AppJS.vm")
 
 
-<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/tabWrangler/tabWrangler.css?v=1.7.0a1')">
-<script src="$content.getURI('scripts/tabWrangler/tabWrangler.js')"></script>
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.css?${versionString}">
+<script src="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.js"></script>
 
 
 #addGlobalCustomScreens("header")

@@ -1,12 +1,13 @@
 ## Base JavaScript files
 
-#set ($SITE_ROOT = $content.getURI(''))
+#set($versionString = "v=1.7.1")
+#set($SITE_ROOT = $content.getURI(""))
 
 ## only load once
 #if (!$baseJS)
 
     <!-- load polyfills before ANY other JavaScript -->
-    <script src="$content.getURI('scripts/polyfills.js')"></script>
+    <script src="${SITE_ROOT}/scripts/polyfills.js"></script>
 
     <!-- set global vars that are used often -->
     <script>
@@ -21,21 +22,21 @@
     ## separate script tags so not everything breaks if showReason or requireReason blows up
 
     <!-- XNAT global functions (no dependencies) -->
-    <script src="$content.getURI('scripts/globals.js')"></script>
+    <script src="${SITE_ROOT}/scripts/globals.js"></script>
 
     <!-- required libraries -->
-    <script src="$content.getURI('scripts/lib/loadjs/loadjs.js')"></script>
-    <script src="$content.getURI('scripts/lib/jquery/jquery.min.js')"></script>
-    <script src="$content.getURI('scripts/lib/jquery/jquery-migrate.min.js')"></script>
+    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.min.js"></script>
     <script>
         // alias jQuery to jq
         var jq = jQuery;
     </script>
 
     <!-- jQuery plugins -->
-    <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/lib/jquery-plugins/chosen/chosen.min.css?v=1.7.0a1')">
-    <script src="$content.getURI('scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js')"></script>
-    <script src="$content.getURI('scripts/lib/jquery-plugins/jquery.maskedinput.min.js')"></script>
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.min.css?${versionString}">
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.maskedinput.min.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.hasClasses.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.js"></script>
@@ -47,7 +48,7 @@
     <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.js"></script>
 
 <!-- XNAT utility functions -->
-    <script src="$content.getURI('scripts/utils.js')"></script>
+    <script src="${SITE_ROOT}/scripts/utils.js"></script>
 
     #set ($baseJS = true)
 

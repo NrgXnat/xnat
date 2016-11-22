@@ -39,7 +39,7 @@
     <%--<c:set var="_scriptsLib" value="${SITE_ROOT}/scripts/lib"/>--%>
     <c:set var="csrfToken" value="${sessionScope.csrfToken}"/>
     <c:set var="_user" value="${sessionScope.username}"/>
-    <c:set var="versionString" value="v=1.7.0a2"/>
+    <c:set var="versionString" value="v=1.7.1"/>
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta http-equiv="Pragma" content="no-cache">

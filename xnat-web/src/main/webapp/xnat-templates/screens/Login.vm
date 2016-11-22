@@ -127,7 +127,7 @@ $page.setTitle("$siteId - Please Login")
     <div id="login_welcome">
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
-            <div id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</div>
+            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
             <script>
                 var mdtext = jq('#siteDescriptionMd').text();
                 var markedText = marked(mdtext);

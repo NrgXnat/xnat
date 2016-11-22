@@ -9,6 +9,9 @@ $!template.setLayoutTemplate("Login.vm")
 $page.setTitle("Register A New User Account")
 $page.setBgColor($ui.bgcolor)
 
+## Dependency for markdown parsing
+<script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
+
 <div id="login_area">
     #if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
         <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;"><strong>$siteConfig.siteWideAlertMessage</strong></div>
@@ -16,7 +19,13 @@ $page.setBgColor($ui.bgcolor)
 
     <div id="login_welcome">
         #if($siteConfig.siteDescriptionType == "Text")
-            <div>$siteConfig.siteDescriptionText</div>
+            <div id="siteDescription"></div>
+            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
+            <script>
+                var mdtext = jq('#siteDescriptionMd').text();
+                var markedText = marked(mdtext);
+                jq('#siteDescription').html(markedText);
+            </script>
         #else
             #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
                 <div>#parse($siteConfig.siteDescriptionPage)</div>
@@ -26,7 +35,7 @@ $page.setBgColor($ui.bgcolor)
         #end
     </div>
 
-    <div id="register_box_container">
+    <div id="login_box" style="background:transparent">
         <h3>New User Registration</h3>
 
         #if($data.getMessage())

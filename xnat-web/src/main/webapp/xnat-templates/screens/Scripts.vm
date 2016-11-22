@@ -1,4 +1,5 @@
 <!-- BEGIN plugin-resources/webapp/xnat-templates/screens/Scripts.vm -->
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
@@ -118,19 +119,6 @@
 
 <h3 style="margin:0 0 15px 0;">Automation</h3>
 
-
-<div class="alert" style="margin:15px 0;max-width:696px;min-width:400px;">
-    Automation is an emerging feature in the XNAT server platform. It allows you to create scripts in a number
-    of scripting languages that can be triggered by system events. You should use it only if you or your team
-    has a thorough understanding of XNAT, your system architecture and environment, and the particular
-    scripting languages involved. Refer to the
-    <a href="https://wiki.xnat.org/display/XNAT16/XNAT+Automation" target="_blank">XNAT Automation documentation</a>
-    for more information. For specific questions, you can visit the
-##    <a href="https://wiki.xnat.org/display/XNAT16/XNAT+Automation+Discussion" target="_blank">XNAT Automation Discussion forum</a> or the
-    <a href="https://groups.google.com/forum/#!forum/xnat_discussion" target="_blank">XNAT discussion group</a>.
-</div>
-
-
 <div class="yui-skin-sam">
 
 ##    <div id="tp_fm" style="display:none"></div>
@@ -159,7 +147,7 @@
                 </tr>
                 <tr>
                     <td><label for="event" class="required"><strong>Event ID:</strong><i>*</i></label></td>
-                    <td><select id="select_event" name="event" class="event"></select> <input type="text" id="select_input" class="event" style="display:none" size="15"/> <button class="customButton">Custom Value</button></div></td>
+                    <td><select id="select_event" name="event" class="event"></select> <input type="text" id="select_input" class="event" style="display:none" size="15"/> <button class="customButton">Custom Value</button></td>
                 </tr>
                 <tr id="filterRow">
                     <td><label for="filters"><strong>Filters:</strong></label></td>

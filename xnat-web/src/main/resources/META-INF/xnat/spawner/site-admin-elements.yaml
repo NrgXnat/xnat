@@ -322,14 +322,24 @@ generalSecuritySettings:
     url: /xapi/siteConfig
     contents:
         securityChannel:
-            kind: panel.select.single
+            kind: panel.element
             label: Security Channel
-            options:
-                any: Any
-                http: http
-                https: https
-            element:
-                title: Security Channel
+            info: >
+                If you're using another service for SSL termination, including a front-end proxy such as Apache HTTPD
+                or nginx, or a load balancer such as AWS elastic load balancing, you should leave the security channel
+                set to "any".
+#            <!-- For more information, see XXX (<- link to documentation page). -->
+            contents:
+                securityChannelMenu:
+                    kind: select.menu
+                    name: securityChannel
+                    options:
+                        any: Any
+                        http: http
+                        https: https
+#                    element:
+#                        style:
+#                            marginTop: 1px
         requireLogin:
             kind: panel.input.switchbox
             name: requireLogin
@@ -1393,23 +1403,24 @@ investigatorsOld:
                     label: ~!
                     call: XNAT.admin.investigatorProjectList
 
-misc:
+scanTypeMapping:
     kind: panel.form
-    name: misc
-    label: Miscellaneous
+    label: Scan Type Mapping
     method: POST
     contentType: json
     url: /xapi/siteConfig
     contents:
         scanTypeMapping:
             kind: panel.input.switchbox
-            name: scanTypeMapping
             label: Scan Type Mapping?
             onText: Enabled
             offText: Disabled
-        development:
-            kind: panel.subhead
-            label: Development Utilities
+
+developmentUtilities:
+    kind: panel.form
+    label: Development Utilities
+    footer: false
+    contents:
         spawner:
             kind: panel.element
             label: Spawner
@@ -1578,7 +1589,8 @@ adminPage:
             kind: tab
             label: Miscellaneous
             contents:
-                ${misc}
+                ${scanTypeMapping}
+                ${developmentUtilities}
 
 
 ###########################################

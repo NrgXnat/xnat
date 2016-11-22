@@ -1417,7 +1417,7 @@ scanTypeMapping:
             offText: Disabled
 
 developmentUtilities:
-    kind: panel.form
+    kind: panel
     label: Development Utilities
     footer: false
     contents:

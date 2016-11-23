@@ -1,5 +1,5 @@
 /*
- * web: org.nrg.xnat.event.listeners.methods.ReceivedFileUserPreferenceHandlerMethod
+ * web: org.nrg.xnat.event.listeners.methods.XnatUserProviderPreferenceHandlerMethod
  * XNAT http://www.xnat.org
  * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
@@ -11,7 +11,16 @@ package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.XnatUserProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -45,10 +54,28 @@ public class XnatUserProviderPreferenceHandlerMethod extends AbstractSiteConfigP
         if (_providers.containsKey(preference)) {
             final XnatUserProvider provider = _providers.get(preference);
             if (!StringUtils.equals(value, provider.getLogin())) {
+                try {
+                    final UserI user = Users.getUser(value);
+                    if (!Roles.isSiteAdmin(user)) {
+                        _log.error("Can't set the {} user provider login name to {}, as that user is not a site administrator.", preference, value);
+                        throw new NrgServiceRuntimeException(NrgServiceError.PermissionsViolation, value);
+                    }
+                } catch (UserNotFoundException e) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.UserNotFoundError, value);
+                } catch (UserInitException e) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the user " + value, e);
+                }
+                _log.info("Setting the {} user provider login name to {}", preference, value);
                 provider.setLogin(value);
+            } else {
+                _log.error("Not changing the {} user provider login name to {}, it's already set to that.", preference, value);
             }
+        } else {
+            _log.error("Couldn't find a user provider with the name {}", preference);
         }
     }
+
+    private static final Logger _log = LoggerFactory.getLogger(XnatUserProviderPreferenceHandlerMethod.class);
 
     private final Map<String, XnatUserProvider> _providers = Maps.newHashMap();
 }

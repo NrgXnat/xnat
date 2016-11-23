@@ -13,12 +13,9 @@ import com.google.common.base.Joiner;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.ApiException;
 import org.nrg.xapi.exceptions.InitializationException;
-import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
-import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -119,12 +116,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 if (isInitializing && name.equals("initialized")) {
                     continue;
                 }
-                if (name.equals("receivedFileUser")) {
-                    final HttpStatus setStatus = setReceivedFileUser(properties.get(name));
-                    if (setStatus != null) {
-                        return new ResponseEntity<>(setStatus);
-                    }
-                }
                 _preferences.set(properties.get(name), name);
                 if (_log.isInfoEnabled()) {
                     _log.info("Set property {} to value: {}", name, properties.get(name));
@@ -210,11 +201,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
 
         if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
             _preferences.setInitialized(true);
-        } else if (StringUtils.equals("receivedFileUser", property)) {
-            final HttpStatus setStatus = setReceivedFileUser(value);
-            if (setStatus != null) {
-                return new ResponseEntity<>(setStatus);
-            }
         } else {
             try {
                 _preferences.set(value, property);
@@ -277,24 +263,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
         }
 
         return new ResponseEntity<>(_appInfo.getFormattedUptime(), HttpStatus.OK);
-    }
-
-    private HttpStatus setReceivedFileUser(final String value) throws InsufficientPrivilegesException, NotFoundException {
-        try {
-            _preferences.setReceivedFileUser(value);
-        } catch (NrgServiceRuntimeException e) {
-            switch (e.getServiceError()) {
-                case PermissionsViolation:
-                    throw new InsufficientPrivilegesException(e.getMessage());
-                case UserNotFoundError:
-                    throw new NotFoundException("No user with the name " + e.getMessage() + " was found.");
-                case Unknown:
-                default:
-                    _log.error("An unknown error occurred trying to set the received file user to value " + value, e);
-                    return HttpStatus.INTERNAL_SERVER_ERROR;
-            }
-        }
-        return null;
     }
 
     private Map<String, Object> getPreferences() {

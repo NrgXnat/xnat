@@ -54,7 +54,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 
 	@Override
 	public UserI getUser(Integer userId) throws UserNotFoundException, UserInitException {
-		XdatUser u=XdatUser.getXdatUsersByXdatUserId(userId, null, false);
+		XdatUser u=XdatUser.getXdatUsersByXdatUserId(userId, null, true);
 		if(u!=null){
 			return new XDATUser(u.getItem());
 		}else{

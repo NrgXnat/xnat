@@ -1,11 +1,7 @@
 <table id="user-account-details" border="0" align="left">
     <tr>
         <td align="left" width="90"><h3>User Details</h3></td>
-        <td>&nbsp;
-        ##					#if ($item.canEdit($user))
-        ##					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)" >Edit</a>
-        ##					#end
-        </td>
+        <td>&nbsp;</td>
     </tr>
     <tr>
         <td align=left>Username: </td>
@@ -26,12 +22,10 @@
     <tr>
         <td align=left>Verified: </td>
         <td id="user-verified-switch"></td>
-##        <td>#if($item.getBooleanProperty("verified"))YES #else NO #end</td>
     </tr>
     <tr>
         <td align=left>Enabled: </td>
         <td id="user-enabled-switch"></td>
-    ##        <td>#if($item.getBooleanProperty("enabled"))YES #else NO #end</td>
     </tr>
 ##    <tr>
 ##        <td align=left>Authenticated:</td><td>#if($item.isActive())YES #else NO #end</td>
@@ -66,9 +60,9 @@
         }
 
 
-        XNAT.xhr.get(XNAT.url.rootUrl('/xapi/siteConfig')).done(function(siteConfig){
+        topXNAT.xhr.get(topXNAT.url.rootUrl('/xapi/siteConfig')).done(function(siteConfig){
 
-            XNAT.data = extend(true, XNAT.data||{}, {
+            topXNAT.data = extend(true, XNAT.data||{}, {
                 siteConfig: siteConfig
             });
 

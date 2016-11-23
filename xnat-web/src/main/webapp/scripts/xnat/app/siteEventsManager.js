@@ -31,7 +31,7 @@ $(function(){
         $manage_event_handlers = $('#manage_event_handlers'),
         handlersRendered = false,
         hasEvents = false;
-    
+
 
     function initHandlersTable(doEdit){
 
@@ -56,15 +56,15 @@ $(function(){
 
                 if(_handlers.length) {
                     handlersRendered = true;
-                    eventRows += 
-                    '<dl class="header">' + 
+                    eventRows +=
+                    '<dl class="header">' +
                          '<dl>' +
                               '<dd class="col1">Event</dd>' +
                               '<dd class="col2">Script</dd>' +
                               '<dd class="col3">Description</dd>' +
                             //((doEdit) ?
                               '<dd class="col4"></dd>' +
-                            //  '<dd class="col5"></dd>' + 
+                            //  '<dd class="col5"></dd>' +
 			    // : '') +
                          '</dl>' +
                     '</dl>';
@@ -80,12 +80,12 @@ $(function(){
                                 '<button href="javascript:" class="delete-handler event-handler-button" ' +
                                 'data-event="' + _event_id + '" ' +
                                 'data-handler="' + eventHandler.triggerId + '" title="Delete handler for event ' + _event_id + '">delete</button>' +
-                                '</dd>' + 
+                                '</dd>' +
                                 '<dd class="col5" style="text-align: center;">' +
                                 '<button href="javascript:" class="configure-uploader-handler event-handler-button" ' +
                                 'data-event="' + _event_id + '" ' +
                                 'data-handler=' + eventHandler.triggerId + ' title="Configure uploader for event ' + _event_id + '">configure uploader</button>' +
-                                '</dd>' + 
+                                '</dd>' +
                             //: '') +
                             '<dd class="colC">' + '<b>Event Class: </b> ' + getEventClassDisplayValueFromHandlers(_handlers, eventHandler) + '</dd>' +
                             '<dd class="colC">' + '<b>Event Filters: </b> ' + eventHandler.eventFilters + '</dd>' +
@@ -114,17 +114,30 @@ $(function(){
     function manageEventHandlers(){
 
 			var manageModalOpts = {
-				width: 840,  
-				height: 480,  
-				id: 'xmodal-manage-events',  
+				width: 840,
+				height: 480,
+				id: 'xmodal-manage-events',
 				title: "Manage Event Handlers",
-				content: "<div id='manageModalDiv'></div>",
+				content: '' +
+                    '<p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>' +
+                    '<p id="no_event_handlers" style="display:none;padding:20px;">There are no event handlers currently configured for this project.</p>' +
+                    '<div id="events_manage_table" class="xnat-table" style="display:table;width:100%">' +
+                    '<dl class="header">' +
+                        '<dl>' +
+                            '<dd class="col1">Event</dd>' +
+                            '<dd class="col2">Script</dd>' +
+                            '<dd class="col3">Description</dd>' +
+                            '<dd class="col4"></dd>' +
+                            '<dd class="col5"></dd>' +
+                            '</dl>' +
+                        '</dl>' +
+                    '</div>',
                 buttons: {
-                    close: { 
+                    close: {
                         label: 'Done',
                         isDefault: true
                     },
-                    addEvents: { 
+                    addEvents: {
                         label: 'Add Event Handler',
                         action: function( obj ){
                             addEventHandler();
@@ -133,22 +146,6 @@ $(function(){
                 }
 			};
 			xmodal.open(manageModalOpts);
-			$('#manageModalDiv').html(
-               '<p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>' +
-                '<p id="no_event_handlers" style="display:none;padding:20px;">There are no event handlers currently configured for this project.</p>' +
-                '<div id="events_manage_table" class="xnat-table" style="display:table;width:100%">' +
-                    '<dl class="header">' + 
-                         '<dl>' +
-                              '<dd class="col1">Event</dd>' +
-                              '<dd class="col2">Script</dd>' +
-                              '<dd class="col3">Description</dd>' +
-                              '<dd class="col4"></dd>' +
-                              '<dd class="col5"></dd>' +
-                         '</dl>' +
-                    '</dl>' +
-                '</div>' 
-
-           ); 
            initHandlersTable(true);
            $("#events_manage_table").on('click', 'button.delete-handler', function(){
                deleteEventHandler($(this).data('handler'), $(this).data('event'))
@@ -159,37 +156,28 @@ $(function(){
 
     }
 
-    function initEventsMenu(){
+    function initEvents(){
         siteEventsManager.events = []; // reset array
-
-        $("#select_event").prop('disabled','disabled');
-		if (typeof XNAT.app.siteEventsManager.eventClasses === 'undefined') {
-			var eventClassesAjax = $.ajax({
-				type : "GET",
-		  		url: serverRoot+'/xapi/eventHandlers/automationEventClasses?XNAT_CSRF=' + window.csrfToken,
-				cache: false,
-				async: true,
-				context: this,
-				dataType: 'json'
-			});
-			eventClassesAjax.done( function( data, textStatus, jqXHR ) {
-				if (typeof data !== 'undefined') {
-					XNAT.app.siteEventsManager.eventClasses = data;
-                    populateEventsMenu();
-				}
-			});
-			eventClassesAjax.fail( function( data, textStatus, jqXHR ) {
+        if (typeof siteEventsManager.eventClasses === 'undefined') {
+            var eventClassesAjax = xhr.getJSON(XNAT.url.restUrl('/xapi/eventHandlers/automationEventClasses'));
+            eventClassesAjax.done(function(data, textStatus, jqXHR){
+                if (typeof data !== 'undefined') {
+                    siteEventsManager.eventClasses = data;
+                    addEventHandlerDialog();
+                }
+            });
+            eventClassesAjax.fail(function(data, textStatus, jqXHR){
                 xmodal.message('Error', 'An error occurred retrieving system events: ' + textStatus);
-			});
-		} else {
-            populateEventsMenu();
+            });
         }
-
+        else {
+            addEventHandlerDialog();
+        }
     }
 
 
     function getEventClassDisplayValueFromHandlers(_handlers, eventHandler){
-        var classPart = eventHandler.srcEventClass.substring(eventHandler.srcEventClass.lastIndexOf('.')); 
+        var classPart = eventHandler.srcEventClass.substring(eventHandler.srcEventClass.lastIndexOf('.'));
         var matches=0;
         for (var i=0; i<_handlers.length; i++) {
             var classVal = _handlers[i].srcEventClass;
@@ -201,39 +189,51 @@ $(function(){
     }
 
     function getEventClassDisplayValue(ins){
-        var classPart = ins.substring(ins.lastIndexOf('.')); 
+        var classPart = ins.substring(ins.lastIndexOf('.'));
         var displayName;
-        var matches=0;
-        for (var i=0; i<XNAT.app.siteEventsManager.eventClasses.length; i++) {
-            var classVal = XNAT.app.siteEventsManager.eventClasses[i].class;
+        var matches = 0;
+        siteEventsManager.eventClasses.forEach(function(evtCls){
+            var classVal = evtCls.class;
             if (typeof classVal !== 'undefined' && classVal.endsWith(classPart)) {
                 matches++;
-                displayName = XNAT.app.siteEventsManager.eventClasses[i].displayName;
+                displayName = evtCls.displayName;
             }
-        }
-        return (typeof displayName !== 'undefined' && displayName !== ins) ? displayName : (matches<=1) ? classPart.substring(1) : ins;
+        });
+        return (typeof displayName !== 'undefined' && displayName !== ins) ? displayName : (matches <= 1) ? classPart.substring(1) : ins;
     }
 
-    function populateEventsMenu(){
+    function addEventHandlerDialog(){
 
-        $('#select_eventClass').empty().append('<option></option>');
-        for (var i=0; i<XNAT.app.siteEventsManager.eventClasses.length; i++) {
-            if (typeof XNAT.app.siteEventsManager.eventClasses[i].class !== 'undefined') {
-                $('#select_eventClass').append('<option value="' + XNAT.app.siteEventsManager.eventClasses[i].class + '">' + getEventClassDisplayValue(XNAT.app.siteEventsManager.eventClasses[i].class) + '</option>');
-            }
-        }
-        xmodal.open({
+        return xmodal.open({
             title: 'Add Event Handler',
             template: $('#addEventHandler'),
             width: 600,
             height: 350,
             overflow: 'auto',
             beforeShow: function(obj){
-                //menuInit(obj.$modal.find('select.event, select.scriptId'), null, 300);
-                //obj.$modal.find('select.event, select.scriptId').chosen({
-                //    width: '300px',
-                //    disable_search_threshold: 6
-                //});
+                // initialize the menus INSIDE the dialog
+
+                // 'Event Type' menu
+                var $eventTypeMenu = obj.$modal.find('#select_eventClass');
+                $eventTypeMenu.empty().append('<option></option>');
+
+                // 'Event ID' menu
+                var $eventIdMenu = obj.$modal.find('#select_event');
+
+                // nice clean Array.forEach()
+                siteEventsManager.eventClasses.forEach(function(evtCls){
+                    $eventTypeMenu.append('<option value="' + evtCls.class + '">' + getEventClassDisplayValue(evtCls.class) + '</option>');
+                });
+
+                $eventTypeMenu.on('change', function(){
+                    updateEventIdSelect($eventIdMenu);
+                });
+
+                updateEventIdSelect($eventIdMenu);
+
+                var $scriptsMenu = obj.$modal.find('#select_scriptId');
+                initScriptsMenu($scriptsMenu);
+
             },
             buttons: {
                 save: {
@@ -247,62 +247,67 @@ $(function(){
                 }
             }
         });
-        updateEventIdSelect();
-        $('#select_eventClass').change(function(){
-            updateEventIdSelect();
-        });
 
     }
 
-    function updateEventIdSelect(){
-        $('#select_event').empty().append('<option></option>');
-        $('#filterRow').css('display','none');
-        $('#filterDiv').html(filterableHtml);
-        for (var i=0; i<XNAT.app.siteEventsManager.eventClasses.length; i++) {
-            if ($('#select_eventClass').val() == XNAT.app.siteEventsManager.eventClasses[i].class) {
-                var eventIds = XNAT.app.siteEventsManager.eventClasses[i].eventIds;
-                if (typeof eventIds !== 'undefined' && eventIds.length>0) {
-                    for (var j=0; j<eventIds.length; j++) {
-                        var eventId = eventIds[j];
-                        $('#select_event').append('<option value="' + eventId + '">' + eventId + '</option>');
-                    }
+    function updateEventIdSelect($eventIdMenu){
+
+        var filterableHtml = '';
+        var $filterRow = $('#filterRow').hide();
+        var $filterDiv = $('#filterDiv').html(filterableHtml);
+
+        $eventIdMenu.empty()
+                    .append('<option></option>')
+                    .addClass('disabled')
+                    .prop('disabled', true);
+
+        for (var i = 0; i < siteEventsManager.eventClasses.length; i++) {
+            if ($('#select_eventClass').val() == siteEventsManager.eventClasses[i].class) {
+                var eventIds = siteEventsManager.eventClasses[i].eventIds;
+                if (eventIds && eventIds.length) {
+                    eventIds.forEach(function(eventId){
+                        $eventIdMenu.append('<option value="' + eventId + '">' + eventId + '</option>');
+                    });
                 }
-                var filterableFields = XNAT.app.siteEventsManager.eventClasses[i].filterableFields;
-                var filterableHtml = ""
-                $('#filterRow').css('display','none');
+                var filterableFields = siteEventsManager.eventClasses[i].filterableFields;
+                $filterRow.hide();
                 if (typeof filterableFields !== 'undefined') {
                     for (var filterable in filterableFields) {
                         if (!filterableFields.hasOwnProperty(filterable)) continue;
                         var filterableInfo = filterableFields[filterable];
                         var filterableVals = filterableInfo["filterValues"];
-			var filterableRequired = filterableInfo["filterRequired"];
-			var filterableDefault = filterableInfo["defaultValue"];
-			if (typeof filterableRequired !== 'undefined' && !filterableRequired) {
-                           filterableHtml = filterableHtml + '<option value="">&lt;NONE&gt;</option>';
-			}
-                        if (typeof filterableVals !== 'undefined' && filterableVals.length>0) {
-                            filterableHtml = filterableHtml + '<div style="width:100%;margin-top:5px;margin-bottom:5px">' + filterable + ' &nbsp;<select id="filter_sel_' + filterable + '" name="' + filterable + '" class="filter">';
-                            for (var i=0; i<filterableVals.length; i++) {
-				if (typeof filterableDefault !== 'undefined' && filterableDefault == filterableVals[i]) {
-                               		filterableHtml = filterableHtml + '<option value="' + filterableVals[i] + '" selected>' + filterableVals[i] + '</option>';
-				} else {
-                               		filterableHtml = filterableHtml + '<option value="' + filterableVals[i] + '">' + filterableVals[i] + '</option>';
-				}
+                        var filterableRequired = filterableInfo["filterRequired"];
+                        var filterableDefault = filterableInfo["defaultValue"];
+                        if (typeof filterableRequired !== 'undefined' && !filterableRequired) {
+                            filterableHtml += ('<option value="">&lt;NONE&gt;</option>');
+                        }
+                        if (typeof filterableVals !== 'undefined' && filterableVals.length > 0) {
+                            filterableHtml += ('<div style="width:100%;margin-top:5px;margin-bottom:5px">' + filterable + ' &nbsp;<select id="filter_sel_' + filterable + '" name="' + filterable + '" class="filter">');
+                            for (var i = 0; i < filterableVals.length; i++) {
+                                if (typeof filterableDefault !== 'undefined' && filterableDefault == filterableVals[i]) {
+                                    filterableHtml += ('<option value="' + filterableVals[i] + '" selected>' + filterableVals[i] + '</option>');
+                                }
+                                else {
+                                    filterableHtml += ('<option value="' + filterableVals[i] + '">' + filterableVals[i] + '</option>');
+                                }
                             }
-                            filterableHtml = filterableHtml + '</select> <input type="text" id="filter_input_' + filterable + '" name="' + filterable +
-                                  '" class="filter" style="display:none" size="15"/> <button class="customButton">Custom Value</button></div>';
+                            filterableHtml += ('</select> ' +
+                                '<input type="text" id="filter_input_' + filterable + '" name="' + filterable + '" class="filter" style="display:none" size="15"/>' +
+                                '<button class="customButton">Custom Value</button>' +
+                                '</div>');
                         }
                     }
                 }
-                if (filterableHtml.length>0) {
-                    $('#filterRow').css('display','table-row');
-                    $('#filterDiv').html(filterableHtml);
+                if (filterableHtml.length > 0) {
+                    $filterRow.css('display', 'table-row');
+                    $filterDiv.html(filterableHtml);
                 }
-                $("#select_event").prop('disabled',false);
+                $eventIdMenu.removeClass('disabled').prop('disabled', false);
                 break;
             }
         }
         $(".customButton").each(function(){
+            // TODO: ???????
             var eventObject = $._data(this, 'events');
             if (typeof eventObject == 'undefined' || typeof eventObject.click == 'undefined') {
                 $(this).click(function(event){
@@ -310,7 +315,8 @@ $(function(){
                 });
             }
         });
-        $(".customButton").css('margin-left','5px');
+        $(".customButton").css('margin-left', '5px');
+
     }
 
     function customInputToggle(ele){
@@ -331,7 +337,7 @@ $(function(){
         }
     }
 
-    function initScriptsMenu(){
+    function initScriptsMenu(menu){
         //if (!hasEvents) { return; }
         siteEventsManager.scripts = []; // reset array
         return xhr.getJSON({
@@ -339,7 +345,7 @@ $(function(){
             success: function( response ){
 
                 var scripts = response.ResultSet.Result || [],
-                    $scriptsMenu = $('#select_scriptId'),
+                    $scriptsMenu = menu ? $$(menu) : $('#select_scriptId'),
                     options = '<option></option>';
 
                 if (!scripts.length){
@@ -351,9 +357,8 @@ $(function(){
                         options += '<option title="' + script['Description'] + '" value="' + script['Script ID'] + '">' + script['Script ID'] + ':' + script['Script Label'] + '</option>';
                         siteEventsManager.scripts.push(script['Script ID']);
                     });
-                    $scriptsMenu.html(options);
                 }
-
+                $scriptsMenu.html(options);
             },
             error: function( request, status, error ){
                 xmodal.message('Error', 'An error occurred retrieving system events: [' + status + '] ' + error);
@@ -362,23 +367,24 @@ $(function(){
     }
 
     // initialize menus and table
+    // initScriptsMenu();
     if (!handlersRendered) {
         initHandlersTable(false);
     }
-    initScriptsMenu();
 
-    function doAddEventHandler( xmodalObj ){
+    function doAddEventHandler(xmodalObj){
 
-	var filterVar = {};
-	var filterEle = $("select.filter, input.filter").filter(function() { return $(this).val() != "" });
-	for (var i=0; i<filterEle.length; i++) {
-		filterVar[filterEle[i].name]=[];
-		filterVar[filterEle[i].name].push($(filterEle[i]).val());
-	}
+        var filterVar = {};
+        var filterEle = $("select.filter, input.filter").filter(function(){ return $(this).val() != "" });
+        for (var i = 0; i < filterEle.length; i++) {
+            filterVar[filterEle[i].name] = [];
+            filterVar[filterEle[i].name].push($(filterEle[i]).val());
+        }
 
         var data = {
             eventClass: xmodalObj.__modal.find('select.eventClass').val(),
-            event: xmodalObj.__modal.find('select.event, input.event').filter(function() { return $(this).val() != "" }).val(),
+            event: xmodalObj.__modal.find('select.event, input.event').filter(function(){ return $(this).val() != "" })
+                            .val(),
             scriptId: xmodalObj.__modal.find('select.scriptId').val(),
             description: xmodalObj.__modal.find('input.description').val(),
             filters: filterVar
@@ -388,59 +394,54 @@ $(function(){
         // var url = serverRoot + "/data/projects/" + window.projectScope + "/automation/events/" + triggerId + "?XNAT_CSRF=$!XNAT_CSRF";
         //var url = serverRoot + "/data/projects/" + window.projectScope + "/automation/events?XNAT_CSRF=$!XNAT_CSRF";
 
-        if (!data.event || data.event === '!' || !data.scriptId){
-            xmodal.message('Missing Information','Please select an <b>Event</b> <i>and</i> <b>Script</b> to create an <br>Event Handler.');
+        if (!data.event || data.event === '!' || !data.scriptId) {
+            xmodal.message('Missing Information', 'Please select an <b>Event</b> <i>and</i> <b>Script</b> to create an <br>Event Handler.');
             return false;
         }
-	XNAT.app.siteEventsManager.eventHandlerData = data;
+        siteEventsManager.eventHandlerData = data;
 
-	var eventHandlerAjax = $.ajax({
-		type : "PUT",
-  		url:serverRoot+'/data/automation/handlers?XNAT_CSRF=' + window.csrfToken,
-		cache: false,
-		async: true,
-		data: JSON.stringify(data),
-		contentType: 'application/json'
-	});
-	eventHandlerAjax.done( function( data, textStatus, jqXHR ) {
-		if (typeof data !== 'undefined') {
-	                xmodal.message('Success', 'Your event handler was successfully added.', 'OK', { 
-	                        action: function(){
-	                            initHandlersTable(false);
-	                            if ($("#events_manage_table").length>0) {
-	                                initHandlersTable(true);
-	                            }
-	                            xmodal.closeAll($(xmodal.dialog.open),$('#xmodal-manage-events'));
-	                            // Trigger automation uploader to reload handlers
-	                            XNAT.app.abu.getAutomationHandlers();
-	                        }  
-	                    }
-	                );
-		}
-	});
-	eventHandlerAjax.fail( function( data, textStatus, jqXHR ) {
-                xmodal.message('Error', 'An error occurred: [' + data.statusText + '] ' + data.responseText, 'Close', {
-                    action: function(){
-                        xmodal.closeAll($(xmodal.dialog.open),$('#xmodal-manage-events'));
+        var eventHandlerAjax = xhr.putJSON({
+            url: XNAT.url.csrfUrl('/data/automation/handlers'),
+            data: JSON.stringify(data)
+        });
+        eventHandlerAjax.done(function(data, textStatus, jqXHR){
+            if (typeof data !== 'undefined') {
+                xmodal.message('Success', 'Your event handler was successfully added.', 'OK', {
+                        action: function(){
+                            initHandlersTable(false);
+                            if ($("#events_manage_table").length > 0) {
+                                initHandlersTable(true);
+                            }
+                            xmodal.closeAll($(xmodal.dialog.open), $('#xmodal-manage-events'));
+                            // Trigger automation uploader to reload handlers
+                            XNAT.app.abu.getAutomationHandlers();
+                        }
                     }
-                });
-	});
+                );
+            }
+        });
+        eventHandlerAjax.fail(function(data, textStatus, jqXHR){
+            xmodal.message('Error', 'An error occurred: [' + data.statusText + '] ' + data.responseText, 'Close', {
+                action: function(){
+                    xmodal.closeAll($(xmodal.dialog.open), $('#xmodal-manage-events'));
+                }
+            });
+        });
 
     }
 
     function addEventHandler(){
-        initEventsMenu();
-        initScriptsMenu();
+        // initScriptsMenu();
+        initEvents();
     }
 
     function doDeleteHandler( triggerId ){
-        var url = serverRoot+'/data/automation/triggers/' + triggerId + "?XNAT_CSRF=" + window.csrfToken;
+        var url = XNAT.url.csrfUrl('/data/automation/triggers/'+triggerId);
         if (window.jsdebug) console.log(url);
         //xhr.delete({
-        jQuery.ajax({
+        $.ajax({
             type: 'DELETE',
             url: url,
-            cache: false,
             success: function(){
                var configScope;
                 if (typeof XNAT.app.abu.uploaderConfig !== 'undefined') {
@@ -504,5 +505,7 @@ $(function(){
     // *javascript* event handler for adding an XNAT event handler (got it?)
     $add_event_handler.on('click', addEventHandler);
     $manage_event_handlers.on('click', manageEventHandlers);
+
+    XNAT.app.siteEventsManager = siteEventsManager;
 
 });

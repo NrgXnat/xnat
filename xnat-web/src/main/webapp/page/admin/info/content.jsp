@@ -27,7 +27,7 @@
 
     <h1>Some info</h1>
 
-    <c:import url="/xapi/users.json" var="userList"/>
+    <c:import url="/xapi/users" var="userList"/>
 
     <h2>Users</h2>
     <p id="user-list-raw">

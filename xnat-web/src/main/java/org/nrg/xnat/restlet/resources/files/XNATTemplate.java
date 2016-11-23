@@ -16,7 +16,6 @@ import org.nrg.xdat.om.*;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
@@ -353,7 +352,7 @@ public class XNATTemplate extends SecureResource {
         }
     }
 
-    public boolean insertCatalog(XnatResourcecatalog catResource, EventMetaI ci)
+    public boolean insertCatalog(XnatResourcecatalog catResource)
             throws Exception {
         final XnatExperimentdata assessed = assesseds.size() == 1 ? assesseds.get(0) : null;
 
@@ -365,21 +364,21 @@ public class XNATTemplate extends SecureResource {
             }
 
             final XnatReconstructedimagedata reconstruction = recons.get(0);
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, reconstruction), catResource, ci) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, reconstruction), catResource) != null;
         } else if (scans.size() > 0) {
             if (assessed == null) {
                 getResponse().setStatus(Status.CLIENT_ERROR_GONE, "Invalid session id.");
                 return false;
             }
             final XnatImagescandata scan = scans.get(0);
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, scan), catResource, ci) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, scan), catResource) != null;
         } else if (expts.size() > 0) {
             final XnatExperimentdata experiment = expts.get(0);
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(experiment), catResource, ci) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(experiment), catResource) != null;
         } else if (sub != null) {
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(sub), catResource, ci) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(sub), catResource) != null;
         } else if (proj != null) {
-            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(proj), catResource, ci) != null;
+            return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(proj), catResource) != null;
         }
         return true;
     }

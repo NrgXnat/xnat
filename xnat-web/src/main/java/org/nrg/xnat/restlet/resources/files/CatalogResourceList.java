@@ -124,7 +124,7 @@ public class CatalogResourceList extends XNATTemplate {
                 assert wrk != null;
                 EventMetaI ci=wrk.buildEvent();
 
-                insertCatalog(catResource, ci);
+                insertCatalog(catResource);
 
                 if(isNew){
                     WorkflowUtils.complete(wrk, ci);

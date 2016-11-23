@@ -180,7 +180,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 						assert wrk != null;
 						EventMetaI ci=wrk.buildEvent();
 
-						this.insertCatalog(catResource, ci);
+						this.insertCatalog(catResource);
 
 						if(isNew){
 							WorkflowUtils.complete(wrk, ci);

@@ -295,7 +295,7 @@ public class XFTManager {
                                                 final List<String> dependencies = getDependentSchema(new FileInputStream(level2));
                                                 toLoad.add(new SchemaWrapper("file", level2.getParentFile().getAbsolutePath(), level2.getName(), new FileSystemResource(level2), dependencies));
                                             } catch (Exception e) {
-                                                logger.error("", e);
+                                                logger.error("An error occurred processing the schema " + level2.getAbsolutePath(), e);
                                             }
                                         }
                                     }
@@ -313,21 +313,18 @@ public class XFTManager {
             final Resource[] resources = resolver.getResources("classpath*:schemas/**/*.xsd");
             for (final Resource resource : resources) {
                 final String name = resource.getFilename();
-                if (!schemaLoaded.contains(resource.getFilename()) && !ignoredSchemaNames.contains(resource.getFilename())) {
+                if (!schemaLoaded.contains(name) && !ignoredSchemaNames.contains(name)) {
                     schemaLoaded.add(name);
-
                     try {
-                        List<String> dependencies = getDependentSchema(resource.getInputStream());
-                        SchemaWrapper schema = new SchemaWrapper("cp", resource.getURL().getPath(), name, resource, dependencies);
-
-                        toLoad.add(schema);
+                        final List<String> dependencies = getDependentSchema(resource.getInputStream());
+                        toLoad.add(new SchemaWrapper("cp", resource.getURL().getPath(), name, resource, dependencies));
                     } catch (Exception e) {
-                        logger.error("", e);
+                        logger.error("An error occurred while loading resource " + name, e);
                     }
                 }
             }
-        } catch (IOException e1) {
-            logger.error("Unable to discover XSD's from classpath.", e1);
+        } catch (IOException e) {
+            logger.error("Unable to discover XSD's from classpath.", e);
         }
 
         return toLoad;

@@ -22,6 +22,7 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
@@ -205,26 +206,25 @@ public class DefaultCatalogService implements CatalogService {
     @SuppressWarnings("ConstantConditions")
     public XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog, final Map<String, String> parameters) throws Exception {
         final XFTItem item             = parent.getItem();
-        final boolean isImageAssessor  = item.instanceOf(XnatImageassessordata.SCHEMA_ELEMENT_NAME);
         final boolean isScan           = item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME);
         final boolean isReconstruction = item.instanceOf(XnatReconstructedimagedata.SCHEMA_ELEMENT_NAME);
         final boolean isExperiment     = item.instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME);
         final boolean isProject        = item.instanceOf(XnatProjectdata.SCHEMA_ELEMENT_NAME);
         final boolean isSubject        = item.instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
 
-        final boolean useParentForUploadId = isImageAssessor || isScan || isReconstruction;
+        final boolean useParentForUploadId = isScan || isReconstruction;
 
         final String uploadId;
         if (useParentForUploadId) {
-            final String parentId = item.getIDValue();
-            uploadId = StringUtils.isNotBlank(parentId) ? parentId : XNATRestConstants.getPrearchiveTimestamp();
+            final Object id = item.getProperty("ID");
+            uploadId = StringUtils.isNotBlank((String) id) ? (String) id : XNATRestConstants.getPrearchiveTimestamp();
         } else {
             uploadId = StringUtils.isNotBlank(catalog.getLabel()) ? catalog.getLabel() : XNATRestConstants.getPrearchiveTimestamp();
         }
 
         final EventDetails event = new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS, EventUtils.CREATE_RESOURCE, "Catalog service invoked", "");
         try {
-            if (isExperiment || isImageAssessor) {
+            if (isExperiment) {
                 final XnatExperimentdata experiment = (XnatExperimentdata) parent;
                 event.setComment("Created experiment resource " + uploadId + " for " + experiment.getId() + " at " + catalog.getUri());
                 insertExperimentResourceCatalog(user, experiment, catalog, uploadId, event, parameters == null ? EMPTY_MAP : parameters);
@@ -432,13 +432,14 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private void insertExperimentResourceCatalog(final UserI user, final XnatExperimentdata experiment, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventDetails event, final Map<String, String> parameters) throws Exception {
-        final boolean isImageAssessor = experiment.getItem().instanceOf("xnat:imageAssessorData");
+        final boolean isImageAssessor = experiment.getItem().instanceOf(XnatImageassessordata.SCHEMA_ELEMENT_NAME);
         final String  resourceFolder  = resourceCatalog.getLabel();
         final String  experimentId    = experiment.getId();
 
         final Path path;
         if (isImageAssessor) {
-            path = Paths.get(experiment.getCurrentSessionFolder(true), "ASSESSORS", experiment.getArchiveDirectoryName());
+            final XnatImagesessiondata parent = ((XnatImageassessordata) experiment).getImageSessionData();
+            path = Paths.get(parent.getCurrentSessionFolder(true), "ASSESSORS", experiment.getArchiveDirectoryName());
         } else {
             path = Paths.get(experiment.getCurrentSessionFolder(true), "RESOURCES");
         }

@@ -349,7 +349,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 						} catch (Exception e) {
 							WorkflowUtils.fail(wrk, c);
 							// Re-throw exception.  Should not proceed as if complete successfully.
-							//throw(e);
+							throw(e);
 						}
 	                }
 					if (dirs.size()==1 && extraFiles.size()==0){

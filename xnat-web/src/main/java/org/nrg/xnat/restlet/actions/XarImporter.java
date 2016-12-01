@@ -245,7 +245,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 
                     if (session!=null)
 						try {
-							dest_path = FileUtils.AppendRootPath(session.getCurrentSessionFolder(true), "SCANS/" + uploadID +"/");
+							dest_path = FileUtils.AppendRootPath(session.getCurrentSessionFolder(true), "SCANS/" + scan.getId() +"/");
 						} catch (Exception e) {
 							throw new ServerException(e.getMessage());
 						}
@@ -349,7 +349,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 						} catch (Exception e) {
 							WorkflowUtils.fail(wrk, c);
 							// Re-throw exception.  Should not proceed as if complete successfully.
-							throw(e);
+							//throw(e);
 						}
 	                }
 					if (dirs.size()==1 && extraFiles.size()==0){

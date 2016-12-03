@@ -9,7 +9,7 @@ import org.gradle.internal.jvm.Jvm
  * Released under the Simplified BSD.
  */
 
-def vXnat = '1.7.1-SNAPSHOT'
+def vXnat = '1.7.1'
 def vXnatStable = '1.7.0'
 def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.7.RELEASE'
@@ -30,7 +30,7 @@ def vGroovy = '2.4.7'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
-version = '1.7.1-SNAPSHOT'
+version = vXnat
 
 buildscript {
     repositories {
@@ -168,8 +168,14 @@ if (JavaVersion.current().isJava8Compatible()) {
 
 // Pulls in the Jenkins BUILD_NUMBER environment variable if available.
 def buildDate = new Date()
-def buildNumber = hasProperty("BUILD_NUMBER") ? getProperty("BUILD_NUMBER") : "Manual"
+def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: "Manual"
 def revision = gitVersion().replace("${version}-", "")
+
+logger.info "Git version:            ${gitVersion()}"
+logger.info "Build-Date:             ${buildDate}"
+logger.info "Build-Number:           ${buildNumber}"
+logger.info "Implementation-Sha:     ${revision}"
+logger.info "Implementation-Version: ${version}"
 
 jar {
     manifest {
@@ -195,6 +201,7 @@ jacoco {
 }
 
 jacocoTestReport {
+    dependsOn test
     reports {
         xml.enabled false
         csv.enabled false
@@ -338,11 +345,10 @@ dependencies {
     compile "org.nrg:dicom-xnat-sop:${vXnat}"
     compile "org.nrg:dicom-xnat-util:${vXnat}"
     compile "org.nrg:ecat4xnat:${vXnat}"
-    compile "org.nrg:DicomDB:5.1.0-SNAPSHOT"
-    compile "org.nrg:ExtAttr:4.2.0-SNAPSHOT"
-    compile "org.nrg:DicomEdit:6.0.1-SNAPSHOT"
+    compile "org.nrg:DicomDB:5.1.0"
+    compile "org.nrg:ExtAttr:4.2.0"
+    compile "org.nrg:DicomEdit:6.0.1"
     compile "org.nrg:DicomImageUtils:${vXnat}"
-    compile "org.nrg:DicomUtils:1.4.0-SNAPSHOT"
     compile "org.nrg:PrearcImporter:${vXnat}"
     compile "org.nrg:SessionBuilders:${vXnat}"
 
@@ -394,6 +400,7 @@ dependencies {
     compile "org.hibernate:hibernate-validator:4.3.2.Final"
     compile "org.hibernate:hibernate-envers:4.3.11.Final"
     compile "net.sf.ehcache:ehcache-core:${vEhcache}"
+    compile "com.marvinformatics.hibernate:hibernate-native-json:0.3"
 
     compile "com.noelios.restlet:com.noelios.restlet:1.1.10"
     compile "com.noelios.restlet:com.noelios.restlet.ext.servlet:1.1.10"

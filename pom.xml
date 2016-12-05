@@ -14,7 +14,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.1-SNAPSHOT</version>
+    <version>1.7.1</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -53,29 +53,27 @@
         <!-- xnat.app.name is used as the name for applet manifests to allow all XNAT applets to share dependencies. -->
         <xnat.app.name>XNAT</xnat.app.name>
 
-        <xnat.version>1.7.0</xnat.version>
-        <xnatdev.version>1.7.1-SNAPSHOT</xnatdev.version>
-        <xdat.version>${xnatdev.version}</xdat.version>
-        <nrg.anonymize.version>${xnatdev.version}</nrg.anonymize.version>
-        <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
-        <nrg.config.version>${xnatdev.version}</nrg.config.version>
-        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
-        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
-        <nrg.mail.version>${xnatdev.version}</nrg.mail.version>
-        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
-        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
-        <nrg.test.version>${xnatdev.version}</nrg.test.version>
-        <nrg.transaction.version>${xnatdev.version}</nrg.transaction.version>
+        <xnat.version>1.7.1</xnat.version>
+        <xdat.version>${xnat.version}</xdat.version>
+        <nrg.anonymize.version>${xnat.version}</nrg.anonymize.version>
+        <nrg.automation.version>${xnat.version}</nrg.automation.version>
+        <nrg.config.version>${xnat.version}</nrg.config.version>
+        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
+        <nrg.framework.version>${xnat.version}</nrg.framework.version>
+        <nrg.mail.version>${xnat.version}</nrg.mail.version>
+        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
+        <nrg.test.version>${xnat.version}</nrg.test.version>
+        <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.dicomedit.version>6.0</nrg.dicomedit.version>
-        <nrg.dicomutils.version>1.4.0-SNAPSHOT</nrg.dicomutils.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicomdb.version>5.1.0-SNAPSHOT</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
-        <nrg.ecat4xnat.version>${xnatdev.version}</nrg.ecat4xnat.version>
+        <nrg.dicomdb.version>5.1.0</nrg.dicomdb.version>
+        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
+        <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0</nrg.ecat.version>
         <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
-        <nrg.extattr.version>4.2.0-SNAPSHOT</nrg.extattr.version>
-        <nrg.sessionbuilders.version>${xnatdev.version}</nrg.sessionbuilders.version>
+        <nrg.extattr.version>4.2.0</nrg.extattr.version>
+        <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
 
         <!-- These are default property values to be overridden for specific applets and signing requirements. -->
@@ -167,6 +165,7 @@
         <org.postgresql.version>9.4.1209.jre7</org.postgresql.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.10</reflections.version>
+        <restlet.version>1.1.10</restlet.version>
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
         <slf4j.version>1.7.21</slf4j.version>
@@ -283,11 +282,6 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
-                <artifactId>DicomUtils</artifactId>
-                <version>${nrg.dicomutils.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.nrg</groupId>
                 <artifactId>DicomImageUtils</artifactId>
                 <version>${nrg.dicomimageutils.version}</version>
             </dependency>
@@ -376,7 +370,7 @@
             <dependency>
                 <groupId>org.nrg.xdat</groupId>
                 <artifactId>core</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xdat</groupId>
@@ -621,6 +615,11 @@
                 <groupId>org.reflections</groupId>
                 <artifactId>reflections</artifactId>
                 <version>${reflections.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.restlet</groupId>
+                <artifactId>org.restlet</artifactId>
+                <version>${restlet.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>

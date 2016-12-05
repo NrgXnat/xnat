@@ -30,10 +30,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PoolDBUtils {
-	private static final Logger     logger = LoggerFactory.getLogger(PoolDBUtils.class);
-	private              Connection con    = null;
-	private              Statement  st     = null;
-
 	/**
 	 * Processes the specified query on the specified db with a pooled connection.
 	 * The new Primary Key is returned using a SELECT currval() query with
@@ -55,7 +51,7 @@ public class PoolDBUtils {
 			{
 				logger.debug("QUERY:" + query);
 				executeQuery(db, query, "");
-				st.execute(query);
+				_statement.execute(query);
 				String newQuery = "SELECT currval('"+ sequence + "') AS " + pk;
 				try {
 					rs = executeQuery(db, newQuery, "");
@@ -233,31 +229,31 @@ public class PoolDBUtils {
 	private void sendBatchExec(List<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
 	    Date start = Calendar.getInstance().getTime();
 	    try {
-            con = getConnection();
+			_connection = getConnection();
             try {
-            	con.setAutoCommit(false);
+            	_connection.setAutoCommit(false);
 
-            	st = con.createStatement(resultSetType, resultSetConcurrency);
-            	st.clearBatch();
+				_statement = _connection.createStatement(resultSetType, resultSetConcurrency);
+            	_statement.clearBatch();
             	for (String stmt:statements)
             	{
-            	    st.addBatch(stmt);
+            	    _statement.addBatch(stmt);
             	}
 
-            	st.executeBatch();
+            	_statement.executeBatch();
 
             	logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace("BATCH", "\n", " "));
 
-            	st.clearBatch();
+            	_statement.clearBatch();
 
-            	con.commit();
+            	_connection.commit();
             }catch (SQLException e) {
-                con.rollback();
+                _connection.rollback();
                 logger.error(statements.toString());
                 logger.error(e.getMessage());
                throw e.getNextException();
 			}finally{
-			    con.setAutoCommit(true);
+			    _connection.setAutoCommit(true);
 			}
         } catch (DBPoolException e) {
             logger.error("",e);
@@ -404,7 +400,7 @@ public class PoolDBUtils {
 
 	private void resetConnections(){
 		System.out.println("WARNING: DB CONNECTION FAILURE: Resetting all DB connections!!!!!!");
-		this.con=null;
+		this._connection =null;
 	}
 
 	/**
@@ -477,18 +473,18 @@ public class PoolDBUtils {
 
 	public void closeConnection()
 	{
-		if (st != null)
+		if (_statement != null)
 		{
 			try {
-				st.close();
+				_statement.close();
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 		}
-		if (con != null)
+		if (_connection != null)
 		{
 			try {
-				con.close();
+				_connection.close();
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
@@ -499,15 +495,15 @@ public class PoolDBUtils {
 	 * @return
 	 */
 	private Connection getConnection() throws SQLException, DBPoolException {
-		if (con == null) {
+		if (_connection == null) {
 			final DataSource dataSource = XDAT.getDataSource();
 			if (dataSource != null) {
-				con = dataSource.getConnection();
+				_connection = dataSource.getConnection();
 			} else {
 				logger.warn("Couldn't load the data source to create a connection.");
 			}
 		}
-		return con;
+		return _connection;
 	}
 
 //	/**
@@ -540,41 +536,34 @@ public class PoolDBUtils {
 	}
 
     private static boolean ITEM_CACHE_EXISTS = false;
+    private static final Object ITEM_CACHE_MUTEX = new Object();
 
-    /**
-     * @param dbName
-     * @param login
-     */
-    public static void CreateCache(String dbName,String login){
-        try {
-            if (!ITEM_CACHE_EXISTS){
+	/**
+	 * Creates the XNAT item cache table.
+	 *
+	 * @param dbName The name of the database in which the cache should be created.
+	 * @param login  The login name of the user creating the cache.
+	 */
+	public static void CreateCache(String dbName, String login) {
+		try {
+			synchronized (ITEM_CACHE_MUTEX) {
+				if (!ITEM_CACHE_EXISTS) {
+					final String exists = (String) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_EXISTS, "relname", dbName, login);
 
-                String query ="SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_item_cache');";
-                String exists =(String)PoolDBUtils.ReturnStatisticQuery(query, "relname", dbName, login);
-
-                if (exists!=null){
-                    ITEM_CACHE_EXISTS=true;
-                }else{
-                    query = "CREATE TABLE xs_item_cache"+
-                    "\n("+
-                    "\n  elementName varchar(255) NOT NULL,"+
-                    "\n  ids varchar(255) NOT NULL,"+
-                    "\n  create_date timestamp DEFAULT now(),"+
-                    "\n  contents text"+
-                    "\n) "+
-                    "\nWITH OIDS;";
-
-                    PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
-
-                    ITEM_CACHE_EXISTS=true;
-                }
-            }
-        } catch (SQLException e) {
-            logger.error("",e);
-        } catch (Exception e) {
-            logger.error("",e);
-        }
-    }
+					if (exists != null) {
+						ITEM_CACHE_EXISTS = true;
+					} else {
+						PoolDBUtils.ExecuteNonSelectQuery(QUERY_CREATE_ITEM_CACHE, dbName, login);
+						ITEM_CACHE_EXISTS = true;
+					}
+				}
+			}
+		} catch (SQLException e) {
+			logger.error("An database or SQL error occurred trying to validate or create the XNAT item cache.", e);
+		} catch (Exception e) {
+			logger.error("An unknown error occurred trying to create the XNAT item cache.", e);
+		}
+	}
 
     /**
      * @param dbName
@@ -879,18 +868,18 @@ public class PoolDBUtils {
     public ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException{
     	ResultSet rs;
 
-		st = getStatement();
+		_statement = getStatement();
 		final Date start = Calendar.getInstance().getTime();
 
 		try {
-			rs = st.executeQuery(query);
+			rs = _statement.executeQuery(query);
 		} catch (SQLException e) {
 			final String message = e.getMessage();
 			if(message.contains("Connection reset")){
 				closeConnection();
 				resetConnections();
-				st = getStatement();
-				rs = st.executeQuery(query);
+				_statement = getStatement();
+				rs = _statement.executeQuery(query);
 			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
 				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
@@ -906,11 +895,11 @@ public class PoolDBUtils {
     }
 
     private void execute(String db, String query, String userName) throws SQLException, DBPoolException{
-		st = getStatement();
+		_statement = getStatement();
 		final Date start = Calendar.getInstance().getTime();
 
 		try {
-			st.execute(query);
+			_statement.execute(query);
 		} catch (SQLException e) {
 			final String message = e.getMessage();
 			if (message.contains("relation \"xdat_meta_element_meta_data\" does not exist")) {
@@ -920,8 +909,8 @@ public class PoolDBUtils {
 			} else if(message.contains("Connection reset")){
 				closeConnection();
 				resetConnections();
-				st = getStatement();
-				st.execute(query);
+				_statement = getStatement();
+				_statement.execute(query);
 			}else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
 				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
@@ -1004,7 +993,22 @@ public class PoolDBUtils {
 		}
 	}
 
-	private static final String EXPR_COLUMN_NOT_FOUND = "column \"([A-z0-9_-]+)\" does not exist";
-	private static final Pattern PATTERN_COLUMN_NOT_FOUND = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
+	private static final Logger logger = LoggerFactory.getLogger(PoolDBUtils.class);
+
+	private static final String     EXPR_COLUMN_NOT_FOUND    = "column \"([A-z0-9_-]+)\" does not exist";
+	private static final Pattern    PATTERN_COLUMN_NOT_FOUND = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
+	public static final  String     QUERY_ITEM_CACHE_EXISTS  = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_item_cache');";
+	public static final  String     QUERY_CREATE_ITEM_CACHE  = "CREATE TABLE xs_item_cache" +
+															   "\n(" +
+															   "\n  elementName varchar(255) NOT NULL," +
+															   "\n  ids varchar(255) NOT NULL," +
+															   "\n  create_date timestamp DEFAULT now()," +
+															   "\n  contents text" +
+															   "\n) " +
+															   "\nWITH OIDS;";
+
+	private Connection _connection = null;
+	private Statement  _statement  = null;
 }
+
 

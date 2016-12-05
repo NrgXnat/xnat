@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.1-SNAPSHOT</version>
+        <version>1.7.1</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
@@ -156,6 +156,10 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.restlet</groupId>
+            <artifactId>org.restlet</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
         </dependency>
@@ -183,6 +187,10 @@
             <groupId>turbine</groupId>
             <artifactId>turbine</artifactId>
             <exclusions>
+                <exclusion>
+                    <groupId>commons-email</groupId>
+                    <artifactId>commons-email</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>velocity</groupId>
                     <artifactId>velocity</artifactId>

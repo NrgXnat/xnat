@@ -11,7 +11,9 @@ package org.nrg.xdat.preferences;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.nrg.framework.annotations.XnatMixIn;
 import org.nrg.framework.beans.ProxiedBeanMixIn;
 import org.nrg.framework.configuration.ConfigPaths;
@@ -20,6 +22,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.security.helpers.Roles;
@@ -39,12 +42,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Provides property access to the site configuration preferences. Before these preferences
+ * can be considered {@link #isInitialized() initialized}, you must set values for at least
+ * the following preferences:
+ *
+ * <ul>
+ *     <li>adminEmail</li>
+ *     <li>archivePath</li>
+ *     <li>buildPath</li>
+ *     <li>cachePath</li>
+ *     <li>ftpPath</li>
+ *     <li>prearchivePath</li>
+ *     <li>siteId</li>
+ * </ul>
+ */
 @SuppressWarnings("unused")
 @NrgPreferenceBean(toolId = SiteConfigPreferences.SITE_CONFIG_TOOL_ID,
-                   toolName = "XNAT Site Preferences",
-                   description = "Manages site configurations and settings for the XNAT system.",
-                   properties = "META-INF/xnat/preferences/site-config.properties",
-                   strict = false)
+        toolName = "XNAT Site Preferences",
+        description = "Manages site configurations and settings for the XNAT system.",
+        properties = "META-INF/xnat/preferences/site-config.properties",
+        strict = false)
 @XnatMixIn(ProxiedBeanMixIn.class)
 public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
@@ -277,8 +295,8 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "Dear FULL_NAME,\n" +
-            "<br><br>Please click this link to verify your email address: <a href=\"VERIFICATION_URL\">Verify Email</a>\n" +
-            "<br><br>This link will expire in 24 hours.")
+                                  "<br><br>Please click this link to verify your email address: <a href=\"VERIFICATION_URL\">Verify Email</a>\n" +
+                                  "<br><br>This link will expire in 24 hours.")
     public String getEmailVerificationMessage() {
         return getValue("emailVerificationMessage");
     }
@@ -666,7 +684,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
 
 
     // just the extensions.  not the delimiter too.
-    public String[] getZipExtensionsAsArray(){
+    public String[] getZipExtensionsAsArray() {
         return getValue("zipExtensions").split("\\s*,\\s*");
     }
 
@@ -1365,7 +1383,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "false", aliases = "audit.show_change_justification")
-    public boolean getShowChangeJustification(){
+    public boolean getShowChangeJustification() {
         return getBooleanValue("showChangeJustification");
     }
 
@@ -1378,7 +1396,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "false", aliases = "audit.require_change_justification")
-    public boolean getRequireChangeJustification(){
+    public boolean getRequireChangeJustification() {
         return getBooleanValue("requireChangeJustification");
     }
 
@@ -1391,7 +1409,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "false", aliases = "audit.require_event_name")
-    public boolean getRequireEventName(){
+    public boolean getRequireEventName() {
         return getBooleanValue("requireEventName");
     }
 
@@ -1415,13 +1433,54 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     public boolean isComplete() {
-        return !StringUtils.isBlank(getSiteId()) &&
-               !StringUtils.isBlank(getAdminEmail()) &&
-               !StringUtils.isBlank(getArchivePath()) &&
-               !StringUtils.isBlank(getPrearchivePath()) &&
-               !StringUtils.isBlank(getCachePath()) &&
-               !StringUtils.isBlank(getBuildPath()) &&
-               !StringUtils.isBlank(getFtpPath());
+        return getMissingInitSettings().size() == 0;
+    }
+
+    /**
+     * Overrides default {@link AbstractPreferenceBean#postProcessPreferences()} method to add automatically setting
+     * the {@link #isInitialized() initialized} setting to true if the site configuration preferences were initialized
+     * from prefs-init.ini or prefs-override.ini (indicated by {@link AbstractPreferenceBean#isInitFromConfig()} value).
+     */
+    @Override
+    protected void postProcessPreferences() {
+        if (isInitialized()) {
+            return;
+        }
+        if (isInitFromConfig()) {
+            final List<String> missing = getMissingInitSettings();
+            if (missing.size() == 0) {
+                setInitialized(true);
+            } else {
+                _log.warn("Your configuration was initialized from a configuration file, but the following settings were not initialized: {}. These must be set before the initialization configuration for the system can be fully initialized.", Joiner.on(", ").join(missing));
+            }
+        }
+    }
+
+    @NotNull
+    private List<String> getMissingInitSettings() {
+        final List<String> missing = Lists.newArrayList();
+        if (StringUtils.isBlank(getSiteId())) {
+            missing.add("siteId");
+        }
+        if (StringUtils.isBlank(getAdminEmail())) {
+            missing.add("adminEmail");
+        }
+        if (StringUtils.isBlank(getArchivePath())) {
+            missing.add("archivePath");
+        }
+        if (StringUtils.isBlank(getPrearchivePath())) {
+            missing.add("prearchivePath");
+        }
+        if (StringUtils.isBlank(getCachePath())) {
+            missing.add("cachePath");
+        }
+        if (StringUtils.isBlank(getBuildPath())) {
+            missing.add("buildPath");
+        }
+        if (StringUtils.isBlank(getFtpPath())) {
+            missing.add("ftpPath");
+        }
+        return missing;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(SiteConfigPreferences.class);

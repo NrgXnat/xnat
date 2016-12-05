@@ -156,10 +156,10 @@ public class ElementSecurity extends ItemWrapper {
                             if (hasPlural) {
                                 query.append("plural = '").append(bean.getPlural()).append("'");
                             }
-                            if (hasSingular || hasPlural) {
-                                query.append(", ");
-                            }
                             if (hasCode) {
+                                if (hasSingular || hasPlural) {
+                                    query.append(", ");
+                                }
                                 query.append("code = '").append(bean.getCode()).append("'");
                             }
                             query.append(" where element_name = '").append(bean.getType()).append("'");

@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.1-SNAPSHOT</version>
+        <version>1.7.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -58,6 +58,10 @@
         <dependency>
             <groupId>dcm4che</groupId>
             <artifactId>dcm4che-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dcm4che</groupId>
+            <artifactId>dcm4che-net</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

@@ -92,13 +92,21 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         _preferenceService = service;
     }
 
+    /**
+     * Initializes the preference bean. Bean implementations can provide custom pre- and post-processing of initialization
+     * by overriding the default {@link #preProcessPreferences()} and {@link #postProcessPreferences()} methods respectively.
+     *
+     * @return A reference to this instance of the preferences bean.
+     */
     @JsonIgnore
     @PostConstruct
     public PreferenceBean initialize() {
         if (_preferenceService == null) {
             throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "The NrgPreferenceService instance must be configured and wired before this preference bean can be initialized.");
         }
+        preProcessPreferences();
         processDefaultPreferences();
+        postProcessPreferences();
         return this;
     }
 
@@ -182,7 +190,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public Properties asProperties() {
-        final Properties properties = new Properties();
+        final Properties          properties  = new Properties();
         final Map<String, Object> preferences = getPreferenceMap();
         for (final String preference : preferences.keySet()) {
             final Object value = preferences.get(preference);
@@ -632,6 +640,24 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return ImmutableMap.copyOf(_preferences);
     }
 
+    /**
+     * Provides pre-processing functionality for bean initialization.
+     */
+    protected void preProcessPreferences() {
+        _log.debug("Performing default preference pre-processing.");
+    }
+
+    /**
+     * Provides post-processing functionality for bean initialization.
+     */
+    protected void postProcessPreferences() {
+        _log.debug("Performing default preference post-processing.");
+    }
+
+    protected boolean isInitFromConfig() {
+        return _initFromConfig;
+    }
+
     protected String getNamespacedPropertyId(final String key, final String... names) {
         return Joiner.on(NAMESPACE_DELIMITER).join(Lists.asList(resolveAlias(key), names));
     }
@@ -673,6 +699,10 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
         final Properties initializationProperties = getInitializationProperties();
         final Properties overrideProperties       = getPreferenceIniProperties("prefs-override.ini");
+
+        if (initializationProperties.size() > 0 || overrideProperties.size() > 0) {
+            _initFromConfig = true;
+        }
 
         if (!_preferences.isEmpty()) {
             if (_log.isInfoEnabled()) {
@@ -1006,6 +1036,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     private final Map<String, Method>         _methods            = new HashMap<>();
 
     private boolean _resolverInitialized = false;
+    private boolean _initFromConfig      = false;
 
     private NrgPreferenceBean                         _annotation;
     private String                                    _toolId;

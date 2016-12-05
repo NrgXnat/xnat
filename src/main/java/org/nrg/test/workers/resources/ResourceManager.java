@@ -15,7 +15,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Paths;
 
 /**
- *
+ * Provides convenience methods for retrieving resources on the classpath in unit and functional tests.
  */
 public class ResourceManager {
     public static ResourceManager getInstance() {

@@ -245,7 +245,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 
                     if (session!=null)
 						try {
-							dest_path = FileUtils.AppendRootPath(session.getCurrentSessionFolder(true), "SCANS/" + uploadID +"/");
+							dest_path = FileUtils.AppendRootPath(session.getCurrentSessionFolder(true), "SCANS/" + scan.getId() +"/");
 						} catch (Exception e) {
 							throw new ServerException(e.getMessage());
 						}

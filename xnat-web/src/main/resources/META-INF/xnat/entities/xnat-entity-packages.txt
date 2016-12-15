@@ -11,4 +11,6 @@ org.nrg.automation.event.entities
 org.nrg.framework.event.entities
 org.nrg.xnat.entities
 org.nrg.xnat.event.entities
+org.nrg.xnat.node.entities
+org.nrg.xnat.task.entities
 org.nrg.xnat.spawner.entities

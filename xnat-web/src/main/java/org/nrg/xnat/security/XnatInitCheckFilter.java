@@ -114,15 +114,30 @@ public class XnatInitCheckFilter extends GenericFilterBean {
         }
 
         try {
-            final URI refererUri = new URI(referer);
-
             // This validates the request against the referer to ensure they match (no CSRF).
+            final URI refererUri = new URI(referer);
             final URI requestUri = new URI(request.getRequestURL().toString());
-            if ((_preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererUri.getScheme(), requestUri.getScheme())) ||
-                !StringUtils.equals(refererUri.getHost(), requestUri.getHost()) ||
-                refererUri.getPort() != requestUri.getPort()) {
-                final String message = String.format("The referer and request URIs were different:\n * Request: scheme %s, host %s, port %d\n * Referer: scheme %s, host %s, port %d",
-                        requestUri.getScheme(), requestUri.getHost(), requestUri.getPort(), refererUri.getScheme(), refererUri.getHost(), refererUri.getPort());
+            final URI siteUrl    = new URI(_preferences.getSiteUrl());
+
+            if (refererUri.getHost().equals(requestUri.getHost()) && refererUri.getPort() == requestUri.getPort()) {
+                final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererUri.getScheme(), requestUri.getScheme());
+                if (protocolMismatch) {
+                    final String message = String.format("The referer URI matched request URI host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d",
+                            refererUri.getScheme(), refererUri.getHost(), refererUri.getPort(), requestUri.getScheme(), requestUri.getHost(), requestUri.getPort());
+                    throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
+                }
+                _log.info("Referer host and port matched request host and port, allowing further checks for valid referer.");
+            } else if (refererUri.getHost().equals(siteUrl.getHost()) && refererUri.getPort() == siteUrl.getPort()) {
+                final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererUri.getScheme(), siteUrl.getScheme());
+                if (protocolMismatch) {
+                    final String message = String.format("The referer URI matched the configured site URL host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
+                            refererUri.getScheme(), refererUri.getHost(), refererUri.getPort(), siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
+                    throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
+                }
+                _log.info("Referer host and port matched site URL host and port, allowing further checks for valid referer.");
+            } else {
+                final String message = String.format("The referer URI did not match either the request URI or the configured site URL:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
+                        refererUri.getScheme(), refererUri.getHost(), refererUri.getPort(), requestUri.getScheme(), requestUri.getHost(), requestUri.getPort(), siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
                 throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
             }
 

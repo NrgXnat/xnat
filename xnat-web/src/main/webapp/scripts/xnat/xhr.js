@@ -449,9 +449,11 @@ var XNAT = getObject(XNAT||{}),
 
     // set form element values from an object map
     // 'form' can be a form element, selector, or array of inputs
-    function setValues(inputs, dataObj){
+    function setValues(inputs, dataObj, opts){
         // cache and check if form exists
-        var $inputs = $$(inputs);
+        var $inputs = $$(inputs),
+            values = {},
+            $form, _form, formName;
 
         if (!$inputs.length) return;
 
@@ -459,11 +461,27 @@ var XNAT = getObject(XNAT||{}),
             $inputs = $inputs.find(':input');
         }
 
+        $form = $($inputs[0]).closest('form');
+        _form = $form[0];
+        _form.id = _form.id || randomID('form_', false);
+        formName = _form.name || toCamelCase(_form.id);
+
         // apply values to each input
         $inputs.not('button').each(function(){
 
-            var $this = $(this);
-            var val = lookupObjectValue(dataObj, this.name||this.title);
+            var $this = $(this),
+                name = this.name || this.title,
+                val;
+
+            // name is required
+            if (!name) {
+                return;
+            }
+
+            val = lookupObjectValue(dataObj, name);
+
+            // add the value to the returned 'values' object
+            values[name] = val;
 
             // don't set values of inputs with EXISTING
             // values that start with "@?"
@@ -505,22 +523,105 @@ var XNAT = getObject(XNAT||{}),
                 $this.dataAttr('value', val);
             }
 
-            $this.removeClass('dirty').on('change', function(){
-                $(this).addClass('dirty');
-            });
+            $this.removeClass('dirty').addClass('ready')
+                    .off('change.setValues')
+                    .on('change.setValues', function(){
+                        $(this).addClass('dirty');
+                    });
 
         });
 
-        return $inputs;
+        if ($form && $form.length) {
+            $form.addClass('ready');
+            _form.values = values;
+        }
+
+        // XNAT.data =
+        //         getObject(XNAT.data||{});
+        //
+        // XNAT.data.forms =
+        //         getObject(XNAT.data.forms||{});
+        //
+        // // save data for future reference
+        // // ???
+        // XNAT.data.forms[formName] = values;
+
+        // probably more useful to return
+        // the values that were just set
+        return values;
+
+        //return $inputs;
     }
 
     // make globally accessible through $
     $.setValues = setValues;
 
     // this could be a handy jQuery method
-    $.fn.setValues = function(dataObj){
-        setValues(this, dataObj);
+    $.fn.setValues = function(dataObj, opts){
+        setValues(this, dataObj, opts);
         return this;
+    };
+
+    // return values of named form elements
+    // as an object using element 'name' attributes
+    // as the object property names
+    function getValues(inputs){
+
+        var $inputs = $$(inputs),
+            values = {},
+            $form, _form;
+
+        if (!$inputs.length) return;
+
+        if ($inputs.length === 1 && /form/i.test($inputs[0].tagName)) {
+            $inputs = $inputs.find(':input');
+        }
+
+        $form = $($inputs[0]).closest('form');
+        _form = $form[0];
+        _form.id = _form.id || randomID('form_', false);
+        _form.name = _form.name || toCamelCase(_form.id);
+
+        $inputs.not('button').each(function(){
+
+            var $this = $(this),
+                name = this.name || this.id || this.title,
+                val = realValue($this.val()||'');
+
+            // make sure 'name' is camelCase
+            name = toCamelCase(name);
+
+            if (/checkbox/i.test(this.type)) {
+                values[name] = val || this.checked;
+            }
+            else if (/radio/i.test(this.type)) {
+                // only get the value of the 'checked' radio button
+                if (this.checked) {
+                    values[name] = val || this.checked;
+                }
+            }
+            else {
+                values[name] = val;
+            }
+
+        });
+
+        values[0] = _form;
+
+        return values;
+
+    }
+
+    // make globally accessible through $
+    $.getValues = getValues;
+
+    // get values of selected form elements
+    $.fn.getValues = function(callback){
+        var values = getValues(this);
+        if (typeof callback === 'function') {
+            callback.call(this, values);
+        }
+        return values;
     };
 
     xhr.form = function(form, opts){

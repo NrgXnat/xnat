@@ -108,6 +108,7 @@ var XNAT = getObject(XNAT);
     ];
     textTypes.forEach(function(type){
         input[type] = function(config){
+            config.size = config.size || 25;
             return setupType('text', type, config);
         }
     });
@@ -117,6 +118,7 @@ var XNAT = getObject(XNAT);
     ];
     numberTypes.forEach(function(type){
         input[type] = function(config){
+            config.size = config.size || 25;
             return setupType('number', type, config);
         }
     });
@@ -132,15 +134,26 @@ var XNAT = getObject(XNAT);
 
     input.username = function(config){
         config = extend(true, {}, config, config.element);
+        config.size = config.size || 25;
         config.autocomplete = 'off';
         return setupType('text', 'username', config);
     };
     otherTypes.push('username');
 
+    // TODO: HANDLE PASSWORD VALUES IN A SAFER WAY
     input.password = function(config){
         config = extend(true, {}, config, config.element);
-        config.data = { value: '!' };
+        config.size = config.size || 25;
+        config.value = '';
+        config.placeholder = '********';
+        // config.value = config.value ? '********' : '';
+        // config.data = { value: '!' };
+        // config.onfocus = function(){
+        //     this.select();
+        //     (config.onfocus||diddly).call();
+        // };
         config.autocomplete = 'new-password';
+        // config.autocomplete = 'off';
         return setupType('password', 'password', config);
     };
     otherTypes.push('password');
@@ -180,9 +193,9 @@ var XNAT = getObject(XNAT);
     input.types.forEach(function(type, i){
         input[type]['block'] = function(config){
             config = extend(true, {}, config, config.element, {
-                $: { addClass: 'display-block' },
                 style: { display: 'block' }
             });
+            addClassName(config, 'display-block');
             return input[type](config);
         }
     });

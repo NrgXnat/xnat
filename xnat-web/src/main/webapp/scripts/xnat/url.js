@@ -13,7 +13,17 @@
 
 var XNAT = getObject(XNAT||{});
 
-(function(XNAT){
+(function(factory){
+    if (typeof define === 'function' && define.amd) {
+        define(factory);
+    }
+    else if (typeof exports === 'object') {
+        module.exports = factory();
+    }
+    else {
+        return factory();
+    }
+}(function(){
 
     var url, xhr,
         root = this,
@@ -625,10 +635,14 @@ var XNAT = getObject(XNAT||{});
         );
     };
 
+    // this script has loaded
+    url.loaded = true;
 
-})(XNAT);
+    return XNAT.url = url;
 
-$(function(){
+}));
+
+$(window).on('load', function(){
     // re-write links that start with '/'
     // to make sure they go to the site root
     $('a[href^="/"]').attr('href', function(){

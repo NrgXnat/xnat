@@ -13,15 +13,27 @@
 
 var XNAT = getObject(XNAT || {});
 
-(function(XNAT, $, window, undefined){
+(function(factory){
+    if (typeof define === 'function' && define.amd) {
+        define(factory);
+    }
+    else if (typeof exports === 'object') {
+        module.exports = factory();
+    }
+    else {
+        return factory();
+    }
+}(function(){
 
     var panel,
+        $       = window.jQuery,
         spawn   = window.spawn,
         element = XNAT.element,
         multiform = {
             count: 0,
             errors: 0
-        };
+        },
+        undefined;
 
 
     XNAT.ui =
@@ -34,6 +46,7 @@ var XNAT = getObject(XNAT || {});
         $$(elements).each(function(idx){
             var _disabled = !!disabled;
             var modifyClass = _disabled ? 'addClass' : 'removeClass';
+            // this.disabled = _disabled;
             $(this).prop('disabled', _disabled)[modifyClass]('disabled');
         });
     }
@@ -153,8 +166,16 @@ var XNAT = getObject(XNAT || {});
 
         obj = cloneObject(obj);
 
+        // 'load' is a url, object, or eval string
         obj.load = obj.load || obj.url;
 
+        // 'onload' is a callback function
+        if (typeof obj.onload === 'string') {
+            obj.onload = eval(obj.onload);
+        }
+        else {
+            obj.onload = obj.onload || diddly;
+        }
 
         // need a form to put the data into!
         // and a 'load' property too
@@ -164,6 +185,8 @@ var XNAT = getObject(XNAT || {});
         }
 
         var $form = $(form);
+        var _form = $form[0];
+        var values = {};
 
         obj.load = (obj.load+'').trim();
 
@@ -194,9 +217,19 @@ var XNAT = getObject(XNAT || {});
             if (doLookup) {
                 obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
                 obj.prop = obj.prop || obj.load.split('|')[1] || '';
-                $(form).setValues(lookupObjectValue(window, obj.load, obj.prop));
+
+                // get the values
+                values = lookupObjectValue(window, obj.load, obj.prop);
+
+                // set values of form elements
+                $form.setValues(values);
+
                 loadingDialog().close();
-                return form;
+
+                obj.onload.call(_form, values);
+
+                return _form;
+
             }
 
             var doEval = obj.load.indexOf(evalPrefix) === 0;
@@ -206,7 +239,9 @@ var XNAT = getObject(XNAT || {});
 
             // lastly try to eval the 'load' value
             try {
-                $form.setValues(eval(obj.load));
+                values = eval(obj.load);
+                // set values of form elements
+                $form.setValues(values);
             }
             catch (e) {
                 console.log(e);
@@ -214,7 +249,9 @@ var XNAT = getObject(XNAT || {});
 
             loadingDialog().close();
 
-            return $form[0];
+            obj.onload.call(_form, values);
+
+            return _form;
 
         }
 
@@ -238,7 +275,7 @@ var XNAT = getObject(XNAT || {});
         // need a url to get the data
         if (!ajaxUrl || !stringable(ajaxUrl)) {
             loadingDialog().close();
-            return form;
+            return _form;
         }
 
         // force GET method
@@ -256,14 +293,18 @@ var XNAT = getObject(XNAT || {});
             if (ajaxProp){
                 data = data[ajaxProp];
             }
-            $(form).dataAttr('status', 'clean');
-            $(form).setValues(data);
+            $form.dataAttr('status', 'clean');
+
+            // set values of form elements
+            $form.setValues(data);
+
+            obj.onload.apply(_form, arguments);
+
         };
 
         obj.ajax.error = function(){
-            $(form).dataAttr('status', 'error');
+            $form.dataAttr('status', 'error');
         };
-
 
         obj.ajax.complete = function(){
             loadingDialog().close();
@@ -394,14 +435,24 @@ var XNAT = getObject(XNAT || {});
             loadData(_formPanel, opts)
         }
 
-        opts.onload = opts.onload || callback;
+        // 'onload' and 'callback' are the same ('onload' takes priority)
+        opts.onload = opts.callback =
+                opts.onload || opts.callback || callback || diddly;
+
 
         // custom event for reloading data (refresh)
         $formPanel.on('reload-data', function(){
             var _load = opts.refresh || opts.load || opts.url;
-            $(this).find('.valid, .invalid').removeClass('valid invalid');
+            var $this = $(this);
+            $this.removeClass('ready error valid invalid');
+            $this.find('.valid, .invalid').removeClass('valid invalid');
+            $this.find('.ready').removeClass('ready');
             loadData(this, {
-                load: _load ? ('$?' + _load.replace(/^\$\?/, '')) : ''
+                load: _load ? _load.replace(/^(\$\?)*/, '') : '',
+                onload: function(){
+                    opts.onload.apply(_formPanel, arguments);
+                    setDisabled([$saveBtn, $resetBtn], true);
+                }
             });
         });
 
@@ -412,8 +463,6 @@ var XNAT = getObject(XNAT || {});
             }
         });
 
-        opts.callback = opts.callback || callback || diddly;
-
         // is this form part of a multiForm?
         multiform.parent = $formPanel.closest('form.multi-form');
 
@@ -423,9 +472,9 @@ var XNAT = getObject(XNAT || {});
 
         multiform.errors = 0;
 
-        // keep an eye on the inputs
-        $formPanel.on('change', ':input', function(){
-            setDisabled($formPanel.find('.panel-footer button'), false);
+        // keep an eye on the inputs but only when they're 'ready'
+        $formPanel.on('change', ':input.ready', function(){
+            setDisabled([$saveBtn, $resetBtn], false);
         });
 
         // intercept the form submit to do it via REST instead
@@ -908,10 +957,12 @@ var XNAT = getObject(XNAT || {});
     panel.input.password = function panelInputPassword(opts){
         opts = cloneObject(opts);
         opts.element = getObject(opts.element);
-        opts.element.autocomplete = 'new-password';
+        // opts.element.autocomplete = 'new-password';
         opts.type = 'password';
-        addClassName(opts, 'input-text password');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        // addClassName(opts, 'input-text password');
+        // return XNAT.ui.template.panelInput(opts).spawned;
+        var passwordInput = XNAT.ui.input.password(opts.element);
+        return XNAT.ui.template.panelDisplay(opts, passwordInput.element).spawned;
     };
 
     panel.input.date = function panelInputDate(opts){
@@ -1451,4 +1502,4 @@ var XNAT = getObject(XNAT || {});
     //
     // });
 
-})(XNAT, jQuery, window);
+}));

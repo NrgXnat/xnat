@@ -173,57 +173,59 @@ siteSetup:
             url: /xapi/notifications
             contents:
 
-                host:
+                smtpEnabled:
+                    kind: panel.input.switchbox
+                    label: Enable SMTP?
+                    onText: Enabled
+                    offText: Disabled
+
+                serverSettings:
+                    kind: panel.subhead
+                    text: Server
+                smtpHostname:
                     kind: panel.input.text
-                    name: smtpHostname
                     label: Host
                     placeholder: localhost
-                    validation: required
-
-                port:
+                smtpPort:
                     kind: panel.input.number
-                    name: smtpPort
                     label: Port
                     placeholder: 25
-                    validation: required number
-
-                username:
+                    validation: allow-empty integer
+                smtpProtocol:
                     kind: panel.input.text
-                    name: smtpUsername
-                    label: Username
-
-                password:
-                    kind: panel.input.password
-                    name: smtpPassword
-                    label: Password
-
-                protocol:
-                    kind: panel.input.text
-                    name: smtpProtocol
                     label: Protocol
+                    placeholder: smtp
 
-                mailServerProperties:
+                authentication:
                     kind: panel.subhead
-                    text: Mail Server Settings
-
+                    text: Authentication
                 smtpAuth:
                     kind: panel.input.switchbox
-                    name: smtpAuth
                     label: SMTP Auth?
                     onText: Enabled
                     offText: Disabled
+                smtpUsername:
+                    kind: panel.input.text
+                    label: Username
+                smtpPassword:
+                    kind: panel.input.password
+                    label: Password
 
+                otherSettings:
+                    kind: panel.subhead
+                    text: Other Settings
                 smtpStartTls:
                     kind: panel.input.switchbox
-                    name: smtpStartTls
                     label: Start TLS?
                     onText: Enabled
                     offText: Disabled
-
                 smtpSslTrust:
                     kind: panel.input.text
-                    name: smtpSslTrust
                     label: SSL Trust
+                emailPrefix:
+                    kind: panel.input.text
+                    label: Email Prefix
+                    placeholder: XNAT
 
         # =========================
         # OTHER SETTINGS

@@ -14,8 +14,8 @@ import org.apache.turbine.services.pull.tools.TemplateLink;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.ArcProject;
-import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
@@ -114,7 +114,20 @@ public class XMLUpload extends SecureAction {
                                         EventUtils.STORE_XML));
                     }
 
-                    SaveItemHelper.unauthorizedSave(item, TurbineUtils.getUser(data), false, q, false, allowDeletion.equalsIgnoreCase("true"), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
+                    if(item.instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)){
+                        final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/image_session_ID");
+                        if(parentId!=null) {
+                            final XnatExperimentdata parent = XnatImagesessiondata.getXnatExperimentdatasById(parentId, XDAT.getUserDetails(), false);
+                            if (parent != null) {
+                                final XnatImagesessiondata session = (XnatImagesessiondata) parent;
+                                session.addScans_scan(new XnatImagescandata(item));
+                                SaveItemHelper.authorizedSave(session, TurbineUtils.getUser(data), false, q, false, allowDeletion.equalsIgnoreCase("true"), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
+                            }
+                        }
+                    }
+                    else {
+                        SaveItemHelper.unauthorizedSave(item, TurbineUtils.getUser(data), false, q, false, allowDeletion.equalsIgnoreCase("true"), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
+                    }
 
                     if (XFT.VERBOSE) {
                         System.out.println("Item Successfully Stored.");

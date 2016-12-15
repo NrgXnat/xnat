@@ -10,6 +10,7 @@
 package org.nrg.xnat.helpers.uri;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
@@ -200,7 +201,8 @@ public final class UriParserUtils {
         }
     };
 
-    private static final Map<List<String>, String> XSI_ARCHIVE_FORMATS = new HashMap<List<String>, String>() {{
+    private static final Map<List<String>, String> XSI_ARCHIVE_FORMATS = ImmutableMap.copyOf(new HashMap<List<String>, String>() {{
+        put(ImmutableList.of("xnat:derivedData"), "/archive/experiments/${xnat:derivedData}");
         put(ImmutableList.of("xnat:experimentData"), "/archive/experiments/${xnat:experimentData}");
         put(ImmutableList.of("xnat:experimentData", "xname"), "/archive/experiments/${xnat:experimentData}/resources/${xname}");
         put(ImmutableList.of("xnat:experimentData", "xnat:derivedData"), "/archive/experiments/${xnat:experimentData}/assessors/${xnat:derivedData}");
@@ -225,5 +227,5 @@ public final class UriParserUtils {
         put(ImmutableList.of("xnat:projectData", "xnat:subjectData", "xnat:experimentData", "xnat:reconstructedImageData", "type", "xname"), "/archive/projects/${xnat:projectData}/subjects/${xnat:subjectData}/experiments/${xnat:experimentData}/reconstructions/${xnat:reconstructedImageData}/${type}/resources/${xname}");
         put(ImmutableList.of("xnat:subjectData"), "/archive/subjects/${xnat:subjectData}");
         put(ImmutableList.of("xnat:subjectData", "xname"), "/archive/subjects/${xnat:subjectData}/resources/${xname}");
-    }};
+    }});
 }

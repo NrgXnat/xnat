@@ -14,6 +14,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
@@ -344,7 +345,23 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 	                	PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, item.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String)params.get(EventUtils.EVENT_TYPE),EventUtils.TYPE.WEB_SERVICE), EventUtils.STORE_XAR, (String)params.get(EventUtils.EVENT_REASON), (String)params.get(EventUtils.EVENT_COMMENT)));
                 		EventMetaI c=wrk.buildEvent();
                         try {
-                        	SaveItemHelper.unauthorizedSave(item, user, false, true,c);
+                        	//SaveItemHelper.unauthorizedSave(item, user, false, true,c);
+
+                            if(item.getItem()!=null && item.getItem().instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)){
+                                final String parentId = item.getStringProperty(XnatImagescandata.SCHEMA_ELEMENT_NAME + "/image_session_ID");
+                                if(parentId!=null) {
+                                    final XnatExperimentdata parent = XnatImagesessiondata.getXnatExperimentdatasById(parentId, user, false);
+                                    if (parent != null) {
+                                        final XnatImagesessiondata scanSession = (XnatImagesessiondata) parent;
+                                        scanSession.addScans_scan(new XnatImagescandata(item));
+                                        SaveItemHelper.authorizedSave(scanSession, user, false, true, c);
+                                    }
+                                }
+                            }
+                            else {
+                                SaveItemHelper.unauthorizedSave(item, user, false, true, c);
+                            }
+
 							WorkflowUtils.complete(wrk, c);
 						} catch (Exception e) {
 							WorkflowUtils.fail(wrk, c);

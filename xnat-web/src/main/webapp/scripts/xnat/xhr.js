@@ -452,19 +452,13 @@ var XNAT = getObject(XNAT||{}),
     function setValues(inputs, dataObj, opts){
         // cache and check if form exists
         var $inputs = $$(inputs),
-            values = {},
-            $form, _form, formName;
+            values = {};
 
         if (!$inputs.length) return;
 
         if ($inputs.length === 1 && /form/i.test($inputs[0].tagName)) {
             $inputs = $inputs.find(':input');
         }
-
-        $form = $($inputs[0]).closest('form');
-        _form = $form[0];
-        _form.id = _form.id || randomID('form_', false);
-        formName = _form.name || toCamelCase(_form.id);
 
         // apply values to each input
         $inputs.not('button').each(function(){
@@ -530,11 +524,6 @@ var XNAT = getObject(XNAT||{}),
                     });
 
         });
-
-        if ($form && $form.length) {
-            $form.addClass('ready');
-            _form.values = values;
-        }
 
         // XNAT.data =
         //         getObject(XNAT.data||{});

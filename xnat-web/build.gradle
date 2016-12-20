@@ -30,7 +30,7 @@ def vGroovy = '2.4.7'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
-version = vXnat
+version = "${vXnat}-1"
 
 buildscript {
     repositories {

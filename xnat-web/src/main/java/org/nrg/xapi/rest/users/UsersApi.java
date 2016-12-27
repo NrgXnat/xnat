@@ -11,7 +11,6 @@ package org.nrg.xapi.rest.users;
 
 import com.google.common.collect.Lists;
 import io.swagger.annotations.*;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.nrg.framework.annotations.XapiRestController;
@@ -24,7 +23,6 @@ import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXapiRestController;
-import org.nrg.xdat.security.PasswordValidatorChain;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
@@ -44,7 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -59,12 +56,10 @@ import java.util.*;
 public class UsersApi extends AbstractXapiRestController {
     @Autowired
     public UsersApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService,
-                    final RoleHolder roleHolder, final SessionRegistry sessionRegistry,
-                    final PasswordValidatorChain passwordValidator, final AliasTokenService aliasTokenService) {
+                    final RoleHolder roleHolder, final SessionRegistry sessionRegistry, final AliasTokenService aliasTokenService) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _sessionRegistry = sessionRegistry;
-        _passwordValidator = passwordValidator;
         _aliasTokenService = aliasTokenService;
     }
 
@@ -250,8 +245,6 @@ public class UsersApi extends AbstractXapiRestController {
         user.setPassword(model.getPassword());
         user.setAuthorization(model.getAuthorization());
 
-        fixPassword(user);
-
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
 
@@ -317,7 +310,6 @@ public class UsersApi extends AbstractXapiRestController {
         // Don't do password compare: we can't.
         if (StringUtils.isNotBlank(model.getPassword())) {
             user.setPassword(model.getPassword());
-            fixPassword(user);
             isDirty = true;
         }
         if (model.getAuthorization() != null && !model.getAuthorization().equals(user.getAuthorization())) {
@@ -456,9 +448,6 @@ public class UsersApi extends AbstractXapiRestController {
         try {
             final UserI user = getUserManagementService().getUser(username);
             boolean oldEnabledFlag = user.isEnabled();
-            if (user == null) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
             user.setEnabled(flag);
             try {
                 getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, flag ? Event.Enabled : Event.Disabled, "", ""));
@@ -950,21 +939,6 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    private void fixPassword(final UserI user) throws PasswordComplexityException {
-        final String password = user.getPassword();
-        if (StringUtils.isNotBlank(password)) {
-            if (!_passwordValidator.isValid(password, user)) {
-                throw new PasswordComplexityException(_passwordValidator.getMessage());
-            }
-        } else {
-            user.setPassword(RandomStringUtils.randomAscii(32));
-        }
-        final String salt = Users.createNewSalt();
-        user.setPassword(new ShaPasswordEncoder(256).encodePassword(password, salt));
-        user.setPrimaryPassword_encrypt(true);
-        user.setSalt(salt);
-    }
-
     @SuppressWarnings("unused")
     public static class Event {
         public static String Added                 = "Added User";
@@ -983,6 +957,5 @@ public class UsersApi extends AbstractXapiRestController {
 
     private final SiteConfigPreferences  _preferences;
     private final SessionRegistry        _sessionRegistry;
-    private final PasswordValidatorChain _passwordValidator;
     private final AliasTokenService      _aliasTokenService;
 }

@@ -11,13 +11,16 @@ package org.nrg.xnat.helpers.prearchive;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
 
 import javax.inject.Provider;
@@ -28,20 +31,26 @@ import java.util.Calendar;
 import java.util.List;
 
 public class SessionXMLRebuilder implements Runnable {
-    public SessionXMLRebuilder(final Provider<UserI> provider, final XnatAppInfo appInfo, final JmsTemplate jmsTemplate, final double interval) {
+    public SessionXMLRebuilder(final Provider<UserI> provider, final XnatAppInfo appInfo, final JmsTemplate jmsTemplate, final JdbcTemplate jdbcTemplate, final double interval) {
         _provider = provider;
         _appInfo = appInfo;
         _interval = interval;
         _jmsTemplate = jmsTemplate;
+        _helper = new DatabaseHelper(jdbcTemplate);
     }
 
     @Override
     public void run() {
-        if (!_appInfo.isInitialized()) {
-            if (!_markedUninitialized) {
-                logger.warn("Application is not yet initialized, session XML rebuild operation delayed until initialization completed.");
-                _markedUninitialized = true;
+        try {
+            if (!_appInfo.isInitialized() || !_helper.tableExists("xdat_search", "prearchive") || !XFTManager.isInitialized()) {
+                if (!_markedUninitialized) {
+                    logger.warn("Application is not yet initialized, session XML rebuild operation delayed until initialization completed.");
+                    _markedUninitialized = true;
+                }
+                return;
             }
+        } catch (final SQLException e) {
+            logger.error("An error occurred trying to access the database to check for the table 'xdat_search.prearchive'.", e);
             return;
         }
 
@@ -128,6 +137,7 @@ public class SessionXMLRebuilder implements Runnable {
     private       XnatAppInfo     _appInfo;
     private final double          _interval;
     private final JmsTemplate     _jmsTemplate;
+    private final DatabaseHelper  _helper;
 
     private boolean _markedUninitialized = false;
 }

@@ -15,6 +15,7 @@ import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.PeriodicTrigger;
@@ -26,10 +27,11 @@ import java.util.concurrent.ScheduledFuture;
 @Component
 public class SessionXmlRebuilderHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
     @Autowired
-    public SessionXmlRebuilderHandlerMethod(final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler, final JmsTemplate jmsTemplate, final XnatUserProvider primaryAdminUserProvider, final XnatAppInfo appInfo) {
+    public SessionXmlRebuilderHandlerMethod(final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler, final JmsTemplate jmsTemplate, final XnatUserProvider primaryAdminUserProvider, final XnatAppInfo appInfo, final JdbcTemplate jdbcTemplate) {
         _preferences = preferences;
         _scheduler = scheduler;
         _jmsTemplate = jmsTemplate;
+        _jdbcTemplate = jdbcTemplate;
         _provider = primaryAdminUserProvider;
         _appInfo = appInfo;
     }
@@ -59,7 +61,7 @@ public class SessionXmlRebuilderHandlerMethod extends AbstractSiteConfigPreferen
             temp.cancel(false);
         }
         scheduledXmlRebuilder.clear();
-        scheduledXmlRebuilder.add(_scheduler.schedule(new SessionXMLRebuilder(_provider, _appInfo, _jmsTemplate, _preferences.getSessionXmlRebuilderInterval()), new PeriodicTrigger(_preferences.getSessionXmlRebuilderRepeat())));
+        scheduledXmlRebuilder.add(_scheduler.schedule(new SessionXMLRebuilder(_provider, _appInfo, _jmsTemplate, _jdbcTemplate, _preferences.getSessionXmlRebuilderInterval()), new PeriodicTrigger(_preferences.getSessionXmlRebuilderRepeat())));
     }
 
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("sessionXmlRebuilderRepeat", "sessionXmlRebuilderInterval"));
@@ -69,6 +71,7 @@ public class SessionXmlRebuilderHandlerMethod extends AbstractSiteConfigPreferen
     private final SiteConfigPreferences   _preferences;
     private final ThreadPoolTaskScheduler _scheduler;
     private final JmsTemplate             _jmsTemplate;
+    private final JdbcTemplate            _jdbcTemplate;
     private final XnatUserProvider        _provider;
     private       XnatAppInfo             _appInfo;
 }

@@ -94,8 +94,8 @@ var XNAT = getObject(XNAT);
         // value should at least be an empty string
         config.value = config.value || '';
 
-        // copy value to [data-*] attribute
-        config.data.value = config.value;
+        // copy value to [data-*] attribute for non-password inputs
+        config.data.value = (!/password/i.test(config.type)) ? config.value : '!';
 
         // add validation [data-*] attributes
         if (config.validate || config.validation) {

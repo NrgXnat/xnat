@@ -180,15 +180,13 @@ var XNAT = getObject(XNAT);
 
         opts.data = opts.data || {};
 
-        opts.data.value = opts.data.value || opts.value;
-
-        // if (opts.element.type !== 'password'){
-        //     opts.data.value = opts.data.value || opts.value;
-        // }
-        // else {
-        //     opts.data.value = '!';
-        //     opts.element.autocomplete = 'new-password';
-        // }
+        if (opts.element.type !== 'password'){
+            opts.data.value = opts.data.value || opts.value;
+        }
+        else {
+            opts.data.value = '!';
+            opts.element.autocomplete = 'new-password';
+        }
 
         if (opts.validation || opts.validate) {
             opts.data.validate = opts.validation || opts.validate;
@@ -249,7 +247,7 @@ var XNAT = getObject(XNAT);
 
         // add value to [data-value] attribute
         // (except for textareas - that could get ugly)
-        if (!/textarea/i.test(element.tagName)){
+        if (!/textarea/i.test(element.tagName) && !/password/i.test(element.type)){
             if (isArray(element.value) || stringable(element.value)) {
                 $element.dataAttr('value', element.value);
             }

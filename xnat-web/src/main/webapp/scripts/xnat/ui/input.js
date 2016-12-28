@@ -57,26 +57,61 @@ var XNAT = getObject(XNAT);
 
     // ========================================
     // MAIN FUNCTION
-    input = function(type, config){
+    input = function inputElement(type, config){
+
         // only one argument?
         // could be a config object
         if (!config && typeof type != 'string') {
             config = type;
             type = null; // it MUST contain a 'type' property
         }
-        config = cloneObject(config);
+
+        // bring 'element' properties into 'config'
+        config = extend(true, {}, config||{}, config.element||{});
+
+        // don't pass 'element' into spawn() function
+        delete config.element;
+
         config.type = type || config.type || 'text';
+        config.data = getObject(config.data || {});
+
+        // addClassName(config, config.type);
+
         // lookup a value if it starts with '??'
         var doLookup = '??';
         if (config.value && (config.value+'').indexOf(doLookup) === 0) {
-            config.value = lookupValue(config.value.split(doLookup)[1])
+            // tolerate '??=' or '??:' syntax
+            config.value = config.value.replace(/^(\?\?[:=\s]*)|(\s*)$/g,'');
+            config.value = lookupValue(config.value)
         }
+
         // lookup a value from a namespaced object
         // if no value is given
-        if (config.value === undefined && config.data && config.data.lookup) {
+        if (config.value === undefined && config.data.lookup) {
             config.value = lookupValue(config.data.lookup)
         }
+
+        // value should at least be an empty string
+        config.value = config.value || '';
+
+        // copy value to [data-*] attribute
+        config.data.value = config.value;
+
+        // add validation [data-*] attributes
+        if (config.validate || config.validation) {
+            config.data.validate = config.validate || config.validation;
+            delete config.validation; // don't pass these to the spawn() function
+            delete config.validate;   // ^^
+        }
+
+        // add validation error message
+        if (config.message) {
+            config.data.message = config.message;
+            delete config.message;
+        }
+
         var spawned = spawn('input', config);
+
         return {
             element: spawned,
             spawned: spawned,
@@ -109,7 +144,8 @@ var XNAT = getObject(XNAT);
     textTypes.forEach(function(type){
         input[type] = function(config){
             config.size = config.size || 25;
-            return setupType('text', type, config);
+            addClassName(config, type);
+            return input('text', config);
         }
     });
 
@@ -119,7 +155,8 @@ var XNAT = getObject(XNAT);
     numberTypes.forEach(function(type){
         input[type] = function(config){
             config.size = config.size || 25;
-            return setupType('number', type, config);
+            addClassName(config, type);
+            return input('number', config);
         }
     });
 
@@ -128,7 +165,7 @@ var XNAT = getObject(XNAT);
     ];
     otherTypes.forEach(function(type){
         input[type] = function(config){
-            return setupType(type, type, config);
+            return input(type, config);
         }
     });
 
@@ -136,7 +173,9 @@ var XNAT = getObject(XNAT);
         config = extend(true, {}, config, config.element);
         config.size = config.size || 25;
         config.autocomplete = 'off';
-        return setupType('text', 'username', config);
+        addClassName(config, 'username');
+        delete config.element;
+        return input('text', config);
     };
     otherTypes.push('username');
 
@@ -144,17 +183,13 @@ var XNAT = getObject(XNAT);
     input.password = function(config){
         config = extend(true, {}, config, config.element);
         config.size = config.size || 25;
-        config.value = '';
+        config.value = ''; // set initial value to empty string
         config.placeholder = '********';
-        // config.value = config.value ? '********' : '';
-        // config.data = { value: '!' };
-        // config.onfocus = function(){
-        //     this.select();
-        //     (config.onfocus||diddly).call();
-        // };
         config.autocomplete = 'new-password';
-        // config.autocomplete = 'off';
-        return setupType('password', 'password', config);
+        addClassName(config, 'password');
+        // should be safe to delete 'element' property
+        delete config.element;
+        return input('password', config);
     };
     otherTypes.push('password');
 
@@ -164,14 +199,15 @@ var XNAT = getObject(XNAT);
         // config.onchange = function(){
         //     this.value = this.checked || $(this).data('uncheckedValue') || '';
         // };
-        return setupType('checkbox', '', config);
+        return input('checkbox', config);
     };
     otherTypes.push('checkbox');
 
     input.switchbox = function(config){
+        config = cloneObject(config);
         addClassName(config, 'switchbox');
         return spawn('label.switchbox', [
-            input.checkbox(config).get(),
+            input('checkbox', config).spawned,
             ['span.switchbox-outer', [['span.switchbox-inner']]],
             ['span.switchbox-on', config.onText||''],
             ['span.switchbox-off', config.offText||'']
@@ -182,7 +218,7 @@ var XNAT = getObject(XNAT);
     // radio buttons are special too
     input.radio = function(config){
         config = extend(true, {}, config, config.element);
-        return setupType('radio', '', config);
+        return input('radio', config);
     };
     otherTypes.push('radio');
 

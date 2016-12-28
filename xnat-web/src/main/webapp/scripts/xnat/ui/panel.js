@@ -153,10 +153,10 @@ var XNAT = getObject(XNAT || {});
         else if (/submit|primary/.test(type)) {
             button.classes.push('submit')
         }
-        if (disabled === true) {
-            button.classes.push('disabled');
-            button.disabled = true
-        }
+        // if (disabled === true) {
+        //     button.classes.push('disabled');
+        //     button.disabled = true
+        // }
         return $.spawn('button', button);
     }
 
@@ -450,8 +450,9 @@ var XNAT = getObject(XNAT || {});
             loadData(this, {
                 load: _load ? _load.replace(/^(\$\?)*/, '') : '',
                 onload: function(){
+                    // fire an 'onload' callback, if specified
                     opts.onload.apply(_formPanel, arguments);
-                    setDisabled([$saveBtn, $resetBtn], true);
+                    // setDisabled([$saveBtn, $resetBtn], true);
                 }
             });
         });
@@ -473,9 +474,9 @@ var XNAT = getObject(XNAT || {});
         multiform.errors = 0;
 
         // keep an eye on the inputs but only when they're 'ready'
-        $formPanel.on('change', ':input.ready', function(){
-            setDisabled([$saveBtn, $resetBtn], false);
-        });
+        // $formPanel.on('focus', ':input.ready', function(){
+        //     setDisabled([$saveBtn, $resetBtn], false);
+        // });
 
         // intercept the form submit to do it via REST instead
         $formPanel.on('submit', function(e){
@@ -574,10 +575,8 @@ var XNAT = getObject(XNAT || {});
                             xmodal.message({
                                 title: 'Validation Error',
                                 content: '' +
-                                //'<div style="font-size:15px;">' +
                                 '<p>Please correct the following fields and re-submit the form:</p>' +
                                 '<ul>' + errors.join('') + '</ul>' +
-                                //'</div>' +
                                 '',
                                 width: 500,
                                 height: 300
@@ -799,19 +798,36 @@ var XNAT = getObject(XNAT || {});
     // create a single generic panel element
     panel.element = function(opts){
 
-        var _element, _inner = [], _target, infoId = '', _info = '';
+        var _element, _inner = [], _target,
+            infoId = '', infoIcon = '', _info = '';
+
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
+
         if (opts.id || opts.element.id) {
             opts.element.id = (opts.id || opts.element.id) + '-element';
         }
+
+        if (opts.name || opts.element.name) {
+            opts.element.name = (opts.element.name || opts.name).replace(/^:+/, '')
+        }
+
         addClassName(opts.element, 'panel-element');
-        addDataObjects(opts.element, { name: (opts.name||'').replace(/^:*/, '') });
+        addDataObjects(opts.element, { name: opts.element.name });
+
         opts.label = opts.label||opts.title||'';
 
         // add a help info icon if one is specified
         if (opts.info){
+
             infoId = randomID('i', false);
+
+            infoIcon = spawn('img', {
+                src: XNAT.url.rootUrl('/style/icons/icon-qm-48.png'),
+                width: 16,
+                height: 16
+            });
+
             _info = spawn('a.infolink|href=#!', {
                 id: infoId,
                 style: {
@@ -819,13 +835,7 @@ var XNAT = getObject(XNAT || {});
                     top: '3px',
                     right: '8px'
                 }
-            }, [
-                ['img', {
-                    src: XNAT.url.rootUrl('/style/icons/icon-qm-48.png'),
-                    width: 16,
-                    height: 16
-                }]
-            ]);
+            }, infoIcon);
 
             panel.info.dialog[infoId] = function(){
                 console.log('info for ' + opts.label);
@@ -841,7 +851,7 @@ var XNAT = getObject(XNAT || {});
             // infoContent[infoId++] = {label:opts.label, content:opts.info};
         }
 
-        _inner.push(['div.element-label', [_info, (opts.label ? opts.label : '')]]);
+        _inner.push(['div.element-label', [_info, opts.label]]);
 
         // 'contents' will be inserted into the 'target' element
         _target = spawn('div.element-wrapper');
@@ -906,7 +916,7 @@ var XNAT = getObject(XNAT || {});
         _inner.push(_body);
 
         if (opts.footer) {
-            _inner.push(['footer.section-footer'], opts.footer);
+            _inner.push(['footer.section-footer', opts.footer]);
         }
 
         _section = spawn('div.panel-section', opts.element, _inner);
@@ -922,11 +932,13 @@ var XNAT = getObject(XNAT || {});
 
     };
 
-    panel.display = function(opts){
-        return XNAT.ui.template.panelDisplay(opts).spawned;
+    panel.display = function(opts, contents){
+        return XNAT.ui.template.panelDisplay(opts, contents);
     };
 
-    panel.input = {};
+    panel.input = function(opts, contents){
+        return XNAT.ui.template.panelInput(opts, contents);
+    };
 
     panel.input.text = function(opts){
         return XNAT.ui.template.panelInput(opts).spawned;
@@ -956,12 +968,20 @@ var XNAT = getObject(XNAT || {});
 
     panel.input.password = function panelInputPassword(opts){
         opts = cloneObject(opts);
-        opts.element = getObject(opts.element);
-        // opts.element.autocomplete = 'new-password';
-        opts.type = 'password';
+        var config = getObject(opts.element||{});
+        config.id = config.id || opts.id;
+        config.name = config.name || opts.name;
+        config.className = config.className || opts.className;
+        if (opts.validate) {
+            config.validate = opts.validate;
+        }
+        if (opts.message) {
+            config.message = opts.message;
+        }
         // addClassName(opts, 'input-text password');
-        // return XNAT.ui.template.panelInput(opts).spawned;
         var passwordInput = XNAT.ui.input.password(opts.element);
+        // return XNAT.ui.template.panelInput(opts, passwordInput.element).spawned;
+        // return panel.display(opts, passwordInput.element).spawned;
         return XNAT.ui.template.panelDisplay(opts, passwordInput.element).spawned;
     };
 

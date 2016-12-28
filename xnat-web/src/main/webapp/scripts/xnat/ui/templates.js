@@ -180,17 +180,23 @@ var XNAT = getObject(XNAT);
 
         opts.data = opts.data || {};
 
-        if (opts.element.type !== 'password'){
-            opts.data.value = opts.data.value || opts.value;
-        }
-        else {
-            opts.data.value = '!';
-            opts.element.autocomplete = 'new-password';
-        }
+        opts.data.value = opts.data.value || opts.value;
+
+        // if (opts.element.type !== 'password'){
+        //     opts.data.value = opts.data.value || opts.value;
+        // }
+        // else {
+        //     opts.data.value = '!';
+        //     opts.element.autocomplete = 'new-password';
+        // }
 
         if (opts.validation || opts.validate) {
             opts.data.validate = opts.validation || opts.validate;
             addClassName(opts.element, opts.data.validate);
+        }
+
+        if (opts.message) {
+            opts.data.message = opts.message;
         }
 
         addDataObjects(opts.element, opts.data);

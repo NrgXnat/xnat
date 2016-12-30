@@ -27,7 +27,6 @@ import java.io.IOException;
 @ComponentScan("org.nrg.config.daos")
 @Import(NrgPrefsConfiguration.class)
 public class PreferencesConfig {
-
     @Bean
     public ConfigService configService() {
         return new DefaultConfigService();

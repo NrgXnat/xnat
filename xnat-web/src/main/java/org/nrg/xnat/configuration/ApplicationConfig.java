@@ -16,9 +16,6 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.HistoricPasswordValidator;
-import org.nrg.xdat.security.PasswordValidatorChain;
-import org.nrg.xdat.security.RegExpValidator;
 import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.ThemeService;
@@ -43,10 +40,10 @@ import java.util.List;
 @ComponentScan({"org.nrg.automation.daos", "org.nrg.automation.repositories", "org.nrg.config.daos", "org.nrg.dcm.xnat",
                 "org.nrg.dicomtools.filters", "org.nrg.framework.datacache.impl.hibernate",
                 "org.nrg.framework.services.impl", "org.nrg.notify.daos", "org.nrg.prefs.repositories",
-                "org.nrg.xdat.daos", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xft.daos",
-                "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xnat.configuration",
-                "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners", "org.nrg.xnat.helpers.merge",
-                "org.nrg.xnat.initialization.tasks"})
+                "org.nrg.xdat.daos", "org.nrg.xdat.security.validators", "org.nrg.xdat.services.impl.hibernate",
+                "org.nrg.xft.daos", "org.nrg.xft.event.listeners", "org.nrg.xft.services",
+                "org.nrg.xnat.configuration", "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners",
+                "org.nrg.xnat.helpers.merge", "org.nrg.xnat.initialization.tasks"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
 public class ApplicationConfig {
@@ -84,21 +81,6 @@ public class ApplicationConfig {
     public UserManagementServiceI userManagementService() {
         // TODO: This should be made to use a preference setting.
         return new XDATUserMgmtServiceImpl();
-    }
-
-    @Bean
-    public RegExpValidator regexValidator() throws SiteConfigurationException {
-        return new RegExpValidator();
-    }
-
-    @Bean
-    public HistoricPasswordValidator historicPasswordValidator() throws SiteConfigurationException {
-        return new HistoricPasswordValidator();
-    }
-
-    @Bean
-    public PasswordValidatorChain validator() {
-        return new PasswordValidatorChain();
     }
 
     // MIGRATION: I'm not even sure this is used, but we need to do away with it in favor of prefs.

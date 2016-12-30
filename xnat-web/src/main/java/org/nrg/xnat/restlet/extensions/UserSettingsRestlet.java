@@ -30,7 +30,6 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -158,7 +157,7 @@ public class UserSettingsRestlet extends SecureResource {
             final String password = attributes.get(UserProperty.password);
             if (!StringUtils.isBlank(password)) {
                 String salt = Users.createNewSalt();
-                xdatUser.setPassword(new ShaPasswordEncoder(256).encodePassword(password, salt));
+                xdatUser.setPassword(Users.encode(password, salt));
                 xdatUser.setPrimaryPassword_encrypt(true);
                 xdatUser.setSalt(salt);
             }

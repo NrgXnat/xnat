@@ -9,18 +9,19 @@
 
 package org.nrg.xnat.initialization.tasks;
 
+import com.google.common.collect.Maps;
 import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xft.security.UserAttributes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -43,15 +44,18 @@ public class EncryptXnatPasswords extends AbstractInitializingTask {
             if (_helper.tableExists("xdat_user")) {
                 try {
                     final PasswordResultSetExtractor extractor = new PasswordResultSetExtractor();
-                    final Map<Integer, String> userPasswords = _template.query("SELECT xdat_user_id, primary_password FROM xdat_user WHERE primary_password IS NOT NULL AND length(primary_password) != 64", extractor);
-                    final Map<Integer, String> historyPasswords = _template.query("SELECT history_id, primary_password FROM xdat_user_history WHERE primary_password IS NOT NULL AND length(primary_password) != 64", extractor);
+
+                    final Map<Integer, Map<UserAttributes, String>> userPasswords    = _template.query("SELECT xdat_user_id, primary_password FROM xdat_user WHERE primary_password IS NOT NULL AND length(primary_password) != 64", extractor);
+                    final Map<Integer, Map<UserAttributes, String>> historyPasswords = _template.query("SELECT history_id, primary_password FROM xdat_user_history WHERE primary_password IS NOT NULL AND length(primary_password) != 64", extractor);
 
                     for (final int userId : userPasswords.keySet()) {
-                        _template.update("UPDATE xdat_user SET primary_password = ? WHERE xdat_user_id = ?", userPasswords.get(userId), userId);
+                        final Map<UserAttributes, String> attributes = userPasswords.get(userId);
+                        _template.update("UPDATE xdat_user SET primary_password = ?, salt = ?, primary_password_encrypt = 1 WHERE xdat_user_id = ?", attributes.get(UserAttributes.password), attributes.get(UserAttributes.salt), userId);
                     }
 
                     for (int historyId : historyPasswords.keySet()) {
-                        _template.update("UPDATE xdat_user_history SET primary_password = ? WHERE history_id = ?", userPasswords.get(historyId), historyId);
+                        final Map<UserAttributes, String> attributes = historyPasswords.get(historyId);
+                        _template.update("UPDATE xdat_user_history SET primary_password = ?, salt = ?, primary_password_encrypt = 1 WHERE history_id = ?", attributes.get(UserAttributes.password), attributes.get(UserAttributes.salt), historyId);
                     }
 
                     if ((!userPasswords.isEmpty() || !historyPasswords.isEmpty()) && _helper.tableExists("xs_item_cache")) {
@@ -70,19 +74,21 @@ public class EncryptXnatPasswords extends AbstractInitializingTask {
         }
     }
 
-    private static class PasswordResultSetExtractor implements ResultSetExtractor<Map<Integer, String>> {
+    private static class PasswordResultSetExtractor implements ResultSetExtractor<Map<Integer, Map<UserAttributes, String>>> {
         @Override
-        public Map<Integer, String> extractData(final ResultSet results) throws SQLException, DataAccessException {
-            final Map<Integer, String> passwords = new HashMap<>();
+        public Map<Integer, Map<UserAttributes, String>> extractData(final ResultSet results) throws SQLException, DataAccessException {
+            final Map<Integer, Map<UserAttributes, String>> passwords = Maps.newHashMap();
             while (results.next()) {
-                passwords.put(results.getInt(1), encoder.encodePassword(results.getString(2), null));
+                final String                      salt       = Users.createNewSalt();
+                final Map<UserAttributes, String> attributes = Maps.newHashMap();
+                attributes.put(UserAttributes.salt, salt);
+                attributes.put(UserAttributes.password, Users.encode(results.getString(2), salt));
+                passwords.put(results.getInt(1), attributes);
             }
             return passwords;
         }
-
-        final ShaPasswordEncoder encoder = new ShaPasswordEncoder(256);
     }
 
     private final DatabaseHelper _helper;
-    private final JdbcTemplate _template;
+    private final JdbcTemplate   _template;
 }

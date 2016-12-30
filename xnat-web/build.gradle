@@ -9,6 +9,7 @@ import org.gradle.internal.jvm.Jvm
  * Released under the Simplified BSD.
  */
 
+def vXnatDev = '1.7.2-SNAPSHOT'
 def vXnat = '1.7.1'
 def vXnatStable = '1.7.0'
 def vXImgView = '1.0.0-SNAPSHOT'
@@ -30,7 +31,7 @@ def vGroovy = '2.4.7'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
-version = "${vXnat}-1"
+version = "${vXnatDev}"
 
 buildscript {
     repositories {
@@ -330,7 +331,7 @@ dependencies {
     compile("org.nrg.xnat:xnat-data-models:${vXnat}") {
         transitive = false
     }
-    compile "org.nrg.xdat:core:${vXnat}"
+    compile "org.nrg.xdat:core:${vXnatDev}"
     compile "org.nrg:framework:${vXnat}"
     compile "org.nrg:transaction:${vXnat}"
     compile "org.nrg:prefs:${vXnat}"

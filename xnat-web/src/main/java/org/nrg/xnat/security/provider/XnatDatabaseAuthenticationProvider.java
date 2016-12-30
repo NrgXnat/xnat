@@ -23,10 +23,9 @@ import org.springframework.security.core.userdetails.UserDetailsChecker;
 
 public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvider implements XnatAuthenticationProvider {
 
-    public XnatDatabaseAuthenticationProvider(final boolean requireEmailVerification) {
+    public XnatDatabaseAuthenticationProvider() {
         super();
-        _requireEmailVerification = requireEmailVerification;
-        this.setPreAuthenticationChecks(new PreAuthenticationChecks());
+        setPreAuthenticationChecks(new PreAuthenticationChecks());
     }
 
     /**
@@ -151,6 +150,5 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
         }
     }
 
-    private final boolean _requireEmailVerification;
     private int _order = -1;
 }

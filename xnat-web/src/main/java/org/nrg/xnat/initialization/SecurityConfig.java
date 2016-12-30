@@ -148,7 +148,7 @@ public class SecurityConfig {
 
     @Bean
     public DatabaseAuthenticationProviderConfigurator dbConfigurator(final XnatDatabaseUserDetailsService userDetailsService, final SiteConfigPreferences preferences) {
-        return new DatabaseAuthenticationProviderConfigurator(userDetailsService, preferences);
+        return new DatabaseAuthenticationProviderConfigurator(userDetailsService);
     }
 
     @Bean

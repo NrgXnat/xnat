@@ -9,14 +9,13 @@
 
 package org.nrg.xnat.security.config;
 
-import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.ReflectionSaltSource;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +23,9 @@ import java.util.Map;
 
 public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenticationProviderConfigurator {
     @Autowired
-    public DatabaseAuthenticationProviderConfigurator(final XnatDatabaseUserDetailsService userDetailsService, final SiteConfigPreferences preferences) {
+    public DatabaseAuthenticationProviderConfigurator(final XnatDatabaseUserDetailsService userDetailsService) {
         super();
         _userDetailsService = userDetailsService;
-        _preferences = preferences;
         setConfiguratorId("db");
     }
 
@@ -38,9 +36,9 @@ public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenti
         ReflectionSaltSource saltSource = new ReflectionSaltSource();
         saltSource.setUserPropertyToUse("salt");
 
-        XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(_preferences.getEmailVerification());
+        final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider();
         sha2DatabaseAuthProvider.setUserDetailsService(_userDetailsService);
-        sha2DatabaseAuthProvider.setPasswordEncoder(new ShaPasswordEncoder(256));
+        sha2DatabaseAuthProvider.setPasswordEncoder(Users.getEncoder());
         sha2DatabaseAuthProvider.setName(name);
         sha2DatabaseAuthProvider.setProviderId(id);
         sha2DatabaseAuthProvider.setSaltSource(saltSource);
@@ -51,17 +49,16 @@ public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenti
 
     @Override
     public List<AuthenticationProvider> getAuthenticationProviders(String id, String name, Map<String, String> properties) {
-        List<AuthenticationProvider> provs = getAuthenticationProviders(id, name);
-        for(AuthenticationProvider prov : provs){
-            if(XnatAuthenticationProvider.class.isAssignableFrom(prov.getClass())){
+        final List<AuthenticationProvider> providers = getAuthenticationProviders(id, name);
+        for(final AuthenticationProvider provider : providers){
+            if(XnatAuthenticationProvider.class.isAssignableFrom(provider.getClass())){
                 if (properties.get("order") != null) {
-                    ((XnatAuthenticationProvider)prov).setOrder(Integer.parseInt(properties.get("order")));
+                    ((XnatAuthenticationProvider)provider).setOrder(Integer.parseInt(properties.get("order")));
                 }
             }
         }
-        return provs;
+        return providers;
     }
 
     private final XnatDatabaseUserDetailsService _userDetailsService;
-    private final SiteConfigPreferences          _preferences;
 }

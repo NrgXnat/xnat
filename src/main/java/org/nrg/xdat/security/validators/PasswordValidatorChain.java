@@ -1,0 +1,67 @@
+/*
+ * core: org.nrg.xdat.security.PasswordValidatorChain
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
+package org.nrg.xdat.security.validators;
+
+import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xft.security.UserI;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+@Primary
+public class PasswordValidatorChain implements PasswordValidator {
+    public static PasswordValidatorChain getTestInstance() {
+        return new PasswordValidatorChain();
+    }
+
+    @Autowired
+    public PasswordValidatorChain(final List<PasswordValidator> validators) {
+        for (final PasswordValidator validator : validators) {
+            if (!(validator instanceof PasswordValidatorChain)) {
+                _validators.add(validator);
+            }
+        }
+    }
+
+    @Override
+    public boolean isValid(String password, UserI user) {
+        final StringBuilder buffer = new StringBuilder();
+        for (final PasswordValidator validator : _validators) {
+            if (!validator.isValid(password, user)) {
+                buffer.append(validator.getMessage()).append(" \n");
+            }
+        }
+        message = buffer.toString();
+        return StringUtils.isBlank(message);
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    /**
+     * Private access level constructor is provided for "panic mode" instantiation when context can't be
+     * found. Default values are then used for all preference settings.
+     */
+    private PasswordValidatorChain() {
+        _validators.add(new RegExpValidator());
+        _validators.add(new HistoricPasswordValidator());
+    }
+
+    private final List<PasswordValidator> _validators = Lists.newArrayList();
+    private       String                  message;
+}

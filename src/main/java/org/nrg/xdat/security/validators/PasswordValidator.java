@@ -7,7 +7,7 @@
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xdat.security;
+package org.nrg.xdat.security.validators;
 
 import org.nrg.xft.security.UserI;
 

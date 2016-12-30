@@ -10,7 +10,6 @@
 package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -21,7 +20,11 @@ import org.nrg.xdat.security.Authenticator.Credentials;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xdat.security.user.exceptions.*;
+import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
+import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.security.validators.PasswordValidatorChain;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
@@ -30,10 +33,10 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 import javax.annotation.Nonnull;
 import java.util.Date;
@@ -158,12 +161,12 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 	}
 
 	@Override
-	public void save(UserI user, UserI authenticatedUser,boolean overrideSecurity, EventMetaI event) throws Exception{
+	public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventMetaI event) throws Exception {
 		if(user.getLogin()==null){
 			throw new NullPointerException();
 		}
-		
-		UserI existing=null;
+
+		UserI existing = null;
 		try {
 			existing = Users.getUser(user.getLogin());
 		} catch (Exception ignored) {
@@ -172,80 +175,35 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 		if (existing == null) {
 			 // NEW USER
 		    if (overrideSecurity || Roles.isSiteAdmin(authenticatedUser)) {
-		        String tempPass = user.getPassword();
-		        if (StringUtils.isNotBlank(tempPass)){
-		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-		        	if(validator.isValid(tempPass, null)){
-		        		//this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
-                        String salt = user.getSalt();
-                        if(salt==null){
-                            salt = Users.createNewSalt();
-                            user.setSalt(salt);
-                        }
-                        if(user.getPassword()==null || user.getPassword().length()!=64) {
-                            user.setPassword(_encoder.encodePassword(tempPass, salt));
-                        }
+		        final String password = user.getPassword();
+				if (StringUtils.isNotBlank(password)) {
+					final PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
+					if (validator.isValid(password, null)) {
+						//this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
+						final String salt = StringUtils.defaultIfBlank(user.getSalt(), Users.createNewSalt());
+						user.setSalt(salt);
+						if (user.getPassword() == null || user.getPassword().length() != 64) {
+							user.setPassword(Users.encode(password, salt));
+						}
+					} else {
+						throw new PasswordComplexityException(validator.getMessage());
+					}
+				}
 
-		        	} else {
-		        		throw new PasswordComplexityException(validator.getMessage());
-		        	}
-		        }
-		        // newUser.initializePermissions();
-		        SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, true, false, event);
-		        XdatUserAuth newUserAuth = new XdatUserAuth(user.getLogin(), XdatUserAuthService.LOCALDB);
-		        XDAT.getXdatUserAuthService().create(newUserAuth);
-		    } else {
+				SaveItemHelper.authorizedSave(((XDATUser) user), authenticatedUser, true, false, event);
+				XdatUserAuth newUserAuth = new XdatUserAuth(user.getLogin(), XdatUserAuthService.LOCALDB);
+				XDAT.getXdatUserAuthService().create(newUserAuth);
+			} else {
 		        throw new InvalidPermissionException("Unauthorized user modification attempt");
 		    }
 		} else {
-		    // OLD USER
-			final String newPassword = user.getPassword();
-			final String newSalt = user.getSalt();
-			final boolean hasNewPassword = StringUtils.isNotBlank(newPassword);
-			final boolean hasNewSalt = StringUtils.isNotBlank(newSalt);
+			final Map<UserAttributes, String> passwordAndSalt = Users.getUpdatedPassword(existing, user);
 
-			final String savedPassword = existing.getPassword();
-			final String savedSalt = existing.getSalt();
-			final boolean hasSavedPassword = StringUtils.isNotBlank(savedPassword);
-			final boolean hasSavedSalt = StringUtils.isNotBlank(savedSalt);
-
-			// check if the password is being updated (also do this if password remains the same but salt is empty)
-			final String passwordToSet;
-			final String saltToSet;
-
-			if (!hasNewPassword) {
-				// If the user didn't specify a new password and there's no saved password...
-				if (!hasSavedPassword) {
-					// Create a new salt regardless of whether or not we already have one then encode a random password with it.
-					saltToSet = Users.createNewSalt();
-					passwordToSet = _encoder.encodePassword(RandomStringUtils.randomAscii(32), saltToSet);
-				} else if (!hasSavedSalt) {
-					// If there is a saved password but no saved salt, create a new salt then encode the existing password.
-					// This presumes that the previous password wasn't encoded at all.
-					saltToSet = Users.createNewSalt();
-					passwordToSet = _encoder.encodePassword(savedPassword, saltToSet);
-				} else {
-					// We had a salt and a password and no new one specified, so just keep those.
-					saltToSet = savedSalt;
-					passwordToSet = savedPassword;
-				}
-			} else {
-				// The user specified a new password, test for validity.
-				final PasswordValidatorChain validator = getValidator();
-				if (!validator.isValid(newPassword, user)) {
-					throw new PasswordComplexityException(validator.getMessage());
-				}
-
-				// Get the specified salt if available.
-				saltToSet = hasNewSalt ? newSalt : Users.createNewSalt();
-				passwordToSet = _encoder.encodePassword(newPassword, saltToSet);
-			}
-
-			user.setPassword(passwordToSet);
-			user.setSalt(saltToSet);
+			user.setPassword(passwordAndSalt.get(UserAttributes.password));
+			user.setSalt(passwordAndSalt.get(UserAttributes.salt));
 
 			// This means the password was actually updated, so reset the password updated date and failed login attempts.
-			if (!StringUtils.equals(savedPassword, passwordToSet)) {
+			if (!StringUtils.equals(existing.getPassword(), user.getPassword())) {
 				final XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
 				auth.setPasswordUpdated(new Date());
 				auth.setFailedLoginAttempts(0);
@@ -318,11 +276,5 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
         return ((XDATUser) user).login(credentials.password);
 	}
 
-	private PasswordValidatorChain getValidator() {
-		return XDAT.getContextService().getBean(PasswordValidatorChain.class);
-	}
-
 	private static final Logger      logger   = Logger.getLogger(XDATUserMgmtServiceImpl.class);
-
-	private final ShaPasswordEncoder _encoder = new ShaPasswordEncoder(256);
 }

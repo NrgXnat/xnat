@@ -13,9 +13,9 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.ElementDisplay;
@@ -46,7 +46,6 @@ import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -144,22 +143,24 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         if (XFT.VERBOSE) System.out.println("User(login,password) Loaded (" + (Calendar.getInstance().getTimeInMillis() - startTime) + ")ms");
     }
 
-    public boolean login(String password) throws PasswordAuthenticationException, Exception {
+    public boolean login(final String submitted) throws PasswordAuthenticationException, Exception {
         if (!isEnabled()) {
-            throw new EnabledException(this.getUsername());
+            throw new EnabledException(getUsername());
         }
 
-        if ((!this.isActive()) && (!this.checkRole("Administrator"))) {
-            throw new ActivationException(this.getUsername());
+        if ((!isActive()) && (!checkRole("Administrator"))) {
+            throw new ActivationException(getUsername());
         }
 
-        String pass = getStringProperty("primary_password");
-        String salt = getStringProperty("salt");
+        final String password = getStringProperty("primary_password");
+        if (StringUtils.isBlank(password)) {
+            throw new PasswordAuthenticationException(getUsername());
+        }
 
-        if (StringUtils.isBlank(pass)) throw new PasswordAuthenticationException(getUsername());
+        final String salt = getStringProperty("salt");
 
         // encryption
-        if (new ShaPasswordEncoder(256).isPasswordValid(pass, password, salt)) {
+        if (Users.isPasswordValid(password, submitted, salt)) {
             return true;
         }
         throw new PasswordAuthenticationException(getUsername());

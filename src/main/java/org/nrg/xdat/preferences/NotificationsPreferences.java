@@ -97,7 +97,13 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
 
     @NrgPreference(defaultValue = "25", aliases = "port")
     public int getSmtpPort() {
-        return getIntegerValue("smtpPort");
+        try {
+            return getIntegerValue("smtpPort");
+        } catch (NumberFormatException e) {
+            // If there's a bad port set, just set it to the default value.
+            setSmtpPort(25);
+            return 25;
+        }
     }
 
     public void setSmtpPort(final int smtpPort) {

@@ -9,10 +9,6 @@
 
 package org.nrg.xdat.configuration;
 
-import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
-import org.nrg.xdat.configuration.mocks.MockUser;
-import org.nrg.xdat.configuration.mocks.MockUserRepository;
-import org.nrg.xdat.configuration.mocks.MockUserService;
 import org.nrg.xdat.daos.AliasTokenDAO;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -23,23 +19,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import(TestXdatUserAuthServiceConfig.class)
+@Import({TestXdatUserAuthServiceConfig.class, MockUserConfig.class})
 public class TestAliasTokenServiceConfig {
-    @Bean
-    public HibernateEntityPackageList mockUserEntities() {
-        return new HibernateEntityPackageList(MockUser.class.getPackage().getName());
-    }
-
-    @Bean
-    public MockUserRepository mockUserRepository() {
-        return new MockUserRepository();
-    }
-
-    @Bean
-    public UserManagementServiceI userService() {
-        return new MockUserService();
-    }
-
     @Bean
     public AliasTokenDAO aliasTokenDAO() {
         return new AliasTokenDAO();

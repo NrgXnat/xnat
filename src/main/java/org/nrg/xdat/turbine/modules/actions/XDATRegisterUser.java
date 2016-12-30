@@ -17,7 +17,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.PasswordValidatorChain;
+import org.nrg.xdat.security.validators.PasswordValidatorChain;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.UserRegistrationDataService;

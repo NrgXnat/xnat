@@ -33,6 +33,7 @@ public class MockUser extends AbstractHibernateEntity implements UserI {
     private Collection<String> _authorities = new ArrayList<>();
     private String             _password;
     private Boolean            _verified;
+    private Boolean            _encrypt;
     private String             _salt;
     private UserAuthI          _authorization;
     private boolean            _accountNonExpired;
@@ -173,9 +174,13 @@ public class MockUser extends AbstractHibernateEntity implements UserI {
         _password = password;
     }
 
+    public Boolean getPrimaryPassword_encrypt() {
+        return _encrypt;
+    }
+
     @Override
     public void setPrimaryPassword_encrypt(final Object b) {
-        _password = (String) b;
+        _encrypt = (Boolean) b;
     }
 
     @Transient

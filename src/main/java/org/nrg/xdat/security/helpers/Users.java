@@ -10,6 +10,7 @@
 package org.nrg.xdat.security.helpers;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.ContextService;
@@ -18,15 +19,16 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authenticator.Credentials;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xdat.security.user.exceptions.PasswordAuthenticationException;
+import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.security.validators.PasswordValidatorChain;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.slf4j.Logger;
@@ -34,13 +36,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.encoding.PasswordEncoder;
+import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -52,11 +55,10 @@ public class Users {
     private static UserManagementServiceI singleton = null;
 
     /**
-     * Returns the currently configured user management service
-     *
-     * You can customize the implementation returned by adding a new implementation to the org.nrg.xdat.security.user.custom package (or a diffently configured package).
-     *
-     * You can change the default implementation returned via the security.userManagementService.default configuration parameter
+     * Returns the currently configured user management service.  You can customize the implementation returned by
+     * adding a new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured
+     * package). You can change the default implementation returned via the security.userManagementService.default
+     * configuration parameter.
      *
      * @return The service.
      */
@@ -117,13 +119,12 @@ public class Users {
     }
 
     /**
-     * Return a freshly created user object populated with the passed parameters.
-     *
-     * Object may or may not already exist in the database.
+     * Return a freshly created user object populated with the passed parameters. The user object may or may not already
+     * exist in the database.
      *
      * @return Returns the newly created user
      */
-    public static UserI createUser(Map<String, ? extends Object> params) throws UserFieldMappingException, UserInitException {
+    public static UserI createUser(Map<String, ?> params) throws UserFieldMappingException, UserInitException {
         final UserManagementServiceI service = getUserManagementService();
         return service.createUser(params);
     }
@@ -132,8 +133,7 @@ public class Users {
      * Return a User object for the referenced username.
      *
      * @return Returns the user object with the given username
-     *
-     * @throws UserNotFoundException
+     * @throws UserNotFoundException When the requested user can't be found.
      */
     public static UserI getUser(String username) throws UserInitException, UserNotFoundException {
         final UserManagementServiceI service = getUserManagementService();
@@ -164,7 +164,6 @@ public class Users {
      * Return the path to the user's cache directory.
      *
      * @param user The user.
-     *
      * @return The cache path for the user.
      */
     public static String getUserCacheUploadsPath(final UserI user) {
@@ -176,7 +175,6 @@ public class Users {
      *
      * @param user The user.
      * @param dirs The directories.
-     *
      * @return A file from the user cache.
      */
     public static File getUserCacheFile(final UserI user, String... dirs) {
@@ -197,9 +195,8 @@ public class Users {
      * Return the guest user for this server
      *
      * @return Returns the guest user
-     *
-     * @throws UserNotFoundException
-     * @throws UserInitException
+     * @throws UserNotFoundException When the requested user can't be found.
+     * @throws UserInitException     When an error occurs accessing the user records.
      */
     @Nonnull
     public static UserI getGuest() throws UserNotFoundException, UserInitException {
@@ -219,7 +216,7 @@ public class Users {
     /**
      * clear any objects that might be cached for this user
      *
-     * @param user
+     * @param user The user whose cache should be cleared.
      */
     public static void clearCache(UserI user) {
         final UserManagementServiceI service = getUserManagementService();
@@ -229,41 +226,37 @@ public class Users {
     /**
      * Save the user object
      *
-     * @param user
-     * @param authenticatedUser
-     * @param overrideSecurity  : whether to check if this user can modify this user object (should be false if authenticatedUser is null)
-     * @param c
-     *
-     * @throws Exception
+     * @param user              The user object to be saved.
+     * @param authenticatedUser The user saving the user object.
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+     * @param event             The event metadata.
+     * @throws Exception When something goes wrong.
      */
-    public static void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventMetaI c) throws Exception {
+    public static void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventMetaI event) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        service.save(user, authenticatedUser, overrideSecurity, c);
+        service.save(user, authenticatedUser, overrideSecurity, event);
     }
 
     /**
      * Save the user object
      *
-     * @param user
-     * @param authenticatedUser
-     * @param overrideSecurity  : whether to check if this user can modify this user object (should be false if authenticatedUser is null)
-     * @param c
-     *
-     * @throws Exception
+     * @param user              The user object to be saved.
+     * @param authenticatedUser The user saving the user object.
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+     * @param event             The event details.
+     * @throws Exception When something goes wrong.
      */
-    public static void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails c) throws Exception {
+    public static void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        service.save(user, authenticatedUser, overrideSecurity, c);
+        service.save(user, authenticatedUser, overrideSecurity, event);
     }
 
     /**
      * Validate the user object and see if it meets whatever requirements have been met by the system
      *
-     * @param user
-     *
+     * @param user The user object to be validated.
      * @return Returns whether the user meets whatever requirements have been met by the system
-     *
-     * @throws Exception
+     * @throws Exception When something goes wrong.
      */
     public static ValidationResultsI validate(UserI user) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
@@ -273,99 +266,85 @@ public class Users {
     /**
      * Enable the user account
      *
-     * @param user
-     * @param authenticatedUser
-     * @param ci
-     *
-     * @throws InvalidPermissionException
-     * @throws Exception
+     * @param user              The user object to be enabled.
+     * @param authenticatedUser The user saving the user object.
+     * @param event             The event details.
+     * @throws Exception When something goes wrong.
      */
-    public static void enableUser(UserI user, UserI authenticatedUser, EventDetails ci) throws InvalidPermissionException, Exception {
+    public static void enableUser(UserI user, UserI authenticatedUser, EventDetails event) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        service.enableUser(user, authenticatedUser, ci);
+        service.enableUser(user, authenticatedUser, event);
     }
 
     /**
      * Disable the user account
      *
-     * @param user
-     * @param authenticatedUser
-     * @param ci
-     *
-     * @throws InvalidPermissionException
-     * @throws Exception
+     * @param user              The user object to be disabled.
+     * @param authenticatedUser The user saving the user object.
+     * @param event             The event details.
+     * @throws Exception When something goes wrong.
      */
-    public static void disableUser(UserI user, UserI authenticatedUser, EventDetails ci) throws InvalidPermissionException, Exception {
+    public static void disableUser(UserI user, UserI authenticatedUser, EventDetails event) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        service.disableUser(user, authenticatedUser, ci);
+        service.disableUser(user, authenticatedUser, event);
     }
 
     /**
      * See whether the passed user can authenticate using the passed credentials
      *
-     * @param u
-     * @param cred
-     *
-     * @return Returns whether authentication was successful
-     *
-     * @throws PasswordAuthenticationException
-     * @throws Exception
+     * @param user        The user to be authenticated.
+     * @param credentials The credentials to be used for authentication.
+     * @return Whether authentication was successful
+     * @throws Exception When something goes wrong.
      */
-    public static boolean authenticate(UserI u, Credentials cred) throws PasswordAuthenticationException, Exception {
+    public static boolean authenticate(UserI user, Credentials credentials) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        return service.authenticate(u, cred);
+        return service.authenticate(user, credentials);
     }
 
     /**
      * Retrieve the username for this user PK (Integer)
      *
-     * @param xdat_user_id
-     *
+     * @param xdatUserId The user record primary key.
      * @return Returns the username for a given user ID
      */
-    public static String getUsername(Object xdat_user_id) {
-        if (xdat_user_id == null) {
-            return null;
-        } else if (xdat_user_id instanceof Integer) {
-            return getUsername((Integer) xdat_user_id);
-        } else {
-            return null;
-        }
+    public static String getUsername(final Object xdatUserId) {
+        return xdatUserId != null && xdatUserId instanceof Integer
+               ? getUsername((Integer) xdatUserId)
+               : null;
     }
 
     /**
      * Retrieve the username for this user PK (Integer)
      *
-     * @param xdat_user_id
-     *
-     * @return The user's username
+     * @param xdatUserId The user record primary key.
+     * @return The user's username.
      */
-    public static String getUsername(Integer xdat_user_id) {
-        if (xdat_user_id == null) {
+    public static String getUsername(Integer xdatUserId) {
+        if (xdatUserId == null) {
             return null;
         }
 
-        String u = getCachedUserIds().get(xdat_user_id);
-        if (u == null) {
+        String username = getCachedUserIds().get(xdatUserId);
+        if (username == null) {
             //check if it was added since init
             try {
-                u = (String) PoolDBUtils.ReturnStatisticQuery("select login FROM xdat_user WHERE xdat_user_id=" + xdat_user_id, "login", null, null);
-                if (u != null) {
-                    getCachedUserIds().put(xdat_user_id, u);
+                username = (String) PoolDBUtils.ReturnStatisticQuery("select login FROM xdat_user WHERE xdat_user_id=" + xdatUserId, "login", null, null);
+                if (username != null) {
+                    getCachedUserIds().put(xdatUserId, username);
                 }
             } catch (Exception e) {
                 logger.error("", e);
             }
         }
 
-        return u;
+        return username;
     }
 
     /**
      * Retrieve the user PK (Integer) for this username
      *
      * @param username The username.
-     *
      * @return The user's ID
      */
     public static Integer getUserid(String username) {
@@ -395,22 +374,23 @@ public class Users {
         return u;
     }
 
-    private static final Object               usercache = new Object();
-    private static       Map<Integer, String> users     = null;
+    private static final Object               _userCache = new Object();
+    private static       Map<Integer, String> _users     = null;
 
     private static Map<Integer, String> getCachedUserIds() {
-        if (users == null) {
-            synchronized (usercache) {
-                users = new Hashtable<>();
+        if (_users == null) {
+            synchronized (_userCache) {
+                _users = new Hashtable<>();
                 //initialize database users, only done once per server restart
                 try {
-                    users.putAll(XFTTable.Execute("select xdat_user_id,login FROM xdat_user ORDER BY xdat_user_id;", null, null).toHashtable("xdat_user_id", "login"));
+                    //noinspection unchecked
+                    _users.putAll(XFTTable.Execute("select xdat_user_id,login FROM xdat_user ORDER BY xdat_user_id;", null, null).toHashtable("xdat_user_id", "login"));
                 } catch (Exception e) {
                     logger.error("", e);
                 }
             }
         }
-        return users;
+        return _users;
     }
 
     /**
@@ -420,34 +400,42 @@ public class Users {
      */
     public static java.util.Collection<String> getAllLogins() {
         try {
+            //noinspection unchecked
             return ElementSecurity.GetDistinctIdValuesFor("xdat:user", "xdat:user.login", null).values();
         } catch (Exception e) {
             logger.error("", e);
-            return new ArrayList();
+            return new ArrayList<>();
         }
     }
 
     /**
-     * Retrn a random string for use as a salt
+     * Return a random 64-character string for use as a salt
      *
-     * @return Returns the new salt created by this method
+     * @return A new random salt
      */
+    @Nonnull
     public static String createNewSalt() {
-        String salt = RandomStringUtils.random(64, 0, 0, true, true, null, new SecureRandom());
-        return salt;
+        return createRandomString(64);
+    }
+
+    /**
+     * Return a random string with the indicated number of characters.
+     *
+     * @return A new random string.
+     */
+    @Nonnull
+    public static String createRandomString(final int length) {
+        return RandomStringUtils.random(length, 0, 0, true, true, null, new SecureRandom());
     }
 
     /**
      * Get the last login date/time for the user account
      *
-     * @param user
-     *
+     * @param user The user to check for login date/time.
      * @return Returns the last login date/time for the user account
-     *
-     * @throws SQLException
-     * @throws Exception
+     * @throws Exception When something goes wrong.
      */
-    public static Date getLastLogin(UserI user) throws SQLException, Exception {
+    public static Date getLastLogin(UserI user) throws Exception {
         String query = "SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id=" + user.getID() + " ORDER BY login_date DESC LIMIT 1";
         return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", user.getDBName(), user.getUsername());
     }
@@ -455,15 +443,100 @@ public class Users {
     /**
      * Verify if this user account is allowed to login (enabled, verified, not locked, etc)
      *
-     * @param u
+     * @param user The user account to verify.
      */
-    public static void validateUserLogin(UserI u) {
-        if (!u.isEnabled()) {
-            throw new DisabledException("Attempted login to disabled account: " + u.getUsername());
+    @SuppressWarnings("unused")
+    public static void validateUserLogin(UserI user) {
+        if (!user.isEnabled()) {
+            throw new DisabledException("Attempted login to disabled account: " + user.getUsername());
         }
         boolean verificationRequired = XDAT.getSiteConfigPreferences().getEmailVerification();
-        if ((verificationRequired && !u.isVerified()) || !u.isAccountNonLocked()) {
-            throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + u.getUsername());
+        if ((verificationRequired && !user.isVerified()) || !user.isAccountNonLocked()) {
+            throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + user.getUsername());
         }
     }
+
+    /**
+     * Tests password and salt for existing and updated user to determine what value should be set when user is saved.
+     * The password value will always be encoded using the returned salt.
+     *
+     * @param existing The existing user.
+     * @param updated  The updated user.
+     * @return The password and salt attributes to be set returned in a map.
+     * @throws PasswordComplexityException If the password doesn't meet the system's specified complexity requirements.
+     */
+    public static Map<UserAttributes, String> getUpdatedPassword(final UserI existing, final UserI updated) throws PasswordComplexityException {
+        final String  savedPassword    = existing.getPassword();
+        final String  savedSalt        = existing.getSalt();
+        final boolean hasSavedPassword = StringUtils.isNotBlank(savedPassword);
+        final boolean hasSavedSalt     = StringUtils.isNotBlank(savedSalt);
+
+        final String  updatedPassword    = updated.getPassword();
+        final boolean hasUpdatedPassword = StringUtils.isNotBlank(updatedPassword) && !StringUtils.equals(savedPassword, updatedPassword);
+
+        // If there's no saved password, no saved salt, or an updated password, create a new salt whether or not we already have one.
+        final String saltToSet = !hasSavedPassword || !hasSavedSalt || hasUpdatedPassword ? Users.createNewSalt() : savedSalt;
+
+        // check if the password is being updated (also do this if password remains the same but salt is empty)
+        final String passwordToSet;
+
+        if (hasUpdatedPassword) {
+            // The user specified a new password, test for validity.
+            final PasswordValidatorChain validator = getValidator();
+            if (!validator.isValid(updatedPassword, updated)) {
+                throw new PasswordComplexityException(validator.getMessage());
+            }
+
+            passwordToSet = encode(updatedPassword, saltToSet);
+        } else if (!hasSavedPassword) {
+            // If the user didn't specify a new password and there's no saved password, generate a new random one.
+            passwordToSet = encode(createRandomString(32), saltToSet);
+        } else if (!hasSavedSalt) {
+            // If there's no saved salt, the password is plain text.
+            passwordToSet = encode(savedPassword, saltToSet);
+        } else {
+            passwordToSet = savedPassword;
+        }
+
+        return new HashMap<UserAttributes, String>() {{
+            put(UserAttributes.password, passwordToSet);
+            put(UserAttributes.salt, saltToSet);
+        }};
+    }
+
+    public static String encode(final String value, final String salt) {
+        return _encoder.encodePassword(value, salt);
+    }
+
+    public static boolean isPasswordValid(final String encoded, final String plaintext, final String salt) {
+        return _encoder.isPasswordValid(encoded, plaintext, salt);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static PasswordEncoder getEncoder() {
+        return _encoder;
+    }
+
+    private static PasswordValidatorChain getValidator() {
+        if (_validator == null) {
+            synchronized (_encoder) {
+                final ContextService contextService = XDAT.getContextService();
+                if (contextService != null) {
+                    try {
+                        final PasswordValidatorChain validator = contextService.getBean(PasswordValidatorChain.class);
+                        if (validator != null) {
+                            return _validator = validator;
+                        }
+                    } catch (NoSuchBeanDefinitionException ignored) {
+                        // Do nothing. We'll do the same thing if there's a
+                    }
+                }
+                return PasswordValidatorChain.getTestInstance();
+            }
+        }
+        return _validator;
+    }
+
+    private static final ShaPasswordEncoder _encoder = new ShaPasswordEncoder(256);
+    private static PasswordValidatorChain _validator;
 }

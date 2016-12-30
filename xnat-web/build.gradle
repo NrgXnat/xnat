@@ -10,6 +10,7 @@ import org.gradle.internal.jvm.Jvm
  */
 
 def vXnat = '1.7.1'
+def vXnatFramework = '1.7.2-SNAPSHOT'
 def vXnatStable = '1.7.0'
 def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.7.RELEASE'
@@ -331,7 +332,7 @@ dependencies {
         transitive = false
     }
     compile "org.nrg.xdat:core:${vXnat}"
-    compile "org.nrg:framework:${vXnat}"
+    compile "org.nrg:framework:${vXnatFramework}"
     compile "org.nrg:transaction:${vXnat}"
     compile "org.nrg:prefs:${vXnat}"
     compile "org.nrg:config:${vXnat}"

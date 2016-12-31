@@ -14,7 +14,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.1</version>
+    <version>1.7.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -53,7 +53,7 @@
         <!-- xnat.app.name is used as the name for applet manifests to allow all XNAT applets to share dependencies. -->
         <xnat.app.name>XNAT</xnat.app.name>
 
-        <xnat.version>1.7.1</xnat.version>
+        <xnat.version>1.7.2-SNAPSHOT</xnat.version>
         <xdat.version>${xnat.version}</xdat.version>
         <nrg.anonymize.version>${xnat.version}</nrg.anonymize.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
@@ -169,7 +169,7 @@
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
         <slf4j.version>1.7.21</slf4j.version>
-        <spring-framework.version>4.2.7.RELEASE</spring-framework.version>
+        <spring-framework.version>4.2.9.RELEASE</spring-framework.version>
         <spring-ldap.version>2.0.4.RELEASE</spring-ldap.version>
         <spring-security.version>4.0.4.RELEASE</spring-security.version>
         <springockito.version>1.0.5</springockito.version>
@@ -189,7 +189,7 @@
         <!-- Plugin versions -->
         <antlr4-maven-plugin.version>4.5.3</antlr4-maven-plugin.version>
         <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
-        <jacoco-maven-plugin.version>0.7.7.201606060606</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.7.8</jacoco-maven-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
         <maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>

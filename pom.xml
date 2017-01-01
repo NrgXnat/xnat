@@ -53,13 +53,14 @@
         <!-- xnat.app.name is used as the name for applet manifests to allow all XNAT applets to share dependencies. -->
         <xnat.app.name>XNAT</xnat.app.name>
 
-        <xnat.version>1.7.2-SNAPSHOT</xnat.version>
-        <xdat.version>${xnat.version}</xdat.version>
+        <xnat.dev.version>1.7.2-SNAPSHOT</xnat.dev.version>
+        <xnat.version>1.7.1</xnat.version>
+        <xdat.version>${xnat.dev.version}</xdat.version>
         <nrg.anonymize.version>${xnat.version}</nrg.anonymize.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
-        <nrg.framework.version>${xnat.version}</nrg.framework.version>
+        <nrg.framework.version>${xnat.dev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
@@ -345,7 +346,7 @@
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>web</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat.dev.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
@@ -370,7 +371,7 @@
             <dependency>
                 <groupId>org.nrg.xdat</groupId>
                 <artifactId>core</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xdat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xdat</groupId>

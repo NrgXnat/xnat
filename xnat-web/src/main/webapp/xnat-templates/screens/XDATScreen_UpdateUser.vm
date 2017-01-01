@@ -1,11 +1,19 @@
+#* @vtlvariable name="expired" type="java.lang.Boolean" *#
+#* @vtlvariable name="forgot" type="java.lang.Boolean" *#
+#* @vtlvariable name="missingSalt" type="java.lang.Boolean" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
-##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 #if ($expired || $forgot)
 $!data.getTemplateInfo().setLayoutTemplate("Noninteractive.vm")
 #end
 $page.setTitle("My XNAT")
 #if ($data.message)
-<DIV class="error">$data.message</DIV><br>
+#if ($success)
+    #set($msgClass = "alert")
+#else
+    #set($msgClass = "error")
+#end
+<DIV class="$msgClass">$data.message</DIV><br>
 #end
 
 #if(!$user.isGuest())
@@ -15,8 +23,3 @@ $page.setTitle("My XNAT")
 #end
 #parse("screens/XDATScreen_password.vm")
 #end
-#*<A href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","password")">Change Password</a><br>*#
-#*<A href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","change_email")">Change Email</a>*#
-
-
-

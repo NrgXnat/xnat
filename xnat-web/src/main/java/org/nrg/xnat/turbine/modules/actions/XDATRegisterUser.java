@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("unused")
 public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATRegisterUser {
-
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
         Map<String, String> parameters = TurbineUtils.GetDataParameterHash(data);
@@ -38,7 +38,7 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
             final String email = parameters.get("xdat:user.email");
             ArrayList<ProjectAccessRequest> pars = ProjectAccessRequest.RequestPARsByUserEmail(email, null);
             if (pars != null && pars.size() > 0) {
-                List<String> projectIds = new ArrayList<String>();
+                List<String> projectIds = new ArrayList<>();
                 for (ProjectAccessRequest par : pars) {
                     projectIds.add(par.getProjectId());
                 }
@@ -103,32 +103,6 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
             }
         }
     }
-
-	public boolean autoApproval(RunData data, Context context) throws Exception {
-		boolean autoApproval = XDAT.getSiteConfigPreferences().getUserRegistration();
-
-		if (autoApproval) {
-            logger.debug("Auto-approval for registration came from super...");
-			return true;
-		}
-		
-		String parID = (String) TurbineUtils.GetPassedParameter("par", data);
-		
-		if (StringUtils.isEmpty(parID) && data.getSession().getAttribute("par") != null) {
-			parID = (String) data.getSession().getAttribute("par");
-		}
-		
-		if (!StringUtils.isEmpty(parID)) {
-			ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parID, null);
-            autoApproval = !(par == null || par.getApproved() != null || par.getApprovalDate() != null);
-		}
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Auto-approval for registration from PAR: " + autoApproval);
-        }
-
-		return autoApproval;
-	}
 
     private static final Logger logger = Logger.getLogger(XDATRegisterUser.class);
     private static final Pattern PATTERN_ACCEPT_PAR = Pattern.compile("^.*AcceptProjectAccess/par/([A-z0-9-]{36})\\?hash=([A-z0-9]{32})");

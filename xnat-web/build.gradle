@@ -9,11 +9,10 @@ import org.gradle.internal.jvm.Jvm
  * Released under the Simplified BSD.
  */
 
-def vXnatDev = '1.7.2-SNAPSHOT'
-def vXnat = '1.7.1'
-def vXnatStable = '1.7.0'
+def vXnat = '1.7.2-SNAPSHOT'
+def vXnatStable = '1.7.1'
 def vXImgView = '1.0.0-SNAPSHOT'
-def vSpring = '4.2.7.RELEASE'
+def vSpring = '4.2.9.RELEASE'
 def vSpringSecurity = '4.0.4.RELEASE'
 def vSwagger = '2.4.0'
 def vHibernate = '4.3.11.Final'
@@ -31,7 +30,7 @@ def vGroovy = '2.4.7'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
-version = "${vXnatDev}"
+version = "${vXnat}"
 
 buildscript {
     repositories {
@@ -197,8 +196,9 @@ war {
                 'Implementation-Version': version
     }
 }
+
 jacoco {
-    toolVersion = "0.7.7.201606060606"
+    toolVersion = "0.7.8"
 }
 
 jacocoTestReport {
@@ -327,41 +327,41 @@ configurations {
 
 dependencies {
     // NRG dependencies first.
-    compile "org.nrg.xnat:spawner:${vXnat}"
-    compile("org.nrg.xnat:xnat-data-models:${vXnat}") {
+    compile "org.nrg.xnat:spawner:${vXnatStable}"
+    compile("org.nrg.xnat:xnat-data-models:${vXnatStable}") {
         transitive = false
     }
-    compile "org.nrg.xdat:core:${vXnatDev}"
-    compile "org.nrg:framework:${vXnatDev}"
-    compile "org.nrg:transaction:${vXnat}"
-    compile "org.nrg:prefs:${vXnat}"
-    compile "org.nrg:config:${vXnat}"
-    compile "org.nrg:automation:${vXnat}"
-    compile "org.nrg:dicomtools:${vXnat}"
-    compile "org.nrg:anonymize:${vXnat}"
-    compile "org.nrg:mail:${vXnat}"
-    compile "org.nrg:notify:${vXnat}"
+    compile "org.nrg.xdat:core:${vXnat}"
+    compile "org.nrg:framework:${vXnat}"
+    compile "org.nrg:transaction:${vXnatStable}"
+    compile "org.nrg:prefs:${vXnatStable}"
+    compile "org.nrg:config:${vXnatStable}"
+    compile "org.nrg:automation:${vXnatStable}"
+    compile "org.nrg:dicomtools:${vXnatStable}"
+    compile "org.nrg:anonymize:${vXnatStable}"
+    compile "org.nrg:mail:${vXnatStable}"
+    compile "org.nrg:notify:${vXnatStable}"
 
-    compile "org.nrg:dicom-xnat-mx:${vXnat}"
-    compile "org.nrg:dicom-xnat-sop:${vXnat}"
-    compile "org.nrg:dicom-xnat-util:${vXnat}"
-    compile "org.nrg:ecat4xnat:${vXnat}"
+    compile "org.nrg:dicom-xnat-mx:${vXnatStable}"
+    compile "org.nrg:dicom-xnat-sop:${vXnatStable}"
+    compile "org.nrg:dicom-xnat-util:${vXnatStable}"
+    compile "org.nrg:ecat4xnat:${vXnatStable}"
     compile "org.nrg:DicomDB:5.1.0"
     compile "org.nrg:ExtAttr:4.2.0"
     compile "org.nrg:DicomEdit:6.0.1"
-    compile "org.nrg:DicomImageUtils:${vXnat}"
-    compile "org.nrg:PrearcImporter:${vXnat}"
-    compile "org.nrg:SessionBuilders:${vXnat}"
+    compile "org.nrg:DicomImageUtils:${vXnatStable}"
+    compile "org.nrg:PrearcImporter:${vXnatStable}"
+    compile "org.nrg:SessionBuilders:${vXnatStable}"
 
     compile "org.nrg:pipelineBase:1.0"
     compile "org.nrg:pipelineBuild:1.0"
     compile "org.nrg:pipelineWorkflow:1.0"
     compile "org.nrg:pipelineXNAT:1.0"
-    compile "org.nrg.xnat.pipeline:client:${vXnatStable}"
-    compile "org.nrg.xnat.pipeline:xnat_pipeline:${vXnatStable}"
-    compile "org.nrg.xnat.pipeline:xnat_tools:${vXnatStable}"
+    compile "org.nrg.xnat.pipeline:client:1.7.0"
+    compile "org.nrg.xnat.pipeline:xnat_pipeline:1.7.0"
+    compile "org.nrg.xnat.pipeline:xnat_tools:1.7.0"
 
-    compile("org.nrg.xnat:plexiviewer:${vXnatStable}") {
+    compile("org.nrg.xnat:plexiviewer:1.7.0") {
         transitive = false
     }
 

@@ -11,7 +11,6 @@ package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
@@ -37,6 +36,8 @@ import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.Date;
@@ -44,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
+public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
 	@Override
 	public UserI createUser() {
 		return new XDATUser();
@@ -64,19 +65,6 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 			throw new UserNotFoundException(userId);
 		}
 	}
-    
-	public List<UserI> getUsersByEmail(String email){
-		List<UserI> _return=Lists.newArrayList();
-		List<XdatUser> al = XdatUser.getXdatUsersByField("xdat:user.email", email, null, true);
-		for(XdatUser u:al){
-			try {
-				_return.add(new XDATUser(u.getItem()));
-			} catch (Exception e) {
-				logger.error("",e);
-			}
-		}
-		return _return;
-	}
 
 	@Override
 	@Nonnull
@@ -91,15 +79,13 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 
 	@Override
 	public List<UserI> getUsers() {
-		List<UserI> allUsers = Lists.newArrayList();
-		for(XdatUser u:XdatUser.getAllXdatUsers(null,false)){
-            try {
-				allUsers.add(new XDATUser((u).getItem()));
-			} catch (UserInitException e) {
-				logger.error("",e);
-			}
-		}
-        return allUsers;
+		return Lists.transform(XdatUser.getAllXdatUsers(null,false), XdatUserToUserITransform.getInstance());
+	}
+
+	@Override
+	@Nonnull
+	public List<UserI> getUsersByEmail(String email){
+		return Lists.transform(XdatUser.getXdatUsersByField("xdat:user.email", email, null, true), XdatUserToUserITransform.getInstance());
 	}
 
 	@Override
@@ -128,6 +114,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.security.services.UserManagementServiceI#save(org.nrg.xft.security.UserI, org.nrg.xft.security.UserI, boolean, org.nrg.xft.event.EventDetails)
 	 */
+	@Override
 	public void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event) throws Exception {
 		//this calls the other save method, but also takes care of creating the workflow entry for this change.
 		if(user.getLogin()==null){
@@ -276,5 +263,5 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI{
         return ((XDATUser) user).login(credentials.password);
 	}
 
-	private static final Logger      logger   = Logger.getLogger(XDATUserMgmtServiceImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(XDATUserMgmtServiceImpl.class);
 }

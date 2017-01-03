@@ -10,7 +10,6 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.turbine.Turbine;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -27,15 +26,21 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 
 /**
  * @author Tim
  */
 @SuppressWarnings("unused")
-public class ModifyPassword extends SecureAction {
-    public void doPerform(RunData data, Context context) throws Exception {
+public class ModifyPassword extends ModifyAction {
+    public void doPerform(final RunData data, final Context context) throws Exception {
+        setDataAndContext(data, context);
+
         if (data.getSession().getAttribute("forgot") != null && ((Boolean) data.getSession().getAttribute("forgot"))) {
             context.put("forgot", true);
         }
@@ -54,9 +59,8 @@ public class ModifyPassword extends SecureAction {
         final UserI found;
         try {
             found = Users.createUser(TurbineUtils.GetDataParameterHash(data));
-        } catch (UserFieldMappingException e1) {
-            data.addMessage(e1.getMessage());
-            redirect(data, false);
+        } catch (UserFieldMappingException e) {
+            redirect(false, e.getMessage());
             return;
         }
 
@@ -71,8 +75,7 @@ public class ModifyPassword extends SecureAction {
         }
 
         if (existing == null) {
-            data.addMessage("Unable to identify user for password modification.");
-            redirect(data, false);
+            redirect(false, "Unable to identify user for password modification.");
             return;
         }
 
@@ -82,8 +85,7 @@ public class ModifyPassword extends SecureAction {
 
         if (data.getSession().getAttribute("forgot") == null) {
             if (StringUtils.isBlank(encodedPassword) && !Roles.isSiteAdmin(user)) {
-                data.setMessage("The user " + login + " is configured as a no-login user and can't have a password set. If you feel this is an error, please contact your site administrator.");
-                redirect(data, false);
+                redirect(false, "The user " + login + " is configured as a no-login user and can't have a password set. If you feel this is an error, please contact your site administrator.");
                 return;
             }
 
@@ -95,16 +97,22 @@ public class ModifyPassword extends SecureAction {
                 } else if (!Users.isPasswordValid(encodedPassword, currentPassword, existing.getSalt())) {
                     message.append("you entered an incorrect value for your current password.");
                 }
-                data.setMessage(message.toString());
-                redirect(data, false);
+                redirect(false, message.toString());
                 return;
             }
         }
 
         existing.setPassword(updatedPassword);
 
-        if (!Users.validate(existing).isValid()) {
-            redirect(data, false);
+        final ValidationResultsI validate = Users.validate(existing);
+        if (!validate.isValid()) {
+            final String message;
+            if (validate instanceof ValidationResults) {
+                message = "<p>The submitted user information failed validation for the following reasons:</p><ul>" + ((ValidationResults) validate).toHTML();
+            } else {
+                message = "The submitted password seems to be invalid, but I have no further details.";
+            }
+            redirect(false, message);
         }
 
         try {
@@ -122,53 +130,23 @@ public class ModifyPassword extends SecureAction {
                     ElementSecurity.refresh();
                 }
 
-                context.put("success", true);
-                data.setMessage("Password changed.");
-                redirect(data, true);
+                redirect(true, "Password changed.");
             } else {
-                data.setMessage("Password unchanged.");
-                redirect(data, false);
+                redirect(false, "Password unchanged.");
             }
         } catch (InvalidPermissionException e) {
             notifyAdmin(user, data, 403, "Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
         } catch (PasswordComplexityException e) {
-            data.setMessage(e.getMessage());
-            redirect(data, false);
+            redirect(false, e.getMessage());
         } catch (Exception e) {
             logger.error("Error Storing User", e);
         }
     }
 
-    private void redirect(RunData data, boolean changed) {
-        if (changed) {
-            final Boolean expired          = (Boolean) data.getSession().getAttribute("expired");
-            final Boolean forgot           = (Boolean) data.getSession().getAttribute("forgot");
-            final String  loginTemplate    = Turbine.getConfiguration().getString("template.login");
-            final String  homepageTemplate = Turbine.getConfiguration().getString("template.homepage");
-
-            if (forgot != null && forgot) {
-                //User forgot their password. They must log in again.
-                if (StringUtils.isNotEmpty(loginTemplate)) {
-                    // We're running in a templating solution
-                    data.setScreenTemplate(loginTemplate);
-                } else {
-                    data.setScreen(Turbine.getConfiguration().getString("screen.login"));
-                }
-            } else if (expired != null && expired) {
-                //They just updated expired password.
-                data.getSession().setAttribute("expired", Boolean.FALSE);//New password is not expired
-                if (StringUtils.isNotEmpty(homepageTemplate)) {
-                    // We're running in a templating solution
-                    data.setScreenTemplate(homepageTemplate);
-                } else {
-                    data.setScreen(Turbine.getConfiguration().getString("screen.homepage"));
-                }
-            } else {
-                data.setScreenTemplate("XDATScreen_UpdateUser.vm");
-            }
-        } else {
-            data.setScreenTemplate("XDATScreen_UpdateUser.vm");
-        }
+    @Override
+    @Nonnull
+    protected String getDefaultEditScreen() {
+        return "XDATScreen_UpdateUser.vm";
     }
 
     private static final Logger logger = LoggerFactory.getLogger(ModifyPassword.class);

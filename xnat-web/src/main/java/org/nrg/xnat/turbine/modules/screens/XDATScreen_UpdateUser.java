@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
+import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.generic.EscapeTool;
 import org.nrg.xdat.XDAT;
@@ -32,36 +33,43 @@ public class XDATScreen_UpdateUser extends SecureScreen {
 
     @Override
     protected void doBuildTemplate(RunData data) throws Exception {
-        Context c = TurbineVelocity.getContext(data);
+        final Context context = TurbineVelocity.getContext(data);
 
         //SecureScreen.loadAdditionalVariables(data, c);
         //When a user has forgotten their password and comes to this page in a half logged in state, setting
         // turbineUtils will cause problems. The below code is a copy of loadAdditionalVariables, but without setting
         // turbineUtils in cases where the user forgot their password.
+        if (TurbineUtils.GetPassedParameter("a", data) == null || TurbineUtils.GetPassedParameter("s", data) == null) {
+            context.put("turbineUtils", TurbineUtils.GetInstance());
+        }
+        if (TurbineUtils.HasPassedParameter("success", data)) {
+            context.put("success", TurbineUtils.GetPassedBoolean("success", data));
+        }
+        if (TurbineUtils.HasPassedParameter("message", data)) {
+            context.put("message", TurbineUtils.GetPassedParameter("message", data));
+        }
         if(TurbineUtils.GetPassedParameter("a", data)==null || TurbineUtils.GetPassedParameter("s", data)==null) {
-            c.put("turbineUtils", TurbineUtils.GetInstance());
+            context.put("turbineUtils", TurbineUtils.GetInstance());
         }
 
-        c.put("user", XDAT.getUserDetails());
-        checkForPopup(data, c);
+        context.put("user", XDAT.getUserDetails());
+        checkForPopup(data, context);
 
-        c.put("displayManager", DisplayManager.GetInstance());
-        c.put("systemName", TurbineUtils.GetSystemName());
-        c.put("esc", new EscapeTool());
-        c.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
-        c.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
-        c.put("notifications", XDAT.getNotificationsPreferences());
-        c.put("siteConfig", XDAT.getSiteConfigPreferences());
+        context.put("displayManager", DisplayManager.GetInstance());
+        context.put("systemName", TurbineUtils.GetSystemName());
+        context.put("esc", new EscapeTool());
+        context.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
+        context.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
+        context.put("notifications", XDAT.getNotificationsPreferences());
+        context.put("siteConfig", XDAT.getSiteConfigPreferences());
 
-        doBuildTemplate(data, c);
+        doBuildTemplate(data, context);
     }
 
     protected void doBuildTemplate(RunData data, Context context) throws Exception {
-
         try {
-            UserI user = TurbineUtils.getUser(data);
+            UserI user = XDAT.getUserDetails();
             if (user != null && !user.getUsername().equalsIgnoreCase("guest")) {
-                user = TurbineUtils.getUser(data);
                 if (!StringUtils.isBlank(user.getUsername()) &&
                         !TurbineUtils.HasPassedParameter("a", data) && !TurbineUtils.HasPassedParameter("s", data)) {
                     if(data.getSession().getAttribute("expired")!=null && (Boolean)data.getSession().getAttribute("expired")) {
@@ -76,8 +84,6 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                     context.put("missingSalt", true);
                 }
             } else {
-                user = XDAT.getUserDetails();
-
                 // If the user isn't already logged in...
                 if(user == null || user.getUsername().equals("guest")) {
                     String alias = (String) TurbineUtils.GetPassedParameter("a", data);
@@ -137,7 +143,6 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                 }
 
                 context.put("topMessage", "Enter a new password.");
-
             }
         } catch (Exception e) {
             log.error(e);

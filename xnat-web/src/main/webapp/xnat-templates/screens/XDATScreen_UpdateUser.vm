@@ -1,25 +1,28 @@
+#* @vtlvariable name="message" type="java.lang.String" *#
+#* @vtlvariable name="success" type="java.lang.Boolean" *#
 #* @vtlvariable name="expired" type="java.lang.Boolean" *#
 #* @vtlvariable name="forgot" type="java.lang.Boolean" *#
 #* @vtlvariable name="missingSalt" type="java.lang.Boolean" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #if ($expired || $forgot)
-$!data.getTemplateInfo().setLayoutTemplate("Noninteractive.vm")
+    $!data.getTemplateInfo().setLayoutTemplate("Noninteractive.vm")
 #end
-$page.setTitle("My XNAT")
-#if ($data.message)
 #if ($success)
-    #set($msgClass = "alert")
+    #set($msgClass = "success")
 #else
     #set($msgClass = "error")
 #end
-<DIV class="$msgClass">$data.message</DIV><br>
+#if ($message)
+<div class="$msgClass">$message</div><br>
+#elseif ($data.message)
+<div class="$msgClass">$data.message</div><br>
 #end
 
 #if(!$user.isGuest())
-#if (!$expired && !$forgot && !$missingSalt)
-#parse("screens/XDATScreen_change_email.vm")
-<br /><br />
-#end
-#parse("screens/XDATScreen_password.vm")
+    #if (!$expired && !$forgot && !$missingSalt)
+        #parse("screens/XDATScreen_change_email.vm")
+    <br/><br/>
+    #end
+    #parse("screens/XDATScreen_password.vm")
 #end

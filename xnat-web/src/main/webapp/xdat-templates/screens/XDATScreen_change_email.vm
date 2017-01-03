@@ -30,20 +30,20 @@ $page.setVlinkColor($ui.vlink)
 		<TH align=center colspan=2>Change Email for $!item.getProperty("firstname") $!item.getProperty("lastname") ($!item.getProperty("login"))</TH>
 	</tr>
 		<tr>
-		<TD align=right>Current Email:</TD><TD>$!item.getProperty("email")</TD>
+		<TD align=right width="40%">Current Email:</TD><TD>$!item.getProperty("email")</TD>
 	</tr>
 	<tr>
-		<TD align=right>Enter new Email:</TD><TD><INPUT id="new_email" type="text" name="xdat:user.email" value=""/></TD>
+		<TD align=right width="40%">Enter new Email:</TD><TD><INPUT id="new_email" type="text" name="xdat:user.email" value=""/></TD>
 	</tr>
 	<tr>
-		<TD align=right>Confirm new Email:</TD><TD><INPUT id="confirm_email" type="text" name="confirm_email" value=""/></TD>
+		<TD align=right width="40%">Confirm new Email:</TD><TD><INPUT id="confirm_email" type="text" name="confirm_email" value=""/></TD>
 	</tr>
 <input type="hidden" name="destination" value="Index.vm"/>
 <input type="hidden" name="message" value="Email Changed."/>
 	#xdatHiddenBox("xdat:user.xdat_user_id" $item "")
 	#xdatHiddenBox("xdat:user.login" $item "")
 	#xdatEditProps($item $edit_screen)
-	<TR><TD COLSPAN=2 ALIGN=center><input type="submit" name="eventSubmit_doSetup" value="Submit"/></TD></TR>
+	<TR><TD align=right width="40%">&nbsp;</TD><TD><input type="submit" name="eventSubmit_doSetup" value="Submit"/></TD></TR>
 </table>
 </form>
 </p>

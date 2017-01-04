@@ -1324,6 +1324,7 @@ investigators:
     kind: panel
     name: investigators
     label: List of Investigators
+    footer: false
     contents:
         investigatorsContainer:
             tag: div#investigators-list-container

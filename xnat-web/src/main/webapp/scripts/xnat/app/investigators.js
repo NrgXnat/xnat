@@ -205,7 +205,29 @@ var XNAT = getObject(XNAT);
         // menuInit(this.menu, null, width||200);
         return this;
     };
-    
+
+    // display confirmation dialog then delete investigator
+    Investigators.fn.deleteInvestigator = function(id, name){
+        var self = this;
+        xmodal.confirm({
+            title: 'Delete Investigator?',
+            content: 'Delete investigator: ' + '<b>' + name + '</b>?',
+            okLabel: 'Delete',
+            okClose: false,
+            okAction: function(dlg){
+                XNAT.xhr['delete']({
+                    url: setupUrl(id),
+                    success: function(){
+                        XNAT.ui.banner.top(2000, 'Investigator deleted.', 'success');
+                        dlg.close();
+                        investigators.dataTable(self.tableContainer);
+                    }
+                })
+            }
+        });
+        return this;
+    };
+
     // renders the <select> element into the container
     Investigators.fn.render = function(container, width){
         var self = this;
@@ -349,6 +371,10 @@ var XNAT = getObject(XNAT);
                                         investigators.primary = selected;
                                     }
                                 }
+                                // update the investigator table (in site admin)
+                                if (self.tableContainer){
+                                    self.dataTable();
+                                }
                                 dialog.close();
                             }
                         });
@@ -369,16 +395,24 @@ var XNAT = getObject(XNAT);
 
         var self = this;
 
-        container = container || $('#investigators-list-container');
+        this.tableContainer = $$(container || '#investigators-list-container');
 
         function investigatorFieldValue(val){
             return val || '<div class="center">&mdash;</div>'
         }
 
-        function investigatorProjectList(projects){
-            return projects && projects.map ? projects.map(function(proj){
-                return '<a title="Go to project page for ' + proj + '" class="link" href="/data/projects/' + proj + '">' + proj + '</a>'
-            }).join(', ') : '&mdash;';
+        function investigatorProjectList(){
+            var _data = this;
+            var projects = _data.primaryProjects;
+            return '' +
+                '<div class="primaryProjects center">' +
+                    (isArray(projects) && projects.length ? projects.map(function(proj){
+                        return '<a title="Go to project page for ' + proj + '" class="link" href="/data/projects/' + proj + '">' + proj + '</a>'
+                    }).join(', ') : '&mdash;') +
+                '</div>' +
+                '<div title="investigatorProjects" class="hidden">' +
+                    [].concat(_data.investigatorProjects).join(', ') +
+                '</div>';
         }
 
         var tableConfig = {
@@ -386,11 +420,17 @@ var XNAT = getObject(XNAT);
                 kind: 'table.dataTable',
                 id: 'xnat-investigators-list',
                 load: '/xapi/investigators',
+                messages: {
+                    noData: 'There are no investigators defined in this system. Click the button below to create one.' ,
+                    error: 'An error occurred retrieving investigator information.'
+                },
                 items: {
-                    xnatInvestigatordataId: {
+                    xnatInvestigatordataId: '~data-id',
+                    viewInvestigator: {
                         label: '<div class="hidden"></div>',
                         className: "center",
-                        call: function(ID){
+                        call: function(){
+                            var ID = this.xnatInvestigatordataId;
                             return spawn('a.view-investigator.link', {
                                 href: '#!',
                                 data: { id: ID },
@@ -434,13 +474,26 @@ var XNAT = getObject(XNAT);
                         sort: true,
                         call: investigatorFieldValue
                     },
-                    primaryProjects: {
+                    projects: {
                         label: 'PI',
                         call: investigatorProjectList
                     },
-                    investigatorProjects: {
-                        label: '~!',
-                        call: investigatorProjectList
+                    // investigatorProjects: {
+                    //     label: '~!',
+                    //     call: investigatorProjectList
+                    // }
+                    deleteInvestigator: {
+                        label: 'Delete',
+                        className: 'center',
+                        call: function(){
+                            var ID = this.xnatInvestigatordataId;
+                            var NAME = this.firstname + ' ' + this.lastname;
+                            return spawn('button.delete-investigator.btn2.btn-sm.center|type=button', {
+                                on: { click: function(){
+                                    self.deleteInvestigator(ID, NAME);
+                                }}
+                            }, 'Delete')
+                        }
                     }
                 }
             }
@@ -449,26 +502,31 @@ var XNAT = getObject(XNAT);
         this.spawnedTable = XNAT.spawner.spawn(tableConfig);
         this.table = this.spawnedTable.get();
 
-        if (container) {
-            this.spawnedTable.render(container);
+        if (this.tableContainer) {
+            this.tableContainer.empty();
+            this.spawnedTable.render(this.tableContainer);
         }
 
-        $('body').on('click', '#create-new-investigator', function(){
-            self.dialog();
-        });
+        var new_investigator_btn = '#create-new-investigator';
+        var new_investigator_click = 'click.newInvestigator';
+
+        $('body').off(new_investigator_click, new_investigator_btn)
+                 .on(new_investigator_click, new_investigator_btn, function(){
+                     self.dialog();
+                 });
 
         return this;
 
     };
-    
-    
-    // init function for XNAT.misc.blank
+
+    // MAIN INIT FUNCTION
     investigators.init = function(opts){
         return new Investigators(opts);
     };
 
     investigators.dataTable = function(container){
-        var _dataTable = investigators.init().dataTable(container);
+        var $container = $$(container).empty();
+        var _dataTable = investigators.init().dataTable($container);
         return {
             spawned: _dataTable.table,
             element: _dataTable.table,

@@ -44,31 +44,39 @@ public class HistoricPasswordValidator implements PasswordValidator {
     public boolean isValid(String password, UserI user) {
         //if there's no user, they're probably new so there's nothing to do here.
         if (user != null) {
-            try {
-                final long      durationInSeconds        = SiteConfigPreferences.convertPGIntervalToSeconds(getPasswordHistoryDuration());
-                final String    userId                   = user.getUsername();
-                final String    dbName                   = user.getDBName();
-                final Date      today                    = Calendar.getInstance(TimeZone.getDefault()).getTime();
-                final Timestamp startOfDurationTimestamp = new Timestamp(today.getTime() - (durationInSeconds * 1000L));// Multiplying by 1000 to convert to milliseconds;
-                final String    query                    = "SELECT primary_password AS hashed_password, salt AS salt FROM xdat_user_history WHERE login='" + userId + "' AND change_date > '" + startOfDurationTimestamp + "' UNION SELECT primary_password AS password, salt AS salt FROM xdat_user WHERE login='" + userId + "';";
-                final XFTTable  table                    = TableSearch.Execute(query, dbName, userId);
+            final String passwordReuseRestriction = getPasswordReuseRestriction();
+            if (StringUtils.equals(passwordReuseRestriction, "Historical")) {
+                try {
+                    final long      durationInSeconds        = SiteConfigPreferences.convertPGIntervalToSeconds(getPasswordHistoryDuration());
+                    final String    userId                   = user.getUsername();
+                    final String    dbName                   = user.getDBName();
+                    final Date      today                    = Calendar.getInstance(TimeZone.getDefault()).getTime();
+                    final Timestamp startOfDurationTimestamp = new Timestamp(today.getTime() - (durationInSeconds * 1000L));// Multiplying by 1000 to convert to milliseconds;
+                    final String    query                    = "SELECT primary_password AS hashed_password, salt AS salt FROM xdat_user_history WHERE login='" + userId + "' AND change_date > '" + startOfDurationTimestamp + "' UNION SELECT primary_password AS password, salt AS salt FROM xdat_user WHERE login='" + userId + "';";
+                    final XFTTable  table                    = TableSearch.Execute(query, dbName, userId);
 
-                table.resetRowCursor();
-                while (table.hasMoreRows()) {
-                    final Hashtable row            = table.nextRowHash();
-                    final String    hashedPassword = (String) row.get("hashed_password");
-                    final String    salt           = (String) row.get("salt");
-                    final String    encrypted      = Users.encode(password, salt);
-                    if (encrypted.equals(hashedPassword)) {
-                        _message = "Password has been used in the previous " + getPasswordHistoryDuration() + ".";
+                    table.resetRowCursor();
+                    while (table.hasMoreRows()) {
+                        final Hashtable row            = table.nextRowHash();
+                        final String    hashedPassword = (String) row.get("hashed_password");
+                        final String    salt           = (String) row.get("salt");
+                        final String    encrypted      = Users.encode(password, salt);
+                        if (encrypted.equals(hashedPassword)) {
+                            _message = "Password has been used in the previous " + getPasswordHistoryDuration() + ".";
+                            break;
+                        }
                     }
+                } catch (Exception e) {
+                    _message = e.getMessage();
                 }
-            } catch (Exception e) {
-                _message = e.getMessage();
             }
         }
 
         return StringUtils.isBlank(_message);
+    }
+
+    private String getPasswordReuseRestriction() {
+        return _preferences != null ? _preferences.getPasswordReuseRestriction() : "None";
     }
 
     private String getPasswordHistoryDuration() throws SQLException {

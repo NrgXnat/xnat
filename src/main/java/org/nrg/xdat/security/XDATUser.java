@@ -457,9 +457,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private Set<String> loadRoleNames() throws Exception {
     	final Set<String> r= Sets.newHashSet();
 
-    	//load from the old role store
-        for (ItemI sub: (List<ItemI>)this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
-            r.add(sub.getStringProperty("role_name"));
+        try {
+            //load from the old role store
+            for (ItemI sub : (List<ItemI>) this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
+                r.add(sub.getStringProperty("role_name"));
+            }
+        }
+        catch(Throwable e){
+            logger.error("Error loading roles from old role store. Will use role service instead.",e);
         }
 
         try {

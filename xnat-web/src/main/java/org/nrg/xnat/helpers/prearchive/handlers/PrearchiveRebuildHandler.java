@@ -13,12 +13,14 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
 import org.nrg.xdat.bean.reader.XDATXMLReader;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.restlet.actions.PrearcImporterA;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
+import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +104,18 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected UserI getUser() {
+        XnatUserProvider provider = XDAT.getContextService().getBean("receivedFileUserProvider", XnatUserProvider.class);
+        if(provider!=null){
+            UserI provUser= provider.get();
+            if(provUser!=null){
+                return provUser;
+            }
+        }
+        return super.getUser();
     }
 
     private static final Logger _log = LoggerFactory.getLogger(PrearchiveRebuildHandler.class);

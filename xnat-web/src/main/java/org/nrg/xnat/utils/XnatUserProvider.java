@@ -74,6 +74,10 @@ public class XnatUserProvider implements Provider<UserI> {
         _login = login;
     }
 
+    public void clearUserObject(){
+        _user = null;
+    }
+
     private final Logger _logger = LoggerFactory.getLogger(XnatUserProvider.class);
 
     private final SiteConfigPreferences _preferences;

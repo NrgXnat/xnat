@@ -67,6 +67,7 @@ public class XnatUserProviderPreferenceHandlerMethod extends AbstractSiteConfigP
                 }
                 _log.info("Setting the {} user provider login name to {}", preference, value);
                 provider.setLogin(value);
+                provider.clearUserObject();//This clears out the old user object so that XnatUserProvider will update the user object based on the login we just set.
             } else {
                 _log.error("Not changing the {} user provider login name to {}, it's already set to that.", preference, value);
             }

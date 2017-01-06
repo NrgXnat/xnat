@@ -70,7 +70,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         final ArcArchivespecification _arcSpec = ArcSpecManager.GetInstance();
 
         final String referer = request.getHeader("Referer");
-        if (BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBoolean((String) session.getAttribute("forcePasswordChange")), false)) {
+        if (BooleanUtils.toBooleanDefaultIfNull((Boolean) session.getAttribute("forcePasswordChange"), false)) {
             try {
                 String refererPath = null;
                 String uri = new URI(request.getRequestURI()).getPath();

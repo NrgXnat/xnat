@@ -92,7 +92,7 @@ var XNAT = getObject(XNAT);
         naturalNoZero: /^([1-9]+[0-9]*)+$/,  // positive whole number, no leading 0s
         decimal: /^(-?[0-9]*\.?[0-9])+$/,
         hexadecimal: /^[0-9a-f]+$/i,
-        email: /^([a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))$/i,
+        email: /^([a-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-z0-9](?:[.a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))$/i,
         alpha: /^[a-z]+$/i,                 // ONLY letters
         alphaSafe: /^[a-z_]+$/i,            // ONLY letters and underscores
         alphaDash: /^[a-z_\-]+$/i,          // ONLY letters, underscore, and dash

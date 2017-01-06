@@ -482,9 +482,9 @@ public class Users {
 
         if (hasUpdatedPassword) {
             // The user specified a new password, test for validity.
-            final PasswordValidatorChain validator = getValidator();
-            if (!validator.isValid(updatedPassword, updated)) {
-                throw new PasswordComplexityException(validator.getMessage());
+            final String message = XDAT.getContextService().getBean(PasswordValidatorChain.class).isValid(updatedPassword, updated);
+            if (StringUtils.isNotBlank(message)) {
+                throw new PasswordComplexityException(message);
             }
 
             passwordToSet = encode(updatedPassword, saltToSet);

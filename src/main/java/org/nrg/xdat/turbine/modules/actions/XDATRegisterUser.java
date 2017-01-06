@@ -79,9 +79,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
                 if (matches.size()==0 && matches2.size()==0) {
 	                String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
-	                PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-	                if (validator.isValid(tempPass, null)) {
-
+	                final String message = XDAT.getContextService().getBean(PasswordValidatorChain.class).isValid(tempPass, null);
+	                if (StringUtils.isBlank(message)) {
                         // NEW USER
                         found.setPassword(tempPass);
 
@@ -168,7 +167,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         }
                     } else {
                         //Invalid Password
-		            	handleInvalid(data, context, validator.getMessage());
+		            	handleInvalid(data, context, message);
 	                }
 	            } else {
                     //Duplicate Email

@@ -33,14 +33,11 @@ public class RegExpValidator implements PasswordValidator {
     }
 
     @Override
-    public boolean isValid(String password, UserI user) {
+    public String isValid(final String password, final UserI user) {
         final String regexp = getPasswordComplexity();
-        return StringUtils.isBlank(regexp) || Pattern.matches(regexp, password);
-    }
-
-    @Override
-    public String getMessage() {
-        return StringUtils.defaultIfBlank(getPasswordComplexityMessage(), "Password is not sufficiently complex.");
+        return StringUtils.isBlank(regexp) || Pattern.matches(regexp, password)
+               ? ""
+               : StringUtils.defaultIfBlank(getPasswordComplexityMessage(), "Password is not sufficiently complex.");
     }
 
     private String getPasswordComplexity() {

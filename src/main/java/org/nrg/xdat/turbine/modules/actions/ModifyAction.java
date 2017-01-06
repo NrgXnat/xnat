@@ -31,6 +31,10 @@ public abstract class ModifyAction extends SecureAction {
 
 
     protected void redirect(final boolean success, final String message) {
+        if (StringUtils.isNotBlank(message)) {
+            _data.setMessage(message);
+        }
+
         if (success) {
             final Boolean expired          = (Boolean) _data.getSession().getAttribute("expired");
             final Boolean forgot           = (Boolean) _data.getSession().getAttribute("forgot");

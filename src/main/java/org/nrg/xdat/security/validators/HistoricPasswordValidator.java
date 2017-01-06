@@ -15,6 +15,8 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +43,7 @@ public class HistoricPasswordValidator implements PasswordValidator {
     }
 
     @Override
-    public boolean isValid(String password, UserI user) {
+    public String isValid(String password, UserI user) {
         //if there's no user, they're probably new so there's nothing to do here.
         if (user != null) {
             final String passwordReuseRestriction = getPasswordReuseRestriction();
@@ -62,17 +64,17 @@ public class HistoricPasswordValidator implements PasswordValidator {
                         final String    salt           = (String) row.get("salt");
                         final String    encrypted      = Users.encode(password, salt);
                         if (encrypted.equals(hashedPassword)) {
-                            _message = "Password has been used in the previous " + getPasswordHistoryDuration() + ".";
-                            break;
+                            return "Password has been used in the previous " + getPasswordHistoryDuration() + ".";
                         }
                     }
                 } catch (Exception e) {
-                    _message = e.getMessage();
+                    _log.error("An error occurred while trying to validate a password update for user " + user.getLogin(), e);
+                    return "An error occurred trying to update your password. Please contact your system administrator.";
                 }
             }
         }
 
-        return StringUtils.isBlank(_message);
+        return "";
     }
 
     private String getPasswordReuseRestriction() {
@@ -83,11 +85,7 @@ public class HistoricPasswordValidator implements PasswordValidator {
         return _preferences != null ? _preferences.getPasswordHistoryDuration() : "1 year";
     }
 
-    public String getMessage() {
-        return _message;
-    }
+    private static final Logger _log = LoggerFactory.getLogger(HistoricPasswordValidator.class);
 
     private final SiteConfigPreferences _preferences;
-
-    private String _message;
 }

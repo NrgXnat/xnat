@@ -11,14 +11,11 @@ package org.nrg.xdat.security.validators;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -38,19 +35,15 @@ public class PasswordValidatorChain implements PasswordValidator {
     }
 
     @Override
-    public boolean isValid(String password, UserI user) {
+    public String isValid(String password, UserI user) {
         final StringBuilder buffer = new StringBuilder();
         for (final PasswordValidator validator : _validators) {
-            if (!validator.isValid(password, user)) {
-                buffer.append(validator.getMessage()).append(" \n");
+            final String message = validator.isValid(password, user);
+            if (StringUtils.isNotBlank(message)) {
+                buffer.append(message).append(" \n");
             }
         }
-        message = buffer.toString();
-        return StringUtils.isBlank(message);
-    }
-
-    public String getMessage() {
-        return message;
+        return buffer.toString().trim();
     }
 
     /**
@@ -63,5 +56,4 @@ public class PasswordValidatorChain implements PasswordValidator {
     }
 
     private final List<PasswordValidator> _validators = Lists.newArrayList();
-    private       String                  message;
 }

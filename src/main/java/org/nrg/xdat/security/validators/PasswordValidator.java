@@ -11,7 +11,17 @@ package org.nrg.xdat.security.validators;
 
 import org.nrg.xft.security.UserI;
 
+/**
+ * Defines objects for validating passwords.
+ */
 public interface PasswordValidator {
-	boolean isValid(String password, UserI user);
-	String getMessage();
+    /**
+     * Tests the validity of the submitted password. If valid, this returns an empty string. If invalid, it returns a
+     * string with a message indicating the reason.
+     *
+     * @param password The password to test
+     * @param user     The user to test for
+     * @return The reason for failure if invalid, blank otherwise.
+     */
+    String isValid(final String password, final UserI user);
 }

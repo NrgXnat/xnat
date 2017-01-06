@@ -53,6 +53,6 @@ public class XdatUserToUserITransform implements Function<XdatUser, UserI> {
         _log.debug("Creating the default instance of this transform.");
     }
 
-    private static final Logger                   _log      = LoggerFactory.getLogger(XDATUserMgmtServiceImpl.class);
+    private static final Logger                   _log      = LoggerFactory.getLogger(XdatUserToUserITransform.class);
     private static final XdatUserToUserITransform _instance = new XdatUserToUserITransform();
 }

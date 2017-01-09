@@ -93,6 +93,13 @@ var XNAT = getObject(XNAT);
         decimal: /^(-?[0-9]*\.?[0-9])+$/,
         hexadecimal: /^[0-9a-f]+$/i,
         email: /^([a-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-z0-9](?:[.a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))$/i,
+        // (email regex below prevents multiple 'dots' but hasn't been tested thoroughly)
+        // email: /^([a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:(\.?[a-z0-9-]){0,61}[a-z0-9])?(?:\.?[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])))$/i,
+        // email should start with a letter or number, contain a single @, and end with a valid domain
+        // does not allow multiple sequential . or leading or trailing - or . in domain
+        // email2: /^[a-z0-9.!#$%&’*+/=?^_`{|}~-]{1,125}(@(?![.-]))([a-z0-9]*[.-]?[a-z0-9]+){1,125}$/i,
+        // W3C regex for <input type="email">
+        emailW3c: /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
         alpha: /^[a-z]+$/i,                 // ONLY letters
         alphaSafe: /^[a-z_]+$/i,            // ONLY letters and underscores
         alphaDash: /^[a-z_\-]+$/i,          // ONLY letters, underscore, and dash
@@ -105,13 +112,14 @@ var XNAT = getObject(XNAT);
         ip: /^(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2}))$/i,
         base64: /^([^a-zA-Z0-9\/+=])+$/i,
         numericDash: /^[\d\-\s]+$/,
+        //fqdn: /^([a-z0-9]*(\.(?![.-]))*(-(?!\.))*([a-z0-9](?![^a-z0-9]))*){1,252}$/i,
         //url: /^(((http|https):\/\/(\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?)$/,
         //url: /^(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&/=]*))$/i,
         url: /^(https?:\/\/[^\/\s]+(\/.*)?)$/i, // keep it simple for less strict url validation
         //uri: /^(([\/](\w+:{0,1}\w*@)?(\S+)|)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/])))$/,
         uri: /^(\/\w*)/i, // simpler URI check only requires string start with a single '/'
         // these date regexes can't check leap years or other incorrect MM/DD combos
-        // dateISO: /^((19|20)\d\d([- /.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01]))$/,
+        //dateISO: /^((19|20)\d\d([- /.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01]))$/,
         //dateUS: /^((0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d)$/,
         //dateEU: /^((0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.](19|20)\d\d)$/,
         // CRON!!!!!  (Say it like "KHAN!!!!!")
@@ -335,6 +343,22 @@ var XNAT = getObject(XNAT);
         return errors === 0;
     };
 
+    // check for a valid domain name -
+    // probably not as fast as a single regex
+    // but should only be called a few times at once
+    test.fqdn = function(value){
+        return !!value && (
+                // allow single-character values (?)
+                /^[a-z0-9]$/.test(value) || (
+                // only letters, numbers, hyphens, and periods are valid
+                /^[a-z0-9.-]+$/i.test(value) &&
+                // must start AND end with a letter or number
+                /^[a-z0-9].*[a-z0-9]$/i.test(value) &&
+                // cannot contain consecutive dashes or dots
+                !/\.{2,}|-{2,}|\.-|-\./i.test(value)
+            ));
+    };
+
     // make sure there's a minimum number of characters
     test.minLength = function(value, length){
         if (!regex.naturalNoZero.test(length)) {
@@ -510,14 +534,12 @@ var XNAT = getObject(XNAT);
 
     function init(element){
         var obj = {
-            element$: $.spawn('input.tmp|type=hidden'),
             len: 0,
             regex: '',
             value: '',
             values: [], // use to check more than one value
             validated: true // true until proven false
         };
-        obj.element = obj.element$[0];
         if (element) {
             obj.element$ = $$(element).removeClass('valid invalid');
             obj.len = obj.element$.length;
@@ -525,7 +547,10 @@ var XNAT = getObject(XNAT);
                 obj.element = obj.element$[0];
                 obj.value = obj.element.value || '';
             }
+            return obj;
         }
+        obj.element$ = $.spawn('input.tmp|type=hidden');
+        obj.element = obj.element$[0];
         return obj;
     }
 

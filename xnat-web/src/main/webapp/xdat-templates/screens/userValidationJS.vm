@@ -5,7 +5,7 @@
     XNAT.app.register = {
         validateForm: function(e){
             // create a few shortcuts
-            if(!validateUsername(document.getElementById('xdat:user.login'))){
+            if (!validateUsername(document.getElementById('xdat:user.login'))) {
                 return false;
             }
 
@@ -13,18 +13,18 @@
             var validators = XNAT.app.register.validators;
 
             // execute the validators on the fields, creating a list of boolean results for each field.
-            var validations = [validateInput('xdat:user.login', [validators.nonEmpty,validators.max255]),
-                validateInput('xdat:user.primary_password', [validators.nonEmpty,validators.max255]),
-                validateInput('xdat:user.firstname', [validators.nonEmpty,validators.max255]),
-                validateInput('xdat:user.lastname', [validators.nonEmpty,validators.max255]),
-                validateInput('xdat:user.email', [validators.nonEmpty,validators.max255,
+            var validations = [validateInput('xdat:user.login', [validators.nonEmpty, validators.max255]),
+                validateInput('xdat:user.primary_password', [validators.nonEmpty, validators.max255]),
+                validateInput('xdat:user.firstname', [validators.nonEmpty, validators.max255]),
+                validateInput('xdat:user.lastname', [validators.nonEmpty, validators.max255]),
+                validateInput('xdat:user.email', [validators.nonEmpty, validators.max255,
                     validators.isEmail()])];
-            if(YUIDOM.get('xdat:user.password_check')!=null){
+            if (YUIDOM.get('xdat:user.password_check') != null) {
                 validations.push(validateInput('xdat:user.password_check', [validators.nonEmpty, validators.valuesMatch('xdat:user.primary_password')]));
             }
             // if any of the validations failed, stop form submission
-            for (var i=0; i < validations.length; i++){
-                if (!validations[i]){
+            for (var i = 0; i < validations.length; i++) {
+                if (!validations[i]) {
                     return false;
                 }
             }
@@ -32,9 +32,9 @@
         },
         validateInput: function(inputId, validators){
             var input = document.getElementById(inputId);
-            for (var i=0; i < validators.length; i++){
+            for (var i = 0; i < validators.length; i++) {
                 var validator = validators[i];
-                if (!validator(input)){
+                if (!validator(input)) {
                     XNAT.app.register.validationError(input);
                     return false;
                 }
@@ -59,13 +59,13 @@
             },
             valuesMatch: function(inputIdToCompare){
                 var inputToCompare = document.getElementById(inputIdToCompare);
-                return function(input) {
+                return function(input){
                     return inputToCompare.value == input.value;
                 }
             },
             isEmail: function(){
-                var emailReg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,})$/;
-                return function(input) {
+                var emailReg = XNAT.validation.regex.email;
+                return function(input){
                     return emailReg.test(input.value);
                 }
             },
@@ -79,41 +79,45 @@
 
     function validateName(obj, which, button_id){
         var valid = false;
-        if (obj.value!=""){
-            if(obj.value.match(/^[a-zA-Z0-9-' ]+$/)) {
+        if (obj.value != "") {
+            if (obj.value.match(/^[a-zA-Z0-9' -]+$/)) {
                 valid = true;
-            }else{
-                xmodal.message('User Validation', which+' name cannot contain special characters.  Please modify.');
+            }
+            else {
+                xmodal.message('User Validation', which + ' name cannot contain special characters.  Please modify.');
                 obj.focus();
             }
         }
         check(obj, valid, button_id);
         return valid;
-    };
+    }
 
     function validateEmail(obj, button_id){
         var valid = false;
-        if (obj.value!=""){
-            if(XNAT.app.register.validators.isEmail()(obj)){
+        if (obj.value != "") {
+            if (XNAT.app.register.validators.isEmail()(obj)){
+            // if (XNAT.validate().val(obj.value).check('email')) {
                 valid = true;
-            }else{
+            }
+            else {
                 xmodal.message('User Validation', 'Invalid email address.  Please modify.');
                 obj.focus();
             }
         }
         check(obj, valid, button_id);
         return valid;
-    };
+    }
 
     function check(obj, valid, button_id){
-        if(valid){
-            if(obj.appendedImage!=undefined)appendImage(obj,"/images/checkmarkGreen.gif");
-            if(button_id!=undefined)document.getElementById(button_id).disabled=false;
-        }else{
-            appendImage(obj,"/images/checkmarkRed.gif");
-            if(button_id!=undefined)document.getElementById(button_id).disabled=true;
+        if (valid) {
+            if (obj.appendedImage != undefined) appendImage(obj, "/images/checkmarkGreen.gif");
+            if (button_id != undefined) document.getElementById(button_id).disabled = false;
         }
-    };
+        else {
+            appendImage(obj, "/images/checkmarkRed.gif");
+            if (button_id != undefined) document.getElementById(button_id).disabled = true;
+        }
+    }
 
 </script>
 <!-- END xdat-templates/screens/userValidationJS.vm -->

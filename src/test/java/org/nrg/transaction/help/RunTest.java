@@ -1,11 +1,12 @@
 /*
- * org.nrg.transaction.help.RunTest
+ * transaction: org.nrg.transaction.help.RunTest
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.transaction.help;
 
 import static org.junit.Assert.assertEquals;

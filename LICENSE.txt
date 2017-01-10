@@ -4,7 +4,7 @@ available for general use under the 2-clause or Simplified BSD license:
 
 ==============================================================================
 
-Copyright (c) 2016, Washington University School of Medicine
+Copyright (c) 2017, Washington University School of Medicine
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

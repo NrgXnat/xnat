@@ -1,7 +1,7 @@
 <!--
   ~ ExtAttr: pom.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2016, Washington University School of Medicine
+  ~ Copyright (c) 2017, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
@@ -14,12 +14,12 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.1</version>
+        <version>1.7.2</version>
         <relativePath/>
     </parent>
 
     <artifactId>ExtAttr</artifactId>
-    <version>4.2.0</version>
+    <version>4.2.1</version>
 
     <name>External Attribute library</name>
     <description>

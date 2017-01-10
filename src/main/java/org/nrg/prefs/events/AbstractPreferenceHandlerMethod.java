@@ -1,3 +1,12 @@
+/*
+ * prefs: org.nrg.prefs.events.AbstractPreferenceHandlerMethod
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2017, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.prefs.events;
 
 import com.google.common.collect.Sets;

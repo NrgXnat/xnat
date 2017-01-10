@@ -1,7 +1,7 @@
 /*
- * org.nrg.prefs.services.impl.hibernate.HibernatePreferenceService
+ * prefs: org.nrg.prefs.services.impl.hibernate.HibernatePreferenceService
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.

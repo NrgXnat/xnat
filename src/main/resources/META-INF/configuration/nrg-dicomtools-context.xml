@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ /home/rherrick/Development/XNAT/1.7/libraries/dicomtools/src/main/resources/META-INF/configuration/nrg-dicomtools-context.xml
+  ~ dicomtools: src/main/resources/META-INF/configuration/nrg-dicomtools-context.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2016, Washington University School of Medicine
+  ~ Copyright (c) 2017, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
   -->
+
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd

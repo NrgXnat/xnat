@@ -1,11 +1,12 @@
 /*
- * org.nrg.dicomtools.filters.RegExBasedSeriesImportFilter
+ * dicomtools: org.nrg.dicomtools.filters.RegExBasedSeriesImportFilter
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.dicomtools.filters;
 
 import com.google.common.base.Joiner;

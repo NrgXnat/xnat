@@ -1,11 +1,12 @@
 /*
- * org.nrg.mail.services.EmailRequestLogService
+ * mail: org.nrg.mail.services.EmailRequestLogService
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.mail.services;
 
 import java.util.Date;

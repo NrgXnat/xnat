@@ -1,11 +1,12 @@
 /*
- * org.nrg.mail.api.MailMessageTest
+ * mail: org.nrg.mail.api.MailMessageTest
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.mail.api;
 
 import static org.junit.Assert.assertEquals;

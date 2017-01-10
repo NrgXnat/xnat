@@ -1,11 +1,12 @@
 /*
- * org.nrg.notify.services.impl.hibernate.HibernateDefinitionService
+ * notify: org.nrg.notify.services.impl.hibernate.HibernateDefinitionService
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.notify.services.impl.hibernate;
 
 import org.hibernate.Hibernate;

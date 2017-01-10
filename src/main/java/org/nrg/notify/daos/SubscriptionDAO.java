@@ -1,11 +1,12 @@
 /*
- * org.nrg.notify.daos.SubscriptionDAO
+ * notify: org.nrg.notify.daos.SubscriptionDAO
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.notify.daos;
 
 import java.util.List;

@@ -1,11 +1,12 @@
 /*
- * org.nrg.notify.exceptions.NoMatchingCategoryException
+ * notify: org.nrg.notify.exceptions.NoMatchingCategoryException
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.notify.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;

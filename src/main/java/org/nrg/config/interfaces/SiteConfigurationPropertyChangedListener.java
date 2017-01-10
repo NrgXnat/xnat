@@ -1,11 +1,12 @@
 /*
- * org.nrg.config.interfaces.SiteConfigurationPropertyChangedListener
+ * config: org.nrg.config.interfaces.SiteConfigurationPropertyChangedListener
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.config.interfaces;
 
 public interface SiteConfigurationPropertyChangedListener {

@@ -1,11 +1,12 @@
 /*
- * org.nrg.config.services.ConfigService
+ * config: org.nrg.config.services.ConfigService
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.config.services;
 
 import org.nrg.config.entities.Configuration;

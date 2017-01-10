@@ -1,11 +1,12 @@
 /*
- * org.nrg.config.util.TestDBUtils
+ * config: org.nrg.config.util.TestDBUtils
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
+
 package org.nrg.config.util;
 
 import static org.junit.Assert.fail;

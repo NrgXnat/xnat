@@ -1,3 +1,12 @@
+/*
+ * test: org.nrg.test.exceptions.ResourceNotFoundException
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2017, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
 package org.nrg.test.exceptions;
 
 import org.apache.commons.lang3.StringUtils;

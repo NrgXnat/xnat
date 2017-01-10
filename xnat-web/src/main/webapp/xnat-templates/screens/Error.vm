@@ -1,10 +1,17 @@
+##
+## xnat-web: plugin-resources/webapp/xnat/scripts/yui/xnat_loader.js
+## XNAT http://www.xnat.org
+## Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+## All Rights Reserved
+##
+## Released under the Simplified BSD.
+##
 #* @vtlvariable name="links" type="java.util.Map" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="status" type="java.lang.Integer" *#
 #* @vtlvariable name="uri" type="java.lang.String" *#
 #* @vtlvariable name="message" type="java.lang.String" *#
-## Copyright 2015 Washington University School of Medicine. All Rights Reserved.
-## This code is released under the Simplified BSD software license.
+
 #set ($template = $data.getTemplateInfo())
 $!template.setLayoutTemplate("NoMenu.vm")
 <style type="text/css">

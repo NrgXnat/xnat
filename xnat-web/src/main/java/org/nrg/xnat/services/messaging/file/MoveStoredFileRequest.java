@@ -1,22 +1,13 @@
 /*
  * web: org.nrg.xnat.services.messaging.file.MoveStoredFileRequest
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xnat.services.messaging.file;/*
- * org.nrg.xnat.helpers.prearchive.PrearcDatabase
- * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
- * All Rights Reserved
- *
- * Released under the Simplified BSD.
- *
- * Created 3/12/14 12:17 PM
- */
+package org.nrg.xnat.services.messaging.file;
 
 import java.io.Serializable;
 import java.util.ArrayList;

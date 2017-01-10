@@ -1,13 +1,10 @@
 /*
- * org.nrg.xnat.turbine.modules.screens.ManageProtocol
+ * web: themeManagement.js
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Author: Justin Cleveland <clevelandj@wustl.edu>
- * Last modified 3/17/2016 3:33 PM
  */
 var themeUrl = XNAT.url.rootUrl('/xapi/theme');
 var s = '/', q = '?', a = '&';

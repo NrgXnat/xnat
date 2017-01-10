@@ -1,13 +1,11 @@
 /*
-* D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/scripts/prearchive/PrearchiveDetails_files.js
-* XNAT http://www.xnat.org
-* Copyright (c) 2014, Washington University School of Medicine
-* All Rights Reserved
-*
-* Released under the Simplified BSD.
-*
-* Last modified 1/3/14 9:54 AM
-*/
+ * web: PrearchiveDetails_files.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
 
 XNAT.app.fileCounter={
  	load:function(){

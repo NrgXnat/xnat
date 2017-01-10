@@ -1,17 +1,17 @@
+/*
+ * web: ReplaceUrlPathsWithBase64.groovy
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *  
+ * Released under the Simplified BSD.
+ */
+
 @Grab('commons-io:commons-io:2.5')
 
 import org.apache.commons.io.FileUtils
 
 import java.nio.file.Paths
-
-/*
- * web: ReplacePathsWithBase64.groovy
- * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
- * All Rights Reserved
- *
- * Released under the Simplified BSD.
- */
 
 if (args.size() == 0) {
     println("You must specify the path to at least one CSS file to be processed. For example:");

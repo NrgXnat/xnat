@@ -1,12 +1,10 @@
 /*
- * D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/scripts/prearchive/PrearchiveDetails_actions.js
+ * web: PrearchiveDetails_actions.js
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 1/6/14 3:48 PM
  */
 XNAT.app.prearchiveActions={
 	requestDelete:function(){

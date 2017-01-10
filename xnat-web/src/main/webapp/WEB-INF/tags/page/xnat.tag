@@ -2,6 +2,15 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
+<%--
+  ~ web: xnat.tag
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  --%>
+
 <jsp:useBean id="themeService" class="org.nrg.xdat.services.impl.ThemeServiceImpl"/>
 
 <%@ attribute name="page" %>
@@ -10,15 +19,6 @@
 <%@ attribute name="headBottom" %>
 <%@ attribute name="bodyTop" %>
 <%@ attribute name="bodyBottom" %>
-
-<%--
-  ~ web: xnat.tag
-  ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
-  ~ All Rights Reserved
-  ~
-  ~ Released under the Simplified BSD.
-  --%>
 
 <head>
 

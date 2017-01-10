@@ -1,4 +1,11 @@
-##Copyright 2009 Washington University in St. Louis All Rights Reserved
+##
+## xnat-web: src/main/webapp/xnat-templates/screens/PipelineScreen_protocolcheck_add.vm
+## XNAT http://www.xnat.org
+## Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+## All Rights Reserved
+##
+## Released under the Simplified BSD.
+##
 
 ##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
 

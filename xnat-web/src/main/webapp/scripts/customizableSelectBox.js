@@ -1,12 +1,10 @@
 /*
- * D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/scripts/customizableSelectBox.js
+ * web: customizableSelectBox.js
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *
+ *  
  * Released under the Simplified BSD.
- *
- * Last modified 7/1/13 9:12 AM
  */
 function CustomSelectBox(_input,_settings){
 	this.settings=_settings;

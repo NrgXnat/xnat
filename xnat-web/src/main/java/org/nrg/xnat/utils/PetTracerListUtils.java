@@ -1,22 +1,13 @@
 /*
  * web: org.nrg.xnat.utils.PetTracerListUtils
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xnat.utils;/*
- * org.nrg.xnat.helpers.prearchive.PrearcDatabase
- * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
- * All Rights Reserved
- *
- * Released under the Simplified BSD.
- *
- * Created 9/9/14 4:46 PM
- */
+package org.nrg.xnat.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;

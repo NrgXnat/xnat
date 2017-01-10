@@ -1,36 +1,13 @@
-import org.gradle.internal.jvm.Jvm
-
 /*
  * web: build.gradle
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *
+ *  
  * Released under the Simplified BSD.
  */
 
-def vXnat = '1.7.2-SNAPSHOT'
-def vXnatStable = '1.7.1'
-def vXImgView = '1.0.0-SNAPSHOT'
-def vSpring = '4.2.9.RELEASE'
-def vSpringSecurity = '4.0.4.RELEASE'
-def vSwagger = '2.4.0'
-def vHibernate = '4.3.11.Final'
-def vEhcache = '2.6.11'
-def vJackson = '2.6.5'
-def vPostgreSQL = '9.4.1209.jre7'
-def vServletApi = '3.1.0'
-def vTomcat = '7.0.68'
-def vCargo = '1.4.18'
-def vSlf4j = '1.7.21'
-def vLog4j = '1.2.17'
-def vJunit = '4.12'
-def vSaxon = '9.1.0.8'
-def vGroovy = '2.4.7'
-def vJython = '2.7.0'
-
-group 'org.nrg.xnat'
-version = "${vXnat}"
+import org.gradle.internal.jvm.Jvm
 
 buildscript {
     repositories {
@@ -55,6 +32,29 @@ buildscript {
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.5.2"
     }
 }
+
+def vXnat = '1.7.2'
+def vXImgView = '1.0.0-SNAPSHOT'
+def vSpring = '4.2.9.RELEASE'
+def vSpringSecurity = '4.0.4.RELEASE'
+def vSwagger = '2.4.0'
+def vHibernate = '4.3.11.Final'
+def vEhcache = '2.6.11'
+def vJackson = '2.6.5'
+def vPostgreSQL = '9.4.1209.jre7'
+def vServletApi = '3.1.0'
+def vTomcat = '7.0.68'
+def vCargo = '1.4.18'
+def vSlf4j = '1.7.21'
+def vLog4j = '1.2.17'
+def vJunit = '4.12'
+def vJacoco = '0.7.8'
+def vSaxon = '9.1.0.8'
+def vGroovy = '2.4.7'
+def vJython = '2.7.0'
+
+group 'org.nrg.xnat'
+version = "${vXnat}"
 
 apply plugin: 'groovy'
 apply plugin: 'java'
@@ -198,7 +198,7 @@ war {
 }
 
 jacoco {
-    toolVersion = "0.7.8"
+    toolVersion = vJacoco
 }
 
 jacocoTestReport {
@@ -327,31 +327,31 @@ configurations {
 
 dependencies {
     // NRG dependencies first.
-    compile "org.nrg.xnat:spawner:${vXnatStable}"
-    compile("org.nrg.xnat:xnat-data-models:${vXnatStable}") {
+    compile "org.nrg.xnat:spawner:${vXnat}"
+    compile("org.nrg.xnat:xnat-data-models:${vXnat}") {
         transitive = false
     }
     compile "org.nrg.xdat:core:${vXnat}"
     compile "org.nrg:framework:${vXnat}"
-    compile "org.nrg:transaction:${vXnatStable}"
-    compile "org.nrg:prefs:${vXnatStable}"
-    compile "org.nrg:config:${vXnatStable}"
-    compile "org.nrg:automation:${vXnatStable}"
-    compile "org.nrg:dicomtools:${vXnatStable}"
-    compile "org.nrg:anonymize:${vXnatStable}"
-    compile "org.nrg:mail:${vXnatStable}"
-    compile "org.nrg:notify:${vXnatStable}"
+    compile "org.nrg:transaction:${vXnat}"
+    compile "org.nrg:prefs:${vXnat}"
+    compile "org.nrg:config:${vXnat}"
+    compile "org.nrg:automation:${vXnat}"
+    compile "org.nrg:dicomtools:${vXnat}"
+    compile "org.nrg:anonymize:${vXnat}"
+    compile "org.nrg:mail:${vXnat}"
+    compile "org.nrg:notify:${vXnat}"
 
-    compile "org.nrg:dicom-xnat-mx:${vXnatStable}"
-    compile "org.nrg:dicom-xnat-sop:${vXnatStable}"
-    compile "org.nrg:dicom-xnat-util:${vXnatStable}"
-    compile "org.nrg:ecat4xnat:${vXnatStable}"
-    compile "org.nrg:DicomDB:5.1.0"
-    compile "org.nrg:ExtAttr:4.2.0"
-    compile "org.nrg:DicomEdit:6.0.1"
-    compile "org.nrg:DicomImageUtils:${vXnatStable}"
-    compile "org.nrg:PrearcImporter:${vXnatStable}"
-    compile "org.nrg:SessionBuilders:${vXnatStable}"
+    compile "org.nrg:dicom-xnat-mx:${vXnat}"
+    compile "org.nrg:dicom-xnat-sop:${vXnat}"
+    compile "org.nrg:dicom-xnat-util:${vXnat}"
+    compile "org.nrg:ecat4xnat:${vXnat}"
+    compile "org.nrg:DicomDB:5.1.1"
+    compile "org.nrg:ExtAttr:4.2.1"
+    compile "org.nrg:DicomEdit:6.0.2"
+    compile "org.nrg:DicomImageUtils:${vXnat}"
+    compile "org.nrg:PrearcImporter:${vXnat}"
+    compile "org.nrg:SessionBuilders:${vXnat}"
 
     compile "org.nrg:pipelineBase:1.0"
     compile "org.nrg:pipelineBuild:1.0"

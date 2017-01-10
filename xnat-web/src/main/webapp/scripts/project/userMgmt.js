@@ -1,13 +1,11 @@
 
 /*
- * D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/scripts/project/userMgmt.js
+ * web: userMgmt.js
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 1/23/14 1:16 PM
  */
 /*******************************
  * Set of javascript functions to facilitate project-user access via AJAX

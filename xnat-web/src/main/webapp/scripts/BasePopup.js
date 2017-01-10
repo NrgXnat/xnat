@@ -1,12 +1,10 @@
 /*
- * D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/scripts/BasePopup.js
+ * web: BasePopup.js
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/26/13 3:34 PM
  */
 function BasePopup(_id,_config){
   this.id=_id;

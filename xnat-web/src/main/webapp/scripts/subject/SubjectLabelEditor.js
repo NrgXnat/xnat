@@ -1,12 +1,10 @@
 /*
- * D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/scripts/subject/SubjectLabelEditor.js
+ * web: SubjectLabelEditor.js
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 1/30/14 11:48 AM
  */
 
 /*jslint white: true, vars: true, browser: true */

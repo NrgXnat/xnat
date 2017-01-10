@@ -1,22 +1,13 @@
 /*
  * web: org.nrg.xnat.turbine.modules.screens.InactiveAccount
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xnat.turbine.modules.screens;/*
- * org.nrg.xnat.helpers.prearchive.PrearcDatabase
- * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
- * All Rights Reserved
- *
- * Released under the Simplified BSD.
- *
- * Created 10/29/13 12:00 PM
- */
+package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;

@@ -1,11 +1,10 @@
 /*
- Table sorting script  by Joost de Valk, check it out at http://www.joostdevalk.nl/code/sortable-table/.
- Based on a script from http://www.kryogenix.org/code/browser/sorttable/.
- Distributed under the MIT license: http://www.kryogenix.org/code/browser/licence.html .
-
- Copyright (c) 1997-2007 Stuart Langridge, Joost de Valk.
-
- Version 1.5.7
+ * web: sortable_us.js
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
  */
 
 /* You can change these values */

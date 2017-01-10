@@ -1,13 +1,12 @@
 /*
  * core: org.nrg.xft.db.ItemAccessHistory
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xft.db;
 
 import java.sql.SQLException;

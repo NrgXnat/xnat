@@ -1,7 +1,7 @@
 /*
  * core: org.nrg.xdat.turbine.modules.actions.ModifyAction
  * XNAT http://www.xnat.org
- * Copyright (c) 2017, Washington University School of Medicine
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.

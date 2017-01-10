@@ -1,17 +1,12 @@
 /*
  * core: org.nrg.xdat.servlet.XDATAjaxServlet
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
-/*
- * $Id: XDATAjaxServlet.java,v 1.8 2010/03/30 20:05:26 timo Exp $
- * Copyright 2006,2008 Harvard University / Washington University School of Medicine All Rights Reserved
- * Created on Oct 4, 2006
- */
 package org.nrg.xdat.servlet;
 
 import java.io.IOException;

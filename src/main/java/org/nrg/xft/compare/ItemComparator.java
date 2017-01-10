@@ -1,13 +1,12 @@
 /*
  * core: org.nrg.xft.compare.ItemComparator
  * XNAT http://www.xnat.org
- * Copyright (c) 2016, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
-//Copyright 2012 Radiologics, Inc.  All Rights Reserved
 package org.nrg.xft.compare;
 
 import java.util.Comparator;

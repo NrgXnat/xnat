@@ -29,10 +29,11 @@ buildscript {
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.2"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.2.4"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.5.2"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.5.3"
     }
 }
 
+def vXnatDev = '1.7.3-SNAPSHOT'
 def vXnat = '1.7.2'
 def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.9.RELEASE'
@@ -54,7 +55,7 @@ def vGroovy = '2.4.7'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
-version = "${vXnat}"
+version = "${vXnatDev}"
 
 apply plugin: 'groovy'
 apply plugin: 'java'
@@ -331,7 +332,7 @@ dependencies {
     compile("org.nrg.xnat:xnat-data-models:${vXnat}") {
         transitive = false
     }
-    compile "org.nrg.xdat:core:${vXnat}"
+    compile "org.nrg.xdat:core:${vXnatDev}"
     compile "org.nrg:framework:${vXnat}"
     compile "org.nrg:transaction:${vXnat}"
     compile "org.nrg:prefs:${vXnat}"

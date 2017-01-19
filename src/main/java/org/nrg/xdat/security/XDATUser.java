@@ -11,6 +11,7 @@ package org.nrg.xdat.security;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
@@ -69,7 +70,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private boolean rolesNotUpdatedFromService = true;
     private ArrayList<XdatStoredSearch> stored_searches = null;
 
-    private ArrayList<ElementDisplay> browseable = null;
+    private final List<ElementDisplay> browseable = Lists.newArrayList();
+    private final Map<Object, Object> readable_counts = Maps.newHashMap();
 
     private long startTime = Calendar.getInstance().getTimeInMillis();
 
@@ -519,30 +521,30 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public void clearBrowseableElementDisplays() {
-        browseable = null;
-        readable_counts = null;
+        browseable.clear();
+        readable_counts.clear();
     }
 
-    protected ArrayList<ElementDisplay> getBrowseableElementDisplays() {
-        if (browseable == null) {
-            browseable = new ArrayList<>();
+    protected List<ElementDisplay> getBrowseableElementDisplays() {
+        if (browseable.size() == 0) {
+            final Map counts = getReadableCounts();
 
-            Map counts = this.getReadableCounts();
             try {
                 for (final ElementDisplay ed : getReadableElementDisplays()) {
-                    if (ElementSecurity.IsBrowseableElement(ed.getElementName())) {
-                        if (counts.containsKey(ed.getElementName()) && ((Long) counts.get(ed.getElementName()) > 0))
+                    final String elementName = ed.getElementName();
+                    if (ElementSecurity.IsBrowseableElement(elementName)) {
+                        if (counts.containsKey(elementName) && ((Long) counts.get(elementName) > 0)) {
                             browseable.add(ed);
+                        }
                     }
                 }
             } catch (ElementNotFoundException e) {
-                logger.error("", e);
+                logger.error("Couldn't find the schema element specified by " + e.ELEMENT, e);
             } catch (XFTInitException e) {
-                logger.error("", e);
+                logger.error("There was an error initializing XFT", e);
             } catch (Exception e) {
-                logger.error("", e);
+                logger.error("An unknown error occurred", e);
             }
-            browseable.trimToSize();
         }
 
         return browseable;
@@ -871,18 +873,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     protected void clearLocalCache() {
         userSessionCache = new Hashtable<>();
         total_counts = null;
-        readable_counts = null;
+        readable_counts.clear();
         criteria=null;
         _editableProjects = null;
     }
 
-    Map readable_counts = null;
-
     protected Map getReadableCounts() {
-        if (readable_counts == null) {
+        if (readable_counts.size() == 0) {
             try {
-                readable_counts = new Hashtable<>();
-
                 try {
                     //projects
                     org.nrg.xft.search.QueryOrganizer qo = new org.nrg.xft.search.QueryOrganizer("xnat:projectData", this, ViewManager.ALL);
@@ -1281,26 +1279,37 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         final Map<String, ElementDisplay> hash = new Hashtable<>();
 
         for(ElementSecurity es: ElementSecurity.GetSecureElements()){
-            if (es.getSchemaElement().hasDisplay()){
-                if(Permissions.canAny(this, es.getElementName(), action)){
-                    ElementDisplay ed = es.getSchemaElement().getDisplay();
-                    if (ed != null) {
-                        hash.put(ed.getElementName(), ed);
+            try {
+                final SchemaElement schemaElement = es.getSchemaElement();
+                if (schemaElement != null) {
+                    if (schemaElement.hasDisplay()){
+                        if(Permissions.canAny(this, es.getElementName(), action)){
+                            ElementDisplay ed = schemaElement.getDisplay();
+                            if (ed != null) {
+                                hash.put(ed.getElementName(), ed);
+                            }
+                        }
                     }
+                } else {
+                    logger.warn("Couldn't find the schema element for security element " + es.getElementName());
                 }
+            } catch (ElementNotFoundException e) {
+                logger.error("Couldn't find the schema element for " + e.ELEMENT, e);
             }
         }
 
         for (ElementSecurity es : ElementSecurity.GetInSecureElements()) {
-            if (es.getSchemaElement().hasDisplay()) {
-                hash.put(es.getElementName(), es.getSchemaElement().getDisplay());
+            try {
+                final SchemaElement schemaElement = es.getSchemaElement();
+                if (schemaElement.hasDisplay()) {
+                    hash.put(es.getElementName(), schemaElement.getDisplay());
+                }
+            } catch (ElementNotFoundException e) {
+                logger.error("Couldn't find the schema element for " + e.ELEMENT, e);
             }
         }
 
-        final ArrayList<ElementDisplay> al = new ArrayList<>();
-        al.addAll(hash.values());
-        al.trimToSize();
-
+        final ArrayList<ElementDisplay> al = Lists.newArrayList(hash.values());
         Collections.sort(al, ElementDisplay.SequenceComparator);
         return al;
     }

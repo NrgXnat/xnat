@@ -24,6 +24,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -641,21 +642,23 @@ public class XFTManager {
      * @throws Exception When something goes wrong.
      */
     public ArrayList getOrderedElements() throws Exception {
-        ArrayList al = new ArrayList();
-        Iterator schemas = GetSchemas().iterator();
         XFTElementSorter sorter = new XFTElementSorter();
-        while (schemas.hasNext()) {
-            XFTSchema schema = (XFTSchema) schemas.next();
-            Iterator elements = schema.getSortedElements().iterator();
-            while (elements.hasNext()) {
-                XFTElement element = (XFTElement) elements.next();
-                sorter.addElement((GenericWrapperElement) GenericWrapperFactory.GetInstance().wrapElement(element));
+        final XFTFactoryI factory = GenericWrapperFactory.GetInstance();
+        for (final XFTSchema schema : GetSchemas()) {
+            for (final Object object : schema.getSortedElements()) {
+                final XFTElement element = (XFTElement) object;
+                final GenericWrapperElement gwe = (GenericWrapperElement) factory.wrapElement(element);
+                try {
+                    sorter.addElement(gwe);
+                } catch (ElementNotFoundException e) {
+                    logger.warn("Tried to add the element {}, but couldn't find it, so skipping it.", e.ELEMENT);
+                }
             }
         }
 
-        al.addAll(sorter.getElements());
-
-        al.trimToSize();
+        final Vector elements = sorter.getElements();
+        ArrayList al = new ArrayList(elements.size());
+        al.addAll(elements);
         return al;
     }
 

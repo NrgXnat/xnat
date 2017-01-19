@@ -962,17 +962,9 @@ public class PoolDBUtils {
 	    	st=pooledConnection.getStatement();
 		}
 
-		public void execute(String query) throws SQLException{
-			st.execute(query);
-		}
-
-		public void execute(Collection<String> statements) {
+		public void execute(Collection<String> statements) throws SQLException {
 			for (final String statement : statements) {
-				try {
-					st.execute(statement);
-				} catch (SQLException e) {
-					logger.error("An error occurred in the SQL statement: " + statement + "\nError: " + e.getErrorCode() + ", state: " + e.getSQLState() + "\nMessage: " + e.getMessage());
-				}
+				st.execute(statement);
 			}
 		}
 

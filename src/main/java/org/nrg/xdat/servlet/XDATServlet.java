@@ -20,6 +20,8 @@ import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -97,7 +99,7 @@ public class XDATServlet extends HttpServlet {
      *
      * @param conf    The configuration folder from which to load the SQL scripts.
      * @return Returns true if the database was created or updated, false otherwise.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     private boolean updateDatabase(String conf) throws Exception {
         Long user_count;
@@ -125,6 +127,7 @@ public class XDATServlet extends HttpServlet {
                 final DatabaseUpdater du = new DatabaseUpdater((user_count == 0) ? conf : null);//user_count==0 means users need to be created.
 
                 //only interested in the required ones here.
+                @SuppressWarnings("unchecked")
                 final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
                 if (sql.size() > 0) {
                     _shouldUpdateViews = false;
@@ -244,14 +247,18 @@ public class XDATServlet extends HttpServlet {
                 }
 
                 transaction.commit();
+            } catch (XFTInitException e) {
+                logger.error("An error occurred initializing XFT, now attempting rolling back the current transactions", e);
+                rollback(transaction);
+            } catch (SQLException e) {
+                logger.error("An error occurred creating or updating the database elements schemas and views, now attempting rolling back the current transactions", e);
+                rollback(transaction);
+            } catch (DBPoolException e) {
+                logger.error("An error occurred when trying to start the transaction for creating or updating the database elements schemas and views, now attempting rolling back the current transactions", e);
+                rollback(transaction);
             } catch (Exception e) {
-                try {
-                    transaction.rollback();
-                } catch (SQLException e1) {
-                    logger.error("", e1);
-                }
-                logger.error("", e);
-                return;
+                logger.error("An unknown error occurred when trying to create or update the database elements schemas and views, now attempting rolling back the current transactions", e);
+                rollback(transaction);
             } finally {
                 transaction.close();
             }
@@ -279,9 +286,17 @@ public class XDATServlet extends HttpServlet {
             }
         }
 
+        private void rollback(final PoolDBUtils.Transaction transaction) {
+            try {
+                transaction.rollback();
+            } catch (SQLException e1) {
+                logger.error("", e1);
+            }
+        }
+
         /**
          * Returns a list of sql statements pulled from SQL files stored under META-INF/xnat. The files are filtered and
-         * sorted by the {@link #filterAndSortInitSqlResources(Resource[])} method. These files should initialize the
+         * sorted by the {@link #filterAndSortInitSqlResources(List)} method. These files should initialize the
          * server, its settings and the users.
          *
          * @return A list of SQL statements initialized from the SQL scripts.
@@ -289,7 +304,7 @@ public class XDATServlet extends HttpServlet {
         private List<String> getInitScripts() {
             final List<String> statements = new ArrayList<>();
             try {
-                for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/init_*.sql")) {
+                for (final Resource resource : filterAndSortInitSqlResources(BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/init_*.sql"))) {
                     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()), 1024)) {
                         String statement;
                         while ((statement = reader.readLine()) != null) {
@@ -315,7 +330,7 @@ public class XDATServlet extends HttpServlet {
      * @param resources    The array of resources to be sorted and filtered.
      * @return The list of resources after sorting and filtering.
      */
-    private List<Resource> filterAndSortInitSqlResources(final Resource[] resources) {
+    private List<Resource> filterAndSortInitSqlResources(final List<Resource> resources) {
         final List<Resource> filtered = new ArrayList<>();
         for (final Resource resource : resources) {
             final Matcher matcher = SQL_PATTERN.matcher(resource.getFilename());

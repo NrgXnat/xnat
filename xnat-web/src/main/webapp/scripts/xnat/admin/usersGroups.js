@@ -1,5 +1,8 @@
 /*
  * web: usersGroups.js
+ * JS for Users & Groups admin page
+ * /page/admin/users/
+ *
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
@@ -106,9 +109,10 @@ var XNAT = getObject(XNAT);
                         }
                     },
                     usersTablePanel: {
-                        kind: 'panel',
-                        label: 'User Accounts',
-                        footer: false,
+//                        kind: 'panel',
+//                        label: 'User Accounts',
+//                        footer: false,
+                        tag: 'div.user-table',
                         contents: {
                             tableContainer: {
                                 tag: userTableContainer,
@@ -728,7 +732,7 @@ var XNAT = getObject(XNAT);
         }
 
         function goToEmail(){
-            var _email = $(this).text();
+            var _email = this.title.split(':')[0];
             var _url = XNAT.url.rootUrl('/app/template/XDATScreen_email.vm/emailTo/');
             window.location.href = _url + _email;
         }
@@ -833,25 +837,36 @@ var XNAT = getObject(XNAT);
                         label: 'Username',
                         filter: true, // add filter: true to individual items to add a filter
                         call: function(username, tr){
-                            //console.log(tr);
-                            return '<a href="#!" title="' + username + ': details" class="username link">' + username + '</a>'
+                            return spawn('a.username.link', {
+                                href: '#!',
+                                title: username + ': details',
+                                html: truncateText(username),
+                                data: { username: this.username }
+                            })
                         }
                     },
                     fullName: {
                         label: 'Name',
                         call: function(){
+                            var _fullName = truncateText(this.lastName + ', ' + this.firstName);
                             return spawn('a.full-name.link', {
                                 href: '#!',
                                 title: this.username + ': project and security settings',
-                                html: this.lastName + ', ' + this.firstName,
+                                html: _fullName,
                                 data: { username: this.username }
                             });
-                            //return this.lastName + ', ' + this.firstName
                         }
                     },
                     email: {
                         label: 'Email',
-                        content: '<a href="#!" title="Send email" class="send-email link">__VALUE__</a>'
+                        call: function(email){
+                            return spawn('a.send-email.link', {
+                                href: '#!',
+                                title: email + ': send email',
+                                html: truncateText(email),
+                                data: { username: this.username }
+                            })
+                        }
                     },
                     verified: {
                         label: 'Verified',

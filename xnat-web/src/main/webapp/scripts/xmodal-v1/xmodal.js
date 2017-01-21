@@ -1041,7 +1041,7 @@ if (typeof jQuery == 'undefined') {
                     $mask.hide();
                 }
                 // don't remove 'static' modals we want to 'keep'
-                if (!$modal.hasClasses('keep || static')) {
+                if (!/keep|static/i.test($modal[0].className)) {
                     $modal.remove();
                     $mask.remove();
                 }

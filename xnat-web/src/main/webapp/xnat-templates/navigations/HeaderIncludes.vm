@@ -20,7 +20,7 @@
 ## pull in the base JavaScript files
 $navigation.setTemplate("/BaseJS.vm")
 
-#set($versionString = "v=1.7.1")
+#set($versionString = "v=1.7.2")
 #set($SITE_ROOT = $content.getURI(""))
 
 <script>
@@ -37,16 +37,16 @@ $navigation.setTemplate("/BaseJS.vm")
         app: {
             displayNames: {
                 singular: {
-                    project: "$displayManager.getSingularDisplayNameForProject()",
-                    subject: "$displayManager.getSingularDisplayNameForSubject()",
-                    imageSession: "$displayManager.getSingularDisplayNameForImageSession()",
-                    mrSession: "$displayManager.getSingularDisplayNameForMRSession()"
+                    project: "$!displayManager.getSingularDisplayNameForProject()",
+                    subject: "$!displayManager.getSingularDisplayNameForSubject()",
+                    imageSession: "$!displayManager.getSingularDisplayNameForImageSession()",
+                    mrSession: "$!displayManager.getSingularDisplayNameForMRSession()"
                 },
                 plural: {
-                    project: "$displayManager.getPluralDisplayNameForProject()",
-                    subject: "$displayManager.getPluralDisplayNameForSubject()",
-                    imageSession: "$displayManager.getPluralDisplayNameForImageSession()",
-                    mrSession: "$displayManager.getPluralDisplayNameForMRSession()"
+                    project: "$!displayManager.getPluralDisplayNameForProject()",
+                    subject: "$!displayManager.getPluralDisplayNameForSubject()",
+                    imageSession: "$!displayManager.getPluralDisplayNameForImageSession()",
+                    mrSession: "$!displayManager.getPluralDisplayNameForMRSession()"
                 }
             },
             siteId: "$!turbineUtils.GetSystemName()"
@@ -86,17 +86,17 @@ $navigation.setTemplate("/BaseJS.vm")
 
     if (XNAT.data.context.projectName === "") {
         #set ($projectName = $turbineUtils.getProjectName($om, $project))
-        XNAT.data.context.projectName = "$projectName";
+        XNAT.data.context.projectName = "$!projectName";
     }
 
     // 'page' object is same as 'context' - easier to remember?
     XNAT.data.page = XNAT.data.context;
 
-    XNAT.app.showLeftBar = $siteConfig.uiShowLeftBarBrowse;
-    XNAT.app.showLeftBarProjects = $siteConfig.uiShowLeftBarProjects;
-    XNAT.app.showLeftBarFavorites = $siteConfig.uiShowLeftBarFavorites;
-    XNAT.app.showLeftBarSearch = $siteConfig.uiShowLeftBarSearch;
-    XNAT.app.showLeftBarBrowse = $siteConfig.uiShowLeftBarBrowse;
+    XNAT.app.showLeftBar = realValue($!siteConfig.uiShowLeftBarBrowse);
+    XNAT.app.showLeftBarProjects = realValue($!siteConfig.uiShowLeftBarProjects);
+    XNAT.app.showLeftBarFavorites = realValue($!siteConfig.uiShowLeftBarFavorites);
+    XNAT.app.showLeftBarSearch =  realValue($!siteConfig.uiShowLeftBarSearch);
+    XNAT.app.showLeftBarBrowse = realValue($!siteConfig.uiShowLeftBarBrowse);
 
     window.available_elements = [];
 

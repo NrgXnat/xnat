@@ -9,20 +9,20 @@
     <!-- load polyfills before ANY other JavaScript -->
     <script src="${SITE_ROOT}/scripts/polyfills.js"></script>
 
+    <!-- XNAT global functions (no dependencies) -->
+    <script src="${SITE_ROOT}/scripts/globals.js"></script>
+
     <!-- set global vars that are used often -->
     <script>
 
         var XNAT = XNAT || {};
         var serverRoot = "$content.getURI('')";
         var csrfToken = "$!data.getSession().getAttribute("XNAT_CSRF")";
-        var showReason = typeof $showReason != 'undefined' ? $showReason : null;
-        var requireReason = typeof $requireReason != 'undefined' ? $showReason : null;
+        var showReason = realValue($!showReason) || null;
+        var requireReason = realValue($!requireReason) || null;
 
     </script>
     ## separate script tags so not everything breaks if showReason or requireReason blows up
-
-    <!-- XNAT global functions (no dependencies) -->
-    <script src="${SITE_ROOT}/scripts/globals.js"></script>
 
     <!-- required libraries -->
     <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>

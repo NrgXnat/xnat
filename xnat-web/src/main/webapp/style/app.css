@@ -1284,6 +1284,11 @@ body.xnat .chosen-container {
     margin-bottom: 0;
 }
 
+#login_box [type="submit"],
+#register_box [type="submit"] {
+    font-size: 13px !important;
+}
+
 #login_form,
 #register_form {
     border: 1px solid #ccc;
@@ -1313,7 +1318,8 @@ body.xnat .chosen-container {
 /*max-width: 1200px;*/
 /*}*/
 
-#register_forgot a {
+#register_forgot a,
+#register_forgot span.sep {
     margin-right: 20px;
 }
 

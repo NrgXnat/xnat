@@ -25,9 +25,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.configuration2.SubnodeConfiguration;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
@@ -35,6 +32,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.framework.utilities.IniImporter;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.entities.Preference;
@@ -50,7 +48,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.io.*;
@@ -93,8 +90,10 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     /**
-     * Initializes the preference bean. Bean implementations can provide custom pre- and post-processing of initialization
-     * by overriding the default {@link #preProcessPreferences()} and {@link #postProcessPreferences()} methods respectively.
+     * Initializes the preference bean. Bean implementations can provide custom pre- and post-processing of
+     * initialization
+     * by overriding the default {@link #preProcessPreferences()} and {@link #postProcessPreferences()} methods
+     * respectively.
      *
      * @return A reference to this instance of the preferences bean.
      */
@@ -697,8 +696,10 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
             tool = _preferenceService.getTool(getToolId());
         }
 
+        final String toolId = tool.getToolId();
+
         final Properties initializationProperties = getInitializationProperties();
-        final Properties overrideProperties       = getPreferenceIniProperties("prefs-override.ini");
+        final Properties overrideProperties       = IniImporter.getIniProperties(_configFolderPaths, "prefs-override.ini", toolId);
 
         if (initializationProperties.size() > 0 || overrideProperties.size() > 0) {
             _initFromConfig = true;
@@ -713,11 +714,16 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
                 if (info != null) {
                     // We'll take, in order of precedence, the override value, the initialization value, then the default value.
-                    final boolean hasOverrideValue       = overrideProperties.containsKey(preference);
-                    final String  overrideValue          = hasOverrideValue ? (String) overrideProperties.remove(preference) : null;
-                    final boolean hasInitializationValue = initializationProperties.containsKey(preference);
-                    final String  initializationValue    = hasInitializationValue ? (String) initializationProperties.remove(preference) : null;
-                    final String  defaultValue           = hasOverrideValue ? overrideValue : (hasInitializationValue ? initializationValue : info.getDefaultValue());
+                    final String  overrideValue          = getOverrideValue(overrideProperties, info);
+                    final String  initializationValue    = getOverrideValue(initializationProperties, info);
+                    final boolean hasOverrideValue       = overrideValue != null;
+                    final boolean hasInitializationValue = initializationValue != null;
+
+                    final String defaultValue = hasOverrideValue
+                                                ? overrideValue
+                                                : (hasInitializationValue
+                                                   ? initializationValue
+                                                   : info.getDefaultValue());
 
                     if (_log.isDebugEnabled()) {
                         final String message = hasOverrideValue
@@ -817,6 +823,18 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
+    private String getOverrideValue(final Properties overrideProperties, final PreferenceInfo info) {
+        if (overrideProperties.containsKey(info.getKey())) {
+            return (String) overrideProperties.remove(info.getKey());
+        }
+        for (final String alias : info.getAliases()) {
+            if (overrideProperties.containsKey(alias)) {
+                return (String) overrideProperties.remove(alias);
+            }
+        }
+        return null;
+    }
+
     private String findAliasedPreference(final String property) {
         if (!_aliasedPreferences.keySet().contains(property)) {
             return null;
@@ -849,7 +867,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         final Properties properties = new Properties();
 
         // Add any properties found in the prefs-init.ini file.
-        properties.putAll(getPreferenceIniProperties("prefs-init.ini"));
+        properties.putAll(IniImporter.getIniProperties(_configFolderPaths, "prefs-init.ini", _annotation.toolId()));
 
         // If we found any properties there, then return those.
         if (properties.size() > 0) {
@@ -876,40 +894,6 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
             }
         }
 
-        return properties;
-    }
-
-    @Nonnull
-    private Properties getPreferenceIniProperties(final String iniFileSpec) {
-        final Properties properties = new Properties();
-        final File       iniFile    = _configFolderPaths.findFile(iniFileSpec);
-        if (iniFile != null && iniFile.exists()) {
-            try {
-                // If we find the prefs-init.ini, we'll favor that over tool-specific configurations...
-                final INIConfiguration ini = new INIConfiguration();
-                ini.read(new FileReader(iniFile));
-
-                // So check whether it contains the tool ID...
-                final String toolId = _annotation.toolId();
-                if (ini.getSections().contains(toolId)) {
-                    // If so, we'll use this...
-                    final SubnodeConfiguration section = ini.getSection(toolId);
-                    final Iterator<String>     keys    = section.getKeys();
-                    while (keys.hasNext()) {
-                        final String property = keys.next();
-                        // If this property is actually an alias reference...
-                        if (_aliases.containsKey(property)) {
-                            // Then convert the alias to primary.
-                            properties.setProperty(getPreferenceInfo(property).getProperty(), section.getString(property));
-                        } else {
-                            properties.setProperty(property, section.getString(property));
-                        }
-                    }
-                }
-            } catch (IOException | ConfigurationException e) {
-                _log.error("An error occurred trying to read the ini file " + iniFile.getAbsolutePath(), e);
-            }
-        }
         return properties;
     }
 

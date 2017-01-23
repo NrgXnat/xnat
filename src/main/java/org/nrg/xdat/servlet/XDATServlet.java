@@ -7,12 +7,15 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xdat.servlet;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.text.StrSubstitutor;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.framework.utilities.IniImporter;
+import org.nrg.framework.utilities.PropertiesLookup;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
@@ -49,7 +52,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("serial")
 public class XDATServlet extends HttpServlet {
-    private static final Logger logger = LoggerFactory.getLogger(XDATServlet.class);
+    private static final Logger  logger      = LoggerFactory.getLogger(XDATServlet.class);
     private static final Pattern SQL_PATTERN = Pattern.compile("^.*(\\d\\d\\d).sql$");
 
     private static Boolean _shouldUpdateViews;
@@ -97,8 +100,10 @@ public class XDATServlet extends HttpServlet {
      * Method used to manage auto-updates to the database.  It will only auto update the database, if the auto-update
      * parameter is null or true. It uses a query on the user table to identify if the user table to see if users have been populated.
      *
-     * @param conf    The configuration folder from which to load the SQL scripts.
+     * @param conf The configuration folder from which to load the SQL scripts.
+     *
      * @return Returns true if the database was created or updated, false otherwise.
+     *
      * @throws Exception When an error occurs.
      */
     private boolean updateDatabase(String conf) throws Exception {
@@ -133,7 +138,9 @@ public class XDATServlet extends HttpServlet {
                     _shouldUpdateViews = false;
                     System.out.println("===========================");
                     System.out.println("Database out of date... updating");
-                    for (String s : sql) System.out.println(s);
+                    for (String s : sql) {
+                        System.out.println(s);
+                    }
                     System.out.println("===========================");
                     // changes have been made to the actual db schema, they
                     // should be done before we continue
@@ -192,6 +199,7 @@ public class XDATServlet extends HttpServlet {
      * necessary. The statements to create the tables are passed in via the addStatements method.
      */
     public class DatabaseUpdater extends Thread {
+        public static final String INIT_SQL_PATTERN = "classpath*:META-INF/xnat/**/init_*.sql";
         final String conf;
         final List<String> sql = Lists.newArrayList();
 
@@ -302,13 +310,21 @@ public class XDATServlet extends HttpServlet {
          * @return A list of SQL statements initialized from the SQL scripts.
          */
         private List<String> getInitScripts() {
+            // TODO: Convert IniImporter methods to use BasicXnatResourceLocator.
+            // final Properties properties = IniImporter.getIniProperties(XDAT.getContextService().getBean(ConfigPaths.class), "classpath*:META-INF/xnat/defaults/**/*-init.properties");
+            final Properties properties = IniImporter.getIniProperties(XDAT.getContextService().getBean(ConfigPaths.class), "/META-INF/xnat/defaults/sys-init.properties");
+            final StrSubstitutor substitutor = new StrSubstitutor(new PropertiesLookup(properties), "${", "}", '\\');
+
             final List<String> statements = new ArrayList<>();
             try {
-                for (final Resource resource : filterAndSortInitSqlResources(BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/init_*.sql"))) {
+                final List<Resource> resources = filterAndSortInitSqlResources(BasicXnatResourceLocator.getResources(INIT_SQL_PATTERN));
+                logger.debug("Found {} resources that match the pattern {}", resources.size(), INIT_SQL_PATTERN);
+                for (final Resource resource : resources) {
+                    logger.debug("Now processing the resource {}", resource.getFilename());
                     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()), 1024)) {
                         String statement;
                         while ((statement = reader.readLine()) != null) {
-                            statements.add(statement + (statement.endsWith(";") ? '\n' : ";\n"));
+                            statements.add(substitutor.replace(statement + (statement.endsWith(";") ? '\n' : ";\n")));
                         }
                     }
                 }
@@ -327,7 +343,8 @@ public class XDATServlet extends HttpServlet {
      * Once the resources have been filtered and any non-compliant resources have been removed and logged, the list is
      * sorted based on the resources' ordinal values.
      *
-     * @param resources    The array of resources to be sorted and filtered.
+     * @param resources The array of resources to be sorted and filtered.
+     *
      * @return The list of resources after sorting and filtering.
      */
     private List<Resource> filterAndSortInitSqlResources(final List<Resource> resources) {

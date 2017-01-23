@@ -59,7 +59,7 @@ public class DisplayManager {
      *
      * @return The elements set in the display manager.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Hashtable getElements() {
         return new Hashtable(elements);
     }
@@ -69,7 +69,7 @@ public class DisplayManager {
      *
      * @param elements The elements to set for the display manager.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void setElements(Hashtable elements) {
         this.elements.clear();
         this.elements.putAll(elements);
@@ -112,7 +112,7 @@ public class DisplayManager {
      *
      * @param doc The document to be parsed and processed.
      */
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
+    @SuppressWarnings({"unchecked"})
     public void assignDisplays(Document doc) {
         Element root = doc.getDocumentElement();
 
@@ -487,17 +487,18 @@ public class DisplayManager {
         }
     }
 
-    public void initArcs() throws Exception {
-        Enumeration enumer = elements.keys();
+    @SuppressWarnings("rawtypes")
+	public void initArcs() throws Exception {
+        final Enumeration enumer = elements.keys();
         while (enumer.hasMoreElements()) {
-            String elementName = (String) enumer.nextElement();
-            ElementDisplay ed = elements.get(elementName);
-            Enumeration arcs = ed.getArcs().keys();
+            final String elementName = (String) enumer.nextElement();
+            final ElementDisplay ed = elements.get(elementName);
+            final Enumeration arcs = ed.getArcs().keys();
             while (arcs.hasMoreElements()) {
-                String arcName = (String) arcs.nextElement();
-                ArcDefinition arcDefine = getArcDefinition(arcName);
+                final String arcName = (String) arcs.nextElement();
+                final ArcDefinition arcDefine = getArcDefinition(arcName);
                 if (arcDefine == null) {
-                    throw new Exception("INVALID ARC:" + arcName);
+                    logger.warn("WARNING:  INVALID ARC:" + arcName);
                 } else
                     arcDefine.addMember(elementName);
             }
@@ -889,7 +890,8 @@ public class DisplayManager {
         schemaLinks.add(new Object[]{link.getElement(), link});
     }
 
-    public ArrayList getSchemaLinksFor(String elementName) {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	public ArrayList getSchemaLinksFor(String elementName) {
         ArrayList al = new ArrayList();
         Iterator iter = schemaLinks.iterator();
         while (iter.hasNext()) {

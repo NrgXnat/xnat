@@ -329,7 +329,7 @@ configurations {
 dependencies {
     // NRG dependencies first.
     compile "org.nrg.xnat:spawner:${vXnat}"
-    compile("org.nrg.xnat:xnat-data-models:${vXnat}") {
+    compile("org.nrg.xnat:xnat-data-models:${vXnatDev}") {
         transitive = false
     }
     compile "org.nrg.xdat:core:${vXnatDev}"

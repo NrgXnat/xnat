@@ -13,7 +13,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.2</version>
+    <version>1.7.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -52,16 +52,17 @@
         <!-- xnat.app.name is used as the name for applet manifests to allow all XNAT applets to share dependencies. -->
         <xnat.app.name>XNAT</xnat.app.name>
 
+        <xnatdev.version>1.7.3-SNAPSHOT</xnatdev.version>
         <xnat.version>1.7.2</xnat.version>
-        <xdat.version>${xnat.version}</xdat.version>
+        <xdat.version>${xnatdev.version}</xdat.version>
         <nrg.anonymize.version>${xnat.version}</nrg.anonymize.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
-        <nrg.framework.version>${xnat.version}</nrg.framework.version>
+        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
-        <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
+        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.dicomedit.version>6.0.2</nrg.dicomedit.version>
@@ -85,7 +86,7 @@
         <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
         <activemq.version>5.7.0</activemq.version>
-        <ant.version>1.9.3</ant.version>
+        <ant.version>1.10.0</ant.version>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5.1-1</antlr4.version>
         <hsqldb.version>2.3.4</hsqldb.version>

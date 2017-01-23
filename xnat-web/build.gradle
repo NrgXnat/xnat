@@ -333,9 +333,9 @@ dependencies {
         transitive = false
     }
     compile "org.nrg.xdat:core:${vXnatDev}"
-    compile "org.nrg:framework:${vXnat}"
+    compile "org.nrg:framework:${vXnatDev}"
     compile "org.nrg:transaction:${vXnat}"
-    compile "org.nrg:prefs:${vXnat}"
+    compile "org.nrg:prefs:${vXnatDev}"
     compile "org.nrg:config:${vXnat}"
     compile "org.nrg:automation:${vXnat}"
     compile "org.nrg:dicomtools:${vXnat}"

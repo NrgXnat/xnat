@@ -45,6 +45,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.regex.Pattern;
 
 @Component
 public class XnatAppInfo {
@@ -126,21 +127,43 @@ public class XnatAppInfo {
                         // Migrate to preferences map.
                         _template.query("select arc_archivespecification.site_id, arc_archivespecification.site_admin_email, arc_archivespecification.site_url, arc_archivespecification.smtp_host, arc_archivespecification.require_login, arc_archivespecification.enable_new_registrations, arc_archivespecification.enable_csrf_token, arc_pathinfo.archivepath, arc_pathinfo.prearchivepath, arc_pathinfo.cachepath, arc_pathinfo.buildpath, arc_pathinfo.ftppath, arc_pathinfo.pipelinepath from arc_archivespecification LEFT JOIN arc_pathinfo ON arc_archivespecification.globalpaths_arc_pathinfo_id=arc_pathinfo.arc_pathinfo_id", new RowMapper<Object>() {
                             @Override
-                            public Object mapRow(final ResultSet rs, final int rowNum) throws SQLException {
-                                _foundPreferences.put("siteId", rs.getString("site_id"));
-                                _foundPreferences.put("adminEmail", rs.getString("site_admin_email"));
-                                _foundPreferences.put("siteUrl", rs.getString("site_url"));
-                                _foundPreferences.put("smtp_host", rs.getString("smtp_host"));
-                                _foundPreferences.put("requireLogin", translateIntToBoolean(rs.getString("require_login")));
-                                _foundPreferences.put("userRegistration", translateIntToBoolean(rs.getString("enable_new_registrations")));
-                                _foundPreferences.put("enableCsrfToken", translateIntToBoolean(rs.getString("enable_csrf_token")));
-                                _foundPreferences.put("archivePath", rs.getString("archivepath"));
-                                _foundPreferences.put("prearchivePath", rs.getString("prearchivepath"));
-                                _foundPreferences.put("cachePath", rs.getString("cachepath"));
-                                _foundPreferences.put("buildPath", rs.getString("buildpath"));
-                                _foundPreferences.put("ftpPath", rs.getString("ftppath"));
-                                _foundPreferences.put("pipelinePath", rs.getString("pipelinepath"));
+                            public Object mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
+                                addFoundStringPreference(resultSet, "siteId", "site_id");
+                                addFoundStringPreference(resultSet, "adminEmail", "site_admin_email");
+                                addFoundStringPreference(resultSet, "siteUrl", "site_url");
+                                addFoundStringPreference(resultSet, "smtp_host", "smtp_host");
+                                addFoundStringPreference(resultSet, "archivePath", "archivepath");
+                                addFoundStringPreference(resultSet, "prearchivePath", "prearchivepath");
+                                addFoundStringPreference(resultSet, "cachePath", "cachepath");
+                                addFoundStringPreference(resultSet, "buildPath", "buildpath");
+                                addFoundStringPreference(resultSet, "ftpPath", "ftppath");
+                                addFoundStringPreference(resultSet, "pipelinePath", "pipelinepath");
+                                addFoundBooleanPreference(resultSet, "requireLogin", "require_login");
+                                addFoundBooleanPreference(resultSet, "userRegistration", "enable_new_registrations");
+                                addFoundBooleanPreference(resultSet, "enableCsrfToken", "enable_csrf_token");
                                 return _foundPreferences;
+                            }
+
+                            private void addFoundBooleanPreference(final ResultSet resultSet, final String preference, final String column) throws SQLException {
+                                // Get the value for the column.
+                                final String value = resultSet.getString(column);
+
+                                // If there was no value, ignore this one, but if there was...
+                                if (StringUtils.isNotBlank(value)) {
+                                    // Translate from int or string to boolean
+                                    final String translatedValue = translateToBoolean(value);
+                                    // translateToBoolean returns either "true", "false", or null, no need for empty string check.
+                                    if (translatedValue != null) {
+                                        _foundPreferences.put(preference, translatedValue);
+                                    }
+                                }
+                            }
+
+                            private void addFoundStringPreference(final ResultSet resultSet, final String preference, final String column) throws SQLException {
+                                final String value = resultSet.getString(column);
+                                if (value != null) {
+                                    _foundPreferences.put(preference, value);
+                                }
                             }
                         });
                     }
@@ -180,21 +203,21 @@ public class XnatAppInfo {
                     if (_log.isInfoEnabled()) {
                         _log.info("The site was not flagged as initialized and initialized preference set to false. Setting system for initialization.");
                     }
-                    for (String pref : _foundPreferences.keySet()) {
-                        if (_foundPreferences.get(pref) != null) {
+                    for (final String preference : _foundPreferences.keySet()) {
+                        if (_foundPreferences.get(preference) != null) {
                             _template.update(
                                     "UPDATE xhbm_preference SET value = ? WHERE name = ?",
-                                    new Object[]{_foundPreferences.get(pref), pref}, new int[]{Types.VARCHAR, Types.VARCHAR}
+                                    new Object[]{_foundPreferences.get(preference), preference}, new int[]{Types.VARCHAR, Types.VARCHAR}
                                             );
                             try {
-                                _preferences.set(_foundPreferences.get(pref), pref);
+                                _preferences.set(_foundPreferences.get(preference), preference);
                             } catch (InvalidPreferenceName e) {
                                 _log.error("", e);
                             } catch (NullPointerException e) {
                                 _log.error("Error getting site config preferences.", e);
                             }
                         } else {
-                            _log.warn("Preference " + pref + " was null.");
+                            _log.warn("Preference " + preference + " was null.");
                         }
                     }
                 }
@@ -274,7 +297,7 @@ public class XnatAppInfo {
      *
      * @return The value of the property if found, the specified default value otherwise.
      */
-    public <T> T getConfiguredProperty(final String property, final Class<T> type, final T defaultValue) {
+    public <T> T getConfiguredProperty(final String property, final Class<T> type, @SuppressWarnings("SameParameterValue") final T defaultValue) {
         return _environment.getProperty(property, type, defaultValue);
     }
 
@@ -461,14 +484,14 @@ public class XnatAppInfo {
         return PATH_MATCHER.match(_nonAdminErrorPathPattern, path);
     }
 
-    private String translateIntToBoolean(String oldProperty) {
-        String translation = oldProperty;
-        if (oldProperty.equals("0")) {
-            translation = "false";
-        } else if (oldProperty.equals("1")) {
-            translation = "true";
+    private String translateToBoolean(final String currentValue) {
+        if (currentValue == null) {
+            return null;
         }
-        return translation;
+        if (CHECK_VALID_PATTERN.matcher(currentValue).matches()) {
+            return null;
+        }
+        return Boolean.toString(CHECK_TRUE_PATTERN.matcher(currentValue).matches());
     }
 
     private Collection<? extends String> asAntPatterns(final List<String> urls) {
@@ -530,6 +553,8 @@ public class XnatAppInfo {
     private static final String           HOURS                       = "hours";
     private static final String           MINUTES                     = "minutes";
     private static final String           SECONDS                     = "seconds";
+    private static final Pattern          CHECK_VALID_PATTERN         = Pattern.compile("^(?i)(0|1|false|true|f|t)$");
+    private static final Pattern          CHECK_TRUE_PATTERN          = Pattern.compile("^(?i)(1|true|t)$");
 
     private final JdbcTemplate          _template;
     private final Environment           _environment;

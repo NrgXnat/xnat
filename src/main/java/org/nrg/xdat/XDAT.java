@@ -24,6 +24,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.services.ContextService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
@@ -49,9 +50,9 @@ import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -86,7 +87,9 @@ public class XDAT implements Initializable, Configurable{
     public static final String IP_WHITELIST_TOOL = "ipWhitelist";
     public static final String IP_WHITELIST_PATH = "/system/ipWhitelist";
 
-    private static final Logger logger = Logger.getLogger(XDAT.class);
+	private static final Logger logger                    = Logger.getLogger(XDAT.class);
+	private static final String ELEMENT_NOT_FOUND_MESSAGE = "Element not found: %s. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+
 	private static ContextService _contextService;
     private static DataSource _dataSource;
 	private static MailService _mailService;
@@ -310,27 +313,36 @@ public class XDAT implements Initializable, Configurable{
 
 		XFT.init(_configFilesLocation);
 
-		Long user_count;
-		try {
-			user_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
-		} catch (Throwable e) {
-			// xdat_user table doesn't exist
-			user_count = null;
-		}
-
-		if (allowDBAccess && user_count!=null)
-		{
+		if (allowDBAccess && hasUsers()) {
 			try {
-                for (ElementSecurity es : ElementSecurity.GetQuarantinedElements()) {
-	                GenericWrapperElement.GetElement(es.getElementName()).setQuarantineSetting(es.getBooleanProperty(ViewManager.QUARANTINE,false));
-                }
+				for (final ElementSecurity security : ElementSecurity.GetQuarantinedElements()) {
+					try {
+						final GenericWrapperElement element = GenericWrapperElement.GetElement(security.getElementName());
+						if (element != null) {
+							element.setQuarantineSetting(security.getBooleanProperty(ViewManager.QUARANTINE, false));
+						} else {
+							throw new ElementNotFoundException(security.getElementName());
+						}
+					} catch (ElementNotFoundException e) {
+						logger.error(getElementNotFoundMessage(e));
+					}
+				}
 
-                for (ElementSecurity es : ElementSecurity.GetPreLoadElements()) {
-                    GenericWrapperElement.GetElement(es.getElementName()).setPreLoad(es.getBooleanProperty("pre_load", false));
-                }
-	        } catch (Exception e) {
-	            logger.error("",e);
-	        }
+				for (final ElementSecurity security : ElementSecurity.GetPreLoadElements()) {
+					try {
+						final GenericWrapperElement element = GenericWrapperElement.GetElement(security.getElementName());
+						if (element != null) {
+							element.setPreLoad(security.getBooleanProperty("pre_load", false));
+						} else {
+							throw new ElementNotFoundException(security.getElementName());
+						}
+					} catch (ElementNotFoundException e) {
+						logger.error(getElementNotFoundMessage(e));
+					}
+				}
+			} catch (Exception e) {
+				logger.error("", e);
+			}
 		}
 
 		logger.info("Initializing Display Manager");
@@ -821,7 +833,20 @@ public class XDAT implements Initializable, Configurable{
         jmsTemplate.convertAndSend(destination, request);
 	}
 
-    private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(UserI user) throws ConfigServiceException {
+	public static String getElementNotFoundMessage(final ElementNotFoundException e) {
+		return String.format(ELEMENT_NOT_FOUND_MESSAGE, e.ELEMENT);
+	}
+
+	private static boolean hasUsers() {
+		try {
+			return (new DatabaseHelper(XDAT.getContextService().getBean(DataSource.class))).tableExists("xdat_user");
+		} catch (Throwable e) {
+			// xdat_user table doesn't exist
+			return false;
+		}
+	}
+
+	private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(UserI user) throws ConfigServiceException {
         String username = user.getUsername();
         String reason = Roles.isSiteAdmin(user) ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
         return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));

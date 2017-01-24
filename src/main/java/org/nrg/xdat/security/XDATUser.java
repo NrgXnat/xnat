@@ -539,7 +539,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     }
                 }
             } catch (ElementNotFoundException e) {
-                logger.error("Couldn't find the schema element specified by " + e.ELEMENT, e);
+                logger.error(XDAT.getElementNotFoundMessage(e));
             } catch (XFTInitException e) {
                 logger.error("There was an error initializing XFT", e);
             } catch (Exception e) {
@@ -1291,10 +1291,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                         }
                     }
                 } else {
-                    logger.warn("Couldn't find the schema element for security element " + es.getElementName());
+                    throw new ElementNotFoundException(es.getElementName());
                 }
             } catch (ElementNotFoundException e) {
-                logger.error("Couldn't find the schema element for " + e.ELEMENT, e);
+                logger.error(XDAT.getElementNotFoundMessage(e));
             }
         }
 
@@ -1305,7 +1305,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     hash.put(es.getElementName(), schemaElement.getDisplay());
                 }
             } catch (ElementNotFoundException e) {
-                logger.error("Couldn't find the schema element for " + e.ELEMENT, e);
+                logger.error(XDAT.getElementNotFoundMessage(e));
             }
         }
 

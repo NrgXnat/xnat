@@ -86,7 +86,7 @@
         <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
         <activemq.version>5.7.0</activemq.version>
-        <ant.version>1.10.0</ant.version>
+        <ant.version>1.9.8</ant.version>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5.1-1</antlr4.version>
         <hsqldb.version>2.3.4</hsqldb.version>

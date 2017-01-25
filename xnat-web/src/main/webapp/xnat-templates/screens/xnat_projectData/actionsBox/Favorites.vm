@@ -34,30 +34,11 @@
             e.preventDefault();
 
             function quickMsg( text ){
-                xmodal.alert({
-                    width: 300,
-                    height: 75,
-                    padding: 10,
-                    top: '25%',
-                    scroll: false,
-                    //title: ' ',
-                    //closeBtn: true,
-                    content:   '<div class="success"><b>' + text + '</b></div>',
-                    footer: false,
-                    afterShow: function( obj ){
-                        // close after 2 seconds if no interraction from user
-                        setTimeout(function(){
-                            try {
-                                xmodal.close(obj.__modal, 200);
-                            }
-                            catch (e) {}
-                        }, 2000)
-                    }
-                });
+                XNAT.ui.banner.top(2000, text, 'success')
             }
 
             var method,
-                url = XNAT.url.restUrl('/data/users/favorites/Project/$project.getId()'),
+                url = XNAT.url.csrfUrl('/data/users/favorites/Project/$project.getId()'),
                 callback = {
                     error: function(){
                         xmodal.message('Error', 'An error occurred changing favorite status.')

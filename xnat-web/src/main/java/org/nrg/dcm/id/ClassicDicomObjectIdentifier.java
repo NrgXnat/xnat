@@ -34,4 +34,8 @@ public class ClassicDicomObjectIdentifier extends CompositeDicomObjectIdentifier
     public ClassicDicomObjectIdentifier() {
         super(new Xnat15DicomProjectIdentifier(), subjectExtractors, sessionExtractors, attributeExtractors);
     }
+
+    public static List<Extractor> getAAExtractors() { return attributeExtractors; }
+    public static List<Extractor> getSessionExtractors() { return sessionExtractors; }
+    public static List<Extractor> getSubjectExtractors() { return subjectExtractors; }
 }

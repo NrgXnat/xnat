@@ -125,7 +125,12 @@ $(function(){
                 }
             },
             error: function( request, status, error ){
-                xmodal.message('Error', 'An error occurred retrieving event handlers for this project: [' + status + '] ' + error);
+                if ($("#err_event_handlers").length<1) {
+                    $("#events_list").prepend('<p id="err_event_handlers" style="padding:20px;">' +
+                        'An error occurred retrieving event handlers for this project: [' + status + '] ' + error +  
+                        '.  This may mean that your account does not have permission to edit event handlers for this project.</p>').show();
+                   $("#manage_event_handlers").prop('disabled', true);
+                }
             },
             complete: function(){
                 //$('#accordion').accordion('refresh');

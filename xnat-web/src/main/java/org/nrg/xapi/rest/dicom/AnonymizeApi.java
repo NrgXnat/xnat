@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.xapi.exceptions.NoContentException;
 import org.nrg.xapi.rest.AbstractXapiProjectRestController;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -101,7 +102,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @RequestMapping(value = "projects/{projectId}", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<String> getProjectAnonScript(@PathVariable("projectId") final String projectId) throws NrgServiceException {
+    public ResponseEntity<String> getProjectAnonScript(@PathVariable("projectId") final String projectId) throws NrgServiceException, NoContentException {
         final HttpStatus status;
         try {
             status = canReadProject(projectId);
@@ -112,11 +113,10 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
             return new ResponseEntity<>(status);
         }
         final String script = _anonUtils.getProjectScript(projectId);
-        if (StringUtils.isNotBlank(script)) {
-            return new ResponseEntity<>(script, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        if (StringUtils.isBlank(script)) {
+            throw new NoContentException("There's no anonymization script associated with the project " + projectId);
         }
+        return new ResponseEntity<>(script, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Sets the project-specific anonymization script.", response = Void.class)

@@ -15,6 +15,8 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xapi.model.investigators.Investigator;
+import org.nrg.xapi.model.investigators.InvestigatorService;
 import org.nrg.xdat.om.XnatInvestigatordata;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.helpers.Roles;

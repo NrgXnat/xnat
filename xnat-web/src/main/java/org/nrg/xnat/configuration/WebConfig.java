@@ -20,6 +20,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -30,10 +32,7 @@ import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
@@ -69,6 +68,17 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     @Override
     public void configurePathMatch(final PathMatchConfigurer matcher) {
         matcher.setUseRegisteredSuffixPatternMatch(true);
+    }
+
+    @Override
+    public void configureAsyncSupport(final AsyncSupportConfigurer configurer) {
+        configurer.setDefaultTimeout(-1);
+        configurer.setTaskExecutor(asyncTaskExecutor());
+    }
+
+    @Bean
+    public AsyncTaskExecutor asyncTaskExecutor() {
+        return new SimpleAsyncTaskExecutor("async");
     }
 
     @Bean

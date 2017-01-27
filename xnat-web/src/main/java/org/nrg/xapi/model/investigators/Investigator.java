@@ -1,5 +1,5 @@
 /*
- * web: org.nrg.xapi.rest.data.Investigator
+ * web: org.nrg.xapi.model.investigators.Investigator
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
@@ -7,7 +7,7 @@
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xapi.rest.data;
+package org.nrg.xapi.model.investigators;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.nrg.xdat.bean.XnatInvestigatordataBean;

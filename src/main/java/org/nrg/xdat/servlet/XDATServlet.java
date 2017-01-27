@@ -242,7 +242,7 @@ public class XDATServlet extends HttpServlet {
                 if (conf != null) {
                     //create the views defined in the display documents
                     logger.info("Initializing database views...");
-                    transaction.execute(DisplayManager.GetCreateViewsSQL().get(0));
+                    transaction.execute(DisplayManager.GetCreateViewsSQL());
                 }
 
                 transaction.execute(runAfter);

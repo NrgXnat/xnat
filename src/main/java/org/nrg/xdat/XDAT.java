@@ -376,7 +376,7 @@ public class XDAT implements Initializable, Configurable{
 		buffer.append("SELECT removeViews();\n--BR\n");
 
 		buffer.append("\n\n-- ADDED VIEWS FOR DISPLAY DOCS\n\n");
-	    for (Object item : DisplayManager.GetCreateViewsSQL().get(0))
+	    for (Object item : DisplayManager.GetCreateViewsSQL())
 	    {
 	        buffer.append(item).append("\n--BR\n");
 	    }
@@ -401,7 +401,7 @@ public class XDAT implements Initializable, Configurable{
 	        buffer.append(item).append("\n--BR\n");
 	    }
 		buffer.append("\n\n-- ADDED VIEWS FOR DISPLAY DOCS\n\n");
-	    for (Object item : DisplayManager.GetCreateViewsSQL().get(0))
+	    for (Object item : DisplayManager.GetCreateViewsSQL())
 	    {
 	        buffer.append(item).append("\n--BR\n");
 	    }
@@ -420,7 +420,7 @@ public class XDAT implements Initializable, Configurable{
 
         sql.addAll(SQLCreateGenerator.GetSQLCreate(true));
 
-        sql.addAll(DisplayManager.GetCreateViewsSQL().get(0));
+        sql.addAll(DisplayManager.GetCreateViewsSQL());
 
         return sql;
 	}

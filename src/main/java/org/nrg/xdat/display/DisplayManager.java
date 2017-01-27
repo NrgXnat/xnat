@@ -505,10 +505,8 @@ public class DisplayManager {
         }
     }
 
-    public static List<List<String>> GetCreateViewsSQL() {
+    public static List<String> GetCreateViewsSQL() {
         final List<String> views = new ArrayList<>();
-        final List<String> drops = new ArrayList<>();
-        final List<List<String>> viewsAndDrops = new ArrayList<>();
 
         views.add("GRANT ALL ON TABLE xdat_search.xs_item_access TO public;");
 
@@ -545,7 +543,6 @@ public class DisplayManager {
             for (final Object o : ed.getSortedViews()) {
                 SQLView view = (SQLView) o;
                 views.add("--DEFINED VIEW\nCREATE OR REPLACE VIEW " + view.getName() + " AS " + view.getSql() + ";\n\n");
-                drops.add("DROP VIEW " + view.getName() + " CASCADE;");
             }
 
             try {
@@ -565,7 +562,6 @@ public class DisplayManager {
                     if (!createdAlias.contains(viewName)) {
                         createdAlias.add(viewName);
                         views.add("--DISPLAY LINK\nCREATE OR REPLACE VIEW " + viewName + " AS " + query + ";\n\n");
-                        drops.add("DROP VIEW " + viewName + " CASCADE;");
                     }
                 } catch (Exception e1) {
                     logger.error("Error in Display Document for '" + root.getFullXMLName() + "'.\n" + e1.getMessage());
@@ -736,9 +732,7 @@ public class DisplayManager {
                 "\n	RETURN; " +
                 "\nEND;'" +
                 "\n   LANGUAGE 'plpgsql' VOLATILE;");
-        viewsAndDrops.add(views);
-        viewsAndDrops.add(drops);
-        return viewsAndDrops;
+        return views;
     }
 
     public static String GetArcDefinitionQuery(ArcDefinition arcD, SchemaElement root, SchemaElement foreign, UserI user) throws Exception {

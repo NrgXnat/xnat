@@ -58,6 +58,12 @@ public class DatabaseConfig {
     public JdbcTemplate jdbcTemplate(final DataSource dataSource) throws NrgServiceException {
         return new JdbcTemplate(dataSource);
     }
+    
+    @Bean(name="dbUsername")
+    public String dbUsername(final Environment environment) throws NrgServiceException {
+        final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
+        return properties.getProperty("username");
+    }
 
     private static Properties setDefaultDatasourceProperties(final Properties properties) {
         // Configure some defaults if they're not already set.

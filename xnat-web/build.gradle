@@ -467,7 +467,7 @@ dependencies {
 
     runtime "org.nrg.xnatx.plugins:ximgview-plugin:${vXImgView}"
     runtime "org.apache.activemq:activemq-core:5.7.0"
-    runtime "ant:ant:1.6.5"
+    runtime "org.apache.ant:ant:1.9.8"
     runtime "axis:axis-ant:1.4"
     runtime "axis:axis-schema:1.3"
     runtime "cglib:cglib:3.2.0"

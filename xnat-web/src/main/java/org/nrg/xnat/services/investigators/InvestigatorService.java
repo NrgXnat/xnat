@@ -1,5 +1,5 @@
 /*
- * web: org.nrg.xapi.model.investigators.InvestigatorService
+ * web: org.nrg.xnat.services.investigators.InvestigatorService
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
@@ -7,8 +7,9 @@
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xapi.model.investigators;
+package org.nrg.xnat.services.investigators;
 
+import org.nrg.xapi.model.investigators.Investigator;
 import org.nrg.xdat.model.XnatInvestigatordataI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;

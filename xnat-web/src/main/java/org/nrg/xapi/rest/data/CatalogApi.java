@@ -22,12 +22,11 @@ import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.services.archive.CatalogService;
+import org.nrg.xnat.web.http.ZipStreamingResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,14 +36,12 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.*;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.CRC32;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 @Api(description = "XNAT Archive and Resource Management API")
 @XapiRestController
 @RequestMapping(value = "/archive")
 public class CatalogApi extends AbstractXapiRestController {
+
     @Autowired
     public CatalogApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final CatalogService service) {
         super(userManagementService, roleHolder);
@@ -117,7 +114,7 @@ public class CatalogApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
                    @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @RequestMapping(value = "download/{catalogId}", produces = "application/zip", method = RequestMethod.POST)
+    @RequestMapping(value = "download/{catalogId}", produces = ZipStreamingResponseBody.MEDIA_TYPE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalog(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, IOException {
         final UserI user = getSessionUser();
@@ -129,55 +126,9 @@ public class CatalogApi extends AbstractXapiRestController {
         _log.info("User {} requested download of the catalog {}", user.getLogin(), catalogId);
 
         return ResponseEntity.ok()
-                             .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                             .header("Content-disposition", "attachment; filename=\"" + user.getLogin() + "-" + catalogId + ".zip\"")
+                             .header("Content-Type", ZipStreamingResponseBody.MEDIA_TYPE)
+                             .header("Content-Disposition", "attachment; filename=\"" + user.getLogin() + "-" + catalogId + ".zip\"")
                              .body((StreamingResponseBody) new ZipStreamingResponseBody(_service.getResourcesForCatalog(user, catalogId)));
-
-    }
-
-    private static final class ZipStreamingResponseBody implements StreamingResponseBody {
-        ZipStreamingResponseBody(final Map<String, Resource> resources) {
-            _resources = resources;
-        }
-
-        @Override
-        public void writeTo(final OutputStream output) throws IOException {
-            try (final ZipOutputStream zip = new ZipOutputStream(output)) {
-                for (final String path : _resources.keySet()) {
-                    final Resource resource = _resources.get(path);
-                    final ZipEntry entry = new ZipEntry(path);
-                    final File file = resource.getFile();
-                    entry.setSize(file.length());
-                    entry.setCrc(getCrc(file));
-                    entry.setTime(file.lastModified());
-
-                    zip.putNextEntry(entry);
-                    try (final InputStream input = new FileInputStream(file)) {
-                        int len;
-                        while ((len = input.read(_buffer)) > 0) {
-                            zip.write(_buffer, 0, len);
-                        }
-                    }
-                    zip.closeEntry();
-                }
-            }
-            output.flush();
-        }
-
-        public static long getCrc(final File file) throws IOException {
-            final CRC32 crc = new CRC32();
-            try (final InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
-                int count;
-                while ((count = inputStream.read()) != -1) {
-                    crc.update(count);
-                }
-            }
-            return crc.getValue();
-        }
-
-        private final Map<String, Resource> _resources;
-        private final byte[] _buffer = new byte[FileUtils.LARGE_DOWNLOAD];
-
     }
 
     private static final Logger _log = LoggerFactory.getLogger(CatalogApi.class);

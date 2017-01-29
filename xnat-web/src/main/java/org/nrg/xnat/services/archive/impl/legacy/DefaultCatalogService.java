@@ -67,7 +67,7 @@ public class DefaultCatalogService implements CatalogService {
         for (final String session : sessions) {
             final CatCatalogBean sessionCatalog = new CatCatalogBean();
             sessionCatalog.setId(session);
-            catalog.addEntries_entry(sessionCatalog);
+            catalog.addSets_entryset(sessionCatalog);
         }
         return catalog;
     }
@@ -76,7 +76,7 @@ public class DefaultCatalogService implements CatalogService {
     public Map<String, Resource> getResourcesForCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException {
         final Path parent = BasicXnatResourceLocator.getResource("classpath:testdata").getFile().toPath();
         final Map<String, Resource> resources = Maps.newHashMap();
-        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:test-data/**/*.dcm")) {
+        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:testdata/**/*.dcm")) {
             resources.put(parent.relativize(resource.getFile().toPath()).toString(), resource);
         }
         return resources;

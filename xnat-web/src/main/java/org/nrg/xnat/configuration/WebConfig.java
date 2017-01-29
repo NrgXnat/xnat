@@ -12,6 +12,8 @@ package org.nrg.xnat.configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.web.converters.XftBeanHttpMessageConverter;
+import org.nrg.xnat.web.converters.XftObjectHttpMessageConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,10 +61,12 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override
     public void configureMessageConverters(final List<HttpMessageConverter<?>> converters) {
-        converters.add(mappingJackson2HttpMessageConverter());
-        converters.add(marshallingHttpMessageConverter());
-        converters.add(stringHttpMessageConverter());
-        converters.add(resourceHttpMessageConverter());
+        converters.add(new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build()));
+        converters.add(new MarshallingHttpMessageConverter(_marshaller, _marshaller));
+        converters.add(new StringHttpMessageConverter());
+        converters.add(new ResourceHttpMessageConverter());
+        converters.add(new XftBeanHttpMessageConverter());
+        converters.add(new XftObjectHttpMessageConverter());
     }
 
     @Override
@@ -79,26 +83,6 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     @Bean
     public AsyncTaskExecutor asyncTaskExecutor() {
         return new SimpleAsyncTaskExecutor("async");
-    }
-
-    @Bean
-    public HttpMessageConverter<?> mappingJackson2HttpMessageConverter() {
-        return new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build());
-    }
-
-    @Bean
-    public HttpMessageConverter<?> marshallingHttpMessageConverter() {
-        return new MarshallingHttpMessageConverter(_marshaller, _marshaller);
-    }
-
-    @Bean
-    public HttpMessageConverter<?> stringHttpMessageConverter() {
-        return new StringHttpMessageConverter();
-    }
-
-    @Bean
-    public HttpMessageConverter<?> resourceHttpMessageConverter() {
-        return new ResourceHttpMessageConverter();
     }
 
     @Bean

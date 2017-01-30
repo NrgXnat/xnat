@@ -9,7 +9,9 @@
 
 package org.nrg.xnat.preferences;
 
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -28,8 +30,8 @@ public class AutomationPreferences extends EventTriggeringAbstractPreferenceBean
     public static final String AUTOMATION_TOOL_ID = "automation";
 
     @Autowired
-    public AutomationPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
-        super(preferenceService, eventService);
+    public AutomationPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+        super(preferenceService, eventService, configFolderPaths, initPrefs);
     }
 
     @NrgPreference(defaultValue = "true")

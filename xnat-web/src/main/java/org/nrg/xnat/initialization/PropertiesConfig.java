@@ -13,6 +13,9 @@ import com.google.common.base.Joiner;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
+import org.nrg.framework.utilities.IniImporter;
+import org.nrg.framework.utilities.OrderedProperties;
+import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -106,7 +109,19 @@ public class PropertiesConfig {
         }
         return _configFolderLocations;
     }
-    
+
+    @Bean
+    public OrderedProperties initPrefs(final ConfigPaths configFolderPaths) {
+        // Initialize from the system defaults.
+        final OrderedProperties initPrefs = new OrderedProperties(IniImporter.getIniProperties("/META-INF/xnat/defaults/sys-init.properties"));
+
+        // Now try to get any override properties that are configured.
+        initPrefs.addProperties("prefs-init", IniImporter.getIniProperties(configFolderPaths, "prefs-init.ini"));
+        initPrefs.addProperties("prefs-override", IniImporter.getIniProperties(configFolderPaths, "prefs-override.ini"));
+
+        return initPrefs;
+    }
+
     @Bean
     public ConfigPaths configFolderPaths(final Environment environment) {
         if (_configFolderPaths.size() == 0) {

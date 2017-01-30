@@ -17,6 +17,7 @@ import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
@@ -47,8 +48,8 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     private static final String FORGOT_PASSWORD_EMAIL = "Dear USER_FIRSTNAME USER_LASTNAME,\nPlease click this link to reset your password: RESET_URL <br/>\r\nThis link will expire in 24 hours.";
 
     @Autowired
-    public NotificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
-        super(preferenceService, eventService, configFolderPaths);
+    public NotificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+        super(preferenceService, eventService, configFolderPaths, initPrefs);
     }
 
     /**

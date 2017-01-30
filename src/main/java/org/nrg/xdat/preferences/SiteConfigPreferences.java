@@ -20,6 +20,7 @@ import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
@@ -68,8 +69,8 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
     @Autowired
-    public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
-        super(preferenceService, eventService, configFolderPaths);
+    public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+        super(preferenceService, eventService, configFolderPaths, initPrefs);
     }
 
     @NrgPreference(defaultValue = "false")

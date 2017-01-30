@@ -11,17 +11,15 @@ package org.nrg.xdat.preferences;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.services.NrgPreferenceService;
-
-import java.nio.file.Path;
-import java.util.List;
-import org.nrg.framework.configuration.ConfigPaths;
 
 public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPreferenceBean {
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
@@ -30,6 +28,11 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
 
     protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
         super(preferenceService,configFolderPaths);
+        _eventService = eventService;
+    }
+
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+        super(preferenceService,configFolderPaths, initPrefs);
         _eventService = eventService;
     }
 

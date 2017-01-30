@@ -13,10 +13,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.nrg.framework.configuration.ConfigPaths;
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
-import org.nrg.framework.utilities.IniImporter;
-import org.nrg.framework.utilities.PropertiesLookup;
-import org.nrg.framework.utilities.Reflection;
+import org.nrg.framework.utilities.*;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.ElementSecurity;
@@ -310,9 +307,8 @@ public class XDATServlet extends HttpServlet {
          * @return A list of SQL statements initialized from the SQL scripts.
          */
         private List<String> getInitScripts() {
-            // TODO: Convert IniImporter methods to use BasicXnatResourceLocator.
-            // final Properties properties = IniImporter.getIniProperties(XDAT.getContextService().getBean(ConfigPaths.class), "classpath*:META-INF/xnat/defaults/**/*-init.properties");
-            final Properties properties = IniImporter.getIniProperties(XDAT.getContextService().getBean(ConfigPaths.class), "/META-INF/xnat/defaults/sys-init.properties");
+            // Get the init prefs ordered properties from context and create a substitutor.
+            final OrderedProperties properties = XDAT.getContextService().getBeanSafely("initPrefs", OrderedProperties.class);
             final StrSubstitutor substitutor = new StrSubstitutor(new PropertiesLookup(properties), "${", "}", '\\');
 
             final List<String> statements = new ArrayList<>();

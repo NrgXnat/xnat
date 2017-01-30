@@ -63,6 +63,6 @@ public class TestXdatUserAuthServiceConfig {
 
     @Bean
     public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService) {
-        return new SiteConfigPreferences(preferenceService, eventService, null);
+        return new SiteConfigPreferences(preferenceService, eventService, null, null);
     }
 }

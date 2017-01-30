@@ -32,7 +32,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
-import org.nrg.framework.utilities.IniImporter;
+import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.entities.Preference;
@@ -77,8 +77,22 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
      * @param configFolderPaths The configuration folder paths to search for initialization properties.
      */
     protected AbstractPreferenceBean(final NrgPreferenceService preferenceService, final ConfigPaths configFolderPaths) {
+        this(preferenceService, configFolderPaths, null);
+    }
+
+    /**
+     * Initializes default preferences for the bean and sets the preference service to be used for managing system
+     * preferences, as well as the configuration folder paths to be used when attempting to locate initialization
+     * properties.
+     *
+     * @param preferenceService The preference service to use for managing preference values.
+     * @param configFolderPaths The configuration folder paths to search for initialization properties.
+     * @param initPrefs         The ordered properties to consider when initializing bean values.
+     */
+    protected AbstractPreferenceBean(final NrgPreferenceService preferenceService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         _preferenceService = preferenceService;
         _configFolderPaths = configFolderPaths == null ? new ConfigPaths() : configFolderPaths;
+        _initPrefs = initPrefs == null ? new OrderedProperties() : initPrefs;
         _preferences.putAll(PreferenceBeanHelper.getPreferenceInfoMap(getClass()));
         PreferenceBeanHelper.getAliases(_preferences.values(), _aliases, _aliasedPreferences);
     }
@@ -696,12 +710,12 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
             tool = _preferenceService.getTool(getToolId());
         }
 
-        final String toolId = tool.getToolId();
-
+        final String     toolId                   = tool.getToolId();
         final Properties initializationProperties = getInitializationProperties();
-        final Properties overrideProperties       = IniImporter.getIniProperties(_configFolderPaths, "prefs-override.ini", toolId);
+        initializationProperties.putAll(resolvePreferenceAliases(_initPrefs.getPropertiesForNamespace(toolId)));
+        final Properties overrideProperties = _initPrefs.getProperties("prefs-override");
 
-        if (initializationProperties.size() > 0 || overrideProperties.size() > 0) {
+        if (_initPrefs.getProperties("prefs-init").size() > 0 || overrideProperties.size() > 0) {
             _initFromConfig = true;
         }
 
@@ -824,8 +838,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     private String getOverrideValue(final Properties overrideProperties, final PreferenceInfo info) {
-        if (overrideProperties.containsKey(info.getKey())) {
-            return (String) overrideProperties.remove(info.getKey());
+        if (overrideProperties.containsKey(info.getName())) {
+            return (String) overrideProperties.remove(info.getName());
         }
         for (final String alias : info.getAliases()) {
             if (overrideProperties.containsKey(alias)) {
@@ -866,27 +880,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         // Create the properties object.
         final Properties properties = new Properties();
 
-        // Add any properties found in the prefs-init.ini file.
-        properties.putAll(IniImporter.getIniProperties(_configFolderPaths, "prefs-init.ini", _annotation.toolId()));
-
-        // If we found any properties there, then return those.
-        if (properties.size() > 0) {
-            return properties;
-        }
-
-        // If we didn't find the prefs-init.ini or, if we did but it didn't contain a section for the current prefs
-        // tools, fall back to looking for the tool-specific properties file.
+        // Check for the tool-specific properties file.
         final String propertiesFile = StringUtils.isNotBlank(_annotation.properties()) ? _annotation.properties() : propertize(getClass().getName());
         final File   file           = _configFolderPaths.findFile(propertiesFile);
         if (file != null && file.exists() && file.isFile()) {
             try (final InputStream input = new FileInputStream(file)) {
                 properties.load(input);
-                for (final String property : properties.stringPropertyNames()) {
-                    if (_aliases.containsKey(property)) {
-                        properties.setProperty(getPreferenceInfo(property).getProperty(), properties.getProperty(property));
-                        properties.remove(property);
-                    }
-                }
+                return resolvePreferenceAliases(properties);
             } catch (FileNotFoundException ignored) {
                 // Nothing to do here: we've already checked that the file exists.
             } catch (IOException e) {
@@ -894,6 +894,16 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
             }
         }
 
+        return properties;
+    }
+
+    private Properties resolvePreferenceAliases(final Properties properties) {
+        for (final String property : properties.stringPropertyNames()) {
+            if (_aliases.containsKey(property)) {
+                properties.setProperty(getPreferenceInfo(property).getProperty(), properties.getProperty(property));
+                properties.remove(property);
+            }
+        }
         return properties;
     }
 
@@ -1012,6 +1022,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     private       NrgPreferenceService _preferenceService;
     private final ConfigPaths          _configFolderPaths;
+    private final OrderedProperties    _initPrefs;
 
     private final Map<String, PreferenceInfo> _preferences        = new HashMap<>();
     private final Map<String, Object>         _preferenceMap      = new HashMap<>();

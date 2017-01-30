@@ -19,17 +19,22 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import com.google.common.collect.Lists;
+
 import java.sql.SQLException;
+import java.util.List;
 
 @Component
 public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
     @Autowired
-    public CreateOrUpdateDatabaseViews(final XnatAppInfo appInfo, final JdbcTemplate template) {
+    public CreateOrUpdateDatabaseViews(final XnatAppInfo appInfo, final JdbcTemplate template, @Qualifier("dbUsername") String dbUsername) {
         _appInfo = appInfo;
         _helper = new DatabaseHelper(template);
+        _dbUsername = dbUsername;
     }
 
     @Override
@@ -66,10 +71,15 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
                 //create the views defined in the display documents
                 _log.info("Initializing database views...");
                 try {
-                    transaction.execute(DisplayManager.GetCreateViewsSQL().get(0));
+                    transaction.execute(DisplayManager.GetCreateViewsSQL());
+                	_log.info("View initialization complete.");
                 } catch (Exception e) {
-                    transaction.execute(DisplayManager.GetCreateViewsSQL().get(1));//drop all
-                    transaction.execute(DisplayManager.GetCreateViewsSQL().get(0));//then try to create all
+                	_log.info("View initialization threw exception (" + e.toString() + ").  We'll drop views and rebuild them.");
+                    transaction.rollback();
+                    transaction.execute(getViewDropSql(_dbUsername));//drop all
+                	_log.info("Drop views step complete.  Begin rebuilding views.");
+                    transaction.execute(DisplayManager.GetCreateViewsSQL());//then try to create all
+                	_log.info("View rebuild complete.");
                 }
                 try {
                     transaction.commit();
@@ -84,9 +94,54 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
             }
         }
     }
+    
+    private List<String> getViewDropSql(String user) {
+    	final List<String> dropSql = Lists.newArrayList();  
+    	dropSql.add(
+    	"CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
+    	  "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
+    	"BEGIN " +
+    	  "RETURN QUERY " +
+    	  "SELECT " +
+    	    "n.nspname AS table_schema, " +
+    	    "c.relname AS view_name " +
+    	  "FROM pg_catalog.pg_class c " +
+    	    "LEFT JOIN pg_catalog.pg_namespace n " +
+    	      "ON (n.oid = c.relnamespace) " +
+    	  "WHERE c.relkind = 'v' " +
+    	        "AND c.relowner = (SELECT usesysid " +
+    	                          "FROM pg_catalog.pg_user " +
+    	                          "WHERE usename = $1); " +
+    	"END$$ LANGUAGE plpgsql;");
+    	dropSql.add(
+    	"CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
+    	  "RETURNS INTEGER AS $$ " +
+    	"DECLARE " +
+    	  "r RECORD; " +
+    	  "s TEXT; " +
+    	  "c INTEGER := 0; " +
+    	"BEGIN " +
+    	  "RAISE NOTICE 'Dropping views for user %', $1; " +
+    	  "FOR r IN " +
+    	    "SELECT * FROM find_user_views($1) " +
+    	  "LOOP " +
+    	    "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
+    	    "EXECUTE s; " +
+    	    "c := c + 1; " +
+    	    "RAISE NOTICE 's = % ', S; " +
+    	  "END LOOP; " +
+    	  "RETURN c; " +
+    	"END$$ LANGUAGE plpgsql;"
+    	);
+    	dropSql.add(
+    	"SELECT drop_user_views('" + user + "');"
+    	);
+    	return dropSql;
+    }
 
     private static final Logger _log = LoggerFactory.getLogger(CreateOrUpdateDatabaseViews.class);
 
     private final XnatAppInfo    _appInfo;
     private final DatabaseHelper _helper;
+    private final String _dbUsername;
 }

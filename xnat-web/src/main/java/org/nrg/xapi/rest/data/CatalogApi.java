@@ -82,7 +82,8 @@ public class CatalogApi extends AbstractXapiRestController {
                   notes = "The map submitted to this call supports lists of object IDs organized by key type: sessions, "
                           + "scan_type, scan_format, recon, assessors, and resources. The response for this method is "
                           + "the ID for the catalog of resolved resources, which can be submitted to the download/{catalog} "
-                          + "function to retrieve the files as a zip archive.",
+                          + "function to retrieve the catalog or to the download/{catalog}/zip function to retrieve the"
+                          + "files in the catalog as a zip archive.",
                   response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "The download catalog was successfully built."),
                    @ApiResponse(code = 204, message = "No resources were specified."),
@@ -103,11 +104,8 @@ public class CatalogApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_service.buildCatalogForResources(user, resources), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Creates a download catalog for the submitted sessions and other data objects.",
-                  notes = "The map submitted to this call supports lists of object IDs organized by key type: sessions, "
-                          + "scan_type, scan_format, recon, assessors, and resources. The response for this method is "
-                          + "the catalog of resolved resources, which can be submitted to the download/{catalog} "
-                          + "function to retrieve the files as a zip archive.",
+    @ApiOperation(value = "Retrieves the download catalog for the submitted catalog ID.",
+                  notes = "This retrieves a catalog created earlier by the catalog service.",
                   response = CatCatalogBean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "The download catalog was successfully built."),
                    @ApiResponse(code = 204, message = "No resources were specified."),
@@ -115,7 +113,7 @@ public class CatalogApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
                    @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @RequestMapping(value = "download/{catalogId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.POST)
+    @RequestMapping(value = "download/{catalogId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<CatCatalogBean> getDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
         final UserI user = getSessionUser();
@@ -132,13 +130,9 @@ public class CatalogApi extends AbstractXapiRestController {
         return new ResponseEntity<>(catalog, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Creates a download catalog for the submitted sessions and other data objects.",
-                  notes = "The map submitted to this call supports lists of object IDs organized by key type: sessions, "
-                          + "scan_type, scan_format, recon, assessors, and resources. The response for this method is "
-                          + "the catalog of resolved resources, which can be submitted to the download/{catalog} "
-                          + "function to retrieve the files as a zip archive.",
-                  response = CatCatalogBean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The download catalog was successfully built."),
+    @ApiOperation(value = "Downloads the contents of the specified catalog as a zip archive.",
+                  response = StreamingResponseBody.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "The requested resources were successfully downloaded."),
                    @ApiResponse(code = 204, message = "No resources were specified."),
                    @ApiResponse(code = 400, message = "Something is wrong with the request format."),
                    @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),

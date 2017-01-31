@@ -56,17 +56,29 @@ public interface CatalogService {
      * <li>resources</li>
      * </ul>
      *
-     * Each key can reference a list containing one or more data object IDs. The catalog is returned with the resolved
-     * resource URL for each specified item.
+     * Each key can reference a list containing one or more data object IDs. This function returns the ID of the newly
+     * created catalog. You can retrieve the catalog itself by calling {@link #getResourcesForCatalog(UserI, String)}.
      *
      * @param user      The user requesting the resources.
      * @param resources The resources to be included in the catalog.
      *
-     * @return The catalog containing the requested resources.
+     * @return The ID of the newly created catalog containing the requested resources.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
-    CatCatalogBean getCatalogForResources(final UserI user, final Map<String, List<String>> resources) throws InsufficientPrivilegesException;
+    String buildCatalogForResources(final UserI user, final Map<String, List<String>> resources) throws InsufficientPrivilegesException;
+
+    /**
+     * Retrieves the catalog with the submitted ID.
+     *
+     * @param user      The user requesting the catalog.
+     * @param catalogId The ID of the catalog to be retrieved.
+     *
+     * @return The ID of the newly created catalog containing the requested resources.
+     *
+     * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
+     */
+    CatCatalogBean getCatalogForResources(final UserI user, final String catalogId) throws InsufficientPrivilegesException;
 
     /**
      * Retrieves the catalog with the specified ID, locates the resources specified in the catalog, and maps the

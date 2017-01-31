@@ -60,16 +60,23 @@ import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp
 @Service
 public class DefaultCatalogService implements CatalogService {
     @Override
-    public CatCatalogBean getCatalogForResources(final UserI user, final Map<String, List<String>> resources) throws InsufficientPrivilegesException {
+    public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resources) throws InsufficientPrivilegesException {
+        final String catalogId = String.format(CATALOG_FORMAT, user.getLogin(), getPrearchiveTimestamp());
         final CatCatalogBean catalog = new CatCatalogBean();
-        catalog.setId(String.format(CATALOG_FORMAT, user.getLogin(), getPrearchiveTimestamp()));
+        catalog.setId(catalogId);
         final List<String> sessions = resources.get("sessions");
         for (final String session : sessions) {
             final CatCatalogBean sessionCatalog = new CatCatalogBean();
             sessionCatalog.setId(session);
             catalog.addSets_entryset(sessionCatalog);
         }
-        return catalog;
+        _catalogs.put(catalogId, catalog);
+        return catalogId;
+    }
+
+    @Override
+    public CatCatalogBean getCatalogForResources(final UserI user, final String catalogId) throws InsufficientPrivilegesException {
+        return _catalogs.get(catalogId);
     }
 
     @Override
@@ -658,4 +665,5 @@ public class DefaultCatalogService implements CatalogService {
     private static final Logger              _log      = LoggerFactory.getLogger(DefaultCatalogService.class);
     private static final Map<String, String> EMPTY_MAP = ImmutableMap.of();
 
+    private final Map<String, CatCatalogBean> _catalogs = Maps.newHashMap();
 }

@@ -697,7 +697,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "Page")
+    @NrgPreference(defaultValue = "Text")
     public String getSiteDescriptionType() {
         return getValue("siteDescriptionType");
     }
@@ -723,7 +723,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "SITE DESCRIPTION HERE: Go to Administer -> Configuration -> Site Information to change.")
+    @NrgPreference(defaultValue = "Welcome to **XNAT**: You can change this site description by clicking the **Administer->Site Administration** menu option, and modifying the **Site Description** setting on the **Site Setup** tab.")
     public String getSiteDescriptionText() {
         return getValue("siteDescriptionText");
     }

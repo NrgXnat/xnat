@@ -615,7 +615,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			debug:true,
 			doneFunction:function(){
 					// Since we're using the update-stats=false parameter for resource uploads, we need to call catalog refresh when we're finished uploading.
-					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
+					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
 						XNAT.app.abu.updateResourceStats();
 						// Create workflow if we just uploaded files without any script processing (otherwise, workflow will have been generated there)
 						if (!XNAT.app.abu.filesProcessed) {
@@ -623,7 +623,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 						}
 					}
 					xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
-					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
+					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
 						setTimeout(function(){
 							window.location.reload(true);
 						},20);
@@ -893,7 +893,7 @@ XNAT.app.abu.whatToDoChange = function(){
 	XNAT.app.abu.updateModalAction();
 	$('#eventHandlerSelect').val(launchSelect);
 	XNAT.app.abu.updateOptionsCheckboxes(launchSelect);
-	if (typeof abu !== 'undefined' && abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
+	if (typeof abu !== 'undefined' && abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
 		$("#xmodal-abu-process-button")
 			.prop("disabled","disabled")
 			.html("Process files")

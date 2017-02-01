@@ -22,6 +22,7 @@ abu.FileUploader = function(o){
 	this.ALLOW_DRAG_AND_DROP = true;
 	this.DRAG_AND_DROP_ON = true;
 	this.uploadsInProgress = 0;
+	this.currentUploads = 0;
 	this.uploadsStarted = 0;
 	this.overwriteConfirmIssued = false;
 	this.doOverwrite = false;
@@ -125,6 +126,7 @@ abu.FileUploader = function(o){
 					$(".abu-upload-drop-area").css('display','none');
 					$(".abu-upload-drop-area").removeClass('abu-upload-drop-area-active');
 					if(e.originalEvent.dataTransfer){
+						this._options.uploadStartedFunction();
 						if(e.originalEvent.dataTransfer.files.length) {
 							e.preventDefault();
 							e.stopPropagation();
@@ -226,6 +228,7 @@ abu.FileUploader = function(o){
 					'</div>' +
 					'<div id="upload-status-div-' + adj_i + '" class="abu-status"></div>' +
 				'</div>');
+			this.currentUploads++;
 			var formData = new FormData();
 			formData.append("file" + adj_i,cFile,cFile.name);
 			this.uploadFile("#file-upload-form-" + adj_i,formData);
@@ -312,13 +315,14 @@ abu.FileUploader = function(o){
 					var percentVal = '0%';
 					bar.width(percentVal)
 					percent.html(percentVal);
-					uploader.uploadsInProgress++;
 					uploader.uploadsStarted++;
+					uploader.uploadsInProgress++;
 					if (this.isOverwrite && !this.doOverwrite) {
 			 			status.html('<span class="abu-upload-fail">File exists.  Upload cancelled at user request.</a>');
 			 			status.css("display","inline-block");
 			 			$(infoSelector).find(".abu-progress").css("display","none");
 						uploader.uploadsInProgress--;
+						uploader.currentUploads--;
 						if (uploader.uploadsInProgress==0) {
 							uploader._options.uploadCompletedFunction();
 						}
@@ -374,7 +378,8 @@ abu.FileUploader = function(o){
 				},
 				complete: function(xhr) {
 					uploader.uploadsInProgress--;
-					if (uploader.uploadsInProgress==0) {
+					uploader.currentUploads--;
+					if (uploader.currentUploads==0) {
 						uploader._options.uploadCompletedFunction();
 					}
 					uploader.manageUploads();

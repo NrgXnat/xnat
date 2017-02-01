@@ -1,2 +1,2 @@
-<p>Welcome to **XNAT**: You can change this site description by clicking the **Administer->Site Administration** menu option, and modifying the **Site Description** setting on the **Site Setup** tab.</p>
-<p>This site description comes from the file **xnat-templates/screens/site_description.vm**. You can override this file in a plugin or use Markdown text instead.</p>
+<p>Welcome to <b>XNAT</b>: You can change this site description by clicking the <b>Administer->Site Administration</b> menu option, and modifying the <b>Site Description</b> setting on the <b>Site Setup</b> tab.</p>
+<p>This site description comes from the file <b>xnat-templates/screens/site_description.vm</b>. You can override this file in a plugin or enter Markdown text in the site setup.</p>

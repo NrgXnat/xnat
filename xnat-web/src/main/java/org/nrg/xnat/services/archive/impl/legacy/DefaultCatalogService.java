@@ -80,6 +80,14 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     @Override
+    public long getCatalogSize(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException {
+        final CatCatalogBean bean = _catalogs.get(catalogId);
+        final StringWriter writer = new StringWriter();
+        bean.toXML(writer, true);
+        return writer.toString().length();
+    }
+
+    @Override
     public Map<String, Resource> getResourcesForCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException {
         final Path parent = BasicXnatResourceLocator.getResource("classpath:testdata").getFile().toPath();
         final Map<String, Resource> resources = Maps.newHashMap();

@@ -28,13 +28,16 @@ import org.nrg.xnat.web.http.ZipStreamingResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.Map;
 
@@ -130,6 +133,42 @@ public class CatalogApi extends AbstractXapiRestController {
         return new ResponseEntity<>(catalog, HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Downloads the specified catalog as an XML file.",
+                  response = StreamingResponseBody.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "The requested catalog was successfully downloaded."),
+                   @ApiResponse(code = 204, message = "No catalog was specified."),
+                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
+                   @ApiResponse(code = 403, message = "The user is not authorized to access the specified catalog."),
+                   @ApiResponse(code = 404, message = "The request was valid but the specified catalog was not found."),
+                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @RequestMapping(value = "download/{catalogId}/xml", produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogXml(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException, IOException {
+        final UserI user = getSessionUser();
+
+        if (StringUtils.isBlank(catalogId)) {
+            throw new NoContentException("There was no catalog specified in the request.");
+        }
+
+        _log.info("User {} requested download catalog: {}", catalogId);
+        final CatCatalogBean catalog = _service.getCatalogForResources(user, catalogId);
+        if (catalog == null) {
+            throw new NotFoundException("No catalog with ID " + catalogId + " was found.");
+        }
+        return ResponseEntity.ok()
+                             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                             .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "xml"))
+                             .header(HttpHeaders.CONTENT_LENGTH, Long.toString(_service.getCatalogSize(user, catalogId)))
+                             .body((StreamingResponseBody) new StreamingResponseBody() {
+                                 @Override
+                                 public void writeTo(final OutputStream outputStream) throws IOException {
+                                     try (final OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
+                                         catalog.toXML(writer, true);
+                                     }
+                                 }
+                             });
+    }
+
     @ApiOperation(value = "Downloads the contents of the specified catalog as a zip archive.",
                   response = StreamingResponseBody.class)
     @ApiResponses({@ApiResponse(code = 200, message = "The requested resources were successfully downloaded."),
@@ -140,7 +179,7 @@ public class CatalogApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     @RequestMapping(value = "download/{catalogId}/zip", produces = ZipStreamingResponseBody.MEDIA_TYPE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<StreamingResponseBody> downloadSessionCatalog(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, IOException {
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZip(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, IOException {
         final UserI user = getSessionUser();
 
         if (StringUtils.isBlank(catalogId)) {
@@ -150,10 +189,16 @@ public class CatalogApi extends AbstractXapiRestController {
         _log.info("User {} requested download of the catalog {}", user.getLogin(), catalogId);
 
         return ResponseEntity.ok()
-                             .header("Content-Type", ZipStreamingResponseBody.MEDIA_TYPE)
-                             .header("Content-Disposition", "attachment; filename=\"" + user.getLogin() + "-" + catalogId + ".zip\"")
+                             .header(HttpHeaders.CONTENT_TYPE, ZipStreamingResponseBody.MEDIA_TYPE)
+                             .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "zip"))
                              .body((StreamingResponseBody) new ZipStreamingResponseBody(_service.getResourcesForCatalog(user, catalogId)));
     }
+
+    private static String getAttachmentDisposition(final String name, final String extension) {
+        return String.format(ATTACHMENT_DISPOSITION, name, extension);
+    }
+
+    private static final String ATTACHMENT_DISPOSITION = "attachment; filename=\"%s.%s\"";
 
     private static final Logger _log = LoggerFactory.getLogger(CatalogApi.class);
 

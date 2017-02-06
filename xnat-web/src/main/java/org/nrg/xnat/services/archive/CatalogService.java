@@ -74,11 +74,24 @@ public interface CatalogService {
      * @param user      The user requesting the catalog.
      * @param catalogId The ID of the catalog to be retrieved.
      *
-     * @return The ID of the newly created catalog containing the requested resources.
+     * @return The specified catalog.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
     CatCatalogBean getCatalogForResources(final UserI user, final String catalogId) throws InsufficientPrivilegesException;
+
+    /**
+     * Returns the size of the requested catalog. This is useful when making the catalog available for download.
+     *
+     * @param user      The user requesting the catalog.
+     * @param catalogId The ID of the catalog to be retrieved.
+     *
+     * @return The size of the specified catalog.
+     *
+     * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
+     * @throws IOException When an error occurs accessing the catalog.
+     */
+    long getCatalogSize(UserI user, String catalogId) throws InsufficientPrivilegesException, IOException;
 
     /**
      * Retrieves the catalog with the specified ID, locates the resources specified in the catalog, and maps the

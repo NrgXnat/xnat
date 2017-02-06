@@ -9,13 +9,17 @@
 
 package org.nrg.dcm;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.dcm.preferences.DicomSCPPreference;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.DicomObjectIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +30,23 @@ import java.util.*;
 
 public class DicomSCPManager {
     @Autowired
-    public DicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences) {
+    public DicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
         _dicomScpPreferences = dicomScpPreferences;
         _siteConfigPreferences = siteConfigPreferences;
+        final List<String> sortedDicomObjectIdentifierNames = Lists.newArrayList();
+        final List<DicomObjectIdentifier<XnatProjectdata>> sortedDicomObjectIdentifiers = Lists.newArrayList();
+        for (final String beanId : dicomObjectIdentifiers.keySet()) {
+            final DicomObjectIdentifier<XnatProjectdata> identifier = dicomObjectIdentifiers.get(beanId);
+            if (identifier == primaryDicomObjectIdentifier) {
+                sortedDicomObjectIdentifierNames.add(0, beanId);
+                sortedDicomObjectIdentifiers.add(0, identifier);
+            } else {
+                sortedDicomObjectIdentifierNames.add(beanId);
+                sortedDicomObjectIdentifiers.add(identifier);
+            }
+        }
+        _dicomObjectIdentifierNames = ImmutableList.copyOf(sortedDicomObjectIdentifierNames);
+        _dicomObjectIdentifiers = ImmutableList.copyOf(sortedDicomObjectIdentifiers);
     }
 
     @PreDestroy
@@ -197,6 +215,24 @@ public class DicomSCPManager {
         }
     }
 
+    public List<String> getDicomObjectIdentifierBeanIds() {
+        return _dicomObjectIdentifierNames;
+    }
+
+    public List<DicomObjectIdentifier<XnatProjectdata>> getDicomObjectIdentifiers() {
+        return _dicomObjectIdentifiers;
+    }
+
+    public DicomObjectIdentifier<XnatProjectdata> getDicomObjectIdentifier(final String beanId) {
+        if (!_dicomObjectIdentifierNames.contains(beanId)) {
+            return null;
+        }
+        return getDicomObjectIdentifiers().get(_dicomObjectIdentifierNames.indexOf(beanId));
+    }
+
+    public DicomObjectIdentifier<XnatProjectdata> getDefaultDicomObjectIdentifier() {
+        return getDicomObjectIdentifiers().get(0);
+    }
 
     private int getNextKey() {
         final Set<String> keys = _dicomScpPreferences.getDicomSCPInstances().keySet();
@@ -209,6 +245,8 @@ public class DicomSCPManager {
 
     private static final Logger _log = LoggerFactory.getLogger(DicomSCPManager.class);
 
-    private final DicomSCPPreference    _dicomScpPreferences;
-    private final SiteConfigPreferences _siteConfigPreferences;
+    private final DicomSCPPreference                           _dicomScpPreferences;
+    private final SiteConfigPreferences                        _siteConfigPreferences;
+    private final List<String>                                 _dicomObjectIdentifierNames;
+    private final List<DicomObjectIdentifier<XnatProjectdata>> _dicomObjectIdentifiers;
 }

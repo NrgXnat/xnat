@@ -10,6 +10,7 @@
 package org.nrg.xapi.rest.dicom;
 
 import io.swagger.annotations.*;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.DicomSCP;
 import org.nrg.dcm.DicomSCPManager;
 import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
@@ -17,9 +18,11 @@ import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xnat.DicomObjectIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +42,33 @@ public class DicomSCPApi extends AbstractXapiRestController {
     public DicomSCPApi(final DicomSCPManager manager, final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
         _manager = manager;
+    }
+
+    @ApiOperation(value = "Get list of all configured DICOM object identifiers.", notes = "This function returns a list of all DICOM object identifiers defined for the current system. The default identifier will be the first in the list.", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "A list of DICOM object identifiers."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "identifiers", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<List<String>> getDicomObjectIdentifiers() {
+        return new ResponseEntity<>(_manager.getDicomObjectIdentifierBeanIds(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Get implementation name of the specified DICOM object identifier.", notes = "This function returns the fully-qualified class name of the specified DICOM object identifier. You can use the value 'default' to retrieve the default identifier even if you don't know the specific name.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "The implementation class of the specified DICOM object identifier."),
+                   @ApiResponse(code = 404, message = "No DICOM object identifier with the specified ID was found."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "identifiers/{beanId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<String> getDicomObjectIdentifier(@PathVariable("beanId") String beanId) {
+        // If they specified "default", then get the first bean in the list: they're sorted so that the default is first.
+        if (StringUtils.equals("default", beanId)) {
+            return new ResponseEntity<>(_manager.getDefaultDicomObjectIdentifier().getClass().getName(), HttpStatus.OK);
+        }
+        final DicomObjectIdentifier<XnatProjectdata> identifier = _manager.getDicomObjectIdentifier(beanId);
+        if (identifier == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(identifier.getClass().getName(), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get list of all configured DICOM SCP receiver definitions.", notes = "The primary DICOM SCP retrieval function returns a list of all DICOM SCP receivers defined for the current system.", response = DicomSCPInstance.class, responseContainer = "List")

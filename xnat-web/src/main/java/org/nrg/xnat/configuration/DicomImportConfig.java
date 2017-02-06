@@ -21,15 +21,18 @@ import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @ComponentScan("org.nrg.dcm.preferences")
 public class DicomImportConfig {
     @Bean
+    @Primary
     public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final XnatUserProvider receivedFileUserProvider) {
         final ClassicDicomObjectIdentifier identifier = new ClassicDicomObjectIdentifier();
         identifier.setUserProvider(receivedFileUserProvider);
@@ -40,10 +43,10 @@ public class DicomImportConfig {
     public DicomFileNamer dicomFileNamer() throws Exception {
         return new TemplatizedDicomFileNamer("${StudyInstanceUID}-${SeriesNumber}-${InstanceNumber}-${HashSOPClassUIDWithSOPInstanceUID}");
     }
-    
+
     @Bean
-    public DicomSCPManager dicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences) throws Exception {
-        return new DicomSCPManager(dicomScpPreferences, siteConfigPreferences);
+    public DicomSCPManager dicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) throws Exception {
+        return new DicomSCPManager(dicomScpPreferences, siteConfigPreferences, primaryDicomObjectIdentifier, dicomObjectIdentifiers);
     }
 
     @Bean

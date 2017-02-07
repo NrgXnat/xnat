@@ -66,7 +66,7 @@ $page.setTitle("$siteId - Register")
             top: modal_top,
             className: 'friendlyForm',
             okAction: function(obj){
-                var _emailToVerify = $(obj.$modal).find('#requestEmail').val();
+                var _emailToVerify = $(obj.__modal).find('#requestEmail').val();
                 requestVerificationEmail(_emailToVerify);
             }
         });

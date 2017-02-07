@@ -263,7 +263,7 @@ var XNAT = getObject(XNAT||{}),
             $ajax = $.ajax(opts);
 
             // save jQuery's fail method
-            $ajax.$fail = $ajax.fail;
+            $ajax.$fail = $ajax.fail$ = $ajax.fail;
 
             // remap the arguments for consistency with .done()
             $ajax.fail = function(callback){
@@ -448,7 +448,7 @@ var XNAT = getObject(XNAT||{}),
     }
 
     // set form element values from an object map
-    // 'form' can be a form element, selector, or array of inputs
+    // 'inputs' can be a form element, selector, or array of inputs
     function setValues(inputs, dataObj, opts){
         // cache and check if form exists
         var $inputs = $$(inputs),
@@ -613,12 +613,24 @@ var XNAT = getObject(XNAT||{}),
         return values;
     };
 
-    xhr.form = function(form, opts){
+    // accept either a form element or array (or collection)
+    // of input elements for the 'inputs' argument
+    xhr.form = function(inputs, opts){
 
-        var $form = $$(form),
-            _form = $form[0], // raw DOM element
-            validateForm = $form.hasClass('validate'),
-            callback = diddly;
+        var $form = null;
+        var $inputs = $$(inputs);
+
+        if ($inputs.length === 1 && /form/i.test($inputs[0].tagName)) {
+            $form = $inputs.jquery ? $inputs : $($inputs[0]);
+            $inputs = $form.find(':input');
+        }
+        else {
+            $form = $($inputs[0]).closest('form')
+        }
+
+        var _form = $form[0]; // raw DOM element
+        var validateForm = $form.hasClass('validate');
+        var callback = diddly;
 
         opts = cloneObject(opts);
         opts.url = XNAT.url.rootUrl(opts.url || $form.data('url') || $form.attr('action'));
@@ -642,7 +654,7 @@ var XNAT = getObject(XNAT||{}),
         // don't pass 'callback' property into the AJAX request
         delete opts.callback;
 
-        var $inputs = $form.find(':input').not('button, [type="submit"]');
+        $inputs = $inputs.filter(':input').not('button, [type="submit"], .ignore');
 
         // inputs with a value that starts with
         // @? will get values from another source
@@ -656,7 +668,7 @@ var XNAT = getObject(XNAT||{}),
         // validate all fields with [data-validate] attribute
         if (validateForm && XNAT.validate) {
 
-            $inputs.filter('[data-validate]').not('.ignore').each(function(){
+            $inputs.filter('[data-validate]').each(function(){
                 var valid = XNAT.validate(this).check();
                 var $input = $(this);
                 if ($input.hasClass('allow-empty') && !this.value) {
@@ -700,7 +712,7 @@ var XNAT = getObject(XNAT||{}),
             };
         }
 
-        var inputs = $inputs.toArray();
+        var _inputs = $inputs.toArray();
 
         if (/POST|PUT/i.test(opts.method)) {
             if ($form.hasAnyClass('json-text text-json')) {
@@ -708,7 +720,7 @@ var XNAT = getObject(XNAT||{}),
             }
             if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
                 // opts.data = formToJSON($form, true);
-                opts.data = JSON.stringify(form2js(inputs, opts.delimiter||opts.delim||':', false));
+                opts.data = JSON.stringify(form2js(_inputs, opts.delimiter||opts.delim||':', false));
                 opts.processData = false;
                 if (opts.contentType === 'text/json') {
                     opts.contentType = 'text/plain';
@@ -745,7 +757,6 @@ var XNAT = getObject(XNAT||{}),
     // $('form.foo').submitJSON();
     $.fn.submitJSON = function(opts){
         var $form = $(this);
-        $form.addClass('json');
         return xhr.form($form, extend(true, {
             method: $form.data('method') || this.method || 'POST',
             processData: false,

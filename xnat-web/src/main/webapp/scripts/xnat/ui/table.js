@@ -397,7 +397,8 @@ var XNAT = getObject(XNAT);
         opts.element = extend(true, {
             id: opts.id || randomID('t', false),
             style: {
-                width: opts.width || '100%'
+                width: opts.width || '100%',
+                position: 'relative'
             }
         }, opts.element);
 
@@ -409,7 +410,9 @@ var XNAT = getObject(XNAT);
 
         // create a div to hold the table
         // or message (if no data or error)
-        var $tableContainer = $.spawn('div.data-table-container', [newTable.table]);
+        var $tableContainer = $.spawn('div.data-table-container', {
+            style: { position: 'relative' }
+        }, [newTable.table]);
         var tableContainer = $tableContainer[0];
 
         // if (opts.before) {
@@ -442,46 +445,59 @@ var XNAT = getObject(XNAT);
                 });
                 rows = objRows; // now it's an array
             }
+
+            // create <thead> element (it's ok if it's empty)
+            newTable.thead({ style: { position: 'relative' } });
+
             // create header row
             if (!allItems && (opts.items || opts.properties)) {
-                newTable.tr();
-                forOwn(opts.items||opts.properties, function(name, val){
-                    // if 'val' is a string, it's the text for the <th>
-                    // if it's an object, get the 'label' property
-                    //var label = stringable(val) ? val+'' : val.label;
-                    props.push(name);
 
+                // if 'val' is a string, it's the text for the <th>
+                // if it's an object, get the 'label' property
+                //var label = stringable(val) ? val+'' : val.label;
+                forOwn(opts.items||opts.properties, function(name, val){
+                    props.push(name);
                     // don't create <th> for items labeled as '~data'
                     if (DATAREGEX.test(val)) {
                         hiddenItems.push(name);
-                        return;
+                        // return;
                     }
-
-                    newTable.th(extend({ html: (val.label || val)}, val.th));
-
-                    if (HIDDENREGEX.test(val.label || val)) {
-                        hiddenItems.push(name);
-                        $(newTable.last.th).html(name)
-                                .addClass('hidden')
-                                .dataAttr('prop', name);
-                        return;
-                    }
-                    //if (!opts.sortable) return;
-                    if (val.sort || opts.sortable === true || (opts.sortable||[]).indexOf(name) !== -1) {
-                        addClassName(newTable.last.th, 'sort');
-                        newTable.last.th.appendChild(spawn('i', '&nbsp;'))
-                    }
-
                     // does this column have a filter field?
-                    if (val.filter || (opts.filter && opts.filter.indexOf(name) > -1)){
+                    if (typeof val !== 'string' && (val.filter || (opts.filter && opts.filter.indexOf(name) > -1))){
                         filterColumns.push(name);
                         // pass a function that returns an element for a 'custom' filter
                         if (typeof val.filter === 'function'){
                             customFilters[name] = val.filter;
                         }
                     }
-
                 });
+
+                if (opts.header !== false) {
+                    newTable.tr();
+                    forOwn(opts.items||opts.properties, function(name, val){
+
+                        if (DATAREGEX.test(val)) {
+                            hiddenItems.push(name);
+                            return;
+                        }
+
+                        newTable.th(extend({ html: (val.label || val)}, val.th));
+
+                        if (HIDDENREGEX.test(val.label || val)) {
+                            hiddenItems.push(name);
+                            $(newTable.last.th).html(name)
+                                .addClass('hidden')
+                                .dataAttr('prop', name);
+                            return;
+                        }
+                        //if (!opts.sortable) return;
+                        if (val.sort || opts.sortable === true || (opts.sortable||[]).indexOf(name) !== -1) {
+                            addClassName(newTable.last.th, 'sort');
+                            newTable.last.th.appendChild(spawn('i', '&nbsp;'))
+                        }
+
+                    });
+                }
             }
             else {
                 if (allItems) {
@@ -581,8 +597,13 @@ var XNAT = getObject(XNAT);
                 });
             }
 
+            // create the <tbody>
+            newTable.tbody();
+
             rows.forEach(function(item){
+
                 newTable.tr();
+
                 // iterate properties for each row
                 props.forEach(function(name){
 
@@ -599,7 +620,7 @@ var XNAT = getObject(XNAT);
                     var _tr = newTable.last.tr;
 
                     if (opts.items) {
-                        cellObj = opts.items[name];
+                        cellObj = opts.items[name] || {};
                         if (typeof cellObj === 'string') {
                             // set item label to '~data' to add as a
                             // [data-*] attribute to the <tr>
@@ -625,12 +646,13 @@ var XNAT = getObject(XNAT);
                             // if (cellObj.apply) {
                             //     itemVal = eval(cellObj.apply).apply(item, [itemVal]);
                             // }
-                            if (cellObj['call']) {
-                                if (isFunction(cellObj['call'])) {
-                                    itemVal = cellObj['call'].call(item, itemVal, _tr) || itemVal;
+                            if (cellObj['apply'] || cellObj['call']) {
+                                cellObj['apply'] = cellObj['call'] || cellObj['apply'];
+                                if (isFunction(cellObj['apply'])) {
+                                    itemVal = cellObj['apply'].apply(item, [].concat(itemVal, _tr)) || itemVal;
                                 }
                                 else {
-                                    itemVal = eval('('+cellObj['call'].trim()+')').call(item, itemVal, _tr) || itemVal;
+                                    itemVal = eval('('+cellObj['apply'].trim()+')').apply(item, [].concat(itemVal, _tr)) || itemVal;
                                 }
                             }
                             // special __VALUE__ string gets replaced
@@ -744,6 +766,7 @@ var XNAT = getObject(XNAT);
         // };
 
         return {
+            dataTable: newTable,
             table: newTable.table,
             element: tableContainer,
             spawned: tableContainer,

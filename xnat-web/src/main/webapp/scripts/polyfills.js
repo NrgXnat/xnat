@@ -3,7 +3,7 @@
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *  
+ *
  * Released under the Simplified BSD.
  */
 
@@ -308,7 +308,7 @@ if (!Array.prototype.trim) {
 // force 'stringable' array elements to string,
 // optionally including non-stringable items
 if (!Array.prototype.strings) {
-    Array.prototype.strings = function(other){
+    Array.prototype.strings = function(other, recursive, flatten){
         'use strict';
         if (this == null) {
             throw new TypeError('Array.prototype.strings called on null or undefined');
@@ -321,7 +321,17 @@ if (!Array.prototype.strings) {
             }
             else if (other) {
                 if (Array.isArray(item)){
-                    _item = '[' + item.strings(other) + ']';
+                    if (recursive) {
+                        if (flatten) {
+                            stringArray = stringArray.concat(item.strings(other, recursive, flatten))
+                        }
+                        else {
+                            _item = item.strings(other, recursive, flatten)
+                        }
+                    }
+                    else {
+                        _item = '[' + item.strings(other) + ']';
+                    }
                 }
                 else if (typeof item === 'function') {
                     _item = item.toString().replace(/\s+/, ' ');
@@ -384,17 +394,22 @@ if (typeof Object.assign != 'function') {
 
 if (typeof Object.create != 'function') {
     Object.create = (function() {
-        var Temp = function() {};
-        return function (prototype) {
-            if (arguments.length > 1) {
-                throw Error('Second argument not supported');
+        var undefined;
+        var Temp = function(){};
+        return function(prototype, propertiesObject){
+            if (prototype !== Object(prototype) && prototype !== null) {
+                throw TypeError('Argument must be an object, or null');
             }
-            if (typeof prototype != 'object') {
-                throw TypeError('Argument must be an object');
-            }
-            Temp.prototype = prototype;
+            Temp.prototype = prototype || {};
             var result = new Temp();
             Temp.prototype = null;
+            if (propertiesObject !== undefined) {
+                Object.defineProperties(result, propertiesObject);
+            }
+            // to imitate the case of Object.create(null)
+            if (prototype === null) {
+                result.__proto__ = null;
+            }
             return result;
         };
     })();

@@ -331,21 +331,21 @@ function setExtendedObject(obj, str, val){
 // var myVal = lookupObjectValue(XNAT, ':data:siteConfig:siteId');
 // --> myVal == 'myXnatSiteId'
 function lookupObjectValue(root, objStr, prop){
-    
+
     var val = '',
         delim = '.',
         brackets = /[\]\[]/,
         hasBrackets = false,
         parts = [],
         undef;
-    
+
     if (!objStr) {
         objStr = root+'';
         root = window;
     }
-    
+
     if (!objStr) return '';
-    
+
     root = root || window;
 
     // if 'objStr' contains brackets, use bracket notation
@@ -383,14 +383,14 @@ function lookupObjectValue(root, objStr, prop){
             val = val[part];
         }
     });
-    
+
     // explicitly set a final property name to look for
     if (prop) {
         val = (val[prop] !== undef) ? val[prop] : val;
     }
-    
+
     return val;
-    
+
 }
 
 // return the last item in an array-like object
@@ -411,15 +411,27 @@ function once(func, args) {
 // execute a function on each item in an
 // array(-like) object with a length property
 // works like native Array.forEach();
-function forEach( arr, fn ){
+function forEach( arr, fn, context ){
     var i = -1, len;
     if (!arr || !arr.length) { return }
     len = arr.length;
     if (isFunction(fn)) {
         while (++i < len){
-            fn(arr[i], i);
+            fn.call(context||arr[i], arr[i], i);
         }
     }
+}
+
+function forIn(obj, fn){
+    var keys = [],
+        key;
+    if (!isPlainObject(obj)) { return }
+    for (key in obj) {
+        keys.push(key);
+        if (!isFunction(fn)) continue;
+        fn(key, obj[key]);
+    }
+    return keys;
 }
 
 // execute a function on each
@@ -680,7 +692,7 @@ function toDashed(str){
         return '-' + u;
     }).replace(/[A-Z]-/g, function(c){
         return c.replace(/-$/, '');
-    }).toLowerCase().replace(/\W+|_+/g, '-').replace(/^-*|-*$/g, '');
+    }).toLowerCase().replace(/[\W_-]+/g, '-').replace(/^-*|-*$/g, '');
 }
 //hyphenate = toDashed;
 //dashify   = toDashed;

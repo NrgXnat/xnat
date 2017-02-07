@@ -5,6 +5,8 @@
 #* @vtlvariable name="scan" type="java.util.List" *#
 #* @vtlvariable name="sessionSummary" type="java.util.List" *#
 #* @vtlvariable name="sessionRow" type="java.util.List" *#
+#* @vtlvariable name="item" type="java.util.List" *#
+#* @vtlvariable name="format" type="java.util.List" *#
 #* @vtlvariable name="scans" type="java.util.List" *#
 #* @vtlvariable name="resources" type="java.util.List" *#
 #* @vtlvariable name="resource" type="java.util.List" *#
@@ -13,394 +15,451 @@
 #set($showResources = $resources && $resources.size() > 0)
 #set($showRecons = $recons && $recons.size() > 0)
 #set($showAssessors = $assessors && $assessors.size() > 0)
-<SCRIPT language="javascript">
-    function toggleAll(check, names) {
-        for (var j = 0; j < names.length; j++) {
-            var allSessions = document.getElementsByName(names[j]);
-            for (var i = 0; i < allSessions.length; i++) {
-                allSessions[i].checked = check.checked;
-            }
-        }
+#set($SESSION_DISPLAY_NAME_PLURAL = $displayManager.getPluralDisplayNameForImageSession())
+#set($SITE_ROOT = $content.getURI(""))
+
+<style type="text/css">
+
+    #download-form {
+        width: 1109px;
+        padding: 5px;
+        background: #f0f0f0;
+        border: 1px solid #e0e0e0;
+        overflow: auto;
     }
 
-    function validateForm() {
-        var sessionsSelected = false;
-        var allSessions = document.getElementsByName("sessions");
-        for (var i = 0; i < allSessions.length; i++) {
-            if (allSessions[i].checked) {
-                sessionsSelected = true;
-            }
-        }
-
-        if (!sessionsSelected) {
-            xmodal.message('Download Sessions', 'Please select at least one imaging $displayManager.getSingularDisplayNameForImageSession().toLowerCase() from section 1.');
-            return false;
-        }
-
-        var typeSelected = false;
-        allSessions = document.getElementsByName("scan_type");
-        for (i = 0; i < allSessions.length; i++) {
-            if (allSessions[i].checked) {
-                typeSelected = true;
-            }
-        }
-
-        if (typeSelected) {
-            return true;
-        }
-
-        allSessions = document.getElementsByName("resources");
-        for (i = 0; i < allSessions.length; i++) {
-            if (allSessions[i].checked) {
-                typeSelected = true;
-            }
-        }
-
-        if (typeSelected) {
-            return true;
-        }
-
-        allSessions = document.getElementsByName("recon");
-        for (i = 0; i < allSessions.length; i++) {
-            if (allSessions[i].checked) {
-                typeSelected = true;
-            }
-        }
-
-        if (typeSelected) {
-            return true;
-        }
-
-        allSessions = document.getElementsByName("assessors");
-        for (i = 0; i < allSessions.length; i++) {
-            if (allSessions[i].checked) {
-                typeSelected = true;
-            }
-        }
-
-        if (typeSelected) {
-            return true;
-        }
-        else {
-            xmodal.message('Download Sessions', 'Please select at least one format of imaging data to download from section 2.');
-            return false;
-        }
+    div.download-column {
+        width: 34%;
+        float: left;
+        /*font-size: 12px;*/
     }
-</SCRIPT>
 
-<FORM id="downloadForm" name="downloadForm" METHOD="post" ACTION="$link.setAction("DownloadSessionsAction2")" ONSUBMIT="return validateForm();">
-<DIV class="edit_header1">Imaging Data Download</DIV>
-<DIV class="spacer">&nbsp;</DIV>
-<TABLE border="0">
-<TR>
-    <TD>
-        <DIV class="edit_header2"><img src="$content.getURI("images/number_1.gif")" border=0> Confirm $displayManager.getPluralDisplayNameForImageSession() for download</DIV>
-    </TD>
-    <TD></TD>
-    <TD>
-        <DIV class="edit_header2"><img src="$content.getURI("images/number_2.gif")" border=0> Select image data to download</DIV>
-    </TD>
-    <TD></TD>
-    <TD>
-        <DIV class="edit_header2"><img src="$content.getURI("images/number_3.gif")" border=0> Select download format</DIV>
-    </TD>
-<TR>
-<TD VALIGN="top" class="withColor" ROWSPAN="4">
-    <DIV ID="dataTable" style="display: none;">
-        <DIV STYLE="overflow: auto; height: 550px;">
-            <TABLE border="0" ID="subTableSessions" cellspacing="0">
-                <TR class="">
-                    <TD><INPUT type="checkbox" value="" ONCLICK="toggleAll(this,['sessions']);" ID="toggleAllSessions" CHECKED/></TD>
-                    <TD NOWRAP colspan="2"><label for="toggleAllSessions">Toggle All (#if($sessionSummary) $!sessionSummary.size() #else 0 #end)</label></TD>
-                </TR>
+    div.download-column > .pad {
+        padding: 10px;
+    }
 
-                #set($rowColor="even")
-                #foreach($sessionRow in $sessionSummary)
-                    <TR class="$rowColor">
-                        <TD></TD>
-                        <TD><INPUT type="checkbox" value="$sessionRow.get(0)" ID="$sessionRow.get(0)" name="sessions" CHECKED/></TD>
-                        <TD NOWRAP><label for="$sessionRow.get(0)">$sessionRow.get(1)</label></TD>
-                        <TD NOWRAP><label for="$sessionRow.get(0)">$!sessionRow.get(2)</label></TD>
-                    </TR>
+    div.download-column.last {
+        width: 32%;
+    }
 
-                    #if($rowColor=="even")
-                        #set($rowColor="")
-                    #else
-                        #set($rowColor="even")
-                    #end
-                #end
-            </TABLE>
-        </DIV>
-    </DIV>
-</TD>
-<TD ROWSPAN="4">&nbsp;&nbsp;&nbsp;</TD>
-<TD VALIGN="top" class="withColor" ROWSPAN="4">
-    <SCRIPT language="javascript">
-        document.getElementById("dataTable").style.display = "block";
-    </SCRIPT>
+    div.download-column .inner {
+        /*min-height: 500px;*/
+        /*max-height: 700px;*/
+        height: 620px;
+        padding: 5px;
+        overflow-y: scroll;
+        overflow-x: visible;
+        background: #fff;
+        border: 1px solid #d0d0d0;
+    }
 
-    <DIV>
-        <TABLE>
-            <TR>
-                <TD colspan="2">
-                    <DIV class="edit_header3">Scan Formats</DIV>
-                </TD>
-            </TR>
+    div.download-column.last .inner {
+        height: auto;
+        overflow: auto;
+    }
 
-            <TR>
-                <TD colspan="2">
-                    <TABLE>
+    div.download-column section {
+        margin: 15px 0;
+        padding: 0 15px;
+    }
+
+    div.download-column section.list {
+        margin: 10px 0 30px;
+        padding: 0 10px;
+        /*border: 1px solid #ccc;*/
+    }
+
+    div.download-column h3 {
+        padding: 7px 15px;
+        /*background: #f0f0f0;*/
+        background: #1A75BB;
+        /*border-bottom: 1px solid #d0d0d0;*/
+        border: 1px solid #11609c;
+        color: #fff;
+        font-weight: normal;
+        font-size: 15px;
+    }
+
+    div.download-column h4 {
+        margin: 10px 15px;
+        padding-bottom: 3px;
+        font-size: 15px;
+        font-weight: normal;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    div.download-column dl {
+        position: relative;
+        margin: 15px 0;
+    }
+
+    div.download-column dt {
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    div.download-column dd {
+        margin-left: 22px;
+    }
+
+    div.download-column dd label {
+        display: block;
+        margin: 0;
+        /*font-weight: bold;*/
+    }
+
+    section.list table.data-table {
+        border: none;
+        border-collapse: collapse;
+    }
+
+    section.list table.data-table tbody tr:hover {
+        background: #e5f2ff;
+    }
+
+    section.list table.data-table td,
+    section.list table.data-table th {
+        padding: 4px 6px;
+        border: none;
+        /*border-bottom: 1px solid #e0e0e0;*/
+    }
+
+    section.list table.data-table label {
+        display: block;
+        /*text-decoration: underline;*/
+    }
+
+</style>
+
+<script>
+    XNAT.app = getObject(XNAT.app);
+    XNAT.app.projectDownload = getObject(XNAT.app.projectDownload);
+    XNAT.app.projectDownload.items = extend(true, XNAT.app.projectDownload.items || {}, {
+        counts: {},
+        sessions: {
+            list: [],
+            data: []
+        },
+        scan_formats: {
+            list: [],
+            data: []
+        },
+        scan_types: {
+            list: [],
+            data: []
+        },
+        resources: {
+            list: [],
+            data: []
+        },
+        reconstructions: {
+            list: [],
+            data: []
+        },
+        assessors: {
+            list: [],
+            data: []
+        }
+    });
+    // alias to 'recons'
+    XNAT.app.projectDownload.items.recons = XNAT.app.projectDownload.items.reconstructions;
+    // alias to 'assessments'
+    XNAT.app.projectDownload.items.assessments = XNAT.app.projectDownload.items.assessors;
+</script>
+
+<h2>Imaging Data Download</h2>
+
+<form id="download-form" class="json" method="post" content-type="application/json" action="/xapi/archive/download">
+
+    <!-- Select Sessions -->
+    <div id="project-sessions" class="download-column">
+        <div class="pad">
+
+            <h3>1: Select ${SESSION_DISPLAY_NAME_PLURAL}</h3>
+
+            <div class="inner">
+
+                <h4>Sessions</h4>
+                <section class="sessions list">
+                    <!-- list project sessions -->
+                </section>
+                <script>
+                    // gather sessions
+                        #foreach($sessionRow in $sessionSummary)
+                        XNAT.app.projectDownload.items.sessions.list.push('$!sessionRow.get(0)');
+                        XNAT.app.projectDownload.items.sessions.data.push({
+                            id: '$!sessionRow.get(0)',
+                            value: '$!sessionRow.get(0)',
+                            name: '$!sessionRow.get(0)',
+                            label: '$!sessionRow.get(1)',
+                            type: '$!sessionRow.get(2)'
+                        });
+                        #end
+                </script>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Select Image Data -->
+    <div id="project-imaging-data" class="download-column">
+        <div class="pad">
+
+            <h3>2: Select Image Data</h3>
+
+            <div class="inner">
+
+                <!-- Scan Formats -->
+                <h4>Scan Formats</h4>
+                <section class="scan-formats list">
+                    <!-- list scan formats -->
+                </section>
+                <script>
+                    // gather scan formats
                         #set($counter = 0)
-                        #foreach($scan in $scan_formats)
-                            #if($!scan.get(0))
-                                <TR>
-                                    <TD><input type="checkbox" id="scan_format$counter" name="scan_format" value="$!scan.get(0)" checked="true"/></TD>
-                                    <TD><label for="scan_format$counter">$!scan.get(0)</label></TD>
-                                </TR>
+                        #foreach($format in $scan_formats)
+                            #if($!format.get(0))
+                            XNAT.app.projectDownload.items.scan_formats.list.push('$!format.get(0)')
+                            XNAT.app.projectDownload.items.scan_formats.data.push({
+                                counter: $counter,
+                                value: '$!format.get(0)',
+                                name: '$!format.get(0)',
+                                label: '$!format.get(0)'
+                            });
                             #else
-                                <TR>
-                                    <TD><input type="checkbox" id="scan_format$counter" name="scan_format" value="NULL" checked="checked"/></TD>
-                                    <TD><label for="scan_format$counter">Unspecified</label></TD>
-                                </TR>
+                            XNAT.app.projectDownload.items.scan_formats.list.push('Unspecified')
+                            XNAT.app.projectDownload.items.scan_formats.data.push({
+                                counter: $counter,
+                                value: null,
+                                name: 'Unspecified',
+                                label: 'Unspecified'
+                            });
                             #end
                             #set($counter = $counter + 1)
                         #end
-                    </TABLE>
-                </TD>
-            </TR>
+                </script>
 
-            <TR>
-                <TD colspan="2">&nbsp;</TD>
-            </TR>
-
-            <TR>
-                <TD><INPUT type="checkbox" value=""
-                           ONCLICK="toggleAll(this,['scan_type'#if($showResources),'resources'#end #if($showRecons),'recon'#end #if($showAssessors),'assessors'#end]);"
-                           ID="toggleAllScanTypes" checked="true"/></TD>
-                <TD><label for="toggleAllScanTypes">Toggle All</label></TD>
-            </TR>
-
-            <TR>
-                <TD></TD>
-                <TD>
-                    <DIV class="edit_header3">Scan Types</DIV>
-                </TD>
-            </TR>
-
-            <TR>
-                <TD></TD>
-                <TD>
-                    <TABLE>
+                <!-- Scan Types -->
+                <h4>Scan Types</h4>
+                <section class="scan-types list">
+                    <!-- list scan types -->
+                </section>
+                <script>
+                    // gather scan types
                         #set($counter = 0)
                         #foreach($scan in $scans)
                             #if($!scan.get(0))
-                                <TR>
-                                    <TD><input type="checkbox" id="scan_type$counter" name="scan_type" value="$!scan.get(0)" checked="true"/></TD>
-                                    <TD><label for="scan_type$counter">$!scan.get(0) ($!scan.get(1))</label></TD>
-                                </TR>
+                            XNAT.app.projectDownload.items.scan_types.list.push('$!scan.get(0)');
+                            XNAT.app.projectDownload.items.scan_types.data.push({
+                                counter: $counter,
+                                value: '$!scan.get(0)',
+                                name: '$!scan.get(0)',
+                                label: '$!scan.get(0)',
+                                count: '$!scan.get(1)'
+                            });
                             #else
-                                <TR>
-                                    <TD><input type="checkbox" id="scan_type$counter" name="scan_type" value="NULL"/></TD>
-                                    <TD><label for="scan_type$counter">Unassigned ($!scan.get(1))</label></TD>
-                                </TR>
+                            XNAT.app.projectDownload.items.scan_types.list.push('Unassigned');
+                            XNAT.app.projectDownload.items.scan_types.data.push({
+                                counter: $counter,
+                                value: null,
+                                name: 'Unassigned',
+                                label: 'Unassigned',
+                                count: '$!scan.get(1)'
+                            });
                             #end
                             #set($counter = $counter + 1)
                         #end
-                    </TABLE>
-                </TD>
-            </TR>
+                </script>
 
-            <TR>
-                <TD colspan="2">&nbsp;</TD>
-            </TR>
-
-            #if ($showResources)
-                <TR>
-                    <TD></TD>
-                    <TD>
-                        <DIV class="edit_header3">Additional Resources</DIV>
-                    </TD>
-                </TR>
-
-                <TR>
-                    <TD></TD>
-                    <TD>
-                        <TABLE>
+                <!-- Project Resources -->
+                #if($showResources)
+                    <h4>Project Resources</h4>
+                    <section class="resources list">
+                        <!-- list project resources -->
+                    </section>
+                    <script>
+                        // gather resources
                             #set($counter = 0)
                             #foreach($resource in $resources)
                                 #if($!resource.get(0))
-                                    <TR>
-                                        <TD><input type="checkbox" id="resources$counter" name="resources" value="$!resource.get(0)" checked="true"/></TD>
-                                        <TD><label for="resources$counter">$!resource.get(0)</label></TD>
-                                    </TR>
+                                XNAT.app.projectDownload.items.resources.list.push('$!resource.get(0)');
+                                XNAT.app.projectDownload.items.resources.data.push({
+                                    counter: $counter,
+                                    value: '$!resource.get(0)',
+                                    name: '$!resource.get(0)',
+                                    label: '$!resource.get(0)'
+                                });
                                 #else
-                                    <TR>
-                                        <TD><input type="checkbox" id="resources$counter" name="resources" value="NULL"/></TD>
-                                        <TD><label for="resources$counter">Unspecified</label></TD>
-                                    </TR>
+                                XNAT.app.projectDownload.items.resources.list.push('Unspecified');
+                                XNAT.app.projectDownload.items.resources.data.push({
+                                    counter: $counter,
+                                    value: null,
+                                    name: 'Unspecified',
+                                    label: 'Unspecified'
+                                });
                                 #end
                                 #set($counter = $counter + 1)
                             #end
-                        </TABLE>
-                    </TD>
-                </TR>
+                    </script>
+                #end
 
-                <TR>
-                    <TD colspan="2">&nbsp;</TD>
-                </TR>
-            #end
-
-            #if ($showRecons)
-                <TR>
-                    <TD></TD>
-                    <TD>
-                        <DIV class="edit_header3">Reconstructions</DIV>
-                    </TD>
-                </TR>
-
-                <TR>
-                    <TD></TD>
-                    <TD>
-                        <TABLE ID="subTableScans">
+                <!-- Reconstructions -->
+                #if($showRecons)
+                    <h4>Reconstructions</h4>
+                    <section class="reconstructions list">
+                        <!-- list reconstructions -->
+                    </section>
+                    <script>
+                        // gather reconstructions
                             #set($counter = 0)
-                            #foreach($scan in $recons)
-                                #if($!scan.get(0))
-                                    <TR>
-                                        <TD><input type="checkbox" id="recon$counter" name="recon" value="$!scan.get(0)" checked="true"/></TD>
-                                        <TD><label for="recon$counter">$!scan.get(0) ($!scan.get(1))</label></TD>
-                                    </TR>
+                            #foreach($item in $recons)
+                                #if($!item.get(0))
+                                XNAT.app.projectDownload.items.reconstructions.list.push('$!item.get(0)');
+                                XNAT.app.projectDownload.items.reconstructions.data.push({
+                                    counter: $counter,
+                                    value: '$!item.get(0)',
+                                    name: '$!item.get(0)',
+                                    label: '$!item.get(0)',
+                                    count: +'$!item.get(1)'
+                                });
                                 #else
-                                    <TR>
-                                        <TD><input type="checkbox" id="recon$counter" name="recon" value="NULL"/></TD>
-                                        <TD><label for="recon$counter">Unassigned ($!scan.get(1))</label></TD>
-                                    </TR>
+                                XNAT.app.projectDownload.items.reconstructions.list.push('Unassigned');
+                                XNAT.app.projectDownload.items.reconstructions.data.push({
+                                    counter: $counter,
+                                    value: null,
+                                    name: 'Unassigned',
+                                    label: 'Unassigned',
+                                    count: +'$!item.get(1)'
+                                });
                                 #end
                                 #set($counter = $counter + 1)
                             #end
-                        </TABLE>
-                    </TD>
-                </TR>
+                    </script>
+                #end
 
-                <TR>
-                    <TD colspan="2">&nbsp;</TD>
-                </TR>
-            #end
 
-            #if ($showAssessors)
-                <TR>
-                    <TD></TD>
-                    <TD>
-                        <DIV class="edit_header3">Assessments</DIV>
-                    </TD>
-                </TR>
-
-                <TR>
-                    <TD></TD>
-                    <TD>
-                        <TABLE>
+                <!-- Assessors -->
+                #if($showAssessors)
+                    <h4>Assessments</h4>
+                    <section class="assessors">
+                        <!-- list assessors -->
+                    </section>
+                    <script>
+                        // gather assessors
                             #set($counter = 0)
-                            #foreach($scan in $assessors)
-                                #if($!scan.get(2))
-                                    <TR>
-                                        <TD><input type="checkbox" id="assessors$counter" name="assessors" value="$!scan.get(0)" checked="true"/></TD>
-                                        <TD><label for="assessors$counter">$!scan.get(2) ($!scan.get(1))</label></TD>
-                                    </TR>
+                            #foreach($item in $assessors)
+                                #if($!item.get(2))
+                                XNAT.app.projectDownload.items.assessors.list.push('$!item.get(2)');
+                                XNAT.app.projectDownload.items.assessors.data.push({
+                                    counter: $counter,
+                                    value: '$!item.get(0)',
+                                    name: '$!item.get(2)',
+                                    label: '$!item.get(2)',
+                                    count: +'$!item.get(1)'
+                                });
                                 #else
-                                    <TR>
-                                        <TD><input type="checkbox" id="assessors$counter" name="assessors" value="$!scan.get(0)"/></TD>
-                                        <TD><label for="assessors$counter">$!scan.get(0) ($!scan.get(1))</label></TD>
-                                    </TR>
+                                XNAT.app.projectDownload.items.assessors.list.push('$!item.get(0)');
+                                XNAT.app.projectDownload.items.assessors.data.push({
+                                    counter: $counter,
+                                    value: '$!item.get(0)',
+                                    name: '$!item.get(0)',
+                                    label: '$!item.get(0)',
+                                    count: +'$!item.get(1)'
+                                });
                                 #end
                                 #set($counter = $counter + 1)
                             #end
-                        </TABLE>
-                    </TD>
-                </TR>
+                    </script>
+                #end
 
-                <TR>
-                    <TD colspan="2">&nbsp;</TD>
-                </TR>
-            #end
+            </div>
+        </div>
+    </div>
 
-        </TABLE>
-    </DIV>
-</TD>
-<TD ROWSPAN="4">&nbsp;&nbsp;&nbsp;</TD>
-<TD VALIGN="top" width="300" class="withColor">
-    <TABLE>
-        <TR>
-            <TD><INPUT type="radio" id="download_option" name="download_option" value="applet" CHECKED></TD>
-            <TD><label for="download_option">Option 1: Direct download</label></TD>
-        </TR>
-        <TR>
-            <TD></TD>
-            <TD style="font-size:11px;">
-                You will be prompted to enter a local directory to copy the data to. Then, all of
-                the requested imaging data will be directly downloaded via a java applet into that directory.
-            </TD>
-        </TR>
-        <TR>
-            <TD>&nbsp;</TD>
-        </TR>
-        <TR>
-            <TD><INPUT type="radio" id="download_option" name="download_option" value="catalog"></TD>
-            <TD><label for="download_option">Option 2: Catalog XML (.xcat)</label></TD>
-        </TR>
+    <script>
+        // cache the list containers
+    </script>
 
-        <TR>
-            <TD></TD>
-            <TD style="font-size:11px;">Download an xml representation of the files. This xml can then be used by
-                specific applications to download the data at the user's command.
-            </TD>
-        </TR>
-        <TR>
-            <TD>&nbsp;</TD>
-        </TR>
-        <TR>
-            <TD><input type="checkbox" id="projectIncludedInPath" name="projectIncludedInPath" value="true"/>
-            <TD><label for="projectIncludedInPath">Include $displayManager.getSingularDisplayNameForProject().toLowerCase() in file paths</label></TD>
-        </TR>
-        <TR>
-            <TD><input type="checkbox" id="subjectIncludedInPath" name="subjectIncludedInPath" value="true"/>
-            <TD><label for="subjectIncludedInPath">Include $displayManager.getSingularDisplayNameForSubject().toLowerCase() in file paths</label></TD>
-        </TR>
-        <TR>
-            <TD><input type="checkbox" id="simplified" name="simplified" checked value="true"/>
-            <TD><label for="simplified">Simplify downloaded archive structure</label></TD>
-        </TR>
-        <TR>
-            <TD colspan="2">&nbsp;</TD>
-        </TR>
-    </TABLE>
-</TD>
-</TR>
-<TR>
-    <TD>&nbsp;</TD>
-</TR>
-<TR>
-    <TD>
-        <DIV class="edit_header2"><img src="$content.getURI("images/number_4.gif")" border=0> Submit Data Request</DIV>
-    </TD>
-</TR>
-<TR>
-    <TD style="vertical-align: top">
-        <TABLE class="withColor">
-            <TR>
-                <TD><input type="submit" value="Submit" name="eventSubmit_doPerform"/></TD>
-            </TR>
-            <TR>
-                <TD style="font-size:11px;">Upon page submission, the pertinent files will be reviewed and organized for
-                    download. Depending on the number of files, this may take several minutes to process.
-                </TD>
-            </TR>
-        </TABLE>
-    </TD>
-</TR>
-</TABLE>
-</FORM>
 
-<script type="text/javascript">
-    jq(document).ready(function(){
-        jq('#subTableSessions tr:first').addClass('first');
-    });
+
+
+    <!-- Download Options -->
+    <div id="project-download-options" class="download-column last">
+        <div class="pad">
+
+            <h3>3: Download Data</h3>
+
+            <div class="inner">
+
+                <h4>Options</h4>
+                <section>
+                    <dl>
+                        <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="direct" checked></dt>
+                        <dd><label for="direct-download"><b>Option 1: Direct download</b></label></dd>
+                        <dd>
+                            A download request will be initiated by the browser to retrieve the selected session data as a single compressed zip file.
+                            <div class="warning" style="left:-12px;margin-top:5px;">
+                                Interruption of a large zip download may result in corrupted or incomplete data.
+                            </div>
+                        </dd>
+                    </dl>
+                    <dl>
+                        <dt><input type="radio" id="catalog-download" name="download_type" class="download-type ignore" value="catalog"></dt>
+                        <dd><label for="catalog-download"><b>Option 2: Catalog XML</b></label></dd>
+                        <dd>
+                            Download an xml representation of the files. This xml can then be used by
+                            specific applications to download the data at the user's command.
+                        </dd>
+                    </dl>
+                    <dl>
+                        <dt><input type="checkbox" name="options[]" value="projectIncludedInPath"></dt>
+                        <dd>
+                            <label for="projectIncludedInPath">Include $displayManager.getSingularDisplayNameForProject().toLowerCase() in file paths</label>
+                        </dd>
+                    </dl>
+                    <dl>
+                        <dt><input type="checkbox" name="options[]" value="subjectIncludedInPath"></dt>
+                        <dd>
+                            <label for="subjectIncludedInPath">Include $displayManager.getSingularDisplayNameForSubject().toLowerCase() in file paths</label>
+                        </dd>
+                    </dl>
+                    <dl>
+                        <dt><input type="checkbox" name="options[]" checked value="simplified"></dt>
+                        <dd><label for="simplified">Simplify downloaded archive structure</label></dd>
+                    </dl>
+                </section>
+                <br>
+                <h4>Submit Data Request</h4>
+                <section>
+                    <p> Upon page submission, the pertinent files will be reviewed and organized for download.
+                        Depending on the number of files, this may take several minutes to process. </p><br>
+                    <div class="pull-right">
+                        <button type="submit">Submit</button>
+                    </div>
+                    <div class="clear"></div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="${SITE_ROOT}/scripts/xnat/app/projectDownload.js"></script>
+
+    <div class="clear"></div>
+
+</form>
+
+<script>
+    (function(){
+        var sampleJSON = {
+            "sessions": ["session1", "session2", "session3", "session4", "session5"],
+            "scan_type": ["scan_type1", "scan_type2", "scan_type3", "scan_type4", "scan_type5"],
+            "scan_format": ["scan_format1", "scan_format2", "scan_format3", "scan_format4", "scan_format5"],
+            "recon": ["recon1", "recon2", "recon3", "recon4", "recon5"],
+            "assessors": ["assessors1", "assessors2", "assessors3", "assessors4", "assessors5"],
+            "resources": ["resources1", "resources2", "resources3", "resources4", "resources5"]
+        }
+    })()
 </script>

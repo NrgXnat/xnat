@@ -16,10 +16,10 @@
     <script>
 
         var XNAT = XNAT || {};
-        var serverRoot = "$content.getURI('')";
-        var csrfToken = "$!data.getSession().getAttribute("XNAT_CSRF")";
-        var showReason = realValue($!showReason) || null;
-        var requireReason = realValue($!requireReason) || null;
+        var serverRoot = '$content.getURI("")';
+        var csrfToken = '$!data.getSession().getAttribute("XNAT_CSRF")';
+        var showReason = realValue('$!showReason');
+        var requireReason = realValue('$!requireReason');
 
     </script>
     ## separate script tags so not everything breaks if showReason or requireReason blows up

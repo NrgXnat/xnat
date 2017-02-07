@@ -33,6 +33,10 @@ var XNAT = getObject(XNAT);
     XNAT.app.projectDownload = projectDownload =
         getObject(XNAT.app.projectDownload || {});
 
+    function getById(id){
+        return document.getElementById(id);
+    }
+
     // list of project data is build on the download page
     // XDATScreen_download_sessions.vm
     // XNAT.app.projectDownload.items
@@ -48,7 +52,17 @@ var XNAT = getObject(XNAT);
         var itemCheckboxes = [];
         var $itemCheckboxes = null;
 
-        var CKBX_WIDTH = '70px';
+        var CKBX_WIDTH = '60px';
+
+        // keeping track of the select-all toggle
+        // in the DOM is a nightmare
+        // true -> select all
+        // false -> select none
+        // null -> indeterminate
+        var selectAll = true;
+
+        // cache the ID string for the 'select all' menu/checkbox
+        var SELECT_ALL_ID = 'select-all-' + typeDashed;
 
         var selectAllMenu = XNAT.ui.select.menu({
             value: 'all',
@@ -58,7 +72,8 @@ var XNAT = getObject(XNAT);
                 none: 'None'
             },
             element: {
-                id: 'select-all-' + typeDashed,
+                id: SELECT_ALL_ID,
+                className: 'ignore',
                 style: { width: CKBX_WIDTH },
                 on: [['change', function(){
                     var menu = this;
@@ -77,50 +92,47 @@ var XNAT = getObject(XNAT);
             $selectAllMenu.changeVal('select');
         }
 
-        var selectAllCheckbox = spawn('input', {
+        var selectAllCheckbox = spawn('input|checked', {
             type: 'checkbox',
-            className: 'checkbox select-all select-all-' + typeDashed,
-            value: 'select',
+            id: SELECT_ALL_ID,
+            className: 'ignore checkbox select-all ' + typeDashed,
             title: type + ': select all',
-            checked: true,
-            on: [['change', function(){
-                console.log('selectAllCheckbox.change()');
-                var ckbx = this;
-                if ($itemCheckboxes && ckbx.value !== 'select') {
-                    $itemCheckboxes.prop('checked', false).filter(':visible').each(function(){
-                        // this.checked = ckbx.value === 'all';
-                        this.checked = ckbx.checked;
-                    });
-                }
-                ckbx.value = ckbx.checked ? 'all' : 'none';
-            }]]
+            checked: true
         });
 
-        var $selectAllCheckbox = $(selectAllCheckbox).clone(true, true);
-        var _selectAllCheckbox = $selectAllCheckbox[0];
+        var selectAllLabel = spawn('label', {
+            className: 'no-wrap',
+            title: type + ': select all',
+            attr: { 'for': SELECT_ALL_ID },
+            style: {
+                display: 'block',
+                width: CKBX_WIDTH
+            }
+        }, [selectAllCheckbox, '&nbsp;', '<span style="text-decoration:underline;">All</span>']);
 
-        function toggleSelectAllCheckbox(clicked){
-            var $table = $(clicked).closest('table');
-            var _selectAllCheckbox = $table.find('input.checkbox.select-all')[0];
-            console.log('toggleSelectAllCheckbox');
-            _selectAllCheckbox.value = 'select';
-            _selectAllCheckbox.checked = false;
-            _selectAllCheckbox.indeterminate = true;
+        function toggleAllItems(){
+            selectAll = (selectAll === false || selectAll === null);
+            $('.select-' + typeDashed).prop('checked', false).filter(':visible').each(function(){
+                this.checked = selectAll;
+            });
+        }
+
+        function toggleSelectAllCheckbox(){
+            var selectAllCkbx = getById(SELECT_ALL_ID);
+            selectAll = null;
+            selectAllCkbx.checked = false;
+            selectAllCkbx.indeterminate = true;
         }
 
         function itemCheckbox(item){
-            var checkbox = spawn('input', {
+            var checkbox = spawn('input|checked', {
                 type: 'checkbox',
                 id: item.newId,
                 className: 'select-item select-' + typeDashed,
                 value: item.value,
                 name: type + '[]',
                 title: type + ': ' + item.name,
-                checked: true,
-                on: [['change', function(){
-                    toggleSelectAllMenu();
-                    // toggleSelectAllCheckbox(this);
-                }]]
+                checked: true
             });
             itemCheckboxes.push(checkbox);
             return checkbox;
@@ -130,16 +142,12 @@ var XNAT = getObject(XNAT);
             classes: typeDashed,
             header: false,
             sortable: false,
-            // element: {
-            //     on: [
-            //         ['change', 'input.checkbox.select-all', function(){
-            //             console.log(this.className)
-            //         }],
-            //         ['change', 'input.select-item', function(){
-            //
-            //         }]
-            //     ]
-            // },
+            table: {
+                on: [
+                    ['change', 'input.select-all', toggleAllItems],
+                    ['change', 'input.select-item', toggleSelectAllCheckbox]
+                ]
+            },
             items: {
                 _name: '~data-id',
                 CHECKBOX: {
@@ -155,10 +163,7 @@ var XNAT = getObject(XNAT);
                     },
                     filter: function(){
                         // renders a menu in the filter row
-                        return spawn('div.center', [selectAllMenu]);
-                        // return spawn('div.center', [
-                        //     spawn('label.no-wrap', [_selectAllCheckbox, '&nbsp', 'All'])
-                        // ]);
+                        return spawn('div.center', [selectAllLabel]);
                     },
                     call: function(){
                         // renders the actual checkbox cell
@@ -204,7 +209,8 @@ var XNAT = getObject(XNAT);
         }
     );
 
-    // XNAT.dom('/#download-form').event('submit', function(e){
+    // future high-speed selector syntax with lightweight event handling
+    // XNAT.dom('#/download-form').on('submit', function(e){
     //     e.preventDefault();
     // });
 
@@ -213,7 +219,7 @@ var XNAT = getObject(XNAT);
     $(function(){
 
         function setupDownloadUrl(id, zip){
-            var base = XNAT.url.rootUrl('/xapi/archive/download/' + id)
+            var base = XNAT.url.rootUrl('/xapi/archive/download/' + id);
             return zip ? (base + '/zip') : (base + '/xml');
         }
 
@@ -228,9 +234,8 @@ var XNAT = getObject(XNAT);
             $form.find('[name="XNAT_CSRF"]').remove();
             var $formSubmit = $form.submitJSON();
             $formSubmit.always(function(data){
-                var _id = data.responseText;
-                var _url = setupDownloadUrl(_id, getZip);
-                var XML = null;
+                var ID = data.responseText;
+                var URL = setupDownloadUrl(ID, getZip);
                 if (getZip) {
                     msg.push('Click "Download" to start the zip download.');
                 }
@@ -238,13 +243,13 @@ var XNAT = getObject(XNAT);
                     msg.push('Click "Download" to download the catalog XML.');
                 }
                 msg.push('<br><br>');
-                msg.push('The download id is <b>' + _id + '</b>.');
+                msg.push('The download id is <b>' + ID + '</b>.');
 
                 xmodal.confirm({
                     content: msg.join(' '),
                     okLabel: 'Download',
                     okAction: function(){
-                        window.open(_url)
+                        window.open(URL)
                     }
                 })
             });
@@ -254,7 +259,7 @@ var XNAT = getObject(XNAT);
             });
             return false;
         });
-    })
+    });
 
     // this script has loaded
     projectDownload.loaded = true;

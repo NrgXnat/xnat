@@ -381,7 +381,7 @@ var XNAT = getObject(XNAT);
         var allItems = opts.header || (opts.items && opts.items === 'all');
 
         // properties for spawned element
-        opts.element = opts.element || {};
+        opts.element = opts.table || opts.element || {};
 
         addClassName(opts.element, 'data-table xnat-table');
 

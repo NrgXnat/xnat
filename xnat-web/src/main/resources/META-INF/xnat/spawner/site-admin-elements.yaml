@@ -1065,6 +1065,15 @@ sessionBuilder:
             description: >
                 This should be the login name of an enabled and valid user. The specified user must be a site
                 administrator.
+        reloadPrearcDatabaseOnStartup:
+            kind: panel.input.switchbox
+            label: "Reload Prearchive Database<br>On Start-up?"
+            onText: Enabled
+            offText: Disabled
+            description: >
+                This controls whether the prearchive database is rebuilt when your XNAT server restarts. This can help
+                keep your system in sync with the data in prearchive, but can add to system load at start-up, especially
+                on systems that handle a lot of incoming data.
         sessionXmlRebuilderRepeat:
             kind: panel.input.number
             label: Session Idle Check Interval

@@ -9,15 +9,19 @@
 
 package org.nrg.xapi.rest.settings;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.beans.XnatPluginBean;
+import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xnat.spawner.services.SpawnerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -35,9 +40,20 @@ import java.util.Properties;
 @RequestMapping(value = "/plugins")
 public class XnatPluginApi extends AbstractXapiRestController {
     @Autowired
-    public XnatPluginApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) throws IOException {
+    public XnatPluginApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatPluginBeanManager manager, final SpawnerService spawner) throws IOException {
         super(userManagementService, roleHolder);
-        _plugins = XnatPluginBean.getXnatPluginBeans();
+        final List<String> spawnerNamespaces = spawner.getNamespaces();
+        for (final String pluginId : manager.getPluginIds()) {
+            final XnatPluginBean plugin = manager.getPlugin(pluginId);
+            _plugins.put(pluginId, plugin);
+
+            final List<String> namespaces = plugin.getAssociatedNamespaces();
+            for (final String namespace : Lists.asList(plugin.getNamespace(), plugin.getId(), namespaces.toArray(new String[namespaces.size()]))) {
+                if (spawnerNamespaces.contains(namespace) && spawner.getNamespacedElementIds(namespace).contains("siteSettings")) {
+                    plugin.setExtendedAttribute("siteSettings", namespace);
+                }
+            }
+        }
     }
 
     @ApiOperation(value = "Returns a list of all of the installed and active XNAT plugins with their properties.", notes = "The maps returned from this call include all of the properties specified in the plugin's property file.", response = String.class, responseContainer = "Map")
@@ -62,5 +78,5 @@ public class XnatPluginApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_plugins.get(plugin), HttpStatus.OK);
     }
 
-    private final Map<String, XnatPluginBean> _plugins;
+    private final Map<String, XnatPluginBean> _plugins = Maps.newHashMap();
 }

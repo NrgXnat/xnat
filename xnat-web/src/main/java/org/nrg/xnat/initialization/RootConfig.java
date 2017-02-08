@@ -24,7 +24,6 @@ import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.configuration.ApplicationConfig;
-import org.nrg.xnat.helpers.prearchive.PrearcConfig;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -84,13 +83,6 @@ public class RootConfig {
         }
 
         return bean;
-    }
-
-    @Bean
-    public PrearcConfig prearcConfig() {
-        final PrearcConfig prearcConfig = new PrearcConfig();
-        prearcConfig.setReloadPrearcDatabaseOnApplicationStartup(false);
-        return prearcConfig;
     }
 
     @Bean

@@ -20,7 +20,6 @@ import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xnat.helpers.prearchive.PrearcConfig;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,9 +80,8 @@ public class ArcSpecManager {
             logger.debug("Done writing out arc spec.");
    
             if(dbInit){
-                PrearcConfig prearcConfig = XDAT.getContextService().getBean(PrearcConfig.class);
 	            try {
-	    			PrearcDatabase.initDatabase(prearcConfig.isReloadPrearcDatabaseOnApplicationStartup());
+                    PrearcDatabase.initDatabase(XDAT.getBoolSiteConfigurationProperty("reloadPrearcDatabaseOnStartup", false));
 	    		} catch (Exception e) {
 	    			logger.error("",e);
 	    		}

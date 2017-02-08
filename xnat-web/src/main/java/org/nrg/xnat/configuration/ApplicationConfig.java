@@ -11,6 +11,7 @@ package org.nrg.xnat.configuration;
 
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.framework.utilities.OrderedProperties;
@@ -57,6 +58,11 @@ public class ApplicationConfig {
     @Bean
     public InitializingTasksExecutor initializingTasksExecutor(final TaskScheduler scheduler, final List<InitializingTask> tasks) {
         return new InitializingTasksExecutor(scheduler, tasks);
+    }
+
+    @Bean
+    public XnatPluginBeanManager xnatPluginBeanManager() {
+        return new XnatPluginBeanManager();
     }
 
     @Bean

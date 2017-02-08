@@ -15,6 +15,7 @@ import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.beans.XnatPluginBean;
+import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
@@ -126,22 +127,17 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     private List<Class<?>> getPluginConfigs() {
         final List<Class<?>> configs = new ArrayList<>();
         try {
-            for (final XnatPluginBean plugin : XnatPluginBean.getXnatPluginBeans().values()) {
+            for (final XnatPluginBean plugin : XnatPluginBeanManager.scanForXnatPluginBeans().values()) {
                 if (_log.isInfoEnabled()) {
                     _log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
                 }
                 configs.add(Class.forName(plugin.getPluginClass()));
             }
-        } catch (IOException e) {
-            throw new RuntimeException("An error occurred trying to locate XNAT plugin definitions.");
         } catch (ClassNotFoundException e) {
             _log.error("Did not find a class specified in a plugin definition.", e);
         }
 
-        if (_log.isInfoEnabled()) {
-            _log.info("Found a total of {} plugins", configs.size());
-        }
-
+        _log.info("Found a total of {} plugins", configs.size());
         return configs;
     }
 

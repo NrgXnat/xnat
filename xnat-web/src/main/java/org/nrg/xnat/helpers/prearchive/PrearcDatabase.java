@@ -31,6 +31,7 @@ import org.nrg.xdat.bean.XnatPetsessiondataBean;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatPetscandataI;
 import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
@@ -466,11 +467,15 @@ public final class PrearcDatabase {
      * @throws ClassNotFoundException
      */
     public static void refresh() throws Exception {
-        refresh(XDAT.getContextService().getBean(PrearcConfig.class).isReloadPrearcDatabaseOnApplicationStartup());
+        refresh(XDAT.getBoolSiteConfigurationProperty("reloadPrearcDatabaseOnStartup", false));
     }
 
     /**
-     * Recreate the database from scratch. This is an expensive operation. The {@link #refresh()} version of this method will only recreate the database from scratch if the {@link org.nrg.xnat.helpers.prearchive.PrearcConfig#isReloadPrearcDatabaseOnApplicationStartup()} property is set to <b>true</b>. This is useful for cleaning up the table on application start-up without incurring the additional overhead of a full rebuild of the prearchive database. This version lets you specify <b>true</b> for the force parameter to force the delete and full rebuild of the table.
+     * Recreate the database from scratch. This is an expensive operation. The {@link #refresh()} version of this method
+     * will only recreate the database from scratch if the {@link SiteConfigPreferences#isReloadPrearcDatabaseOnStartup()}
+     * property is set to <b>true</b>. This is useful for cleaning up the table on application start-up without
+     * incurring the additional overhead of a full rebuild of the prearchive database. This version lets you specify
+     * <b>true</b> for the force parameter to force the delete and full rebuild of the table.
      *
      * @param force Indicates whether the table should be dropped.
      *

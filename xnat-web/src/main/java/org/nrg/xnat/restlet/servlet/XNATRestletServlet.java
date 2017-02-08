@@ -12,7 +12,6 @@ package org.nrg.xnat.restlet.servlet;
 import com.noelios.restlet.ext.servlet.ServerServlet;
 import org.nrg.dcm.DicomSCPManager;
 import org.nrg.xdat.XDAT;
-import org.nrg.xnat.helpers.prearchive.PrearcConfig;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,15 +32,10 @@ public class XNATRestletServlet extends ServerServlet {
 
         XNATRestletServlet.REST_CONFIG = getServletConfig();
 
-        final PrearcConfig prearcConfig = XDAT.getContextService().getBean(PrearcConfig.class);
-        if (prearcConfig != null) {
-            try {
-                PrearcDatabase.initDatabase(prearcConfig.isReloadPrearcDatabaseOnApplicationStartup());
-            } catch (Throwable e) {
-                logger.error("Unable to initialize prearchive database", e);
-            }
-        } else {
-            logger.error("The prearc config wasn't found!");
+        try {
+            PrearcDatabase.initDatabase(XDAT.getBoolSiteConfigurationProperty("reloadPrearcDatabaseOnStartup", false));
+        } catch (Throwable e) {
+            logger.error("Unable to initialize prearchive database", e);
         }
 
         XDAT.getContextService().getBean(DicomSCPManager.class).startOrStopDicomSCPAsDictatedByConfiguration();

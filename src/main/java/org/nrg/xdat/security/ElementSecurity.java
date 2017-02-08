@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.framework.beans.XnatDataModelBean;
 import org.nrg.framework.beans.XnatPluginBean;
+import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
@@ -132,7 +133,9 @@ public class ElementSecurity extends ItemWrapper {
             }
         }
 
-        for (final XnatPluginBean plugin : XnatPluginBean.getXnatPluginBeans().values()) {
+        final XnatPluginBeanManager beanManager = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
+        for (final String pluginId : beanManager.getPluginIds()) {
+            final XnatPluginBean plugin = beanManager.getPlugin(pluginId);
             for (final XnatDataModelBean bean : plugin.getDataModelBeans()) {
                 if (!elements.containsKey(bean.getType()) && bean.isSecured()) {
                     if (GenericWrapperElement.GetFieldForXMLPath(bean.getType() + "/project") != null) {

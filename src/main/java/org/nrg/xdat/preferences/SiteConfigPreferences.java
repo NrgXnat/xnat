@@ -229,6 +229,18 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean isReloadPrearcDatabaseOnStartup() {
+        return getBooleanValue("reloadPrearcDatabaseOnStartup");
+    }
+
+    public void setReloadPrearcDatabaseOnStartup(final boolean reloadPrearcDatabaseOnStartup) {
+        try {
+            setBooleanValue(reloadPrearcDatabaseOnStartup, "reloadPrearcDatabaseOnStartup");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'reloadPrearcDatabaseOnStartup': something is very wrong here.", e);
+        }
+    }
 
     @NrgPreference(defaultValue = "^.*$")
     public String getPasswordComplexity() {

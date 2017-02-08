@@ -9,9 +9,9 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -30,13 +30,18 @@ import org.nrg.xdat.model.PipePipelinedetailsParameterI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseWrkWorkflowdata;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.modules.screens.SecureReport;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.PipelineNotFoundException;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
@@ -305,5 +310,59 @@ public abstract class DefaultPipelineScreen extends SecureReport {
         } else {
             return Lists.newArrayList();
         }
+    }
+
+    protected List<XnatImagesessiondata> getPreviousImagingSessions(final XnatImagesessiondata latestImagingSession) {
+        if (latestImagingSession == null) {
+            return null;
+        }
+
+        final String subjectId = latestImagingSession.getSubjectId();
+        if (StringUtils.isBlank(subjectId)) {
+            logger.error("Image session " + latestImagingSession.getId() + " has no subject identifier.");
+            return null;
+        }
+        final String projectId = latestImagingSession.getSubjectId();
+        if (StringUtils.isBlank(projectId)) {
+            logger.error("Image session " + latestImagingSession.getId() + " has no project identifier.");
+            return null;
+        }
+        final UserI userI = XDAT.getUserDetails();
+        if (userI == null) {
+            logger.error("Bad user object returned from XDAT.");
+            return null;
+        }
+        final String login = userI.getLogin();
+
+        final String query = "SELECT im.id FROM xnat_imagesessiondata im LEFT JOIN xnat_subjectAssessorData sad ON im.ID=sad.ID LEFT JOIN xnat_experimentData ed ON sad.ID=ed.ID WHERE subject_id='" + subjectId +"' and ed.project='" + projectId + "' and date < '" +  latestImagingSession.getDate() +"' ORDER BY date DESC ";
+
+        final List<XnatImagesessiondata> previousSessions = Lists.newArrayList();
+        XFTTable table;
+        try {
+            table = TableSearch.Execute(query, latestImagingSession.getDBName(), login);
+        } catch (Exception e) {
+            logger.error("There was a problem searching for previous imaging sessions.", e);
+            return null;
+        }
+
+        if (table != null && table.size() > 0)            {
+            table.resetRowCursor();
+
+            while(table.hasMoreRows())    {
+                final Object imageSessionId = table.nextRowHash().get("id");
+                if (imageSessionId != null)      {
+                    ItemI itemI = null;
+                    try {
+                        itemI = ItemSearch.GetItem("xnat:imageSessionData.ID", imageSessionId, userI, false);
+                    } catch (Exception e) {
+                        logger.error("Could not find image session " + imageSessionId, e);
+                    }
+                    if (itemI != null) {
+                        previousSessions.add(new XnatImagesessiondata(itemI));
+                    }
+                }
+            }
+        }
+        return previousSessions;
     }
 }

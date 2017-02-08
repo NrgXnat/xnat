@@ -37,7 +37,7 @@ var XNAT = getObject(XNAT);
 
         return XNAT.xhr.get(XNAT.url.restUrl('/xapi/plugins'), function(plugins){
 
-            console.log('/xapi/plugins response:');
+            console.log('/xapi/plugins:');
             console.log(plugins);
 
             var showMenuItem = false;
@@ -78,6 +78,9 @@ var XNAT = getObject(XNAT);
                             if (xhrObj.status === 200) {
                                 showMenuItem = true;
                                 $('#view-plugin-settings').removeClass('hidden');
+                            }
+                            else {
+                                lookForSettings(++i)
                             }
                         })
                         .fail(function(){

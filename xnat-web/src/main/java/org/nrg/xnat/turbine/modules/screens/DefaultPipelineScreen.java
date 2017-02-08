@@ -30,7 +30,6 @@ import org.nrg.xdat.model.PipePipelinedetailsParameterI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseWrkWorkflowdata;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.modules.screens.SecureReport;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;

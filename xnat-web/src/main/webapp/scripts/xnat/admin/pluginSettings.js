@@ -73,9 +73,12 @@ var XNAT = getObject(XNAT);
                     }
                     // recursively try to get settings at different places
                     getPluginSpawnerElements(pluginSettingsPaths[i])
-                        .done(function(){
-                            showMenuItem = true;
-                            $('#view-plugin-settings').removeClass('hidden');
+                        .done(function(data, textStatus, xhrObj){
+                            // only show the menu for valid responses
+                            if (xhrObj.status === 200) {
+                                showMenuItem = true;
+                                $('#view-plugin-settings').removeClass('hidden');
+                            }
                         })
                         .fail(function(){
                             lookForSettings(++i)

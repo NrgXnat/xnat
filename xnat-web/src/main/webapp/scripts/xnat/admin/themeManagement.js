@@ -52,7 +52,7 @@ function selectTheme(themeToSelect){
         themeSelector.val(themeToSelect);
     }
 }
-var themeSelectionForm = $('#themeSelection').parent().parent().parent().parent();
+var themeSelectionForm = $('#themeSelection').closest('form');
 themeSelectionForm.off('submit');
 themeSelectionForm.submit(function(ev){
     ev.preventDefault();
@@ -111,6 +111,7 @@ themeUploadForm.onsubmit = function(event){
             if (newThemeOptions[0]) {
                 selected = newThemeOptions[0].value;
             }
+            selected = null; // don't change the menu?
             addThemeOptions(newThemeOptions, selected);
         };
         xhr.send(formData);
@@ -121,5 +122,18 @@ themeUploadForm.onsubmit = function(event){
         $(themeUploadSubmit).text('Upload');
         $(themeUploadSubmit).removeAttr('disabled');
     }
+    else {
+        XNAT.ui.banner.top(2000, 'Theme uploaded.', 'success');
+    }
+    return false;
 };
+
+$('body').on('change', '#themeSelection', function(){
+    var THEME = this.value;
+    var URL = XNAT.url.csrfUrl('/xapi/theme/' + THEME);
+    XNAT.xhr.put(URL).done(function(){
+        XNAT.ui.banner.top(2000, 'Theme set to "' + THEME + '".', 'success');
+    })
+});
+
 $(populateThemes);  // ...called once DOM is fully loaded "ready"

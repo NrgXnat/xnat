@@ -671,7 +671,6 @@ emailServerSettings:
         smtpSslTrust:
             kind: panel.input.text
             label: SSL Trust
-            placeholder: localhost
         emailPrefix:
             kind: panel.input.text
             label: Email Prefix
@@ -798,10 +797,9 @@ themeManagement:
     kind: panel.form
     name: themeManagement
     label: Theme Management
-    url: /xapi/theme
+    footer: false
+    #url: /xapi/theme
     contents:
-        themeScript:
-            tag: script|src=/scripts/xnat/admin/themeManagement.js
         themeStyle:
             tag: style
             content: ".themeUploader{width:270px;display:inline !important;}"
@@ -832,6 +830,8 @@ themeManagement:
             label: Upload a theme package
             description: Upload a zipped theme package for selection above.
             className: themeUploader
+        themeScript:
+            tag: script|src=/scripts/xnat/admin/themeManagement.js
 
 pluginTable:
     kind: table.dataTable
@@ -853,7 +853,7 @@ pluginTable:
             className: center
             # function that accepts current item as sole argument and parent object as 'this'
             # returned value will be new value - if nothing's returned, value is passed through
-            call: (function(){ return formatJSON(this) })
+            apply: (function(){ return formatJSON(this) })
             html: >
                 <a href="#!" class="view-plugin-info link">View Plugin Info</a>
                 <div data-code-language="json" class="hidden plugin-json-string">__VALUE__</div>
@@ -1499,7 +1499,7 @@ adminPage:
         plugins:
             kind: tab
             name: plugins
-            label: Manage Plugins
+            label: Installed Plugins
             group: xnatSetup
             contents:
                 ${pluginList}

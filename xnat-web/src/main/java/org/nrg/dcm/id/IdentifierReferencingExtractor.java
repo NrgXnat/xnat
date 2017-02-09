@@ -17,10 +17,11 @@ import org.nrg.xnat.DicomObjectIdentifier;
  * Provides a method to set the identifier that's containing this extractor. This can be used so that extractors can
  * find other values that the identifier may have.
  */
-public interface ReferencingExtractor extends Extractor {
+public interface IdentifierReferencingExtractor extends Extractor {
     /**
-     * Sets the identifier object.
-     * @param identifier    The identifier object.
+     * Sets the DICOM object identifier instance.
+     *
+     * @param identifier The identifier instance.
      */
     void setIdentifier(DicomObjectIdentifier<XnatProjectdata> identifier);
 }

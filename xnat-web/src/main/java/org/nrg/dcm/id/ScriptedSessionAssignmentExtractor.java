@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class ScriptedSessionAssignmentExtractor extends ChainExtractor implements ReferencingExtractor {
+public class ScriptedSessionAssignmentExtractor extends ChainExtractor implements IdentifierReferencingExtractor {
 
     @SuppressWarnings("unused")
     public ScriptedSessionAssignmentExtractor(final String event, final Extractor... extractors) {
@@ -120,14 +120,7 @@ public class ScriptedSessionAssignmentExtractor extends ChainExtractor implement
                 }
             }
             return results == null ? defaultValue : results.toString();
-        } catch (RuntimeException e) {
-            _log.error("Got an exception running the " + script.getScriptId() + "script for event " + _event + ". " + (_continueOnScriptFailure ? "Continue on failure is true, returning default value " + defaultValue : "Continue on failure is false, re-throwing exception"), e);
-            if (_continueOnScriptFailure) {
-                return defaultValue;
-            } else {
-                throw e;
-            }
-        } catch (Error e) {
+        } catch (RuntimeException | Error e) {
             _log.error("Got an exception running the " + script.getScriptId() + "script for event " + _event + ". " + (_continueOnScriptFailure ? "Continue on failure is true, returning default value " + defaultValue : "Continue on failure is false, re-throwing exception"), e);
             if (_continueOnScriptFailure) {
                 return defaultValue;

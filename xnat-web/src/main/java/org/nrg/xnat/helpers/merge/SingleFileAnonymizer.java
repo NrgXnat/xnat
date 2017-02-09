@@ -17,6 +17,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class SingleFileAnonymizer extends AnonymizerA {
 	public final File f;
 	public final String project;
@@ -75,10 +76,7 @@ public class SingleFileAnonymizer extends AnonymizerA {
 	}
 
 	@Override
-	public java.lang.Void call () throws Exception {
-		if (this.reanonymize) {
-			super.call();
-		}
-		return null;
+	public Boolean call () throws Exception {
+		return reanonymize ? super.call() : false;
 	}
 }

@@ -61,11 +61,6 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public XnatPluginBeanManager xnatPluginBeanManager() {
-        return new XnatPluginBeanManager();
-    }
-
-    @Bean
     public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new SiteConfigPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
     }

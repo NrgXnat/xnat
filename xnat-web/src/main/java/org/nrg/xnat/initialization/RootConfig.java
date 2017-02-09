@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import org.apache.commons.beanutils.BeanUtils;
 import org.nrg.framework.beans.Beans;
+import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.ContextService;
@@ -63,6 +64,11 @@ public class RootConfig {
     @Bean
     public ContextService contextService() throws NrgServiceException {
         return ContextService.getInstance();
+    }
+
+    @Bean
+    public XnatPluginBeanManager xnatPluginBeanManager() {
+        return new XnatPluginBeanManager();
     }
 
     @Bean

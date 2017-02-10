@@ -21,6 +21,8 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.data.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -39,7 +41,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     }
 
     public void finalize(XnatImagesessiondata session) throws ClientException,
-            ServerException {
+                                                              ServerException {
         final String root = destRootPath.replace('\\', '/') + "/";
         for (XnatImagescandataI scan : session.getScans_scan()) {
             for (final XnatAbstractresourceI file : scan.getFile()) {
@@ -58,8 +60,8 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     }
 
     public void postSave(XnatImagesessiondata session) {
-        final String root = destRootPath.replace('\\', '/') + "/";
-        boolean checksums = false;
+        final String root      = destRootPath.replace('\\', '/') + "/";
+        boolean      checksums = false;
         try {
             final XnatProjectdata project = session.getProjectData();
             checksums = CatalogUtils.getChecksumConfiguration(project);
@@ -72,9 +74,9 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
                 if (file instanceof XnatResourcecatalog) {
                     XnatResourcecatalog res = (XnatResourcecatalog) file;
                     try {
-                        File f = CatalogUtils.getCatalogFile(root, res);
+                        File           f   = CatalogUtils.getCatalogFile(root, res);
                         CatCatalogBean cat = CatalogUtils.getCatalog(root, res);
-                        if (CatalogUtils.formalizeCatalog(cat, f.getParentFile().getAbsolutePath(), user, c,checksums,false)) {
+                        if (CatalogUtils.formalizeCatalog(cat, f.getParentFile().getAbsolutePath(), user, c, checksums, false)) {
                             CatalogUtils.writeCatalogToFile(cat, f, checksums);
                         }
                     } catch (Exception exception) {
@@ -89,13 +91,15 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
             XnatImagesessiondata src, String srcRootPath,
             XnatImagesessiondata dest, String destRootPath, final File rootBackUp)
             throws ClientException, ServerException {
-        if (dest == null) return new Results<XnatImagesessiondata>(src);
+        if (dest == null) {
+            return new Results<>(src);
+        }
 
-        final Results<XnatImagesessiondata> results = new Results<XnatImagesessiondata>();
-        final List<XnatImagescandataI> srcScans = src.getScans_scan();
-        final List<XnatImagescandataI> destScans = dest.getScans_scan();
+        final Results<XnatImagesessiondata> results   = new Results<>();
+        final List<XnatImagescandataI>      srcScans  = src.getScans_scan();
+        final List<XnatImagescandataI>      destScans = dest.getScans_scan();
 
-        final List<File> toDelete = new ArrayList<File>();
+        final List<File> toDelete = new ArrayList<>();
         processing("Merging new meta-data into existing meta-data.");
         try {
             for (final XnatImagescandataI srcScan : srcScans) {
@@ -103,7 +107,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
                 if (destScan == null) {
                     dest.addScans_scan(srcScan);
                 } else {
-                    final List<XnatAbstractresourceI> source = srcScan.getFile();
+                    final List<XnatAbstractresourceI> source      = srcScan.getFile();
                     final List<XnatAbstractresourceI> destination = destScan.getFile();
 
                     for (final XnatAbstractresourceI srcRes : source) {
@@ -149,7 +153,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
             throw new ServerException("Unable to create back-up folder: " + backup.getAbsolutePath());
         }
 
-        final List<Callable<Boolean>> followup = new ArrayList<Callable<Boolean>>();
+        final List<Callable<Boolean>> followup = new ArrayList<>();
         followup.add(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -187,4 +191,5 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         return results;
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(MergePrearcToArchiveSession.class);
 }

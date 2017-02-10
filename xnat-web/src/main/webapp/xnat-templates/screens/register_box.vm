@@ -44,18 +44,18 @@
     </p>
     <p>
         <label for="phone">Phone</label>
-        <input type="text" name="phone" value="$!phone">
+        <input id="phone" type="text" name="phone" value="$!phone">
     </p>
     <p>
         <label for="lab">Study Site or Lab</label>
-        <input type="text" name="lab" value="$!lab">
+        <input id="lab" type="text" name="lab" value="$!lab">
     </p>
     #if($siteConfig.uiAllowNewUserComments)
         <hr/>
         <p>Please include a brief description of how you plan to use this site.</p>
         <p>
             <label for="comments">Comments</label>
-            <textarea name="comments" rows="4">$!comments</textarea>
+            <textarea id="comments" name="comments" rows="4">$!comments</textarea>
         </p>
     #end
     <p class="form-submit">
@@ -65,9 +65,11 @@
 </form>
 
 <script>
-    $(document).ready(function(){
+    $(function(){
         $(".formLabelRequired").append(" <b>*</b>");
-        $("input").on("focusout",function(){ $(this).parent('p').find('.errorMsg').remove(); });
+        $("input").on("focusout", function(){
+            $(this).closest('p').find('.errorMsg').remove();
+        });
     });
 </script>
 <!-- END xnat-templates/screens/register_box.vm -->

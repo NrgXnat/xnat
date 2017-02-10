@@ -34,9 +34,7 @@ public class DicomImportConfig {
     @Bean
     @Primary
     public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final XnatUserProvider receivedFileUserProvider) {
-        final ClassicDicomObjectIdentifier identifier = new ClassicDicomObjectIdentifier();
-        identifier.setUserProvider(receivedFileUserProvider);
-        return identifier;
+        return new ClassicDicomObjectIdentifier(receivedFileUserProvider);
     }
 
     @Bean

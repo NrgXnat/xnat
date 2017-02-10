@@ -31,6 +31,8 @@ public class SiteWideAnonymizer extends AnonymizerA {
 		this.located_in_prearchive = located_in_prearchive;
 		this.path = DicomEdit.buildScriptPath(ResourceScope.SITE_WIDE, null);
 	}
+
+	@SuppressWarnings("unused")
 	public SiteWideAnonymizer(XnatImagesessiondataI s){
 		this(s,false);
 	}
@@ -85,9 +87,9 @@ public class SiteWideAnonymizer extends AnonymizerA {
 	boolean isEnabled() {
 		return DefaultAnonUtils.getService().isSiteWideScriptEnabled();
 	}
-	public java.lang.Void call() throws Exception {
-		super.call();
-		return null;
+
+	public Boolean call() throws Exception {
+		return super.call();
 	}
 }
 

@@ -54,25 +54,27 @@ $page.setTitle("$siteId - Please Login")
 
     #if($data.getMessage())
     <div class="warning">
-        <p><strong>Note: </strong><br />$data.getMessage()</p>
+        <strong>Note: </strong><br>$data.getMessage()
     </div>
     #end
 
     <div id="register_box_container">
-        <h3>New User Registration <span class="btn btn-xs btn-inline right" onclick="showLogin()">Already Have an Account?</span></h3>
+        <h3><span>New User Registration</span> <button class="btn btn-sm" onclick="showLogin()">Already Have an Account?</button></h3>
+        <div class="clear"></div>
         <div id="register_box">
             #parse("/screens/register_box.vm")
         </div>
     </div>
 
     <div id="login_box_container" class="hidden">
-        <h3>Existing User Login <span class="btn btn-xs btn-inline right" onclick="showRegistration()">Register?</span> </h3>
+        <h3><span>Existing User Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
+        <div class="clear"></div>
         <div class="message">
             <p><strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account. </p>
             <p>&nbsp;</p>
             <p>Not what you want? <a href="$content.getURI('/app/template/Login.vm')"><strong>Default Log In Page</strong></a></p>
         </div>
-        <hr style="margin: 2em 0">
+        <div class="clear" style="margin:2em 0;"></div>
         <div id="login_box">
             <form name="form1" method="post" action="$content.getURI("/login")" class="friendlyForm" id="login_form">
                 #if($login_methods && $login_methods.size() == 0)

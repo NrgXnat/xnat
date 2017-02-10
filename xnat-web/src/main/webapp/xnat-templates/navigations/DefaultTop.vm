@@ -218,7 +218,7 @@
 <div id="header" class="main_header"><div class="pad">
 
     #if($siteConfig.siteWideAlertStatus == "2")
-        <div class="$siteConfig.siteWideAlertType" headNotification hidden">
+        <div class="$siteConfig.siteWideAlertType headNotification hidden">
             <span class="closeNotification"><img src="$content.getURI('images/close.gif')"></span>
             <span>$siteConfig.siteWideAlertMessage</span>
         </div>

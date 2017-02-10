@@ -61,12 +61,12 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override
     public void configureMessageConverters(final List<HttpMessageConverter<?>> converters) {
-        converters.add(new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build()));
-        converters.add(new MarshallingHttpMessageConverter(_marshaller, _marshaller));
-        converters.add(new StringHttpMessageConverter());
-        converters.add(new ResourceHttpMessageConverter());
-        converters.add(new XftBeanHttpMessageConverter());
-        converters.add(new XftObjectHttpMessageConverter());
+        converters.add(mappingJackson2HttpMessageConverter());
+        converters.add(marshallingHttpMessageConverter());
+        converters.add(stringHttpMessageConverter());
+        converters.add(resourceHttpMessageConverter());
+        converters.add(xftBeanHttpMessageConverter());
+        converters.add(xftObjectHttpMessageConverter());
     }
 
     @Override
@@ -78,6 +78,36 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     public void configureAsyncSupport(final AsyncSupportConfigurer configurer) {
         configurer.setDefaultTimeout(-1);
         configurer.setTaskExecutor(asyncTaskExecutor());
+    }
+
+    @Bean
+    public HttpMessageConverter<?> xftObjectHttpMessageConverter() {
+        return new XftObjectHttpMessageConverter();
+    }
+
+    @Bean
+    public HttpMessageConverter<?> xftBeanHttpMessageConverter() {
+        return new XftBeanHttpMessageConverter();
+    }
+
+    @Bean
+    public HttpMessageConverter<?> resourceHttpMessageConverter() {
+        return new ResourceHttpMessageConverter();
+    }
+
+    @Bean
+    public HttpMessageConverter<?> stringHttpMessageConverter() {
+        return new StringHttpMessageConverter();
+    }
+
+    @Bean
+    public HttpMessageConverter<?> marshallingHttpMessageConverter() {
+        return new MarshallingHttpMessageConverter(_marshaller, _marshaller);
+    }
+
+    @Bean
+    public HttpMessageConverter<?> mappingJackson2HttpMessageConverter() {
+        return new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build());
     }
 
     @Bean
@@ -110,7 +140,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     private static String[] getExposedContextBeanNames() {
         final String value = CONFIGURATION.getProperty("exposedContextBeanNames");
         if (StringUtils.isBlank(value)) {
-            return new String[] {};
+            return new String[]{};
         }
         return value.split("\\s*,\\s*");
     }

@@ -9,7 +9,6 @@
 
 package org.nrg.xapi.rest.settings;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -21,7 +20,6 @@ import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xnat.spawner.services.SpawnerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -31,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -40,19 +37,11 @@ import java.util.Properties;
 @RequestMapping(value = "/plugins")
 public class XnatPluginApi extends AbstractXapiRestController {
     @Autowired
-    public XnatPluginApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatPluginBeanManager manager, final SpawnerService spawner) throws IOException {
+    public XnatPluginApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatPluginBeanManager manager) throws IOException {
         super(userManagementService, roleHolder);
-        final List<String> spawnerNamespaces = spawner.getNamespaces();
         for (final String pluginId : manager.getPluginIds()) {
             final XnatPluginBean plugin = manager.getPlugin(pluginId);
             _plugins.put(pluginId, plugin);
-
-            final List<String> namespaces = plugin.getAssociatedNamespaces();
-            for (final String namespace : Lists.asList(plugin.getNamespace(), plugin.getId(), namespaces.toArray(new String[namespaces.size()]))) {
-                if (spawnerNamespaces.contains(namespace) && spawner.getNamespacedElementIds(namespace).contains("siteSettings")) {
-                    plugin.setExtendedAttribute("siteSettings", namespace);
-                }
-            }
         }
     }
 

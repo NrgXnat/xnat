@@ -12,7 +12,7 @@
  */
 var sessExpMsg = 'WARNING: Your session has expired.<br/><br/>You will need to re-login and navigate to the content.';
 var removeButtonFormatter = function(elCell, oRecord, oColumn, oData) {
-	elCell.innerHTML="<input type=\"button\" ONCLICK=\"window.userManager.removeUser('" + oRecord.getData("login")  + "','" + oRecord.getData("GROUP_ID")  + "');\" value=\"Remove\"/>";
+	elCell.innerHTML="<input type=\"button\" class=\"btn sm\" onclick=\"window.userManager.removeUser('" + oRecord.getData("login")  + "','" + oRecord.getData("GROUP_ID")  + "');\" value=\"Remove\"/>";
 };
 
 var groupDropdownFormatter = function(elCell, oRecord, oColumn, oData) {
@@ -152,8 +152,8 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 		XNAT.app.grp_dialog=new YAHOO.widget.Dialog("grp_dialog", { fixedcenter:true, visible:false, width:"340px", height:"500px", modal:true, close:true, draggable:true });
 		XNAT.app.grp_dialog.cfg.queueProperty("buttons", [{ text:"Close", handler:{fn:function(){XNAT.app.grp_dialog.hide();}},isDefault:true}]);
 
-		$("<button style='margin-top:10px;' id='' onclick='window.userManager.showGroups();return false;'>Manage Groups</button>").insertAfter("#user_invite_div");
-		$("<button style='margin-top:10px;' id='' onclick='window.location=\""+ serverRoot +"/app/template/ManageProjectFeatures.vm/project/" + pID + "\"'>Manage Features</button>").insertAfter("#user_invite_div");
+		var projAccessSettings = "<input type='button' onclick='window.userManager.showGroups();return false;' value='Manage Groups' style='margin-bottom: 6px' /><br><input type='button' onclick='window.location=\""+ serverRoot +"/app/template/ManageProjectFeatures.vm/project/" + pID + "\"' value='Manage Features' />";
+		$('#project_access_settings').html(projAccessSettings);
 
 		this.loadUsers();
 		
@@ -276,7 +276,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 			this.setFormDisabled(false);
 			document.getElementById("popup_all_users_button").disabled = true;
 			document.getElementById("popup_all_users_button_container1").style.visibility = "hidden";
-			document.getElementById("popup_all_users_button_container2").style.visibility = "hidden";
+//			document.getElementById("popup_all_users_button_container2").style.visibility = "hidden";
 		}
 		this.allLoader.close();
 	};

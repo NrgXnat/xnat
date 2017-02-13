@@ -90,7 +90,7 @@ function PARManager(_div,_obj){
 
         if (this.pars.length == 0) {
             jq('#heading').html('Sorry...');
-            jq('#pil').html('There are no outstanding project access requests for the current user.');
+            jq('#pil').html('<p>There are no outstanding project access requests for the current user.</p>');
             return;
         }
 		for(var parC=0;parC<this.pars.length;parC++){

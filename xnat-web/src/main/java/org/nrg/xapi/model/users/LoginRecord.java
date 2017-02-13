@@ -20,84 +20,58 @@ import java.util.Date;
  */
 public class LoginRecord {
     LoginRecord() {
-
+        _authMethodId = null;
+        _timestamp = null;
+        _passwordUpdated = null;
+        _failedLoginAttempts = null;
+        _lastLoginAttempt = null;
+        _lastSuccessfulLogin = null;
+        _lockoutTime = null;
     }
 
     LoginRecord(final XdatUserAuth auth) {
-        setAuthMethodId(auth.getAuthMethodId());
-        setPasswordUpdated(auth.getPasswordUpdated());
-        setFailedLoginAttempts(auth.getFailedLoginAttempts());
-        setLastLoginAttempt(auth.getLastLoginAttempt());
-        setLastSuccessfulLogin(auth.getLastSuccessfulLogin());
-        setLockoutTime(auth.getLockoutTime());
-    }
-
-    LoginRecord(final String authMethodId,
-                final Date passwordUpdated,
-                final Integer failedLoginAttempts,
-                final Date lastLoginAttempt,
-                final Date lastSuccessfulLogin,
-                final Date lockoutTime) {
-        setAuthMethodId(authMethodId);
-        setPasswordUpdated(passwordUpdated);
-        setFailedLoginAttempts(failedLoginAttempts);
-        setLastLoginAttempt(lastLoginAttempt);
-        setLastSuccessfulLogin(lastSuccessfulLogin);
-        setLockoutTime(lockoutTime);
+        _authMethodId = auth.getAuthMethodId();
+        _timestamp = auth.getTimestamp();
+        _passwordUpdated = auth.getPasswordUpdated();
+        _failedLoginAttempts = auth.getFailedLoginAttempts();
+        _lastLoginAttempt = auth.getLastLoginAttempt();
+        _lastSuccessfulLogin = auth.getLastSuccessfulLogin();
+        _lockoutTime = auth.getLockoutTime();
     }
 
     public String getAuthMethodId() {
         return _authMethodId;
     }
 
-    public void setAuthMethodId(final String authMethodId) {
-        _authMethodId = authMethodId;
+    public Date getTimestamp() {
+        return _timestamp;
     }
 
     public Date getPasswordUpdated() {
         return _passwordUpdated;
     }
 
-    public void setPasswordUpdated(final Date passwordUpdated) {
-        _passwordUpdated = passwordUpdated;
-    }
-
     public Integer getFailedLoginAttempts() {
         return _failedLoginAttempts;
-    }
-
-    public void setFailedLoginAttempts(final Integer failedLoginAttempts) {
-        _failedLoginAttempts = failedLoginAttempts;
     }
 
     public Date getLastLoginAttempt() {
         return _lastLoginAttempt;
     }
 
-    public void setLastLoginAttempt(final Date lastLoginAttempt) {
-        _lastLoginAttempt = lastLoginAttempt;
-    }
-
     public Date getLastSuccessfulLogin() {
         return _lastSuccessfulLogin;
-    }
-
-    public void setLastSuccessfulLogin(final Date lastSuccessfulLogin) {
-        _lastSuccessfulLogin = lastSuccessfulLogin;
     }
 
     public Date getLockoutTime() {
         return _lockoutTime;
     }
 
-    public void setLockoutTime(final Date lockoutTime) {
-        _lockoutTime = lockoutTime;
-    }
-
-    private String  _authMethodId;
-    private Date    _passwordUpdated;
-    private Integer _failedLoginAttempts;
-    private Date    _lastLoginAttempt;
-    private Date    _lastSuccessfulLogin;
-    private Date    _lockoutTime;
+    private final String  _authMethodId;
+    private final Date    _timestamp;
+    private final Date    _passwordUpdated;
+    private final Integer _failedLoginAttempts;
+    private final Date    _lastLoginAttempt;
+    private final Date    _lastSuccessfulLogin;
+    private final Date    _lockoutTime;
 }

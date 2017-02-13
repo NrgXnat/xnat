@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.utilities.IniImporter;
 import org.nrg.framework.utilities.OrderedProperties;
-import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -39,8 +38,7 @@ import java.util.*;
                   @PropertySource(value = PropertiesConfig.XNAT_CONFIG_URL, ignoreResourceNotFound = true),
                   @PropertySource(value = PropertiesConfig.XNAT_HOME_NODE_URL, ignoreResourceNotFound = true),
                   @PropertySource(value = PropertiesConfig.NODE_CONFIG_HOME_URL, ignoreResourceNotFound = true),
-                  @PropertySource(value = PropertiesConfig.NODE_CONFIG_URL, ignoreResourceNotFound = true)}
-		)
+                  @PropertySource(value = PropertiesConfig.NODE_CONFIG_URL, ignoreResourceNotFound = true)})
 public class PropertiesConfig {
 
     public static final String ENV_HOME              = "HOME";

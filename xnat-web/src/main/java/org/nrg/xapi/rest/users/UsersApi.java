@@ -21,6 +21,7 @@ import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
+import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.UserGroupI;
@@ -55,12 +56,13 @@ import java.util.*;
 @RequestMapping(value = "/users")
 public class UsersApi extends AbstractXapiRestController {
     @Autowired
-    public UsersApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService,
+    public UsersApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final UserFactory factory,
                     final RoleHolder roleHolder, final SessionRegistry sessionRegistry, final AliasTokenService aliasTokenService) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _sessionRegistry = sessionRegistry;
         _aliasTokenService = aliasTokenService;
+        _factory = factory;
     }
 
     @ApiOperation(value = "Get list of users.", notes = "The primary users function returns a list of all users of the XNAT system. This includes just the username and nothing else. You can retrieve a particular user by adding the username to the REST API URL or a list of users with abbreviated user profiles by calling /xapi/users/profiles.", response = String.class, responseContainer = "List")
@@ -99,7 +101,7 @@ public class UsersApi extends AbstractXapiRestController {
         if (users != null && users.size() > 0) {
             for (UserI user : users) {
                 try {
-                    beans.add(new User(user));
+                    beans.add(_factory.getUser(user));
                 } catch (Exception e) {
                     _log.error("", e);
                 }
@@ -201,7 +203,7 @@ public class UsersApi extends AbstractXapiRestController {
         final UserI user;
         try {
             user = getUserManagementService().getUser(username);
-            return user == null ? new ResponseEntity<User>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(new User(user), HttpStatus.OK);
+            return user == null ? new ResponseEntity<User>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(_factory.getUser(user), HttpStatus.OK);
         } catch (UserInitException e) {
             _log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -256,7 +258,7 @@ public class UsersApi extends AbstractXapiRestController {
                     _log.error("", e);
                 }
             }
-            return new ResponseEntity<>(new User(user), HttpStatus.CREATED);
+            return new ResponseEntity<>(_factory.getUser(user), HttpStatus.CREATED);
         } catch (Exception e) {
             _log.error("Error occurred modifying user " + user.getLogin());
         }
@@ -349,7 +351,7 @@ public class UsersApi extends AbstractXapiRestController {
                     _log.error("", e);
                 }
             }
-            return new ResponseEntity<>(new User(user), HttpStatus.OK);
+            return new ResponseEntity<>(_factory.getUser(user), HttpStatus.OK);
         } catch (Exception e) {
             _log.error("Error occurred modifying user " + user.getLogin());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -955,7 +957,8 @@ public class UsersApi extends AbstractXapiRestController {
 
     private static final Logger _log = LoggerFactory.getLogger(UsersApi.class);
 
-    private final SiteConfigPreferences  _preferences;
-    private final SessionRegistry        _sessionRegistry;
-    private final AliasTokenService      _aliasTokenService;
+    private final SiteConfigPreferences _preferences;
+    private final SessionRegistry       _sessionRegistry;
+    private final AliasTokenService     _aliasTokenService;
+    private final UserFactory           _factory;
 }

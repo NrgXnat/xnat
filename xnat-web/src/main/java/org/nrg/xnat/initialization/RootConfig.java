@@ -41,7 +41,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DateFormat;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -106,9 +108,15 @@ public class RootConfig {
                 .serializationInclusion(JsonInclude.Include.NON_NULL)
                 .failOnEmptyBeans(false)
                 .mixIns(mixIns())
+                .dateFormat(dateFormat())
                 .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
                 .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
                 .modulesToInstall(new Hibernate4Module());
+    }
+
+    @Bean
+    public DateFormat dateFormat() {
+        return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, Locale.getDefault());
     }
 
     @Bean

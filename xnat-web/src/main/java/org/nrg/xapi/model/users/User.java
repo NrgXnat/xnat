@@ -10,53 +10,24 @@
 package org.nrg.xapi.model.users;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.xdat.entities.UserAuthI;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xft.security.UserI;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * A transport container for user details. The {@link #isSecured() secured property} controls whether security-related
- * properties like password and salt are available. When a new user object is created through one of the wrapper
- * constructors, such as {@link #User(String)} or {@link #User(UserI)}, secure is set to true. This means that
- * serializing beans with existing user accounts won't expose the password data. Newly created beans have secure set to
- * false by default to allow for serializing the bean for REST calls with all data intact.
+ * properties like password and salt are available. When a new user object is created from an existing user record in
+ * XNAT, the secure flag is set to true. This prevents serializing beans with existing user accounts to prevent exposing
+ * password data. Newly created beans have secure set to false by default to allow for serializing the bean for REST
+ * calls with all data intact.
  */
 @ApiModel(description = "Contains the properties that define a user on the system.")
 public class User {
-    public User() {
-        // Nothing to see here...
-    }
-
-    public User(final String username) {
-        this(XDATUser.getXdatUsersByLogin(username, null, false));
-    }
-
-    public User(final UserI user) {
-        _id = user.getID();
-        _username = user.getUsername();
-        _firstName = user.getFirstname();
-        _lastName = user.getLastname();
-        _email = user.getEmail();
-        _isAdmin = (user instanceof XDATUser && ((XDATUser) user).isSiteAdmin());
-        _dbName = user.getDBName();
-        _password = user.getPassword();
-        _salt = user.getSalt();
-        _lastModified = user.getLastModified();
-        _authorization = user.getAuthorization();
-        _isEnabled = user.isEnabled();
-        _isVerified = user.isVerified();
-        _secured = true;
-    }
-
-    public User(final XdatUser user) {
-        this((UserI) user);
-    }
-
     /**
      * The user's unique key.
      **/
@@ -205,6 +176,18 @@ public class User {
         _authorization = authorization;
     }
 
+    @ApiModelProperty(value = "The user's login records, which includes each available login method, the user's login"
+                              + "name for that method, and data about logins using that method (failed login count, last"
+                              + "successful login, and so on).")
+    public Map<String, LoginRecord> getLoginRecords() {
+        return ImmutableMap.copyOf(_loginRecords);
+    }
+
+    public void setLoginRecords(final Map<String, LoginRecord> loginRecords) {
+        _loginRecords.clear();
+        _loginRecords.putAll(loginRecords);
+    }
+
     @ApiModelProperty(value = "The user's full name.")
     @JsonIgnore
     public String getFullName() {
@@ -250,4 +233,6 @@ public class User {
     private Boolean   _isAdmin;
     private Boolean   _isEnabled;
     private Boolean   _isVerified;
+
+    private final Map<String, LoginRecord> _loginRecords = Maps.newHashMap();
 }

@@ -10,6 +10,8 @@
 package org.nrg.xapi.configuration;
 
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xapi.model.users.UserFactory;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xnat.configuration.WebConfig;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.slf4j.Logger;
@@ -32,6 +34,11 @@ import java.util.Locale;
 @EnableSwagger2
 @ComponentScan({"org.nrg.xapi.rest", "org.nrg.xnat.spawner.configuration"})
 public class RestApiConfig {
+    @Bean
+    public UserFactory userFactory(final XdatUserAuthService service) {
+        return new UserFactory(service);
+    }
+
     @Bean
     public Docket api(final XnatAppInfo info, final MessageSource messageSource) {
         _log.debug("Initializing the Swagger Docket object");

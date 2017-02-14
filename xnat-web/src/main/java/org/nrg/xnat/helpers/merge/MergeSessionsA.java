@@ -10,10 +10,9 @@
 package org.nrg.xnat.helpers.merge;
 
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.dcm.edit.AttributeException;
-import org.nrg.dcm.edit.ScriptEvaluationException;
 import org.nrg.status.StatusProducer;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -21,15 +20,12 @@ import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.FileUtils.OldFileHandlerI;
 import org.nrg.xnat.archive.XNATSessionBuilder;
-import org.nrg.xnat.helpers.merge.MergeCatCatalog.DCMEntryConflict;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.data.Status;
@@ -79,11 +75,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
     }
 
     public interface SaveHandlerI<A> {
-        public void save(A session) throws Exception;
-    }
-
-    public interface AnonymizerI {
-        public void anonymize() throws AttributeException, ScriptEvaluationException, FileNotFoundException, IOException;
+        void save(A session) throws Exception;
     }
 
     public void checkForConflict() throws ClientException, ServerException {
@@ -126,9 +118,8 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
     public A call() throws ClientException, ServerException {
         processing("Preparing to move uploaded resources into destination directory.");
         File backupDIR  = null;
-        File rootBackup = null;
         this.checkForConflict();
-        rootBackup = createPrimaryBackupDirectory(this.getCacheBKDirName(), src.getProject(), destDIR.getName());
+        final File rootBackup = createPrimaryBackupDirectory(this.getCacheBKDirName(), src.getProject(), destDIR.getName());
         if (destDIR.exists()) {
             backupDIR = backupDestDIR(destDIR, rootBackup);
         }
@@ -201,42 +192,16 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         }
     }
 
-    private XnatImagesessiondataI getPostAnonSession() throws Exception {
-        // Now that we're at the project level, let's re-anonymize.
-        final boolean wasAnonymized = anonymizer.call();
-
-        // If anonymization wasn't performed...
-        if (!wasAnonymized) {
-            // Return the original session XML.
-            return src;
-        }
-
-        // Otherwise, we need to rebuild the session XML to match the anonymized DICOM.
-        final Map<String, String> params = Maps.newLinkedHashMap();
-        params.put("project", src.getProject());
-        params.put("label", src.getLabel());
-        params.put("subject_ID", getSubjectId(src));
-
-        final File    sessionXml               = new File(srcDIR.getPath() + ".xml");
-        final Boolean sessionRebuildSuccess = new XNATSessionBuilder(srcDIR, sessionXml, true, params).call();
-        if (!sessionRebuildSuccess || !sessionXml.exists() || sessionXml.length() == 0) {
-            throw new ServerException("Something went wrong: I anonymized the data in " + srcDIR.getPath() + " but something failed during the session rebuild.");
-        }
-
-        final XnatImagesessiondata session = new XNATSessionPopulater(user, sessionXml, src.getProject(), false).populate();
-        session.setId(src.getId());
-        return session;
-    }
-
     public void postSave(A session) {
 
     }
 
-    private String getSubjectId(final A session) {
-        if (XnatImagesessiondata.class.isAssignableFrom(session.getClass())) {
-            return ((XnatImagesessiondata) session).getSubjectData().getLabel();
-        }
-        return XnatSubjectdata.getXnatSubjectdatasById(session.getSubjectId(), user, false).getLabel();
+    protected A getPostAnonSession() throws Exception {
+        // Anonymize the data.
+        anonymizer.call();
+
+        // Return the default session XML.
+        return src;
     }
 
     private void backupXML(A dest2, File rootBackup) throws ServerException {
@@ -311,9 +276,9 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
     /**
      * Fix scans
      *
-     * @param session
+     * @param session The session to be finalized.
      *
-     * @throws Exception
+     * @throws Exception When something goes wrong finalizing the session.
      */
     public abstract void finalize(A session) throws ClientException, ServerException;
 
@@ -321,21 +286,21 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
     public abstract Results<A> mergeSessions(final A src, final String srcRootPath, final A dest, final String destRootPath, final File rootbackup) throws ClientException, ServerException;
 
-    public MergeSessionsA.Results<File> mergeCatalogs(final String srcRootPath, final XnatResourcecatalogI srcRes, final String destRootPath, final XnatResourcecatalogI destRes) throws DCMEntryConflict, ServerException, Exception {
-        final CatCatalogBean srcCat = CatalogUtils.getCleanCatalog(srcRootPath, (XnatResourcecatalogI) srcRes, false, user, c);
+    public MergeSessionsA.Results<File> mergeCatalogs(final String srcRootPath, final XnatResourcecatalogI srcRes, final String destRootPath, final XnatResourcecatalogI destRes) throws Exception {
+        final CatCatalogBean srcCat = CatalogUtils.getCleanCatalog(srcRootPath, srcRes, false, user, c);
 
         //WARNING: this command will create a catalog if it doesn't already exist
-        final CatCatalogBean cat = CatalogUtils.getCleanCatalog(destRootPath, (XnatResourcecatalogI) destRes, false, user, c);
+        final CatCatalogBean cat = CatalogUtils.getCleanCatalog(destRootPath, destRes, false, user, c);
 
-        MergeCatCatalog merge = new MergeCatCatalog(srcCat, cat, allowSessionMerge, c, CatalogUtils.getCatalogFile(destRootPath, (XnatResourcecatalogI) destRes));
+        MergeCatCatalog merge = new MergeCatCatalog(srcCat, cat, allowSessionMerge, c, CatalogUtils.getCatalogFile(destRootPath, destRes));
 
         MergeSessionsA.Results<Boolean> r = merge.call();
         if (r.result != null && r.result) {
             try {
                 //write merged destination file to src directory for merge process to move
-                CatalogUtils.writeCatalogToFile(cat, CatalogUtils.getCatalogFile(srcRootPath, (XnatResourcecatalogI) srcRes));
+                CatalogUtils.writeCatalogToFile(cat, CatalogUtils.getCatalogFile(srcRootPath, srcRes));
 
-                return new MergeSessionsA.Results<File>(CatalogUtils.getCatalogFile(destRootPath, destRes), r);
+                return new MergeSessionsA.Results<>(CatalogUtils.getCatalogFile(destRootPath, destRes), r);
             } catch (Exception e) {
                 failed("Failed to update XML Specification document.");
                 throw new ServerException(e.getMessage(), e);
@@ -347,8 +312,8 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
     public static class Results<A> {
         A result;
-        final List<Callable<Boolean>> after          = new ArrayList<Callable<Boolean>>();
-        final List<Callable<Boolean>> beforeDirMerge = new ArrayList<Callable<Boolean>>();
+        final List<Callable<Boolean>> after          = new ArrayList<>();
+        final List<Callable<Boolean>> beforeDirMerge = new ArrayList<>();
 
         public Results() {
         }
@@ -394,15 +359,15 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                 }
             }, new OldFileHandlerI() {
                 @Override
-                public boolean handle(File f) {
+                public boolean handle(final File f) {
                     if (CatalogUtils.maintainFileHistory()) {
                         try {
                             FileUtils.MoveToHistory(f, EventUtils.getTimestamp(c));
                         } catch (FileNotFoundException e) {
-                            logger.error("", e);
+                            logger.error("Couldn't find the file " + f.getPath(), e);
                             return false;
                         } catch (IOException e) {
-                            logger.error("", e);
+                            logger.error("An unknown error occurred trying to access the file " + f.getPath(), e);
                             return false;
                         }
                     }

@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.helpers.merge;
 
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -18,6 +20,8 @@ import org.nrg.xdat.om.*;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xnat.archive.XNATSessionBuilder;
+import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.data.Status;
@@ -27,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 
@@ -87,7 +92,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
     }
 
-    public org.nrg.xnat.helpers.merge.MergeSessionsA.Results<XnatImagesessiondata> mergeSessions(
+    public MergeSessionsA.Results<XnatImagesessiondata> mergeSessions(
             XnatImagesessiondata src, String srcRootPath,
             XnatImagesessiondata dest, String destRootPath, final File rootBackUp)
             throws ClientException, ServerException {
@@ -189,6 +194,40 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
 
         results.getBeforeDirMerge().addAll(followup);
         return results;
+    }
+
+    @Override
+    protected XnatImagesessiondata getPostAnonSession() throws Exception {
+        // Now that we're at the project level, let's re-anonymize.
+        final boolean wasAnonymized = anonymizer.call();
+
+        final File sessionXml = new File(srcDIR.getPath() + ".xml");
+
+        // If anonymization wasn't performed or the session XML doesn't exist yet...
+        if (!wasAnonymized || !sessionXml.exists()) {
+            // Return the original session XML.
+            return src;
+        }
+
+        // Otherwise, we need to rebuild the session XML to match the anonymized DICOM.
+        final Map<String, String> params = Maps.newLinkedHashMap();
+        params.put("project", StringUtils.defaultString(src.getProject(), ""));
+        params.put("label", StringUtils.defaultString(src.getLabel(), ""));
+        params.put("subject_ID", getSubjectId(src));
+
+        final Boolean sessionRebuildSuccess = new XNATSessionBuilder(srcDIR, sessionXml, true, params).call();
+        if (!sessionRebuildSuccess || !sessionXml.exists() || sessionXml.length() == 0) {
+            throw new ServerException("Something went wrong: I anonymized the data in " + srcDIR.getPath() + " but something failed during the session rebuild.");
+        }
+
+        final XnatImagesessiondata session = new XNATSessionPopulater(user, sessionXml, src.getProject(), false).populate();
+        session.setId(src.getId());
+        return session;
+    }
+
+    private String getSubjectId(final XnatImagesessiondata session) {
+        final XnatSubjectdata subject = session.getSubjectData();
+        return subject != null ? subject.getLabel() : "";
     }
 
     private static final Logger logger = LoggerFactory.getLogger(MergePrearcToArchiveSession.class);

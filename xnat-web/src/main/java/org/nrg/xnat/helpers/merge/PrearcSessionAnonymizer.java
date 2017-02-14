@@ -131,8 +131,4 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
         }
         return ret;
     }
-
-    public Boolean call() throws Exception {
-        return super.call();
-    }
 }

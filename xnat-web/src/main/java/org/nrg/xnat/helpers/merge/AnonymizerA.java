@@ -59,12 +59,10 @@ public abstract class AnonymizerA implements Callable<Boolean> {
     abstract List<File> getFilesToAnonymize() throws IOException;
 
     public void setNext(final AnonymizerA anonymizer) {
-        next = anonymizer;
+        _next = anonymizer;
     }
 
-    public void anonymize(final File file) throws AttributeException,
-                                                  ScriptEvaluationException,
-                                                  IOException {
+    public void anonymize(final File file) throws AttributeException, ScriptEvaluationException, IOException {
         final Configuration script = getScript();
         if (script != null) {
             if (isEnabled()) {
@@ -76,8 +74,8 @@ public abstract class AnonymizerA implements Callable<Boolean> {
                                     true,
                                     script.getId(),
                                     script.getContents());
-                if (next != null) {
-                    next.anonymize(file);
+                if (_next != null) {
+                    _next.anonymize(file);
                 }
             } else {
                 // anonymization is disabled.
@@ -111,6 +109,5 @@ public abstract class AnonymizerA implements Callable<Boolean> {
     }
 
     private static final Logger _log = LoggerFactory.getLogger(AnonymizerA.class);
-
-    AnonymizerA next = null;
+    private AnonymizerA _next;
 }

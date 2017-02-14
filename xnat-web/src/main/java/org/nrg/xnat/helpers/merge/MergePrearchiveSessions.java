@@ -34,15 +34,16 @@ public class MergePrearchiveSessions extends MergeSessionsA<XnatImagesessiondata
 		return "prearc_merge";
 	}
 	
+	public MergeSessionsA.Results<XnatImagesessiondataBean> mergeSessions(final XnatImagesessiondataBean src, final String srcRootPath, final XnatImagesessiondataBean dest, final String destRootPath,final File rootbackup) throws ClientException, ServerException {
+		if (dest == null) {
+			return new Results<>(src);
+		}
 
-	public org.nrg.xnat.helpers.merge.MergeSessionsA.Results<XnatImagesessiondataBean> mergeSessions(final XnatImagesessiondataBean src, final String srcRootPath, final XnatImagesessiondataBean dest, final String destRootPath,final File rootbackup) throws ClientException, ServerException {
-		if(dest==null)return new Results<XnatImagesessiondataBean>(src);
-
-		final Results<XnatImagesessiondataBean> result=new Results<XnatImagesessiondataBean>(dest);
+		final Results<XnatImagesessiondataBean> result= new Results<>(dest);
 		final List<XnatImagescandataI> srcScans=src.getScans_scan();
 		final List<XnatImagescandataI> destScans=dest.getScans_scan();
 	
-		final List<File> toDelete=new ArrayList<File>();
+		final List<File> toDelete= new ArrayList<>();
 		processing("Merging new meta-data into existing meta-data.");
 		try {
 			for(final XnatImagescandataI srcScan: srcScans){
@@ -86,7 +87,7 @@ public class MergePrearchiveSessions extends MergeSessionsA<XnatImagesessiondata
 		final File backup = new File(rootbackup,"catalog_bk");
 		backup.mkdirs();
 		
-		final List<Callable<Boolean>> followup=new ArrayList<Callable<Boolean>>();
+		final List<Callable<Boolean>> followup= new ArrayList<>();
 		followup.add(new Callable<Boolean>(){
 			@Override
 			public Boolean call() throws Exception {

@@ -87,9 +87,5 @@ public class SiteWideAnonymizer extends AnonymizerA {
 	boolean isEnabled() {
 		return DefaultAnonUtils.getService().isSiteWideScriptEnabled();
 	}
-
-	public Boolean call() throws Exception {
-		return super.call();
-	}
 }
 

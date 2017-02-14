@@ -133,8 +133,4 @@ public class ProjectAnonymizer extends AnonymizerA implements Callable<Boolean> 
     boolean isEnabled() {
         return DefaultAnonUtils.getService().isProjectScriptEnabled(projectId);
     }
-
-    public Boolean call() throws Exception {
-        return super.call();
-    }
 }

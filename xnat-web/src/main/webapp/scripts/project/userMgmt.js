@@ -15,6 +15,12 @@ var removeButtonFormatter = function(elCell, oRecord, oColumn, oData) {
 	elCell.innerHTML="<input type=\"button\" class=\"btn sm\" onclick=\"window.userManager.removeUser('" + oRecord.getData("login")  + "','" + oRecord.getData("GROUP_ID")  + "');\" value=\"Remove\"/>";
 };
 
+var emailDisplayFormatter = function(elCell, oRecord, oColumn, oData) {
+	var email_to_display = oRecord.getData("email");
+	var emailDisplayField = "<span class='truncate100' title='"+ email_to_display + "'>"+ email_to_display +"</span>";
+	elCell.innerHTML = emailDisplayField;
+}
+
 var groupDropdownFormatter = function(elCell, oRecord, oColumn, oData) {
     var user_access = oRecord.getData("displayname");
     var user_login = oRecord.getData("login");
@@ -92,7 +98,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 	                     {key:"login",label:"Username",sortable:true},
 	                     {key:"firstname",label:"Firstname",sortable:true},
 	                     {key:"lastname",label:"Lastname",sortable:true},
-	                     {key:"email",label:"Email",sortable:true},
+	                     {key:"email",label:"Email",sortable:true,formatter:emailDisplayFormatter},
 	                     {key:"displayname",label:"Group",sortable:true,formatter:groupDropdownFormatter},
                          {key:"button",label:"Remove",formatter:removeButtonFormatter}];
 
@@ -399,7 +405,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
                 };
             };
             if(knownUsers.length>0){
-                var confirmMsg="Would you like an email to be sent to " + knownUsers;
+                var confirmMsg="New user added. Would you like an email to be sent to " + knownUsers;
                 if(knownUsers.length>1)
                     confirmMsg+=" to inform them of this addition?";
                 else
@@ -530,7 +536,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
         	});
             this.hide();
             var popup = window.userManager.allUsersPopup;
-            popup.allUsersDataTable = new YAHOO.widget.DataTable("all_users_table", allUserColumnDefs,popup.alluserDataSource,{scrollable:true,height:"300px",width:"500px"});
+            popup.allUsersDataTable = new YAHOO.widget.DataTable("all_users_table", allUserColumnDefs,popup.alluserDataSource,{scrollable:true,height:"300px",width:"600px"});
 		};
 		var myButtons = [ { text:"Submit", handler:handleSubmit, isDefault:true },
 		                  { text:"Cancel", handler:handleCancel } ];
@@ -549,7 +555,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 		this.allUsersPopup.alluserDataSource.responseSchema = {
 				fields: ["login","firstname","lastname","email","displayname"]
 		};
-		this.allUsersPopup.allUsersDataTable = new YAHOO.widget.DataTable("all_users_table", allUserColumnDefs,this.allUsersPopup.alluserDataSource,{scrollable:true,height:"300px",width:"500px"});
+		this.allUsersPopup.allUsersDataTable = new YAHOO.widget.DataTable("all_users_table", allUserColumnDefs,this.allUsersPopup.alluserDataSource,{scrollable:true,height:"300px",width:"600px"});
 
 		this.allUsersPopup.render();
 

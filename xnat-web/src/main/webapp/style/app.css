@@ -3734,6 +3734,14 @@ hr.light {
         left: -65px !important;
     }
 
+    .truncate100 {
+        display: block;
+        width: 100px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
 }
 
 pre.json { outline: 1px solid #f0f0f0; padding: 20px; }

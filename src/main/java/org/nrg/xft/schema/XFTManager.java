@@ -9,9 +9,12 @@
 
 package org.nrg.xft.schema;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -43,6 +46,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.*;
 
 public class XFTManager {
@@ -51,6 +55,9 @@ public class XFTManager {
 
     private static XFTElement                      ELEMENT_TABLE = null;
     private static final Map<String, XFTDataModel> DATA_MODELS   = new Hashtable<>();
+
+    //TODO: Make this more generic so that you can dynamically ignore schema
+    private static final List<String> IGNORED_SCHEMA_NAMES = Lists.newArrayList("xdat.xsd", "build.xsd", "display.xsd", "instance.xsd", "PlexiViewer.xsd");
 
     private static Map<String,String> ROOT_LEVEL_ELEMENTS = new Hashtable<>();
 
@@ -204,76 +211,64 @@ public class XFTManager {
      *
      * @param source location where InstanceSettings.xml can be found.
      *
-     * @throws ElementNotFoundException
+     * @throws ElementNotFoundException When a specified element can't be found.
      */
-    private XFTManager(String source) throws ElementNotFoundException {
-		logger.debug("Java Version is: " + System.getProperty("java.version"));
-        if (!source.endsWith(File.separator)) {
-            source = source + File.separator;
-        }
-        if (source.contains("WEB-INF")) {
-            sourceDir = source.substring(0, source.indexOf("WEB-INF"));
-            System.out.println("SOURCE: " + sourceDir);
-        } else {
-            sourceDir = source;
-        }    	
+    private XFTManager(final String source) throws ElementNotFoundException {
+        logger.debug("Java Version is: " + System.getProperty("java.version"));
+        sourceDir = (source.contains("WEB-INF") ? source.substring(0, source.indexOf("WEB-INF")) : source) + (source.endsWith(File.separator) ? "" : File.separator);
+        System.out.println("SOURCE: " + sourceDir);
 
-        try {
-            List<String> schemaParsed = Lists.newArrayList(DATA_MODELS.keySet());
-            List<SchemaWrapper> toLoad = discoverSchema(source);
-            //iterate over the list of schema until they've all been loaded
-            int registered = 1;
-            while (toLoad.size() > 0 && registered > 0) {
-                registered = 0;
+        final List<String> schemaParsed = Lists.newArrayList(DATA_MODELS.keySet());
+        final List<SchemaWrapper> toLoad = discoverSchema(source);
 
-                //iterate on copy of toLoad so we can remove schema as we register them
-                List<SchemaWrapper> toLoadCopy = toLoad;
-                toLoad = Lists.newArrayList();
+        //iterate over the list of schema until they've all been loaded
+        int registered = 1;
+        while (toLoad.size() > 0 && registered > 0) {
+            registered = 0;
 
-                //look for schema that are ok to parse in this pass
-                for (SchemaWrapper schema : toLoadCopy) {
-                    try (final InputStream inputStream = schema.getResource().getInputStream()) {
-                        if (inputStream != null && !schemaParsed.contains(schema.getName())) {
-                            //check if dependent schema have been registered yet.
-                            if (schema.getDependencies().size() == 0 || schemaParsed.containsAll(schema.getDependencies())) {
-                                logger.info("Importing schema: " + schema.toString());
-                                XFTDataModel model = new XFTDataModel();
-                                model.setResource(schema.getResource());
-                                model.setFileName(schema.getName());
-                                model.setSchema(new XFTSchema(XMLUtils.GetDOM(inputStream), model));
+            //iterate on copy of toLoad so we can remove schema as we register them
+            final List<SchemaWrapper> toLoadCopy = Lists.newArrayList(toLoad);
+            toLoad.clear();
 
-                                DATA_MODELS.put(model.getFileName(), model);
-                                schemaParsed.add(schema.getName());
-                                registered++;
-                            } else {
-                                toLoad.add(schema);
-                            }
-                        } else {
-                            //dead reference
+            //look for schema that are ok to parse in this pass
+            for (final SchemaWrapper schema : toLoadCopy) {
+                try (final InputStream inputStream = schema.getResource().getInputStream()) {
+                    if (inputStream != null && !schemaParsed.contains(schema.getName())) {
+                        //check if dependent schema have been registered yet, excepting those that are ignored.
+                        final List<String> dependencies = Lists.newArrayList(schema.getDependencies());
+                        dependencies.removeAll(IGNORED_SCHEMA_NAMES);
+                        if (dependencies.size() == 0 || schemaParsed.containsAll(dependencies)) {
+                            logger.info("Importing schema: " + schema.toString());
+                            final XFTDataModel model = new XFTDataModel();
+                            model.setResource(schema.getResource());
+                            model.setFileName(schema.getName());
+                            model.setSchema(new XFTSchema(XMLUtils.GetDOM(inputStream), model));
+
+                            DATA_MODELS.put(model.getFileName(), model);
+                            schemaParsed.add(schema.getName());
                             registered++;
+                        } else {
+                            toLoad.add(schema);
                         }
-                    } catch (IOException e) {
-                        logger.warn("An error occurred trying to close a stream", e);
+                    } else {
+                        //dead reference
+                        registered++;
                     }
+                } catch (IOException e) {
+                    logger.warn("An error occurred trying to close the stream when processing the schema " + schema.getName(), e);
+                } catch (XFTInitException e) {
+                    logger.error("An error occurred trying to process the schema " + schema.getName(), e);
                 }
             }
+        }
 
-            //if there are still some to be loaded AFTER all loadable ones have been loaded, then there is a dependency problem.
-            if (toLoad.size() > 0) {
-                throw new XFTInitException("Unable to startup due to missing or cyclical schema dependency! " + listToString(toLoad));
-            }
-        } catch (XFTInitException e)
-
-        {
-            e.printStackTrace();
-            logger.error("", e);
+        //if there are still some to be loaded AFTER all loadable ones have been loaded, then there is a dependency problem.
+        if (toLoad.size() > 0) {
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Unable to startup due to missing or cyclical schema dependency in the following schemas: " + Joiner.on(", ").join(toLoad));
         }
     }
 
-    //TODO: Make this more generic so that you can dynamically ignore schema
-    private final List<String> ignoredSchemaNames = Lists.newArrayList("xdat.xsd", "build.xsd", "display.xsd", "instance.xsd", "PlexiViewer.xsd");
-
-    private List<SchemaWrapper> discoverSchema(String source) throws XFTInitException, ElementNotFoundException {
+    private List<SchemaWrapper> discoverSchema(final String source) {
         final List<String> schemaLoaded = Lists.newArrayList();
         final List<SchemaWrapper> toLoad = Lists.newArrayList();
 
@@ -289,7 +284,7 @@ public class XFTManager {
                             final File[] subfiles = level1.listFiles();
                             if (subfiles != null) {
                                 for (final File level2 : subfiles) {
-                                    if (!schemaLoaded.contains(level2.getName()) && !ignoredSchemaNames.contains(level2.getName())) {
+                                    if (!schemaLoaded.contains(level2.getName()) && !IGNORED_SCHEMA_NAMES.contains(level2.getName())) {
                                         if (level2.getName().endsWith(".xsd")) {
                                             schemaLoaded.add(level2.getName());
                                             try {
@@ -314,7 +309,7 @@ public class XFTManager {
             final Resource[] resources = resolver.getResources("classpath*:schemas/**/*.xsd");
             for (final Resource resource : resources) {
                 final String name = resource.getFilename();
-                if (!schemaLoaded.contains(name) && !ignoredSchemaNames.contains(name)) {
+                if (!schemaLoaded.contains(name) && !IGNORED_SCHEMA_NAMES.contains(name)) {
                     schemaLoaded.add(name);
                     try {
                         final List<String> dependencies = getDependentSchema(resource.getInputStream());
@@ -329,14 +324,6 @@ public class XFTManager {
         }
 
         return toLoad;
-    }
-
-    private static String listToString(List<SchemaWrapper> toLoad) {
-        StringBuilder sb = new StringBuilder();
-        for (SchemaWrapper schema : toLoad) {
-            sb.append("\n").append(schema.toString());
-        }
-        return sb.toString();
     }
 
     /**

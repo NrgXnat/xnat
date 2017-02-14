@@ -15,7 +15,6 @@ import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.xdat.entities.UserAuthI;
-import sun.rmi.runtime.Log;
 
 import java.util.Date;
 import java.util.Map;
@@ -37,7 +36,7 @@ public class User {
         return _id;
     }
 
-    public void setId(Integer id) {
+    public void setId(final Integer id) {
         _id = id;
     }
 
@@ -49,7 +48,7 @@ public class User {
         return _username;
     }
 
-    public void setUsername(String username) {
+    public void setUsername(final String username) {
         _username = username;
     }
 
@@ -62,7 +61,7 @@ public class User {
     }
 
     @SuppressWarnings("unused")
-    public void setFirstName(String firstName) {
+    public void setFirstName(final String firstName) {
         _firstName = firstName;
     }
 
@@ -75,7 +74,7 @@ public class User {
     }
 
     @SuppressWarnings("unused")
-    public void setLastName(String lastName) {
+    public void setLastName(final String lastName) {
         _lastName = lastName;
     }
 
@@ -87,7 +86,7 @@ public class User {
         return _email;
     }
 
-    public void setEmail(String email) {
+    public void setEmail(final String email) {
         _email = email;
     }
 
@@ -135,7 +134,7 @@ public class User {
         return _secured ? null : _password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(final String password) {
         _password = password;
     }
 
@@ -148,7 +147,7 @@ public class User {
     }
 
     @SuppressWarnings("unused")
-    public void setSalt(String salt) {
+    public void setSalt(final String salt) {
         _salt = salt;
     }
 
@@ -160,7 +159,7 @@ public class User {
         return _lastModified;
     }
 
-    public void setLastModified(Date lastModified) {
+    public void setLastModified(final Date lastModified) {
         _lastModified = lastModified;
     }
 
@@ -173,7 +172,7 @@ public class User {
     }
 
     @SuppressWarnings("unused")
-    public void setAuthorization(UserAuthI authorization) {
+    public void setAuthorization(final UserAuthI authorization) {
         _authorization = authorization;
     }
 

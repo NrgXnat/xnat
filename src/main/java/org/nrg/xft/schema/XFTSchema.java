@@ -65,7 +65,8 @@ public class XFTSchema {
 		for (int i=0;i<attributes.getLength();i++)
 		{
 			Node attribute = attributes.item(i);
-			if (attribute.getNodeValue().equalsIgnoreCase("http://www.w3.org/2001/XMLSchema"))
+			final String nodeValue = attribute.getNodeValue().trim();
+			if (nodeValue.equalsIgnoreCase("http://www.w3.org/2001/XMLSchema"))
 			{
 				String attName= attribute.getNodeName();
 				if (attName.contains(":"))
@@ -77,15 +78,15 @@ public class XFTSchema {
 			}
 			if (attribute.getNodeName().equalsIgnoreCase("targetNamespace"))
 			{
-				this.targetNamespaceURI = attribute.getNodeValue();	
+				this.targetNamespaceURI = nodeValue;
 			}
 			//schemaAttributes.put(attribute.getNodeValue(),attribute.getNodeName());
 			
 			if (attribute.getNodeName().startsWith("xmlns:"))
 			{
 				String abbr = attribute.getNodeName().substring(attribute.getNodeName().indexOf(":") + 1);
-				this.uRIToAbbr.put(attribute.getNodeValue(),abbr);
-				this.abbrToURI.put(abbr,attribute.getNodeValue());	
+				this.uRIToAbbr.put(nodeValue, abbr);
+				this.abbrToURI.put(abbr, nodeValue);
 			}
 		}
 		

@@ -11,13 +11,12 @@ package org.nrg.xft.schema;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 
 public class XFTDataModel {
-    private static final Logger _log = LoggerFactory.getLogger(XFTDataModel.class);
-
     public String    db           = "";
     public Resource    resource = null;
     public String    fileName     = "";
@@ -123,7 +122,8 @@ public class XFTDataModel {
     }
 
     public String toString() {
-        return getSchema().toString();
+        final XFTSchema schema = getSchema();
+        return schema != null ? schema.toString() : (StringUtils.isNotBlank(fileName) ? fileName : (StringUtils.isNotBlank(packageName) ? getPackageName() : (resource != null ? resource.toString() : "(Uninitialized)")));
     }
 
     /**

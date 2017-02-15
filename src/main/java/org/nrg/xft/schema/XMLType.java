@@ -210,28 +210,23 @@ public class XMLType {
 	 * valid original prefix is found and returned.
 	 * @return Returns the foreign prefix
 	 */
-	public String getForeignPrefix()
-	{
-		if (foreignPrefix == null){
-			if (this.getLocalPrefix().equalsIgnoreCase(schema.getTargetNamespacePrefix()) || getLocalPrefix().equalsIgnoreCase(schema.getXMLNS()))
-			{
+	public String getForeignPrefix() {
+		if (foreignPrefix == null) {
+			if (getLocalPrefix().equalsIgnoreCase(schema.getTargetNamespacePrefix()) || getLocalPrefix().equalsIgnoreCase(schema.getXMLNS())) {
 				foreignPrefix = localPrefix;
-			}else
-			{
-				String uri = schema.getURIForPrefix(localPrefix);
-				if (uri==null)
-				{
-                    foreignPrefix = localPrefix;
-				}else{
-					try {
-	                    foreignPrefix = XFTMetaManager.TranslateURIToPrefix(uri);
-	                } catch (RuntimeException e) {
-	                    foreignPrefix = localPrefix;
-	                }
+			} else {
+				final String uri = schema.getURIForPrefix(localPrefix);
+				if (uri == null) {
+					foreignPrefix = localPrefix;
+				} else {
+					foreignPrefix = XFTMetaManager.TranslateURIToPrefix(uri);
+					if (foreignPrefix == null) {
+						foreignPrefix = localPrefix;
+					}
 				}
 			}
 		}
-		
+
 		return foreignPrefix;
 	}
 	

@@ -53,7 +53,6 @@ public class Login extends VelocitySecureScreen {
 	        SecurityContextHolder.clearContext();	
 		}
 		
-		Context c = TurbineVelocity.getContext(data);
 		String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
 		
 		Cookie[] cookies = data.getRequest().getCookies();
@@ -94,7 +93,9 @@ public class Login extends VelocitySecureScreen {
 		if(failed!=null && failed.equals("true")){
 			data.setMessage(AdminUtils.GetLoginFailureMessage());
 		}
-        SecureScreen.loadAdditionalVariables(data, c);
+
+		final Context context = TurbineVelocity.getContext(data);
+        SecureScreen.loadAdditionalVariables(data, context);
         List<AuthenticationProvider> prov = XDAT.getContextService().getBean("customAuthenticationManager",ProviderManager.class).getProviders();
         List<String> providerNames = new ArrayList<String>();
         for(AuthenticationProvider p : prov){
@@ -106,8 +107,8 @@ public class Login extends VelocitySecureScreen {
         	}
         }
 
-        c.put("login_methods", providerNames);
-        doBuildTemplate(data, c);
+        context.put("login_methods", providerNames);
+        doBuildTemplate(data, context);
 	}
 
     private boolean isVisibleProvider(final AuthenticationProvider provider) {

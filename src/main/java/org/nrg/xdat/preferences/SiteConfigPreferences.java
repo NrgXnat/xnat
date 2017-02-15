@@ -709,6 +709,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "/images/logo.png")
+    public String getSiteLogoPath() {
+        return getValue("siteLogoPath");
+    }
+
+    public void setSiteLogoPath(final String siteLogoPath) {
+        try {
+            set(siteLogoPath, "siteLogoPath");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'siteLogoPath': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "Text")
     public String getSiteDescriptionType() {
         return getValue("siteDescriptionType");

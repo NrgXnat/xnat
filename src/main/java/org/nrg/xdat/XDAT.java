@@ -45,6 +45,7 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
+import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
@@ -267,6 +268,15 @@ public class XDAT implements Initializable, Configurable{
 			logger.error("Error performing su redirect", exception);
 		}
 	}
+
+	public static String getSiteLogoPath() {
+        try {
+            return getSiteConfigurationProperty("siteLogoPath");
+        } catch (ConfigServiceException e) {
+            logger.error("An error occurred trying to retrieve the site logo path setting, using the default", e);
+            return "/images/logo.png";
+        }
+    }
 
 	/**
 	 * configure torque

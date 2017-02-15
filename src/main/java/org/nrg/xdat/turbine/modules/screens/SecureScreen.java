@@ -75,20 +75,21 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         }
     }
 
-    public static void loadAdditionalVariables(RunData data, Context c) {
-        checkForPopup(data, c);
+    public static void loadAdditionalVariables(RunData data, Context context) {
+        checkForPopup(data, context);
 
-        c.put("user", XDAT.getUserDetails());
-        c.put("turbineUtils", TurbineUtils.GetInstance());
-        c.put("displayManager", DisplayManager.GetInstance());
-        c.put("systemName", TurbineUtils.GetSystemName());
-        c.put("esc", new EscapeTool());
+        context.put("user", XDAT.getUserDetails());
+        context.put("turbineUtils", TurbineUtils.GetInstance());
+        context.put("displayManager", DisplayManager.GetInstance());
+        context.put("systemName", TurbineUtils.GetSystemName());
+        context.put("siteLogoPath", XDAT.getSiteLogoPath());
+        context.put("esc", new EscapeTool());
 
-        c.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
-        c.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
+        context.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
+        context.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
 
-        c.put("notifications", XDAT.getNotificationsPreferences());
-        c.put("siteConfig", XDAT.getSiteConfigPreferences());
+        context.put("notifications", XDAT.getNotificationsPreferences());
+        context.put("siteConfig", XDAT.getSiteConfigPreferences());
     }
 
     protected static void checkForPopup(final RunData data, final Context c) {

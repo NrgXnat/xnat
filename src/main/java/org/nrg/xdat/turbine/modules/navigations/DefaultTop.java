@@ -25,6 +25,7 @@ public class DefaultTop extends VelocityNavigation {
 		{
 			context.put("logout","true");
 		}
+		context.put("siteLogoPath", XDAT.getSiteLogoPath());
 	}
 }
 

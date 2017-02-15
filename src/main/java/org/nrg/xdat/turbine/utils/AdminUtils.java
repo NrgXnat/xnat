@@ -73,6 +73,7 @@ public class AdminUtils {
 	public static void sendDisabledUserVerificationNotification(final UserI user, final Context context) throws Exception {
         context.put("time", Calendar.getInstance().getTime());
         context.put("server", TurbineUtils.GetFullServerPath());
+        context.put("siteLogoPath", XDAT.getSiteLogoPath());
         context.put("system", TurbineUtils.GetSystemName());
         context.put("user", user);
 
@@ -196,6 +197,7 @@ public class AdminUtils {
 		if (!StringUtils.isBlank(email)) {
 		    context.put("time", Calendar.getInstance().getTime());
 		    context.put("system", TurbineUtils.GetSystemName());
+			context.put("siteLogoPath", XDAT.getSiteLogoPath());
 		    context.put("server", TurbineUtils.GetFullServerPath());
 		    context.put("user", user.getLogin() + " (" + user.getFirstname() + " " + user.getLastname() + ")");
 			context.put("error", message);
@@ -296,6 +298,7 @@ public class AdminUtils {
 	private static void sendNewUserRequestNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
 		context.put("time", Calendar.getInstance().getTime());
 		context.put("server", TurbineUtils.GetFullServerPath());
+		context.put("siteLogoPath", XDAT.getSiteLogoPath());
 		context.put("system", TurbineUtils.GetSystemName());
 		context.put("username", username);
 		context.put("first", first);
@@ -332,6 +335,7 @@ public class AdminUtils {
 	private static void sendNewUserCreationNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
 		context.put("time", Calendar.getInstance().getTime());
 		context.put("server", TurbineUtils.GetFullServerPath());
+		context.put("siteLogoPath", XDAT.getSiteLogoPath());
 		context.put("system", TurbineUtils.GetSystemName());
 		context.put("username", username);
 		context.put("first", first);

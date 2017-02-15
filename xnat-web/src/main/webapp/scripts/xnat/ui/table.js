@@ -37,6 +37,13 @@ var XNAT = getObject(XNAT);
         element = window.spawn,
         undefined;
 
+    function isElement(it){
+        return it.nodeType && it.nodeType === 1;
+    }
+
+    function isFragment(it){
+        return it.nodeType && it.nodeType === 11;
+    }
 
     /**
      * Constructor function for XNAT.table()
@@ -380,39 +387,34 @@ var XNAT = getObject(XNAT);
 
         var allItems = opts.header || (opts.items && opts.items === 'all');
 
-        // properties for spawned element
-        opts.element = opts.table || opts.element || {};
+        // properties for spawned <table> element
+        var tableConfig = opts.table || opts.element || {};
 
-        addClassName(opts.element, 'data-table xnat-table');
+        addClassName(tableConfig, 'data-table xnat-table');
 
         if (opts.sortable) {
             if (opts.sortable === true) {
-                addClassName(opts.element, 'sortable');
+                addClassName(tableConfig, 'sortable');
             }
             else {
                 opts.sortable = opts.sortable.split(',').map(function(item){return item.trim()});
             }
         }
 
-        opts.element = extend(true, {
-            id: opts.id || randomID('t', false),
-            style: {
-                width: opts.width || '100%',
-                position: 'relative'
-            }
-        }, opts.element);
+        tableConfig = extend(true, {
+            id: opts.id || randomID('xdt-', false),
+            style: { width: opts.width || '100%' }
+        }, tableConfig);
 
         // initialize the table
-        var newTable = new Table(opts.element);
+        var newTable = new Table(tableConfig);
         var $table = newTable.$table;
         var $dataRows = [];
 
 
         // create a div to hold the table
         // or message (if no data or error)
-        var $tableContainer = $.spawn('div.data-table-container', {
-            style: { position: 'relative' }
-        }, [newTable.table]);
+        var $tableContainer = $.spawn('div.data-table-container', [newTable.table]);
         var tableContainer = $tableContainer[0];
 
         // if (opts.before) {
@@ -485,9 +487,9 @@ var XNAT = getObject(XNAT);
 
                         if (HIDDENREGEX.test(val.label || val)) {
                             hiddenItems.push(name);
-                            $(newTable.last.th).html(name)
-                                .addClass('hidden')
-                                .dataAttr('prop', name);
+                            newTable.last.th.innerHTML = name;
+                            addClassName(newTable.last.th, 'hidden');
+                            addDataAttrs(newTable.last.th, { prop: name });
                             return;
                         }
                         //if (!opts.sortable) return;
@@ -527,13 +529,16 @@ var XNAT = getObject(XNAT);
             // if we have filters, create a row for them
             if (filterColumns.length) {
 
+                var filterInputs = []; // save reference to filter inputs
+                var allFilterValues = '';
+
                 newTable.tr({ className: 'filter' });
 
                 function filterRows(val, name){
                     if (!val) { return false }
                     // save the rows if there are none
                     if (!$dataRows.length) {
-                        $dataRows = $table.find('tr[data-id]');
+                        $dataRows = $table.find('tbody').find('tr');
                     }
                     $dataRows.not(function(){
                         return $(this).find('td.'+ name + ':containsNC(' + val + ')').length
@@ -563,6 +568,7 @@ var XNAT = getObject(XNAT);
                                 title: name + ':filter',
                                 placeholder: 'filter'
                             });
+                            filterInputs.push($filterInput);
 
                             $filterInput.on('focus', function(){
                                 $(this).select();
@@ -570,12 +576,15 @@ var XNAT = getObject(XNAT);
                                 //$table.find('input.filter-data').val('');
                                 // save reference to the data rows on focus
                                 // (should make filtering slightly faster)
-                                $dataRows = $table.find('tr[data-id]');
+                                // $dataRows = $table.find('tr[data-filter]');
+                                $dataRows = $table.find('tbody').find('tr');
                             });
 
                             $filterInput.on('keyup', function(e){
                                 var val = this.value;
                                 var key = e.which;
+                                // don't do anything on 'tab' keyup
+                                if (key == 9) return false;
                                 if (key == 27){ // key 27 = 'esc'
                                     this.value = val = '';
                                 }
@@ -588,6 +597,26 @@ var XNAT = getObject(XNAT);
                                 }
                                 filterRows(val, name);
                             });
+
+                            // $filterInput.on('keyup', function(e){
+                            //     var val = this.value;
+                            //     var key = e.which;
+                            //     // don't do anything on 'tab' keyup
+                            //     if (key == 9) return false;
+                            //     if (key == 27){ // key 27 = 'esc'
+                            //         this.value = val = '';
+                            //     }
+                            //     allFilterValues = filterInputs.map(function(filter){
+                            //         return filter[0].value || '';
+                            //     }).join('').trim();
+                            //     if (!allFilterValues) {
+                            //         $dataRows.show();
+                            //     }
+                            //     // no value, no filter
+                            //     //if (!val) return false;
+                            //     filterRows(val, name);
+                            // });
+
                             tdContent.push($filterInput[0]);
                         }
                     }
@@ -617,7 +646,13 @@ var XNAT = getObject(XNAT);
                         html: ''
                         // html: itemVal
                     };
+                    var dataAttrs = {};
                     var _tr = newTable.last.tr;
+                    var applyFn = null;
+
+                    if (filterColumns.length) {
+                        dataAttrs.filter = '';
+                    }
 
                     if (opts.items) {
                         cellObj = opts.items[name] || {};
@@ -626,7 +661,11 @@ var XNAT = getObject(XNAT);
                             // [data-*] attribute to the <tr>
                             if (DATAREGEX.test(cellObj)) {
                                 var dataName = cellObj.split(/[.-]/).slice(1).join('-') || name;
-                                newTable.last$('tr').dataAttr(dataName, itemVal);
+                                var dataObj = {};
+                                dataObj[dataName] = itemVal;
+                                addDataAttrs(newTable.last.tr, dataObj);
+                                // newTable.last$('tr').dataAttr(dataName, itemVal);
+                                // dataAttrs[dataName] = itemVal;
                                 return;
                             }
                             cellContent = itemVal;
@@ -647,12 +686,30 @@ var XNAT = getObject(XNAT);
                             //     itemVal = eval(cellObj.apply).apply(item, [itemVal]);
                             // }
                             if (cellObj['apply'] || cellObj['call']) {
-                                cellObj['apply'] = cellObj['call'] || cellObj['apply'];
-                                if (isFunction(cellObj['apply'])) {
-                                    itemVal = cellObj['apply'].apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                applyFn = cellObj['call'] || cellObj['apply'];
+                                if (isFunction(applyFn)) {
+                                    itemVal = applyFn.apply(item, [].concat(itemVal, _tr)) || itemVal;
                                 }
-                                else {
-                                    itemVal = eval('('+cellObj['apply'].trim()+')').apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                else if (stringable(applyFn)) {
+                                    applyFn = (applyFn+'').trim();
+                                    // wrap eval() expression in {( expr )}
+                                    if (/^(\{\()(.*?)(\)})$/.test(applyFn)) {
+                                        applyFn = applyFn.replace(/^(\{\(\s*)/g, '(')
+                                                         .replace(/(\s*\)})$/g, ')');
+                                        itemVal = eval(applyFn).apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                    }
+                                    else if (applyFn = lookupObjectValue(window, applyFn)) {
+                                        //          ^^^ correct, we're doing assignment in an 'if' statement
+                                        if (isFunction(applyFn)) {
+                                            itemVal = applyFn.apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                        }
+                                        else {
+                                            itemVal = applyFn;
+                                        }
+                                    }
+                                    else {
+                                        itemVal = applyFn;
+                                    }
                                 }
                             }
                             // special __VALUE__ string gets replaced
@@ -667,12 +724,48 @@ var XNAT = getObject(XNAT);
                         }
                     }
 
+                    // addDataAttrs(_tr, dataAttrs);
+
                     newTable.td(tdElement);
 
-                    var $td = newTable.last$('td').empty().append(cellContent);
+                    // var $td = newTable.last$('td').empty().append(cellContent);
+
+                    // var $td = newTable.last$('td');
+                    var _td = newTable.last.td;
+
+                    function appendContent(content){
+                        if (stringable(content)) {
+                            _td.innerHTML = content + '';
+                            return 'innerHTML';
+                        }
+                        if (isElement(content) || isFragment(content)) {
+                            _td.appendChild(content);
+                            return 'appendChild';
+                        }
+                        if (isArray(content)) {
+                            forEach(content, function(_content){
+                                appendContent(_content);
+                            });
+                            return 'array';
+                        }
+                        // console.log('cannot append?');
+                        return 'cannot append?';
+                    }
+
+                    if (isArray(cellContent)) {
+                        forEach(cellContent, function(_content){
+                            appendContent(_content);
+                        })
+                    }
+                    else {
+                        console.log(appendContent(cellContent));
+                    }
+                    //
+                    // $td.append(cellContent);
 
                     // evaluate jQuery methods
                     if (cellObj.$) {
+                        var $td = $(_td);
                         if (typeof cellObj.$ === 'string') {
                             eval('$(newTable.last.td).'+(cellObj.$).trim());
                         }
@@ -684,7 +777,8 @@ var XNAT = getObject(XNAT);
                     }
 
                     if (hidden) {
-                        $td.addClass('hidden');
+                        addClassName(_td, 'hidden');
+                        // $td.addClass('hidden');
                     }
 
                 });

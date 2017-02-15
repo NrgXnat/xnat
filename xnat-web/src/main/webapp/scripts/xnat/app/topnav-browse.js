@@ -13,6 +13,7 @@
 
 (function(){
 
+    var $browseProjectsMenuItem = $('#browse-projects-menu-item');
     var $browseProjects = $('#browse-projects');
     var $browseData = $('#browse-data');
     var $favoriteProjects = $('#favorite-projects');
@@ -21,11 +22,52 @@
     var displayProjectList = function($parent, projectList){
         if (!projectList.length) return;
         // convert projectList to an array of <li> elements
-        projectList = projectList.map(function(proj){
-            if (!proj.name) return;
-            return '<li><a href="' + serverRoot + '/data/projects/' + proj.id + '">' + proj.name + '</a></li>'
-        });
-        $parent.append(projectList).parents('li').removeClass('hidden');
+        // projectList = projectList.map(function(proj){
+        //     if (!proj.name) return;
+        //     return '<li><a href="' + serverRoot + '/data/projects/' + proj.id + '">' + proj.name + '</a></li>'
+        // });
+        function projectListItem(val, len){
+            var URL = XNAT.url.rootUrl('/data/projects/' + this.id);
+            var linkText = spawn('a', {
+                href: URL,
+                title: val
+            }, truncateText(val || '<i><i>&ndash;</i></i>', len || 30));
+            return [spawn('div.hidden', [val]), linkText];
+        }
+        projectList = XNAT.table.dataTable(projectList, {
+            sortable: true,
+            items: {
+                _id: '~data-id',
+                id: {
+                    label: 'Project ID',
+                    filter: true,
+                    th: { style: { width: '18%' } },
+                    td: { style: { width: '18%' } },
+                    apply: function(name){
+                        return projectListItem.call(this, name, 15);
+                    }
+                },
+                name: {
+                    label: 'Project Name',
+                    filter: true,
+                    th: { style: { width: '48%' } },
+                    td: { style: { width: '48%' } },
+                    apply: function(name){
+                        return projectListItem.call(this, name, 40);
+                    }
+                },
+                pi: {
+                    label: 'Project PI',
+                    filter: true,
+                    th: { style: { width: '34%' } },
+                    td: { style: { width: '34%' } },
+                    apply: function(pi){
+                        return projectListItem.call(this, pi, 25);
+                    }
+                }
+            }
+        }).get();
+        $parent.append(spawn('li', [projectList])).parents('li').removeClass('hidden');
     };
 
     var displayProjectNavFail = function(){

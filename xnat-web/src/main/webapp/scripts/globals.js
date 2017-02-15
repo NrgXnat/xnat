@@ -207,6 +207,71 @@ function stringable(val){
     return /string|number|boolean/.test(typeof val);
 }
 
+// copy an object
+function objectCopy(obj){
+
+    var output = {},
+        prop, val;
+
+    for (prop in obj){
+        val = output[prop] = obj[prop];
+        if (isPlainObject(val)) {
+            // prevent infinite loop
+            if (val[prop] !== val){
+                output[prop] = objectCopy(val);
+            }
+            continue;
+        }
+        if (isArray(val)) {
+            output[prop] = toArray(val);
+        }
+    }
+
+    return output;
+}
+
+// alternative to Object.assign
+function objectAssign(/* deep, target, obj2, obj3, etc */) {
+
+    var undef, target, source, prop, val,
+        args = arguments,
+        deep = args[0],
+        len = arguments.length,
+        i = 1;
+
+    if (typeof deep !== 'boolean') {
+        deep = false;
+        i = 0;
+    }
+
+    target = args[i];
+
+    if (target === undef || target === null) {
+        throw new TypeError('Cannot convert undefined or null to object');
+    }
+
+    var output = Object(target);
+
+    while (++i < len) {
+        source = args[i];
+        if (source !== undef && source !== null) {
+            for (prop in source) {
+                if (source.hasOwnProperty(prop)) {
+                    val = output[prop] = source[prop];
+                    if (deep && isPlainObject(val)) {
+                        // prevent infinite loop
+                        if (val[prop] !== val){
+                            output[prop] = objectAssign(deep, {}, val);
+                            // output[prop] = val;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return output;
+}
+
 // copy of jQuery's $.extend() method
 function extend(){
     var src, copyIsArray, copy, name, options, clone,

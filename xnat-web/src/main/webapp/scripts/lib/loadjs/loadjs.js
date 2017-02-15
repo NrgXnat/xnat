@@ -129,7 +129,7 @@
    * @param {Function} [arg3] - The fail callback
    */
   function loadjs(paths, arg1, arg2, arg3) {
-    var bundleId, successFn, failFn;
+    var bundleId, successFn, failFn, errorMsg;
 
     // bundleId
     if (arg1 && !arg1.call) bundleId = arg1;
@@ -145,7 +145,17 @@
     // throw error if bundle is already defined
     if (bundleId) {
       if (bundleId in bundleIdCache) {
-        throw new Error("LoadJS: Bundle already defined");
+        errorMsg = 'LoadJS: Bundle already defined';
+          // prefer to show an error message but not throw an error
+          if (window.console && window.console.error) {
+            window.console.error(errorMsg)
+          }
+          else if (window.console && window.console.log){
+            window.console.log(errorMsg)
+          }
+          else {
+            throw new Error(errorMsg);
+          }
       } else {
         bundleIdCache[bundleId] = true;
       }

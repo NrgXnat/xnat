@@ -2,20 +2,20 @@
 <!-- Sequence: 10 -->
 
 <!-- Browse/Default -->
-    <li class="hidden"><a href="#BrowseProjects">Projects</a>
-        <ul id="browse-projects">
+    <li class="hidden"><a id="browse-projects-menu-item" href="#!BrowseProjects">Projects</a>
+        <ul id="browse-projects" class="shadowed dark-shadow">
             <!-- Sequence: 10 -->
             #if($siteConfig.uiAllowNonAdminProjectCreation || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData/project"))
                 <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
             #end
         </ul>
     </li>
-    <li class="hidden"><a href="#FavoriteProjects">Favorite Projects</a>
+    <li class="hidden"><a href="#!FavoriteProjects">Favorite Projects</a>
         <ul id="favorite-projects">
             <!-- Sequence: 20 -->
         </ul>
     </li>
-    <li class="hidden"><a href="#BrowseData">Data</a>
+    <li class="hidden"><a href="#!BrowseData">Data</a>
         <ul id="browse-data">
             <!-- Sequence: 30 -->
         </ul>

@@ -21,6 +21,45 @@
 <style type="text/css">
     #attention_icon { float: left ; padding-top: 7px ; padding-left: 11px ; }
     #attention_icon:hover { cursor: pointer ; }
+
+    #main_nav ul.nav #browse-projects.dark-shadow {
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        z-index: 1;
+    }
+
+    #browse-projects div.data-table-container {
+        width: 750px;
+    }
+
+    #browse-projects table.data-table,
+    #browse-projects table.data-table th,
+    #browse-projects table.data-table td {
+        padding: 2px 8px;
+        border: none;
+    }
+    #browse-projects table.data-table tr:hover {
+        background: #e5f2ff;
+    }
+    #browse-projects table.data-table th.sort {
+        background: none;
+        border-bottom: 1px solid #d0d0d0;
+        text-align: left;
+    }
+    #browse-projects table.data-table td.filter {
+        background: #f0f0f0;
+        padding: 6px;
+        border-bottom: 1px solid #d0d0d0;
+    }
+    #browse-projects table.data-table td.filter > input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    #main_nav #browse-projects table.data-table td a {
+        padding: 0;
+        font-size: 12px;
+    }
+
+
 </style>
 
 <div id="user_bar">
@@ -177,31 +216,27 @@
         main_nav$.find('li li ul').addClass('subnav');
 
         // no fancy fades on hover
-        main_nav$.find('li.more').
-        on('mouseover',
-                function(){
-                    var li$ = $(this);
-                    fadeInNav(li$);
-                    //jq('#main_nav li').removeClass('open');
-                    li$.find('ul.subnav').each(function(){
-                        var sub$ = $(this);
-                        var offsetL = sub$.closest('li').width();
-                        sub$.css({ 'left': offsetL });
-                    });
-                    if (body$.hasClass('applet')) {
-                        coverApplet(li$.find('> ul'));
-                    }
-                }
-        ).
-        on('mouseout',
-                function(){
-                    var li$ = $(this);
-                    fadeOutNav(li$);
-                    if (body$.hasClass('applet')) {
-                        unCoverApplets(li$.find('> ul'));
-                    }
-                }
-        );
+        main_nav$.find('li.more')
+                 .on('mouseover', function(){
+                     var li$ = $(this);
+                     fadeInNav(li$);
+                     //jq('#main_nav li').removeClass('open');
+                     li$.find('ul.subnav').each(function(){
+                         var sub$ = $(this);
+                         var offsetL = sub$.closest('li').width();
+                         sub$.css({ 'left': offsetL });
+                     });
+                     if (body$.hasClass('applet')) {
+                         coverApplet(li$.find('> ul'));
+                     }
+                 })
+                 .on('mouseout', function(){
+                     var li$ = $(this);
+                     fadeOutNav(li$);
+                     if (body$.hasClass('applet')) {
+                         unCoverApplets(li$.find('> ul'));
+                     }
+                 });
 
         // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
         jq('#logout_user').click(function(){

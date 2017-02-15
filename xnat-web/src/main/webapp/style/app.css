@@ -705,6 +705,12 @@ table.ruled tr:nth-child(2n+1) {
     font-family: Courier, monospace;
 }
 
+/* reset text to normal */
+body i > i {
+    font-weight: normal !important;
+    font-style: normal !important;
+}
+
 .center,
 .centered {
     text-align: center !important;
@@ -2938,6 +2944,12 @@ th.sort.desc > i {
 
 th.sort:hover {
     cursor: pointer;
+}
+
+/* data-table styles */
+.xnat-table.data-table tr.filter > td,
+.xnat-table.data-table tr.filter > th {
+    border-bottom: 1px solid #ccc;
 }
 
 /* overrides for Chosen menus (if used) */

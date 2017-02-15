@@ -194,6 +194,7 @@ public class ProjectMemberResource extends SecureResource {
 								VelocityContext context = new VelocityContext();
 								context.put("user", user);
 								context.put("server", TurbineUtils.GetFullServerPath(request));
+								context.put("siteLogoPath", XDAT.getSiteLogoPath());
 								context.put("process", "Transfer to the archive.");
 								context.put("system", TurbineUtils.GetSystemName());
 								context.put("access_level", gID);
@@ -238,6 +239,7 @@ public class ProjectMemberResource extends SecureResource {
 
 										context.put("user", user);
 										context.put("server", TurbineUtils.GetFullServerPath(request));
+										context.put("siteLogoPath", XDAT.getSiteLogoPath());
 										context.put("process", "Transfer to the archive.");
 										context.put("system", TurbineUtils.GetSystemName());
 										context.put("access_level", "member");

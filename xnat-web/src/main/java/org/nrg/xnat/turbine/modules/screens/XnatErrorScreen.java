@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocityErrorScreen;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,8 +22,8 @@ import javax.servlet.http.HttpServletRequest;
 @SuppressWarnings("unused")
 public class XnatErrorScreen extends VelocityErrorScreen {
 
-	@Override
-	protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    @Override
+    protected void doBuildTemplate(RunData data, Context context) throws Exception {
         super.doBuildTemplate(data, context);
 
         final HttpServletRequest request = data.getRequest();
@@ -38,7 +39,8 @@ public class XnatErrorScreen extends VelocityErrorScreen {
         context.put("status", status != null ? status : "Unknown status");
         context.put("uri", StringUtils.isNotBlank(uri) ? uri : "Unknown URI");
         context.put("message", message);
-	}
+        SecureScreen.loadAdditionalVariables(data, context);
+    }
 
     private static final Logger _log = LoggerFactory.getLogger(XnatErrorScreen.class);
 }

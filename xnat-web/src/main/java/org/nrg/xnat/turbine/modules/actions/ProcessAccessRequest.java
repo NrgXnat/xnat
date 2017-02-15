@@ -86,6 +86,7 @@ public class ProcessAccessRequest extends SecureAction {
 			    
 		    context.put("user",user);
 		    context.put("server",TurbineUtils.GetFullServerPath());
+			context.put("siteLogoPath", XDAT.getSiteLogoPath());
 		    context.put("system",TurbineUtils.GetSystemName());
 		    context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
 		    context.put("projectOM",project);
@@ -168,6 +169,7 @@ public class ProcessAccessRequest extends SecureAction {
                         
             context.put("user",user);
             context.put("server",TurbineUtils.GetFullServerPath());
+			context.put("siteLogoPath", XDAT.getSiteLogoPath());
             context.put("process","Transfer to the archive.");
             context.put("system",TurbineUtils.GetSystemName());
             context.put("access_level",access_level);

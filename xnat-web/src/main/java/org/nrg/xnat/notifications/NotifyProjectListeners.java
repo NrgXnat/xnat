@@ -87,6 +87,7 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 				context.put("expt", _expt);
 				context.put("username", _user.getUsername());
 				context.put("server", TurbineUtils.GetFullServerPath());
+				context.put("siteLogoPath", XDAT.getSiteLogoPath());
 				context.put("system", TurbineUtils.GetSystemName());
 				context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
 				context.put("params", _params);

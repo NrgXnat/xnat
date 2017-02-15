@@ -9,18 +9,6 @@
 
 package org.nrg.xnat.archive;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.nio.channels.FileLock;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
-import javax.mail.MessagingException;
-
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -41,10 +29,17 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 
+import javax.mail.MessagingException;
+import java.io.*;
+import java.nio.channels.FileLock;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 public class BatchTransfer extends Thread{
     final private Logger logger = Logger.getLogger(BatchTransfer.class);
-    final private List<XnatImagesessiondata> sessions = new LinkedList<XnatImagesessiondata>();
-    final private List<File> dirs = new LinkedList<File>();
+    final private List<XnatImagesessiondata> sessions = new LinkedList<>();
+    final private List<File> dirs = new LinkedList<>();
     private UserI user = null;
     
     final private String server;
@@ -69,13 +64,13 @@ public class BatchTransfer extends Thread{
     }
     
     public void execute(){
-		final List<String> messages = new LinkedList<String>();
-		final List<List<String>> errors = new LinkedList<List<String>>();
+		final List<String> messages = new LinkedList<>();
+		final List<List<String>> errors = new LinkedList<>();
         
         
         for(int i=0, nSessions = sessions.size(); i<nSessions; i++){
-            boolean _successful = true;
-            WrkWorkflowdata wkdata = null;
+            boolean _successful;
+            WrkWorkflowdata wkdata;
             try {
                 XnatImagesessiondata partialMR = sessions.get(i);
                 final File dir = dirs.get(i);
@@ -92,13 +87,13 @@ public class BatchTransfer extends Thread{
                     cc.addClause(subCC);
 					List<WrkWorkflowdata> al = WrkWorkflowdata.getWrkWorkflowdatasByField(cc, user, false);
                     if (al.size()>0){
-                        wkdata= (WrkWorkflowdata)al.get(al.size()-1);
+                        wkdata= al.get(al.size() - 1);
 						if (XFT.VERBOSE)
 							System.out.println("FOUND Transfer Workflow:" + wkdata.getWrkWorkflowdataId());
                     }else{
 						if (XFT.VERBOSE)
 							System.out.println("MISSING TRANSFER WORKFLOWDATA");
-                        wkdata = new WrkWorkflowdata((UserI)user);
+                        wkdata = new WrkWorkflowdata(user);
                         try {
                             wkdata.setId(partialMR.getId());
                             wkdata.setDataType("xnat:mrSessionData");
@@ -111,7 +106,7 @@ public class BatchTransfer extends Thread{
                     }
                 } catch (Exception e1) {
                     logger.error("",e1);
-                    wkdata = new WrkWorkflowdata((UserI)user);
+                    wkdata = new WrkWorkflowdata(user);
                     try {
                         wkdata.setId(partialMR.getId());
                         wkdata.setDataType(partialMR.getXSIType());
@@ -139,7 +134,7 @@ public class BatchTransfer extends Thread{
 					System.out.println("done. (" + (System.currentTimeMillis() - last) + ")");
                 
                 final XnatImagesessiondata session = (XnatImagesessiondata)BaseElement.GetGeneratedItem(item);
-                final XnatImagesessiondata tempMR = (XnatImagesessiondata)partialMR;
+                final XnatImagesessiondata tempMR = partialMR;
                 if (null != partialMR.getId())
                     session.setId(partialMR.getId());
                 
@@ -195,7 +190,7 @@ public class BatchTransfer extends Thread{
                     partialMR.getItem().setUser(user);
                 }
                   
-                String currentarc =null;
+                String currentarc;
                 try {
                     currentarc = partialMR.getCurrentArchiveFolder();
 					if (XFT.VERBOSE)
@@ -203,7 +198,7 @@ public class BatchTransfer extends Thread{
                 } catch (Throwable e) {
                     logger.error("Unable to identify current archive location",e);
 
-					final List<String> error = new ArrayList<String>(2);
+					final List<String> error = new ArrayList<>(2);
                     error.add(partialMR.getId());
                     error.add("Error transfering files.  Unable to identify current archive location.");
                     errors.add(error);
@@ -266,12 +261,12 @@ public class BatchTransfer extends Thread{
                     } catch (Exception e) {
                 	logger.error("",e);
                     }
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     sb.append("Archiving Failed.<BR>File Comparison Failed.<BR>");
 					for (String error : fileerrors) {
-						sb.append(error + "<BR>");
+						sb.append(error).append("<BR>");
                     }
-					List<String> error = new ArrayList<String>(2);
+					List<String> error = new ArrayList<>(2);
                     error.add(partialMR.getId());
                     error.add(sb.toString());
                     errors.add(error);
@@ -291,16 +286,15 @@ public class BatchTransfer extends Thread{
 					if (XFT.VERBOSE)
 						System.out.print("Creating QC Images...");
                       try {
-                          QCImageCreator qcImageCreator = new QCImageCreator((XnatMrsessiondata)partialMR, (UserI)user);
+                          QCImageCreator qcImageCreator = new QCImageCreator((XnatMrsessiondata)partialMR, user);
                           boolean _success = qcImageCreator.createQCImagesForScans();
                           if (!_success) {
-                              AdminUtils.sendAdminEmail((UserI)user,"Archiving Failed","Couldnt complete creation of Quality Control Images Successfully");
+                              AdminUtils.sendAdminEmail(user, "Archiving Failed", "Couldnt complete creation of Quality Control Images Successfully");
                           }
                       }catch (Exception e) {
-                          StringBuffer sb = new StringBuffer();
-                          sb.append("Archiving Failed.<BR>Quality Control Image Creation Failed.<BR>");
-                          sb.append(e.getMessage());
-                          AdminUtils.sendAdminEmail((UserI)user,"Archiving Failed",sb.toString());
+                          final String sb = "Archiving Failed.<BR>Quality Control Image Creation Failed.<BR>" +
+                                            e.getMessage();
+                          AdminUtils.sendAdminEmail(user, "Archiving Failed", sb);
                       }
                       if(XFT.VERBOSE)System.out.print("Done");
                   }
@@ -423,27 +417,22 @@ public class BatchTransfer extends Thread{
 		if (XFT.VERBOSE)
 			System.out.println("Ending Batch Transfer Thread");
     }
-    
-	public String getEmailCompletionMessage(UserI user, List<String> messages, List<List<String>> errors, String system, String admin_email) {
-        try {
-            VelocityContext context = new VelocityContext();
-            context.put("user",user);
-            context.put("server",server);
-            context.put("process","Transfer to the archive.");
-            context.put("messages",messages);
-            context.put("errors",errors);
-            context.put("system",system);
-            context.put("admin_email",admin_email);
-            StringWriter sw = new StringWriter();
-            Template template =Velocity.getTemplate("/screens/BatchWorkflowCompleteEmail.vm");
-            template.merge(context,sw);
-            return sw.toString();
-        } catch (Exception e) {
-            logger.error("",e);
-            StringBuffer sb = new StringBuffer();
-            
-            return sb.toString();
-        }
+
+    public String getEmailCompletionMessage(final UserI user, final List<String> messages, final List<List<String>> errors, final String system, final String adminEmail) {
+        final VelocityContext context = new VelocityContext() {{
+            put("user", user);
+            put("server", server);
+            put("siteLogoPath", XDAT.getSiteLogoPath());
+            put("process", "Transfer to the archive.");
+            put("messages", messages);
+            put("errors", errors);
+            put("system", system);
+            put("admin_email", adminEmail);
+        }};
+        StringWriter sw = new StringWriter();
+        Template template = Velocity.getTemplate("/screens/BatchWorkflowCompleteEmail.vm");
+        template.merge(context, sw);
+        return sw.toString();
     }
     
     /* (non-Javadoc)

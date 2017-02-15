@@ -51,6 +51,7 @@ public class GrantProjectAccess {
     		
     		context.put("user",user);
             context.put("server",TurbineUtils.GetFullServerPath());
+            context.put("siteLogoPath", XDAT.getSiteLogoPath());
             context.put("process","Transfer to the archive.");
             context.put("system",TurbineUtils.GetSystemName());
             context.put("access_level",level);

@@ -104,6 +104,22 @@ siteDescriptionType:
         siteInfoJs:
             tag: script|src=/scripts/xnat/admin/siteInfo.js
 
+siteLogo:
+    kind: panel.element
+    label: Site Logo Path
+    info: >
+        <p>The site log should be specified by its path within the web application. The default XNAT site logo is
+        located at <b>/images/logo.png</b>. The maximum recommended size for a logo is 240w x 120h.</p>
+        <p><b>Note:</b> Your logo can be located at any path within the web application, but, for it to be available to
+        be displayed to users who are not logged in, that path must be an <i>open URL</i> in the XNAT security
+        configuration. The <b>/images</b> folder and its descendants are already configured as open URLs.</p>
+    contents:
+        siteLogoPath:
+            kind: input.text
+            placeholder: /images/logo.png
+            validation: uri onblur
+            description: "The path to the file to be used as the site logo."
+
 siteLoginLanding:
     kind: panel.input.text
     name: siteLoginLanding
@@ -285,6 +301,7 @@ siteInfo:
         ${siteUrl}
 #        ${processingUrl}
         ${siteDescriptionType}
+        ${siteLogo}
         ${siteLoginLanding}
 #        ${siteLandingLayout}
         ${siteHome}

@@ -43,6 +43,7 @@ public class RequestAccess extends SecureAction {
                 
         context.put("user",user);
         context.put("server",TurbineUtils.GetFullServerPath());
+        context.put("siteLogoPath", XDAT.getSiteLogoPath());
         context.put("process","Transfer to the archive.");
         context.put("system",TurbineUtils.GetSystemName());
         context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());

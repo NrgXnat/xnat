@@ -16,6 +16,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xft.security.UserI;
 
 import java.util.ArrayList;
@@ -43,5 +44,6 @@ public class PublicProjectView extends VelocityScreen {
         }
 
         context.put("projects", allProjects);
+        SecureScreen.loadAdditionalVariables(data, context);
     }
 }

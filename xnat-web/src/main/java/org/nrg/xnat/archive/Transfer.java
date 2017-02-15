@@ -227,6 +227,7 @@ public class Transfer {
         VelocityContext context = new VelocityContext();
         context.put("user",user);
         context.put("server",server);
+        context.put("siteLogoPath", XDAT.getSiteLogoPath());
         context.put("process","Transfer to the archive.");
         context.put("message",message);
         context.put("system",system);

@@ -88,6 +88,7 @@ public class ManageProjectAccess extends SecureAction {
                     if (sendmail) {
                         context.put("user", XDAT.getUserDetails());
                         context.put("server", TurbineUtils.GetFullServerPath());
+                        context.put("siteLogoPath", XDAT.getSiteLogoPath());
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
                         context.put("access_level", "owner");
@@ -122,6 +123,7 @@ public class ManageProjectAccess extends SecureAction {
                     if (sendmail) {
                         context.put("user", XDAT.getUserDetails());
                         context.put("server", TurbineUtils.GetFullServerPath());
+                        context.put("siteLogoPath", XDAT.getSiteLogoPath());
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
                         context.put("access_level", "member");
@@ -156,6 +158,7 @@ public class ManageProjectAccess extends SecureAction {
                     if (sendmail) {
                         context.put("user", XDAT.getUserDetails());
                         context.put("server", TurbineUtils.GetFullServerPath());
+                        context.put("siteLogoPath", XDAT.getSiteLogoPath());
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
                         context.put("access_level", "collaborator");

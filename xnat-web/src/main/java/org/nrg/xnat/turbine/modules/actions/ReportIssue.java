@@ -112,6 +112,7 @@ public class ReportIssue extends SecureAction {
         context.put("xnat_version", FileUtils.getXNATVersion());
         context.put("user", user);
         context.put("postgres_version", PoolDBUtils.ReturnStatisticQuery("SELECT version();", "version", user.getDBName(), user.getLogin()));
+        context.put("siteLogoPath", XDAT.getSiteLogoPath());
 
         if(html){
             context.put("html", "html");

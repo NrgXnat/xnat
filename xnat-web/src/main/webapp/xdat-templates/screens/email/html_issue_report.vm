@@ -1,3 +1,6 @@
+#* @vtlvariable name="html" type="java.lang.String" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="siteLogoPath" type="java.lang.String" *#
 #if($html)
 #set($h3 = "<h3>")
 #set($h3_ = "</h3>")
@@ -26,7 +29,7 @@ table { margin-left: 10px; }
 $!{h3}
 #end #parse("/screens/email/issue_report.vm")
 $!{hr}<div style="width: 100%; margin-right: 10px ; text-align: right;">
-    <img src="http://${xnat_host}/${content.getURI("images/logo.png")}" border="0">
+    <img src="http://${xnat_host}/${content.getURI($siteLogoPath)}" border="0">
 </div>
 #if($html)
 </body>

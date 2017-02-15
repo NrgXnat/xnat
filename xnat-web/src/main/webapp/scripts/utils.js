@@ -70,6 +70,50 @@ function speedTest(fn, args, count, context, undefined){
 
 }
 
+// same as speedTest() above but doesn't collect results
+function speedTestExe(fn, args, count, context, undefined){
+
+    var i = -1,
+        start = Date.now(),
+        errors = [],
+        elapsed;
+
+    if (fn == undefined){
+        return 'Test function is undefined.';
+    }
+
+    function timing(time){
+        var out = {};
+        out.num = out.ms = (Date.now() - time);
+        out.milliseconds = out.ms+'ms';
+        out.sec = (out.ms/1000);
+        out.seconds = (out.sec + 's');
+        return out;
+    }
+
+    count   = count   || 1000;
+    context = context || null;
+
+    // collect any results
+    while(++i < count){
+        try {
+            fn.apply(context, [].concat(args||[]));
+        }
+        catch(e){
+            errors.push(e);
+            break;
+        }
+    }
+
+    elapsed = timing(start);
+    elapsed.errors = errors;
+
+    console.log(elapsed.seconds);
+
+    return elapsed;
+
+}
+
 
 // return REST url with common parts pre-defined
 // restUrl('/data/projects', ['format=json'])
@@ -110,30 +154,107 @@ function replaceEach(str, replacements, regex_params){
     return str;
 }
 
+var useClassList = !!document.head.classList;
+var useDataset   = !!document.head.dataset;
+
+// remove potential duplicate classNames
+function cleanupClasses(el){
+    var classes = [];
+    if (el && el.className) {
+        el.className.split(/\s+/).forEach(function(cls){
+            if (classes.indexOf(cls) === -1) {
+                classes.push(cls);
+            }
+        });
+        el.className = classes.join(' ').trim();
+    }
+    // return the cleaned up className string
+    return el.className;
+}
+
 
 function hasClassName(el, className){
-    var elClasses = (el.className||'').split(/\s+/); // existing classes
-    return elClasses.indexOf(className.trim()) > -1;
+    if (useClassList && el.classList) {
+        return el.classList.contains(className);
+    }
+    return (el.className||'').split(/\s+/).indexOf(className.trim()) > -1;
+}
+
+
+// does the element 'el' have any ONE of these 'classes'?
+function hasAnyClass(el, classes){
+    var hasClass = false,
+        i = -1;
+
+    // make sure we've got an array of classNames to test
+    classes = [].concat(classes||[]).join(' ').split(/\s+/);
+
+    while (++i < classes.length && !hasClass) {
+        hasClass = hasClassName(el, classes[i]);
+    }
+    return hasClass;
+}
+
+
+// does the element 'el' have ALL of these 'classes'?
+function hasAllClasses(el, classes){
+    var matches = 0,
+        i = -1,
+        len;
+
+    // make sure we've got an array of classNames to test
+    classes = [].concat(classes||[]).join(' ').split(/\s+/);
+
+    len = classes.length;
+
+    while (++i < len) {
+        if (hasClassName(el, classes[i])){
+            matches++;
+        }
+    }
+    return matches === len;
 }
 
 
 // add new element class without destroying existing class
-function addClassName(el, newClass){
-    var classes = (el.className||'').split(/\s+/); // existing classes
-    var newClasses = [].concat(newClass||[]).join(' ').split(/\s+/);
-    // don't add duplicate classes
+function addClassName(el, newClasses){
+    var hasClassList = useClassList && el.classList,
+        elClasses    = (el.className||'').split(/\s+/);
+    // make sure 'newClasses' is an array
+    newClasses = [].concat(newClasses||[]).join(' ').split(/\s+/);
     newClasses.forEach(function(cls){
-        if (!cls) return;
-        if (!hasClassName(el, cls)) {
-            classes.push(cls);
+        if (hasClassList) {
+            el.classList.add(cls);
+        }
+        else {
+            // don't add duplicate classes
+            if (!hasClassName(el, cls)){
+                elClasses.push(cls);
+            }
         }
     });
-    classes = classes.join(' ').trim();
-    // set the className and return the string
-    if (classes) {
-        el.className = classes;
+    if (!hasClassList){
+        elClasses = elClasses.join(' ').trim();
+        // set the new className and return the string
+        return el.className = elClasses;
     }
-    return classes;
+}
+
+
+// remove className(s) from an element
+function removeClasses(el, classes){
+    var elClasses;
+    if (useClassList && el.classList) {
+        el.classList.remove(classes);
+        return el.className;
+    }
+    classes = [].concat(classes||[]).join(' ').split(/\s+/);
+    // return element classes that are NOT in the 'classes' array
+    elClasses = (el.className||'').split(/\s+/).filter(function(cls){
+        return classes.indexOf(cls) === -1;
+    });
+    // set the new className and return the string
+    return el.className = elClasses.join(' ');
 }
 
 
@@ -145,6 +266,27 @@ function addDataObjects(el, attrs){
     });
     // set the data attributes and return the new data object
     return el.data;
+}
+
+
+// add new data object item to an element as [data-*] attributes
+function addDataAttrs(el, attrs){
+    var hasDataset = useDataset && el.dataset;
+    var dataAttrs = {};
+    forOwn(attrs, function(attr, value){
+        var attrName = toCamelCase(attr);
+        if (hasDataset) {
+            el.dataset[attrName] = value;
+        }
+        else {
+            if (el.setAttribute) {
+                el.setAttribute('data-' + toDashed(attrName), value);
+            }
+        }
+        dataAttrs[attrName] = value;
+    });
+    // return camelCase version of attribute map
+    return dataAttrs;
 }
 
 

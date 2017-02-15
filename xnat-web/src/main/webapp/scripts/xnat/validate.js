@@ -390,6 +390,7 @@ var XNAT = getObject(XNAT);
         }
         return (parseFloat(value) > parseFloat(num));
     };
+    test.gt = test.greaterThan;
 
     test.greaterThanOrEqual = function(value, num){
         if (!regex.decimal.test(value)) {
@@ -407,6 +408,7 @@ var XNAT = getObject(XNAT);
         }
         return (parseFloat(value) < parseFloat(num));
     };
+    test.lt = test.lessThan;
 
     test.lessThanOrEqual = function(value, num){
         if (!regex.decimal.test(value)) {

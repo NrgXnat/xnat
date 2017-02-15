@@ -18,6 +18,8 @@
 
 <pg:restricted msg="${redirect}">
 
+    <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
+
     <div id="page-body">
         <div class="pad">
 
@@ -50,6 +52,9 @@
                 </div>
 
                 <c:import url="/xapi/plugins" var="plugins"/>
+                <c:import url="/xapi/spawner/namespaces" var="spawnerNamespaces"/>
+
+                <%--<script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>--%>
 
                 <script>
                     (function(){
@@ -61,32 +66,42 @@
                             XNAT.data['/xapi/plugins'] = XNAT.xapi.plugins;
                         </c:if>
 
+                        <c:if test="${not empty spawnerNamespaces}">
+                            XNAT.xapi.spawnerNamespaces = ${spawnerNamespaces};
+                            XNAT.data['/xapi/spawner/namespaces'] = XNAT.xapi.spawnerNamespaces;
+                        </c:if>
+
                         XNAT.data = extend(true, {
-                            plugins: XNAT.xapi.plugins
+                            plugins: XNAT.xapi.plugins,
+                            spawnerNamespaces: XNAT.xapi.spawnerNamespaces
                         }, XNAT.data||{});
 
-                        // these properties MUST be set before spawning 'tabs' widgets
-                        XNAT.tabs.container = $('#plugin-settings-tabs').find('div.content-tabs');
-                        XNAT.tabs.layout = 'left';
+                        // render siteSettings tab into specified container
+                        XNAT.app.pluginSettings.siteSettingsTabs = $('#plugin-settings-tabs').find('div.content-tabs');
+                        XNAT.app.pluginSettings.siteSettings();
 
-                        function pluginTabs(name){
-                            var tabSpawn = XNAT.spawner.resolve(name + '/siteSettings');
-                            tabSpawn.render(XNAT.tabs.container, 200)
-                                    .fail(function(){
-                                        console.log('"' + name + '" site settings tabs not found');
-                                    });
-                            return tabSpawn;
-                        }
-
-                        // try to get plugin tab Spawner objects
-                        // from url:
-                        // /xapi/spawner/resolve/pluginName/siteSettings
-                        forOwn(XNAT.xapi.plugins, function(name, obj){
-                            // first try to load admin js file at
-                            // /scripts/xnat-plugins/pluginName/admin.js
-                            //loadjs(XNAT.url.rootUrl('/scripts/xnat-plugins/' + name + '/admin.js'), name);
-                            pluginTabs(name);
-                        });
+//                        // these properties MUST be set before spawning 'tabs' widgets
+//                        XNAT.tabs.container = $('#plugin-settings-tabs').find('div.content-tabs');
+//                        XNAT.tabs.layout = 'left';
+//
+//                        function pluginTabs(name){
+//                            var tabSpawn = XNAT.spawner.resolve(name + '/siteSettings');
+//                            tabSpawn.render(XNAT.tabs.container, 200)
+//                                    .fail(function(){
+//                                        console.log('"' + name + '" site settings tabs not found');
+//                                    });
+//                            return tabSpawn;
+//                        }
+//
+//                        // try to get plugin tab Spawner objects
+//                        // from url:
+//                        // /xapi/spawner/resolve/pluginName/siteSettings
+//                        forOwn(XNAT.xapi.plugins, function(name, obj){
+//                            // first try to load admin js file at
+//                            // /scripts/xnat-plugins/pluginName/admin.js
+//                            //loadjs(XNAT.url.rootUrl('/scripts/xnat-plugins/' + name + '/admin.js'), name);
+//                            pluginTabs(name);
+//                        });
 
                     })();
                 </script>

@@ -3,7 +3,7 @@
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *  
+ *
  * Released under the Simplified BSD.
  */
 
@@ -439,14 +439,14 @@ function forIn(obj, fn){
 // works like jQuery's $.each()
 // but only for objects
 // returns array of property names
-function forOwn( obj, fn ){
+function forOwn(obj, fn){
     var keys = [],
         key;
     if (!isPlainObject(obj)) { return }
     for (key in obj) {
         if (obj.hasOwnProperty(key)) {
             keys.push(key);
-            if (!isFunction(fn)) continue;
+            if (!fn || !isFunction(fn)) continue;
             fn(key, obj[key]);
         }
     }

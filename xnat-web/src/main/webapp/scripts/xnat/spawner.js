@@ -51,12 +51,16 @@ var XNAT = getObject(XNAT);
 
     // ==================================================
     // MAIN FUNCTION
-    spawner.spawn = spawner.init = function _spawn(obj){
+    spawner.spawn = spawner.init = function spawnerInit(obj){
 
         var frag  = document.createDocumentFragment(),
             $frag = $(frag),
             callbacks = [],
             undefined;
+
+        if (firstDefined(obj.kind || false, undefined) === null) {
+            return null;
+        }
 
         spawner.counter++;
         
@@ -223,7 +227,7 @@ var XNAT = getObject(XNAT);
                     $spawnedElement.append(prop.contents+'');
                 }
                 else {
-                    $spawnedElement.append(_spawn(prop.contents).get());
+                    $spawnedElement.append(spawnerInit(prop.contents).get());
                 }
             }
             
@@ -238,7 +242,7 @@ var XNAT = getObject(XNAT);
                     $frag.append(prop.after)
                 }
                 else if (isPlainObject(prop.after)) {
-                    $frag.append(_spawn(prop.after).get())
+                    $frag.append(spawnerInit(prop.after).get())
                 }
             }
 
@@ -247,7 +251,7 @@ var XNAT = getObject(XNAT);
                     $frag.prepend(prop.before)
                 }
                 else if (isPlainObject(prop.before)) {
-                    $frag.prepend(_spawn(prop.before).get())
+                    $frag.prepend(spawnerInit(prop.before).get())
                 }
             }
 
@@ -267,28 +271,28 @@ var XNAT = getObject(XNAT);
 
         });
 
-        _spawn.spawned = frag;
+        spawnerInit.spawned = frag;
         
-        _spawn.element = frag;
+        spawnerInit.element = frag;
 
-        _spawn.children = frag.children;
+        spawnerInit.children = frag.children;
 
-        _spawn.get = function(){
+        spawnerInit.get = function(){
             return frag;
         };
 
-        _spawn.getContents = function(){
+        spawnerInit.getContents = function(){
             return $frag.contents();    
         };
 
-        _spawn.done = function(callback){
+        spawnerInit.done = function(callback){
             if (isFunction(callback)) {
-                callback(_spawn)
+                callback(spawnerInit)
             }
-            return _spawn;
+            return spawnerInit;
         };
 
-        _spawn.render = function(container, wait, callback){
+        spawnerInit.render = function(container, wait, callback){
 
             var $container = $$(container).hide();
 
@@ -313,13 +317,13 @@ var XNAT = getObject(XNAT);
                 }
             }, wait/2);
 
-            return _spawn;
+            return spawnerInit;
 
         };
 
-        _spawn.foo = '(spawn.foo)';
+        spawnerInit.foo = '(spawn.foo)';
         
-        return _spawn;
+        return spawnerInit;
 
     };
     // ==================================================
@@ -360,6 +364,8 @@ var XNAT = getObject(XNAT);
 
         return {
             done: request.done,
+            fail: request.fail,
+            always: request.always,
             spawn: spawnRender,
             render: spawnRender
         };

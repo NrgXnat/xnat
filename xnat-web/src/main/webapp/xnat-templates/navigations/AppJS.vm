@@ -31,6 +31,7 @@
     <script src="${SITE_ROOT}/scripts/xnat/ui/banner.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/popup.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
 
     <!-- The Spawner! -->
     <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>

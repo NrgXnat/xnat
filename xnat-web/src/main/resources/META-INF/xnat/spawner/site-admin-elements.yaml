@@ -336,10 +336,6 @@ generalSecuritySettings:
                         any: Any
                         http: http
                         https: https
-#                    element:
-#                        style:
-#                            marginTop: 1px
-
         requireLogin:
             kind: panel.input.switchbox
             name: requireLogin
@@ -425,7 +421,6 @@ userLoginsSessionControls:
             label: Login Failure Message
             code: html
             description: Text to show when a user fails to login
-#            value: "?? XNAT:data:siteConfig:uiLoginFailureMessage"
         maximumFailedLogins:
             kind: panel.input.number
             name: maxFailedLogins
@@ -590,25 +585,21 @@ securityServices:
     contents:
         securityServicesFeatureDefault:
             kind: panel.input.text
-#            id: securityServicesFeatureDefault
             name: featureService
             label: Feature Default
             size: 50
         securityServicesFeatureRepoDefault:
             kind: panel.input.text
-#            id: securityServicesFeatureRepoDefault
             name: featureRepositoryService
             label: Feature Repository Default
             size: 50
         securityServicesRoleDefault:
             kind: panel.input.text
-#            id: securityServicesRoleDefault
             name: roleService
             label: Role Default
             size: 50
         securityServicesRoleRepositoryDefault:
             kind: panel.input.text
-#            id: securityServicesRoleRepositoryDefault
             name: roleRepositoryService
             label: Role Repository Default
             size: 50
@@ -688,7 +679,6 @@ notifications:
             kind: panel.input.email
             label: "Help Contact Info"
             validation: allow-empty email onblur
-#            value: "!? XNAT.data.notifications['notifications.helpContactInfo'] || XNAT.data.siteConfig.adminEmail"
 
         emailMessageSubhead:
             kind: panel.subhead
@@ -791,45 +781,44 @@ notifications:
             onText: Allow
             offText: Do Not Allow
             description: "Indicates whether this site should restrict email addresses for site notifications to addresses that are associated with valid active users of the XNAT installation. If turned on, the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events."
-#            value: "?? XNAT.data.siteConfig.emailAllowNonuserSubscribers"
 
 themeManagement:
-    kind: panel.form
+    kind: panel
     name: themeManagement
     label: Theme Management
     footer: false
-    #url: /xapi/theme
     contents:
         themeStyle:
             tag: style
-            content: ".themeUploader{width:270px;display:inline !important;}"
-        currentTheme:
-            kind: panel.display
-            id: currentTheme
-            label: Current Theme
-            description: The currently selected global theme.
-            element:
-                style:
-                    color: red
-        existingTheme:
-            kind: panel.select.single
-            id: themeSelection
-            name: themeSelection
-            label: Select an existing theme
-            description: Selected a new global theme from those available on the system.
-            options:
-                None: None
-            element:
-                style: "width:220px;margin-right:39px;"
-            afterElement: >
-                <button class="btn btn-sm" id="removeThemeButton" onclick="removeTheme()">Remove Theme</button>
+             # "|" preserves line breaks...
+            content: |
+                input.theme-uploader { width:244px; display: inline !important; }
+                body #theme-management-panel div.element-wrapper { position: relative; top: -5px; }
+                body #theme-management-panel div.panel-body{ padding-top: 50px; }
+        themeSelectorForm:
+            tag: "form|id=theme-selector"
+            contents:
+                themeSelection:
+                    kind: panel.select.single
+                    id: theme-selection
+                    name: themeSelection
+                    label: Select Theme
+                    description: Select a new global theme from those available on the system.
+                    options:
+                        None: None
+                    element:
+                        style: "width:230px;margin-right:10px;"
+                    afterElement: >
+                        <span style="display:inline-block;margin-left:10px"></span>
+                        <button id="activate-theme" class="btn btn-sm" type="submit">Set Theme</button>
+                        <button id="remove-theme" class="btn btn-sm">Delete</button>
         uploadTheme:
             kind: panel.input.upload
-            id: themeFileUpload
+            id: xnat-theme-upload
+            className: theme-uploader
             name: ":xnat.theme.upload"
-            label: Upload a theme package
+            label: Upload Theme
             description: Upload a zipped theme package for selection above.
-            className: themeUploader
         themeScript:
             tag: script|src=/scripts/xnat/admin/themeManagement.js
 
@@ -849,17 +838,16 @@ pluginTable:
             className: center
         viewPluginInfo:
             label: Contents
-            value: "-" # this gets overwritten with 'html' below
+            value: "&ndash;" # this gets overwritten with 'html' below
             className: center
             # function that accepts current item as sole argument and parent object as 'this'
             # returned value will be new value - if nothing's returned, value is passed through
-            apply: (function(){ return formatJSON(this) })
+            apply: "{(  function(){ return formatJSON(this) }  )}"
             html: >
                 <a href="#!" class="view-plugin-info link">View Plugin Info</a>
                 <div data-code-language="json" class="hidden plugin-json-string">__VALUE__</div>
             td:
                 title: "Plugin JSON"
-            #$: addClass('plugin-info') # this can be a string or object
             $:
                 addClass: plugin-info
     messages:
@@ -1136,7 +1124,6 @@ seriesImportFilter:
             description: >
                 Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload applet. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
             options:
-                #value: Label
                 whitelist: Whitelist
                 blacklist: Blacklist
                 modalityMap: Modality Map

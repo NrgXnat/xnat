@@ -12,6 +12,7 @@ package org.nrg.xnat.configuration;
 import org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory;
 import org.hibernate.cache.spi.RegionFactory;
 import org.hibernate.cfg.ImprovedNamingStrategy;
+import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
@@ -69,9 +70,9 @@ public class OrmConfig {
     }
 
     @Bean
-    public LocalSessionFactoryBean sessionFactory(final Environment environment, final DataSource dataSource) throws NrgServiceException {
+    public LocalSessionFactoryBean sessionFactory(final Environment environment, final DataSource dataSource, final XnatPluginBeanManager manager) throws NrgServiceException {
         try {
-            final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean(XNAT_ENTITIES_PACKAGES);
+            final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean(manager, XNAT_ENTITIES_PACKAGES);
             bean.setDataSource(dataSource);
             bean.setCacheRegionFactory(regionFactory(environment));
             bean.setHibernateProperties(hibernateProperties(environment).getObject());
@@ -83,8 +84,8 @@ public class OrmConfig {
     }
 
     @Bean
-    public PlatformTransactionManager transactionManager(final Environment environment, final DataSource dataSource) throws NrgServiceException {
-        return new HibernateTransactionManager(sessionFactory(environment, dataSource).getObject());
+    public PlatformTransactionManager transactionManager(final Environment environment, final DataSource dataSource, final XnatPluginBeanManager manager) throws NrgServiceException {
+        return new HibernateTransactionManager(sessionFactory(environment, dataSource, manager).getObject());
     }
 
     @Bean

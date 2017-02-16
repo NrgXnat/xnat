@@ -28,7 +28,8 @@
     }
 
     #browse-projects div.data-table-wrapper {
-        /*width: 750px;*/
+        max-height: 525px;
+        overflow-y: scroll;
     }
 
     #browse-projects table.data-table,

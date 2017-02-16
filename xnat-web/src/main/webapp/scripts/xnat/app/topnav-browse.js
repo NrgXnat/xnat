@@ -66,12 +66,6 @@
             container: _menuItem,
             sortable: true,
             header: false,
-            table: {
-                style: {
-                    maxHeight: '525px',
-                    overflowY: 'scroll'
-                }
-            },
             items: {
                 _id: '~data-id',
                 secondary_id: {

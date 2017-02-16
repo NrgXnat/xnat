@@ -1,3 +1,5 @@
+<%--@elvariable id="siteConfigPreferences" type="org.nrg.xdat.preferences.SiteConfigPreferences"--%>
+<%--@elvariable id="themeService" type="org.nrg.xdat.services.impl.ThemeServiceImpl"--%>
 <%@ tag description="Document Skeleton" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
@@ -11,9 +13,6 @@
   ~
   ~ Released under the Simplified BSD.
   --%>
-
-<jsp:useBean id="themeService" class="org.nrg.xdat.services.impl.ThemeServiceImpl"/>
-<jsp:useBean id="siteConfig" class="org.nrg.xdat.preferences.SiteConfigPreferences"/>
 
 <%@ attribute name="page" %>
 <%@ attribute name="title" %>
@@ -561,7 +560,7 @@ ${bodyTop}
     <div id="header" class="main_header">
         <div class="pad">
             <a id="header_logo" href="${SITE_ROOT}/" style="display: none;" title="XNAT version Unknown">
-                <img class="logo_img" src="<c:url value="${siteConfig.siteLogoPath}"/>" style="border:none;">
+                <img class="logo_img" src="<c:url value="${siteConfigPreferences.siteLogoPath}"/>" style="border:none;">
             </a>
         </div>
     </div>

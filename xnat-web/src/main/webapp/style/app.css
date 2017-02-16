@@ -2952,6 +2952,11 @@ th.sort:hover {
     border-bottom: 1px solid #ccc;
 }
 
+.xnat-table.data-table .filter > input {
+    box-sizing: border-box;
+    width: 100%;
+}
+
 /* overrides for Chosen menus (if used) */
 html .chosen-container-single .chosen-single {
     color: #000;
@@ -3780,9 +3785,17 @@ textarea.xml-formatted {
 .pad5v { padding-top: 5px; padding-bottom: 5px; }
 .pad10v { padding-top: 10px; padding-bottom: 10px; }
 .pad20v { padding-top: 20px; padding-bottom: 20px; }
-.pad1top, .pad-top-1 { padding-top: 5px; }
+.pad1top, .pad-top-1 { padding-top: 1px; }
 .pad5top, .pad-top-5 { padding-top: 5px; }
 .pad10top, .pad-top-10 { padding-top: 10px; }
 .pad20top, .pad-top-20 { padding-top: 20px; }
 
 .inline { display: inline }
+
+.truncate {
+    display: inline-block;
+    width: 95%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

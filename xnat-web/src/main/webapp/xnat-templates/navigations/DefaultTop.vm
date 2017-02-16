@@ -27,8 +27,8 @@
         z-index: 1;
     }
 
-    #browse-projects div.data-table-container {
-        width: 750px;
+    #browse-projects div.data-table-wrapper {
+        /*width: 750px;*/
     }
 
     #browse-projects table.data-table,

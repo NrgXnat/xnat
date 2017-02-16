@@ -19,8 +19,8 @@
     var $favoriteProjects = $('#favorite-projects');
     var undefined;
 
-    var displayProjectList = function($parent, projectList){
-        if (!projectList.length) return;
+    var displayProjectList = function($parent, projectData){
+        if (!projectData.length) return;
         // convert projectList to an array of <li> elements
         // projectList = projectList.map(function(proj){
         //     if (!proj.name) return;
@@ -28,46 +28,76 @@
         // });
         function projectListItem(val, len){
             var URL = XNAT.url.rootUrl('/data/projects/' + this.id);
-            var linkText = spawn('a', {
+            // var TEXT = truncateText(val || '<i><i>&ndash;</i></i>', len || 30);
+            var TEXT = (val || '<i><i>&ndash;</i></i>');
+            var linkText = spawn('a.truncate', {
                 href: URL,
-                title: val
-            }, truncateText(val || '<i><i>&ndash;</i></i>', len || 30));
-            return [spawn('div.hidden', [val]), linkText];
+                title: val,
+                style: { width: len }
+            }, TEXT);
+            return linkText;
+            // return [spawn('div.hidden', [val]), linkText];
         }
-        projectList = XNAT.table.dataTable(projectList, {
+        var WIDTHS = {
+            id: '180px',
+            name: '360px',
+            pi: '240px'
+        };
+        var _menuItem = spawn('li.table-list');
+        var projectListFilter = XNAT.table.dataTable([], {
+            container: _menuItem,
+            sortable: false,
+            filter: 'secondary_id, name, pi',
+            header: false,
+            body: false,
+            items: {
+                secondary_id: {
+                    th: { style: { width: WIDTHS.id } }
+                },
+                name: {
+                    th: { style: { width: WIDTHS.name } }
+                },
+                pi: {
+                    th: { style: { width: WIDTHS.pi } }
+                }
+            }
+        });
+        var projectList = XNAT.table.dataTable(projectData, {
+            container: _menuItem,
             sortable: true,
+            header: false,
+            table: {
+                style: {
+                    maxHeight: '525px',
+                    overflowY: 'scroll'
+                }
+            },
             items: {
                 _id: '~data-id',
-                id: {
-                    label: 'Project ID',
-                    filter: true,
-                    th: { style: { width: '18%' } },
-                    td: { style: { width: '18%' } },
+                secondary_id: {
+                    label: 'Running Title',
+                    td: { style: { width: WIDTHS.id } },
                     apply: function(name){
-                        return projectListItem.call(this, name, 15);
+                        return projectListItem.call(this, name, WIDTHS.id);
                     }
                 },
                 name: {
                     label: 'Project Name',
-                    filter: true,
-                    th: { style: { width: '48%' } },
-                    td: { style: { width: '48%' } },
+                    td: { style: { width: WIDTHS.name } },
                     apply: function(name){
-                        return projectListItem.call(this, name, 40);
+                        return projectListItem.call(this, name, WIDTHS.name);
                     }
                 },
                 pi: {
                     label: 'Project PI',
-                    filter: true,
-                    th: { style: { width: '34%' } },
-                    td: { style: { width: '34%' } },
+                    td: { style: { width: WIDTHS.pi } },
                     apply: function(pi){
-                        return projectListItem.call(this, pi, 25);
+                        return projectListItem.call(this, pi, WIDTHS.pi);
                     }
                 }
             }
-        }).get();
-        $parent.append(spawn('li', [projectList])).parents('li').removeClass('hidden');
+        });
+        $parent.append(_menuItem).parents('li').removeClass('hidden');
     };
 
     var displayProjectNavFail = function(){

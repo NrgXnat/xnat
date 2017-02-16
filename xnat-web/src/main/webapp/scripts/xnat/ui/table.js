@@ -375,6 +375,9 @@ var XNAT = getObject(XNAT);
     table.dataTable = function(data, opts){
 
         var tableData = data;
+        var tableHeader = true;
+        var fixedHeader = false;
+        var allItems = true;
 
         // tolerate reversed arguments or spawner element object
         if (Array.isArray(opts) || data.spawnerElement) {
@@ -385,15 +388,23 @@ var XNAT = getObject(XNAT);
         // don't modify original object
         opts = cloneObject(opts);
 
-        var allItems = opts.header || (opts.items && opts.items === 'all');
+        tableHeader = firstDefined(opts.header||undefined, tableHeader);
+        fixedHeader = firstDefined(opts.fixedHeader||undefined, fixedHeader);
+
+        // this should allow use of items: true or items: 'all'
+        allItems = firstDefined(opts.items||undefined, allItems);
+        allItems = allItems === 'all' || allItems === true;
 
         // properties for spawned <table> element
         var tableConfig = opts.table || opts.element || {};
 
         addClassName(tableConfig, 'data-table xnat-table');
 
+        // normalize 'sortable/sort' parameter
+        opts.sortable = opts.sortable || opts.sort;
+
         if (opts.sortable) {
-            if (opts.sortable === true) {
+            if (opts.sortable === true || opts.sortable === 'all') {
                 addClassName(tableConfig, 'sortable');
             }
             else {
@@ -410,23 +421,82 @@ var XNAT = getObject(XNAT);
         var newTable = new Table(tableConfig);
         var $table = newTable.$table;
         var $dataRows = [];
+        var dataRows = [];
 
+        var $tableContainer = opts.container ? $$(opts.container) : null;
 
         // create a div to hold the table
         // or message (if no data or error)
-        var $tableContainer = $.spawn('div.data-table-container', [newTable.table]);
-        var tableContainer = $tableContainer[0];
+        var $tableWrapper = $.spawn('div.data-table-wrapper');
+        var tableWrapper = $tableWrapper[0];
+
+        $tableWrapper.append(newTable.table);
 
         // if (opts.before) {
-        //     $tableContainer.prepend(opts.before);
+        //     $tableWrapper.prepend(opts.before);
         // }
 
         // add the table
-        // $tableContainer.append(newTable.table);
+        // $tableWrapper.append(newTable.table);
 
         // if (opts.after) {
-        //     $tableContainer.append(opts.after);
+        //     $tableWrapper.append(opts.after);
         // }
+
+        function createTableHeader(items, fixed){
+
+        }
+
+        function adjustCellWidths(source, target, other){
+            $$(source).each(function(i){
+                var source$ = this;
+                var target$ = target[i];
+                // var other$ = other[i];
+                var sourceCellWidth = source$.offsetWidth;
+                var targetCellWidth = target$.offsetWidth;
+                if (sourceCellWidth > targetCellWidth) {
+                    target$.style.width = sourceCellWidth + 'px';
+                    // other$.style.width = sourceCellWidth + 'px';
+                }
+            });
+        }
+
+        function normalizeTableCells(table){
+            // $(table).each(function(){
+
+                var table$ = $(this);
+                var headerRow$ = table$.find('thead').first();
+                var bodyRow$ = table$.find('tbody').first();
+                // var footerRow$ = table$.find('tfoot').first();
+
+                var headerCells$ = headerRow$.find('> th');
+                var bodyCells$ = bodyRow$.find('> td');
+                // var footerCells$ = footerRow$.find('> div');
+
+                //var colCount = headerCells$.length;
+                //var minWidth = this.offsetWidth/colCount;
+
+                // set min-width to 100/colCount %
+                // should be able to just apply this to the header
+                //headerCells$.css('width', minWidth + 'px');
+
+                adjustCellWidths(headerCells$, bodyCells$);
+                adjustCellWidths(bodyCells$, headerCells$);
+
+                // match the body cells with the header cells
+                // adjustCellWidths(headerCells$, bodyCells$, footerCells$);
+
+                // go back and match the header cells with the body cells
+                // adjustCellWidths(footerCells$, headerCells$, bodyCells$);
+
+                // one more pass to make sure everything's lined up
+                // adjustCellWidths(bodyCells$, footerCells$, headerCells$);
+
+                table$.find('> .loading').addClass('hidden');
+                table$.find('> .invisible').removeClass('invisible');
+
+            // });
+        }
 
         function createTable(rows){
 
@@ -452,7 +522,7 @@ var XNAT = getObject(XNAT);
             newTable.thead({ style: { position: 'relative' } });
 
             // create header row
-            if (!allItems && (opts.items || opts.properties)) {
+            if (allItems !== true && (opts.items || opts.properties)) {
 
                 // if 'val' is a string, it's the text for the <th>
                 // if it's an object, get the 'label' property
@@ -534,12 +604,22 @@ var XNAT = getObject(XNAT);
 
                 newTable.tr({ className: 'filter' });
 
+                function cacheRows(){
+                    // if (!$dataRows.length || $dataRows.length != dataRows.length) {
+                    //     $dataRows = dataRows.length ? $(dataRows) : $tableWrapper.find('.table-body').find('tr');
+                    // }
+                    $dataRows =
+                            $dataRows.length ?
+                                    $dataRows :
+                                    ($tableContainer||$tableWrapper).find('.table-body').find('tr');
+                    return $dataRows;
+                }
+
                 function filterRows(val, name){
                     if (!val) { return false }
+                    val = val.toLowerCase();
                     // save the rows if there are none
-                    if (!$dataRows.length) {
-                        $dataRows = $table.find('tbody').find('tr');
-                    }
+                    cacheRows();
                     $dataRows.not(function(){
                         return $(this).find('td.'+ name + ':containsNC(' + val + ')').length
                     }).hide();
@@ -547,7 +627,7 @@ var XNAT = getObject(XNAT);
 
                 props.forEach(function(name){
 
-                    var tdElement = {},
+                    var tdElement = opts.items && opts.items[name] ? cloneObject(opts.items[name].th) || {} : {},
                         $filterInput = '',
                         tdContent = [];
 
@@ -577,7 +657,7 @@ var XNAT = getObject(XNAT);
                                 // save reference to the data rows on focus
                                 // (should make filtering slightly faster)
                                 // $dataRows = $table.find('tr[data-filter]');
-                                $dataRows = $table.find('tbody').find('tr');
+                                cacheRows();
                             });
 
                             $filterInput.on('keyup', function(e){
@@ -626,12 +706,21 @@ var XNAT = getObject(XNAT);
                 });
             }
 
+            // set body: false to create a body-less table
+            // (intended for use on fixed header tables)
+            if (firstDefined(opts.body||undefined, false)) {
+                return newTable;
+            }
+
             // create the <tbody>
-            newTable.tbody();
+            newTable.tbody({ className: 'table-body' });
 
             rows.forEach(function(item){
 
                 newTable.tr();
+
+                // cache each row
+                dataRows.push(newTable.last.tr);
 
                 // iterate properties for each row
                 props.forEach(function(name){
@@ -736,20 +825,20 @@ var XNAT = getObject(XNAT);
                     function appendContent(content){
                         if (stringable(content)) {
                             _td.innerHTML = content + '';
-                            return 'innerHTML';
+                            // return 'innerHTML';
                         }
                         if (isElement(content) || isFragment(content)) {
                             _td.appendChild(content);
-                            return 'appendChild';
+                            // return 'appendChild';
                         }
                         if (isArray(content)) {
                             forEach(content, function(_content){
                                 appendContent(_content);
                             });
-                            return 'array';
+                            // return 'array';
                         }
                         // console.log('cannot append?');
-                        return 'cannot append?';
+                        // return 'cannot append?';
                     }
 
                     if (isArray(cellContent)) {
@@ -758,7 +847,8 @@ var XNAT = getObject(XNAT);
                         })
                     }
                     else {
-                        console.log(appendContent(cellContent));
+                        appendContent(cellContent);
+                        // console.log(appendContent(cellContent));
                     }
                     //
                     // $td.append(cellContent);
@@ -782,22 +872,22 @@ var XNAT = getObject(XNAT);
                     }
 
                 });
+
             });
 
         }
 
-
         function showMessage(){
-            tableContainer.innerHTML = '';
+            tableWrapper.innerHTML = '';
             return {
                 noData: function(msg){
-                    tableContainer.innerHTML = '' +
+                    tableWrapper.innerHTML = '' +
                         '<div class="no-data">' +
                         (msg || 'Data not available.') +
                         '</div>';
                 },
                 error: function(msg, error){
-                    tableContainer.innerHTML = '' +
+                    tableWrapper.innerHTML = '' +
                         '<div class="error">' +
                         (msg || '') +
                         (error ? '<br><br>' + error : '') +
@@ -847,25 +937,35 @@ var XNAT = getObject(XNAT);
 
         // save a reference to generated rows for
         // (hopefully) better performance when filtering
-        $dataRows = $table.find('tr[data-id]');
+        // $dataRows = $table.find('tr.filter');
 
         if (opts.container) {
-            $$(opts.container).append(tableContainer);
+            $tableContainer.append(tableWrapper);
         }
 
         // add properties for Spawner compatibility
-        // newTable.element = newTable.spawned = tableContainer;
+        // newTable.element = newTable.spawned = tableWrapper;
         // newTable.get = function(){
-        //     return tableContainer;
+        //     return tableWrapper;
         // };
 
         return {
             dataTable: newTable,
             table: newTable.table,
-            element: tableContainer,
-            spawned: tableContainer,
+            element: tableWrapper,
+            spawned: tableWrapper,
             get: function(){
-                return tableContainer;
+                normalizeTableCells.call(tableWrapper);
+                return tableWrapper;
+            },
+            // render: newTable.render
+            render: function(container, empty){
+                var $container = $$(container);
+                normalizeTableCells.call(tableWrapper);
+                if (empty) {
+                    $container.empty();
+                }
+                $container.append(tableWrapper);
             }
         };
 

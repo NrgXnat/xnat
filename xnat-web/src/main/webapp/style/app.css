@@ -2957,6 +2957,12 @@ th.sort:hover {
     width: 100%;
 }
 
+/* container for data tables in report page panels */
+.panel-table-container {
+    overflow-x: auto;
+    width: 820px;
+}
+
 /* overrides for Chosen menus (if used) */
 html .chosen-container-single .chosen-single {
     color: #000;
@@ -3701,66 +3707,6 @@ hr.light {
     border-color: #f0f0f0;
 }
 
-
-/* accommodate smaller viewports */
-/***********************************************/
-@media screen and (max-width: 1200px) {
-
-    #page_wrapper,
-    #xnat_power,
-    #main_nav > .inner,
-    #user_bar > .inner {
-        width: 960px;
-    }
-
-    /*#page_wrapper,*/
-    /*#header,*/
-    /*#layout_content,*/
-    /*#home-data,*/
-    /*#xnat_power {*/
-    /*width: 920px;*/
-    /*}*/
-
-    #projects-container,
-    #data-container {
-        width: 450px;
-    }
-
-    #project_summary_module {
-        width: 640px;
-    }
-
-    #search_tabs,
-    .yui-navset.yui-navset-top.wrangled {
-        width: 920px !important;
-    }
-
-
-    #data-type-table .name-singular,
-    #data-type-table .name-plural {
-        display: none;
-    }
-
-
-    #search_tabs .xT_p,
-    #search_tabs .xT_c {
-        width: 900px !important;
-    }
-
-    #prearchive_table {
-        left: -65px !important;
-    }
-
-    .truncate100 {
-        display: block;
-        width: 100px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-}
-
 pre.json { outline: 1px solid #f0f0f0; padding: 20px; }
 pre.json .string { color: green; }
 pre.json .number { color: darkorange; }
@@ -3791,6 +3737,15 @@ textarea.xml-formatted {
 .pad20top, .pad-top-20 { padding-top: 20px; }
 
 .inline { display: inline }
+.inline-thirds {
+    display: inline-block;
+    margin-right: 10%;
+    vertical-align: top;
+    width: 26%;
+}
+.inline-thirds:last-of-type {
+    margin-right: 0;
+}
 
 .truncate {
     display: inline-block;
@@ -3798,4 +3753,76 @@ textarea.xml-formatted {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.truncateCell {
+    display: block;
+    width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.truncateCellNarrow {
+    width: 100px;
+}
+
+
+/* accommodate smaller viewports */
+/***********************************************/
+@media screen and (max-width: 1200px) {
+
+    #page_wrapper,
+    #xnat_power,
+    #main_nav > .inner,
+    #user_bar > .inner {
+        width: 960px;
+    }
+
+    /*#page_wrapper,*/
+    /*#header,*/
+    /*#layout_content,*/
+    /*#home-data,*/
+    /*#xnat_power {*/
+    /*width: 920px;*/
+    /*}*/
+
+    #projects-container,
+    #data-container {
+        width: 450px;
+    }
+
+    #project_summary_module {
+        width: 640px;
+    }
+    .panel-table-container {
+        width: 620px;
+    }
+
+    #search_tabs,
+    .yui-navset.yui-navset-top.wrangled {
+        width: 920px !important;
+    }
+
+
+    #data-type-table .name-singular,
+    #data-type-table .name-plural {
+        display: none;
+    }
+
+
+    #search_tabs .xT_p,
+    #search_tabs .xT_c {
+        width: 900px !important;
+    }
+
+    #prearchive_table {
+        left: -65px !important;
+    }
+
+    .truncateCell {
+        width: 100px;
+    }
+    .truncateCellNarrow {
+        width: 70px;
+    }
+
 }

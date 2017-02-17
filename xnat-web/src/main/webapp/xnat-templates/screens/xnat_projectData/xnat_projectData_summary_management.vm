@@ -5,45 +5,40 @@
 #set($showUserList = !$siteConfig.restrictUserListAccessToAdmins || $turbineUtils.isSiteAdmin($user))
 <script type="text/javascript" src="$content.getURI("scripts/project/userMgmt.js")"></script>
 
-<table class="">
+
+<p style="margin-bottom: 3px;"><label><input id="showDeactivatedUsersCheck" type="checkbox" onclick="window.userManager.reloadUsersForProject();">Show Deactivated Users</label></p>
+<div id="user_mgmt_div" class="panel-table-container"></div>
+<div class="clearfix clear"></div>
+
+<div id="access_controls_container" class="pad10v">
+    <div class="inline-thirds" id="user_invite_div" >
+        <h4 id="add_invite_user_header" style="margin-bottom:3px">Add/Invite User</h4>
+        <p>Enter the username or email address of the user to add.</p>
+        <p>
+           <input type="text" name="email" ID="invite_email" style="margin-bottom:3px"/><br>
+           <select name="access_level" id="access_level" style="margin-bottom:3px"></select><br>
+           <input type="button" class="btn sm" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" ONCLICK="window.userManager.inviteUserFromForm();"/>
+        </p>
+    </div>
+
+    #if($showUserList)
+        <div class="inline-thirds" id="user_invite_list">
+            <h4 id="user_list_header" style="margin-bottom:3px">Add Users from List</h4>
+            <p>
+                <input type="button" id="popup_all_users_button" disabled="true" value="Show List" ONCLICK="window.userManager.popupAllUsersBox();"/>
+            </p>
+        </div>
+    #end
+    <div class="inline-thirds">
+        <h4 style="margin-bottom: 3px;">Project Access Settings</h4>
+        <p id="project_access_settings"></p>
+    </div>
+</div>
+<div class="clearfix clear"></div>
+
+<table width="100%">
     <tr>
-        <td valign="top" colspan="5">
-            <p style="margin-bottom: 3px;"><label><input id="showDeactivatedUsersCheck" type="checkbox" onclick="window.userManager.reloadUsersForProject();">Show Deactivated Users</label></p>
-            <div id="user_mgmt_div"></div>
-        </td>
-    </tr>
-    <tr>
-        <td valign="top" width="30%">
-            <div id="user_invite_div">
-                <h4 id="add_invite_user_header" style="margin-bottom:3px">Add/Invite User</h4>
-                <p>Enter the username or email address of the user to add.</p>
-                <p>
-                   <input type="text" name="email" ID="invite_email" style="margin-bottom:3px"/><br>
-                   <select name="access_level" id="access_level" style="margin-bottom:3px"></select><br>
-                   <input type="button" class="btn sm" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" ONCLICK="window.userManager.inviteUserFromForm();"/>
-                </p>
-            </div>
-        </td>
-        <td width="10%">&nbsp;</td>
-        <td valign="top" width="30%">
-            #if($showUserList)
-                <h4 id="user_list_header" style="margin-bottom:3px">Add Users from List</h4>
-                <p>
-                    <input type="button" id="popup_all_users_button" disabled="true" value="Show List" ONCLICK="window.userManager.popupAllUsersBox();"/>
-                </p>
-            #end
-        </td>
-        <td width="10%">&nbsp;</td>
-        <td valign="top" width="29%">
-            <h4 style="margin-bottom: 3px;">Project Access Settings</h4>
-            <p id="project_access_settings"></p>
-        </td>
-    </tr>
-    <tr>
-        <td>&nbsp;</td>
-    </tr>
-    <tr>
-        <td class="highlighted" id="access_container" colspan="5">
+        <td class="highlighted" id="access_container">
             <div style="padding: 10px;">
                 #set($guest=$om.getPublicAccessibility())
                 #if($guest=="")

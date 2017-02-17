@@ -12,14 +12,29 @@
  */
 var sessExpMsg = 'WARNING: Your session has expired.<br/><br/>You will need to re-login and navigate to the content.';
 var removeButtonFormatter = function(elCell, oRecord, oColumn, oData) {
-	elCell.innerHTML="<input type=\"button\" class=\"btn sm\" onclick=\"window.userManager.removeUser('" + oRecord.getData("login")  + "','" + oRecord.getData("GROUP_ID")  + "');\" value=\"Remove\"/>";
+	elCell.innerHTML="<input type=\"button\" class=\"btn sm\" onclick=\"window.userManager.removeUser('" + oRecord.getData("login")  + "','" + oRecord.getData("GROUP_ID")  + "');\" value=\"X\"/>";
+	elCell.className="centered"; 
+};
+
+var defaultCellFormat = function(displayVal) {
+	return "<span class='truncate truncateCellNarrow' title='"+ displayVal +"'>"+ displayVal +"</span>";
+};
+
+var loginFormatter = function(elCell,oRecord){
+	elCell.innerHTML = defaultCellFormat(oRecord.getData('login'));
+};
+var firstnameFormatter = function(elCell,oRecord){
+	elCell.innerHTML = defaultCellFormat(oRecord.getData('firstname'));
+};
+var lastnameFormatter = function(elCell,oRecord){
+	elCell.innerHTML = defaultCellFormat(oRecord.getData('lastname'));
 };
 
 var emailDisplayFormatter = function(elCell, oRecord, oColumn, oData) {
 	var email_to_display = oRecord.getData("email");
-	var emailDisplayField = "<span class='truncate100' title='"+ email_to_display + "'>"+ email_to_display +"</span>";
+	var emailDisplayField = "<span class='truncate truncateCell' title='"+ email_to_display + "'>"+ email_to_display +"</span>";
 	elCell.innerHTML = emailDisplayField;
-}
+};
 
 var groupDropdownFormatter = function(elCell, oRecord, oColumn, oData) {
     var user_access = oRecord.getData("displayname");
@@ -95,9 +110,9 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
     this.retrieveAllUsers = retrieveAllUsers;
 
 	this.userColumnDefs=[
-	                     {key:"login",label:"Username",sortable:true},
-	                     {key:"firstname",label:"Firstname",sortable:true},
-	                     {key:"lastname",label:"Lastname",sortable:true},
+	                     {key:"login",label:"Username",sortable:true,formatter:loginFormatter},
+	                     {key:"firstname",label:"Firstname",sortable:true,formatter:firstnameFormatter},
+	                     {key:"lastname",label:"Lastname",sortable:true,formatter:lastnameFormatter},
 	                     {key:"email",label:"Email",sortable:true,formatter:emailDisplayFormatter},
 	                     {key:"displayname",label:"Group",sortable:true,formatter:groupDropdownFormatter},
                          {key:"button",label:"Remove",formatter:removeButtonFormatter}];

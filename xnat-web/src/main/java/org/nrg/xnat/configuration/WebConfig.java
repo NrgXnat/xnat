@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.configuration;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.web.converters.XftBeanHttpMessageConverter;
@@ -123,7 +122,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     @Bean
     public ViewResolver viewResolver() {
         return new InternalResourceViewResolver() {{
-            setExposedContextBeanNames(WebConfig.getExposedContextBeanNames());
+            setExposeContextBeansAsAttributes(true);
             setViewClass(JstlView.class);
             setPrefix("/WEB-INF/views/");
             setSuffix(".jsp");
@@ -137,13 +136,6 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         }};
     }
 
-    private static String[] getExposedContextBeanNames() {
-        final String value = CONFIGURATION.getProperty("exposedContextBeanNames");
-        if (StringUtils.isBlank(value)) {
-            return new String[]{};
-        }
-        return value.split("\\s*,\\s*");
-    }
 
     private static final Logger _log = LoggerFactory.getLogger(WebConfig.class);
 

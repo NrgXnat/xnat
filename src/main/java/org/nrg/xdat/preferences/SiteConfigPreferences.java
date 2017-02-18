@@ -1469,15 +1469,13 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
      */
     @Override
     protected void postProcessPreferences() {
-        if (isInitialized()) {
-            return;
-        }
         if (isInitFromConfig()) {
             final List<String> missing = getMissingInitSettings();
             if (missing.size() == 0) {
                 setInitialized(true);
             } else {
                 _log.warn("Your configuration was initialized from a configuration file, but the following settings were not initialized: {}. These must be set before the initialization configuration for the system can be fully initialized.", Joiner.on(", ").join(missing));
+                setInitialized(false);
             }
         }
     }
@@ -1487,6 +1485,9 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         final List<String> missing = Lists.newArrayList();
         if (StringUtils.isBlank(getSiteId())) {
             missing.add("siteId");
+        }
+        if (StringUtils.isBlank(getSiteUrl())) {
+            missing.add("siteUrl");
         }
         if (StringUtils.isBlank(getAdminEmail())) {
             missing.add("adminEmail");

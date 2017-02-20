@@ -886,8 +886,13 @@ var XNAT = getObject(XNAT);
 
             newTable.table$.parent().find('.loading').hide();
             newTable.table$.removeClass('hidden invisible').show();
+
             // close any 'loading' dialogs that are open
-            xmodal.loading.closeAll();
+            $(function(){
+                if (xmodal && xmodal.loading && xmodal.loading.closeAll) {
+                    xmodal.loading.closeAll();
+                }
+            });
 
         }
 

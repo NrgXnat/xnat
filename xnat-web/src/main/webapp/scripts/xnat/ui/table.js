@@ -398,7 +398,13 @@ var XNAT = getObject(XNAT);
         // properties for spawned <table> element
         var tableConfig = opts.table || opts.element || {};
 
-        addClassName(tableConfig, 'data-table xnat-table');
+        addClassName(tableConfig, [
+            opts.className || '',
+            opts.classes || '',
+            tableConfig.className || '',
+            tableConfig.classes || '',
+            'data-table xnat-table'
+        ]);
 
         // normalize 'sortable/sort' parameter
         opts.sortable = opts.sortable || opts.sort;
@@ -506,6 +512,9 @@ var XNAT = getObject(XNAT);
                 hiddenItems = [],
                 filterColumns = [],
                 customFilters = {};
+
+            // xmodal.loading.closeAll();
+            // xmodal.loading.open();
 
             // convert object list to array list
             if (isPlainObject(rows)) {
@@ -875,6 +884,11 @@ var XNAT = getObject(XNAT);
 
             });
 
+            newTable.table$.parent().find('.loading').hide();
+            newTable.table$.removeClass('hidden invisible').show();
+            // close any 'loading' dialogs that are open
+            xmodal.loading.closeAll();
+
         }
 
         function showMessage(){
@@ -959,13 +973,16 @@ var XNAT = getObject(XNAT);
                 return tableWrapper;
             },
             // render: newTable.render
-            render: function(container, empty){
+            render: function(container, empty, callback){
                 var $container = $$(container);
                 normalizeTableCells.call(tableWrapper);
                 if (empty) {
                     $container.empty();
                 }
                 $container.append(tableWrapper);
+                if (isFunction(callback)) {
+                    callback.call(this, newTable);
+                }
             }
         };
 

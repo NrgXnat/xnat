@@ -15,6 +15,10 @@
 <!--[if IE 9]><html class="ie ie9 ltie10 no-js"><![endif]-->
 <!--[if gt IE 9]><!--><html class="no-js"><!--<![endif]-->
 
+<c:if test="${empty requestScope.hasInit}">
+    <pg:init/>
+</c:if>
+
 <jsp:doBody/>
 
 </html>

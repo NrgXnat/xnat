@@ -2843,6 +2843,11 @@ span.spacer {
     background: #e5f2ff;
 }
 
+.xnat-table thead tr.highlight:hover,
+.xnat-table.highlight thead tr:hover {
+    background: inherit;
+}
+
 .xnat-table .top {
     vertical-align: top;
 }

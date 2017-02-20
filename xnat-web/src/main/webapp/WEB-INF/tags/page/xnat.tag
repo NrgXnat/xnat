@@ -40,7 +40,7 @@
     <%--<c:set var="_scriptsLib" value="${SITE_ROOT}/scripts/lib"/>--%>
     <c:set var="csrfToken" value="${sessionScope.csrfToken}"/>
     <c:set var="_user" value="${sessionScope.username}"/>
-    <c:set var="versionString" value="v=1.7.1"/>
+    <c:set var="versionString" value="v=1.7.3a"/>
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta http-equiv="Pragma" content="no-cache">
@@ -52,6 +52,9 @@
     <!-- load polyfills before ANY other JavaScript -->
     <script src="${SITE_ROOT}/scripts/polyfills.js"></script>
 
+    <!-- XNAT global functions (no dependencies) -->
+    <script src="${SITE_ROOT}/scripts/globals.js"></script>
+
     <!-- set global vars that are used often -->
     <script type="text/javascript">
 
@@ -61,12 +64,15 @@
         //var showReason = typeof false != 'undefined' ? false : null;
         //var requireReason = typeof false != 'undefined' ? false : null;
 
-        window.loggedIn = ${sessionScope.loggedIn};
+        window.loggedIn = realValue(${sessionScope.loggedIn});
+
+        XNAT.theme = {};
+        XNAT.theme.name = '${themeService.theme.name}';
+        XNAT.theme.path = '${themeService.theme.path}';
+        XNAT.themeName = XNAT.theme.name;
+        XNAT.themePath = XNAT.theme.path;
 
     </script>
-
-    <!-- XNAT global functions (no dependencies) -->
-    <script src="${SITE_ROOT}/scripts/globals.js"></script>
 
     <!-- required libraries -->
     <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
@@ -90,6 +96,7 @@
     <script src="${SITE_ROOT}/scripts/lib/js.cookie.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/ace/ace.js"></script>
 
     <!-- XNAT utility functions -->
     <script src="${SITE_ROOT}/scripts/utils.js"></script>
@@ -167,7 +174,7 @@
 
     <!-- YUI css -->
     <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">--%>
-    
+
     <!-- Icon sets -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
 
@@ -206,6 +213,7 @@
     <script src="${SITE_ROOT}/scripts/xnat/ui/banner.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/popup.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
 
     <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>
 
@@ -245,6 +253,29 @@ ${bodyTop}
 
 <c:if test="${_user != '-' && page != 'setup'}">
 
+    <style type="text/css">
+        #quickSearchForm .chosen-results {
+            max-height: 500px;
+        }
+
+        #quickSearchForm .chosen-results li {
+            padding-right: 20px;
+            white-space: nowrap;
+        }
+
+        #quickSearchForm .chosen-container .chosen-drop {
+            width: auto;
+            min-width: 180px;
+            max-width: 360px;
+        }
+
+        #quickSearchForm .chosen-container .chosen-drop .divider {
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+
+
     <div id="main_nav">
         <div class="inner">
 
@@ -266,7 +297,7 @@ ${bodyTop}
                 <!-- Sequence: 11 -->
                 <li class="hidden"><a id="browse" title="Browse" href="#Browse">Browse</a>
                     <ul class="" style="display:none; min-width: 120px;">
-                    <!-- Browse/Default -->
+                        <!-- Browse/Default -->
                         <li class="hidden"><a href="#BrowseProjects">Projects</a>
                             <ul id="browse-projects">
                                 <!-- Sequence: 10 -->
@@ -283,7 +314,6 @@ ${bodyTop}
                             </ul>
                         </li>
                     </ul>
-                    <script src="${SITE_ROOT}/scripts/xnat/app/topnav-browse.js"></script>
                 </li>
                 <!-- Sequence: 20 -->
                 <li class="more"><a href="#new">New</a>
@@ -292,7 +322,7 @@ ${bodyTop}
                         <c:set var="hidden_li">
                             <li class="hidden">&nbsp;</li>
                         </c:set>
-                        <%-- only allow admins to create projects for now --%>
+                            <%-- only allow admins to create projects for now --%>
                         <pg:restricted msg="${hidden_li}">
                             <li id="top-new-project">
                                 <a href="${SITE_ROOT}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a>
@@ -377,34 +407,12 @@ ${bodyTop}
             <!-- search script -->
             <script type="text/javascript">
                 function submitQuickSearch(){
-                  if($('#searchValue').val()!="") {
-                    $('#quickSearchForm').submit();
-                  }
+                    if ($('#searchValue').val() != "") {
+                        $('#quickSearchForm').submit();
+                    }
                 }
             </script>
             <!-- end search script -->
-
-            <style type="text/css">
-                #quickSearchForm .chosen-results {
-                    max-height: 500px;
-                }
-
-                #quickSearchForm .chosen-results li {
-                    padding-right: 20px;
-                    white-space: nowrap;
-                }
-
-                #quickSearchForm .chosen-container .chosen-drop {
-                    width: auto;
-                    min-width: 180px;
-                    max-width: 360px;
-                }
-
-                #quickSearchForm .chosen-container .chosen-drop .divider {
-                    padding: 0;
-                    overflow: hidden;
-                }
-            </style>
 
             <form id="quickSearchForm" method="post" action="${SITE_ROOT}/app/action/QuickSearchAction">
                 <select id="stored-searches" data-placeholder="Stored Searches" style="display: none;">
@@ -423,14 +431,14 @@ ${bodyTop}
 
                 <script>
                     var searchField = $('#searchValue');
-                    searchField.keyup(function( event ) {
-                      if (event.which == 13) {
-                        submitQuickSearch();
-                      }
+                    searchField.keyup(function(event){
+                        if (event.which == 13) {
+                            submitQuickSearch();
+                        }
                     });
-                    
+
                     $('#xnat_csrf').val(window.csrfToken);
-                    
+
                     searchField.each(function(){
                         var _this = this;
                         _this.value = _this.value || 'search';
@@ -453,7 +461,6 @@ ${bodyTop}
                         placeholder_text_single: 'Stored Searches',
                         search_contains: true
                     });
-
                 </script>
             </form>
 
@@ -471,12 +478,12 @@ ${bodyTop}
 
                     function coverApplet(el$){
                         var cover_up_id = 'cover_up' + cover_up_count++;
-                        var jqObjPos = el$.offset(),
-                                jqObjLeft = jqObjPos.left,
-                                jqObjTop = jqObjPos.top,
-                                jqObjMarginTop = el$.css('margin-top'),
-                                jqObjWidth = el$.outerWidth() + 4,
-                                jqObjHeight = el$.outerHeight() + 2;
+                        var jqObjPos       = el$.offset(),
+                            jqObjLeft      = jqObjPos.left,
+                            jqObjTop       = jqObjPos.top,
+                            jqObjMarginTop = el$.css('margin-top'),
+                            jqObjWidth     = el$.outerWidth() + 4,
+                            jqObjHeight    = el$.outerHeight() + 2;
 
                         el$.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
 
@@ -521,7 +528,7 @@ ${bodyTop}
                                 li$.find('ul.subnav').each(function(){
                                     var sub$ = $(this);
                                     var offsetL = sub$.closest('li').width();
-                                    sub$.css({ 'left': offsetL });
+                                    sub$.css({'left': offsetL});
                                 });
                                 if (body$.hasClass('applet')) {
                                     coverApplet(li$.find('> ul'));
@@ -539,8 +546,8 @@ ${bodyTop}
 
                     // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
                     jq('#logout_user').click(function(){
-                        Cookies.set('WARNING_BAR', 'OPEN', { path: '/' });
-                        Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', { path: '/' });
+                        Cookies.set('WARNING_BAR', 'OPEN', {path: '/'});
+                        Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', {path: '/'});
                     });
 
                 })();
@@ -552,6 +559,160 @@ ${bodyTop}
 
     </div>
     <!-- /#main_nav -->
+
+    <script src="${SITE_ROOT}/scripts/xnat/app/topnav-browse.js"></script>
+
+    <script>
+
+        function submitQuickSearch(){
+            if ($('#searchValue').val() != "") {
+                $('#quickSearchForm').submit();
+            }
+        }
+
+        function loadMainNav(){
+
+            // get Velocity-generated menu
+            $('#main_nav').load('${SITE_ROOT}/app/template/Page.vm #main_nav > .inner', function(){
+
+
+                $('#nav-home').css({
+                    width: '30px',
+                    backgroundImage: "url('${SITE_ROOT}/images/xnat-nav-logo-white-lg.png')",
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '32px',
+                    backgroundPosition: 'center'
+                });
+
+
+                var searchField = $('#searchValue');
+                searchField.keyup(function(event){
+                    if (event.which == 13) {
+                        submitQuickSearch();
+                    }
+                });
+
+                $('#xnat_csrf').val(window.csrfToken);
+
+                searchField.each(function(){
+                    var _this = this;
+                    _this.value = _this.value || 'search';
+                    $(_this).focus(function(){
+                        $(_this).removeClass('clean');
+                        if (!_this.value || _this.value === 'search') {
+                            _this.value = '';
+                        }
+                    })
+                });
+
+                $('#stored-searches').on('change', function(){
+                    if (this.value) {
+                        window.location.href = this.value;
+                    }
+                }).chosen({
+                    width: '150px',
+                    disable_search_threshold: 9,
+                    inherit_select_classes: true,
+                    placeholder_text_single: 'Stored Searches',
+                    search_contains: true
+                });
+
+
+                // cache it
+                var main_nav$ = jq('#main_nav ul.nav');
+
+                var body$ = jq('body');
+
+                var cover_up_count = 1;
+
+                function coverApplet(el$){
+                    var cover_up_id = 'cover_up' + cover_up_count++;
+                    var jqObjPos       = el$.offset(),
+                        jqObjLeft      = jqObjPos.left,
+                        jqObjTop       = jqObjPos.top,
+                        jqObjMarginTop = el$.css('margin-top'),
+                        jqObjWidth     = el$.outerWidth() + 4,
+                        jqObjHeight    = el$.outerHeight() + 2;
+
+                    el$.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
+
+                    jq('#' + cover_up_id).css({
+                        display: 'block',
+                        position: 'fixed',
+                        width: jqObjWidth,
+                        height: jqObjHeight,
+                        marginTop: jqObjMarginTop,
+                        left: jqObjLeft,
+                        top: jqObjTop,
+                        background: 'transparent',
+                        border: 'none',
+                        outline: 'none'
+                    });
+                }
+
+                function unCoverApplets(el$){
+                    el$.prev('iframe.applet_cover_up').detach();
+                }
+
+                function fadeInNav(el$){
+//            el$.stop('clearQueue','gotoEnd');
+                    el$.find('> ul').show().addClass('open');
+                }
+
+                function fadeOutNav(el$){
+//            el$.stop('clearQueue','gotoEnd');
+                    el$.find('> ul').hide().removeClass('open');
+                }
+
+                // give menus with submenus a class of 'more'
+                main_nav$.find('li ul, li li ul').closest('li').addClass('more');
+                main_nav$.find('li li ul').addClass('subnav');
+
+                // no fancy fades on hover
+                main_nav$.find('li.more').on('mouseover',
+                        function(){
+                            var li$ = $(this);
+                            fadeInNav(li$);
+                            //jq('#main_nav li').removeClass('open');
+                            li$.find('ul.subnav').each(function(){
+                                var sub$ = $(this);
+                                var offsetL = sub$.closest('li').width();
+                                sub$.css({'left': offsetL});
+                            });
+                            if (body$.hasClass('applet')) {
+                                coverApplet(li$.find('> ul'));
+                            }
+                        }
+                ).on('mouseout',
+                        function(){
+                            var li$ = $(this);
+                            fadeOutNav(li$);
+                            if (body$.hasClass('applet')) {
+                                unCoverApplets(li$.find('> ul'));
+                            }
+                        }
+                );
+
+                // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
+                jq('#logout_user').click(function(){
+                    Cookies.set('WARNING_BAR', 'OPEN', {path: '/'});
+                    Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', {path: '/'});
+                });
+
+                // load js files from elements with 'data-loadjs' attributes
+                $('[data-loadjs]').each(function(){
+                    var jsAttr = this.dataset ? this.dataset.loadjs : this.getAttribute('data-loadjs');
+                    var jsUrl = XNAT.url.rootUrl('/scripts/' + jsAttr + '.js');
+                    loadjs(jsUrl);
+                })
+
+            });
+
+        }
+
+        loadMainNav();
+
+    </script>
 
 </c:if>
 
@@ -570,27 +731,27 @@ ${bodyTop}
 
 
         XNAT.app.adjustHeaderAndNavForLogoSize = function(){
-    
+
             var header_logo$ = $('#header_logo');
-    
+
             // adjust height of header if logo is taller than 65px
             var hdr_logo_height = header_logo$.height();
             if (hdr_logo_height > 65) {
                 jq('.main_header').height(hdr_logo_height + 10);
             }
-    
+
             //Commented out 2016/09/02 (XNAT-4501).  I don't think we want to do this (See home page when this takes effect)
             // adjust width of main nav if logo is wider than 175px
             //var hdr_logo_width = header_logo$.width();
             //if (hdr_logo_width > 175) {
             //    jq('#main_nav').width(932 - hdr_logo_width - 20);
             //}
-    
+
             //
             //var recent_proj_height = jq('#min_projects_list > div').height();
             var recent_proj_height = 67;
             //jq('#min_projects_list, #min_expt_list').height(recent_proj_height * 5).css({'min-width':349,'overflow-y':'scroll'});
-    
+
         };
 
         // initialize the advanced search method toggler
@@ -598,18 +759,18 @@ ${bodyTop}
 
             parent$ = $$(parent$ || 'body');
 
-            var INPUTS = 'input, select, textarea, :input',
+            var INPUTS                = 'input, select, textarea, :input',
                 SEARCH_METHOD_CKBOXES = 'input.search-method',
-                searchGroups$ = parent$.find('div.search-group'),
-                searchMethodInputs$ = parent$.find(SEARCH_METHOD_CKBOXES);
+                searchGroups$         = parent$.find('div.search-group'),
+                searchMethodInputs$   = parent$.find(SEARCH_METHOD_CKBOXES);
 
             // disable 'by-id' search groups by default
             searchGroups$.filter('.by-id').addClass('disabled').find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('')
-                         .prop('disabled', true).addClass('disabled');
+                    .prop('disabled', true).addClass('disabled');
 
             // enable 'by-criteria' search groups by default
             searchGroups$.filter('.by-criteria').removeClass('disabled').find(INPUTS).prop('disabled', false)
-                         .removeClass('disabled');
+                    .removeClass('disabled');
 
             // check 'by-criteria' checkboxes
             searchMethodInputs$.filter('.by-criteria').prop('checked', true);
@@ -620,14 +781,14 @@ ${bodyTop}
             // toggle the search groups
             searchMethodInputs$.on('click', function(){
 
-                var method = this.value,
-                        isChecked = this.checked;
+                var method    = this.value,
+                    isChecked = this.checked;
 
                 searchGroups$.addClass('disabled').find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('')
-                             .prop('disabled', true).addClass('disabled');
+                        .prop('disabled', true).addClass('disabled');
 
                 searchGroups$.filter('.' + method).removeClass('disabled').find(INPUTS).prop('disabled', false)
-                             .removeClass('disabled');
+                        .removeClass('disabled');
 
                 // update the radio buttons/checkboxes
                 searchMethodInputs$.prop('checked', false);
@@ -688,6 +849,32 @@ ${bodyTop}
         <!--END SCREEN CONTENT -->
     </div>
 
+    <script>
+
+        XNAT.app.customPage.container = $$('id=view-page');
+
+        var body$ = $(document.body);
+
+        body$.on('click', 'a[href*="#"]', function(e){
+            e.preventDefault();
+        });
+
+        // navigate to new page when clicking a '/page/#/name/' link
+        body$.on('click', 'a[href^="/page/#"]', function(e){
+            e.preventDefault();
+            var pageLink = this.href.split('page/#')[1];
+            var hashPart = getUrlHash();
+            if (pageLink !== hashPart) {
+//                var viewPage = this.href.split('page/#/')[1].split('/#')[0];
+                XNAT.app.customPage.getPage(pageLink, null, function(){
+                    loadMainNav();
+                    window.location.hash = pageLink;
+                });
+            }
+        });
+
+    </script>
+
     <div id="mylogger"></div>
 </div>
 <!-- /page_wrapper -->
@@ -701,9 +888,11 @@ ${bodyTop}
         <c:import url="/xapi/siteConfig/buildInfo" var="buildInfo" scope="session"/>
 
         extend(true, XNAT, {
-            data: { siteConfig: {
-                buildInfo: ${buildInfo}
-            }}
+            data: {
+                siteConfig: {
+                    buildInfo: ${buildInfo}
+                }
+            }
         });
 
         var buildInfo = XNAT.data.siteConfig.buildInfo;
@@ -729,23 +918,23 @@ ${bodyTop}
         }
 
         $('#xnat_power')
-            .spawn('a.xnat-version', {
-                href: 'http://www.xnat.org',
-                target: '_blank',
-                title: 'XNAT version ' + version
-            }, [['img|src=${SITE_ROOT}/images/xnat_power_small.png']])
-            .spawn('small', 'version ' + version + (isNonRelease ? '<br>' + buildInfo.buildDate : ''));
+                .spawn('a.xnat-version', {
+                    href: 'http://www.xnat.org',
+                    target: '_blank',
+                    title: 'XNAT version ' + version
+                }, [['img|src=${SITE_ROOT}/images/xnat_power_small.png']])
+                .spawn('small', 'version ' + version + (isNonRelease ? '<br>' + buildInfo.buildDate : ''));
 
-        $('#header_logo').attr('title','XNAT version ' + version);
+        $('#header_logo').attr('title', 'XNAT version ' + version);
 
-        XNAT.app.version = version ;
+        XNAT.app.version = version;
 
         var clicker = XNAT.event.click('#header_logo, #xnat_power > a');
 
         // shift-click the header or footer XNAT logo to TOGGLE debug mode on/off
         clicker.shiftKey(function(e){
             e.preventDefault();
-            if (Cookies.get('debug') === 'on'){
+            if (Cookies.get('debug') === 'on') {
                 Cookies.set('debug', 'off');
                 window.location.hash = 'debug=off';
             }

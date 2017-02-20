@@ -56,6 +56,8 @@
                 <script>
                     (function(){
 
+                        xmodal.loading.open();
+
                         XNAT.xapi =
                                 getObject(XNAT.xapi);
 

@@ -22,40 +22,41 @@
     #attention_icon { float: left ; padding-top: 7px ; padding-left: 11px ; }
     #attention_icon:hover { cursor: pointer ; }
 
-    #main_nav ul.nav #browse-projects.dark-shadow {
+    #main_nav ul.nav .dark-shadow {
         box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
         z-index: 1;
     }
 
-    #browse-projects div.data-table-wrapper {
+    #main_nav ul.nav div.data-table-wrapper {
+        width: 880px;
         max-height: 525px;
         overflow-y: scroll;
     }
 
-    #browse-projects table.data-table,
-    #browse-projects table.data-table th,
-    #browse-projects table.data-table td {
+    #main_nav ul.nav table.data-table,
+    #main_nav ul.nav table.data-table th,
+    #main_nav ul.nav table.data-table td {
         padding: 2px 8px;
         border: none;
     }
-    #browse-projects table.data-table tr:hover {
+    #main_nav ul.nav table.data-table tr:hover {
         background: #e5f2ff;
     }
-    #browse-projects table.data-table th.sort {
+    #main_nav ul.nav table.data-table th.sort {
         background: none;
         border-bottom: 1px solid #d0d0d0;
         text-align: left;
     }
-    #browse-projects table.data-table td.filter {
+    #main_nav ul.nav table.data-table td.filter {
         background: #f0f0f0;
         padding: 6px;
         border-bottom: 1px solid #d0d0d0;
     }
-    #browse-projects table.data-table td.filter > input {
+    #main_nav ul.nav table.data-table td.filter > input {
         width: 100%;
         box-sizing: border-box;
     }
-    #main_nav #browse-projects table.data-table td a {
+    #main_nav ul.nav table.data-table td a {
         padding: 0;
         font-size: 12px;
     }
@@ -133,7 +134,7 @@
 </div><!-- /user_bar -->
 
 <script type="text/javascript">
-    jq(document).ready(function(){
+    jq(function(){
         if (Cookies.get('WARNING_BAR') == 'CLOSED'){
             jq('#attention_icon').show();
         }

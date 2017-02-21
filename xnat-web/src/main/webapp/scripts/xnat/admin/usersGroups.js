@@ -481,6 +481,7 @@ var XNAT = getObject(XNAT);
             var doSubmit = $form.submitJSON(opts);
             if (doSubmit.done) {
                 doSubmit.done(function(){
+                    // xmodal.loading.open();
                     XNAT.ui.banner.top(2000, 'User info saved.', 'success')
                 });
             }
@@ -1223,17 +1224,12 @@ var XNAT = getObject(XNAT);
             // console.log(renderUsersTable.name);
             var _usersTable;
             if ($container.length) {
-
+                $container.html('loading...');
                 _usersTable = XNAT.spawner.spawn({
                     usersTable: spawnUsersTable()
                 });
-
-                // _usersTable.onRender = showUsersTable;
-
-                _usersTable.render($container, 200, showUsersTable);
-
+                _usersTable.render($container.empty(), 200, showUsersTable);
                 return _usersTable;
-
             }
         }
         usersGroups.renderUsersTable = renderUsersTable;
@@ -1287,9 +1283,10 @@ var XNAT = getObject(XNAT);
     usersGroups.spawnTabs = function(container){
         // console.log('usersGroups.spawnTabs');
         var tabsConfig = setupTabs();
-        xmodal.loading.open();
+        var $container = $$(container || XNAT.tabs.container);
+        $container.html('loading...');
         usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
-        usersGroups.tabs.render(container || XNAT.tabs.container, 200);
+        usersGroups.tabs.render($container.empty(), 200);
         // usersGroups.tabs.done(usersGroups.showUsersTable);
     };
 

@@ -436,7 +436,7 @@ var XNAT = getObject(XNAT);
         var $tableWrapper = $.spawn('div.data-table-wrapper');
         var tableWrapper = $tableWrapper[0];
 
-        $tableWrapper.append(newTable.table);
+        $tableWrapper.append('<p class="loading">loading...</p>', newTable.table);
 
         // if (opts.before) {
         //     $tableWrapper.prepend(opts.before);
@@ -884,7 +884,7 @@ var XNAT = getObject(XNAT);
 
             });
 
-            newTable.table$.parent().find('.loading').hide();
+            $tableWrapper.find('.loading').remove();
             newTable.table$.removeClass('hidden invisible').show();
 
             // close any 'loading' dialogs that are open

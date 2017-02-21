@@ -1,6 +1,6 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 #set ($template = $data.getTemplateInfo())
-$!template.setLayoutTemplate("NoMenu.vm")
+$!template.setLayoutTemplate("NoMenuTop.vm")
 $page.setTitle("XDAT -- Register")
 $page.setBgColor($ui.bgcolor)
 <div valign="top">

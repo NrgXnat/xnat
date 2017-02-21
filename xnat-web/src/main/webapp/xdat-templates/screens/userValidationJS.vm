@@ -2,40 +2,46 @@
 ##modified to prevent values greater than 255 characters.
 <script type="text/javascript" src="$content.getURI("scripts/user/validateUsername.js")"></script>
 <script type="text/javascript">
+    console.log('userValidationJs.vm');
     XNAT.app.register = {
         validateForm: function(e){
-            // create a few shortcuts
-            if (!validateUsername(document.getElementById('xdat:user.login'))) {
-                return false;
-            }
+            try {
+                var validateInput = XNAT.app.register.validateInput;
+                var validators = XNAT.app.register.validators;
+                var errorMessages = XNAT.app.register.errorsFound = []; // reset errors on each validation attempt
 
-            var validateInput = XNAT.app.register.validateInput;
-            var validators = XNAT.app.register.validators;
-
-            // execute the validators on the fields, creating a list of boolean results for each field.
-            var validations = [validateInput('xdat:user.login', [validators.nonEmpty, validators.max255]),
-                validateInput('xdat:user.primary_password', [validators.nonEmpty, validators.max255]),
-                validateInput('xdat:user.firstname', [validators.nonEmpty, validators.max255]),
-                validateInput('xdat:user.lastname', [validators.nonEmpty, validators.max255]),
-                validateInput('xdat:user.email', [validators.nonEmpty, validators.max255,
-                    validators.isEmail()])];
-            if (YUIDOM.get('xdat:user.password_check') != null) {
-                validations.push(validateInput('xdat:user.password_check', [validators.nonEmpty, validators.valuesMatch('xdat:user.primary_password')]));
-            }
-            // if any of the validations failed, stop form submission
-            for (var i = 0; i < validations.length; i++) {
-                if (!validations[i]) {
-                    return false;
+                // execute the validators on the fields, creating a list of boolean results for each field.
+                var validations = [validateInput('xdat:user.login', [validators.nonEmpty, validators.max255]),
+                    validateInput('xdat:user.primary_password', [validators.nonEmpty, validators.max255, validators.regex('$siteConfig.passwordComplexity'.trim(), '$siteConfig.passwordComplexityMessage')]),
+                    validateInput('xdat:user.firstname', [validators.nonEmpty, validators.max255]),
+                    validateInput('xdat:user.lastname', [validators.nonEmpty, validators.max255]),
+                    validateInput('xdat:user.email', [validators.nonEmpty, validators.max255, validators.isEmail])];
+                if (YUIDOM.get('xdat:user.password_check') != null) {
+                    validations.push(validateInput('xdat:user.password_check', [validators.nonEmpty, validators.valuesMatch('xdat:user.password_check', 'xdat:user.primary_password'), validators.regex('$siteConfig.passwordComplexity'.trim(), '$siteConfig.passwordComplexityMessage')]));
                 }
+                // if any of the validations failed, stop form submission
+                for (var i = 0; i < validations.length; i++) {
+                    if (!validations[i]) {
+                        var errorMessage = '<p>Error(s) found: </p><ul>';
+                        for (var i = 0, j = errorMessages.length; i < j; i++) {
+                            errorMessage += '<li>' + errorMessages[i] + '</li>';
+                        }
+                        errorMessage += '</ul>';
+                        xmodal.alert({title: 'Form Validation Error', message: errorMessage});
+                        return false;
+                    }
+                }
+                return true;
+            }catch(e){
+                xmodal.alert({ title: 'XNAT error', message: e});
             }
-            return true;
         },
         validateInput: function(inputId, validators){
             var input = document.getElementById(inputId);
             for (var i = 0; i < validators.length; i++) {
                 var validator = validators[i];
-                if (!validator(input)) {
-                    XNAT.app.register.validationError(input);
+                if (!validator(input).pass) {
+                    XNAT.app.register.validationError(input, validator(input).failMessage);
                     return false;
                 }
             }
@@ -43,39 +49,46 @@
             XNAT.app.register.validationSuccessful(input);
             return true;
         },
-        validationError: function(input){
-            appendImage(input, "/images/checkmarkRed.gif");
+        validationError: function(input,failMessage){
+            $(input).addClass('invalid');
+            XNAT.app.register.errorsFound.push(failMessage);
         },
         validationSuccessful: function(input){
-            appendImage(input, "/images/checkmarkGreen.gif");
+            if (input.className.includes('invalid')) $(input).removeClass('invalid');
+        //    appendImage(input, "/images/checkmarkGreen.gif");
         },
         /* Collection of validation functions */
         validators: {
             nonEmpty: function(input){
-                return input.value.trim().length > 0;
+                return { pass: input.value.trim().length > 0, failMessage: getLabel(input) + ' field cannot be empty.' };
             },
             max255: function(input){
-                return input.value.length < 256;
+                return { pass: input.value.length < 256, failMessage: getLabel(input) + ' field cannot be longer than 256 characters.' };
             },
-            valuesMatch: function(inputIdToCompare){
+            valuesMatch: function(input,inputIdToCompare){
                 var inputToCompare = document.getElementById(inputIdToCompare);
                 return function(input){
-                    return inputToCompare.value == input.value;
+                    return { pass: inputToCompare.value == input.value, failMessage: 'Values of '+ getLabel(inputToCompare) + ' and ' + getLabel(input) + ' do not match.' };
                 }
             },
-            isEmail: function(){
+            isEmail: function(input){
+                // var emailReg = "/^([a-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-z0-9](?:[.a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))$/i";
                 var emailReg = XNAT.validation.regex.email;
-                return function(input){
-                    return emailReg.test(input.value);
-                }
+                return { pass: emailReg.test(input.value), failMessage: input.value + ' is not a valid email address.' };
             },
-            regex: function(regex){
+            regex: function(regex, failMessage){
                 return function(input){
-                    return input.value.match(regex)
+                    failMessage = failMessage || getLabel(input) + ' failed to match the required validation rules';
+                    return { pass: input.value.match(regex), failMessage: failMessage };
                 }
             }
-        }
+        },
+        errorsFound: []
     };
+
+    function getLabel(input){
+        return input.previousElementSibling.textContent;
+    }
 
     function validateName(obj, which, button_id){
         var valid = false;
@@ -84,7 +97,7 @@
                 valid = true;
             }
             else {
-                xmodal.message('User Validation', which + ' name cannot contain special characters.  Please modify.');
+                xmodal.alert('User Validation', which + ' name cannot contain special characters.  Please modify.');
                 obj.focus();
             }
         }
@@ -100,7 +113,7 @@
                 valid = true;
             }
             else {
-                xmodal.message('User Validation', 'Invalid email address.  Please modify.');
+                xmodal.alert('User Validation', 'Invalid email address.  Please modify.');
                 obj.focus();
             }
         }
@@ -110,11 +123,11 @@
 
     function check(obj, valid, button_id){
         if (valid) {
-            if (obj.appendedImage != undefined) appendImage(obj, "/images/checkmarkGreen.gif");
+        //    if (obj.appendedImage != undefined) appendImage(obj, "/images/checkmarkGreen.gif");
             if (button_id != undefined) document.getElementById(button_id).disabled = false;
         }
         else {
-            appendImage(obj, "/images/checkmarkRed.gif");
+        //    appendImage(obj, "/images/checkmarkRed.gif");
             if (button_id != undefined) document.getElementById(button_id).disabled = true;
         }
     }

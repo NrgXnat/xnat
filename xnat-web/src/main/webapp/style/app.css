@@ -1348,6 +1348,13 @@ body.xnat .chosen-container {
 #site_description a {
     text-decoration: underline;
 }
+.user_account_settings {
+    width: 400px;
+    margin: 2em auto 0;
+}
+.user_account_settings label:after {
+    content: ":";
+}
 
 span.sep {
     background-color: #999;
@@ -2026,10 +2033,6 @@ div.icon-remove {
 input.invalid {
     background: #ffc;
     border: 1px solid #c00;
-}
-
-input.required.invalid {
-    background: #fcc;
 }
 
 input.valid {

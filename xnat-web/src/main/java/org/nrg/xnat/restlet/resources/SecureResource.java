@@ -1244,8 +1244,7 @@ public abstract class SecureResource extends Resource {
         final EventMetaI ci = workflow.buildEvent();
 
         try {
-            String removeFiles = getQueryVariable("removeFiles");
-            if (removeFiles != null) {
+            if (isQueryVariableTrue("removeFiles")) {
                 final List<XFTItem> hash = item.getItem().getChildrenOfType("xnat:abstractResource");
 
                 for (XFTItem resource : hash) {
@@ -1272,8 +1271,7 @@ public abstract class SecureResource extends Resource {
         final EventMetaI ci = workflow.buildEvent();
 
         try {
-            String removeFiles = getQueryVariable("removeFiles");
-            if (removeFiles != null) {
+            if (isQueryVariableTrue("removeFiles")) {
                 final List<XFTItem> hash = item.getItem().getChildrenOfType("xnat:abstractResource");
 
                 for (XFTItem resource : hash) {

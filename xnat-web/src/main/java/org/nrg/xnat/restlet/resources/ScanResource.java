@@ -42,6 +42,9 @@ import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -279,6 +282,22 @@ public class ScanResource extends ItemResource {
             }
 
             delete(session, scan, newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getDeleteAction(scan.getXSIType())));
+
+            // Above "delete" removes resources, but leaves dangling scan directory
+            final Path scanDirPath = Paths.get(session.getCurrentSessionFolder(true), "SCANS", scan.getId());
+            final File scanDir = scanDirPath == null ? null : scanDirPath.toFile();
+            if (scanDir != null && scanDir.isDirectory() && scanDir.exists()) {
+                scanDir.delete();
+
+                // Now we have deleted the scan directory. If that was the last one, also remove the SCANS directory.
+                final File scansDir = scanDir.getParentFile();
+                if (scansDir != null && scansDir.isDirectory() && scansDir.exists()) {
+                    final String[] otherScansInScansDir = scansDir.list();
+                    if (otherScansInScansDir != null && otherScansInScansDir.length == 0) {
+                        scansDir.delete();
+                    }
+                }
+            }
 
         } catch (SQLException e) {
             logger.error("There was an error running a query.", e);

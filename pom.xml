@@ -164,6 +164,7 @@
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <org.postgresql.version>9.4.1209.jre7</org.postgresql.version>
+        <log4jdbc.version>0.2.1-SNAPSHOT</log4jdbc.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.10</reflections.version>
         <restlet.version>1.1.10</restlet.version>
@@ -1320,6 +1321,12 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${org.postgresql.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.marcosemiao.log4jdbc</groupId>
+                <artifactId>log4jdbc-file</artifactId>
+                <version>${log4jdbc.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>

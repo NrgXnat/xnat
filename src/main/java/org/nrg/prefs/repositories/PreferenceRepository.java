@@ -11,7 +11,6 @@ package org.nrg.prefs.repositories;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Query;
-import org.hibernate.type.StandardBasicTypes;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.framework.scope.EntityId;
@@ -25,33 +24,31 @@ import java.util.List;
 /**
  * Manages preferences within the preferences service framework.
  */
+@SuppressWarnings("JpaQlInspection")
 @Repository
 public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
+
+    public static final String PREFS_BY_TOOL_AND_ENTITY      = "SELECT pref FROM Preference pref LEFT JOIN pref.tool Tool WHERE Tool.toolId = :toolId AND pref.scope = :scope";
+    public static final String PREFS_BY_TOOL_PREF_AND_ENTITY = "SELECT pref FROM Preference pref LEFT JOIN pref.tool Tool WHERE Tool.toolId = :toolId AND pref.name = :name AND pref.scope = :scope";
+    public static final String PREF_ENTITY_WHERE             = " AND pref.entityId = :entityId";
+
     public Preference findByToolIdNameAndEntity(final String toolId, final String preferenceName, final Scope scope, final String entityId) {
         final boolean hasEntityId = StringUtils.isNotBlank(entityId);
-        final Query query = getSession().createSQLQuery("select pref.id as id from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.name = :preferenceName and pref.scope = :scope" + (hasEntityId ? " and pref.entity_id = :entityId" : ""))
-                                        .addScalar("id", StandardBasicTypes.LONG)
+        final Query query = getSession().createQuery(PREFS_BY_TOOL_PREF_AND_ENTITY + getEntityWhere(hasEntityId))
                                         .setString("toolId", toolId)
-                                        .setString("preferenceName", preferenceName)
-                                        .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal());
+                                        .setString("name", preferenceName)
+                                        .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal()).setCacheable(true);
         if (hasEntityId) {
             query.setString("entityId", resolveEntityId(entityId));
         }
 
-        @SuppressWarnings("all")
-        final Object results = query.uniqueResult();
-        if (results == null) {
-            return null;
-        }
-        if (results instanceof Long) {
-            return retrieve((Long) results);
-        }
-        return null;
+        return getEntityFromResult(query.uniqueResult());
     }
 
     @SuppressWarnings("unused")
     public Preference findByToolNameAndEntity(final Tool tool, final String preferenceName, final Scope scope, final String entityId) {
         // TODO: This doesn't work. It seems like a bug. With two tools, this will find existing preferences for the first tool when trying to create preferences for the second, even though the tool is set to the second instance.
+        // private static final String[] EXCLUDE_PROPERTY = new String[]{"id", "enabled", "created", "timestamp", "disabled", "value"};
         // final Preference example = new Preference();
         // example.setTool(tool);
         // example.setName(preferenceName);
@@ -65,8 +62,7 @@ public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
 
     public List<Preference> findByToolIdAndEntity(final String toolId, final Scope scope, final String entityId) {
         final boolean hasEntityId = StringUtils.isNotBlank(entityId);
-        final Query query = getSession().createSQLQuery("select * from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.scope = :scope" + (hasEntityId ? " and pref.entity_id = :entityId" : ""))
-                                        .addScalar("id", StandardBasicTypes.LONG)
+        final Query query = getSession().createQuery(PREFS_BY_TOOL_AND_ENTITY + (getEntityWhere(hasEntityId)))
                                         .setString("toolId", toolId)
                                         .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal());
         if (hasEntityId) {
@@ -80,8 +76,9 @@ public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
         }
         final List<Preference> preferences = new ArrayList<>();
         for (final Object result : results) {
-            if (result instanceof Long) {
-                preferences.add(retrieve((Long) result));
+            final Preference preference = getEntityFromResult(result);
+            if (preference != null) {
+                preferences.add(preference);
             }
         }
         return preferences;
@@ -91,5 +88,7 @@ public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
         return StringUtils.isBlank(entityId) ? EntityId.Default.getEntityId() : entityId;
     }
 
-    // private static final String[] EXCLUDE_PROPERTY = new String[]{"id", "enabled", "created", "timestamp", "disabled", "value"};
+    private static String getEntityWhere(final boolean hasEntityId) {
+        return hasEntityId ? PREF_ENTITY_WHERE : "";
+    }
 }

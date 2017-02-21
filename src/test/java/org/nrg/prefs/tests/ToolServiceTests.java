@@ -9,6 +9,7 @@
 
 package org.nrg.prefs.tests;
 
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,9 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the NRG Hibernate tool service. This is a sanity test of the plumbing for the tool entity management. All
@@ -62,12 +65,18 @@ public class ToolServiceTests {
         tool.setToolDescription("This is the first tool of them all!");
         _service.create(tool);
 
-        final List<Tool> tools = _service.getAll();
-        assertNotNull(tools);
+        final List<Tool> tools = Lists.newArrayList();
+        final Set<String> toolIds = _service.getToolIds();
+        for (final String toolId : toolIds) {
+            tools.add(_service.getByToolId(toolId));
+        }
+        assertTrue(tools.size() > 0);
+
         final Tool retrieved = _service.getByToolId(tool.getToolId());
         assertEquals("tool1", retrieved.getToolId());
         assertEquals("Tool 1", retrieved.getToolName());
         assertEquals("This is the first tool of them all!", retrieved.getToolDescription());
+
     }
 
     private static final Logger _log = LoggerFactory.getLogger(ToolServiceTests.class);

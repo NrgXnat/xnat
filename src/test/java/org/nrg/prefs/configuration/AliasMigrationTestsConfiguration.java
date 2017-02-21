@@ -70,7 +70,7 @@ public class AliasMigrationTestsConfiguration {
         final Properties properties = new Properties();
 
         // These lines are why this requires a separate ORM configuration. Set to create and then specify the import files.
-        properties.setProperty("hibernate.hbm2ddl.auto", "create");
+        properties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
         properties.setProperty("hibernate.hbm2ddl.import_files", "/org/nrg/prefs/tests/init-aliased-prefs.sql");
 
         properties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
@@ -104,8 +104,8 @@ public class AliasMigrationTestsConfiguration {
     }
 
     @Bean
-    public ResourceTransactionManager transactionManager(final FactoryBean<SessionFactory> sessionFactory) throws Exception {
-        return new HibernateTransactionManager(sessionFactory.getObject());
+    public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
+        return new HibernateTransactionManager(sessionFactory);
     }
 
     @Bean

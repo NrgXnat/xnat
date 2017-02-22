@@ -325,14 +325,15 @@ var XNAT = getObject(XNAT);
     // render project-level settings for installed plugins
     pluginSettings.projectSettings = function(tabContainer){
         pluginSettings.projectSettingsTabs =
-                pluginSettings.projectSettingsTabs ||
-                tabContainer ? $$(tabContainer) : $('#plugin-project-settings-tabs').find('div.content-tabs');
+            tabContainer ?
+                $$(tabContainer) :
+                $('#plugin-project-settings-tabs').find('div.content-tabs');
         return pluginSettings.renderSettings('projectSettings');
     };
 
     // call it.
     //pluginSettings.check();
 
-    XNAT.admin.pluginSettings = pluginSettings;
+    XNAT.app.pluginSettings = pluginSettings;
 
 }));

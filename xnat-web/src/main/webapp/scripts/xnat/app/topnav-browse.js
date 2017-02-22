@@ -60,7 +60,6 @@
                 }
             }
         });
-        projectData = [].concat(projectData, projectData);
         XNAT.table.dataTable(projectData, {
             container: _menuItem,
             // sortable: true,
@@ -153,7 +152,7 @@
                         title: item.name,
                         style: { width: '100%' }
                     }, item.secondary_id)
-                }    
+                }
             });
             displaySimpleList($favoriteProjects, FAVORITES)
         },

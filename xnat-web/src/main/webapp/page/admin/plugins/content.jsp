@@ -51,10 +51,13 @@
 
                 </div>
 
-                <c:import url="/xapi/plugins" var="plugins"/>
-                <c:import url="/xapi/spawner/namespaces" var="spawnerNamespaces"/>
+                <c:set var="pluginsUrl" value="/xapi/plugins"/>
+                <c:set var="spawnerNamespacesUrl" value="/xapi/spawner/namespaces"/>
 
-                <%--<script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>--%>
+                <c:import url="${pluginsUrl}" var="plugins"/>
+                <c:import url="${spawnerNamespacesUrl}" var="spawnerNamespaces"/>
+
+                <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
 
                 <script>
                     (function(){
@@ -63,12 +66,12 @@
 
                         <c:if test="${not empty plugins}">
                             XNAT.xapi.plugins = ${plugins};
-                            XNAT.data['/xapi/plugins'] = XNAT.xapi.plugins;
+                            XNAT.data['${pluginsUrl}'] = XNAT.xapi.plugins;
                         </c:if>
 
                         <c:if test="${not empty spawnerNamespaces}">
                             XNAT.xapi.spawnerNamespaces = ${spawnerNamespaces};
-                            XNAT.data['/xapi/spawner/namespaces'] = XNAT.xapi.spawnerNamespaces;
+                            XNAT.data['${spawnerNamespacesUrl}'] = XNAT.xapi.spawnerNamespaces;
                         </c:if>
 
                         XNAT.data = extend(true, {
@@ -77,31 +80,8 @@
                         }, XNAT.data||{});
 
                         // render siteSettings tab into specified container
-                        XNAT.app.pluginSettings.siteSettingsTabs = $('#plugin-settings-tabs').find('div.content-tabs');
-                        XNAT.app.pluginSettings.siteSettings();
-
-//                        // these properties MUST be set before spawning 'tabs' widgets
-//                        XNAT.tabs.container = $('#plugin-settings-tabs').find('div.content-tabs');
-//                        XNAT.tabs.layout = 'left';
-//
-//                        function pluginTabs(name){
-//                            var tabSpawn = XNAT.spawner.resolve(name + '/siteSettings');
-//                            tabSpawn.render(XNAT.tabs.container, 200)
-//                                    .fail(function(){
-//                                        console.log('"' + name + '" site settings tabs not found');
-//                                    });
-//                            return tabSpawn;
-//                        }
-//
-//                        // try to get plugin tab Spawner objects
-//                        // from url:
-//                        // /xapi/spawner/resolve/pluginName/siteSettings
-//                        forOwn(XNAT.xapi.plugins, function(name, obj){
-//                            // first try to load admin js file at
-//                            // /scripts/xnat-plugins/pluginName/admin.js
-//                            //loadjs(XNAT.url.rootUrl('/scripts/xnat-plugins/' + name + '/admin.js'), name);
-//                            pluginTabs(name);
-//                        });
+                        var siteSettingsTabs = $('#plugin-settings-tabs').find('div.content-tabs');
+                        XNAT.app.pluginSettings.siteSettings(siteSettingsTabs);
 
                     })();
                 </script>

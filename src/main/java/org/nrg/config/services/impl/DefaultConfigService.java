@@ -47,7 +47,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     public static BeanComparator ConfigComparatorByCreateDate = new BeanComparator("created");
     public static BeanComparator ConfigComparatorByVersion = new BeanComparator("version");
 
-    public static final boolean DEFAULT_VERSIONING = true;
+    public static final boolean UNVERSIONED_DEFAULT = false;  // The default is to version, therefore "unversioned" should be false
 
     @Override
     public void afterPropertiesSet() {
@@ -223,14 +223,14 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Transactional
     @Override
     public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents) throws ConfigServiceException {
-        return replaceConfigImpl(xnatUser, reason, toolName, path, null, DEFAULT_VERSIONING, contents, Scope.Site, null);
+        return replaceConfigImpl(xnatUser, reason, toolName, path, null, null, contents, Scope.Site, null);
     }
 
     @Transactional
     @Override
     @Deprecated
     public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException {
-        return replaceConfigImpl(xnatUser, reason, toolName, path, null, DEFAULT_VERSIONING, contents, projectID != null ? Scope.Project : Scope.Site, getProjectIdFromLong(projectID));
+        return replaceConfigImpl(xnatUser, reason, toolName, path, null, null, contents, projectID != null ? Scope.Project : Scope.Site, getProjectIdFromLong(projectID));
     }
 
     @Transactional
@@ -418,10 +418,14 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         Configuration oldConfig = getConfigImpl(toolName, path, scope, entityId);
 
         // We will version the configuration if:
-        //  Case1) There is no config and unversioned is not specified (defaults to versioned) or unversioned is false
-        //  Case2) There is a config, but unversioned is specified and false (parameter overrides current configuration, so we don't need  to check)
-        //  Case3) NOT(There is a config, unversioned is either not specified or is true, and  the config is set to unversioned)
-        boolean doVersion = (oldConfig == null && (unversioned == null || !unversioned)) || (oldConfig != null && ((unversioned != null && !unversioned) || !(oldConfig.isUnversioned())));
+        //  Case1) There is no config and unversioned is specified and false, or not specified (defaults to false)
+        //  Case2) There is a config, but unversioned is specified and false (parameter overrides current configuration, so we don't need to check)
+        //  Case3) NOT(There is a config, unversioned is either not specified or is true, and the config is set to unversioned)
+        final boolean unversionedValueOrDefault = unversioned != null ? unversioned : UNVERSIONED_DEFAULT;
+        final boolean unversionedSpecifiedAndFalse = unversioned != null && !unversioned;
+        boolean doVersion = ((oldConfig == null && !unversionedValueOrDefault) ||
+                (oldConfig != null && unversionedSpecifiedAndFalse) ||
+                (oldConfig != null && !oldConfig.isUnversioned()));
 
         Configuration configuration;
         boolean update;

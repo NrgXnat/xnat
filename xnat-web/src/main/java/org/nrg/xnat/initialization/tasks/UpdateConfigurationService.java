@@ -13,7 +13,7 @@ import org.hibernate.SessionFactory;
 import org.nrg.config.entities.Configuration;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xnat.utils.XnatUserProvider;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +28,10 @@ import java.util.List;
 @Component
 public class UpdateConfigurationService extends AbstractInitializingTask {
     @Autowired
-    public UpdateConfigurationService(final JdbcTemplate template, final SessionFactory sessionFactory, final XnatUserProvider primaryAdminUserProvider) {
+    public UpdateConfigurationService(final JdbcTemplate template, final SessionFactory sessionFactory) {
         super();
         _template = template;
         _sessionFactory = sessionFactory;
-        _userProvider = primaryAdminUserProvider;
     }
 
     @Override
@@ -52,7 +51,7 @@ public class UpdateConfigurationService extends AbstractInitializingTask {
             _log.info("No suspect configuration entries found.");
         } else {
             for (final Long projectId : projectIds) {
-                final List<XnatProjectdata> projects = XnatProjectdata.getXnatProjectdatasByField("xnat:projectData/projectdata_info", projectId, _userProvider.get(), false);
+                final List<XnatProjectdata> projects = XnatProjectdata.getXnatProjectdatasByField("xnat:projectData/projectdata_info", projectId, AdminUtils.getAdminUser(), false);
                 if (projects.size() == 0) {
                     _log.warn("Processed configurations with project set to {} metadata ID. Can't find a corresponding project.", projectId);
                 } else {
@@ -72,5 +71,4 @@ public class UpdateConfigurationService extends AbstractInitializingTask {
 
     private final JdbcTemplate     _template;
     private final SessionFactory   _sessionFactory;
-    private final XnatUserProvider _userProvider;
 }

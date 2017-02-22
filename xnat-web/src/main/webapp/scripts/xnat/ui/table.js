@@ -655,7 +655,7 @@ var XNAT = getObject(XNAT);
                             $filterInput = $.spawn('input.filter-data', {
                                 type: 'text',
                                 title: name + ':filter',
-                                placeholder: 'filter'
+                                placeholder: 'Filter ' + (opts.items[name].label ? ('by ' + opts.items[name].label) : '')
                             });
                             filterInputs.push($filterInput);
 

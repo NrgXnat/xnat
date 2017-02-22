@@ -19,6 +19,7 @@
 <script type="text/javascript" src="$content.getURI('scripts/lib/js.cookie.js')"></script>
 
 <style type="text/css">
+
     #attention_icon { float: left ; padding-top: 7px ; padding-left: 11px ; }
     #attention_icon:hover { cursor: pointer ; }
 
@@ -28,16 +29,42 @@
     }
 
     #main_nav ul.nav div.data-table-wrapper {
-        width: 880px;
+        width: auto;
+        min-width: 200px;
+        max-width: 880px;
         max-height: 525px;
+        /*box-sizing: border-box;*/
+        overflow-y: auto;
+    }
+
+    #main_nav ul.nav div.data-table-wrapper * {
+        /*box-sizing: border-box;*/
+    }
+
+    #main_nav ul.nav #browse-projects div.data-table-wrapper {
+        width: 880px;
         overflow-y: scroll;
     }
 
-    #main_nav ul.nav table.data-table,
+    #main_nav ul.nav table.data-table {
+        padding: 0;
+        border: none;
+    }
+
     #main_nav ul.nav table.data-table th,
     #main_nav ul.nav table.data-table td {
-        padding: 2px 8px;
+        padding: 2px 12px;
         border: none;
+    }
+
+    #main_nav ul.nav table.data-table th {
+        text-align: left;
+        padding: 4px 12px;
+        /*font-weight: bold;*/
+        /*border-right: 1px solid #ccc;*/
+    }
+    #main_nav ul.nav table.data-table th:last-of-type {
+        /*border-right: none;*/
     }
     #main_nav ul.nav table.data-table tr:hover {
         background: #e5f2ff;

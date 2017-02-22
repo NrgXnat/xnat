@@ -21,11 +21,6 @@
 
     var displayProjectList = function($parent, projectData){
         if (!projectData.length) return;
-        // convert projectList to an array of <li> elements
-        // projectList = projectList.map(function(proj){
-        //     if (!proj.name) return;
-        //     return '<li><a href="' + serverRoot + '/data/projects/' + proj.id + '">' + proj.name + '</a></li>'
-        // });
         function projectListItem(val, len){
             var URL = XNAT.url.rootUrl('/data/projects/' + this.id);
             // var TEXT = truncateText(val || '<i><i>&ndash;</i></i>', len || 30);
@@ -44,7 +39,7 @@
             pi: '240px'
         };
         var _menuItem = spawn('li.table-list');
-        var projectListFilter = XNAT.table.dataTable([], {
+        XNAT.table.dataTable([], {
             container: _menuItem,
             sortable: false,
             filter: 'secondary_id, name, pi',
@@ -52,19 +47,23 @@
             body: false,
             items: {
                 secondary_id: {
+                    label: 'Running Title',
                     th: { style: { width: WIDTHS.id } }
                 },
                 name: {
+                    label: 'Project Name',
                     th: { style: { width: WIDTHS.name } }
                 },
                 pi: {
+                    label: 'Investigator',
                     th: { style: { width: WIDTHS.pi } }
                 }
             }
         });
-        var projectList = XNAT.table.dataTable(projectData, {
+        projectData = [].concat(projectData, projectData);
+        XNAT.table.dataTable(projectData, {
             container: _menuItem,
-            sortable: true,
+            // sortable: true,
             header: false,
             items: {
                 _id: '~data-id',
@@ -94,23 +93,37 @@
         $parent.append(_menuItem).parents('li').removeClass('hidden');
     };
 
-    var displayProjectNavFail = function(){
+    function displayProjectNavFail(){
         $browseProjects.find('.create-project').removeClass('hidden');
-    };
+    }
 
-    var displayDataNav = function(){
-        var dataTypes = window.available_elements || [];
-        if (!dataTypes.length) return;
-        // convert dataTypes to an array of <li> elements
-        dataTypes = dataTypes.map(function(type){
-            if (type.plural === undefined || type.element_name === 'wrk:workflowData') return;
-            return '<li><a href="' + serverRoot + '/app/template/Search.vm/node/d.' + type.element_name + '">' + type.plural + '</a></li>';
+    function displaySimpleList($container, items){
+        if (!items.length) return;
+        // add a filter row if there are more than 10 items
+        var _menuItem = spawn('li.table-list');
+        if (items.length > 10) {
+            XNAT.table.dataTable([], {
+                container: _menuItem,
+                sortable: false,
+                filter: 'item',
+                header: false,
+                body: false,
+                items: {
+                    item: 'list-item'
+                }
+            });
+        }
+        XNAT.table.dataTable(items, {
+            container: _menuItem,
+            sortable: false,
+            header: false,
+            items: {
+                _name: '~data-name',
+                item: 'list-item'
+            }
         });
-        // dataTypes is now an array of <li> elements
-        $browseData.append(dataTypes).parents('li').removeClass('hidden');
-    };
-
-    //$(document).ready(function(){
+        $container.append(_menuItem).parents('li').removeClass('hidden');
+    }
 
     var xnatJSON = XNAT.xhr.getJSON;
     var restUrl = XNAT.url.restUrl;
@@ -130,7 +143,19 @@
     xnatJSON({
         url: restUrl('/data/projects', ['favorite=true']),
         success: function(data){
-            displayProjectList($favoriteProjects, data.ResultSet.Result)
+            var FAVORITES = data.ResultSet.Result.map(function(item){
+                var URL = XNAT.url.rootUrl('/data/projects/' + item.id);
+                return {
+                    // sorry for the confusing naming
+                    name: item.secondary_id,
+                    item: spawn('a.truncate', {
+                        href: URL,
+                        title: item.name,
+                        style: { width: '100%' }
+                    }, item.secondary_id)
+                }    
+            });
+            displaySimpleList($favoriteProjects, FAVORITES)
         },
         error: function(){
             /* set Favorite Projects nav item to hidden, if necessary */
@@ -138,13 +163,24 @@
     });
 
     // populate data list
-    if (window.available_elements !== undefined) {
-        displayDataNav();
+    if (window.available_elements !== undefined && window.available_elements.length) {
+        var DATATYPES = [];
+        window.available_elements.forEach(function(type){
+            if (type.plural === undefined || type.element_name === 'wrk:workflowData') return;
+            var URL = XNAT.url.rootUrl('/app/template/Search.vm/node/d.' + type.element_name);
+            DATATYPES.push({
+                name:  type.element_name,
+                item: spawn('a.truncate', {
+                    href: URL,
+                    title: type.element_name,
+                    style: { width: '100%' }
+                }, type.plural)
+            });
+        });
+        displaySimpleList($browseData, DATATYPES);
     }
     else {
         $browseData.parent('li').addClass('disabled');
     }
-
-    //});
 
 })();

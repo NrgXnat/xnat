@@ -161,20 +161,32 @@
         }
     });
 
+    function dataTypeUrl(name){
+        return XNAT.url.rootUrl('/app/template/Search.vm/node/d.' + name);
+    }
+
+    function dataTypeItem(type){
+        return {
+            name:  type.element_name,
+            item: spawn('a.truncate', {
+                href: dataTypeUrl(type.element_name),
+                title: type.element_name,
+                style: { width: '100%' }
+            }, type.plural)
+        }
+    }
+
     // populate data list
     if (window.available_elements !== undefined && window.available_elements.length) {
-        var DATATYPES = [];
-        window.available_elements.forEach(function(type){
-            if (type.plural === undefined || type.element_name === 'wrk:workflowData') return;
-            var URL = XNAT.url.rootUrl('/app/template/Search.vm/node/d.' + type.element_name);
-            DATATYPES.push({
-                name:  type.element_name,
-                item: spawn('a.truncate', {
-                    href: URL,
-                    title: type.element_name,
-                    style: { width: '100%' }
-                }, type.plural)
-            });
+        var DATATYPES = [dataTypeItem({
+            element_name: 'xnat:subjectData',
+            plural: 'Subjects'
+        })];
+        var sortedTypes = sortObjects(window.available_elements, 'plural');
+        forEach(sortedTypes, function(type){
+            if (type.plural === undefined) return;
+            if (/workflowData|subjectData/i.test(type.element_name)) return;
+            DATATYPES.push(dataTypeItem(type));
         });
         displaySimpleList($browseData, DATATYPES);
     }

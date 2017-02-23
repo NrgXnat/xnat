@@ -213,9 +213,7 @@ $page.setTitle("$siteId - Please Login")
         $('#siteDescription').html(markedText);
 
         $('#login_form').on('submit', function(e){
-
-            e.preventDefault();
-
+            
             var errorCount = 0;
 
 //            var messages = [];

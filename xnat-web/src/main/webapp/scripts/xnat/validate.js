@@ -741,7 +741,7 @@ var XNAT = getObject(XNAT);
             var elValidate = new Validator(this);
             elValidate.is(type, args);
             //valid = regex[type].test(this.value);
-            if (!elValidate.isValid(true)) {
+            if (!elValidate.valid(true)) {
                 invalid++
             }
         });

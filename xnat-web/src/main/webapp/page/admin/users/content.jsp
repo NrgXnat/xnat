@@ -13,7 +13,7 @@
 
 <c:set var="redirect">
     <div class="error">Not authorized. Redirecting...</div>
-    <script> window.location.href = XNAT.url.rootUrl('/') </script>
+    <script> window.location.href = '<c:url value="/"/>' </script>
 </c:set>
 
 <pg:restricted msg="${redirect}">

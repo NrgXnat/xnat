@@ -299,6 +299,36 @@ function validEmailFormat(email) {
     return re.test(email);
 }
 
+// ONLY fire the specified event handler
+// uses same arguments as .on()
+jQuery.fn.only = function(eventName, selectorOrCallback, callback){
+
+    var argsArray = [eventName];
+
+    function modifiedCallback(e, fn){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return fn.call(this, e);
+    }
+
+    if (arguments.length === 2){
+        argsArray.push(function(e){
+            modifiedCallback.call(this, e, selectorOrCallback);
+        });
+    }
+    else {
+        argsArray.push(selectorOrCallback, function(e){
+            modifiedCallback.call(this, e, callback);
+        })
+    }
+
+    this.off(eventName).on.apply(this, argsArray);
+
+    return this;
+
+};
+
+
 // create new case-insensitive :contains selector
 // usage - jq('.this_selector:containsNC("hello")').click(function() { ... });
 jQuery.extend(jQuery.expr[":"], {
@@ -392,7 +422,7 @@ jQuery.loadScript = function (url, arg1, arg2) {
                     attrMap[name].value;
         });
         return obj;
-    }
+    };
 
     // given: <div id="foo" title="Foo" class="bar">Foo</div>
     // $('#foo').attr();

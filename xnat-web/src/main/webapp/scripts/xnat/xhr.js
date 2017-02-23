@@ -405,6 +405,39 @@ var XNAT = getObject(XNAT||{}),
         return ''+val;
     }
 
+    // replace url params with values from [name] or [data-param] attribute
+    // <form data-method="put" action="/xapi/theme/{{themeName}}">
+    //     <input type="text" name="themeName">
+    // </form>
+    function urlParams(form, url, params){
+
+        var $form = $$(form);
+        var URL = url || $form.attr('action') || $form.data('url');
+
+        // which params are we replacing?
+        // /url/path/{{param1}}/{{param2}}
+        var urlParams = URL.split('{{').slice(1).map(function(name){
+            return name.split('}}')[0].trim();
+        });
+
+        // return url if no params to replace
+        if (!urlParams.length) {
+            return URL;
+        }
+
+        // optionally pass an object map with the values
+        params = getObject(params);
+
+        forEach(urlParams, function(name){
+            var _str = '{{' + name + '}}';
+            var _val = params[name] || $form.find('[name="' + name + '"]').val() || '';
+            URL = URL.replace(_str, _val);
+        });
+
+        return URL;
+
+    }
+
     function processJSON(data, stringify){
         var output = {};
         forEach(data, function(item){
@@ -450,6 +483,7 @@ var XNAT = getObject(XNAT||{}),
     // set form element values from an object map
     // 'inputs' can be a form element, selector, or array of inputs
     function setValues(inputs, dataObj, opts){
+
         // cache and check if form exists
         var $inputs = $$(inputs),
             values = {};
@@ -464,15 +498,26 @@ var XNAT = getObject(XNAT||{}),
         $inputs.not('button').each(function(){
 
             var $this = $(this),
+                // dataObj *could* be a string - in that case use window
+                rootObj = isString(dataObj) ? (window[dataObj] || window) : dataObj,
+                lookupRegex = /^((\$\?|\?\?|!\?)(:|=|\|)?\s*)/,
                 name = this.name || this.title,
                 val;
 
-            // name is required
+            // if there's a pre-existing value that starts with
+            // a special string, use that as the name
+            // - $? - lookup value via ajax
+            // - ?? - lookup value from a global var/object
+            // - !? - do a js eval to get the value
+            if (lookupRegex.test(this.value)) {
+                name = this.value.replace(lookupRegex, '');
+            }
+
             if (!name) {
                 return;
             }
 
-            val = lookupObjectValue(dataObj, name);
+            val = lookupObjectValue(rootObj, name);
 
             // add the value to the returned 'values' object
             values[name] = val;
@@ -489,7 +534,7 @@ var XNAT = getObject(XNAT||{}),
                 $this.addClass('array-list')
             }
             else {
-                val = stringable(val) ? val : JSON.stringify(val);
+                val = stringable(val) ? val+'' : JSON.stringify(val);
             }
 
             //if (val === "") return;
@@ -631,6 +676,11 @@ var XNAT = getObject(XNAT||{}),
         var _form = $form[0]; // raw DOM element
         var validateForm = $form.hasClass('validate');
         var callback = diddly;
+        var NOOPS = {
+            done: function(){},
+            fail: function(){},
+            always: function(){}
+        };
 
         opts = cloneObject(opts);
         opts.url = XNAT.url.rootUrl(opts.url || $form.data('url') || $form.attr('action'));
@@ -663,6 +713,10 @@ var XNAT = getObject(XNAT||{}),
             this.value = eval(source);
         });
 
+        // replace {{param}} strings in url with
+        // values from data or named form elements
+        opts.url = urlParams($form, opts.url, opts.data);
+
         var errors = [];
 
         // validate all fields with [data-validate] attribute
@@ -678,7 +732,10 @@ var XNAT = getObject(XNAT||{}),
                 }
                 if (!valid) {
                     errors.push({
+                        element$: $input,
+                        element: this,
                         field: this.title||this.name||this.id,
+                        name: this.name||this.id||this.title,
                         message: $input.data('message') || ''
                     })
                 }
@@ -688,8 +745,20 @@ var XNAT = getObject(XNAT||{}),
 
         // stop here if there are errors
         if (errors.length) {
-            console.log('ERRORS: ' + errors);
+            console.log('VALIDATION ERRORS:');
+            console.log(errors);
             // VALIDATION ERRORS WILL STOP FORM SUBMISSION
+            if (isFunction(opts.invalid)) {
+                // use 'invalid' callback to handle validation failure
+                // called in context of the form, with the
+                // jQuery $form object and errors array as the arguments
+                // return false to stop execution
+                opts.validated = opts.invalid.call(_form, $form, errors);
+            }
+            if (opts.validated === false) {
+                return NOOPS;
+            }
+
             errors = errors.map(function(error){
                 return '' +
                     '<li>' +
@@ -702,14 +771,20 @@ var XNAT = getObject(XNAT||{}),
                 title: 'Validation Failed',
                 content: '' +
                     '<p>Please correct errors with the following fields:</p> ' +
-                    '<ul>' + errors.join('') + '</ul>'
+                    '<ul>' + errors.join('') + '</ul>',
+                onClose: function(){
+                    $inputs.filter('.invalid').first().focus();
+                }
             });
             // return noop functions if validation fails
-            return {
-                done: function(){},
-                fail: function(){},
-                always: function(){}
-            };
+            return NOOPS;
+        }
+
+        if (isFunction(opts.valid)) {
+            opts.validated = opts.valid.call(_form, $form, errors);
+        }
+        if (opts.validated === false) {
+            return NOOPS;
         }
 
         var _inputs = $inputs.toArray();
@@ -753,6 +828,7 @@ var XNAT = getObject(XNAT||{}),
         return xhr.request(opts);
 
     };
+    xhr.submit = xhr.form;
 
     // $('form.foo').submitJSON();
     $.fn.submitJSON = function(opts){

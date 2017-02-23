@@ -101,6 +101,8 @@ var XNAT = getObject(XNAT);
         // W3C regex for <input type="email">
         emailW3c: /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
         alpha: /^[a-z]+$/i,                 // ONLY letters
+        alphaLower: /^[a-z]+$/,             // ONLY lowercase letters
+        alphaUpper: /^[A-Z]+$/,             // ONLY uppercase letters
         alphaSafe: /^[a-z_]+$/i,            // ONLY letters and underscores
         alphaDash: /^[a-z_\-]+$/i,          // ONLY letters, underscore, and dash
         alphaNum: /^[a-z0-9]+$/i,           // ONLY letters and numbers
@@ -798,13 +800,30 @@ var XNAT = getObject(XNAT);
 
     });
 
+    // success callback method
+    // XNAT.validate('#username').is('alpha-num-safe').success(doSomething)
+    Validator.fn.success = function(callback){
+        if (this.validated) {
+            callback.call(this)
+        }
+        return this;
+    };
+
+    // failure callback method
+    // XNAT.validate('#project-id').is('id-safe').failure(doSomethingElse)
+    Validator.fn.failure = function(callback){
+        if (!this.validated) {
+            callback.call(this)
+        }
+        return this;
+    };
+
     // .valid() must be called LAST
     // XNAT.validate('#email').trim().is('email').valid(true);
     Validator.fn.valid = function(bool){
         bool = (bool === undefined) ? true : bool;
         return bool ? this.validated : !this.validated;
     };
-    Validator.fn.isValid = Validator.fn.valid;
     //
     // call *either* .valid() -OR- .check() last
     //
@@ -820,7 +839,7 @@ var XNAT = getObject(XNAT);
     // type can be regex['type'] string,
     // function (must return true or false),
     // or custom regex
-    Validator.fn.check = function(type){
+    Validator.fn.check = function(type, opts){
         var self = this,
             types = [];
         if (type) {
@@ -844,8 +863,24 @@ var XNAT = getObject(XNAT);
         if (this.allowEmpty && !this.value) {
             this.validated = true;
         }
-        return this.isValid(true);
+        if (opts) {
+            if (opts.success && this.validated) {
+                opts.success.call(this, this.element)
+            }
+            else if (opts.failure && !this.validated) {
+                opts.failure.call(this, this.element)
+            }
+        }
+        return this.valid(true);
     };
+
+    Validator.fn.isValid = function(bool){
+        this.reset();
+        this.check();
+        this.validated = this.valid(bool);
+        return this;
+    };
+    Validator.fn.validate = Validator.fn.isValid;
 
     // usage:
     // XNAT.validate('#user-email').trim().is('email').check();

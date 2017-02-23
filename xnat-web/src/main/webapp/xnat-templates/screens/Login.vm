@@ -38,11 +38,6 @@ $page.setTitle("$siteId - Please Login")
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
             <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
-            <script>
-                var mdtext = jq('#siteDescriptionMd').text();
-                var markedText = marked(mdtext);
-                jq('#siteDescription').html(markedText);
-            </script>
         #else
             #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
                 #parse($siteConfig.siteDescriptionPage)
@@ -76,7 +71,7 @@ $page.setTitle("$siteId - Please Login")
         </div>
         <div class="clear" style="margin:2em 0;"></div>
         <div id="login_box">
-            <form name="form1" method="post" action="$content.getURI("/login")" class="friendlyForm" id="login_form">
+            <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
                 #if($login_methods && $login_methods.size() == 0)
                     <input type="hidden" id="login_method" name="login_method" value="Database">
                 #elseif($login_methods && $login_methods.size() > 1)
@@ -87,11 +82,26 @@ $page.setTitle("$siteId - Please Login")
                         #end
                     </select>
                 #end
-                <p><label for="username">User</label>
-                    <input type="text" id="username" name="username"></p>
-
-                <p><label for="password">Password</label>
-                    <input type="password" name="password" autocomplete="off"></p>
+                <p>
+                    <label for="username">User</label>
+                    <input type="text"
+                           id="username"
+                           name="username"
+                           title="User"
+                           class="validate onblur"
+                           data-validate="not-empty"
+                           data-message="Username cannot be blank.">
+                </p>
+                <p>
+                    <label for="password">Password</label>
+                    <input type="password"
+                           name="password"
+                           autocomplete="off"
+                           title="Password"
+                           class="validate onblur"
+                           data-validate="not-empty"
+                           data-message="Password cannot be blank.">
+                </p>
 
                 <p class="form-submit">
                         <span id="register_forgot">
@@ -116,7 +126,6 @@ $page.setTitle("$siteId - Please Login")
             jq('#register_box_container').addClass('hidden');
             jq('#login_box_container').removeClass('hidden');
         }
-
         function showRegistration() {
             jq('#register_box_container').removeClass('hidden');
             jq('#login_box_container').addClass('hidden');
@@ -130,11 +139,6 @@ $page.setTitle("$siteId - Please Login")
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
             <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
-            <script>
-                var mdtext = jq('#siteDescriptionMd').text();
-                var markedText = marked(mdtext);
-                jq('#siteDescription').html(markedText);
-            </script>
         #else
             #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
                 #parse($siteConfig.siteDescriptionPage)
@@ -153,7 +157,7 @@ $page.setTitle("$siteId - Please Login")
 
         #end
 
-        <form name="form1" method="post" action="$content.getURI("/login")" class="friendlyForm" id="login_form">
+        <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
             #if($login_methods && $login_methods.size() == 0)
                 <input type="hidden" id="login_method" name="login_method" value="Database">
             #elseif($login_methods && $login_methods.size() > 1)
@@ -164,11 +168,25 @@ $page.setTitle("$siteId - Please Login")
                     #end
                 </select>
             #end
-            <p><label for="username">User</label>
-                <input type="text" id="username" name="username"></p>
-
-            <p><label for="password">Password</label>
-                <input type="password" name="password" autocomplete="off"></p>
+            <p>
+                <label for="username">User</label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       title="User"
+                       data-validate="not-empty"
+                       data-message="Username cannot be blank.">
+            </p>
+            <p>
+                <label for="password">Password</label>
+                <input type="password"
+                       id="password"
+                       name="password"
+                       autocomplete="off"
+                       title="Password"
+                       data-validate="not-empty"
+                       data-message="Password cannot be blank.">
+            </p>
 
             <p class="form-submit">
                 <span id="register_forgot">
@@ -186,7 +204,66 @@ $page.setTitle("$siteId - Please Login")
 
     #end
 </div>
+
+<script>
+    $(function(){
+
+        var mdtext = $('#siteDescriptionMd').text();
+        var markedText = marked(mdtext);
+        $('#siteDescription').html(markedText);
+
+        $('#login_form').on('submit', function(e){
+
+            e.preventDefault();
+
+            var errorCount = 0;
+
+//            var messages = [];
+//            var _form = $(this);
+//            var _username = _form.find('[name="username"]');
+//            var _password = _form.find('[name="password"]');
+//
+//            XNAT.validate(_username).minLength(1).failure(function(){
+//                errors += 1;
+//                messages.push('Username field cannot be blank')
+//            });
+//
+//            XNAT.validate(_username).minLength(1).failure(function(){
+//                errors += 1;
+//                messages.push('Password field cannot be blank')
+//            });
+//
+//            if (errors) {
+//                xmodal.message('<ul><li>' + messages.join('</li><li>') + '</li></ul>')
+//            }
+
+            XNAT.xhr.submit(this, {
+                invalid: function(form, ers){
+                    errorCount = ers.length;
+                    return false;
+                },
+                // callback for successful validation
+                valid: function(){
+                    // validation passed, hide the
+                    // form and open the loader
+                    concealContent();
+                    // xmodal.loading.open();
+                    // return false here to stop
+                    // execution of XNAT.xhr.submit())
+                    return false;
+                }
+            });
+
+            return errorCount === 0;
+
+        });
+
+    });
+</script>
+
+
 <!-- END xnat-templates/screens/Login.vm -->
+
 
 <!--[if lte IE 8]>
 <script>

@@ -17,7 +17,7 @@
     <td colspan="2" class="highlighted" id="project_resource_container">
 ##      <DIV style="font-weight:700;">Project Resource Settings</DIV>
       <DIV style="padding:10px;">
-          Allows project owners to determine the kinds of files which can/should be uploaded to the various 
+          Allows project owners to determine the kinds of files which can/should be uploaded to the various
           structures associated with this project.
           <br><br>
           <input type="button" value="Start" onclick="XNAT.app.pResources.begin();" />
@@ -26,8 +26,8 @@
   </tr>
 </table>
 	<!-- begin upload dialog -->
-		<div id="pResource_settings_dialog" style="visibility:hidden"> 
-    	    <div class="hd">Project Resource Settings</div> 
+		<div id="pResource_settings_dialog" style="visibility:hidden">
+    	    <div class="hd">Project Resource Settings</div>
     	    <div class="bd" style="">
 				<div class="pResource_a">
 					<div class="info">With this interface, you can define resources that will be expected to be uploaded to a specified location in your project. Users can be prompted to upload specific files on a given page, rather than rely on the 'Manage Files' interface.</div>
@@ -46,8 +46,8 @@
 					<div style="margin-top:3px;overflow: auto;height: 430px;" id="pResource_exist">
 					</div>
 				</div>
-			</div> 
-    	</div> 
+			</div>
+    	</div>
 		<script type="text/javascript" src="$content.getURI("scripts/project/projResourceMgmt.js")"></script>
         <script>
             XNAT.app.pResources.id='$om.getId()';
@@ -90,7 +90,7 @@
             }
 
             .item:hover {
-                background-color: #fe9;
+                background: #e5f2ff;
             }
 
             #pResource_exist dd {

@@ -540,7 +540,7 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.076',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,44)
 
-INSERT INTO xdat_element_action_type (element_action_type_info,element_actions_element_action__element_name,display_name,element_action_name,image,xdat_element_action_type_id,sequence) VALUES (44,'xnat:subjectData','Add Experiment','add_experiment','update.gif',44,2)
+INSERT INTO xdat_element_action_type (element_action_type_info,element_actions_element_action__element_name,display_name,element_action_name,image,xdat_element_action_type_id,sequence,secureaccess) VALUES (44,'xnat:subjectData','Add Experiment','add_experiment','update.gif',44,2,'edit')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.084',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,45)
 

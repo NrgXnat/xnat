@@ -539,6 +539,9 @@ var XNAT = getObject(XNAT);
     function init(element){
         var obj = {
             len: 0,
+            chained: false,
+            checked: false,
+            messages: [],
             regex: '',
             value: '',
             values: [], // use to check more than one value
@@ -601,9 +604,17 @@ var XNAT = getObject(XNAT);
         return this;
     };
 
-    // reset element so it can be validated again
-    Validator.fn.reset = function(element){
-        extend(this, init(element||this.element));
+    // allow chaining of validation methods to
+    // continue validating even after failed validation
+    // break a chain by calling .chain(false)
+    Validator.fn.chain = function(bool){
+        this.chained = bool !== undefined ? bool : true;
+        return this;
+    };
+
+    // break a chain by calling .unchain()
+    Validator.fn.unchain = function(){
+        this.chained = false;
         return this;
     };
 
@@ -625,11 +636,24 @@ var XNAT = getObject(XNAT);
     };
 
     // set className to valid/invalid
-    Validator.fn.setClass = function(){
-        var className = this.validated ? 'valid': 'invalid';
-        this.element$
-            .removeClass('valid invalid')
-            .addClass(className);
+    // optionally resetting to 'valid'
+    Validator.fn.setClass = function(reset){
+        var className = (!reset && !this.validated) ? 'invalid' : 'valid';
+        if (!this.validated) {
+            this.element$.removeClass('valid').addClass('invalid');
+        }
+        else {
+            this.element$.removeClass('valid invalid').addClass(className);
+        }
+        return this;
+    };
+
+    // reset element so it can be validated again
+    Validator.fn.reset = function(element){
+        extend(this, init(element||this['element']));
+        this.validated = true;
+        this.setClass(true);
+        return this;
     };
 
     Validator.fn.is = function(type, args){
@@ -644,8 +668,8 @@ var XNAT = getObject(XNAT);
         }
 
         // return early if the validation is already false
-        // (this is necessary for working with chained methods)
-        if (this.validated === false) { return this }
+        // (this is necessary for breaking out of chained methods)
+        if (!this.chained && this.validated === false) { return this }
 
         // skip on* types
         if (/^on/i.test(type)) {
@@ -793,7 +817,7 @@ var XNAT = getObject(XNAT);
         'lessThan', 'lt', 'lessThanOrEqual', 'lessThanOrEqualTo', 'lte',
         'equalTo', 'equals', 'fileType'   ].forEach(function(method) {
 
-        Validator.fn[method] = function (test) {
+        Validator.fn[method] = function(test) {
             this.is(method, test);
             return this;
         }
@@ -802,18 +826,28 @@ var XNAT = getObject(XNAT);
 
     // success callback method
     // XNAT.validate('#username').is('alpha-num-safe').success(doSomething)
-    Validator.fn.success = function(callback){
+    Validator.fn.success = function(messageOrCallback){
         if (this.validated) {
-            callback.call(this)
+            if (isFunction(messageOrCallback)) {
+                messageOrCallback.call(this);
+            }
+            else {
+                this.messages.push(messageOrCallback);
+            }
         }
         return this;
     };
 
     // failure callback method
     // XNAT.validate('#project-id').is('id-safe').failure(doSomethingElse)
-    Validator.fn.failure = function(callback){
+    Validator.fn.failure = function(messageOrCallback){
         if (!this.validated) {
-            callback.call(this)
+            if (isFunction(messageOrCallback)) {
+                messageOrCallback.call(this);
+            }
+            else {
+                this.messages.push(messageOrCallback);
+            }
         }
         return this;
     };
@@ -874,9 +908,30 @@ var XNAT = getObject(XNAT);
         return this.valid(true);
     };
 
+    // pass an object map of validation types and associated properties
+    function checkAllExample(){
+        var checkFoo = XNAT.validate('#foo-input').checkAll({
+            gte: 1,
+            minLength: 1
+        });
+        checkFoo.gte.failure('Must be greater than 1.');
+        checkFoo.minLength.failure('Must be at least one character.');
+        console.log(checkFoo.validator.messages.join(' '));
+    }
+    // the .checkAll() method is slightly confusing...
+    Validator.fn.checkAll = function checkAll(typesObj){
+        var self = this;
+        var retObj = { validator: this };
+        this.chained = true;
+        if (isPlainObject(typesObj)){
+            forOwn(typesObj, function(type, args){
+                retObj[type] = self.is.apply(self, [].concat(type, args));
+            });
+        }
+        return retObj;
+    };
+
     Validator.fn.isValid = function(bool){
-        this.reset();
-        this.check();
         this.validated = this.valid(bool);
         return this;
     };

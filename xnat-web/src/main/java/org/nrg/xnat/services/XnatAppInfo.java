@@ -15,9 +15,11 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -54,10 +56,12 @@ public class XnatAppInfo {
     public static final String XNAT_PRIMARY_MODE_PROPERTY = "xnat.is_primary_node";
 
     @Inject
-    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
+    public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref) throws IOException {
         _preferences = preferences;
         _template = template;
         _environment = environment;
+        _openUrlsPref = openUrlsPref;
+        _serializerService = serializerService;
         _primaryNode = Boolean.parseBoolean(_environment.getProperty(XNAT_PRIMARY_MODE_PROPERTY, "true"));
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
@@ -71,7 +75,9 @@ public class XnatAppInfo {
 
             _initUrls.addAll(asAntPatterns(nodeToList(paths.get("initUrls"))));
             _openUrls.addAll(asAntPatterns(nodeToList(paths.get("openUrls"))));
+            _openUrls.addAll(openUrlsPref.getAllowedPluginOpenUrls());
             _adminUrls.addAll(asAntPatterns(nodeToList(paths.get("adminUrls"))));
+            _adminUrls.addAll(getPluginAdminUrls());
         }
 
         try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
@@ -173,8 +179,39 @@ public class XnatAppInfo {
             }
         }
     }
+    
+	public void updateOpenUrlList() {
 
-    public Map<String, String> getFoundPreferences() {
+		/** NOTE:  Currently there is no reason to call this method.  The open URL list is not checked for every REST call, 
+		 * so Tomcat restarts are still required for changes to the openUrl list to take effect.  Leaving this method defined
+		 * for documentation of the Tomcat restart requirement, and in case further changes are made that would allow 
+		 * these changes to take effect without restart.
+		 */
+        final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
+        _openUrls.clear();
+        try (final InputStream inputStream = configuredUrls.getInputStream()) {
+        	final JsonNode paths = _serializerService.deserializeYaml(inputStream);
+            _openUrls.addAll(asAntPatterns(nodeToList(paths.get("openUrls"))));
+            _openUrls.addAll(_openUrlsPref.getAllowedPluginOpenUrls());
+        } catch (IOException e) {
+			_log.debug("Could not update open URL list", e);
+		}
+        
+	}
+    
+	/**
+	 * Gets the plugin admin urls.
+	 *
+	 * @return the plugin admin urls
+	 */
+	private Collection<? extends String> getPluginAdminUrls() {
+		return _openUrlsPref.getUrlList(XnatPlugin.PLUGIN_ADMIN_URLS);
+	}
+
+	
+	
+	
+	public Map<String, String> getFoundPreferences() {
         if (_foundPreferences.size() == 0) {
             return null;
         }
@@ -256,7 +293,6 @@ public class XnatAppInfo {
      *
      * @return The value of the property if found, null otherwise.
      */
-    @SuppressWarnings("unused")
     public String getConfiguredProperty(final String property) {
         return getConfiguredProperty(property, (String) null);
     }
@@ -282,7 +318,6 @@ public class XnatAppInfo {
      *
      * @return The value of the property if found, null otherwise.
      */
-    @SuppressWarnings("unused")
     public <T> T getConfiguredProperty(final String property, final Class<T> type) {
         return getConfiguredProperty(property, type, null);
     }
@@ -297,7 +332,7 @@ public class XnatAppInfo {
      *
      * @return The value of the property if found, the specified default value otherwise.
      */
-    public <T> T getConfiguredProperty(final String property, final Class<T> type, @SuppressWarnings("SameParameterValue") final T defaultValue) {
+    public <T> T getConfiguredProperty(final String property, final Class<T> type, final T defaultValue) {
         return _environment.getProperty(property, type, defaultValue);
     }
 
@@ -556,14 +591,15 @@ public class XnatAppInfo {
     private static final Pattern          CHECK_VALID_PATTERN         = Pattern.compile("^(?i)(0|1|false|true|f|t)$");
     private static final Pattern          CHECK_TRUE_PATTERN          = Pattern.compile("^(?i)(1|true|t)$");
 
-    private final JdbcTemplate          _template;
-    private final Environment           _environment;
-    private final String                _configPath;
-    private final List<String>          _configPathPatterns;
-    private final String                _nonAdminErrorPath;
-    private final String                _nonAdminErrorPathPattern;
-    private final SiteConfigPreferences _preferences;
-    private final boolean               _primaryNode;
+    private final JdbcTemplate             _template;
+    private final Environment              _environment;
+    private final String                   _configPath;
+    private final List<String>             _configPathPatterns;
+    private final String                   _nonAdminErrorPath;
+    private final String                   _nonAdminErrorPathPattern;
+    private final SiteConfigPreferences    _preferences;
+    private final boolean                  _primaryNode;
+	private final PluginOpenUrlsPreference _openUrlsPref;
 
     private final List<String>                     _initUrls         = new ArrayList<>();
     private final List<String>                     _openUrls         = new ArrayList<>();
@@ -572,5 +608,7 @@ public class XnatAppInfo {
     private final Date                             _startTime        = new Date();
     private final Properties                       _properties       = new Properties();
     private final Map<String, Map<String, String>> _attributes       = new HashMap<>();
+	private final SerializerService                _serializerService;
     private       boolean                          _initialized      = false;
+    
 }

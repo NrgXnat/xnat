@@ -52,7 +52,7 @@ var XNAT = getObject(XNAT);
 
 	})
 	.fail(function(data, textStatus,jqXHR) {
-		console.log("WARNING:  Could not retreive node/task configuration status");
+		console.log("WARNING:  Could not retrieve node/task configuration status");
 		$("#view-task-settings").hide();
 	})
 
@@ -73,7 +73,7 @@ var XNAT = getObject(XNAT);
 
 		var rObj = JSON.parse(data);
 		if (!($.isArray(rObj))) {
-			$("#task-settings-tabs").html("<h3>ERROR:  Could not retreive configuration</h3>")
+			$("#task-settings-tabs").html("<h3>ERROR:  Could not retrieve configuration</h3>")
 		}
 		var taskTabs = { 
 		   root: {
@@ -161,7 +161,7 @@ var XNAT = getObject(XNAT);
 		}
 	})
 	.fail(function(data, textStatus,jqXHR) {
-		$("#task-settings-tabs").html("<h3>ERROR:  Could not retreive configuration</h3>");
+		$("#task-settings-tabs").html("<h3>ERROR:  Could not retrieve configuration</h3>");
 	})
     }
 

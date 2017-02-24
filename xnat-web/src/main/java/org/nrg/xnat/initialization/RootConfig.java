@@ -25,6 +25,7 @@ import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.configuration.ApplicationConfig;
+import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,9 +42,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.DateFormat;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -59,8 +58,8 @@ import java.util.Properties;
 @Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class, NodeConfig.class})
 public class RootConfig {
     @Bean
-    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template) throws IOException {
-        return new XnatAppInfo(preferences, context, environment, serializerService, template);
+    public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref) throws IOException {
+        return new XnatAppInfo(preferences, context, environment, serializerService, template, openUrlsPref);
     }
 
     @Bean
@@ -93,9 +92,11 @@ public class RootConfig {
         return bean;
     }
 
-    @Bean
+	@Bean
+    @SuppressWarnings("serial")
     public PrettyPrinter prettyPrinter() {
-        return new DefaultPrettyPrinter() {{
+        return new DefaultPrettyPrinter() {
+		{
             final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
             indentObjectsWith(indenter);
             indentArraysWith(indenter);

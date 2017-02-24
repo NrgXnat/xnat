@@ -11,7 +11,6 @@ package org.nrg.xnat.configuration;
 
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.config.services.ConfigService;
-import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.framework.utilities.OrderedProperties;
@@ -25,6 +24,7 @@ import org.nrg.xdat.services.impl.ThemeServiceImpl;
 import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
 import org.nrg.xnat.preferences.AutomationPreferences;
+import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
@@ -73,6 +73,11 @@ public class ApplicationConfig {
     @Bean
     public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final NrgEventService service, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         return new AutomationPreferences(preferenceService, service, configFolderPaths, initPrefs);
+    }
+
+    @Bean
+    public PluginOpenUrlsPreference pluginOpenUrlsPreference(final NrgPreferenceService preferenceService) {
+        return new PluginOpenUrlsPreference(preferenceService);
     }
 
     @Bean

@@ -876,6 +876,15 @@ pluginTable:
 pluginTableScript:
     tag: script|src=/scripts/xnat/admin/pluginManager.js
 
+pluginOpenUrlsConfig:
+    kind: panel
+    name: pluginOpenUrlsConfig
+    header: false 
+    footer: false 
+    contents: 
+        pluginOpenUrlsScript:
+            tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
+
 pluginList:
     kind: panel
     name: pluginList
@@ -1516,6 +1525,14 @@ adminPage:
             group: xnatSetup
             contents:
                 ${pluginList}
+        pluginOpenUrls:
+            kind: tab
+            name: pluginOpenUrls
+            label: Plugin Open URLs
+            group: xnatSetup
+            contents:
+                ${pluginOpenUrlsConfig}
+
 #        authenticationMethods:
 #            kind: tab
 #            name: authenticationMethods

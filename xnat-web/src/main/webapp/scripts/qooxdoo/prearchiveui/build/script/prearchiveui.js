@@ -24,7 +24,7 @@ qx.$$packageData = {};
 
 qx.$$loader = {
   parts : {"boot":[0]},
-  packages : {"0":{"uris":["__out__:prearchiveui.885b04adb2c3.js"]}},
+  packages : {"0":{"uris":["__out__:prearchiveui.13f6d6463860.js"]}},
   urisBefore : [],
   cssBefore : [],
   boot : "boot",
@@ -134508,29 +134508,32 @@ qx.$$packageData['0']={"locales":{"C":{"alternateQuotationEnd":"’","alternateQ
         prearchiveui.ConfirmationDialogView.prototype._initMessage.call(this);
         this.__projNames = new qx.type.Array().concat(this.__projNames);
         this.initSelectBox(new qx.ui.form.SelectBox());
-        this.__projNames.sort().forEach(function(p){
+        this.__projNames.sort(function(q, p){
 
-          this.getSelectBox().add(new qx.ui.form.ListItem(p));
+          return q.toLowerCase().localeCompare(p.toLowerCase());
+        }).forEach(function(r){
+
+          this.getSelectBox().add(new qx.ui.form.ListItem(r));
         }, this);
         this.initForm(new qx.ui.form.Form());
         this.getForm().add(this.getSelectBox(), f);
       },
       _initButtons : function(){
 
-        var r = new qx.ui.form.Button(g, h);
-        var q = new qx.ui.form.Button(a, d);
-        this._initListeners(r, q);
-        this.getForm().addButton(r);
-        this.getForm().addButton(q);
+        var t = new qx.ui.form.Button(g, h);
+        var s = new qx.ui.form.Button(a, d);
+        this._initListeners(t, s);
+        this.getForm().addButton(t);
+        this.getForm().addButton(s);
       },
       _init : function(){
 
         prearchiveui.ConfirmationDialogView.prototype._init.call(this);
         this.getWindow().add(new qx.ui.form.renderer.Single(this.getForm()));
       },
-      _initListeners : function(t, s){
+      _initListeners : function(v, u){
 
-        t.addListener(j, function(e){
+        v.addListener(j, function(e){
 
           if(this.getForm().validate()){
 
@@ -134538,7 +134541,7 @@ qx.$$packageData['0']={"locales":{"C":{"alternateQuotationEnd":"’","alternateQ
             this.getOkAction()(this.getSelectBox().getSelection()[0].getLabel());
           };
         }, this);
-        s.addListener(j, function(e){
+        u.addListener(j, function(e){
 
           this.getWindow().close();
           this.getCancelAction()();

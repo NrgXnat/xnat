@@ -275,7 +275,9 @@ $(function(){
                 if (filterableHtml.length>0) {
                     $('#filterRow').css('display','table-row');
                     $('#filterDiv').html(filterableHtml);
-                }
+                } else {
+                    $('#filterDiv').html("");
+		}
                 $("#select_event").prop('disabled',false);
                 break;
             }

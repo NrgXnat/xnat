@@ -306,7 +306,9 @@ $(function(){
                 if (filterableHtml.length > 0) {
                     $filterRow.css('display', 'table-row');
                     $filterDiv.html(filterableHtml);
-                }
+                } else {
+                    $filterDiv.html("");
+		}
                 $eventIdMenu.removeClass('disabled').prop('disabled', false);
                 break;
             }

@@ -613,7 +613,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public <T> void setListValue(final Scope scope, final String entityId, final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
         try {
-            set(scope, entityId, preferenceName, serialize(list));
+            set(scope, entityId, serialize(list), preferenceName);
         } catch (IOException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", e);
         }
@@ -629,7 +629,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
         try {
-            set(scope, entityId, preferenceName, serialize(array));
+            set(scope, entityId, serialize(array), preferenceName);
         } catch (IOException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", e);
         }

@@ -560,6 +560,17 @@ function dedupeArray(arr){
     return out;
 }
 
+// break an array into a 2-D array of smaller 'chunks'
+function chunkArray(arr, len) {
+    var chunks = [],
+        i = 0,
+        n = arr.length;
+    while (i < n) {
+        chunks.push(arr.slice(i, i += len));
+    }
+    return chunks;
+}
+
 // set default values for object
 function setDefaults(obj, props){
     //obj = getObject(obj);

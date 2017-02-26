@@ -164,10 +164,10 @@ var XNAT = getObject(XNAT);
         opts.email ? opts.email.split('USERNAME')
                          .join(this.username.replace(/[\W\s_.-]+/g, '')) : (this.username + '@xnatdev.xnat.org');
         this.password = usrObj.password || opts.password || '';
-        this.verified = usrObj.verified ||
-        opts.verified ? (alternator % opts.verified === 0) : false;
-        this.enabled = usrObj.enabled ||
-        opts.enabled ? (alternator % opts.enabled === 0) : false;
+        this.verified =
+                usrObj.verified || opts.verified ? (alternator % opts.verified === 0) : false;
+        this.enabled =
+                usrObj.enabled || opts.enabled ? (alternator % opts.enabled === 0) : false;
         // coerce to strings
         this.verified = (this.verified + '');
         this.enabled = (this.enabled + '');

@@ -37,7 +37,7 @@ var XNAT = getObject(XNAT);
         getObject(XNAT.spawner || {});
 
     spawner.counter = 0;
-    
+
     // keep track of items that spawned
     spawner.spawnedElements = [];
 
@@ -63,7 +63,7 @@ var XNAT = getObject(XNAT);
         }
 
         spawner.counter++;
-        
+
         forOwn(obj, function(item, prop){
 
             var kind, element, method, spawnedElement, $spawnedElement;
@@ -187,8 +187,8 @@ var XNAT = getObject(XNAT);
                 if (isFunction(method)) {
 
                     // 'spawnedElement' item will be an
-                    // object with an 'element' property 
-                    // or a .get() method that will retrieve 
+                    // object with an 'element' property
+                    // or a .get() method that will retrieve
                     // the spawned item
                     spawnedElement = method(prop);
 
@@ -230,7 +230,7 @@ var XNAT = getObject(XNAT);
                     $spawnedElement.append(spawnerInit(prop.contents).get());
                 }
             }
-            
+
             // Treat 'before' and 'after' just like 'contents'
             // but insert the items 'before' or 'after' the main
             // spawned (outer) element. This may have unintended
@@ -259,7 +259,7 @@ var XNAT = getObject(XNAT);
             if (isFunction(spawnedElement.load||null)) {
                 spawnedElement.load.call(spawnedElement);
             }
-            
+
             // if there's an .onRender() method, queue it
             if (isFunction(spawnedElement.onRender||null)) {
                 callbacks.push({
@@ -272,7 +272,7 @@ var XNAT = getObject(XNAT);
         });
 
         spawnerInit.spawned = frag;
-        
+
         spawnerInit.element = frag;
 
         spawnerInit.children = frag.children;
@@ -282,12 +282,12 @@ var XNAT = getObject(XNAT);
         };
 
         spawnerInit.getContents = function(){
-            return $frag.contents();    
+            return $frag.contents();
         };
 
         spawnerInit.done = function(callback){
             if (isFunction(callback)) {
-                callback(spawnerInit)
+                callback(spawnerInit, frag, $frag)
             }
             return spawnerInit;
         };
@@ -313,7 +313,7 @@ var XNAT = getObject(XNAT);
 
             setTimeout(function(){
                 if (isFunction(callback)) {
-                    callback()
+                    callback.call(spawnerInit, obj);
                 }
             }, wait/2);
 
@@ -322,7 +322,7 @@ var XNAT = getObject(XNAT);
         };
 
         spawnerInit.foo = '(spawn.foo)';
-        
+
         return spawnerInit;
 
     };

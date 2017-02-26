@@ -257,19 +257,28 @@ function removeClasses(el, classes){
     return el.className = elClasses.join(' ');
 }
 
-
-// add new data object item to be used for [data-] attribute(s)
-function addDataObjects(el, attrs){
-    el.data = el.data || {};
+/**
+ * Build an object to be used for [data-*] attributes.
+ * NOTE: this function does not
+ * @param elConfig {Object} - config object to be used for a spawned element
+ * @param attrs {Object} - object map of attribute name (key) and value to set (value)
+ * @returns {Object} - returns modified elConfig object w/new properties
+ */
+function addDataObjects(elConfig, attrs){
+    elConfig.data = elConfig.data || {};
     forOwn(attrs, function(name, prop){
-        el.data[name] = prop;
+        elConfig.data[name] = prop;
     });
     // set the data attributes and return the new data object
-    return el.data;
+    return elConfig.data;
 }
 
-
-// add new data object item to an element as [data-*] attributes
+/**
+ * Add [data-*] attributes to an element from a data object
+ * @param el {Element} - HTML element for [data-*] attribute
+ * @param attrs {Object} - object map of attribute name (key) and value to set (value)
+ * @returns {Object} - returns copy of attrs object
+ */
 function addDataAttrs(el, attrs){
     var hasDataset = useDataset && el.dataset;
     var dataAttrs = {};
@@ -289,6 +298,24 @@ function addDataAttrs(el, attrs){
     return dataAttrs;
 }
 
+/**
+ * Return value of specified [data-*] attribute
+ * @param el {Element} - HTML element with [data-*] attribute
+ * @param name {String} - camelCase or hypen-ated name of [data-*] attribute
+ * @param convert {Boolean} - convert to assumed type
+ * @returns {*}
+ */
+function getDataAttrValue(el, name, convert){
+    var hasDataset = useDataset && el.dataset;
+    var dataVal = null;
+    if (hasDataset) {
+        dataVal = el.dataset[toCamelCase(name)];
+    }
+    else if (el.getAttribute) {
+        dataVal = el.getAttribute('data-' + toDashed(name))
+    }
+    return convert === true ? realValue(dataVal) : dataVal;
+}
 
 // make sure the ajax calls are NOT cached
 //$.ajaxSetup({cache:false});
@@ -422,7 +449,7 @@ jQuery.loadScript = function (url, arg1, arg2) {
                     attrMap[name].value;
         });
         return obj;
-    };
+    }
 
     // given: <div id="foo" title="Foo" class="bar">Foo</div>
     // $('#foo').attr();
@@ -582,38 +609,66 @@ jQuery.fn.sortElements = (function(){
 
 })();
 
+function sortTable(tbody, col, reverse) {
+    var i = -1;
+    var trs = toArray(tbody.rows).sort(function (a, b) {
+        var aValue, bValue;
+        if (col === -1) {
+            aValue = getDataAttrValue(a, 'index');
+            bValue = getDataAttrValue(b, 'index');
+        }
+        else {
+            aValue = a.cells[col].textContent.trim().toLowerCase();
+            bValue = b.cells[col].textContent.trim().toLowerCase();
+        }
+        return (+reverse || -1) * (aValue < bValue ? -1 : (aValue > bValue ? 1 : 0));
+        // return (+reverse || -1) * (aValue.localeCompare(bValue));
+    });
+    tbody.innerHTML = '';
+    while (++i < trs.length) {
+        tbody.appendChild(trs[i]);
+    }
+}
+
 // http://stackoverflow.com/questions/3160277/jquery-table-sort
 // $('table.sortable').tableSort(); // <-- makes <table> sortable
 jQuery.fn.tableSort = function(){
     var $table = this;
     if ($table.hasClass('sort-ready')) return this;
-    $table.find('tr').each(function(i){
-        // add a hidden 'index' cell to each row to reset sorting
-        var $tr = $(this);
-        // but only if an index column is not already present
-        if ($tr.find('> th, > td').first().hasClass('index')) return;
-        $tr.prepend('<td class="index hidden" style="display:none;">' + zeroPad(i, 6) + '</td>');
+    var tbody = $table.find('tbody')[0];
+    var trs = toArray(tbody.rows).map(function(tr, i){
+        // addDataAttrs(tr, { index: zeroPad(i+1, 6) })
+        return tr.setAttribute('data-index', zeroPad(i+1, 6));
     });
+    // $table.find('tr').detach().each(function(i){
+    //     // add a hidden 'index' cell to each row to reset sorting
+    //     var $tr = $(this);
+    //     // but only if an index column is not already present
+    //     if ($tr.find('> th, > td').first().hasClass('index')) return;
+    //     $tr.prepend('<td class="index hidden" style="display:none;">' + zeroPad(i, 6) + '</td>');
+    // }).appendTo($table);
     // $table.find('th').not('.sort').filter(function(){
     //     return this.innerHTML.trim() > '';
     // }).addClass('sort');
     $table.find('th.sort')
           // wrapInner('<a href="#" class="nolink" title="click to sort on this column"/>').
           .each(function(){
+
               var $this = $(this);
               $this.find('i').remove();
               $this.append('<i>&nbsp;</i>');
-              // don't overwrite existing title
-              //this.title += ' (click to sort) ';
+
               $this.on('click.sort', function(){
+
                   var $th = $(this),
                       thIndex = $th.index(),
-                      sorted = $th.hasAnyClass('asc desc'),
+                      sorted = /asc|desc/i.test(this.className),
                       sortOrder = 1,
                       sortClass = 'asc';
+
                   if (sorted) {
                       // if already sorted, switch to descending order
-                      if ($th.hasClass('asc')) {
+                      if (/asc/i.test(this.className)) {
                           sortClass = 'desc';
                       }
                       else {
@@ -621,21 +676,18 @@ jQuery.fn.tableSort = function(){
                           sortClass = '';
                       }
                   }
+
                   $table.find('th.sort').removeClass('asc desc');
-                  $th.addClass(sortClass);
-                  sortOrder = (sortClass === 'desc') ? -1 : 1;
-                  sorted = !!sortClass;
-                  $table.find('tr').not('.filter, .no-sort').find('td').filter(function(){
-                      return $(this).index() === thIndex;
-                  }).sortElements(function(a, b){
-                      a = $.text([a]).toLowerCase(); // make comparison case-insensitive
-                      b = $.text([b]).toLowerCase();
-                      return a > b ? sortOrder : -(sortOrder);
-                  }, function(){
-                      // parentNode is the element we want to move
-                      return this.parentNode;
-                  });
-                  //inverse = !inverse;
+
+                  if (!sortClass) {
+                      sortTable(tbody, -1, sortOrder);
+                  }
+                  else {
+                      $th.addClass(sortClass);
+                      sortOrder = (sortClass === 'desc') ? -1 : 1;
+                      sortTable(tbody, thIndex, sortOrder);
+                  }
+
               });
           });
     $table.addClass('sort-ready');

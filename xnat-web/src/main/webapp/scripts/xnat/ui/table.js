@@ -920,34 +920,43 @@ var XNAT = getObject(XNAT);
             opts.url = tableData;
         }
 
+        var loadUrl = opts.load || opts.url;
+
         // request data for table rows
-        if (opts.load || opts.url) {
-            XNAT.xhr.get({
-                url: XNAT.url.rootUrl(opts.load||opts.url),
-                dataType: opts.dataType || 'json',
-                success: function(json){
-                    // support custom path for returned data
-                    if (opts.path) {
-                        json = lookupObjectValue(json, opts.path);
+        if (loadUrl) {
+            // use cached data if available
+            tableData = XNAT.data[loadUrl];
+            if (tableData && tableData.length) {
+                createTable(tableData);
+            }
+            else {
+                XNAT.xhr.get({
+                    url: XNAT.url.rootUrl(loadUrl),
+                    dataType: opts.dataType || 'json',
+                    success: function(json){
+                        // support custom path for returned data
+                        if (opts.path) {
+                            json = lookupObjectValue(json, opts.path);
+                        }
+                        else {
+                            // handle data returned in ResultSet.Result array
+                            json = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
+                        }
+                        // make sure there's data before rendering the table
+                        if (isEmpty(json)) {
+                            showMessage().noData(opts.messages ? opts.messages.noData || opts.messages.empty : '')
+                        }
+                        else {
+                            createTable(json);
+                        }
+                    },
+                    error: function(obj, status, message){
+                        var _msg = opts.messages ? opts.messages.error : '';
+                        var _err = 'Error: ' + message;
+                        showMessage().error(_msg);
                     }
-                    else {
-                        // handle data returned in ResultSet.Result array
-                        json = (json.ResultSet && json.ResultSet.Result) ? json.ResultSet.Result : json;
-                    }
-                    // make sure there's data before rendering the table
-                    if (isEmpty(json)) {
-                        showMessage().noData(opts.messages ? opts.messages.noData || opts.messages.empty : '')
-                    }
-                    else {
-                        createTable(json);
-                    }
-                },
-                error: function(obj, status, message){
-                    var _msg = opts.messages ? opts.messages.error : '';
-                    var _err = 'Error: ' + message;
-                    showMessage().error(_msg);
-                }
-            });
+                });
+            }
         }
         else {
             createTable(opts.data||tableData.data||tableData);

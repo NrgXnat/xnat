@@ -707,6 +707,7 @@ var XNAT = getObject(XNAT);
         }
 
         function getActiveUsers(success, failure){
+            // console.log(getActiveUsers.name);
             return XNAT.xhr.get({
                 url: XNAT.url.restUrl('/xapi/users/active'),
                 success: function(data){
@@ -852,6 +853,44 @@ var XNAT = getObject(XNAT);
                     }
                 }
             };
+        }
+
+        // renders cells for 'active' users column
+        function activeUserInfo(){
+            var username = this.username;
+            var sessionCount = 0;
+            if (username && activeUsers && activeUsers[username] && activeUsers[username].sessions.length) {
+                sessionCount = activeUsers[username].sessions.length
+            }
+            if (sessionCount) {
+                return spawn('div', [
+                    ['i.hidden', -sessionCount],
+                    ['a.active-user', {
+                        title: 'click to kill ' + sessionCount + ' active session(s)',
+                        href: '#!',
+                        style: { display: 'block', padding: '2px' },
+                        on: {
+                            click: function(e){
+                                e.preventDefault();
+                                killActiveSessions(username);
+                            }
+                        }
+                    }, [['img', { src: XNAT.url.rootUrl('/images/cg.gif') }]]]
+                ])
+            }
+            else {
+                return '<i class="hidden">9</i>&mdash;'
+            }
+        }
+
+        // renders cells for last login column
+        function lastLoginInfo(value){
+            value = realValue(value) || 0;
+            return [
+                spawn('i.hidden', value),
+                spawn('input.hidden.last-login.timestamp|type=hidden', { value: value }),
+                spawn('div.center.mono', (value ? (new Date(value)).toLocaleString() : '&mdash;'))
+            ]
         }
 
 
@@ -1099,32 +1138,7 @@ var XNAT = getObject(XNAT);
                                 }
                             }).element])
                         },
-                        apply: function(){
-                            var username = this.username;
-                            var sessionCount = 0;
-                            if (username && activeUsers && activeUsers[username] && activeUsers[username].sessions.length) {
-                                sessionCount = activeUsers[username].sessions.length
-                            }
-                            if (sessionCount) {
-                                return spawn('div', [
-                                    ['i.hidden', -sessionCount],
-                                    ['a.active-user', {
-                                        title: 'click to kill ' + sessionCount + ' active session(s)',
-                                        href: '#!',
-                                        style: { display: 'block', padding: '2px' },
-                                        on: {
-                                            click: function(e){
-                                                e.preventDefault();
-                                                killActiveSessions(username);
-                                            }
-                                        }
-                                    }, [['img', { src: XNAT.url.rootUrl('/images/cg.gif') }]]]
-                                ])
-                            }
-                            else {
-                                return '<i class="hidden">9</i>&mdash;'
-                            }
-                        }
+                        apply: activeUserInfo
                     },
                     lastSuccessfulLogin: {
                         label: 'Last Login',
@@ -1199,29 +1213,23 @@ var XNAT = getObject(XNAT);
                                 }
                             }).element])
                         },
-                        apply: function(value){
-                            value = realValue(value);
-                            return [
-                                    spawn('input.hidden.last-login.timestamp|type=hidden', { value: value||0 }),
-                                    spawn('div.center.mono', (value ? (new Date(value)).toLocaleString() : '&mdash;'))
-                            ]
-                        }
+                        apply: lastLoginInfo
                     }
                 }
             }
         }
 
-        function showUsersTable($table){
-            // console.log(showUsersTable.name);
-            $$($table).removeClass('hidden');
+        function showUsersTable(){
+            // console.log('showUsersTable');
+            // $$($table).removeClass('hidden');
             // $$($table).show();
         }
         usersGroups.showUsersTable = showUsersTable;
 
         // render or update the users table
         function renderUsersTable(container){
+            // console.log('renderUsersTable');
             var $container = container ? $$(container) : $(userTableContainer);
-            // console.log(renderUsersTable.name);
             var _usersTable;
             if ($container.length) {
                 $container.html('loading...');
@@ -1241,8 +1249,17 @@ var XNAT = getObject(XNAT);
         }
 
         // TODO: re-render *only* the table rows, not the whole table
-        function updateUsersTable(){
-            // console.log(updateUsersTable.name);
+        function updateUsersTable(refresh){
+            if (!refresh && XNAT.data['/xapi/users/profiles']) {
+                getActiveUsers(function(){
+                    renderUsersTable();
+                });
+                return {
+                    done: function(callback){
+                        callback.call()
+                    }
+                }
+            }
             return XNAT.xhr.get({
                 url: XNAT.url.restUrl('/xapi/users/profiles'),
                 success: function(data){

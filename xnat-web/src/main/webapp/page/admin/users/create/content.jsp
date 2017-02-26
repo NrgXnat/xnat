@@ -26,7 +26,7 @@
 
     <script>
         (function(){
-            
+
             XNAT.xapi =
                     getObject(XNAT.xapi);
 
@@ -117,7 +117,7 @@
                 var randomize = $('#random-string').prop('checked');
                 XNAT.namer.postUniqueNames(null, userList, {
                     random: randomize,
-                    email: emailUser.value + '+USERNAME@gmail.com',
+                    email: (emailUser.value ? (emailUser.value + '+') : '') + 'USERNAME@gmail.com',
                     password: defaultPassword.value,
                     verified: verifyEvery.value + '',
                     enabled: enableEvery.value + ''

@@ -808,7 +808,7 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,image,sequence,e
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.953',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,258)
 
-INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('sometimes','delete','delete','delete.gif',5,258,'xnat:qcManualAssessorData',258,'Delete')
+INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','edit','edit','e.gif',0,258,'xnat:qcManualAssessorData',258,'Edit')
 
 INSERT INTO xdat_element_security_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:57.960',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,42)
 

@@ -1,9 +1,10 @@
 <!-- Sequence: 10 -->
 <!-- Upload/Default -->
-    <li><a href="$link.setPage("UploadOptions.vm")">Images</a>
+    <li><a href="#!" class="nolink">Images</a>
         <ul>
             <!-- Sequence: 10 -->
             <!-- Images -->
+            <li><a href="$link.setPage("UploadOptions.vm")">All Upload Options</a>
             <li><a href="$link.setPage("LaunchUploadApplet.vm")">Upload Applet</a></li>
             <li><a href="$link.setPage("UploadAssistantPage.vm")">Upload Assistant</a></li>
             <li><a href="$link.setPage("CompressedUploaderPage.vm")">Compressed Uploader</a></li>

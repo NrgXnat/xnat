@@ -1782,14 +1782,25 @@ div.containerTitle.withColor {
     top: -9999px;
 }
 
-/* //////////  BRAND-SPANKING NEW NAV BAR!  ////////// */
+
+#main-nav-backdrop {
+    display: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    /*background: blue;*/
+    /*opacity: 0.3;*/
+    z-index: 10;
+}
+
 #main_nav {
     position: relative;
     /*right: 0;*/
     /*bottom: 0;*/
     height: 40px;
     /*width: !* 578px *! !* 525px *! 728px;*/
-    z-index: 3;
+    z-index: 11;
     overflow: visible;
     /*color: #fff;*/
     background-color: #04519b;
@@ -1837,6 +1848,23 @@ div.containerTitle.withColor {
     cursor: pointer !important;
 }
 
+#main_nav ul.nav li > ul {
+    display: none;
+}
+
+#main_nav ul.nav li li.active,
+#main_nav ul.nav li li.active > a,
+#main_nav ul.nav li li.active > a:hover {
+    background-color: #cce1f3;
+    /*background: #e5f2ff;*/
+    /*z-index: 20;*/
+}
+
+#main_nav ul.nav li.active > ul {
+    display: block;
+    z-index: 21;
+}
+
 #main_nav ul.nav > li {
     border-right: 1px solid #033769;
 }
@@ -1857,7 +1885,8 @@ div.containerTitle.withColor {
     color: #fff;
 }
 
-#main_nav ul.nav > li > a:hover {
+#main_nav ul.nav > li > a:hover,
+#main_nav ul.nav > li.active > a {
     /*color: #000;*/
     background-color: #044687;
 }

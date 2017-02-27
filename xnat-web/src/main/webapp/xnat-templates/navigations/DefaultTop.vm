@@ -25,7 +25,6 @@
 
     #main_nav ul.nav .dark-shadow {
         box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-        z-index: 1;
     }
 
     #main_nav ul.nav div.data-table-wrapper {
@@ -179,6 +178,8 @@
     })
 </script>
 
+<div id="main-nav-backdrop"></div>
+
 <div id="main_nav">
     <div class="inner">
 
@@ -195,25 +196,31 @@
 <!-- main_nav interactions -->
 <script type="text/javascript">
 
-    (function() {
+    jq(function(){
 
-        // cache it
-        var main_nav$ = jq('#main_nav ul.nav');
-        var body$ = jq('body');
-        var cover_up_count = 1;
+        var docBody         = jq(document.body);
+        var mainNav         = jq('#main_nav').find('ul.nav');
+        var mainNavBackdrop = jq('#main-nav-backdrop');
+        var cover_up_count  = 1;
+        var hasApplet       = docBody.hasClass('applet');
 
-        function coverApplet(el$){
-            var cover_up_id = 'cover_up'+cover_up_count++;
-            var jqObjPos = el$.offset(),
-                jqObjLeft = jqObjPos.left,
-                jqObjTop = jqObjPos.top,
-                jqObjMarginTop = el$.css('margin-top'),
-                jqObjWidth = el$.outerWidth()+4,
-                jqObjHeight = el$.outerHeight()+2;
+        // uncomment to test applet cover-up
+        // hasApplet = true;
 
-            el$.before('<iframe id="'+cover_up_id+'" class="applet_cover_up" src="about:blank" width="'+jqObjWidth+'" height="'+jqObjHeight+'"></iframe>');
+        function coverApplet(el){
 
-            jq('#'+cover_up_id).css({
+            var cover_up_id    = 'cover_up' + cover_up_count++;
+
+            var jqObjPos       = el.offset(),
+                jqObjLeft      = jqObjPos.left,
+                jqObjTop       = jqObjPos.top,
+                jqObjMarginTop = el.css('margin-top'),
+                jqObjWidth     = el.outerWidth() + 4,
+                jqObjHeight    = el.outerHeight() + 2;
+
+            el.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
+
+            jq('#' + cover_up_id).css({
                 display: 'block',
                 position: 'fixed',
                 width: jqObjWidth,
@@ -225,56 +232,93 @@
                 border: 'none',
                 outline: 'none'
             });
+
+            return coverApplet;
+
         }
 
-        function unCoverApplets(el$){
-            el$.prev('iframe.applet_cover_up').detach();
+        function unCoverApplets(el){
+            if (!el) {
+                jq('iframe.applet_cover_up').remove();
+            }
+            else {
+                el.prev('iframe.applet_cover_up').detach();
+            }
         }
 
-        function fadeInNav(el$){
-//            el$.stop('clearQueue','gotoEnd');
-            el$.find('> ul').show().addClass('open');
-        }
-
-        function fadeOutNav(el$){
-//            el$.stop('clearQueue','gotoEnd');
-            el$.find('> ul').hide().removeClass('open');
+        function mainNavClose(e){
+            mainNavBackdrop.hide();
+            mainNav.find('.active').removeClass('active');
+            mainNav.find('.open').hide().removeClass('open');
+            if (hasApplet) {
+                unCoverApplets();
+            }
         }
 
         // give menus with submenus a class of 'more'
-        main_nav$.find('li ul, li li ul').closest('li').addClass('more');
-        main_nav$.find('li li ul').addClass('subnav');
+        mainNav.find('li ul, li li ul').closest('li').addClass('more');
+        mainNav.find('li li ul').addClass('subnav');
 
-        // no fancy fades on hover
-        main_nav$.find('li.more')
-                 .on('mouseover', function(){
-                     var li$ = $(this);
-                     fadeInNav(li$);
-                     //jq('#main_nav li').removeClass('open');
-                     li$.find('ul.subnav').each(function(){
-                         var sub$ = $(this);
-                         var offsetL = sub$.closest('li').width();
-                         sub$.css({ 'left': offsetL });
-                     });
-                     if (body$.hasClass('applet')) {
-                         coverApplet(li$.find('> ul'));
-                     }
-                 })
-                 .on('mouseout', function(){
-                     var li$ = $(this);
-                     fadeOutNav(li$);
-                     if (body$.hasClass('applet')) {
-                         unCoverApplets(li$.find('> ul'));
-                     }
-                 });
+        mainNav.on('click.nolink', 'a[href^="#"]', function(e){
+            e.preventDefault();
+        });
+
+        mainNav.on('click.topnav', '> li', function(e){
+            e.stopPropagation();
+
+            var topMenuItem  = jq(this);
+            var subMenu      = topMenuItem.find('> ul');
+            var subMenuItems = null;
+
+            mainNavBackdrop.show();
+
+            if (hasApplet) {
+                unCoverApplets();
+            }
+
+            // deactive all top-level items
+            mainNav.find('> li').removeClass('active');
+            // activate only this one
+            topMenuItem.addClass('active');
+
+            if (hasApplet) {
+                coverApplet(subMenu);
+            }
+
+            subMenuItems = subMenu.find('> li.more').removeClass('active');
+            subMenuItems.off('click.subnav').on('click.subnav', function(e){
+                e.stopPropagation();
+                subMenuItems.removeClass('active');
+                var thisMenuItem = jq(this);
+                if (hasApplet) {
+                    unCoverApplets();
+                }
+                thisMenuItem.addClass('active')
+                            .find('> ul')
+                            .each(function(){
+                                var sub     = jq(this);
+                                var offsetL = sub.closest('li').width();
+                                sub.css({ 'left': offsetL });
+                            });
+
+                if (hasApplet) {
+                    coverApplet(subMenu)(thisMenuItem.find('> ul'));
+                }
+
+            });
+
+        });
+
+        mainNavBackdrop.on('click', mainNavClose);
 
         // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
         jq('#logout_user').click(function(){
-            Cookies.set('WARNING_BAR','OPEN',{path:'/'});
-            Cookies.set('NOTIFICATION_MESSAGE','OPEN',{path: '/'});
+            Cookies.set('WARNING_BAR', 'OPEN', { path: '/' });
+            Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', { path: '/' });
         });
 
-    })();
+    });
+
 </script>
 <!-- end main_nav interactions -->
 
@@ -311,7 +355,7 @@
 
     XNAT.app.adjustHeaderAndNavForLogoSize = function(){
 
-        var header_logo$ = $('#header_logo');
+        var header_logo$ = jq('#header_logo');
 
         // adjust height of header if logo is taller than 65px
         var hdr_logo_height = header_logo$.height();

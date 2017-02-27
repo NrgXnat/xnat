@@ -60,7 +60,7 @@
                 #set($TYPE_value=$!search.getWebFormValue("${schemaElement.getFullXMLName()}.PROJECTS_equals"))
                 <select multiple size="6" class="xnat-menu project-multi-select-menu" data-menu-opts="width:280px" style="min-width:100px;" name="${schemaElement.getFullXMLName()}.COMBO2">
                     #foreach($mr_project in $mr_projects)
-                        <option value="'$mr_project'" #if($TYPE_value.indexOf("'$mr_project'")!=-1) SELECTED #end>$mr_project</option>
+                        <option value="'$mr_project'" #if($TYPE_value.indexOf("'$mr_project'")!=-1) #end>$mr_project</option>
                     #end
                 </select>
 

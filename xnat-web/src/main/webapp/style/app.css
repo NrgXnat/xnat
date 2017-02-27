@@ -3207,17 +3207,18 @@ form.search-wizard {
 }
 
 .advanced-search-fields div.search-group {
-    float: left;
     margin-bottom: 10px;
     overflow: visible;
 }
 
 .advanced-search-fields div.search-group.by-criteria {
-    max-width: 60%;
+    float: left;
+    width: 45%;
 }
 
 .advanced-search-fields div.search-group.by-id {
-    max-width: 30%;
+    float: right;
+    width: 45%;
 }
 
 .advanced-search-fields div.search-group.by-id > select {
@@ -3234,6 +3235,7 @@ form.search-wizard {
 
 .advanced-search-fields textarea.exact-ids {
     display: block;
+    width: 80%;
     margin-top: 5px;
 }
 

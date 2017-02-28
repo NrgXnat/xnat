@@ -19,6 +19,10 @@
 <div class="$msgClass">$data.message</div><br>
 #end
 
+#if($expired)
+    <div class="alert">Your password has expired. Please create a new one.</div>
+#end
+
 #if(!$user.isGuest())
     #if (!$expired && !$forgot && !$missingSalt)
         #parse("screens/XDATScreen_change_email.vm")

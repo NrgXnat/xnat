@@ -319,7 +319,7 @@ public class UserGroupManager implements UserGroupServiceI{
 		List<UserGroupI> ug=Lists.newArrayList();
 		
 		final CriteriaCollection col = new CriteriaCollection("AND");
-        col.addClause(XdatUsergroup.SCHEMA_ELEMENT_NAME +".tag","=", "'" + tag + "'",true);
+        col.addClause(XdatUsergroup.SCHEMA_ELEMENT_NAME +".tag","=", "'" + tag + "'");
         for(XdatUsergroup gp:XdatUsergroup.getXdatUsergroupsByField(col, null, false)){
         	ug.add(new UserGroup(gp));
         }

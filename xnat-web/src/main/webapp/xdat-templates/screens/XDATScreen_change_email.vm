@@ -4,41 +4,51 @@ $page.setLinkColor($ui.alink)
 $page.setVlinkColor($ui.vlink)
 
 <script language="javascript">
-    var ConfirmEmail = function(e) {
+    console.log('XDATScreen_change_email.vm');
 
-        try {
-            var validateEmail = XNAT.app.register.validateInput;
-            var emailValidators = XNAT.app.register.validators;
-            var emailErrorMessages = XNAT.app.register.errorsFound = []; // reset errors on each validation attempt
+    $(document).ready(function(){
+        $('#update_email').off('submit').on('submit',function(e){
+            // e.preventDefault();
 
-            // execute the validators on the fields, creating a list of boolean results for each field.
-            var emailValidations = [
-                validateEmail('new_email', [emailValidators.nonEmpty, emailValidators.isEmail]),
-                validateEmail('confirm_email', [emailValidators.nonEmpty, emailValidators.isEmail, emailValidators.valuesMatch('confirm_email','new_email')])
-            ];
+            var errorCount = 0, errorMessages = [];
+            var _form = $(this);
 
-            // if any of the validations failed, stop form submission
-            for (var i = 0; i < emailValidations.length; i++) {
-                if (!emailValidations[i]) {
-                    var errorMessage = '<p>Error(s) found: </p><ul>';
-                    for (var i=0, j=emailErrorMessages.length; i<j; i++) {
-                        errorMessage += '<li>'+emailErrorMessages[i]+'</li>';
-                    }
-                    errorMessage += '</ul>';
-                    xmodal.alert({title: 'Form Validation Error', message: errorMessage });
-                    return false;
-                }
+            // define fields to validate
+            var newEmail = _form.find('#new_email');
+            var confirmEmail = _form.find('#confirm_email');
+
+            // define specific tests
+            var emailReg = XNAT.validation.regex.email;
+
+            // current email
+            var validateNewEmail = XNAT.validate(newEmail).reset().chain();
+            validateNewEmail.minLength(1).failure('Please enter a new email address');
+            validateNewEmail.pattern(emailReg).failure('Please enter a valid email address');
+
+            // confirm email
+            var validateConfirmEmail = XNAT.validate(confirmEmail).reset().chain();
+            validateConfirmEmail.minLength(1).failure('Please confirm your new email address');
+            validateConfirmEmail.matches(newEmail).failure('Email entries must match');
+
+            [validateNewEmail,validateConfirmEmail].forEach(function(item){
+                item.check();
+                errorCount += item.messages.length;
+                item.messages.forEach(function(msg){ errorMessages.push(msg) });
+            });
+
+            if (errorCount) {
+                xmodal.message({ title: 'Form Validation Error', content: '<p>Errors found:</p><ul><li>' + errorMessages.join('</li><li>') + '</li></ul>', height: 300 });
+                return false;
+            } else {
+                return true;
             }
-            return true;
-        } catch(e) {
-            xmodal.alert({ title: 'XNAT error', message: e});
-        }
+        });
+    });
 
-    };
 
 </script>
 <div class="user_account_settings">
-	<form name="form1" class="noHide friendlyForm optOutOfXnatDefaultFormValidation" method="post" action="$link.setAction("ModifyEmail")" ONSUBMIT="return ConfirmEmail();">
+	<form name="form1" id="update_email" class="noHide friendlyForm optOutOfXnatDefaultFormValidation" method="post" action="$link.setAction("ModifyEmail")">
 
 		<h3>Change Email for $!item.getProperty("firstname") $!item.getProperty("lastname") ($!item.getProperty("login"))</h3>
 		<fieldset>

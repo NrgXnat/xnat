@@ -257,6 +257,8 @@ $page.setTitle("$siteId - Please Login")
         });
 
     });
+
+    console.log('$!turbineUtils.escapeJS($siteConfig.passwordComplexityMessage)');
 </script>
 
 

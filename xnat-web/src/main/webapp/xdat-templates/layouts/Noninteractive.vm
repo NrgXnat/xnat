@@ -1,93 +1,31 @@
-<!DOCTYPE html>
-##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-<!-- BEGIN Noninteractive.vm -->
-<!--[if lt IE 7]> <html class="ie ie6 ltie7 ltie8 ltie9 ltie10 no-js"> <![endif]-->
-<!--[if IE 7]>    <html class="ie ie7 ltie8 ltie9 ltie10 no-js"> <![endif]-->
-<!--[if IE 8]>    <html class="ie ie8 ltie9 ltie10 no-js"> <![endif]-->
-<!--[if IE 9]>    <html class="ie ie9 ltie10 no-js"> <![endif]-->
-<!--[if gt IE 9]><!-->
-<html class="no-js"> <!--<![endif]-->
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+<script>
+    window.loggedIn = true;
+    ##        #set($username = $user.getUsername())
+    ##        #if (!$username)
+    //            window.loggedIn = false;
+    ##        #end
+</script>
 
-<head>
-    <title></title>
+<script type="text/javascript">
 
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="cache-control" content="max-age=0">
-    <meta http-equiv="cache-control" content="no-cache">
-    <meta http-equiv="expires" content="-1">
-    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
+    var jq = jQuery;
+    jq.ajaxSetup({cache: false});
 
-    <script>
-        window.loggedIn = true;
-##        #set($username = $user.getUsername())
-##        #if (!$username)
-//            window.loggedIn = false;
-##        #end
-    </script>
+    if (typeof XNAT == 'undefined') { XNAT = {} }
+    if (typeof XNAT.app == 'undefined') { XNAT.app = {} }
+    if (typeof XNAT.data == 'undefined') { XNAT.data = {} }
+    if (typeof XNAT.app.utils == 'undefined') { XNAT.app.utils = {} }
 
-    <script type="text/javascript" src="$content.getURI("scripts/polyfills.js")"></script>
-    <script type="text/javascript" src="$content.getURI("scripts/globals.js")"></script>
+</script>
 
-    <script type="text/javascript">
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
 
-        var serverRoot = "$content.getURI('')";
-        var csrfToken = "$!data.getSession().getAttribute("XNAT_CSRF")";
 
-        // utility for getting URL query string value
-        function getParameterByName(name) {
-            name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-                results = regex.exec(location.search);
-            return (results == null) ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-        }
 
-        window.jsdebug = getParameterByName('jsdebug').toLowerCase();
-        window.js = getParameterByName('js').toLowerCase();
-
-        // convert window.jsdebug to boolean
-        window.jsdebug = (window.jsdebug === 'true' || window.jsdebug === 'debug' || window.js === 'debug');
-
-        var jqScript = (function () {
-
-            var script = 'jquery';
-            var min = (window.jsdebug) ? '' : '.min';
-
-            return '<script type="text/javascript" src="' + serverRoot +
-                    '/scripts/lib/jquery/' + script + min + '.js"><\/script>';
-
-        })();
-
-        document.write(jqScript);
-
-    </script>
-    <!-- document.write(jqScript); -->
-    <script type="text/javascript">
-
-        var jq = jQuery;
-        jq.ajaxSetup({cache: false});
-
-        if (typeof XNAT == 'undefined') { XNAT = {} }
-        if (typeof XNAT.app == 'undefined') { XNAT.app = {} }
-        if (typeof XNAT.data == 'undefined') { XNAT.data = {} }
-        if (typeof XNAT.app.utils == 'undefined') { XNAT.app.utils = {} }
-
-    </script>
-
-    <script type="text/javascript" src="$content.getURI("scripts/utils.js")"></script>
-
-    <!-- xdat.css and xnat.css loaded last to override YUI styles -->
-    <link rel="stylesheet" type="text/css" href="$content.getURI("style/app.css")">
-
-    <link rel="stylesheet" type="text/css" href="$content.getURI("scripts/xmodal-v1/xmodal.css")">
-    <script type="text/javascript" src="$content.getURI("scripts/xmodal-v1/xmodal.js")"></script>
-    <script type="text/javascript" src="$content.getURI("scripts/xmodal-v1/xmodal-migrate.js")"></script>
-
-</head>
-<body class="noninteractive">
-
-<div id="page_wrapper">
-
+<div>
     $navigation.setTemplate("/NoninteractiveTop.vm")
 
     <div id="layout_content2" style="display:none;">Loading...</div>
@@ -96,20 +34,7 @@
     $navigation.setTemplate("/DefaultBottom.vm")
 
 </div>
-<!-- /page_wrapper -->
-##<script type="text/javascript" src="$content.getURI('scripts/footer.js')"></script>
-<!-- END Noninteractive.vm -->
 
-<script type="text/javascript">
-    var myforms = document.getElementsByTagName("form");
-    for (var i=0; i<myforms.length; i++) {
-        var form = myforms[i];
-        var el = document.createElement("input");
-        el.type = "hidden";
-        el.name = "XNAT_CSRF";
-        el.value = csrfToken;
-        form.appendChild(el);
-    }
-</script>
-</body>
-</html>
+
+$navigation.setTemplate("/htmlClose.vm")
+

@@ -100,17 +100,22 @@ var XNAT = getObject(XNAT);
         // email2: /^[a-z0-9.!#$%&’*+/=?^_`{|}~-]{1,125}(@(?![.-]))([a-z0-9]*[.-]?[a-z0-9]+){1,125}$/i,
         // W3C regex for <input type="email">
         emailW3c: /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
-        alpha: /^[a-z]+$/i,                 // ONLY letters
-        alphaLower: /^[a-z]+$/,             // ONLY lowercase letters
-        alphaUpper: /^[A-Z]+$/,             // ONLY uppercase letters
-        alphaSafe: /^[a-z_]+$/i,            // ONLY letters and underscores
-        alphaDash: /^[a-z_\-]+$/i,          // ONLY letters, underscore, and dash
-        alphaNum: /^[a-z0-9]+$/i,           // ONLY letters and numbers
-        alphaNumSafe: /^[a-z0-9_]+$/i,      // ONLY letters, numbers, and underscore
-        alphaNumDash: /^[a-z0-9_\-]+$/i,    // ONLY letters, numbers, underscore, and dash
+        alpha: /^[a-z]+$/i,                    // ONLY letters
+        alphaDash: /^[a-z\-]+$/i,              // ONLY letters and dash
+        alphaDashSpace: /^[a-z \-]+$/i,        // ONLY letters, dash, and space
+        alphaLower: /^[a-z]+$/,                // ONLY lowercase letters
+        alphaUpper: /^[A-Z]+$/,                // ONLY uppercase letters
+        alphaSafe: /^[a-z_]+$/i,               // ONLY letters and underscores
+        alphaNum: /^[a-z0-9]+$/i,              // ONLY letters and numbers
+        alphaNumSpace: /^[a-z0-9 ]+$/i,        // ONLY letters, numbers, and space
+        alphaNumSafe: /^[a-z0-9_]+$/i,         // ONLY letters, numbers, and underscore
+        alphaNumSafeSpace: /^[a-z0-9_ ]+$/i,   // ONLY letters, numbers, underscore, and space
+        alphaNumDash: /^[a-z0-9_\-]+$/i,       // ONLY letters, numbers, underscore, and dash
         alphaNumDashSpace: /^[a-z0-9_\- ]+$/i, // ONLY letters, numbers, underscore, dash, and space
-        idSafe: /^([a-z][a-z0-9_\-]*)$/i,     // safe to use as an ID - alphasafe and must start with a letter
-        idStrict: /^([a-z][a-z0-9_]*)$/i,    // 'idSafe' without hyphens
+        nameSafe: /^[a-z \-]+$/i,              // safe to use for names - letters, spaces, and hyphens
+        username: /^[a-z_.]+$/i,               // safe to use for usernames
+        idSafe: /^([a-z][a-z0-9_\-]*)$/i,      // safe to use as an ID - alphasafe and must start with a letter
+        idStrict: /^([a-z][a-z0-9_]*)$/i,      // 'idSafe' without hyphens
         ip: /^(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2}))$/i,
         base64: /^([^a-zA-Z0-9\/+=])+$/i,
         numericDash: /^[\d\-\s]+$/,
@@ -146,8 +151,12 @@ var XNAT = getObject(XNAT);
     //regex.number = regex.numeric;
     regex.float = regex.decimal;
     regex.hex = regex.hexadecimal;
+    regex.alphaDashSp = regex.alphaDashSpace;
     regex.alphaNumeric = regex.alphaNum;
+    regex.alphaNumSp = regex.alphaNumSP = regex.alphaNumSpace;
+    regex.alphaNumSafeSp = regex.alphaNumSafeSP = regex.alphaNumSafeSpace;
     regex.alphaNumericSafe = regex.alphaNumSafe;
+    regex.usernameSafe = regex.username;
     regex.ipAddr = regex.ipAddress = regex.ip;
     regex.fullUrl = regex.url;
     regex.path = regex.uri;
@@ -539,12 +548,15 @@ var XNAT = getObject(XNAT);
     function init(element){
         var obj = {
             len: 0,
-            chained: false,
+            allowEmpty: false,
             checked: false,
+            errors: 0,
             messages: [],
-            regex: '',
+            method: null,
+            regex: null,
             value: '',
             values: [], // use to check more than one value
+            validations: {}, // keep track of validation results by method name
             validated: true // true until proven false
         };
         if (element) {
@@ -554,10 +566,11 @@ var XNAT = getObject(XNAT);
                 obj.element = obj.element$[0];
                 obj.value = obj.element.value || '';
             }
-            return obj;
         }
-        obj.element$ = $.spawn('input.tmp|type=hidden');
-        obj.element = obj.element$[0];
+        else {
+            obj.element$ = $.spawn('input.tmp|type=hidden');
+            obj.element = obj.element$[0];
+        }
         return obj;
     }
 
@@ -623,7 +636,14 @@ var XNAT = getObject(XNAT);
     // XNAT.validate().val('bar@foo.org').check('email');
     // -> true
     Validator.fn.val = function(value){
-        this.value = value;
+        // this ridiculous construct should:
+        // - explicity set a 'value' if argument is passed and doesn't match existing this.value
+        // - attempt to retrieve a value from an element if value arg is falsey
+        // - fallback to this.value if 'value' arg is falsey
+        this.value =
+                !value || this.value !== value ?
+                        value || this.element.value :
+                        this.element.value || this.value ;
         return this;
     };
 
@@ -635,15 +655,31 @@ var XNAT = getObject(XNAT);
         return this;
     };
 
+    // keep track of the validation methods
+    // along with their successes and failures
+    Validator.fn.setMethod = function(method){
+        this.method = method+'';
+        if (!this.validations[this.method]) {
+            this.validations[this.method] = {
+                success: [],
+                failure: []
+            };
+        }
+        return this;
+    };
+
     // set className to valid/invalid
     // optionally resetting to 'valid'
-    Validator.fn.setClass = function(reset){
-        var className = (!reset && !this.validated) ? 'invalid' : 'valid';
-        if (!this.validated) {
+    Validator.fn.setClass = function(className){
+        if (this.errors) {
             this.element$.removeClass('valid').addClass('invalid');
         }
-        else {
-            this.element$.removeClass('valid invalid').addClass(className);
+        // do not alter classes for invalid chained validations
+        // else if (!this.checked  || !this.chained) {
+        //     this.element$.removeClass('valid invalid').addClass(className||'');
+        // }
+        if (className != null) {
+            this.checked = true;
         }
         return this;
     };
@@ -652,7 +688,8 @@ var XNAT = getObject(XNAT);
     Validator.fn.reset = function(element){
         extend(this, init(element||this['element']));
         this.validated = true;
-        this.setClass(true);
+        this.checked = false;
+        this.setClass(null);
         return this;
     };
 
@@ -675,6 +712,11 @@ var XNAT = getObject(XNAT);
         if (/^on/i.test(type)) {
             return this;
         }
+
+        this.setMethod(type);
+
+        // try to fetch a fresh value from the element
+        this.val(this.element.value);
 
         if (this.trimValue) {
             this.value = (this.value+'').trim();
@@ -741,15 +783,12 @@ var XNAT = getObject(XNAT);
             this.validated = true;
         }
 
-        this.setClass();
-
         return this;
     };
 
     Validator.fn.not = function(type, args){
         this.is(type, args);
         this.validated = !this.validated;
-        this.setClass();
         return this;
     };
 
@@ -778,9 +817,9 @@ var XNAT = getObject(XNAT);
     };
 
     Validator.fn.pattern = function(regex){
+        this.setMethod('pattern');
         this.regex = (typeof regex === 'string') ? new RegExp(regex) : regex;
         this.validated = this.regex.test(this.value);
-        this.setClass();
         return this;
     };
 
@@ -794,7 +833,7 @@ var XNAT = getObject(XNAT);
             targetValue = targetValue.trim();
         }
         this.validated = sourceValue === targetValue;
-        this.setClass();
+        this.setMethod('matches');
         return this;
     };
 
@@ -806,6 +845,7 @@ var XNAT = getObject(XNAT);
             }
             return this.value+'' !== '';
         });
+        this.setMethod('required');
         return this;
     };
 
@@ -834,6 +874,7 @@ var XNAT = getObject(XNAT);
             else {
                 this.messages.push(messageOrCallback);
             }
+            this.validations[this.method].success.push(messageOrCallback);
         }
         return this;
     };
@@ -848,6 +889,7 @@ var XNAT = getObject(XNAT);
             else {
                 this.messages.push(messageOrCallback);
             }
+            this.validations[this.method].failure.push(messageOrCallback);
         }
         return this;
     };
@@ -856,7 +898,9 @@ var XNAT = getObject(XNAT);
     // XNAT.validate('#email').trim().is('email').valid(true);
     Validator.fn.valid = function(bool){
         bool = (bool === undefined) ? true : bool;
-        return bool ? this.validated : !this.validated;
+        this.validated = bool ? this.validated : !this.validated;
+        this.errors += (!this.validated ? 1 : 0);
+        return this.validated;
     };
     //
     // call *either* .valid() -OR- .check() last
@@ -905,7 +949,20 @@ var XNAT = getObject(XNAT);
                 opts.failure.call(this, this.element)
             }
         }
-        return this.valid(true);
+        this.valid(true);
+        // sets 'valid' class ONLY if validation passes
+        this.setClass('valid');
+        return this.validated;
+    };
+
+    // perform a callback function when validation is done;
+    Validator.fn.done = function(callback){
+        if (!this.checked) {
+            this.check();
+        }
+        try { callback.call(this.element, this) }
+        catch(e) { console.error(e) }
+        return this;
     };
 
     // pass an object map of validation types and associated properties
@@ -989,7 +1046,7 @@ var XNAT = getObject(XNAT);
     // add event listeners for validation
     $(function(){
 
-        var $body = $('body');
+        var $body = $(document.body);
 
         $body.on('focus', ':input[data-validate]', function(){
             $(this).removeClass('valid invalid');

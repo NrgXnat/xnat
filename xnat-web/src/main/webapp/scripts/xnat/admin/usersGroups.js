@@ -238,7 +238,8 @@ var XNAT = getObject(XNAT);
                             }
                         },
                         contents: {
-                            createUserButton: createUserButton()
+                            createUserButton: createUserButton(),
+                            updateUserTableButton: updateUserTableButton()
                         }
                     },
                     usersTablePanel: {
@@ -268,6 +269,24 @@ var XNAT = getObject(XNAT);
                         click: function(e){
                             // console.log('clicked');
                             newUserDialog();
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateUserTableButton(){
+            return {
+                tag: 'button#refresh-user-list',
+                element: {
+                    html: 'Refresh User List',
+                    style: {
+                        marginLeft: '20px'
+                    },
+                    on: {
+                        click: function(e){
+                            // console.log('clicked');
+                            updateUserData('profiles', 10);
                         }
                     }
                 }
@@ -673,7 +692,8 @@ var XNAT = getObject(XNAT);
                         onclose(obj)
                     }
                     if (updated) {
-                        renderUsersTable();
+                        updateUserData(data.username);
+                        // renderUsersTable();
                     }
                 }
             })
@@ -717,6 +737,66 @@ var XNAT = getObject(XNAT);
                     }
                 },
                 failure: failure
+            })
+        }
+
+        function setRowId(profile){
+            return profile.username + '-' + profile.id;
+        }
+
+        // update ONLY the row of the edited user
+        function updateUserRow(profile){
+
+            var rowId = setRowId(profile);
+            var $row  = $(document.getElementById(rowId));
+
+            // full name column
+            $row.find('a.full-name')
+                .text(profile.lastName + ', ' + profile.firstName);
+
+            // email column
+            $row.find('a.send-email')
+                .attr('title', profile.email + ': send email')
+                .text(profile.email);
+
+            // verified status column
+            $row.find('td.verified')
+                .empty()
+                .append(userStatusInfo.call(profile, 'verified', 'unverified'));
+
+            // enabled status column
+            $row.find('td.enabled')
+                .empty()
+                .append(userStatusInfo.call(profile, 'enabled', 'disabled'));
+
+            // active status column
+            $row.find('td.active')
+                .empty()
+                .append(activeUserInfo.call(profile));
+
+            // last login column
+            $row.find('td.last-login')
+                .empty()
+                .append(lastLoginInfo(profile.lastSuccessfulLogin));
+
+        }
+
+        function updateUserData(username, delay){
+            var USERNAME = typeof username === 'string' ? username : this.title.split(':')[0];
+            var USER_URL = '/xapi/users/' + USERNAME;
+            return XNAT.xhr.get({
+                url: XNAT.url.restUrl(USER_URL),
+                success: function(DATA){
+                    XNAT.data[USER_URL] = DATA;
+                    window.setTimeout(function(){
+                        getActiveUsers().done(function(ACTIVE){
+                            XNAT.data['/xapi/users/active'] = ACTIVE;
+                            forEach([].concat(DATA), function(profile){
+                                updateUserRow(profile);
+                            })
+                        })
+                    }, delay||100);
+                }
             })
         }
 
@@ -785,7 +865,9 @@ var XNAT = getObject(XNAT);
                         success: function(){
                             obj.close();
                             XNAT.ui.banner.top(2000, 'Sessions closed', 'success');
-                            updateUsersTable();
+                            // wait a few seconds before updating the row
+                            updateUserData(username, 2000);
+                            // updateUsersTable(true);
                         }
                     })
                 }
@@ -828,6 +910,7 @@ var XNAT = getObject(XNAT);
             // call this function in context of the table
             var $userProfilesTable = $(this);
             var FILTERCLASS = 'filter-' + prop;
+            // var FILTERCLASS = 'hidden';
             return {
                 id: 'user-filter-select-' + prop,
                 // style: { width: '100%' },
@@ -855,16 +938,43 @@ var XNAT = getObject(XNAT);
             };
         }
 
+        // renders cells for 'verified' and 'enabled' status
+        function userStatusInfo(type, off){
+            var username = this.username;
+            var status = realValue(this[type]);
+            var SORTER = status ? 1 : 0;
+            var IMG = status ? '/images/cg.gif' : '/images/cr.gif';
+                return spawn('div', [
+                    ['i.hidden.sort-value', SORTER],
+                    ['input', {
+                        type: 'checkbox',
+                        className: 'hidden user-' + type,
+                        checked: !!SORTER
+                    }],
+                    ['a.user-' + type + '-status.edit-user', {
+                        title: username + ': ' + (status ? type : off),
+                        href: '#!',
+                        style: { display: 'block', padding: '2px' },
+                        on: {
+                            click: function(e){
+                                e.preventDefault();
+                            }
+                        }
+                    }, [['img', { src: XNAT.url.rootUrl(IMG) }]]]
+                ]);
+        }
+
         // renders cells for 'active' users column
         function activeUserInfo(){
             var username = this.username;
             var sessionCount = 0;
+            activeUsers = XNAT.data['/xapi/users/active'];
             if (username && activeUsers && activeUsers[username] && activeUsers[username].sessions.length) {
                 sessionCount = activeUsers[username].sessions.length
             }
             if (sessionCount) {
                 return spawn('div', [
-                    ['i.hidden', -sessionCount],
+                    ['i.hidden.sort-value', -sessionCount],
                     ['a.active-user', {
                         title: 'click to kill ' + sessionCount + ' active session(s)',
                         href: '#!',
@@ -887,7 +997,7 @@ var XNAT = getObject(XNAT);
         function lastLoginInfo(value){
             value = realValue(value) || 0;
             return [
-                spawn('i.hidden', value),
+                spawn('i.hidden', (value||0)+''),
                 spawn('input.hidden.last-login.timestamp|type=hidden', { value: value }),
                 spawn('div.center.mono', (value ? (new Date(value)).toLocaleString() : '&mdash;'))
             ]
@@ -930,17 +1040,17 @@ var XNAT = getObject(XNAT);
                         tag: 'style|type=text/css',
                         content: '\n' +
                         '#user-profiles td.user-id { width: ' + styles.id + '; } \n' +
-                        '#user-profiles td.username .truncate { width: 134px; } \n' +
-                        '#user-profiles td.fullName .truncate { width: 214px; } \n' +
-                        '#user-profiles td.email .truncate { width: 236px; } \n' +
+                        '#user-profiles td.username .truncate { width: 120px; } \n' +
+                        '#user-profiles td.fullName .truncate { width: 180px; } \n' +
+                        '#user-profiles td.email .truncate { width: 220px; } \n' +
                         '#user-profiles td.verified { width: ' + styles.verified + '; } \n' +
                         '#user-profiles td.enabled { width: ' + styles.enabled + '; } \n' +
                         '#user-profiles td.ACTIVE { width: ' + styles.active + '; } \n' +
                         '#user-profiles td.lastSuccessfulLogin { width: ' + styles.login + '; } \n' +
                         '@media screen and (max-width: 1200px) { \n' +
-                        '    #user-profiles td.username .truncate { width: 96px; } \n' +
-                        '    #user-profiles td.fullName .truncate { width: 126px; } \n' +
-                        '    #user-profiles td.email .truncate { width: 162px; } \n' +
+                        '    #user-profiles td.username .truncate { width: 90px; } \n' +
+                        '    #user-profiles td.fullName .truncate { width: 100px; } \n' +
+                        '    #user-profiles td.email .truncate { width: 140px; } \n' +
                         '}'
                     }
                 },
@@ -948,14 +1058,21 @@ var XNAT = getObject(XNAT);
                 table: {
                     classes: 'highlight hidden',
                     on: [
+                        ['click', 'a.user-id', updateUserData],
                         ['click', 'a.select-all', selectAllUsers],
-                        ['click', 'a.username, a.full-name', editUser],
+                        ['click', 'a.edit-user', editUser],
                         // ['click', 'a.full-name', userProjectsAndSecurity],
                         ['click', 'a.send-email', goToEmail],
-                        ['change', 'input.user-verified', setVerified],
-                        ['change', 'input.user-enabled', setEnabled],
+                        // ['change', 'input.user-verified', setVerified],
+                        // ['change', 'input.user-enabled', setEnabled],
                         ['click', 'a.session-info', viewSessionInfo]
                     ]
+                },
+                trs: function(tr, data){
+                    // 'this' is the currently iterating <tr>
+                    data.userId = setRowId(data);
+                    tr.id = data.userId;
+                    addDataAttrs(tr, { filter: '0' });
                 },
                 // onRender: function($table){
                 //     $dataRows = $table.find('tbody').find('tr');
@@ -964,8 +1081,8 @@ var XNAT = getObject(XNAT);
                 sortable: 'username, fullName, email',
                 filter: 'fullName, email',
                 items: {
-                    _id: '~data-id',
-                    _username: '~data-username',
+                    // _id: '~data-id',
+                    // _username: '~data-username',
                     // _select: {
                     //     label: 'Select',
                     //     th: { html: '<a href="#!" class="select-all link">Select</a>' },
@@ -989,8 +1106,9 @@ var XNAT = getObject(XNAT);
                             className: 'user-id center'
                         },
                         apply: function(id){
-                            return spawn('span.user-id', {
-                                // style: { width: styles.id }
+                            return spawn('a.user-id.link', {
+                                href: '#!',
+                                title: this.username + ': refresh'
                             }, [['i.hidden', zeroPad(id, 6)], id]);
                         }
                     },
@@ -1002,7 +1120,7 @@ var XNAT = getObject(XNAT);
                         apply: function(username, tr){
                             //console.log(tr);
                             // var _username = truncateText(username);
-                            return spawn('a.username.link.truncate', {
+                            return spawn('a.username.link.truncate.edit-user', {
                                 href: '#!',
                                 title: username + ': details',
                                 // html: _username,
@@ -1019,7 +1137,7 @@ var XNAT = getObject(XNAT);
                         apply: function(){
                             // var _fullName = truncateText(this.lastName + ', ' + this.firstName);
                             var _fullName = (this.lastName + ', ' + this.firstName);
-                            return spawn('a.full-name.link.truncate', {
+                            return spawn('a.full-name.link.truncate.edit-user', {
                                 href: '#!',
                                 title: this.username + ': project and security settings',
                                 html: _fullName,
@@ -1035,7 +1153,7 @@ var XNAT = getObject(XNAT);
                         // td: { style: { width: styles.email }},
                         apply: function(email){
                             // var _email = truncateText(email);
-                            return spawn('a.send-email.link.truncate', {
+                            return spawn('a.send-email.link.truncate.edit-user', {
                                 href: '#!',
                                 title: email + ': send email',
                                 // style: { width: styles.email },
@@ -1064,8 +1182,8 @@ var XNAT = getObject(XNAT);
                                 element: filterMenuElement.call(table, 'verified', 'unverified')
                             }).element])
                         },
-                        apply: function(value){
-                            return userSwitch.call(this, 'verified', value);
+                        apply: function(){
+                            return userStatusInfo.call(this, 'verified', 'unverified');
                         }
                     },
                     enabled: {
@@ -1086,8 +1204,8 @@ var XNAT = getObject(XNAT);
                                 element: filterMenuElement.call(table, 'enabled', 'disabled')
                             }).element])
                         },
-                        apply: function(value){
-                            return userSwitch.call(this, 'enabled', value);
+                        apply: function(){
+                            return userStatusInfo.call(this, 'enabled', 'disabled');
                         }
                     },
                     // by convention, name 'custom' columns with ALL CAPS
@@ -1116,7 +1234,8 @@ var XNAT = getObject(XNAT);
                                         change: function(){
                                             var selectedValue = $(this).val();
                                             var $rows = $table.find('tbody').find('tr');
-                                            var FILTERCLASS = 'filter-active';
+                                            // var FILTERCLASS = 'filter-active';
+                                            var FILTERCLASS = 'hidden';
                                             if (selectedValue === 'all') {
                                                 $rows.removeClass(FILTERCLASS);
                                                 return;
@@ -1144,11 +1263,9 @@ var XNAT = getObject(XNAT);
                         label: 'Last Login',
                         sort: true,
                         th: {
-                            // style: { width: styles.login },
                             className: 'last-login center'
                         },
                         td: {
-                            // style: { width: styles.login },
                             className: 'last-login center'
                         },
                         filter: function(table){
@@ -1242,11 +1359,6 @@ var XNAT = getObject(XNAT);
         }
         usersGroups.renderUsersTable = renderUsersTable;
 
-
-        // TODO: update only the edited user's row
-        function updateUserRow(username){
-
-        }
 
         // TODO: re-render *only* the table rows, not the whole table
         function updateUsersTable(refresh){

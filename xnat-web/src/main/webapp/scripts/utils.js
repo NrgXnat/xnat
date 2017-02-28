@@ -302,7 +302,7 @@ function addDataAttrs(el, attrs){
  * Return value of specified [data-*] attribute
  * @param el {Element} - HTML element with [data-*] attribute
  * @param name {String} - camelCase or hypen-ated name of [data-*] attribute
- * @param convert {Boolean} - convert to assumed type
+ * @param [convert] {Boolean} - convert to assumed type
  * @returns {*}
  */
 function getDataAttrValue(el, name, convert){
@@ -611,7 +611,7 @@ jQuery.fn.sortElements = (function(){
 
 function sortTable(tbody, col, reverse) {
     var i = -1;
-    var trs = toArray(tbody.rows).sort(function (a, b) {
+    var trs = toArray($(tbody).clone(true)[0].rows).sort(function (a, b) {
         var aValue, bValue;
         if (col === -1) {
             aValue = getDataAttrValue(a, 'index');

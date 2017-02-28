@@ -629,6 +629,14 @@ var XNAT = getObject(XNAT);
                     val = val.toLowerCase();
                     // save the rows if there are none
                     cacheRows();
+                    // var rowStuff = [];
+                    // $dataRows.each(function(){
+                    //     rowStuff.push({
+                    //         row: this,
+                    //         args: arguments
+                    //     })
+                    // });
+                    // console.log(rowStuff);
                     $dataRows.not(function(){
                         return $(this).find('td.'+ name + ':containsNC(' + val + ')').length
                     }).hide();
@@ -726,7 +734,19 @@ var XNAT = getObject(XNAT);
 
             rows.forEach(function(item){
 
-                newTable.tr();
+                // set static properties for each <tr>
+                // using a 'tr' (SINGULAR) property name
+
+                newTable.tr(opts.tr||{});
+
+                // apply 'trs' (PLURAL) property (function), if present
+                // (should return an element config object)
+                // trs: function(tr, data){
+                //     tr.id = data.username + '-' + data.id
+                // }
+                if (isFunction(opts.trs)) {
+                    opts.trs(newTable.last.tr, item)
+                }
 
                 // cache each row
                 dataRows.push(newTable.last.tr);

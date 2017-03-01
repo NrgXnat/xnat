@@ -248,10 +248,6 @@ INSERT INTO xdat_action_type_meta_data (status,activation_date,modified,row_last
 
 INSERT INTO xdat_action_type (display_name,action_type_info,action_name,sequence) VALUES ('Upload XML',2,'XMLUpload',7)
 
-INSERT INTO xdat_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:55.511',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,3)
-
-INSERT INTO xdat_action_type (display_name,action_type_info,action_name,sequence) VALUES ('Upload Images',3,'LaunchUploadApplet',10)
-
 INSERT INTO xdat_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:55.515',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,4)
 
 INSERT INTO xdat_action_type (display_name,action_type_info,action_name,sequence) VALUES ('View Prearchive',4,'prearchives',11)
@@ -261,8 +257,6 @@ INSERT INTO xdat_action_type_meta_data (status,activation_date,modified,row_last
 INSERT INTO xdat_action_type (display_name,action_type_info,action_name,sequence) VALUES ('Add Project',5,'add_xnat_projectData',7)
 
 INSERT INTO xdat_a_xdat_action_type_allowe_xdat_role_type (xdat_role_type_role_name,xdat_action_type_action_name) VALUES ('DataManager','XMLUpload')
-
-INSERT INTO xdat_a_xdat_action_type_allowe_xdat_role_type (xdat_role_type_role_name,xdat_action_type_action_name) VALUES ('DataManager','LaunchUploadApplet')
 
 INSERT INTO xdat_a_xdat_action_type_allowe_xdat_role_type (xdat_role_type_role_name,xdat_action_type_action_name) VALUES ('DataManager','prearchives')
 
@@ -541,10 +535,6 @@ INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,ima
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.076',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,44)
 
 INSERT INTO xdat_element_action_type (element_action_type_info,element_actions_element_action__element_name,display_name,element_action_name,image,xdat_element_action_type_id,sequence,secureaccess) VALUES (44,'xnat:subjectData','Add Experiment','add_experiment','update.gif',44,2,'edit')
-
-INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.084',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,45)
-
-INSERT INTO xdat_element_action_type (popup,element_action_name,secureaccess,image,sequence,element_action_type_info,element_actions_element_action__element_name,xdat_element_action_type_id,display_name) VALUES ('never','LaunchUploadApplet','edit','Up.gif',3,45,'xnat:subjectData',45,'Upload Images')
 
 INSERT INTO xdat_element_action_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:56.091',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,46)
 

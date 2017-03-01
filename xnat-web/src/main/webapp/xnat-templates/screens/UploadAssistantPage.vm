@@ -5,8 +5,16 @@
             </td>
         </tr>
         <tr>
+            <td valign="top" align="center">
+                <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion"><img src="https://api.bintray.com/packages/nrgxnat/applications/upload-assistant/images/download.svg"></a></td>
+            </td>
             <td valign="top" align="left">
-                <div style="width:500px">You can download the XNAT Upload Assistant application and use it to upload your session. If the Upload Applet does not work for you, you might want to try this. <a href="https://bitbucket.org/xnatdev/upload-assistant/downloads">Click here</a> to find the appropriate version of the XNAT Upload Assistant application for your operating system.
+                <div style="width:500px">
+                    You can upload DICOM and ECAT files using the <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
+                    Upload Assistant</a>. This tool is installed on your local machine and provides the ability to access multiple
+                    XNAT servers from a single tool, as well as apply DICOM edit and anonymization scripts to the data before it
+                    leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during the transfer process.
                 </div>
+            </td>
         </tr>
 </table>

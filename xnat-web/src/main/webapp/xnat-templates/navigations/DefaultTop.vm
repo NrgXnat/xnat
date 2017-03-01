@@ -201,58 +201,11 @@
         var docBody         = jq(document.body);
         var mainNav         = jq('#main_nav').find('ul.nav');
         var mainNavBackdrop = jq('#main-nav-backdrop');
-        var cover_up_count  = 1;
-        var hasApplet       = docBody.hasClass('applet');
-
-        // uncomment to test applet cover-up
-        // hasApplet = true;
-
-        function coverApplet(el){
-
-            var cover_up_id    = 'cover_up' + cover_up_count++;
-
-            var jqObjPos       = el.offset(),
-                jqObjLeft      = jqObjPos.left,
-                jqObjTop       = jqObjPos.top,
-                jqObjMarginTop = el.css('margin-top'),
-                jqObjWidth     = el.outerWidth() + 4,
-                jqObjHeight    = el.outerHeight() + 2;
-
-            el.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
-
-            jq('#' + cover_up_id).css({
-                display: 'block',
-                position: 'fixed',
-                width: jqObjWidth,
-                height: jqObjHeight,
-                marginTop: jqObjMarginTop,
-                left: jqObjLeft,
-                top: jqObjTop,
-                background: 'transparent',
-                border: 'none',
-                outline: 'none'
-            });
-
-            return coverApplet;
-
-        }
-
-        function unCoverApplets(el){
-            if (!el) {
-                jq('iframe.applet_cover_up').remove();
-            }
-            else {
-                el.prev('iframe.applet_cover_up').detach();
-            }
-        }
 
         function mainNavClose(e){
             mainNavBackdrop.hide();
             mainNav.find('.active').removeClass('active');
             mainNav.find('.open').hide().removeClass('open');
-            if (hasApplet) {
-                unCoverApplets();
-            }
         }
 
         // give menus with submenus a class of 'more'
@@ -272,27 +225,16 @@
 
             mainNavBackdrop.show();
 
-            if (hasApplet) {
-                unCoverApplets();
-            }
-
             // deactive all top-level items
             mainNav.find('> li').removeClass('active');
             // activate only this one
             topMenuItem.addClass('active');
-
-            if (hasApplet) {
-                coverApplet(subMenu);
-            }
 
             subMenuItems = subMenu.find('> li.more').removeClass('active');
             subMenuItems.off('click.subnav').on('click.subnav', function(e){
                 e.stopPropagation();
                 subMenuItems.removeClass('active');
                 var thisMenuItem = jq(this);
-                if (hasApplet) {
-                    unCoverApplets();
-                }
                 thisMenuItem.addClass('active')
                             .find('> ul')
                             .each(function(){
@@ -300,11 +242,6 @@
                                 var offsetL = sub.closest('li').width();
                                 sub.css({ 'left': offsetL });
                             });
-
-                if (hasApplet) {
-                    coverApplet(subMenu)(thisMenuItem.find('> ul'));
-                }
-
             });
 
         });

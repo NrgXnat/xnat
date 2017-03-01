@@ -27,7 +27,6 @@ openUrls:
   - /app/template/VerificationSent.vm
   - /app/template/VerifyEmail.vm
   - /app/template/XDATScreen_UpdateUser.vm
-  - /applet/
   - /data/JSESSION
   - /data/services/auth
   - /data/services/sendemailverification

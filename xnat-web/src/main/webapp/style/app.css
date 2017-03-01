@@ -2793,11 +2793,6 @@ span.spacer {
 
 /* per-tab customizations */
 .mgmt_container #anonymization_mgmt_div p,
-.mgmt_container #applet_mgmt_div p {
-    padding-bottom: 0;
-    border: none;
-}
-
 .mgmt_container #notifications_mgmt_div th,
 .mgmt_container #notifications_mgmt_div td {
     padding: 5px 0;

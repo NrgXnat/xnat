@@ -1148,7 +1148,7 @@ seriesImportFilter:
             name: sitewideSeriesImportFilterMode
             label: Filter Mode
             description: >
-                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload applet. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
+                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload assistant. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
             options:
                 whitelist: Whitelist
                 blacklist: Blacklist
@@ -1198,48 +1198,6 @@ petMr:
                 petmr: Create as PET/MR session
                 pet: Create as PET session
                 separate: Separate into PET and MR sessions
-
-sessionUploadMethod:
-    kind: panel.form
-    name: sessionUploadMethod
-    label: "Session Upload Method"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-#        selectUploadMethod:
-#            kind: panel.select.single
-#            id: selectUploadMethod
-#            name: selectUploadMethod
-#            label: "Session Upload Method"
-##            options:                             # don't know where to populate this from
-##                http:
-##                    label:
-##                    value:
-##                https:
-##                    label:
-##                    value:
-#        showApplet:
-#            kind: panel.input.checkbox
-#            id: showApplet
-#            name: showApplet
-#            label: Display Applet Link
-#            description: "Enable to display link to Upload Applet on various XNAT pages."
-        enableProjectAppletScript:
-            kind: panel.input.switchbox
-            name: enableProjectAppletScript
-            label: Enable Project Applet Script
-            onText: Enabled
-            offText: Disabled
-            description: "The site-wide applet settings script can be supplemented by applet settings specified at the project level if this setting is enabled."
-        appletScript:
-            kind: panel.textarea
-            name: appletScript
-            label: "Applet Script"
-            code: text
-            description: >
-                Details on how to configure an Upload Applet script may be found
-                <a href="https://wiki.xnat.org/display/XKB/Adding+parameters+and+launch+requirements+for+the+upload+applet" target="_blank">here</a>.
 
 pipelineSettings:
     kind: panel.form
@@ -1581,7 +1539,6 @@ adminPage:
                 ${seriesImportFilter}
                 ${petTracers}
                 ${petMr}
-                ${sessionUploadMethod}
         pipelinesTab:
             kind: tab
             label: Pipeline Settings

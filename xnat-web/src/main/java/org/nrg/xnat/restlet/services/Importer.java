@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.services;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
@@ -28,13 +29,12 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.UriParserUtils.UriParser;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
-import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.restlet.actions.importer.ImporterNotFoundException;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
-import org.nrg.xnat.utils.UserUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Representation;
@@ -45,24 +45,17 @@ import org.restlet.util.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class Importer extends SecureResource {
 	private static final String CRLF = "\r\n";
 	private static final String HTTP_SESSION_LISTENER = "http-session-listener";
-	private static final String JAVA = "Java";
-	public static final String APPLET_FLAG = "applet";
 	private final Logger logger = LoggerFactory.getLogger(Importer.class);
 
 	public Importer(Context context, Request request, Response response) {
@@ -111,29 +104,35 @@ public class Importer extends SecureResource {
 		return true;
 	}
 
-	List<FileWriterWrapperI> fw=new ArrayList<FileWriterWrapperI>();
+	List<FileWriterWrapperI> fw= new ArrayList<>();
 
 	String handler=null;
 	String listenerControl=null;
 	boolean httpSessionListener=false;
 
-	final Map<String,Object> params=new Hashtable<String,Object>();
+	final Map<String,Object> params= new Hashtable<>();
 
 	List<String> response=null;
 
 	@Override
 	public void handleParam(String key, Object value) throws ClientException {
-		if(key.equals(ImporterHandlerA.IMPORT_HANDLER_ATTR)){
-			handler=(String)value;
-		}else if(key.equals(XNATRestConstants.TRANSACTION_RECORD_ID)){
-			listenerControl=(String)value;
-		}else if(key.equals("src")){
-				fw.add(retrievePrestoreFile((String)value));
-		}else if(key.equals(HTTP_SESSION_LISTENER)){
-			listenerControl=(String)value;
-			httpSessionListener=true;
-		}else{
-			params.put(key,value);
+		switch (key) {
+			case ImporterHandlerA.IMPORT_HANDLER_ATTR:
+				handler = (String) value;
+				break;
+			case XNATRestConstants.TRANSACTION_RECORD_ID:
+				listenerControl = (String) value;
+				break;
+			case "src":
+				fw.add(retrievePrestoreFile((String) value));
+				break;
+			case HTTP_SESSION_LISTENER:
+				listenerControl = (String) value;
+				httpSessionListener = true;
+				break;
+			default:
+				params.put(key, value);
+				break;
 		}
 	}
 	
@@ -145,10 +144,7 @@ public class Importer extends SecureResource {
 		    final Request request = getRequest();
 		    if (logger.isDebugEnabled()) {
 		        final ClientInfo client = request.getClientInfo();
-		        final StringBuilder sb = new StringBuilder("handling POST from ");
-		        sb.append(client.getAddress()).append(":").append(client.getPort());
-		        sb.append(" ").append(client.getAgent());
-		        logger.debug(sb.toString());
+				logger.debug("handling POST from " + client.getAddress() + ":" + client.getPort() + " " + client.getAgent());
 		    }
 		    
 			Representation entity = request.getEntity();
@@ -160,7 +156,7 @@ public class Importer extends SecureResource {
 			
 			ImporterHandlerA importer;
 			
-			// Set the overwrite flag if we are uploading directly to the archive (prearchve_code = 1)
+			// Set the overwrite flag if we are uploading directly to the archive (prearchive_code = 1)
 			String prearchive_code = (String)params.get("prearchive_code");
 			if("1".equals(prearchive_code)){ // User has selected archive option
 				
@@ -206,16 +202,9 @@ public class Importer extends SecureResource {
 					logger.error("",e);
 					throw new ServerException(e.getMessage(),e);
 				}
-				
-				if(httpSessionListener){
-					if(StringUtils.isEmpty(listenerControl)){
-						getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"'" + XNATRestConstants.TRANSACTION_RECORD_ID+ "' is required when requesting '" + HTTP_SESSION_LISTENER + "'.");
-						return;
-					}
-					final StatusList sq = new StatusList();
-					importer.addStatusListener(sq);
 
-					storeStatusList(listenerControl, sq);
+				if (storeStatusList(importer)) {
+					return;
 				}
 
 				response= importer.call();
@@ -243,43 +232,21 @@ public class Importer extends SecureResource {
 				}
 			}
 			
-			this.addAppletFlagToParams();
-			
 			try {
 				importer = ImporterHandlerA.buildImporter(handler, listenerControl, user, fw.get(0), params);
-			} catch (SecurityException e) {
+			} catch (SecurityException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
 				logger.error("",e);
 				throw new ServerException(e.getMessage(),e);
-			} catch (IllegalArgumentException e) {
+			} catch (IllegalArgumentException | NoSuchMethodException e) {
 				logger.error("",e);
 				throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,e.getMessage(),e);
-			} catch (NoSuchMethodException e) {
-				logger.error("",e);
-				throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,e.getMessage(),e);
-			} catch (InstantiationException e) {
-				logger.error("",e);
-				throw new ServerException(e.getMessage(),e);
-			} catch (IllegalAccessException e) {
-				logger.error("",e);
-				throw new ServerException(e.getMessage(),e);
-			} catch (InvocationTargetException e) {
-				logger.error("",e);
-				throw new ServerException(e.getMessage(),e);
 			} catch (ImporterNotFoundException e) {
 				logger.error("",e);
 				throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND,e.getMessage(),e);
 				}
 
-
-			if(httpSessionListener){
-				if(StringUtils.isEmpty(listenerControl)){
-					getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"'" + XNATRestConstants.TRANSACTION_RECORD_ID+ "' is required when requesting '" + HTTP_SESSION_LISTENER + "'.");
-					return;
-				}
-				final StatusList sq = new StatusList();
-				importer.addStatusListener(sq);
-
-				storeStatusList(listenerControl, sq);
+			if (storeStatusList(importer)) {
+				return;
 			}
 
 			response= importer.call();
@@ -294,14 +261,26 @@ public class Importer extends SecureResource {
 			respondToException(e,(e.status!=null)?e.status:Status.CLIENT_ERROR_BAD_REQUEST);
 		} catch (ServerException e) {
 			respondToException(e,(e.status!=null)?e.status:Status.SERVER_ERROR_INTERNAL);
-		}catch (IllegalArgumentException e) {
-			respondToException(e,Status.CLIENT_ERROR_BAD_REQUEST);
-		} catch (FileUploadException e) {
+		}catch (IllegalArgumentException | FileUploadException e) {
 			respondToException(e,Status.CLIENT_ERROR_BAD_REQUEST);
 		}
 	}
 
-    protected void respondToException(Exception e, Status status) {
+	public boolean storeStatusList(final ImporterHandlerA importer) {
+		if(httpSessionListener){
+            if(StringUtils.isEmpty(listenerControl)){
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "'" + XNATRestConstants.TRANSACTION_RECORD_ID + "' is required when requesting '" + HTTP_SESSION_LISTENER + "'.");
+				return true;
+            }
+            final StatusList sq = new StatusList();
+            importer.addStatusListener(sq);
+
+            storeStatusList(listenerControl, sq);
+        }
+		return false;
+	}
+
+	protected void respondToException(Exception e, Status status) {
     	final Throwable cause = e.getCause();
 		if (cause != null && cause instanceof ExceptionInInitializerError && ((ExceptionInInitializerError) cause).getException() != null) {
 			final ExceptionInInitializerError error = (ExceptionInInitializerError) cause;
@@ -331,61 +310,12 @@ public class Importer extends SecureResource {
 		}
 	}
 
-	/**
-	 * Add an attribute that tells users of the global parameter 
-	 * if the file is being uploaded via the Upload Applet.
-	 * 
-	 * Determining whether a session was uploaded via the applet is 
-	 * done by inspecting the individual products of User Agent string.
-	 * 
-	 * Upload applet sessions seem to come in with a the first product is
-	 * is the browser string (Mozilla etc.) and the second, the operation
-	 * system identifier is "Java". So if the second product is "Java", 
-	 * the session came in from the Upload Applet. 
-	 * 
-	 * Another case when the name of a product is "Java" is when a Java
-	 * program makes calls to the REST API, for example, the functional
-	 * tests in the xnat_test package. In this case however, the first
-	 * product, the browser identifier is "Java" and not the second.  
-	 * 
-	 * TL;DR If the second product is "Java", the session came in via the 
-	 * upload applet
-	 * 
-	 */
-	private void addAppletFlagToParams() {
-		List<Product> ps = this.getRequest().getClientInfo().getAgentProducts();
-		String appletFound = "false";
-		if (ps.size() > 2) {
-			if (ps.get(1).getName().equals(Importer.JAVA)) {
-				appletFound = "true";	
-			}
-		}
-			
-		if (!params.containsKey(Importer.APPLET_FLAG)) {
-			this.params.put(Importer.APPLET_FLAG, appletFound);
-		}
-		else {
-			// the "applet" query string parameter has already been passed,
-			// don't override it. 
-		}
- 	}
-	
-	public static Boolean getUploadFlag(Map<String, Object> params) {
-		if (params.containsKey(Importer.APPLET_FLAG)) {
-			String flag = (String) params.get(Importer.APPLET_FLAG);
-			return flag.equals("true");
-		}
-		else {
-			return new Boolean(false);
-			}
-		}
-
-		@Override
+	@Override
 		public Representation represent(Variant variant) throws ResourceException {
 			final MediaType mt=overrideVariant(variant);
 			final boolean wrapURI = (handler==null || HANDLERS_PREFERRING_PARTIAL_URI_WRAP.contains(handler));
 			if(mt.equals(MediaType.TEXT_HTML)){
-				return buildHTMLresponse(response);
+				return buildHtmlResponse(response);
 			}else if(mt.equals(MediaType.TEXT_PLAIN)){
 				if(response!=null && response.size()==1){
 					return new StringRepresentation((wrapURI) ? wrapPartialDataURI(response.get(0)) : response.get(0), MediaType.TEXT_PLAIN);
@@ -397,9 +327,9 @@ public class Importer extends SecureResource {
 			}
 		}
 
-		private Representation buildHTMLresponse(List<String> response) {
-			final ArrayList<String> preList=new ArrayList<String>();
-			final ArrayList<String> archList=new ArrayList<String>();
+		private Representation buildHtmlResponse(List<String> response) {
+			final List<String> preList= new ArrayList<>();
+			final List<String> archList= new ArrayList<>();
 			final StringBuilder sb=new StringBuilder("<html><head>");
 			sb.append("<link type='text/css' rel='stylesheet' href='");
 			sb.append(TurbineUtils.GetRelativePath(this.getHttpServletRequest()));
@@ -447,7 +377,7 @@ public class Importer extends SecureResource {
 							sb.append(s);
 							sb.append("'>");
 							sb.append(sarray[7]);
-							sb.append("</a> has been archived for project " + sarray[3]);
+							sb.append("</a> has been archived for project ").append(sarray[3]);
 						}
 					} catch (Exception e) {
 						sb.append("<br>A total of ");
@@ -492,7 +422,7 @@ public class Importer extends SecureResource {
 	}
 
 	private String convertListToString(final List<String> response, boolean wrapPartialDataURI){
-		final StringBuffer sb = new StringBuffer();
+		final StringBuilder sb = new StringBuilder();
 		for(final String s:response){
 			sb.append((wrapPartialDataURI) ? wrapPartialDataURI(s) : s).append(CRLF);
 		}

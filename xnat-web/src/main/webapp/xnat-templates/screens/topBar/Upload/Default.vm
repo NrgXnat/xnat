@@ -5,7 +5,6 @@
             <!-- Sequence: 10 -->
             <!-- Images -->
             <li><a href="$link.setPage("UploadOptions.vm")">All Upload Options</a>
-            <li><a href="$link.setPage("LaunchUploadApplet.vm")">Upload Applet</a></li>
             <li><a href="$link.setPage("UploadAssistantPage.vm")">Upload Assistant</a></li>
             <li><a href="$link.setPage("CompressedUploaderPage.vm")">Compressed Uploader</a></li>
             <li><a href="$link.setPage("DICOMSCPPage.vm")">DICOM SCP</a></li>

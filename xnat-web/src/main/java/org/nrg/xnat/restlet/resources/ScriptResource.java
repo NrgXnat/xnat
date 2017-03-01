@@ -57,7 +57,7 @@ public class ScriptResource extends AutomationResource {
         final UserI user = getUser();
         if (!Roles.isSiteAdmin(user)) {
             // You can't put or post or delete a script and you can't retrieve a specific script OTHER THAN the split
-            // PET/MR script, which is used by the upload applet.
+            // PET/MR script.
             if (!request.getMethod().equals(Method.GET) || (StringUtils.isNotBlank(_scriptId) && !_scriptId.equals(PrearcDatabase.SPLIT_PETMR_SESSION_ID))) {
                 _log.warn(getRequestContext("User " + user.getLogin() + " attempted to access forbidden script trigger template resources"));
                 response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins can view or update script resources.");

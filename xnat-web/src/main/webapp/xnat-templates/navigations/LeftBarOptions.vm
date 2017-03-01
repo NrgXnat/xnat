@@ -1,4 +1,2 @@
-#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
-#if($siteConfig.uiShowLeftBarAppletButton)
-<INPUT type="button" style="line-height:11px;font-size:11px;" VALUE="Launch Uploader" ONCLICK="window.location='$content.getURI("/app/template/LaunchUploadApplet.vm")';"/>
- #end
+<!-- BEGIN xnat-templates/navigations/LeftBarOptions.vm -->
+<!-- END xnat-templates/navigations/LeftBarOptions.vm -->

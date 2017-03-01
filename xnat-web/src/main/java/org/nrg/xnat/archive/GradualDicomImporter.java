@@ -337,7 +337,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 throw new ClientException("Concurrent file sends of the same data is not supported.");
             }
             try {
-                // check to see of this session came in through the upload applet
+                // check to see of this session came in through an application that may have performed anonymization
+                // prior to transfer, e.g. the XNAT Upload Assistant.
                 if (!session.getPreventAnon() && DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
                     Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
                     if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {

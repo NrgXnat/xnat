@@ -38,8 +38,7 @@ import java.util.List;
  */
 @XnatTask(taskId = "SessionXMLRebuilder", description = "Session XML Rebuilder", defaultExecutionResolver = "SingleNodeExecutionResolver", executionResolverConfigurable = true)
 public class SessionXMLRebuilder implements Runnable, XnatTaskI {
-	
-	
+
     /**
      * Instantiates a new session xml rebuilder.
      *
@@ -110,7 +109,7 @@ public class SessionXMLRebuilder implements Runnable, XnatTaskI {
             if (sds != null && sds.size() > 0) {
                 for (final SessionData sessionData : sds) {
                     total++;
-                    if (sessionData.getStatus().equals(PrearcUtils.PrearcStatus.RECEIVING) && !sessionData.getPreventAutoCommit() && !StringUtils.trimToEmpty(sessionData.getSource()).equals("applet")) {
+                    if (sessionData.getStatus().equals(PrearcUtils.PrearcStatus.RECEIVING) && !sessionData.getPreventAutoCommit() && !StringUtils.trimToEmpty(sessionData.getSource()).equals(SessionData.UPLOADER)) {
                         try {
                             final File sessionDir = PrearcUtils.getPrearcSessionDir(user, sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), false);
                             final long then = sessionData.getLastBuiltDate().getTime();

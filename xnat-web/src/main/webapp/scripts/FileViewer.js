@@ -1903,7 +1903,7 @@ XNAT.app._addFolder = function (arg1, arg2, container) {
 };
 
 jq(document).ready(function() {
-    // refresh timeout interval so applet doesn't lose its session.
+    // refresh timeout interval so that the page doesn't lose its session while uploading.
     setInterval(function(){XNAT.app.renewLogin()},60000);
 });
 

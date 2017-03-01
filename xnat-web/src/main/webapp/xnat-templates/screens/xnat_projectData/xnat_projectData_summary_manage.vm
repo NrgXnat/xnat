@@ -386,14 +386,14 @@
                         <tr>
                             <td>
                                 <div class="info">
-                                    Creating a whitelist means that
-                                    <i>only</i> DICOM series with a series description that matches one of
-                                    series filter patterns will be considered by XNAT import tools such as the upload applet. Creating a
-                                    blacklist means that all DICOM series will be considered
-                                    <i>except</i> for series that have one of the
-                                    specified series filter patterns. A modality map lets you specify boolean expressions in JavaScript that
-                                    can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the
-                                    destination session.
+                                    Creating a whitelist means that <i>only</i> DICOM series with a series description
+                                    that matches one of series filter patterns will be considered by XNAT import tools
+                                    such as the <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
+                                    Upload Assistant</a>. Creating a blacklist means that all DICOM series will be
+                                    considered <i>except</i> for series that have one of the specified series filter
+                                    patterns. A modality map lets you specify boolean expressions in JavaScript that can
+                                    use DICOM header values from incoming DICOM objects to decide the appropriate
+                                    modality for the destination session.
                                 </div>
                             </td>
                         </tr>
@@ -431,46 +431,6 @@
             filtersGet.get();
         </script>
     </div>
-    #if($siteConfig.enableProjectAppletScript)
-        <h3>Applet Configuration Script</h3>
-        <div>
-            <table id="applet_script_table">
-                <tr>
-                    <td colspan="2" class="highlighted" id="applet_script_container">
-                    ##      <DIV>Applet Configuration Script</DIV>
-                        <TABLE>
-                            <tr>
-                                <td><label for="enable_applet_script">Enable Applet Script</label></td>
-                                <td><input type="checkbox" name="enable_applet_script" id="enable_applet_script"/></td>
-                            </tr>
-                            <TR>
-                                <TD></TD>
-                                <TD><textarea id="applet_script_text_area" rows="20" cols="80"></textarea></TD>
-                            </TR>
-                            <TR>
-                                <TD COLSPAN="2">
-                                    <input type="button" id="applet_script_save" value="Save" disabled="disabled"/></TD>
-                            </TR>
-                        </TABLE>
-                    </td>
-                </tr>
-            </table>
-            <script>
-                var sgApplet = new scriptGet(document.getElementById('applet_script_container'),
-                        {
-                            'getStatus': serverRoot + '/data/projects/$project.getId()/config/applet/settings?format=json',
-                            'putStatus': serverRoot + '/data/projects/$project.getId()/config/applet/settings?status=',
-                            'getScript': serverRoot + '/data/projects/$project.getId()/config/applet/settings?format=json',
-                            'putScript': serverRoot + '/data/projects/$project.getId()/config/applet/settings?inbody=true',
-                            'project': '$project.getId()',
-                            'enable_checkbox': 'enable_applet_script',
-                            'script_text_area': 'applet_script_text_area',
-                            'save_button': 'applet_script_save'
-                        });
-                sgApplet.get();
-            </script>
-        </div>
-    #end
 
     <h3>Event Handlers</h3>
     <div id="events_list" style="min-height:120px;">

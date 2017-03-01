@@ -34,8 +34,7 @@
             </DIV>
            </li>
            <li class="yuimenuitem">
-            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','LaunchUploadApplet').addPathInfo('project',$project.getId())">Upload Images</A>
-            
+               <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
            </li>
            <li class="yuimenuitem">
             <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo('project',$project.getId())">View Prearchive</A>

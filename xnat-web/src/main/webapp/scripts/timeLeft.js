@@ -245,7 +245,6 @@ $(function(){
         // timeout.hideWarningDialog();
         timeout.touchCallback.startTime = new Date().getTime();
         XNAT.xhr.get(XNAT.url.restUrl('/xapi/siteConfig/buildInfo'), timeout.touchCallback);
-        $('applet').css('visibility', 'visible');
     };
 
     /**
@@ -256,7 +255,6 @@ $(function(){
         timeout.hideWarningDialog();
         // timeout.settings.warningDisplayedOnce = true;
         // don't make it any more complicated than necessary - just show the thing
-        $('applet').css('visibility', 'visible');
     };
 
     /**

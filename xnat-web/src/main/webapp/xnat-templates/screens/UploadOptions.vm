@@ -362,36 +362,31 @@
         <tr>
             <td>
                 <hr/>
-                <h4>Option 1: Upload Applet</h4>
+                <h4>Option 1: XNAT Upload Assistant</h4>
             </td>
         </tr>
-        <tr>
-            <td valign="top" align="left">
-                <div style="width:500px">DICOM and ECAT files can be uploaded via the Upload Applet. Due to changes in browser support for applets, the Upload Applet currently only works when using the Firefox browser. <a href="$link.setPage("LaunchUploadApplet.vm")">Click here</a> to upload using the Upload Applet.
-                </div>
-        </tr>
-
-
-
-        <tr>
-            <td>
-                <hr/>
-                <h4>Option 2: Download Upload Assistant application</h4>
-            </td>
-        </tr>
-        <tr>
-            <td valign="top" align="left">
-                <div style="width:500px">You can download the XNAT Upload Assistant application and use it to upload your session. If the Upload Applet does not work for you, you might want to try this. <a href="https://bitbucket.org/xnatdev/upload-assistant/downloads">Click here</a> to find the appropriate version of the XNAT Upload Assistant application for your operating system.
-                </div>
-        </tr>
-
-
+    <tr>
+        <td valign="top" align="left">
+            <div style="width:500px">
+                You can upload DICOM and ECAT files using the <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
+                Upload Assistant</a>. This tool is installed on your local machine and provides the ability to access
+                multiple XNAT servers from a single tool, as well as apply DICOM edit and anonymization scripts to the
+                data before it leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during
+                the transfer process.
+            </div>
+        </td>
+    </tr>
+    <tr id="option2">
+        <td>
+            <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion"><img src="https://api.bintray.com/packages/nrgxnat/applications/upload-assistant/images/download.svg"></a>
+        </td>
+    </tr>
 
     <tr>
         <td>
             <hr/>
             <h4>
-                    Option 3: Compressed upload</h4></td>
+                    Option 2: Compressed upload</h4></td>
     </tr>
     <tr>
         <td valign="top" align="left">
@@ -405,8 +400,8 @@
                 The compressed uploader does not yet support splitting PET/MR sessions based on the site-wide or
                 project-specific settings for handling PET/MR data. If you are uploading PET/MR data and need to have
                 the data split into separate PET and MR sessions or created as a PET session rather than a PET/MR
-                session, you should use either the <a href="$link.setPage("LaunchUploadApplet.vm")">upload applet</a> or the
-                DICOM C-STORE receiver as described below.
+                session, you should use either the <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
+                Upload Assistant</a> as described above or the DICOM C-STORE receiver as described below.
             </div>
         </td>
     </tr>
@@ -554,7 +549,7 @@
         <tr>
             <td>
                 <hr/>
-                <h4>Option 4: DICOM C-STORE Service Class User</h4>
+                <h4>Option 3: DICOM C-STORE Service Class User</h4>
             </td>
         </tr>
         <tr>
@@ -628,10 +623,6 @@
     };
 
     window.projectLoader.init();
-
-    function prepApplet(_form) {
-        return true;
-    }
 
     //build breadcrumb
     var breadcrumbs = document.getElementById('breadcrumbs');

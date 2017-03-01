@@ -343,7 +343,6 @@ ${bodyTop}
                             <ul>
                                 <!-- Sequence: 10 -->
                                 <!-- Images -->
-                                <li><a href="${SITE_ROOT}/app/template/LaunchUploadApplet.vm">Upload Applet</a></li>
                                 <li><a href="${SITE_ROOT}/app/template/UploadAssistantPage.vm">Upload Assistant</a></li>
                                 <li><a href="${SITE_ROOT}/app/template/CompressedUploaderPage.vm">Compressed Uploader</a></li>
                                 <li><a href="${SITE_ROOT}/app/template/DICOMSCPPage.vm">DICOM SCP</a></li>
@@ -472,39 +471,6 @@ ${bodyTop}
                     // cache it
                     var main_nav$ = jq('#main_nav ul.nav');
 
-                    var body$ = jq('body');
-
-                    var cover_up_count = 1;
-
-                    function coverApplet(el$){
-                        var cover_up_id = 'cover_up' + cover_up_count++;
-                        var jqObjPos       = el$.offset(),
-                            jqObjLeft      = jqObjPos.left,
-                            jqObjTop       = jqObjPos.top,
-                            jqObjMarginTop = el$.css('margin-top'),
-                            jqObjWidth     = el$.outerWidth() + 4,
-                            jqObjHeight    = el$.outerHeight() + 2;
-
-                        el$.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
-
-                        jq('#' + cover_up_id).css({
-                            display: 'block',
-                            position: 'fixed',
-                            width: jqObjWidth,
-                            height: jqObjHeight,
-                            marginTop: jqObjMarginTop,
-                            left: jqObjLeft,
-                            top: jqObjTop,
-                            background: 'transparent',
-                            border: 'none',
-                            outline: 'none'
-                        });
-                    }
-
-                    function unCoverApplets(el$){
-                        el$.prev('iframe.applet_cover_up').detach();
-                    }
-
                     function fadeInNav(el$){
 //            el$.stop('clearQueue','gotoEnd');
                         el$.find('> ul').show().addClass('open');
@@ -530,17 +496,11 @@ ${bodyTop}
                                     var offsetL = sub$.closest('li').width();
                                     sub$.css({'left': offsetL});
                                 });
-                                if (body$.hasClass('applet')) {
-                                    coverApplet(li$.find('> ul'));
-                                }
                             }
                     ).on('mouseout',
                             function(){
                                 var li$ = $(this);
                                 fadeOutNav(li$);
-                                if (body$.hasClass('applet')) {
-                                    unCoverApplets(li$.find('> ul'));
-                                }
                             }
                     );
 
@@ -621,39 +581,6 @@ ${bodyTop}
                 // cache it
                 var main_nav$ = jq('#main_nav ul.nav');
 
-                var body$ = jq('body');
-
-                var cover_up_count = 1;
-
-                function coverApplet(el$){
-                    var cover_up_id = 'cover_up' + cover_up_count++;
-                    var jqObjPos       = el$.offset(),
-                        jqObjLeft      = jqObjPos.left,
-                        jqObjTop       = jqObjPos.top,
-                        jqObjMarginTop = el$.css('margin-top'),
-                        jqObjWidth     = el$.outerWidth() + 4,
-                        jqObjHeight    = el$.outerHeight() + 2;
-
-                    el$.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
-
-                    jq('#' + cover_up_id).css({
-                        display: 'block',
-                        position: 'fixed',
-                        width: jqObjWidth,
-                        height: jqObjHeight,
-                        marginTop: jqObjMarginTop,
-                        left: jqObjLeft,
-                        top: jqObjTop,
-                        background: 'transparent',
-                        border: 'none',
-                        outline: 'none'
-                    });
-                }
-
-                function unCoverApplets(el$){
-                    el$.prev('iframe.applet_cover_up').detach();
-                }
-
                 function fadeInNav(el$){
 //            el$.stop('clearQueue','gotoEnd');
                     el$.find('> ul').show().addClass('open');
@@ -679,17 +606,11 @@ ${bodyTop}
                                 var offsetL = sub$.closest('li').width();
                                 sub$.css({'left': offsetL});
                             });
-                            if (body$.hasClass('applet')) {
-                                coverApplet(li$.find('> ul'));
-                            }
                         }
                 ).on('mouseout',
                         function(){
                             var li$ = $(this);
                             fadeOutNav(li$);
-                            if (body$.hasClass('applet')) {
-                                unCoverApplets(li$.find('> ul'));
-                            }
                         }
                 );
 

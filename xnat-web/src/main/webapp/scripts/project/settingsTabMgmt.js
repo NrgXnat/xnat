@@ -31,7 +31,6 @@ function fullConfigHandler() {
             document.getElementById('registration_save_button').onclick = saveSettings;
             document.getElementById('notifications_save_button').onclick = saveSettings;
             document.getElementById('anonymization_save_button').onclick = saveSettings;
-            document.getElementById('applet_save_button').onclick = saveSettings;
             document.getElementById('seriesImportFilter_save_button').onclick = saveSettings;
             document.getElementById('dicomReceiver_save_button').onclick = saveSettings;
 
@@ -63,9 +62,7 @@ function fullConfigHandler() {
         , 'archivePath', 'checksums', 'prearchivePath', 'cachePath', 'ftpPath', 'buildPath', 'pipelinePath'
         , 'requireLogin', 'enableNewRegistrations', 'emailVerification'
         , 'error', 'issue', 'newUser', 'update', 'emailAllowNonuserSubscribers', 'smt.enabled'
-        , 'anonScript', 'anonEnabled'
-        , 'applet'
-        , 'dcmPort', 'dcmAe', 'enableDicomReceiver'
+        , 'anonScript', 'anonEnabled', 'dcmPort', 'dcmAe', 'enableDicomReceiver'
     ]);
 
     xmodal.loading.open({title:'Please wait...'});
@@ -90,7 +87,6 @@ function configurationTabManagerInit() {
         document.getElementById('registration_save_button').onclick = fullConfigHandler;
         document.getElementById('notifications_save_button').onclick = fullConfigHandler;
         document.getElementById('anonymization_save_button').onclick = fullConfigHandler;
-        document.getElementById('applet_save_button').onclick = fullConfigHandler;
         document.getElementById('seriesImportFilter_save_button').onclick = fullConfigHandler;
         document.getElementById('dicomReceiver_save_button').onclick = fullConfigHandler;
     }
@@ -141,7 +137,6 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
             '#registration_reset_button, ' +
             '#notifications_reset_button, ' +
             '#anonymization_reset_button, ' +
-            '#applet_reset_button, ' +
             '#seriesImportFilter_reset_button, ' +
             '#dicomReceiver_reset_button'
         ;

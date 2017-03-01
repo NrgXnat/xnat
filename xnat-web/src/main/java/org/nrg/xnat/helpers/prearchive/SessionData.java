@@ -18,8 +18,9 @@ import java.util.Date;
 
 public final class SessionData implements Serializable {
     private static final long serialVersionUID = 7915299491932778685L;
+    public static final String UPLOADER = "uploader";
 
-	private Date uploadDate;
+    private Date uploadDate;
 	private Date lastBuiltDate;
 	private PrearcStatus status;
 	private SessionDataTriple sessionTriple = new SessionDataTriple();

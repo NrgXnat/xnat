@@ -240,7 +240,6 @@ var XNAT = getObject(XNAT);
                     dialog.$modal.show();
                     cookie.SESSION_DIALOG_OPEN.set('true');
                     timeout.dialogIsOpen = true;
-                    $('applet').css('visibility', 'hidden');
                 }
             };
 
@@ -249,7 +248,6 @@ var XNAT = getObject(XNAT);
                     dialog.$modal.hide();
                     dialog.$mask.hide();
                     cookie.SESSION_DIALOG_OPEN.set('false');
-                    $('applet').css('visibility', 'visible');
                 }
                 timeout.dialogIsOpen = false;
             };

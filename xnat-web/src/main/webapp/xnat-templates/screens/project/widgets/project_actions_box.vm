@@ -1,3 +1,4 @@
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 <!-- actions menu -->
 <DIV id="actionsMenu" class="yuimenu">
     <DIV class="bd">
@@ -25,8 +26,7 @@
                     </DIV>
                 </li>
                 <li class="yuimenuitem">
-                    <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo(
-                        'xdataction','LaunchUploadApplet').addPathInfo('project',$project.getId())">Upload Images</a>
+                    <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
                 </li>
                 <li class="yuimenuitem">
                     <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo(

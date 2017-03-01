@@ -37,7 +37,6 @@ public class TestUserSerialization {
         secured.setEmail("foo@bar.com");
         secured.setPassword("password");
         secured.setSalt("salt");
-        secured.setAdmin(false);
         secured.setEnabled(true);
         secured.setSecured(true);
 
@@ -47,7 +46,6 @@ public class TestUserSerialization {
         unsecured.setEmail("foo@bar.com");
         unsecured.setPassword("password");
         unsecured.setSalt("salt");
-        unsecured.setAdmin(false);
         unsecured.setEnabled(true);
 
         final String secureJson = _serializer.toJson(secured);
@@ -85,7 +83,6 @@ public class TestUserSerialization {
         assertTrue(StringUtils.isNotBlank(securedOutput.getEmail()));
         assertTrue(StringUtils.isBlank(securedOutput.getPassword()));
         assertTrue(StringUtils.isBlank(securedOutput.getSalt()));
-        assertNull(securedOutput.isAdmin());
         assertTrue(securedOutput.isEnabled());
         assertNull(securedOutput.isVerified());
 
@@ -95,7 +92,6 @@ public class TestUserSerialization {
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getEmail()));
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getPassword()));
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getSalt()));
-        assertFalse(unsecuredOutput.isAdmin());
         assertTrue(unsecuredOutput.isEnabled());
         assertNull(unsecuredOutput.isVerified());
     }

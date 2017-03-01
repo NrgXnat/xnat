@@ -35,33 +35,14 @@ public class XDATScreen_UpdateUser extends SecureScreen {
     protected void doBuildTemplate(RunData data) throws Exception {
         final Context context = TurbineVelocity.getContext(data);
 
-        //SecureScreen.loadAdditionalVariables(data, c);
-        //When a user has forgotten their password and comes to this page in a half logged in state, setting
-        // turbineUtils will cause problems. The below code is a copy of loadAdditionalVariables, but without setting
-        // turbineUtils in cases where the user forgot their password.
-        if (TurbineUtils.GetPassedParameter("a", data) == null || TurbineUtils.GetPassedParameter("s", data) == null) {
-            context.put("turbineUtils", TurbineUtils.GetInstance());
-        }
+        SecureScreen.loadAdditionalVariables(data, context);
+
         if (TurbineUtils.HasPassedParameter("success", data)) {
             context.put("success", TurbineUtils.GetPassedBoolean("success", data));
         }
         if (TurbineUtils.HasPassedParameter("message", data)) {
             context.put("message", TurbineUtils.GetPassedParameter("message", data));
         }
-        if(TurbineUtils.GetPassedParameter("a", data)==null || TurbineUtils.GetPassedParameter("s", data)==null) {
-            context.put("turbineUtils", TurbineUtils.GetInstance());
-        }
-
-        context.put("user", XDAT.getUserDetails());
-        checkForPopup(data, context);
-
-        context.put("displayManager", DisplayManager.GetInstance());
-        context.put("systemName", TurbineUtils.GetSystemName());
-        context.put("esc", new EscapeTool());
-        context.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
-        context.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
-        context.put("notifications", XDAT.getNotificationsPreferences());
-        context.put("siteConfig", XDAT.getSiteConfigPreferences());
 
         doBuildTemplate(data, context);
     }

@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.resources.files;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
@@ -309,6 +310,7 @@ public class FileList extends XNATCatalogTemplate {
                                         getResponse().setEntity(new StringRepresentation("", MediaType.TEXT_PLAIN));
                                     }
                                 } else {
+                                    assert wrk != null;
                                     wrk.setStatus(PersistentWorkflowUtils.QUEUED);
                                     WorkflowUtils.save(wrk, wrk.buildEvent());
                                     MoveStoredFileRequest request = new MoveStoredFileRequest(buildResourceModifier(overwrite, um), resourceIdentifier, writers, user, wrk.getWorkflowId(), delete, notifyList, type, filepath, buildResourceInfo(um), extract);
@@ -642,7 +644,7 @@ public class FileList extends XNATCatalogTemplate {
         if (!file.exists()) {
             throw new FileUploadException("The resource referenced does not exist: " + value);
         }
-        List<FileWriterWrapperI> files = new ArrayList<FileWriterWrapperI>();
+        List<FileWriterWrapperI> files = new ArrayList<>();
         if (file.isFile()) {
             files.add(new StoredFile(file, true, "", true));
         } else {
@@ -666,7 +668,7 @@ public class FileList extends XNATCatalogTemplate {
         final boolean isZip = isZIPRequest(mt);
 
         File f = null;
-        Map<String, File> fileList = new HashMap<String, File>();
+        Map<String, File> fileList = new HashMap<>();
 
         final XFTTable table = new XFTTable();
 
@@ -696,20 +698,21 @@ public class FileList extends XNATCatalogTemplate {
         final Integer index = (containsQueryVariable("index")) ? Integer.parseInt(getQueryVariable("index")) : null;
 
         for (final XnatAbstractresource temp : resources) {
+            final String rootArchivePath = proj.getRootArchivePath();
             if (temp.getItem().instanceOf("xnat:resourceCatalog")) {
                 final boolean includeRoot = isQueryVariableTrue("includeRootPath");
 
                 final XnatResourcecatalog catResource = (XnatResourcecatalog) temp;
 
 
-                final CatCatalogBean cat = catResource.getCleanCatalog(proj.getRootArchivePath(), includeRoot, null, null);
-                final String parentPath = catResource.getCatalogFile(proj.getRootArchivePath()).getParent();
+                final CatCatalogBean cat = catResource.getCleanCatalog(rootArchivePath, includeRoot, null, null);
+                final String parentPath = catResource.getCatalogFile(rootArchivePath).getParent();
 
                 if (cat != null) {
                     if (filepath == null || filepath.equals("")) {
                         table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, (catResource.getBaseURI() != null) ? catResource.getBaseURI() + "/files" : baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, isZip || (index != null), entryFilter, proj, locator));
                     } else {
-                        ArrayList<CatEntryI> entries = new ArrayList<CatEntryI>();
+                        ArrayList<CatEntryI> entries = new ArrayList<>();
 
                         CatEntryBean e = (CatEntryBean) CatalogUtils.getEntryByURI(cat, filepath);
                         if (e != null) {
@@ -777,25 +780,31 @@ public class FileList extends XNATCatalogTemplate {
             } else {
                 //not catalog
                 if (entryFilter == null) {
-                    ArrayList<File> files = temp.getCorrespondingFiles(proj.getRootArchivePath());
-                    for (File subFile : files) {
-                        Object[] row = new Object[(isZip) ? 9 : 8];
-                        row[0] = (subFile.getName());
-                        row[1] = (subFile.length());
-                        if (locator.equalsIgnoreCase("URI")) {
-                            row[2] = (temp.getBaseURI() != null) ? temp.getBaseURI() + "/files/" + subFile.getName() : baseURI + "/resources/" + temp.getXnatAbstractresourceId() + "/files/" + subFile.getName();
-                        } else if (locator.equalsIgnoreCase("absolutePath")) {
-                            row[2] = subFile.getAbsolutePath();
-                        } else if (locator.equalsIgnoreCase("projectPath")) {
-                            row[2] = subFile.getAbsolutePath().substring(proj.getRootArchivePath().substring(0, proj.getRootArchivePath().lastIndexOf(proj.getId())).length());
+                    ArrayList<File> files = temp.getCorrespondingFiles(rootArchivePath);
+                    if (files != null && files.size() > 0) {
+                        final boolean checksums = XDAT.getSiteConfigPreferences().getChecksums();
+                        for (final File subFile : files) {
+                            final List<Object> row = Lists.newArrayList();
+                            row.add(subFile.getName());
+                            row.add(subFile.length());
+                            if (locator.equalsIgnoreCase("URI")) {
+                                row.add(temp.getBaseURI() != null ? temp.getBaseURI() + "/files/" + subFile.getName() : baseURI + "/resources/" + temp.getXnatAbstractresourceId() + "/files/" + subFile.getName());
+                            } else if (locator.equalsIgnoreCase("absolutePath")) {
+                                row.add(subFile.getAbsolutePath());
+                            } else if (locator.equalsIgnoreCase("projectPath")) {
+                                row.add(subFile.getAbsolutePath().substring(rootArchivePath.substring(0, rootArchivePath.lastIndexOf(proj.getId())).length()));
+                            }
+                            row.add(temp.getLabel());
+                            row.add(temp.getTagString());
+                            row.add(temp.getFormat());
+                            row.add(temp.getContent());
+                            row.add(temp.getXnatAbstractresourceId());
+                            if (isZip) {
+                                row.add(subFile);
+                            }
+                            row.add(checksums ? CatalogUtils.getHash(subFile) : "");
+                            table.rows().add(row.toArray());
                         }
-                        row[3] = temp.getLabel();
-                        row[4] = temp.getTagString();
-                        row[5] = temp.getFormat();
-                        row[6] = temp.getContent();
-                        row[7] = temp.getXnatAbstractresourceId();
-                        if (isZip) row[8] = subFile;
-                        table.rows().add(row);
                     }
                 }
             }
@@ -817,10 +826,10 @@ public class FileList extends XNATCatalogTemplate {
         }
 
         if (StringUtils.isEmpty(filepath) && index == null) {
-            Hashtable<String, Object> params = new Hashtable<String, Object>();
+            Hashtable<String, Object> params = new Hashtable<>();
             params.put("title", "Files");
 
-            Map<String, Map<String, String>> cp = new Hashtable<String, Map<String, String>>();
+            Map<String, Map<String, String>> cp = new Hashtable<>();
             cp.put("URI", new Hashtable<String, String>());
             String rootPath = getRequest().getRootRef().getPath();
             if (rootPath.endsWith("/data")) {
@@ -1108,10 +1117,10 @@ public class FileList extends XNATCatalogTemplate {
             }
         }
 
-        Hashtable<String, Object> params = new Hashtable<String, Object>();
+        Hashtable<String, Object> params = new Hashtable<>();
         params.put("title", "Files");
 
-        Map<String, Map<String, String>> cp = new Hashtable<String, Map<String, String>>();
+        Map<String, Map<String, String>> cp = new Hashtable<>();
         cp.put("URI", new Hashtable<String, String>());
         cp.get("URI").put("serverRoot", getContextPath());
 
@@ -1139,7 +1148,7 @@ public class FileList extends XNATCatalogTemplate {
     }
 
     private Map<String, String> getSessionMaps() {
-        Map<String, String> session_ids = new Hashtable<String, String>();
+        Map<String, String> session_ids = new Hashtable<>();
         // Check if the session is an assessor to an "assessed" session
         if (assesseds.size() > 0) {
         	// Check if the session containing the assessor has an "ASSESSORS" directory.

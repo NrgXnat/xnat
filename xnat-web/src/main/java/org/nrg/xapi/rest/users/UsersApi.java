@@ -43,12 +43,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 @Api(description = "User Management API")
@@ -57,12 +61,13 @@ import java.util.*;
 public class UsersApi extends AbstractXapiRestController {
     @Autowired
     public UsersApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final UserFactory factory,
-                    final RoleHolder roleHolder, final SessionRegistry sessionRegistry, final AliasTokenService aliasTokenService) {
+                    final RoleHolder roleHolder, final SessionRegistry sessionRegistry, final AliasTokenService aliasTokenService, final JdbcTemplate jdbcTemplate) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _sessionRegistry = sessionRegistry;
         _aliasTokenService = aliasTokenService;
         _factory = factory;
+        _jdbcTemplate = jdbcTemplate;
     }
 
     @ApiOperation(value = "Get list of users.", notes = "The primary users function returns a list of all users of the XNAT system. This includes just the username and nothing else. You can retrieve a particular user by adding the username to the REST API URL or a list of users with abbreviated user profiles by calling /xapi/users/profiles.", response = String.class, responseContainer = "List")
@@ -96,18 +101,15 @@ public class UsersApi extends AbstractXapiRestController {
                 return new ResponseEntity<>(status);
             }
         }
-        final List<? extends UserI> users = getUserManagementService().getUsers();
-        final List<User> beans = new ArrayList<>();
-        if (users != null && users.size() > 0) {
-            for (UserI user : users) {
-                try {
-                    beans.add(_factory.getUser(user));
-                } catch (Exception e) {
-                    _log.error("", e);
-                }
+
+        final List<User> usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.xdat_user_id=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username", new RowMapper<User>() {
+            @Override
+            public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
+                return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, resultSet.getDate("last_modified"), null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, resultSet.getDate("lastSuccessfulLogin"));
             }
-        }
-        return new ResponseEntity<>(beans, HttpStatus.OK);
+        });
+
+        return new ResponseEntity<>(usersList, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get list of active users.", notes = "Returns a map of usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. The number of active sessions and a list of the session IDs is associated with each user.", response = Map.class, responseContainer = "Map")
@@ -961,4 +963,5 @@ public class UsersApi extends AbstractXapiRestController {
     private final SessionRegistry       _sessionRegistry;
     private final AliasTokenService     _aliasTokenService;
     private final UserFactory           _factory;
+    private final JdbcTemplate          _jdbcTemplate;
 }

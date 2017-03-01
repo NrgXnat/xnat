@@ -9,9 +9,6 @@
 
 package org.nrg.xapi.model.users;
 
-import com.google.common.collect.Maps;
-import org.apache.commons.lang3.StringUtils;
-import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -19,8 +16,6 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 /**
  * Handles all data operations with {@link User the user data model}.
@@ -56,7 +51,6 @@ public class UserFactory {
         user.setFirstName(xdatUser.getFirstname());
         user.setLastName(xdatUser.getLastname());
         user.setEmail(xdatUser.getEmail());
-        user.setAdmin((xdatUser instanceof XDATUser && ((XDATUser) xdatUser).isSiteAdmin()));
         user.setPassword(xdatUser.getPassword());
         user.setSalt(xdatUser.getSalt());
         user.setLastModified(xdatUser.getLastModified());
@@ -64,13 +58,6 @@ public class UserFactory {
         user.setEnabled(xdatUser.isEnabled());
         user.setVerified(xdatUser.isVerified());
         user.setSecured(true);
-
-        final Map<String, LoginRecord> loginRecords = Maps.newHashMap();
-        for (final XdatUserAuth auth : _service.getUsersByXdatUsername(xdatUser.getLogin())) {
-            final String key = StringUtils.defaultIfBlank(auth.getAuthMethodId(), auth.getAuthMethod());
-            loginRecords.put(key, new LoginRecord(auth));
-        }
-        user.setLoginRecords(loginRecords);
         return user;
     }
 

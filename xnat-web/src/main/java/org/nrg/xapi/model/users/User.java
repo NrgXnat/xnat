@@ -10,14 +10,11 @@
 package org.nrg.xapi.model.users;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.xdat.entities.UserAuthI;
 
 import java.util.Date;
-import java.util.Map;
 
 /**
  * A transport container for user details. The {@link #isSecured() secured property} controls whether security-related
@@ -88,18 +85,6 @@ public class User {
 
     public void setEmail(final String email) {
         _email = email;
-    }
-
-    /**
-     * Whether the user is a site administrator.
-     **/
-    @ApiModelProperty(value = "Whether the user is a site administrator.")
-    public Boolean isAdmin() {
-        return _secured ? null : _isAdmin;
-    }
-
-    public void setAdmin(final boolean isAdmin) {
-        _isAdmin = isAdmin;
     }
 
     /**
@@ -177,43 +162,11 @@ public class User {
     }
 
     /**
-     * Returns the authentication method ID of the most recently used authentication provider.
-     *
-     * @return The ID of the most recently used authentication provider.
+     * Sets the date and time of the last successful login attempt for the most recently used authentication provider.
      */
-    @ApiModelProperty("Returns ID of the most recently used authentication provider.")
-    public String getAuthMethodId() {
-        return getLatestLoginRecord().getAuthMethodId();
-    }
-
-    /**
-     * Returns the date and time that the password was updated for the most recently used authentication provider.
-     *
-     * @return The date and time that the password was updated for the most recently used authentication provider.
-     */
-    @ApiModelProperty("Returns the date and time that the password was updated for the most recently used authentication provider.")
-    public Date getPasswordUpdated() {
-        return getLatestLoginRecord().getPasswordUpdated();
-    }
-
-    /**
-     * Returns the number of failed login attempts for the most recently used authentication provider.
-     *
-     * @return The number of failed login attempts for the most recently used authentication provider.
-     */
-    @ApiModelProperty("Returns the number of failed login attempts for the most recently used authentication provider.")
-    public Integer getFailedLoginAttempts() {
-        return getLatestLoginRecord().getFailedLoginAttempts();
-    }
-
-    /**
-     * Returns the date and time of the last login attempt for the most recently used authentication provider.
-     *
-     * @return The date and time of the last login attempt for the most recently used authentication provider.
-     */
-    @ApiModelProperty("The date and time of the last login attempt for the most recently used authentication provider.")
-    public Date getLastLoginAttempt() {
-        return getLatestLoginRecord().getLastLoginAttempt();
+    @SuppressWarnings("unused")
+    public void setLastSuccessfulLogin(Date lastSuccessfulLogin) {
+        _lastSuccessfulLogin = lastSuccessfulLogin;
     }
 
     /**
@@ -223,30 +176,7 @@ public class User {
      */
     @ApiModelProperty("The date and time of the last successful login attempt for the most recently used authentication provider.")
     public Date getLastSuccessfulLogin() {
-        return getLatestLoginRecord().getLastSuccessfulLogin();
-    }
-
-    /**
-     * Returns the date and time that the user was locked out of the most recently used authentication provider.
-     *
-     * @return The date and time that the user was locked out of the most recently used authentication provider.
-     */
-    @ApiModelProperty("The date and time that the user was locked out of the most recently used authentication provider.")
-    public Date getLockoutTime() {
-        return getLatestLoginRecord().getLockoutTime();
-    }
-
-    @ApiModelProperty(value = "The user's login records, which includes each available login method, the user's login"
-                              + "name for that method, and data about logins using that method (failed login count, last"
-                              + "successful login, and so on).")
-    public Map<String, LoginRecord> getLoginRecords() {
-        return ImmutableMap.copyOf(_loginRecords);
-    }
-
-    public void setLoginRecords(final Map<String, LoginRecord> loginRecords) {
-        _loginRecords.clear();
-        _loginRecords.putAll(loginRecords);
-        _latest = null;
+        return _lastSuccessfulLogin;
     }
 
     @ApiModelProperty(value = "The user's full name.")
@@ -276,24 +206,31 @@ public class User {
                "  password: " + _password + "\n" +
                "  salt: " + _salt + "\n" +
                "  lastModified: " + _lastModified + "\n" +
+               "  lastSuccessfulLogin: " + _lastSuccessfulLogin + "\n" +
                "  authorization: " + _authorization + "\n" +
                "}\n";
     }
 
-    private LoginRecord getLatestLoginRecord() {
-        if (_latest == null) {
-            for (final LoginRecord current : _loginRecords.values()) {
-                if (_latest == null) {
-                    _latest = current;
-                } else if (_latest.getTimestamp().before(current.getTimestamp())) {
-                    _latest = current;
-                }
-            }
-        }
-        return _latest == null ? EMPTY_RECORD : _latest;
+    public User(int id, String username, String first, String last, String email, String dbname, String password, String salt, boolean secured, Date lastModified, UserAuthI authorization, boolean isEnabled, boolean isVerified, Date lastSuccessfulLogin){
+        _id = id;
+        _username = username;
+        _firstName = first;
+        _lastName = last;
+        _email = email;
+        _dbName = dbname;
+        _password = password;
+        _salt = salt;
+        _secured = secured;
+        _lastModified = lastModified;
+        _authorization = authorization;
+        _isEnabled = isEnabled;
+        _isVerified = isVerified;
+        _lastSuccessfulLogin = lastSuccessfulLogin;
     }
 
-    private static final LoginRecord EMPTY_RECORD = new LoginRecord();
+    public User(){
+
+    }
 
     private Integer     _id;
     private String      _username;
@@ -306,10 +243,7 @@ public class User {
     private boolean     _secured;
     private Date        _lastModified;
     private UserAuthI   _authorization;
-    private Boolean     _isAdmin;
     private Boolean     _isEnabled;
     private Boolean     _isVerified;
-    private LoginRecord _latest;
-
-    private final Map<String, LoginRecord> _loginRecords = Maps.newHashMap();
+    private Date        _lastSuccessfulLogin;
 }

@@ -556,32 +556,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "false")
-    public boolean getEnableProjectAppletScript() {
-        return getBooleanValue("enableProjectAppletScript");
-    }
-
-    public void setEnableProjectAppletScript(final boolean enableProjectAppletScript) {
-        try {
-            setBooleanValue(enableProjectAppletScript, "enableProjectAppletScript");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'enableProjectAppletScript': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference
-    public String getAppletScript() {
-        return getValue("appletScript");
-    }
-
-    public void setAppletScript(final String appletScript) {
-        try {
-            set(appletScript, "appletScript");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'appletScript': something is very wrong here.", e);
-        }
-    }
-
     @NrgPreference(defaultValue = "true")
     public boolean getChecksums() {
         return getBooleanValue("checksums");
@@ -1104,19 +1078,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             setBooleanValue(uiShowLeftBarBrowse, "UiShowLeftBarBrowse");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'UiShowLeftBarBrowse': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "false", aliases = "showapplet")
-    public boolean getUiShowLeftBarAppletButton() {
-        return getBooleanValue("uiShowLeftBarAppletButton");
-    }
-
-    public void setUiShowLeftBarAppletButton(final boolean uiShowLeftBarAppletButton) {
-        try {
-            setBooleanValue(uiShowLeftBarAppletButton, "uiShowLeftBarAppletButton");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'uiShowLeftBarAppletButton': something is very wrong here.", e);
         }
     }
 

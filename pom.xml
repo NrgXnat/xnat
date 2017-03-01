@@ -49,9 +49,6 @@
         <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
         <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 
-        <!-- xnat.app.name is used as the name for applet manifests to allow all XNAT applets to share dependencies. -->
-        <xnat.app.name>XNAT</xnat.app.name>
-
         <xnatdev.version>1.7.3-SNAPSHOT</xnatdev.version>
         <xnat.version>1.7.2</xnat.version>
         <xdat.version>${xnatdev.version}</xdat.version>
@@ -76,9 +73,7 @@
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
 
-        <!-- These are default property values to be overridden for specific applets and signing requirements. -->
-        <applet.main.class>AppletMainClass</applet.main.class>
-        <applet.main.package>org.nrg.xnat.applets</applet.main.package>
+        <!-- These are default property values to be overridden for specific applications and signing requirements. -->
         <signing.keystore>${basedir}/keystore</signing.keystore>
         <signing.alias>nrg</signing.alias>
         <signing.storepass>keypass</signing.storepass>
@@ -1452,42 +1447,6 @@
                     </executions>
                     <configuration>
                         <quiet>true</quiet>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>webstart-maven-plugin</artifactId>
-                    <version>${webstart-maven-plugin.version}</version>
-                    <configuration>
-                        <outputJarVersions>true</outputJarVersions>
-                        <jnlp>
-                            <outputFile>${applet.main.class}.jnlp</outputFile>
-                            <mainClass>${applet.main.package}.${applet.main.class}</mainClass>
-                        </jnlp>
-                        <updateManifestEntries>
-                            <Application-Name>${xnat.app.name}</Application-Name>
-                            <Permissions>all-permissions</Permissions>
-                            <Codebase>*</Codebase>
-                            <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
-                            <Caller-Allowable-Codebase>*</Caller-Allowable-Codebase>
-                            <Trusted-Library>true</Trusted-Library>
-                        </updateManifestEntries>
-                        <sign>
-                            <keystore>${signing.keystore}</keystore>
-                            <alias>${signing.alias}</alias>
-                            <storepass>${signing.storepass}</storepass>
-                            <keypass>${signing.keypass}</keypass>
-                            <tsaLocation>${signing.tsa}</tsaLocation>
-                            <verify>true</verify>
-                            <keystoreConfig>
-                                <delete>false</delete>
-                                <gen>false</gen>
-                            </keystoreConfig>
-                        </sign>
-                        <pack200>
-                            <enabled>true</enabled>
-                        </pack200>
-                        <gzip>true</gzip>
                     </configuration>
                 </plugin>
                 <plugin>

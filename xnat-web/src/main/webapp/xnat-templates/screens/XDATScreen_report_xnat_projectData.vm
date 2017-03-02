@@ -18,14 +18,13 @@
 ##	   background-color:#FFFFFF;
 ##	 }
 ##	</STYLE>
-<DIV id="project-page" class="yui-skin-sam" style="position: relative;">
+<div id="project-page" class="yui-skin-sam" style="position: relative;">
 
 ##    <div id="tp_fm" style="display:none"></div>
     #addCustomScreens($om.getXSIType() "report/alerts")
     #addCustomScreens($om.getXSIType() "report/errors")
 
-    <DIV class="edit_header1" style="">$!item.getStringProperty("xnat:projectData/name")</DIV>
-    <BR/>
+    <div class="edit_header1" style="">$!item.getStringProperty("xnat:projectData/name")</div>
     #if($data.getSession().getAttribute("userHelper").canRead("xnat:subjectData/project","$project.getId()"))
         <script type="text/javascript" src="$content.getURI("scripts/yui/build/resize/resize-beta-min.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/yui/build/layout/layout-beta-min.js")"></script>
@@ -58,20 +57,21 @@
         #addCustomScreens($om.getXSIType() "report/postData")
     #else
         <!--can't read data-->
+        
         #parse($turbineUtils.getTemplateName("_summary_tabs","xnat:projectData",$project.getId()))
 
-        <DIV id="congratsContainer" class="container" style="width:98%;margin:5px;background-color:#ff99cc;">
-            <DIV id="congratsBody" class="containerBody">
-                <DIV class="containerItem edit_header2" style="white-space:normal;line-height:18px">
-                    <FONT size="+1">Security Warning</FONT></DIV>
-                <DIV class="containerItem" style="white-space:normal;">
-                    Your account has not been granted access to this $displayManager.getSingularDisplayNameForProject().toLowerCase()'s data. If you would like to view this data, you will need to request access.
-                </DIV>
-                <DIV class="containerItem" style="white-space:normal;">
-                    &nbsp;&nbsp;&nbsp;&bull; <A href="$link.setPage("RequestProjectAccess.vm").addPathInfo(
-                    "project","$!{project.getId()}").addPathInfo("popup","$!popup")">Request Access.</A></DIV>
-            </DIV>
-        </DIV>
+        <div class="clearfix clear" style="margin-bottom: 2em"></div>
+        <div class="error">
+            <p><strong>Security Warning</strong></p>
+            <p>
+                Your account has not been granted access to this $displayManager.getSingularDisplayNameForProject().toLowerCase()'s data. If you would like to view this data, you will need to request access.
+                <a href="$link.setPage("RequestProjectAccess.vm").addPathInfo("project","$!{project.getId()}").addPathInfo("popup","$!popup")" class="btn1">
+                    #if($user.isGuest()) Log In And #end Request Access
+                </a>
+            </p>
+        </div>
+
+        
     #end
     <DIV ID="temp_display"></DIV>
-</DIV>
+</div>

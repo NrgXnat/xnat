@@ -86,11 +86,10 @@
     </div>
     #end
 #else
-    <div id="congratsContainer" class="container" style="width:98%;margin:5px;background-color: #797979; padding: 10px;">
-        <div id="congratsBody" class="containerBody">
-            <div class="containerItem edit_header2" style="white-space:normal;line-height:18px;">Security Warning</div>
-            <div class="containerItem" style="white-space:normal;">You do not have administrator access and can't access this page.</div>
-        </div>
+    <div class="clearfix clear"></div>
+    <div class="error">
+        <p><strong>Security Warning</strong></p>
+        <p>You do not have administrator access and can't access this page.</p>
     </div>
 #end
         </td>

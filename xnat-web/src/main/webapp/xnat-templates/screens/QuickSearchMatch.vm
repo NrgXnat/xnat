@@ -18,7 +18,7 @@ IMG{
 #set($typeProjectMappingList=$typeProjectMapping.get($key))
  <DIV ID="${key}Container" class="container">
      <DIV class="withColor containerTitle" style="cursor:pointer;" onclick="javascript:toggleBox('$key');return false;"><TABLE width="100%" cellpadding="0" cellspacing="0"><TR><TD>$elementNames.get($key)</TD><TD align="right"><div style="cursor:pointer;display:inline;height:12px" onclick=""><img id="${key}Image" src="$content.getURI("/images/minimize.gif")" border="0"/></div></TD></TR></TABLE></DIV>
-						     <DIV ID="${key}Body" class="containerBody" #if($matchList.size()>6)style="height:140px;"#end>
+						     <DIV ID="${key}Body" class="containerBody">
 						     #foreach($p in $matchList.keySet())
 						      <TABLE WIDTH="100%">
 						        <TR>

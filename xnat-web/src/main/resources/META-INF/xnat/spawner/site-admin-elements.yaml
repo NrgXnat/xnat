@@ -489,7 +489,11 @@ passwords:
             kind: panel.input.text
             name: passwordComplexity
             label: Password Complexity
-            description: Must be a valid regular expression.
+            description: Must be a valid regular expression. Do not include bounding '/' characters.
+            validation: "!pattern:^/"
+            element:
+                data:
+                    message: Please do not include bounding "/" characters in your regex pattern.
         passwordComplexityMessage:
             kind: panel.textarea
             name: passwordComplexityMessage

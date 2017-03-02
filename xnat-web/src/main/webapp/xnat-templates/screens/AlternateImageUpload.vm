@@ -380,8 +380,8 @@ function makeTheFormGo() {
                 The compressed uploader does not yet support splitting PET/MR sessions based on the site-wide or
                 project-specific settings for handling PET/MR data. If you are uploading PET/MR data and need to have
                 the data split into separate PET and MR sessions or created as a PET session rather than a PET/MR
-                session, you should use either the <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
-                Upload Assistant</a> or the DICOM C-STORE receiver as described below.
+                session, you should use either the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT Upload
+                Assistant</a> or the DICOM C-STORE receiver as described below.
             </div>
         </td>
     </tr>

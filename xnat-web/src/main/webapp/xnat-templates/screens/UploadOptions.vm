@@ -368,17 +368,12 @@
     <tr>
         <td valign="top" align="left">
             <div style="width:500px">
-                You can upload DICOM and ECAT files using the <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
-                Upload Assistant</a>. This tool is installed on your local machine and provides the ability to access
-                multiple XNAT servers from a single tool, as well as apply DICOM edit and anonymization scripts to the
-                data before it leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during
-                the transfer process.
+                You can upload DICOM and ECAT files using the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT
+                Upload Assistant</a>. The Upload Assistant is installed on your local machine and provides the ability
+                to access multiple XNAT servers from a single tool, as well as apply DICOM edit and anonymization
+                scripts to the data before it leaves your desktop, reducing the risk of exposing PHI or sensitive
+                patient data during the transfer process.
             </div>
-        </td>
-    </tr>
-    <tr id="option2">
-        <td>
-            <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion"><img src="https://api.bintray.com/packages/nrgxnat/applications/upload-assistant/images/download.svg"></a>
         </td>
     </tr>
 
@@ -400,8 +395,8 @@
                 The compressed uploader does not yet support splitting PET/MR sessions based on the site-wide or
                 project-specific settings for handling PET/MR data. If you are uploading PET/MR data and need to have
                 the data split into separate PET and MR sessions or created as a PET session rather than a PET/MR
-                session, you should use either the <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
-                Upload Assistant</a> as described above or the DICOM C-STORE receiver as described below.
+                session, you should use either the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT Upload
+                Assistant</a> as described above or the DICOM C-STORE receiver as described below.
             </div>
         </td>
     </tr>

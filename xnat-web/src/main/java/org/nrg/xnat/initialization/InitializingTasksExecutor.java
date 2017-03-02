@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.initialization;
 
+import org.nrg.xft.schema.XFTManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,10 @@ public class InitializingTasksExecutor {
     private class CheckTasks implements Runnable {
         @Override
         public void run() {
+            if (!XFTManager.isInitialized()) {
+                _log.info("XFTManager not yet initialized. Delaying check for initializing tasks.");
+                return;
+            }
             if (_tasks.size() == 0) {
                 _log.info("No initializing tasks found, cancelling future executions of initializing tasks.");
                 _future.cancel(false);

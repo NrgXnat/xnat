@@ -1,7 +1,7 @@
 <table>
         <tr>
             <td>
-                <h4>Download Upload Assistant application</h4>
+                <h3>Download the XNAT Upload Assistant</h3>
             </td>
         </tr>
         <tr>
@@ -14,6 +14,17 @@
                     Upload Assistant</a>. This tool is installed on your local machine and provides the ability to access multiple
                     XNAT servers from a single tool, as well as apply DICOM edit and anonymization scripts to the data before it
                     leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during the transfer process.
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td valign="top" align="left">
+                <div class="alert" style="width:500px">
+                    Installing the <b>XNAT Upload Assistant</b> requires administrator privileges (or at least the
+                    ability to grant administrator privileges to the installer)for the workstation on which you wish to
+                    install. If you don't have administrator privileges, please contact your XNAT system administrators
+                    or IT or network support staff.
                 </div>
             </td>
         </tr>

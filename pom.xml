@@ -79,6 +79,7 @@
         <pipeline.version>${xnat.version}</pipeline.version>
 
         <!-- These are default property values to be overridden for specific applications and signing requirements. -->
+        <signing.skip>true</signing.skip>
         <signing.keystore>${basedir}/keystore</signing.keystore>
         <signing.alias>nrg</signing.alias>
         <signing.storepass>keypass</signing.storepass>
@@ -1570,6 +1571,7 @@
                         </execution>
                     </executions>
                     <configuration>
+                        <skip>${signing.skip}</skip>
                         <keystore>${signing.keystore}</keystore>
                         <alias>${signing.alias}</alias>
                         <storepass>${signing.storepass}</storepass>

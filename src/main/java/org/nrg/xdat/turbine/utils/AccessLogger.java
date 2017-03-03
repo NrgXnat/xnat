@@ -72,7 +72,7 @@ public class AccessLogger {
                         try {
                             InetAddress proxyAddy = InetAddress.getByName(proxy);
                             if (proxyAddy != null) {
-                                return proxyAddy.toString();
+                                return proxyAddy.getHostAddress();
                             } else {
                                 return nullAddy;
                             }

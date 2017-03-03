@@ -53,6 +53,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpSession;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 
 @Api(description = "User Management API")
@@ -102,10 +103,57 @@ public class UsersApi extends AbstractXapiRestController {
             }
         }
 
-        final List<User> usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.xdat_user_id=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username", new RowMapper<User>() {
+        final List<User> usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.xdat_user_id=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username ORDER BY xdat_user.xdat_user_id", new RowMapper<User>() {
             @Override
             public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
-                return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, resultSet.getDate("last_modified"), null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, resultSet.getDate("lastSuccessfulLogin"));
+                Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");
+                Date lastSuccessfulLoginDate = null;
+                if(lastSuccessfulLogin!=null){
+                    lastSuccessfulLoginDate = new Date(lastSuccessfulLogin.getTime());
+                }
+                Timestamp lastModified = resultSet.getTimestamp("last_modified");
+                Date lastModifiedDate = null;
+                if(lastModified!=null){
+                    lastModifiedDate = new Date(lastModified.getTime());
+                }
+
+                return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, lastModifiedDate, null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, lastSuccessfulLoginDate);
+            }
+        });
+
+        return new ResponseEntity<>(usersList, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Get list of users who are enabled or who have interacted with the site somewhat recently.", notes = "The users' profiles function returns a list of all users of the XNAT system with brief information about each.", response = User.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "A list of user profiles."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @RequestMapping(value = "current", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<List<User>> currentUsersProfilesGet() {
+        if (_preferences.getRestrictUserListAccessToAdmins()) {
+            final HttpStatus status = isPermitted();
+            if (status != null) {
+                return new ResponseEntity<>(status);
+            }
+        }
+
+        final List<User> usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.xdat_user_id=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - INTERVAL '1 year') OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - INTERVAL '1 year') ) ) )) ORDER BY xdat_user.xdat_user_id", new RowMapper<User>() {
+            @Override
+            public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
+                Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");
+                Date lastSuccessfulLoginDate = null;
+                if(lastSuccessfulLogin!=null){
+                    lastSuccessfulLoginDate = new Date(lastSuccessfulLogin.getTime());
+                }
+                Timestamp lastModified = resultSet.getTimestamp("last_modified");
+                Date lastModifiedDate = null;
+                if(lastModified!=null){
+                    lastModifiedDate = new Date(lastModified.getTime());
+                }
+
+                return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, lastModifiedDate, null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, lastSuccessfulLoginDate);
             }
         });
 

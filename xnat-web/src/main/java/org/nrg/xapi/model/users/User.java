@@ -162,14 +162,6 @@ public class User {
     }
 
     /**
-     * Sets the date and time of the last successful login attempt for the most recently used authentication provider.
-     */
-    @SuppressWarnings("unused")
-    public void setLastSuccessfulLogin(Date lastSuccessfulLogin) {
-        _lastSuccessfulLogin = lastSuccessfulLogin;
-    }
-
-    /**
      * Returns the date and time of the last successful login attempt for the most recently used authentication provider.
      *
      * @return The date and time of the last successful login attempt for the most recently used authentication provider.
@@ -177,6 +169,13 @@ public class User {
     @ApiModelProperty("The date and time of the last successful login attempt for the most recently used authentication provider.")
     public Date getLastSuccessfulLogin() {
         return _lastSuccessfulLogin;
+    }
+
+    /**
+     * Sets the date and time of the last successful login attempt for the most recently used authentication provider.
+     */
+    public void setLastSuccessfulLogin(Date lastSuccessfulLogin) {
+        _lastSuccessfulLogin = lastSuccessfulLogin;
     }
 
     @ApiModelProperty(value = "The user's full name.")

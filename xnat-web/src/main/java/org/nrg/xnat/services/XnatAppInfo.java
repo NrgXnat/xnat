@@ -16,6 +16,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatPlugin;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -39,6 +41,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -51,7 +55,6 @@ import java.util.regex.Pattern;
 
 @Component
 public class XnatAppInfo {
-
     public static final String NON_RELEASE_VERSION_REGEX  = "(?i:^.*(SNAPSHOT|BETA|RC).*$)";
     public static final String XNAT_PRIMARY_MODE_PROPERTY = "xnat.is_primary_node";
 
@@ -68,10 +71,10 @@ public class XnatAppInfo {
         try (final InputStream inputStream = configuredUrls.getInputStream()) {
             final JsonNode paths = serializerService.deserializeYaml(inputStream);
 
-            _configPath = paths.get("configPath").asText();
-            _configPathPatterns = Arrays.asList(asAntPattern(_configPath), asAntPattern(_configPath + "/"));
+            _setupPath = paths.get("setupPath").asText();
+            _setupPathPatterns = Arrays.asList(asAntPattern(_setupPath), asAntPattern(_setupPath + "/"));
             _nonAdminErrorPath = paths.get("nonAdminErrorPath").asText();
-            _nonAdminErrorPathPattern = asAntPattern(_nonAdminErrorPath);
+            _nonAdminErrorPathPatterns = Collections.singletonList(asAntPattern(_nonAdminErrorPath));
 
             _initUrls.addAll(asAntPatterns(nodeToList(paths.get("initUrls"))));
             _openUrls.addAll(asAntPatterns(nodeToList(paths.get("openUrls"))));
@@ -179,10 +182,10 @@ public class XnatAppInfo {
             }
         }
     }
-    
-	public void updateOpenUrlList() {
 
-		/** NOTE:  Currently there is no reason to call this method.  The open URL list is not checked for every REST call, 
+    public void updateOpenUrlList() {
+        /*
+         * NOTE:  Currently there is no reason to call this method.  The open URL list is not checked for every REST call,
 		 * so Tomcat restarts are still required for changes to the openUrl list to take effect.  Leaving this method defined
 		 * for documentation of the Tomcat restart requirement, and in case further changes are made that would allow 
 		 * these changes to take effect without restart.
@@ -190,28 +193,25 @@ public class XnatAppInfo {
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         _openUrls.clear();
         try (final InputStream inputStream = configuredUrls.getInputStream()) {
-        	final JsonNode paths = _serializerService.deserializeYaml(inputStream);
+            final JsonNode paths = _serializerService.deserializeYaml(inputStream);
             _openUrls.addAll(asAntPatterns(nodeToList(paths.get("openUrls"))));
             _openUrls.addAll(_openUrlsPref.getAllowedPluginOpenUrls());
         } catch (IOException e) {
-			_log.debug("Could not update open URL list", e);
-		}
-        
-	}
-    
-	/**
-	 * Gets the plugin admin urls.
-	 *
-	 * @return the plugin admin urls
-	 */
-	private Collection<? extends String> getPluginAdminUrls() {
-		return _openUrlsPref.getUrlList(XnatPlugin.PLUGIN_ADMIN_URLS);
-	}
+            _log.debug("Could not update open URL list", e);
+        }
 
-	
-	
-	
-	public Map<String, String> getFoundPreferences() {
+    }
+
+    /**
+     * Gets the plugin admin urls.
+     *
+     * @return the plugin admin urls
+     */
+    private List<? extends String> getPluginAdminUrls() {
+        return _openUrlsPref.getUrlList(XnatPlugin.PLUGIN_ADMIN_URLS);
+    }
+
+    public Map<String, String> getFoundPreferences() {
         if (_foundPreferences.size() == 0) {
             return null;
         }
@@ -460,8 +460,8 @@ public class XnatAppInfo {
      *
      * @return The path where XNAT found its primary configuration file.
      */
-    public String getConfigPath() {
-        return _configPath;
+    public String getSetupPath() {
+        return _setupPath;
     }
 
     /**
@@ -499,24 +499,12 @@ public class XnatAppInfo {
         return checkUrls(request, _openUrls);
     }
 
-    public boolean isOpenUrlRequest(final String path) {
-        return checkUrls(path, _openUrls);
-    }
-
-    public boolean isConfigPathRequest(final HttpServletRequest request) {
-        return isConfigPathRequest(request.getRequestURI());
-    }
-
-    public boolean isConfigPathRequest(final String path) {
-        return checkUrls(path, _configPathPatterns);
+    public boolean isSetupPathRequest(final HttpServletRequest request) {
+        return checkUrls(request, _setupPathPatterns);
     }
 
     public boolean isNonAdminErrorPathRequest(final HttpServletRequest request) {
-        return isNonAdminErrorPathRequest(request.getRequestURI());
-    }
-
-    public boolean isNonAdminErrorPathRequest(final String path) {
-        return PATH_MATCHER.match(_nonAdminErrorPathPattern, path);
+        return checkUrls(request, _nonAdminErrorPathPatterns);
     }
 
     private String translateToBoolean(final String currentValue) {
@@ -529,7 +517,7 @@ public class XnatAppInfo {
         return Boolean.toString(CHECK_TRUE_PATTERN.matcher(currentValue).matches());
     }
 
-    private Collection<? extends String> asAntPatterns(final List<String> urls) {
+    private List<String> asAntPatterns(final List<String> urls) {
         return Lists.transform(urls, new Function<String, String>() {
             @Nullable
             @Override
@@ -543,7 +531,7 @@ public class XnatAppInfo {
     }
 
     private String asAntPattern(final String url) {
-        return url.endsWith("/") ? url + "**" : url + "*";
+        return url + (url.endsWith("/") ? "**" : "*");
     }
 
     private List<String> nodeToList(final JsonNode node) {
@@ -562,7 +550,66 @@ public class XnatAppInfo {
     }
 
     private boolean checkUrls(final HttpServletRequest request, final Collection<String> urls) {
-        return checkUrls(request.getRequestURI(), urls);
+        if (checkUrls(StringUtils.removeStart(request.getRequestURI(), request.getContextPath()), urls)) {
+            return true;
+        }
+
+        final URI referer = getReferer(request);
+        return referer != null && checkUrls(StringUtils.removeStart(referer.getPath(), request.getContextPath()), urls);
+    }
+
+    private URI getReferer(final HttpServletRequest request) {
+        // If there's no referer, there's nothing to check.
+        final String referer = request.getHeader("Referer");
+        if (StringUtils.isBlank(referer)) {
+            return null;
+        }
+
+        // If the request URI is a page, then we don't care about the referer.
+        final String path = StringUtils.removeStart(request.getRequestURI(), request.getContextPath());
+        if (path.matches("^/app/(template|screen).*$") || path.matches("^.*\\.vm$") || path.equals("/") || StringUtils.isBlank(path)) {
+            return null;
+        }
+
+        try {
+            final URI refererUri = new URI(referer);
+            final URI requestUri = new URI(request.getRequestURL().toString());
+            final URI siteUrl    = new URI(_preferences.getSiteUrl());
+
+            final String refererHost = refererUri.getHost();
+            final String requestHost = requestUri.getHost();
+            final int refererPort = refererUri.getPort();
+            final int requestPort = requestUri.getPort();
+            final String refererScheme = refererUri.getScheme();
+            final String requestScheme = requestUri.getScheme();
+
+            if (StringUtils.equals(refererHost, requestHost) && refererPort == requestPort) {
+                final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererScheme, requestScheme);
+                if (protocolMismatch) {
+                    final String message = String.format("The referer URI matched request URI host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d",
+                                                         refererScheme, refererHost, refererPort, requestScheme, requestHost, requestPort);
+                    throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
+                }
+                _log.info("Referer host and port matched request host and port, valid referer.");
+            } else if (StringUtils.isNotBlank(siteUrl.toString()) && StringUtils.equals(refererHost, siteUrl.getHost()) && refererPort == siteUrl.getPort()) {
+                final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererScheme, siteUrl.getScheme());
+                if (protocolMismatch) {
+                    final String message = String.format("The referer URI matched the configured site URL host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
+                                                         refererScheme, refererHost, refererPort, siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
+                    throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
+                }
+                _log.info("Referer host and port matched site URL host and port, valid referer.");
+            } else {
+                final String message = String.format("The referer URI did not match either the request URI or the configured site URL:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
+                                                     refererScheme, refererHost, refererPort, requestScheme, requestHost, requestPort, siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
+                throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
+            }
+
+            return refererUri;
+        } catch (URISyntaxException e) {
+            _log.info("Couldn't check referer URI because of a syntax exception: " + request.getRequestURL().toString(), e);
+            return null;
+        }
     }
 
     private boolean checkUrls(final String path, final Collection<String> urls) {
@@ -593,14 +640,16 @@ public class XnatAppInfo {
 
     private final JdbcTemplate             _template;
     private final Environment              _environment;
-    private final String                   _configPath;
-    private final List<String>             _configPathPatterns;
-    private final String                   _nonAdminErrorPath;
-    private final String                   _nonAdminErrorPathPattern;
     private final SiteConfigPreferences    _preferences;
+    private final SerializerService        _serializerService;
+    private final PluginOpenUrlsPreference _openUrlsPref;
+    private final String                   _setupPath;
+    private final List<String>             _setupPathPatterns;
+    private final String                   _nonAdminErrorPath;
+    private final List<String>             _nonAdminErrorPathPatterns;
     private final boolean                  _primaryNode;
-	private final PluginOpenUrlsPreference _openUrlsPref;
 
+    private       boolean                          _initialized      = false;
     private final List<String>                     _initUrls         = new ArrayList<>();
     private final List<String>                     _openUrls         = new ArrayList<>();
     private final List<String>                     _adminUrls        = new ArrayList<>();
@@ -608,7 +657,4 @@ public class XnatAppInfo {
     private final Date                             _startTime        = new Date();
     private final Properties                       _properties       = new Properties();
     private final Map<String, Map<String, String>> _attributes       = new HashMap<>();
-	private final SerializerService                _serializerService;
-    private       boolean                          _initialized      = false;
-    
 }

@@ -1,4 +1,5 @@
-configPath: /setup
+setupPath: /setup
+
 nonAdminErrorPath: /app/template/Unconfigured.vm
 
 initUrls:

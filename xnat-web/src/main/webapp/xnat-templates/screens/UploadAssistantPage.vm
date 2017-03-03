@@ -1,31 +1,49 @@
+#* @vtlvariable name="sectionTitle" type="java.lang.String" *#
+#if(!$sectionTitle)
+    #set($sectionTitle = "<h3>Download the XNAT Upload Assistant</h3>")
+    #set($isSelfContained = true)
+#else
+    #set($isSelfContained = false)
+#end
+#if($isSelfContained)
 <table>
-        <tr>
-            <td>
-                <h3>Download the XNAT Upload Assistant</h3>
-            </td>
-        </tr>
-        <tr>
-            <td valign="top" align="center">
-                <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion"><img src="https://api.bintray.com/packages/nrgxnat/applications/upload-assistant/images/download.svg"></a></td>
-            </td>
-            <td valign="top" align="left">
-                <div style="width:500px">
-                    You can upload DICOM and ECAT files using the <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
-                    Upload Assistant</a>. This tool is installed on your local machine and provides the ability to access multiple
-                    XNAT servers from a single tool, as well as apply DICOM edit and anonymization scripts to the data before it
-                    leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during the transfer process.
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td>&nbsp;</td>
-            <td valign="top" align="left">
-                <div class="alert" style="width:500px">
-                    Installing the <b>XNAT Upload Assistant</b> requires administrator privileges (or at least the
-                    ability to grant administrator privileges to the installer)for the workstation on which you wish to
-                    install. If you don't have administrator privileges, please contact your XNAT system administrators
-                    or IT or network support staff.
-                </div>
-            </td>
-        </tr>
+#end
+    <tr>
+        <td>
+            $sectionTitle
+        </td>
+    </tr>
+    <tr>
+        <td valign="top" align="left">
+            <div style="width:500px">
+                You can upload DICOM and ECAT files using the <a
+                    href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion">XNAT
+                Upload Assistant</a>. This tool is installed on your local machine and provides the ability to access
+                multiple
+                XNAT servers from a single tool, as well as apply DICOM edit and anonymization scripts to the data
+                before it
+                leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during the transfer
+                process.
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td valign="top" align="left">
+            <a href="https://bintray.com/nrgxnat/applications/upload-assistant/_latestVersion"><img
+                    src="https://api.bintray.com/packages/nrgxnat/applications/upload-assistant/images/download.svg"></a>
+        </td>
+    </tr>
+    <tr>
+        <td valign="top" align="left">
+            <div class="alert" style="width:500px">
+                Installing the <b>XNAT Upload Assistant</b> requires administrator privileges (or at least the
+                ability to grant administrator privileges to the installer) for the workstation on which you wish to
+                install. If you don't have administrator privileges, please contact your XNAT system administrators
+                or IT or network support staff.
+            </div>
+        </td>
+    </tr>
+#if($isSelfContained)
 </table>
+#end
+

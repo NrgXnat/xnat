@@ -147,7 +147,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DatabaseAuthenticationProviderConfigurator dbConfigurator(final XnatDatabaseUserDetailsService userDetailsService, final SiteConfigPreferences preferences) {
+    public DatabaseAuthenticationProviderConfigurator dbConfigurator(final XnatDatabaseUserDetailsService userDetailsService) {
         return new DatabaseAuthenticationProviderConfigurator(userDetailsService);
     }
 
@@ -199,8 +199,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo, final SiteConfigPreferences preferences) throws IOException {
-        return new XnatInitCheckFilter(appInfo, preferences);
+    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) throws IOException {
+        return new XnatInitCheckFilter(appInfo);
     }
 
     @Bean

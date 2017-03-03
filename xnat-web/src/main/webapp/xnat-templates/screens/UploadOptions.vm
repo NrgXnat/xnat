@@ -358,24 +358,8 @@
         <td>&nbsp;</td>
     </tr>
 
-
-        <tr>
-            <td>
-                <hr/>
-                <h4>Option 1: XNAT Upload Assistant</h4>
-            </td>
-        </tr>
-    <tr>
-        <td valign="top" align="left">
-            <div style="width:500px">
-                You can upload DICOM and ECAT files using the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT
-                Upload Assistant</a>. The Upload Assistant is installed on your local machine and provides the ability
-                to access multiple XNAT servers from a single tool, as well as apply DICOM edit and anonymization
-                scripts to the data before it leaves your desktop, reducing the risk of exposing PHI or sensitive
-                patient data during the transfer process.
-            </div>
-        </td>
-    </tr>
+    #set($sectionTitle = "<hr/><h4>Option 1: XNAT Upload Assistant</h4>")
+    #parse("/screens/UploadAssistantPage.vm")
 
     <tr>
         <td>

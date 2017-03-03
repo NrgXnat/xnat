@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.security;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.XDAT;
@@ -30,15 +29,12 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 public class XnatInitCheckFilter extends GenericFilterBean {
     @Autowired
-    public XnatInitCheckFilter(final XnatAppInfo appInfo, final SiteConfigPreferences preferences) {
+    public XnatInitCheckFilter(final XnatAppInfo appInfo) {
         super();
         _appInfo = appInfo;
-        _preferences = preferences;
     }
 
     @Override
@@ -66,9 +62,8 @@ public class XnatInitCheckFilter extends GenericFilterBean {
 
             try {
                 if (_appInfo.isInitPathRequest(request) ||
-                    _appInfo.isConfigPathRequest(request) ||
-                    _appInfo.isNonAdminErrorPathRequest(request) ||
-                    isPermittedReferer(request)) {
+                    _appInfo.isSetupPathRequest(request) ||
+                    _appInfo.isNonAdminErrorPathRequest(request)) {
                     //If you're already on the configuration page, error page, or expired password page, continue on without redirect.
                     chain.doFilter(req, res);
                 } else if (isAnonymous) {
@@ -80,10 +75,10 @@ public class XnatInitCheckFilter extends GenericFilterBean {
                     final String serverPath = XnatHttpUtils.getServerRoot(request);
                     if (Roles.isSiteAdmin(user)) {
                         if (_log.isWarnEnabled()) {
-                            _log.warn("Admin user {} has logged into the uninitialized server and is being redirected to {}", user.getUsername(), serverPath + _appInfo.getConfigPath());
+                            _log.warn("Admin user {} has logged into the uninitialized server and is being redirected to {}", user.getUsername(), serverPath + _appInfo.getSetupPath());
                         }
                         //Otherwise, if the user has administrative permissions, direct the user to the configuration page.
-                        response.sendRedirect(serverPath + _appInfo.getConfigPath());
+                        response.sendRedirect(serverPath + _appInfo.getSetupPath());
                     } else {
                         if (_log.isWarnEnabled()) {
                             _log.warn("Non-admin user {} has logged into the uninitialized server and is being redirected to {}", user.getUsername(), serverPath + _appInfo.getNonAdminErrorPath());
@@ -102,57 +97,7 @@ public class XnatInitCheckFilter extends GenericFilterBean {
         }
     }
 
-    private boolean isPermittedReferer(final HttpServletRequest request) {
-        final String referer = request.getHeader("Referer");
-        if (StringUtils.isBlank(referer)) {
-            return false;
-        }
-
-        final String uri = request.getRequestURI();
-        if (uri.contains("/app/template") || uri.contains("/app/screen") || uri.endsWith(".vm") || uri.equals("/")) {
-            return false;
-        }
-
-        try {
-            // This validates the request against the referer to ensure they match (no CSRF).
-            final URI refererUri = new URI(referer);
-            final URI requestUri = new URI(request.getRequestURL().toString());
-            final URI siteUrl    = new URI(_preferences.getSiteUrl());
-
-            if (refererUri.getHost().equals(requestUri.getHost()) && refererUri.getPort() == requestUri.getPort()) {
-                final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererUri.getScheme(), requestUri.getScheme());
-                if (protocolMismatch) {
-                    final String message = String.format("The referer URI matched request URI host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d",
-                            refererUri.getScheme(), refererUri.getHost(), refererUri.getPort(), requestUri.getScheme(), requestUri.getHost(), requestUri.getPort());
-                    throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
-                }
-                _log.info("Referer host and port matched request host and port, allowing further checks for valid referer.");
-            } else if (refererUri.getHost().equals(siteUrl.getHost()) && refererUri.getPort() == siteUrl.getPort()) {
-                final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererUri.getScheme(), siteUrl.getScheme());
-                if (protocolMismatch) {
-                    final String message = String.format("The referer URI matched the configured site URL host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
-                            refererUri.getScheme(), refererUri.getHost(), refererUri.getPort(), siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
-                    throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
-                }
-                _log.info("Referer host and port matched site URL host and port, allowing further checks for valid referer.");
-            } else {
-                final String message = String.format("The referer URI did not match either the request URI or the configured site URL:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
-                        refererUri.getScheme(), refererUri.getHost(), refererUri.getPort(), requestUri.getScheme(), requestUri.getHost(), requestUri.getPort(), siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
-                throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
-            }
-
-            // If you're on a request within the configuration page (or error page or expired password page), continue
-            // on without redirect.
-            final String path = refererUri.getPath();
-            return _appInfo.isConfigPathRequest(path) || _appInfo.isNonAdminErrorPathRequest(path) || _appInfo.isOpenUrlRequest(path);
-        } catch (URISyntaxException e) {
-            _log.warn("Unable to construct a URI from the referer specified: {}", referer);
-            return false;
-        }
-    }
-
     private static Logger _log = LoggerFactory.getLogger(XnatInitCheckFilter.class);
 
     private final XnatAppInfo           _appInfo;
-    private final SiteConfigPreferences _preferences;
 }

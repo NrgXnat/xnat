@@ -48,18 +48,14 @@ var XNAT = getObject(XNAT||{});
         return str.replace(/^\/+/,'');
     }
 
-    // fix potential duplicate url root prefixes
+    // try to make sure url includes root app context
     function fixRoot(root, url){
-        var rootRegExp;
         // remove slashes from both sides of root
         root = trimSlashes(root);
         // make sure url has only ONE leading slash
-        url  = '/' + chopSlashes(url);
-        if (!root){
-            return url;
-        }
-        rootRegExp = new RegExp('^(\/' + root + ')*', 'i');
-        return url.replace(rootRegExp, '/' + root);
+        url  = chopSlashes(url);
+        // uh...
+        return ((root ? '/' + root : '') + (url ? '/' + url : '')) || '/';
     }
 
     // make sure the serverRoot string (and only ONE serverRoot string)
@@ -642,10 +638,11 @@ var XNAT = getObject(XNAT||{});
 
 }));
 
-$(window).on('load', function(){
+// $(window).on('load', function(){
     // re-write links that start with '/'
     // to make sure they go to the site root
-    $('a[href^="/"]').attr('href', function(){
-        return XNAT.url.rootUrl($(this).attr('href'));
-    });
-});
+    // ...or don't...
+    // $('a[href^="/"]').attr('href', function(){
+    //     return XNAT.url.rootUrl($(this).attr('href'));
+    // });
+// });

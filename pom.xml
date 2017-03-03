@@ -18,6 +18,7 @@
 
     <name>NRG Parent POM</name>
     <description>Defines NRG-wide dependency, versioning, repository, and other build property values.</description>
+    <url>http://www.xnat.org</url>
 
     <scm>
         <url>https://bitbucket.org/xnatdev/parent</url>
@@ -43,6 +44,10 @@
     </organization>
 
     <properties>
+
+        <!-- The following properties are used for identifying application, version, build number and date, etc. -->
+        <application.name>${project.name}</application.name>
+        <build.number>manual</build.number>
 
         <java.source.version>1.7</java.source.version>
         <java.target.version>1.7</java.target.version>
@@ -197,8 +202,7 @@
         <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
-        <maven-war-plugin.version>3.0</maven-war-plugin.version>
-        <webstart-maven-plugin.version>1.0-beta-7</webstart-maven-plugin.version>
+        <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -1508,17 +1512,39 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>buildnumber-maven-plugin</artifactId>
+                    <version>1.4</version>
+                    <executions>
+                        <execution>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>create</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${maven-jar-plugin.version}</version>
                     <configuration>
                         <archive>
-                            <addMavenDescriptor>false</addMavenDescriptor>
+                            <addMavenDescriptor>true</addMavenDescriptor>
+                            <manifest>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
                             <manifestEntries>
-                                <Application-Name>${xnat.app.name}</Application-Name>
+                                <Application-Name>${application.name}</Application-Name>
                                 <Permissions>all-permissions</Permissions>
                                 <Codebase>*</Codebase>
                                 <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
+                                <Build-Date>${maven.build.timestamp}</Build-Date>,
+                                <!-- This buildNumber is from Jenkins or manually set -->
+                                <Build-Number>${build.number}</Build-Number>,
+                                <!--suppress MavenModelInspection -->
+                                <!-- This buildNumber is from buildnumber-maven-plugin -->
+                                <Implementation-Sha>${buildNumber}</Implementation-Sha>,
                             </manifestEntries>
                         </archive>
                     </configuration>
@@ -1544,7 +1570,6 @@
                         </execution>
                     </executions>
                     <configuration>
-                        <skip>true</skip>
                         <keystore>${signing.keystore}</keystore>
                         <alias>${signing.alias}</alias>
                         <storepass>${signing.storepass}</storepass>

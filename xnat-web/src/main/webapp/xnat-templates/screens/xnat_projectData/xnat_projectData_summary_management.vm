@@ -17,7 +17,7 @@
         <p>
            <input type="text" name="email" ID="invite_email" style="margin-bottom:3px"/><br>
            <select name="access_level" id="access_level" style="margin-bottom:3px"></select><br>
-           <input type="button" class="btn sm" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" ONCLICK="window.userManager.inviteUserFromForm();"/>
+           <input type="button" class="btn sm" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" onclick="window.userManager.inviteUserFromForm();"/>
         </p>
     </div>
 
@@ -25,7 +25,7 @@
         <div class="inline-thirds" id="user_invite_list">
             <h4 id="user_list_header" style="margin-bottom:3px">Add Users from List</h4>
             <p>
-                <input type="button" id="popup_all_users_button" disabled="true" value="Show List" ONCLICK="window.userManager.popupAllUsersBox();"/>
+                <input type="button" id="popup_all_users_button" disabled="true" value="Show List" onclick="window.userManager.inviteUserFromList();"/>
             </p>
         </div>
     #end
@@ -34,7 +34,9 @@
         <p id="project_access_settings"></p>
     </div>
 </div>
-<div class="clearfix clear"></div>
+<div id="availableUserList" class="hidden"></div>
+<div class="clearfix clear pad10v"></div>
+
 
 <table width="100%">
     <tr>

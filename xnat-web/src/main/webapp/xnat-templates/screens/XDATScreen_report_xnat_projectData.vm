@@ -24,7 +24,7 @@
     #addCustomScreens($om.getXSIType() "report/alerts")
     #addCustomScreens($om.getXSIType() "report/errors")
 
-    <div class="edit_header1" style="">$!item.getStringProperty("xnat:projectData/name")</div>
+    <h2 class="edit_header1" style="">$!item.getStringProperty("xnat:projectData/name")</h2>
     #if($data.getSession().getAttribute("userHelper").canRead("xnat:subjectData/project","$project.getId()"))
         <script type="text/javascript" src="$content.getURI("scripts/yui/build/resize/resize-beta-min.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/yui/build/layout/layout-beta-min.js")"></script>

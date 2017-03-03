@@ -1676,6 +1676,9 @@ div.edit_title {
     padding: 2px 2px 0;
     min-width: 470px;
 }
+h2.edit_header1 {
+    font-weight: normal;
+}
 
 div.edit_title {
     margin: 20px 0;

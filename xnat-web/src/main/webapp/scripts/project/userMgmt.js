@@ -494,19 +494,8 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 
     this.adjustInviteLists=function(user_name,access_level){
         if (user_name!=undefined && access_level!=undefined){
-            // remove the user_name from any array it's currently part of
-        	$(selections).each(function (i2,v2){
-        		if(v2.contains!=undefined && v2.contains(user_name)){
-                    var index = v2.indexOf(user_name);
-                    v2.splice(index, 1);
-        		}
-        	});
-
-            // add it to the array it should be in
-            if(selections[access_level]==undefined){
-            	selections[access_level]=new Array();
-            }
-            selections[access_level].push(user_name);
+            // each user can only be invited to join one group, so overwrite a previous group selection if it was made
+			selections[user_name] = access_level;
         }
     };
 
@@ -540,18 +529,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 		};
 
         var handleSubmit = function() {
-        	$.each(selections, function(i3,v3){
-        		if(v3.length>0){
-        			//if there are entries to submit, do the invitation
-        			if(window.userManager.inviteUser(v3.toString(),i3)){
-        				//clear the todo list
-            			selections[i3]=new Array();
-        			}
-        		}
-        	});
-            this.hide();
-            var popup = window.userManager.allUsersPopup;
-            popup.allUsersDataTable = new YAHOO.widget.DataTable("all_users_table", allUserColumnDefs,popup.alluserDataSource,{scrollable:true,height:"300px",width:"600px"});
+
 		};
 		var myButtons = [ { text:"Submit", handler:handleSubmit, isDefault:true },
 		                  { text:"Cancel", handler:handleCancel } ];
@@ -595,6 +573,99 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 		document.getElementById("tp_fm").style.display="block";
 
 		this.allUsersPopup.show();
+	};
+
+	this.getAvailableUsers = function(){
+		var availableUsers = [],
+			projectUsers = this.userResultSet.ResultSet.Result,
+			siteUsers = this.allUserResultSet.ResultSet.Result;
+		// build dataset of available users
+
+		siteUsers.forEach(function(userObj){
+			var available=true;
+			for (var i=0, j=projectUsers.length; i<j; i++) {
+				if (userObj.login === projectUsers[i].login || userObj.login === 'guest') {
+					// don't add users if they already exist in the project, or the "guest" user
+					available=false;
+					break;
+				}
+			}
+			if (available) availableUsers.push(userObj);
+		});
+
+		return availableUsers;
+	};
+
+	function groupSelect(login){
+		var addUserGroupSelector = '<select onchange="window.userManager.adjustInviteLists(\''+login+'\', this.value)">';
+		addUserGroupSelector += '<option value selected></option>';
+		window.userManager.groups.forEach(function(group){
+			addUserGroupSelector += '<option value="'+group.id+'">'+ group.displayname + '</option>';
+		});
+		addUserGroupSelector += '</select>';
+		return addUserGroupSelector;
+	}
+
+	this.showAvailableUsers = function(container){
+		var availableUsers = this.getAvailableUsers();
+
+		$(container).empty();
+
+		var availableUserTable = XNAT.table({
+			className: 'xnat-table'
+		});
+		availableUserTable.tr()
+			.th('Username')
+			.th('First Name')
+			.th('Last Name')
+			.th('Email')
+			.th('Group');
+
+		if (availableUsers.length > 0) {
+			availableUsers.forEach(function(userObj){
+				availableUserTable.tr()
+					.td('<span class="truncate">' + userObj.login + '</span>')
+					.td('<span class="truncate truncateCellNarrow">' + userObj.firstname +'</span>')
+					.td('<span class="truncate truncateCellNarrow">' + userObj.lastname + '</span>')
+					.td('<span class="truncate truncateCell">' + userObj.email + '</span>')
+					.td(groupSelect(userObj.login));
+			});
+		} else {
+			availableUserTable.tr()
+				.td({ colSpan: 5, html: 'There are no additional users that can be added to this project'});
+		}
+
+		$(container).append(availableUserTable.table);
+	};
+
+	this.inviteUserFromList = function(container){
+		container = container || '#availableUserList';
+
+		this.showAvailableUsers(container);
+
+		xmodal.open({
+			title: 'Add Users From List',
+			template: container,
+			height: 300,
+			width: 680,
+			okClose: false,
+			okLabel: 'Invite Users',
+			okAction: function(obj){
+				if (selections && !$.isEmptyObject(selections)) {
+					$.each(selections, function(user,group){
+						if(group){
+							//if there are entries to submit, do the invitation
+							if( window.userManager.inviteUser(user,group.toString()) ){
+								//clear the todo list
+								selections[user]=null;
+							}
+						}
+					});
+				} else {
+					xmodal.alert('You have not selected a project group for any users.');
+				}
+			}
+		});
 	};
 
 	this.init();

@@ -48,14 +48,17 @@ var XNAT = getObject(XNAT||{});
         return str.replace(/^\/+/,'');
     }
 
-    // try to make sure url includes root app context
+    // try to make sure url includes a SINGLE app context string
     function fixRoot(root, url){
-        // remove slashes from both sides of root
-        root = trimSlashes(root);
-        // make sure url has only ONE leading slash
-        url  = chopSlashes(url);
+        // remove slashes from both sides of 'root'
+        var rootTemp = trimSlashes(root) + '/';
+        // remove slash from beginning of 'url'
+        var urlTemp  = chopSlashes(url);
         // uh...
-        return ((root ? '/' + root : '') + (url ? '/' + url : '')) || '/';
+        var newUrl = ((root ? rootTemp : '') + (url ? urlTemp : ''));
+        var rootRegex = new RegExp('^(' + rootTemp + ')+', 'g');
+        newUrl = newUrl.replace(rootRegex, rootTemp);
+        return ('/' + newUrl).replace(/\/+/g, '/');
     }
 
     // make sure the serverRoot string (and only ONE serverRoot string)

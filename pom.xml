@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.2</version>
+        <version>1.7.3-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
@@ -56,6 +56,10 @@
             <artifactId>automation</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.nrg</groupId>
+            <artifactId>ExtAttr</artifactId>
+        </dependency>
+        <dependency>
             <groupId>dcm4che</groupId>
             <artifactId>dcm4che-core</artifactId>
         </dependency>
@@ -74,6 +78,10 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -103,7 +111,6 @@
     </dependencies>
 
     <build>
-        <finalName>nrg-dicomtools-${project.version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>

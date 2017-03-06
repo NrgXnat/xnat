@@ -60,7 +60,7 @@
         <nrg.anonymize.version>${xnat.version}</nrg.anonymize.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
+        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
@@ -69,7 +69,6 @@
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.dicomedit.version>6.0.2</nrg.dicomedit.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.1</nrg.ecat.version>
@@ -153,7 +152,7 @@
         <jetty.version>6.1.25</jetty.version>
         <joda-time.version>2.7</joda-time.version>
         <jruby.version>1.7.19</jruby.version>
-        <json.version>20151123</json.version>
+        <json.version>20160810</json.version>
         <jstl.version>1.2</jstl.version>
         <hamcrest.version>1.3</hamcrest.version>
         <junit.version>4.12</junit.version>
@@ -194,7 +193,7 @@
         <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
         <jacoco-maven-plugin.version>0.7.8</jacoco-maven-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
-        <maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
         <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
         <maven-jarsigner-plugin.version>1.4</maven-jarsigner-plugin.version>
@@ -286,11 +285,6 @@
                 <groupId>org.nrg</groupId>
                 <artifactId>DicomImageUtils</artifactId>
                 <version>${nrg.dicomimageutils.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.nrg</groupId>
-                <artifactId>DicomDB</artifactId>
-                <version>${nrg.dicomdb.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

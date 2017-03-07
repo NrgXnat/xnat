@@ -321,8 +321,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 				fields: ["login","firstname","lastname","email","displayname","GROUP_ID"]
 		};
 
-		if (this.userResultSet.ResultSet.Result.length>6)
-			var config= {scrollable:true,height:"180"};
+		var config= {};
 		this.userDataTable = new YAHOO.widget.DataTable("user_table", this.userColumnDefs,this.userDataSource,config);
 	};
 
@@ -606,48 +605,129 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 		return addUserGroupSelector;
 	}
 
+	function truncCell(val,truncClass) {
+		return '<span class="truncate '+ truncClass +'" title="'+ val +'">'+ val +'</span>';
+	}
+
+	this.searchTable = function(input,term) {
+		term = term.toLowerCase();
+		var table = $(input).parents('div.xmodal').find('tbody');
+		table.find('tr').each(function(){
+			$(this).addClass('hidden');
+			var rowArray = '';
+			$(this).find('td').not('.group').each(function(){
+				rowArray += ' '+$(this).find('span').html().toLowerCase();
+			});
+			if (rowArray.search(term) >= 0) $(this).removeClass('hidden');
+		});
+	};
+
+	this.clearSearch = function(item) {
+		var table = $(item).parents('div.xmodal').find('tbody');
+		table.find('tr').removeClass('hidden');
+		var searchField = $(item).prev('input');
+		$(searchField).val('');
+	};
+
 	this.showAvailableUsers = function(container){
 		var availableUsers = this.getAvailableUsers();
-
 		$(container).empty();
 
-		var availableUserTable = XNAT.table({
-			className: 'xnat-table'
+		var colWidths = {
+			narrow: '125px',
+			email: '175px',
+			group: '180px'
+		};
+		/*
+		 // define floating table header
+		 XNAT.table.dataTable([],{
+		 className: 'xnat-table',
+		 container: container,
+		 items: {
+		 username: {
+		 label: 'Username',
+		 th: { style: { width: colWidths.narrow }  }
+		 },
+		 firstname: {
+		 label: 'First Name',
+		 th: { style: { width: colWidths.narrow } }
+		 },
+		 lastname: {
+		 label: 'Last Name',
+		 th: { style: { width: colWidths.narrow } }
+		 },
+		 email: {
+		 label: 'Email',
+		 th: { style: { width: colWidths.email } }
+		 },
+		 group: {
+		 label: 'Group',
+		 th: { style: { width: colWidths.group } }
+		 }
+		 },
+		 sortable: false,
+		 header: true,
+		 body: false
+		 }); */
+
+		XNAT.table.dataTable(availableUsers,{
+			className: 'xnat-table',
+			container: container,
+			header: true,
+			sortable: false,
+			items: {
+				login: {
+					label: 'Username',
+					td: { style: { width: colWidths.narrow } },
+					apply: function(login){
+						return truncCell.call(this, login, 'truncateCellNarrow');
+					}
+				},
+				firstname: {
+					label: 'First Name',
+					td: { style: { width: colWidths.narrow } },
+					apply: function(firstname){
+						return truncCell.call(this, firstname, 'truncateCellNarrow');
+					}
+				},
+				lastname: {
+					label: 'Last Name',
+					td: { style: { width: colWidths.narrow } },
+					apply: function(lastname){
+						return truncCell.call(this, lastname, 'truncateCellNarrow');
+					}
+				},
+				email: {
+					label: 'Email',
+					td: { style: { width: colWidths.email } },
+					apply: function(email){
+						return truncCell.call(this, email, 'truncateCell');
+					}
+				},
+				group: {
+					label: 'Group',
+					td: { style: { width: colWidths.group } },
+					apply: function(){
+						return groupSelect.call(this, this.login );
+					}
+				}
+			}
 		});
-		availableUserTable.tr()
-			.th('Username')
-			.th('First Name')
-			.th('Last Name')
-			.th('Email')
-			.th('Group');
-
-		if (availableUsers.length > 0) {
-			availableUsers.forEach(function(userObj){
-				availableUserTable.tr()
-					.td('<span class="truncate">' + userObj.login + '</span>')
-					.td('<span class="truncate truncateCellNarrow">' + userObj.firstname +'</span>')
-					.td('<span class="truncate truncateCellNarrow">' + userObj.lastname + '</span>')
-					.td('<span class="truncate truncateCell">' + userObj.email + '</span>')
-					.td(groupSelect(userObj.login));
-			});
-		} else {
-			availableUserTable.tr()
-				.td({ colSpan: 5, html: 'There are no additional users that can be added to this project'});
-		}
-
-		$(container).append(availableUserTable.table);
 	};
 
 	this.inviteUserFromList = function(container){
 		container = container || '#availableUserList';
+
+		var modalSearch = '<input type="text" class="modalSearch" placeholder="Find User" onkeyup="window.userManager.searchTable(this,this.value)">&nbsp;';
+		modalSearch += '<a href="#!" onclick="window.userManager.clearSearch(this)">Clear</a>';
 
 		this.showAvailableUsers(container);
 
 		xmodal.open({
 			title: 'Add Users From List',
 			template: container,
-			height: 300,
-			width: 680,
+			height: 400,
+			width: 730,
 			okClose: false,
 			okLabel: 'Invite Users',
 			okAction: function(obj){
@@ -664,6 +744,9 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 				} else {
 					xmodal.alert('You have not selected a project group for any users.');
 				}
+			},
+			footer: {
+				content: modalSearch
 			}
 		});
 	};

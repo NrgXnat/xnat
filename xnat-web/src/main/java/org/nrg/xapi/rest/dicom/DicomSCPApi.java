@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @Api(description = "XNAT DICOM SCP management API")
 @XapiRestController
@@ -44,13 +45,13 @@ public class DicomSCPApi extends AbstractXapiRestController {
         _manager = manager;
     }
 
-    @ApiOperation(value = "Get list of all configured DICOM object identifiers.", notes = "This function returns a list of all DICOM object identifiers defined for the current system. The default identifier will be the first in the list.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of DICOM object identifiers."),
+    @ApiOperation(value = "Get map of all configured DICOM object identifiers and names.", notes = "This function returns a map of all DICOM object identifiers defined for the current system along with each identifier's readable name. The default identifier will be the first in the list.", response = String.class, responseContainer = "Map")
+    @ApiResponses({@ApiResponse(code = 200, message = "A map of DICOM object identifiers and names."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "identifiers", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<List<String>> getDicomObjectIdentifiers() {
-        return new ResponseEntity<>(_manager.getDicomObjectIdentifierBeanIds(), HttpStatus.OK);
+    public ResponseEntity<Map<String, String>> getDicomObjectIdentifiers() {
+        return new ResponseEntity<>(_manager.getDicomObjectIdentifierBeans(), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get implementation name of the specified DICOM object identifier.", notes = "This function returns the fully-qualified class name of the specified DICOM object identifier. You can use the value 'default' to retrieve the default identifier even if you don't know the specific name.", response = String.class)

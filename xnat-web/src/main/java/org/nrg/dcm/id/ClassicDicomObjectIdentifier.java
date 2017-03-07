@@ -32,12 +32,12 @@ public class ClassicDicomObjectIdentifier extends CompositeDicomObjectIdentifier
                                                                                                               .add(new TextExtractor(Tag.PatientName))
                                                                                                               .build();
 
-    public ClassicDicomObjectIdentifier() {
-        super(new Xnat15DicomProjectIdentifier(), subjectExtractors, sessionExtractors, attributeExtractors);
+    public ClassicDicomObjectIdentifier(final XnatUserProvider userProvider) {
+        this(null, userProvider);
     }
 
-    public ClassicDicomObjectIdentifier(final XnatUserProvider userProvider) {
-        super(new Xnat15DicomProjectIdentifier(), subjectExtractors, sessionExtractors, attributeExtractors);
+    public ClassicDicomObjectIdentifier(final String name, final XnatUserProvider userProvider) {
+        super(name, new Xnat15DicomProjectIdentifier(), subjectExtractors, sessionExtractors, attributeExtractors);
         setUserProvider(userProvider);
     }
 

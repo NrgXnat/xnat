@@ -10,6 +10,7 @@
 package org.nrg.dcm.id;
 
 import com.google.common.collect.ImmutableSortedSet;
+import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.DicomObject;
 import org.nrg.dcm.ChainExtractor;
 import org.nrg.dcm.Extractor;
@@ -25,29 +26,48 @@ import java.util.regex.Pattern;
 
 public class CompositeDicomObjectIdentifier implements DicomObjectIdentifier<XnatProjectdata> {
     public CompositeDicomObjectIdentifier(final DicomProjectIdentifier identifier,
+                                          final Iterable<Extractor> subjectExtractors,
+                                          final Iterable<Extractor> sessionExtractors,
+                                          final Iterable<Extractor> aaExtractors) {
+        this(null, identifier, new ChainExtractor(subjectExtractors), new ChainExtractor(sessionExtractors), new ChainExtractor(aaExtractors));
+    }
+
+    public CompositeDicomObjectIdentifier(final DicomProjectIdentifier identifier,
                                           final Extractor subjectExtractor,
                                           final Extractor sessionExtractor,
                                           final Extractor aaExtractor) {
+        this(null, identifier, subjectExtractor, sessionExtractor, aaExtractor);
+    }
+
+    public CompositeDicomObjectIdentifier(final String name,
+                                          final DicomProjectIdentifier identifier,
+                                          final Iterable<Extractor> subjectExtractors,
+                                          final Iterable<Extractor> sessionExtractors,
+                                          final Iterable<Extractor> aaExtractors) {
+        this(name, identifier, new ChainExtractor(subjectExtractors), new ChainExtractor(sessionExtractors), new ChainExtractor(aaExtractors));
+    }
+
+    public CompositeDicomObjectIdentifier(final String name,
+                                          final DicomProjectIdentifier identifier,
+                                          final Extractor subjectExtractor,
+                                          final Extractor sessionExtractor,
+                                          final Extractor aaExtractor) {
+        _name = StringUtils.defaultIfBlank(name, StringUtils.uncapitalize(getClass().getSimpleName()));
         _identifier = identifier;
         _subjectExtractor = subjectExtractor;
         _sessionExtractor = sessionExtractor;
         _aaExtractor = aaExtractor;
     }
 
-    public CompositeDicomObjectIdentifier(final DicomProjectIdentifier identifier,
-                                          final Iterable<Extractor> subjectExtractors,
-                                          final Iterable<Extractor> sessionExtractors,
-                                          final Iterable<Extractor> aaExtractors) {
-        this(identifier,
-             new ChainExtractor(subjectExtractors),
-             new ChainExtractor(sessionExtractors),
-             new ChainExtractor(aaExtractors));
+    public String getName() {
+        return _name;
     }
 
     /*
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#getProject(org.dcm4che2.data.DicomObject)
      */
+    @Override
     public final XnatProjectdata getProject(final DicomObject o) {
         if (null == user && null != userProvider) {
             user = userProvider.get();
@@ -59,6 +79,7 @@ public class CompositeDicomObjectIdentifier implements DicomObjectIdentifier<Xna
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#getSessionLabel(org.dcm4che2.data.DicomObject)
      */
+    @Override
     public final String getSessionLabel(final DicomObject o) {
         return Labels.toLabelChars(_sessionExtractor.extract(o));
     }
@@ -67,6 +88,7 @@ public class CompositeDicomObjectIdentifier implements DicomObjectIdentifier<Xna
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#getSubjectLabel(org.dcm4che2.data.DicomObject)
      */
+    @Override
     public final String getSubjectLabel(final DicomObject o) {
         return Labels.toLabelChars(_subjectExtractor.extract(o));
     }
@@ -75,6 +97,7 @@ public class CompositeDicomObjectIdentifier implements DicomObjectIdentifier<Xna
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#getTags()
      */
+    @Override
     public final ImmutableSortedSet<Integer> getTags() {
         if (!_initialized) {
             initialize();
@@ -86,6 +109,7 @@ public class CompositeDicomObjectIdentifier implements DicomObjectIdentifier<Xna
      * (non-Javadoc)
      * @see org.nrg.xnat.DicomObjectIdentifier#requestsAutoarchive(org.dcm4che2.data.DicomObject)
      */
+    @Override
     public final Boolean requestsAutoarchive(DicomObject o) {
         final String aa = _aaExtractor.extract(o);
         if (null == aa) {
@@ -123,6 +147,7 @@ public class CompositeDicomObjectIdentifier implements DicomObjectIdentifier<Xna
     private UserI           user         = null;
     private Provider<UserI> userProvider = null;
 
+    private final String                 _name;
     private final DicomProjectIdentifier _identifier;
     private final Extractor              _subjectExtractor, _sessionExtractor, _aaExtractor;
     private final SortedSet<Integer> _tags        = new TreeSet<>();

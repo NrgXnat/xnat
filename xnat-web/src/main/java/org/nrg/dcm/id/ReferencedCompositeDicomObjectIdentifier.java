@@ -16,7 +16,15 @@ public class ReferencedCompositeDicomObjectIdentifier extends CompositeDicomObje
                                                     final Extractor subjectExtractor,
                                                     final Extractor sessionExtractor,
                                                     final Extractor aaExtractor) {
-        super(projectID, subjectExtractor, sessionExtractor, aaExtractor);
+        this(null, projectID, subjectExtractor, sessionExtractor, aaExtractor);
+    }
+
+    public ReferencedCompositeDicomObjectIdentifier(final String name,
+                                                    final DicomProjectIdentifier projectID,
+                                                    final Extractor subjectExtractor,
+                                                    final Extractor sessionExtractor,
+                                                    final Extractor aaExtractor) {
+        super(name, projectID, subjectExtractor, sessionExtractor, aaExtractor);
 
         _subjectExtractor = subjectExtractor;
         _sessionExtractor = sessionExtractor;

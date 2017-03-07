@@ -27,7 +27,8 @@ public class FixedProjectSubjectDicomObjectIdentifier extends ReferencedComposit
      */
     @Autowired
     public FixedProjectSubjectDicomObjectIdentifier(final JdbcTemplate jdbcTemplate, final String projectId, final String subjectLabel) {
-        super(new FixedDicomProjectIdentifier(projectId),
+        super("Fixed project-subject identifier for " + projectId + " and " + subjectLabel,
+              new FixedDicomProjectIdentifier(projectId),
               new FixedSubjectExtractor(subjectLabel),
               new NextAvailableSessionLabelExtractor(jdbcTemplate),
               new ChainExtractor(ClassicDicomObjectIdentifier.getAAExtractors()));

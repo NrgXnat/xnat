@@ -9,9 +9,13 @@
 
 package org.nrg.dcm;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
+import org.nrg.dcm.id.CompositeDicomObjectIdentifier;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.dcm.preferences.DicomSCPPreference;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -24,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.*;
@@ -33,20 +38,31 @@ public class DicomSCPManager {
     public DicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
         _dicomScpPreferences = dicomScpPreferences;
         _siteConfigPreferences = siteConfigPreferences;
-        final List<String> sortedDicomObjectIdentifierNames = Lists.newArrayList();
-        final List<DicomObjectIdentifier<XnatProjectdata>> sortedDicomObjectIdentifiers = Lists.newArrayList();
+        _dicomObjectIdentifiers = Maps.newHashMap();
+
+        String primaryBeanId = null;
+        final List<String> sortedDicomObjectIdentifierBeanIds = Lists.newArrayList();
         for (final String beanId : dicomObjectIdentifiers.keySet()) {
             final DicomObjectIdentifier<XnatProjectdata> identifier = dicomObjectIdentifiers.get(beanId);
+            _dicomObjectIdentifiers.put(beanId, identifier);
             if (identifier == primaryDicomObjectIdentifier) {
-                sortedDicomObjectIdentifierNames.add(0, beanId);
-                sortedDicomObjectIdentifiers.add(0, identifier);
+                primaryBeanId = beanId;
             } else {
-                sortedDicomObjectIdentifierNames.add(beanId);
-                sortedDicomObjectIdentifiers.add(identifier);
+                sortedDicomObjectIdentifierBeanIds.add(beanId);
+                _dicomObjectIdentifiers.put(beanId, identifier);
             }
         }
-        _dicomObjectIdentifierNames = ImmutableList.copyOf(sortedDicomObjectIdentifierNames);
-        _dicomObjectIdentifiers = ImmutableList.copyOf(sortedDicomObjectIdentifiers);
+
+        Collections.sort(sortedDicomObjectIdentifierBeanIds);
+        if (StringUtils.isNotBlank(primaryBeanId)) {
+            _primaryDicomObjectIdentifierBeanId = primaryBeanId;
+            sortedDicomObjectIdentifierBeanIds.add(0, _primaryDicomObjectIdentifierBeanId);
+        } else {
+            _primaryDicomObjectIdentifierBeanId = sortedDicomObjectIdentifierBeanIds.get(0);
+        }
+
+        _dicomObjectIdentifierBeanIds = ImmutableSet.copyOf(sortedDicomObjectIdentifierBeanIds);
+        _identifiersToMapFunction = new IdentifiersToMapFunction(_dicomObjectIdentifiers);
     }
 
     @PreDestroy
@@ -215,23 +231,23 @@ public class DicomSCPManager {
         }
     }
 
-    public List<String> getDicomObjectIdentifierBeanIds() {
-        return _dicomObjectIdentifierNames;
+    public Map<String, String> getDicomObjectIdentifierBeans() {
+        return Maps.asMap(_dicomObjectIdentifierBeanIds, _identifiersToMapFunction);
     }
 
-    public List<DicomObjectIdentifier<XnatProjectdata>> getDicomObjectIdentifiers() {
+    public Map<String, DicomObjectIdentifier<XnatProjectdata>> getDicomObjectIdentifiers() {
         return _dicomObjectIdentifiers;
     }
 
     public DicomObjectIdentifier<XnatProjectdata> getDicomObjectIdentifier(final String beanId) {
-        if (!_dicomObjectIdentifierNames.contains(beanId)) {
+        if (!_dicomObjectIdentifierBeanIds.contains(beanId)) {
             return null;
         }
-        return getDicomObjectIdentifiers().get(_dicomObjectIdentifierNames.indexOf(beanId));
+        return getDicomObjectIdentifiers().get(beanId);
     }
 
     public DicomObjectIdentifier<XnatProjectdata> getDefaultDicomObjectIdentifier() {
-        return getDicomObjectIdentifiers().get(0);
+        return getDicomObjectIdentifiers().get(_primaryDicomObjectIdentifierBeanId);
     }
 
     private int getNextKey() {
@@ -243,10 +259,33 @@ public class DicomSCPManager {
         return Collections.max(values) + 1;
     }
 
+    private static class IdentifiersToMapFunction implements Function<String, String> {
+        IdentifiersToMapFunction(final Map<String, DicomObjectIdentifier<XnatProjectdata>> identifiers) {
+            _identifiers = identifiers;
+        }
+
+        @Nullable
+        @Override
+        public String apply(@Nullable final String beanId) {
+            if (StringUtils.isBlank(beanId)) {
+                return null;
+            }
+            final DicomObjectIdentifier<XnatProjectdata> identifier = _identifiers.get(beanId);
+            if (identifier instanceof CompositeDicomObjectIdentifier) {
+                return ((CompositeDicomObjectIdentifier) identifier).getName();
+            }
+            return beanId;
+        }
+
+        private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
+    }
+
     private static final Logger _log = LoggerFactory.getLogger(DicomSCPManager.class);
 
-    private final DicomSCPPreference                           _dicomScpPreferences;
-    private final SiteConfigPreferences                        _siteConfigPreferences;
-    private final List<String>                                 _dicomObjectIdentifierNames;
-    private final List<DicomObjectIdentifier<XnatProjectdata>> _dicomObjectIdentifiers;
+    private final DicomSCPPreference                                  _dicomScpPreferences;
+    private final SiteConfigPreferences                               _siteConfigPreferences;
+    private final String                                              _primaryDicomObjectIdentifierBeanId;
+    private final Set<String>                                         _dicomObjectIdentifierBeanIds;
+    private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _dicomObjectIdentifiers;
+    private final IdentifiersToMapFunction                            _identifiersToMapFunction;
 }

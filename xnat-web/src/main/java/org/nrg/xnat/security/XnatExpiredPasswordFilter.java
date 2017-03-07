@@ -74,13 +74,26 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
             try {
                 String refererPath = null;
                 String uri = new URI(request.getRequestURI()).getPath();
+                String shortUri = uri;
+                try{
+                    shortUri = uri.substring(0, uri.indexOf("?"));
+                }
+                catch(Exception ignored){
+
+                }
+
+                String shortRefererPath = null;
                 if (!StringUtils.isBlank(referer)) {
                     refererPath = new URI(referer).getPath();
+                    shortRefererPath = refererPath;
+                    if(refererPath.contains("?")) {
+                        shortRefererPath = refererPath.substring(0, refererPath.indexOf("?"));
+                    }
                 }
-                if (uri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination) || uri.endsWith(logoutDestination) || uri.endsWith(loginPath) || uri.endsWith(loginDestination)) {
+                if (shortUri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination) || uri.endsWith(logoutDestination) || uri.endsWith(loginPath) || uri.endsWith(loginDestination)) {
                     //If you're already on the change password page, continue on without redirect.
                     chain.doFilter(req, res);
-                } else if (!StringUtils.isBlank(refererPath) && (refererPath.endsWith(changePasswordPath) || refererPath.endsWith(changePasswordDestination) || refererPath.endsWith(logoutDestination))) {
+                } else if (!StringUtils.isBlank(refererPath) && (shortRefererPath.endsWith(changePasswordPath) || refererPath.endsWith(changePasswordDestination) || refererPath.endsWith(logoutDestination))) {
                     //If you're on a request within the change password page, continue on without redirect.
                     chain.doFilter(req, res);
                 } else {
@@ -146,6 +159,17 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 }
             } else {
                 String uri = request.getRequestURI();
+                String shortUri = uri;
+                try{
+                    shortUri = uri.substring(0, uri.indexOf("?"));
+                }
+                catch(Exception ignored){
+
+                }
+                String shortRefererPath = referer;
+                if (!StringUtils.isBlank(referer) && referer.contains("?")) {
+                    shortRefererPath = referer.substring(0, referer.indexOf("?"));
+                }
 
                 if (user.isGuest()) {
                     //If you're a guest and you try to access the change password page, you get sent to the login page since there's no password on the guest account to change.
@@ -155,13 +179,13 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                     //If you're logging in or out, or going to the login page itself
                     (uri.endsWith(logoutDestination) || uri.endsWith(loginPath) || uri.endsWith(loginDestination)) ||
                     //If you're already on the change password page, continue on without redirect.
-                    (user.isEnabled() && (uri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination))) ||
+                    (user.isEnabled() && (shortUri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination))) ||
                     //If you're already on the inactive account page or reactivating an account, continue on without redirect.
                     (!user.isEnabled() && (uri.endsWith(inactiveAccountPath) || uri.endsWith(inactiveAccountDestination) ||
                                            uri.endsWith(emailVerificationPath) || uri.endsWith(emailVerificationDestination) ||
                                            (referer != null && (referer.endsWith(inactiveAccountPath) || referer.endsWith(inactiveAccountDestination))))) ||
                     //If you're on a request within the change password page, continue on without redirect.
-                    (referer != null && (referer.endsWith(changePasswordPath) || referer.endsWith(changePasswordDestination) ||
+                    (referer != null && (shortRefererPath.endsWith(changePasswordPath) || referer.endsWith(changePasswordDestination) ||
                                          referer.endsWith(logoutDestination)))) {
                     chain.doFilter(req, res);
                 } else {

@@ -1257,6 +1257,17 @@ dicomScpReceivers:
                             label: Port
 #                            description: Port for DICOM Receiver
                             validation: integer
+                        identifier:
+                            kind: panel.select.single
+                            id: scp-identifier
+                            name: identifier
+                            label: Identifier
+                            className: hidden
+                            element:
+                                title: Select DICOM Object Identifier
+                                disabled: disabled
+                            description: >
+                                Select the DICOM object identifier to associate with this AE. If none is selected, the default identifier is applied.
 #                        fileNamer:
 #                            kind: panel.input.text
 #                            name: fileNamer

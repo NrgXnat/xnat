@@ -111,9 +111,10 @@ var XNAT = getObject(XNAT);
         alphaNumSafe: /^[a-z0-9_]+$/i,         // ONLY letters, numbers, and underscore
         alphaNumSafeSpace: /^[a-z0-9_ ]+$/i,   // ONLY letters, numbers, underscore, and space
         alphaNumDash: /^[a-z0-9_\-]+$/i,       // ONLY letters, numbers, underscore, and dash
-        alphaNumDashSpace: /^[a-z0-9_\- ]+$/i, // ONLY letters, numbers, underscore, dash, and space
+        alphaNumDashSpace: /^[a-z0-9 _\-]+$/i, // ONLY letters, numbers, underscore, dash, and space
         nameSafe: /^[a-z \-]+$/i,              // safe to use for names - letters, spaces, and hyphens
-        username: /^[a-z_.]+$/i,               // safe to use for usernames
+        // safe to use for usernames - starts with a letter or number and contains letters, numbers, underscores, hyphens and periods
+        username: /^([a-z0-9]+[a-z0-9._-]*)$/i,
         idSafe: /^([a-z][a-z0-9_\-]*)$/i,      // safe to use as an ID - alphasafe and must start with a letter
         idStrict: /^([a-z][a-z0-9_]*)$/i,      // 'idSafe' without hyphens
         ip: /^(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2}))$/i,

@@ -140,7 +140,7 @@ public class UsersApi extends AbstractXapiRestController {
         }
 
         List<User> usersList = null;
-        String regex = "^[a-zA-Z0-9_-]*$";
+        String regex = "^[a-zA-Z0-9]+[a-zA-Z0-9._-]*$";
         if(username.matches(regex)){
             usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.xdat_user_id=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login='"+username+"'", new RowMapper<User>() {
                 @Override

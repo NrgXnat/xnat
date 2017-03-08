@@ -2925,6 +2925,8 @@ span.spacer {
     border-color: #d0d0d0;
 }
 
+.xnat-table.rows th,
+.xnat-table.rows td,
 .xnat-table.rows-only th,
 .xnat-table.rows-only td {
     border-left: none;
@@ -2941,6 +2943,30 @@ span.spacer {
 
 .xnat-table.clean tr:hover {
     /*background: #e5f2ff;*/
+}
+
+.xnat-table.compact th,
+.xnat-table.compact td {
+    padding: 4px 10px;
+}
+
+.xnat-table.striped tr:nth-of-type(2n) {
+    background: #e5f2ff;
+}
+
+.xnat-table.columns th,
+.xnat-table.columns td,
+.xnat-table.columns-only th,
+.xnat-table.columns-only td {
+    border-left: none;
+    border-right: 1px solid #ccc;
+}
+
+.xnat-table.columns th:last-of-type,
+.xnat-table.columns td:last-of-type,
+.xnat-table.columns-only th:last-of-type,
+.xnat-table.columns-only td:last-of-type {
+    border-right: none;
 }
 
 .xnat-table.borderless,

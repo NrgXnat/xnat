@@ -27,6 +27,9 @@
     <script>
         (function(){
 
+            XNAT.data =
+                getObject(XNAT.data);
+
             XNAT.xapi =
                     getObject(XNAT.xapi);
 
@@ -115,6 +118,7 @@
                 e.preventDefault();
                 var userList = JSON.parse(outputTextarea.value);
                 var randomize = $('#random-string').prop('checked');
+                xmodal.message(false, 'Creating users...', 'Close');
                 XNAT.namer.postUniqueNames(null, userList, {
                     random: randomize,
                     email: (emailUser.value ? (emailUser.value + '+') : '') + 'USERNAME@gmail.com',
@@ -122,7 +126,9 @@
                     verified: verifyEvery.value + '',
                     enabled: enableEvery.value + ''
                 }, function(){
-                    XNAT.ui.banner.top(3000, 'Users created.', 'success');
+                    xmodal.closeAll();
+                    xmodal.message(false, '<div class="success">Users created.</div>', 'Close');
+//                    XNAT.ui.banner.top(3000, 'Users created.', 'success');
                 })
             });
 

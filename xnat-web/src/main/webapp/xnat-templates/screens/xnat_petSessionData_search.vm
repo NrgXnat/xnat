@@ -60,10 +60,17 @@
             <select name="xnat:petSessionData.TRACER_NAME_equals">
                 #set($SCANNER_value=$!search.getWebFormValue("xnat:petSessionData.TRACER_NAME_equals"))
                 <option value="" #if($SCANNER_value=="") SELECTED #end>(SELECT)</option>
-                <option value="PIB" #if($SCANNER_value=="PIB") SELECTED #end>PIB</option>
-                <option value="FDG" #if($SCANNER_value=="FDG") SELECTED #end>FDG</option>
-                <option value="RAC" #if($SCANNER_value=="RAC") SELECTED #end>RAC</option>
-                <option value="PK" #if($SCANNER_value=="PK") SELECTED #end>PK</option>
+                #if($siteConfig.sitewidePetTracers)
+                    #set ($tracers = $siteConfig.sitewidePetTracers.split('\s')) <!-- split a whitespace-separated string into an array -->
+                    #foreach($tracer in $tracers)
+                        <option value="$tracer" #if($SCANNER_value=="$tracer") SELECTED #end>$tracer</option>
+                    #end
+                #else
+                    <option value="PIB" #if($SCANNER_value=="PIB") SELECTED #end>PIB</option>
+                    <option value="FDG" #if($SCANNER_value=="FDG") SELECTED #end>FDG</option>
+                    <option value="RAC" #if($SCANNER_value=="RAC") SELECTED #end>RAC</option>
+                    <option value="PK" #if($SCANNER_value=="PK") SELECTED #end>PK</option>
+                #end
             </select>
         </div>
 

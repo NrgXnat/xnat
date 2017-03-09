@@ -610,6 +610,8 @@ jQuery.fn.sortElements = (function(){
 })();
 
 function sortTable(tbody, col, reverse) {
+    console.log('sortTable');
+    var startTime = Date.now();
     var i = -1;
     var trs = toArray($(tbody).clone(true)[0].rows).sort(function (a, b) {
         var aValue, bValue;
@@ -628,6 +630,35 @@ function sortTable(tbody, col, reverse) {
     while (++i < trs.length) {
         tbody.appendChild(trs[i]);
     }
+    console.log(Date.now() - startTime);
+}
+
+function sortTableToo($tbody, col, reverse) {
+    console.log('sortTableToo');
+    var startTime = Date.now();
+    var i = -1;
+    xmodal.loading.open();
+    setTimeout(function(){
+        var trs = $tbody.find('> tr').detach().toArray().sort(function (a, b) {
+            var aValue, bValue;
+            if (col === -1) {
+                aValue = getDataAttrValue(a, 'index');
+                bValue = getDataAttrValue(b, 'index');
+            }
+            else {
+                aValue = a.cells[col].textContent;
+                bValue = b.cells[col].textContent;
+            }
+            return (+reverse || -1) * (aValue < bValue ? -1 : (aValue > bValue ? 1 : 0));
+            // return (+reverse || -1) * (aValue.localeCompare(bValue));
+        });
+        $tbody.append(trs);
+        console.log(Date.now() - startTime);
+        xmodal.loading.closeAll();
+    }, 100);
+    // while (++i < trs.length) {
+    //     tbody.appendChild(trs[i]);
+    // }
 }
 
 // http://stackoverflow.com/questions/3160277/jquery-table-sort
@@ -635,7 +666,8 @@ function sortTable(tbody, col, reverse) {
 jQuery.fn.tableSort = function(){
     var $table = this;
     if ($table.hasClass('sort-ready')) return this;
-    var tbody = $table.find('tbody')[0];
+    var $tbody = $table.find('tbody');
+    var tbody = $tbody[0];
     var trs = toArray(tbody.rows).map(function(tr, i){
         // addDataAttrs(tr, { index: zeroPad(i+1, 6) })
         return tr.setAttribute('data-index', zeroPad(i+1, 6));
@@ -680,12 +712,13 @@ jQuery.fn.tableSort = function(){
                   $table.find('th.sort').removeClass('asc desc');
 
                   if (!sortClass) {
-                      sortTable(tbody, -1, sortOrder);
+                      // sortTable(tbody, -1, sortOrder);
+                      sortTableToo($tbody, -1, sortOrder);
                   }
                   else {
                       $th.addClass(sortClass);
                       sortOrder = (sortClass === 'desc') ? -1 : 1;
-                      sortTable(tbody, thIndex, sortOrder);
+                      sortTableToo($tbody, thIndex, sortOrder);
                   }
 
               });
@@ -727,6 +760,14 @@ function sortObjects( objects, prop ){
     });
 }
 
+// NUMERICALLY sort an array of objects
+function sortObjectsNumeric( objects, prop ){
+    return objects.sort( function ( _a, _b ) {
+        var a = +(_a[prop]);
+        var b = +(_b[prop]);
+        return (a < b) ? -1 : (a > b) ? 1 : 0;
+    });
+}
 
 // utility for sorting DOM elements
 // by their 'title' attribute

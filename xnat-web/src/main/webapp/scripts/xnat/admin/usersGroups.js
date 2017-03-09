@@ -531,7 +531,7 @@ var XNAT = getObject(XNAT);
                 },
                 onClose: function(){
                     if (updated) {
-                        updateUsersTable();
+                        updateUsersTable(true);
                     }
                 }
             })
@@ -895,7 +895,7 @@ var XNAT = getObject(XNAT);
                 okLabel: 'Close',
                 cancel: false,
                 onClose: function(){
-                    updateUsersTable();
+                    updateUsersTable(true);
                 }
             })
         }
@@ -907,7 +907,7 @@ var XNAT = getObject(XNAT);
         }
 
         // set up custom filter menus
-        function filterMenuElement(prop, notProp){
+        function filterMenuElement(prop){
             if (!prop) return false;
             // call this function in context of the table
             var $userProfilesTable = $(this);
@@ -920,20 +920,19 @@ var XNAT = getObject(XNAT);
                     change: function(){
                         var selectedValue = $(this).val();
                         // console.log(selectedValue);
-                        $userProfilesTable.find('input.user-'+prop).each(function(){
+                        $userProfilesTable.find('i.filtering.'+prop).each(function(){
                             var $row = $(this).closest('tr');
                             if (selectedValue === 'all') {
                                 $row.removeClass(FILTERCLASS);
                                 return;
                             }
                             $row.addClass(FILTERCLASS);
-                            if (this.checked && selectedValue === prop) {
-                                $row.removeClass(FILTERCLASS);
-                                return;
-                            }
-                            if (!this.checked && selectedValue === notProp) {
+                            if (selectedValue == this.textContent) {
                                 $row.removeClass(FILTERCLASS);
                             }
+                            // if (!this.checked && selectedValue === notProp) {
+                            //     $row.removeClass(FILTERCLASS);
+                            // }
                         })
                     }
                 }
@@ -947,12 +946,7 @@ var XNAT = getObject(XNAT);
             var SORTER = status ? 1 : 0;
             var IMG = status ? '/images/cg.gif' : '/images/cr.gif';
             return spawn('!', [
-                ['i.hidden.sort-value.sorting.filtering', SORTER],
-                // ['input', {
-                //     type: 'checkbox',
-                //     className: 'hidden user-' + type,
-                //     checked: !!SORTER
-                // }],
+                ['i.hidden.sorting.filtering.' + type, SORTER+''],
                 ['a.user-' + type + '-status.edit-user', {
                     title: username + ': ' + (status ? type : off),
                     href: '#!',
@@ -971,7 +965,7 @@ var XNAT = getObject(XNAT);
             }
             if (sessionCount) {
                 return spawn('!', [
-                    ['i.hidden.sort-value', zeroPad(sessionCount, 6)],
+                    ['i.hidden.sorting', zeroPad(sessionCount, 6)],
                     ['a.active-user', {
                         title: username + ': kill ' + sessionCount + ' active session(s)',
                         href: '#!',
@@ -987,11 +981,11 @@ var XNAT = getObject(XNAT);
         // renders cells for last login column
         function lastLoginInfo(value){
             value = realValue(value) || 0;
-            return [
-                spawn('i.last-login.hidden.sorting', 9999999999999-value || '9999999999999'),
-                spawn('input.hidden.last-login.timestamp.filtering|type=hidden', { value: value }),
-                (value ? (new Date(value)).toLocaleString() : '&mdash;')
-            ]
+            return spawn('!', [
+                ['i.last-login.hidden.sorting', (9999999999999-value || '9999999999999')+''],
+                ['input.hidden.last-login.timestamp.filtering|type=hidden', { value: value }],
+                ['span.date-time', (value ? (new Date(value)).toLocaleString() : '&mdash;')]
+            ])
         }
 
 
@@ -1038,6 +1032,10 @@ var XNAT = getObject(XNAT);
                         '#user-profiles td.enabled { width: ' + styles.enabled + '; } \n' +
                         '#user-profiles td.ACTIVE { width: ' + styles.active + '; } \n' +
                         '#user-profiles td.lastSuccessfulLogin { width: ' + styles.login + '; } \n' +
+                        '#user-profiles tr.filter-verified, \n' +
+                        '#user-profiles tr.filter-enabled, \n' +
+                        '#user-profiles tr.filter-active, \n' +
+                        '#user-profiles tr.filter-login { display: none; } \n' +
                         '@media screen and (max-width: 1200px) { \n' +
                         '    #user-profiles td.username .truncate { width: 90px; } \n' +
                         '    #user-profiles td.fullName .truncate { width: 100px; } \n' +
@@ -1162,12 +1160,12 @@ var XNAT = getObject(XNAT);
                         filter: function(table){
                             return spawn('div.center', [XNAT.ui.select.menu({
                                 value: 'all',
-                                options: {
-                                    all: 'All',
-                                    verified: 'Verified',
-                                    unverified: 'Unverified'
-                                },
-                                element: filterMenuElement.call(table, 'verified', 'unverified')
+                                options: [
+                                    { label: 'All', value: 'all' },
+                                    { label: 'Verified', value: '1' },
+                                    { label: 'Unverified', value: '0' }
+                                ],
+                                element: filterMenuElement.call(table, 'verified')
                             }).element])
                         },
                         apply: function(){
@@ -1184,12 +1182,12 @@ var XNAT = getObject(XNAT);
                         filter: function(table){
                             return spawn('div.center', [XNAT.ui.select.menu({
                                 value: 'all',
-                                options: {
-                                    all: 'All',
-                                    enabled: 'Enabled',
-                                    disabled: 'Disabled'
-                                },
-                                element: filterMenuElement.call(table, 'enabled', 'disabled')
+                                options: [
+                                    { label: 'All', value: 'all' },
+                                    { label: 'Enabled', value: '1' },
+                                    { label: 'Disabled', value: '0' }
+                                ],
+                                element: filterMenuElement.call(table, 'enabled')
                             }).element])
                         },
                         apply: function(){
@@ -1222,8 +1220,7 @@ var XNAT = getObject(XNAT);
                                         change: function(){
                                             var selectedValue = $(this).val();
                                             var $rows = $table.find('tbody').find('tr');
-                                            // var FILTERCLASS = 'filter-active';
-                                            var FILTERCLASS = 'hidden';
+                                            var FILTERCLASS = 'filter-active';
                                             if (selectedValue === 'all') {
                                                 $rows.removeClass(FILTERCLASS);
                                                 return;
@@ -1296,18 +1293,19 @@ var XNAT = getObject(XNAT);
                                     id: 'user-filter-select-last-login',
                                     on: {
                                         change: function(){
+                                            var FILTERCLASS = 'filter-login';
                                             var selectedValue = parseInt(this.value, 10);
                                             var currentTime = Date.now();
                                             $dataRows = $dataRows.length ? $dataRows : $$(table).find('tbody').find('tr');
                                             if (selectedValue === 0) {
-                                                $dataRows.show();
+                                                $dataRows.removeClass(FILTERCLASS);
                                             }
                                             else {
-                                                $dataRows.hide().filter(function(){
+                                                $dataRows.addClass(FILTERCLASS).filter(function(){
                                                     var timestamp = this.querySelector('input.last-login.timestamp');
                                                     var lastLogin = +(timestamp.value);
                                                     return selectedValue === lastLogin-1 || selectedValue > (currentTime - lastLogin);
-                                                }).show();
+                                                }).removeClass(FILTERCLASS);
                                             }
                                         }
                                     }
@@ -1334,11 +1332,13 @@ var XNAT = getObject(XNAT);
             var _usersTable;
             if ($container.length) {
                 $container.html('loading...');
-                _usersTable = XNAT.spawner.spawn({
-                    usersTable: spawnUsersTable()
-                });
-                _usersTable.render($container.empty(), 200, showUsersTable);
-                return _usersTable;
+                // setTimeout(function(){
+                    _usersTable = XNAT.spawner.spawn({
+                        usersTable: spawnUsersTable()
+                    });
+                    _usersTable.render($container.empty(), 200, showUsersTable);
+                // }, 200);
+                // return _usersTable;
             }
         }
         usersGroups.renderUsersTable = renderUsersTable;
@@ -1398,8 +1398,10 @@ var XNAT = getObject(XNAT);
         var tabsConfig = setupTabs();
         var $container = $$(container || XNAT.tabs.container);
         $container.html('loading...');
-        usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
-        usersGroups.tabs.render($container.empty(), 200);
+        setTimeout(function(){
+            usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
+            usersGroups.tabs.render($container.empty(), 20);
+        }, 200);
         // usersGroups.tabs.done(usersGroups.showUsersTable);
     };
 

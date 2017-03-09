@@ -27,9 +27,6 @@
         #end
     #end
 
-    #renderTopListType("xnat:mrSessionData")
-    #renderTopListType("xnat:petSessionData")
-    #renderTopListType("xnat:ctSessionData")
     #if($project)
         #if($project.getId())
             <li><a href="$link.setPage("XDATScreen_add_experiment.vm").addPathInfo('project',$project.getId())">Experiment</a></li>

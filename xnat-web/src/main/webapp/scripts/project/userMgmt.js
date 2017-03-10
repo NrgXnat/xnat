@@ -458,10 +458,10 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 		this.setFormDisabled(true);
 
 		this.deleteCallback={
-				success:this.completeRemoval,
-				failure:this.inviteFailure,
+            success:this.completeRemoval,
+            failure:this.inviteFailure,
             cache:false, // Turn off caching for IE
-				scope:this
+            scope:this
 		};
 		var post_url = serverRoot + "/REST/projects/" + this.pID + "/users/" + group;
         var showDeactivatedUsers=(document.getElementById('showDeactivatedUsersCheck').checked?'/true':'');
@@ -715,9 +715,50 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 		});
 	};
 
+	function findUsersToAdd(listObj){
+        var usersToAdd = [];
+        $(listObj).find('option:selected').each(function(){
+            if ($(this).val().length > 0) {
+                var group = $(this).val();
+                var user = $(this).parents('tr').find('.login').find('span').html();
+                usersToAdd.push({ login: user, group:group });
+            }
+        });
+        return usersToAdd;
+    }
+    function sendInvitations(selections,projId,sendEmails) {
+        selections.forEach(function(userToAdd,i){
+            var group = userToAdd.group,
+                user = userToAdd.login,
+                params = "XNAT_CSRF=" + csrfToken + "&format=json";
+            if (sendEmails) params = params + '&sendemails=true';
+            var put_url = serverRoot + "/data/projects/" + projId + "/users/" + group + '/' + user + '?' + params;
+
+            XNAT.xhr.put({
+                url: put_url,
+                fail: function(e){ xmodal.alert({ title: 'Error', content: 'Error '+e.status+': '+e.responseText }); },
+                success: function(){ console.log(user + ' added to '+ group) }
+            }).done(function(o){
+                if (i == selections.length-1) {
+                    // if we've completed the last action
+                    // give the table init function a JSON string it can work with
+                    o.responseText = JSON.stringify(o);
+                    userManager.completeInit(o);
+                    xmodal.alert({
+                        content: 'All Users have been added.',
+                        okAction: function () {
+                            xmodal.closeAll();
+                        }
+                    });
+                }
+            });
+        });
+    }
+
 	this.inviteUserFromList = function(container){
 		container = container || '#availableUserList';
 
+        var projId = this.pID;
 		var modalSearch = '<input type="text" class="modalSearch" placeholder="Find User" onkeyup="window.userManager.searchTable(this,this.value)">&nbsp;';
 		modalSearch += '<a href="#!" onclick="window.userManager.clearSearch(this)">Clear</a>';
 
@@ -731,16 +772,18 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 			okClose: false,
 			okLabel: 'Invite Users',
 			okAction: function(obj){
-				if (selections && !$.isEmptyObject(selections)) {
-					$.each(selections, function(user,group){
-						if(group){
-							//if there are entries to submit, do the invitation
-							if( window.userManager.inviteUser(user,group.toString()) ){
-								//clear the todo list
-								selections[user]=null;
-							}
-						}
-					});
+                var listObj = obj.$modal.find('table'),
+                    selections = findUsersToAdd(listObj);
+
+                if (selections.length > 0) {
+                    xmodal.confirm({
+                        content: "You are inviting "+selections.length+" users to join this project. Do you want to send confirmation emails to each user?",
+                        okLabel: "Yes",
+                        okAction: function(){ sendInvitations(selections,projId,true); },
+                        cancelLabel: "No",
+                        cancelAction: function(){ sendInvitations(selections,projId,false); }
+                    });
+
 				} else {
 					xmodal.alert('You have not selected a project group for any users.');
 				}

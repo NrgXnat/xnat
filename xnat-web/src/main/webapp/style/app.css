@@ -1600,15 +1600,22 @@ body.modal-popup #xnat_power {
 .yui-skin-sam .yui-button button,
 .yui-skin-sam .yui-button a,
 .yui-skin-sam .yui-button a:visited {
-    border: none;
-    box-shadow: none;
+    border: 1px solid #848484;
+    border-radius: 1px;
+    box-shadow: 0 1px 1px #ccc;
     color: #000000;
     font-size: 12px;
-    height: 26px;
-    line-height: 26px;
+    height: 28px;
+    line-height: 28px;
     padding: 0 12px;
     vertical-align: middle;
 }
+.yui-skin-sam .yui-button button:hover,
+.yui-skin-sam .yui-button a:hover {
+    box-shadow: none;
+}
+.yui-skin-sam .yui-button .first-child { border:none; }
+.yui-skin-sam .yui-button { border: none; }
 
 /*.yui-content { font-size: 12px ; }*/
 .yui-skin-sam .yui-dialog .ft span.default button,
@@ -1650,7 +1657,7 @@ a, a:active, button, button:active, *:active { outline: none ; border: none ; }
 
 .yui-button,
 .yui-button button {
-    border-radius: 0 !important;
+    /* border-radius: 0 !important; */
 }
 
 .yui-panel-container.yui-dialog {

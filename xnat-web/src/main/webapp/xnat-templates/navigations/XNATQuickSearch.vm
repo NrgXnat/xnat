@@ -67,11 +67,19 @@ function submitQuickSearch(){
 
             var storedSearchMenu = $('#stored-searches');
 
+            function compareSearches(a,b) {
+                // sort alphabetically by the brief_description field, accounting for accented characters if necessary.
+                return a.brief_description.localeCompare(b.brief_description);
+            }
+
             XNAT.xhr.getJSON(XNAT.url.rootUrl('/data/search/saved'), function(data){
+
+                var storedSearchesList = data.ResultSet.Result;
+                storedSearchesList.sort(compareSearches);
 
                 storedSearchMenu.find('optgroup.stored-search-list')
                         .empty()
-                        .append(data.ResultSet.Result.map(function(opt){
+                        .append(storedSearchesList.map(function(opt){
                             var val = serverRoot + '/app/template/Search.vm/node/ss.' + opt.id;
                             return '<option value="' + val + '">' + opt.brief_description + '</option>'
                         }).join(''));

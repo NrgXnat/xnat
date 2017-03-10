@@ -25,7 +25,10 @@ var XNAT = getObject(XNAT);
 
     var undefined, usersGroups, newUser = '',
         BASE_URL = '/xapi/users',
-        passwordComplexity = XNAT.data.siteConfig.passwordComplexity,
+        passwordComplexity =
+            XNAT.data.siteConfig.passwordComplexity
+                .replace(/^\^*/, '^')
+                .replace(/\$*$/, '$'),
         passwordComplexityMessage = XNAT.data.siteConfig.passwordComplexityMessage,
         activeUsers = XNAT.data['/xapi/users/active'];
 
@@ -131,7 +134,7 @@ var XNAT = getObject(XNAT);
             },
             // XNAT.usersGroups.userData('bob').profile().done(someCallbackFunction)
             getProfile: function(opts){
-                return xapiUsers('get', setUrl(user), opts);
+                return xapiUsers('get', setUrl('profile/' + user), opts);
             },
             createProfile: function(data, opts){
                 opts = getObject(opts);
@@ -342,7 +345,7 @@ var XNAT = getObject(XNAT);
 
         function userAccountForm(data){
 
-            var _load = data ? '/xapi/users/' + data.username : false;
+            var _load = data ? serverRoot + '/xapi/users/' + data.username : false;
 
             data = data || {};
 
@@ -812,7 +815,7 @@ var XNAT = getObject(XNAT);
                 getUserRoles(username).done(function(roles){
                     data.roles = roles;
                     // save the data to namespaced object before opening dialog
-                    XNAT.data['/xapi/users/' + username] = data;
+                    XNAT.data['/xapi/users/profile/' + username] = data;
                     editUserDialog(data, onclose);
                 })
             });

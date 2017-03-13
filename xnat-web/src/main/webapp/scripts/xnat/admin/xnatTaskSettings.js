@@ -142,7 +142,7 @@ var XNAT = getObject(XNAT);
 				XNAT.spawner.spawn(taskPanel).render($("#task-settings-tabs"));
 				$(document).ready(function() {
 					$("[id^=task-][id$=-resolver]").change(function(e, f) {
-						if ($(e.currentTarget).closest("form").hasClass("ready")) {
+						if ($(e.currentTarget).hasClass("ready")) {
 							xmodal.confirm({
 				       	         		title: 'Save and Reload Page?',
 				       	         		content: 'You have changed the execution resolver value.  This resolver may have different resolver properties.  Okay to save ' +

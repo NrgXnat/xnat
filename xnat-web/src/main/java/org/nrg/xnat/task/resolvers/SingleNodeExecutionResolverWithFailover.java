@@ -203,7 +203,7 @@ public class SingleNodeExecutionResolverWithFailover implements XnatTaskExecutio
 				"   name: task-" + taskId + "-wait\n" +
 				"   placeholder: " + DEFAULT_WAIT_MIN + "\n" + 
 				"   size: 5\n" +
-				"   validation: required number\n" + 
+				"   validation: allow-empty number\n" + 
 				"   description: Minutes since last indication of server live time to wait before failing over to next node.  Make sure this value " + 
 						"is significantly greater than the interval between task runs, as this resolver currently doesn't account for " +
 						"differences in time between servers.\n";

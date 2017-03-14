@@ -13,7 +13,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.task.XnatTask;
-import org.nrg.framework.task.XnatTaskI;
 import org.nrg.framework.task.services.XnatTaskService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.exception.InvalidPermissionException;
@@ -21,6 +20,7 @@ import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
+import org.nrg.xnat.task.AbstractXnatTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -37,7 +37,7 @@ import java.util.List;
  * The Class SessionXMLRebuilder.
  */
 @XnatTask(taskId = "SessionXMLRebuilder", description = "Session XML Rebuilder", defaultExecutionResolver = "SingleNodeExecutionResolver", executionResolverConfigurable = true)
-public class SessionXMLRebuilder implements Runnable, XnatTaskI {
+public class SessionXMLRebuilder extends AbstractXnatTask implements Runnable {
 
     /**
      * Instantiates a new session xml rebuilder.
@@ -48,12 +48,12 @@ public class SessionXMLRebuilder implements Runnable, XnatTaskI {
      * @param interval the interval
      */
     public SessionXMLRebuilder(final Provider<UserI> provider, final XnatAppInfo appInfo, final JmsTemplate jmsTemplate, final JdbcTemplate jdbcTemplate, final double interval) {
+        super(XDAT.getContextService().getBean(XnatTaskService.class));
         _provider = provider;
         _appInfo = appInfo;
         _interval = interval;
         _jmsTemplate = jmsTemplate;
         _helper = new DatabaseHelper(jdbcTemplate);
-        _taskService = XDAT.getContextService().getBean(XnatTaskService.class);
     }
 
     /* (non-Javadoc)
@@ -85,7 +85,6 @@ public class SessionXMLRebuilder implements Runnable, XnatTaskI {
             	logger.trace("Session XML rebuilder not configured to run on this node.  Skipping.");
             	return;
             }
-            recordTaskRun();
             logger.trace("Running prearc job as {}", user.getLogin());
             
             List<SessionData> sds = null;
@@ -182,24 +181,8 @@ public class SessionXMLRebuilder implements Runnable, XnatTaskI {
     
     /** The helper. */
     private final DatabaseHelper  _helper;
-    
-    /** The _task service. */
-    private final XnatTaskService _taskService;
 
     /** The _marked uninitialized. */
     private boolean _markedUninitialized = false;
 
-	@Override
-	public boolean shouldRunTask() {
-        if (_taskService == null) {
-          	logger.warn("XnatTaskService not initialized.  Skipping rebuilder run.");
-            return false;
-        }    
-        return _taskService.shouldRunTask(this.getClass());
-	}
-
-	@Override
-	public void recordTaskRun() {
-        _taskService.recordTaskRun(this.getClass());
-	}
 }

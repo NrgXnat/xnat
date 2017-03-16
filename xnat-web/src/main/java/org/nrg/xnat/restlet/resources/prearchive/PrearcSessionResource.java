@@ -67,9 +67,11 @@ public final class PrearcSessionResource extends SecureResource {
     private final String project, timestamp, session;
 
     /**
-     * @param context
-     * @param request
-     * @param response
+     * Initializes the restlet.
+     *
+     * @param context  The restlet context.
+     * @param request  The restlet request.
+     * @param response The restlet response.
      */
     public PrearcSessionResource(Context context, Request request,
             Response response) {
@@ -177,9 +179,9 @@ public final class PrearcSessionResource extends SecureResource {
         } else if (POST_ACTION_MOVE.equals(action)) {
             String newProj=this.getQueryVariable("newProject");
 
-            if(StringUtils.isNotEmpty(newProj)){
+            // if(StringUtils.isNotEmpty(newProj)){
                 //TODO: convert ALIAS to project ID (if necessary)
-            }
+            // }
 
             try {
                 if(!PrearcUtils.canModify(user, newProj)){
@@ -190,11 +192,7 @@ public final class PrearcSessionResource extends SecureResource {
                     PrearcDatabase.moveToProject(session, timestamp, (project==null)?"Unassigned":project, newProj);
                     returnString(wrapPartialDataURI(PrearcUtils.buildURI(newProj,timestamp,session)), MediaType.TEXT_URI_LIST,Status.REDIRECTION_PERMANENT);
                 }				
-            } catch (SyncFailedException e) {
-                logger.error("",e);
-                PrearcUtils.log(project, timestamp, session, e);
-                this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
-            } catch (SQLException e) {
+            } catch (SyncFailedException | SQLException e) {
                 logger.error("",e);
                 PrearcUtils.log(project, timestamp, session, e);
                 this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
@@ -218,15 +216,12 @@ public final class PrearcSessionResource extends SecureResource {
                     PrearcDatabase.buildSession(sessionDir, session, timestamp, project, (String) params.get(VISIT), (String) params.get(PROTOCOL), (String) params.get(TIMEZONE), (String) params.get(SOURCE));
                     PrearcUtils.resetStatus(user, project, timestamp, session, true);
 
-                    final FinishImageUpload uploader=new FinishImageUpload(null, user, new PrearcSession(project, timestamp, session, params, user), null, false, true, false);
-                    try {
-                        if(uploader.isAutoArchive()){
-                            returnString(wrapPartialDataURI(uploader.call()),Status.REDIRECTION_PERMANENT);
-                        }else{
-                            returnString(wrapPartialDataURI(uploader.call()), MediaType.TEXT_URI_LIST,Status.SUCCESS_OK);
+                    try (final FinishImageUpload uploader = new FinishImageUpload(null, user, new PrearcSession(project, timestamp, session, params, user), null, false, true, false)) {
+                        if (uploader.isAutoArchive()) {
+                            returnString(wrapPartialDataURI(uploader.call()), Status.REDIRECTION_PERMANENT);
+                        } else {
+                            returnString(wrapPartialDataURI(uploader.call()), MediaType.TEXT_URI_LIST, Status.SUCCESS_OK);
                         }
-                    } finally {
-                        uploader.close();
                     }
                 } else {
                     this.getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "session document locked");
@@ -292,11 +287,9 @@ public final class PrearcSessionResource extends SecureResource {
         } catch (SessionException e) {
             logger.error("",e);
             this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, e.getMessage());
-            return;
         } catch (Exception e) {
             logger.error("",e);
             this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-            return;
         }
     }
 
@@ -307,7 +300,7 @@ public final class PrearcSessionResource extends SecureResource {
      */
     @SuppressWarnings("serial")
     @Override
-    public Representation getRepresentation(final Variant variant){
+    public Representation represent(final Variant variant){
         final File sessionDir;
         final UserI user = getUser();
         try {
@@ -344,11 +337,14 @@ public final class PrearcSessionResource extends SecureResource {
             		tb.initTable(new String[]{"id","date","entry"});
             		
             		try {
-						for(File log:PrearcUtils.getLogs(project,timestamp,session)){
-							Date timestamp=new Date(log.lastModified());
-							String id=log.getName().substring(0,log.getName().indexOf(".log"));
-							tb.insertRow(new Object[]{id,timestamp,FileUtils.readFileToString(log)});
-						}
+                        final Collection<File> logs = PrearcUtils.getLogs(project, timestamp, session);
+                        if (logs != null) {
+                            for(final File log : logs){
+                                final Date timestamp=new Date(log.lastModified());
+                                final String id=log.getName().substring(0,log.getName().indexOf(".log"));
+                                tb.insertRow(new Object[]{id,timestamp,FileUtils.readFileToString(log)});
+                            }
+                        }
                         tb.sort("date","ASC");
 						tb.resetRowCursor();
 					} catch (IOException e) {
@@ -357,11 +353,14 @@ public final class PrearcSessionResource extends SecureResource {
 					}
         		}else{
         			tb.initTable(new String[]{"id"});
-            		
-            		for(String id:PrearcUtils.getLogIds(project,timestamp,session)){
-            			tb.rows().add(new Object[]{id});
-            		}
-        		}
+
+                    final Collection<String> logIds = PrearcUtils.getLogIds(project, timestamp, session);
+                    if (logIds != null) {
+                        for(final String id: logIds){
+                            tb.rows().add(new Object[]{id});
+                        }
+                    }
+                }
         		
         		
         		return representTable(tb,mt,new Hashtable<String,Object>());
@@ -406,15 +405,15 @@ public final class PrearcSessionResource extends SecureResource {
             }
             return new FileRepresentation(sessionXML, variant.getMediaType(), 0);
         } else if (MediaType.APPLICATION_JSON.equals(mt)) {
-            List<SessionDataTriple> l = new ArrayList<SessionDataTriple>();
-            l.add(new SessionDataTriple(sessionDir.getName(), project, timestamp));
+            final List<SessionDataTriple> triples = new ArrayList<>();
+            triples.add(new SessionDataTriple(sessionDir.getName(), timestamp, project));
             XFTTable table = null;
             try {
-                table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(l));
+                table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(triples));
             } catch (Exception e) {
                 this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
             } 
-            return this.representTable(table, MediaType.APPLICATION_JSON, new Hashtable<String,Object>());
+            return representTable(table, MediaType.APPLICATION_JSON, new Hashtable<String,Object>());
         } 
         else if (MediaType.APPLICATION_GNU_ZIP.equals(mt) || MediaType.APPLICATION_ZIP.equals(mt)) {
             final ZipRepresentation zip;

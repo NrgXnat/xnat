@@ -2817,14 +2817,17 @@ span.spacer {
     background: #fff;
     border-spacing: 0;
     border: 1px solid #aaa;
+    box-sizing: border-box;
 }
 
 .xnat-table th,
 .xnat-table td {
     padding: 6px 12px;
+    box-sizing: border-box;
     border: 1px solid #ccc;
     border-top: none;
     border-left: none;
+    border-collapse: collapse;
 }
 
 .xnat-table th {
@@ -3015,6 +3018,12 @@ th.sort:hover {
 }
 
 /* data-table styles */
+.xnat-table.data-table {
+    /* fixed layout renders faster and ensures
+       fixed headers are the same width as body columns */
+    /*table-layout: fixed;*/
+}
+
 .xnat-table.data-table tr.filter > td,
 .xnat-table.data-table tr.filter > th {
     border-bottom: 1px solid #ccc;
@@ -3023,6 +3032,41 @@ th.sort:hover {
 .xnat-table.data-table .filter > input {
     box-sizing: border-box;
     width: 100%;
+}
+
+.data-table-wrapper {
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    /*background: #f0f0f0;*/
+}
+
+.data-table-wrapper.loading {
+    border: none;
+    background: transparent;
+}
+
+.data-table-wrapper.fixed .xnat-table,
+.xnat-table.fixed,
+.xnat-table.fixed-header {
+    table-layout: fixed;
+}
+
+.data-table-wrapper.no-body {
+    border-bottom: none;
+}
+
+.data-table-wrapper.no-header {
+    border-top: none;
+}
+
+.data-table-wrapper .xnat-table.data-table {
+    border: none;
+    border-right: 1px solid #ccc;
+    background: #fff;
+}
+
+.data-table-wrapper.no-header .xnat-table.data-table {
+    border-bottom: 1px solid #ccc;
 }
 
 /* container for data tables in report page panels */

@@ -16,8 +16,6 @@
   #set($projectString="/project/$project")
 #end
 
-<script type="text/javascript" src="$content.getURI('scripts/lib/js.cookie.js')"></script>
-
 <style type="text/css">
 
     #attention_icon { float: left ; padding-top: 7px ; padding-left: 11px ; }
@@ -35,6 +33,7 @@
         /*box-sizing: border-box;*/
         overflow-y: auto;
         overflow-x: hidden;
+        border: none;
     }
 
     #main_nav ul.nav div.data-table-wrapper * {

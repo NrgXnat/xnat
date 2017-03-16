@@ -38,11 +38,11 @@ var XNAT = getObject(XNAT);
         undefined;
 
     function isElement(it){
-        return it.nodeType && it.nodeType === 1;
+        return it && it.nodeType && it.nodeType === 1;
     }
 
     function isFragment(it){
-        return it.nodeType && it.nodeType === 11;
+        return it && it.nodeType && it.nodeType === 11;
     }
 
     /**
@@ -264,6 +264,10 @@ var XNAT = getObject(XNAT);
         return this;
     };
 
+    Table.p.filterRows = function(colIndex, filter){
+
+    };
+
     Table.p.get = function(){
         return this.table;
     };
@@ -419,7 +423,7 @@ var XNAT = getObject(XNAT);
         }
 
         tableConfig = extend(true, {
-            id: opts.id || randomID('xdt-', false),
+            id: opts.id || randomID('xdt', false),
             style: { width: opts.width || '100%' }
         }, tableConfig);
 
@@ -433,10 +437,36 @@ var XNAT = getObject(XNAT);
 
         // create a div to hold the table
         // or message (if no data or error)
-        var $tableWrapper = $.spawn('div.data-table-wrapper');
+        var $tableWrapper = $.spawn('div.data-table-wrapper', {
+            style: {
+                // apply height to wrapper for scrolling
+                height: opts.height || 'auto',
+                minHeight: opts.minHeight || 'auto',
+                maxHeight: opts.maxHeight || 'auto',
+                overflowX: opts.overflowX || 'hidden',
+                overflowY: opts.overflowY || 'auto'
+            }
+        });
         var tableWrapper = $tableWrapper[0];
 
-        $tableWrapper.append('<p class="loading">loading...</p>', newTable.table);
+        if (opts.fixed === true) {
+            $tableWrapper.addClass('fixed');
+        }
+
+        if (opts.body === false) {
+            $tableWrapper.addClass('no-body');
+        }
+
+        if (opts.header === false) {
+            $tableWrapper.addClass('no-header');
+        }
+
+        if (opts.footer === false) {
+            $tableWrapper.addClass('no-footer');
+        }
+
+        $tableWrapper.addClass('loading')
+                     .append('<p class="loading">loading...</p>', newTable.table);
 
         // if (opts.before) {
         //     $tableWrapper.prepend(opts.before);
@@ -608,6 +638,11 @@ var XNAT = getObject(XNAT);
             // if we have filters, create a row for them
             if (filterColumns.length) {
 
+                // add css rules for hiding filtered items
+                document.head.appendChild(spawn('style|type=text/css', filterColumns.map(function(filtername){
+                    return 'tr.filter-' + filtername + '{display:none;}';
+                })));
+
                 var filterInputs = []; // save reference to filter inputs
                 var allFilterValues = '';
 
@@ -627,6 +662,7 @@ var XNAT = getObject(XNAT);
                 function filterRows(val, name){
                     if (!val) { return false }
                     val = val.toLowerCase();
+                    var filterClass = 'filter-' + name;
                     // save the rows if there are none
                     cacheRows();
                     // var rowStuff = [];
@@ -637,9 +673,9 @@ var XNAT = getObject(XNAT);
                     //     })
                     // });
                     // console.log(rowStuff);
-                    $dataRows.not(function(){
+                    $dataRows.addClass(filterClass).filter(function(){
                         return $(this).find('td.'+ name + ':containsNC(' + val + ')').length
-                    }).hide();
+                    }).removeClass(filterClass);
                 }
 
                 props.forEach(function(name){
@@ -686,7 +722,7 @@ var XNAT = getObject(XNAT);
                                     this.value = val = '';
                                 }
                                 if (!val || key == 8) {
-                                    $dataRows.show();
+                                    $dataRows.removeClass('filter-' + name);
                                 }
                                 if (!val) {
                                     // no value, no filter
@@ -904,7 +940,7 @@ var XNAT = getObject(XNAT);
 
             });
 
-            $tableWrapper.find('.loading').remove();
+            $tableWrapper.removeClass('loading').find('.loading').remove();
             newTable.table$.removeClass('hidden invisible').show();
 
             // close any 'loading' dialogs that are open

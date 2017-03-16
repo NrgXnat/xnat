@@ -235,7 +235,7 @@ archivePath:
     kind: panel.input.text
     name: archivePath
     label: Archive Path
-    validation: uri onblur
+    validation: required onblur
     description: ""
     element:
         disabled: true
@@ -243,31 +243,31 @@ cachePath:
     kind: panel.input.text
     name: cachePath
     label: Cache Path
-    validation: uri onblur
+    validation: required onblur
     description: ""
 prearchivePath:
     kind: panel.input.text
     name: prearchivePath
     label: Prearchive Path
-    validation: uri onblur
+    validation: required onblur
     description: ""
 ftpPath:
     kind: panel.input.text
     name: ftpPath
     label: FTP Path
-    validation: uri onblur
+    validation: required onblur
     description: ""
 buildPath:
     kind: panel.input.text
     name: buildPath
     label: Build Path
-    validation: uri onblur
+    validation: required onblur
     description: ""
 pipelinePath:
     kind: panel.input.text
     name: pipelinePath
     label: Pipeline Path
-    validation: uri onblur
+    validation: required onblur
     description: ""
 zipExtensions:
     kind: panel.input.text

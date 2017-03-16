@@ -90,7 +90,7 @@ public class XdatCriteria extends BaseXdatCriteria {
         		&& !comparison_type.trim().contains("FROM") ){
         	overrideValueFormatting=Boolean.TRUE;
         	if(comparison_type.trim().equals("IS")){
-        		if(value.trim().equals("NOT NULL")){
+        		if(value!=null && StringUtils.equals(value.trim(),"NOT NULL")){
         			value=" NOT NULL";
         		}else{
         			value=" NULL";

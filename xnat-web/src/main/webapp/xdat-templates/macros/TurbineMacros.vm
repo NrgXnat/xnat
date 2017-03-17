@@ -299,7 +299,7 @@
           <script type="text/javascript" src="$content.getURI("scripts/customizableSelectBox.js")"></script>
           <script type="text/javascript">
              var comboBox=new CustomSelectBox("$name",$settings_alias);
-             comboBox.render("$!item.getProperty($name)");
+             comboBox.render("$!turbineUtils.escapeHTML($!item.getProperty($name))");
           </script>
    #end
 #end

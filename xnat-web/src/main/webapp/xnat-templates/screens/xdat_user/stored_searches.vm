@@ -1,0 +1,77 @@
+<div id="user-stored-search-table-container">
+    <!-- put user-specific list of stored searches here. -->
+    <p><em>This user does not currently have access to any stored searches.</em></p>
+</div>
+
+<script>
+    console.log('stored_searches.vm');
+
+    var XNAT = getObject(XNAT);
+
+    (function(factory){
+        if (typeof define === 'function' && define.amd) {
+            define(factory);
+        }
+        else if (typeof exports === 'object') {
+            module.exports = factory();
+        }
+        else {
+            return factory();
+        }
+    }(function(){
+
+        var container = '#user-stored-search-table-container';
+
+        function spawnStoredSearchTable() {
+            var $dataRows = [];
+            var username = '$!item.getProperty("login")'
+
+            if (!username) return false;
+
+            return {
+                kind: 'table.dataTable',
+                name: 'userProfiles',
+                id: 'user-profiles',
+                load: '/data/search/saved?user='+username+'&format=json',
+                messages: {
+                    noData: 'This user does not currently have access to any stored searches.'
+                },
+                table: {
+                    classes: 'xnat-table stored-search-table'
+                },
+                sortable: 'id,brief_description,root_element_name',
+                items: {
+                    id: {
+                        label: 'ID',
+                        apply: function(id) {
+                            return spawn('a.link', {
+                                href: '/app/template/XDATScreen_bundles.vm'
+                        }, id)}
+                    },
+                    brief_description: {
+                        label: 'Search Name'
+                    },
+                    root_element_name: {
+                        label: 'Pivot'
+                    }
+                }
+            }
+        }
+
+        function renderStoredSearchTable(container){
+            // console.log('renderUsersTable');
+            var $container = container ? $$(container) : $('#user-stored-search-table-container');
+            var _searchTable;
+            if ($container.length) {
+                    $container.html('loading...');
+                // setTimeout(function(){
+                _searchTable = XNAT.spawner.spawn({
+                    searchTable: spawnStoredSearchTable()
+                });
+                _searchTable.render($container.empty(), 200);
+            }
+        }
+
+        renderStoredSearchTable(container);
+    }));
+</script>

@@ -1,3 +1,5 @@
+<!-- start /screens/xnat_subjectData/xnat_subjectData_assessors.vm -->
+
 <BR>
 
 <div id="expts_container">
@@ -17,12 +19,15 @@
         <div id="proj_expts" style="display:none">
 
             <table width="100%" class="highlight sortable">
+                <thead>
                 <tr>
                     <th align="left" class="underscore sort">Date</th>
                     <th align="left" class="underscore sort">Experiment</th>
                     <th align="left" class="underscore sort">$displayManager.getSingularDisplayNameForProject()</th>
                     <th align="left" class="underscore sort">Label</th>
                 </tr>
+                </thead>
+                <tbody>
                 #foreach ($assessor in $subject.getMinimalLoadAssessors())
                     #if($assessor.hasProject($project))
                         #parse($turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
@@ -30,6 +35,7 @@
                         #set($hasOtherProjects=true)
                     #end
                 #end
+                </tbody>
             </table>
 
         </div><!-- /proj_expts -->
@@ -37,15 +43,19 @@
     <div id="all_expts" style="display:none">
 
         <table width="100%" class="highlight sortable">
+            <thead>
             <tr>
                 <th align="left" class="underscore sort">Date</th>
                 <th align="left" class="underscore sort">Experiment</th>
                 <th align="left" class="underscore sort">$displayManager.getSingularDisplayNameForProject()</th>
                 <th align="left" class="underscore sort">Label</th>
             </tr>
+            </thead>
+            <tbody>
             #foreach ($assessor in $subject.getMinimalLoadAssessors())
                 #parse($turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
             #end
+            </tbody>
         </table>
 
     </div><!-- /all_expts -->
@@ -53,7 +63,7 @@
 </div><!-- /expts_container -->
 
 <script type="text/javascript">
-        
+
         #if($pScope && $hasOtherProjects)
             XNAT.app.subject.toggleExptView = function(){
                 if (document.getElementById("all_expts").style.display == "block") {
@@ -81,5 +91,7 @@
         #if($shared)
             document.getElementById("expt_shared_legend").style.display = "inline-block";
         #end
-    
+
 </script>
+
+<!-- end /screens/xnat_subjectData/xnat_subjectData_assessors.vm -->

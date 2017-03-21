@@ -265,7 +265,7 @@ public class ProjectListResource extends QueryOrganizerResource {
 
                             dc = new DisplayCriteria();
                             dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_ACCESS");
-                            dc.setValue("public", false);
+                            dc.setValue("6", false);
                             cc.add(dc);
 
                             allCC.addCriteria(cc);
@@ -314,6 +314,19 @@ public class ProjectListResource extends QueryOrganizerResource {
                         cc.add(dc);
 
                         allCC.addCriteria(cc);
+                    }
+                }
+                String users = resource.getQueryVariable("users");
+                if (users != null) {
+                    if (users.equalsIgnoreCase("true")) {
+                        CriteriaCollection cc = new CriteriaCollection("OR");
+                        DisplayCriteria dc = new DisplayCriteria();
+                        dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
+                        dc.setComparisonType(" LIKE ");
+                        dc.setValue("% " + user.getLogin() + " %", false);
+                        cc.add(dc);
+
+                        orCC.addCriteria(cc);
                     }
                 }
 

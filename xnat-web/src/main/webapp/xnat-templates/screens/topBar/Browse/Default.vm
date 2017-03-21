@@ -2,7 +2,12 @@
 <!-- Sequence: 10 -->
 
 <!-- Browse/Default -->
-    <li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">Projects</a>
+    <li class="hidden"><a href="#!" class="nolink">My Projects</a>
+        <ul id="my-projects">
+            <!-- Sequence: 20 -->
+        </ul>
+    </li>
+    <li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">All Projects</a>
         <ul id="browse-projects" class="shadowed dark-shadow">
             <!-- Sequence: 10 -->
             #if($siteConfig.uiAllowNonAdminProjectCreation || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData/project"))

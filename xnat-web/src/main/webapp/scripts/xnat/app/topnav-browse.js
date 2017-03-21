@@ -17,6 +17,7 @@
     var $browseProjects = $('#browse-projects');
     var $browseData = $('#browse-data');
     var $favoriteProjects = $('#favorite-projects');
+    var $myProjects = $('#my-projects');
     var undefined;
 
     var displayProjectList = function($parent, projectData){
@@ -135,6 +136,29 @@
         },
         error: function(){
             displayProjectNavFail();
+        }
+    });
+
+    // look for my projects. If found, show that dropdown list.
+    xnatJSON({
+        url: restUrl('/data/projects', ['accessible=true', 'users=true']),
+        success: function(data){
+            var MY = data.ResultSet.Result.map(function(item){
+                var URL = XNAT.url.rootUrl('/data/projects/' + item.id);
+                return {
+                    // sorry for the confusing naming
+                    name: item.secondary_id,
+                    item: spawn('a.truncate', {
+                        href: URL,
+                        title: item.name,
+                        style: { width: '100%' }
+                    }, item.secondary_id)
+                }
+            });
+            displaySimpleList($myProjects, MY)
+        },
+        error: function(){
+            /* set My Projects nav item to hidden, if necessary */
         }
     });
 

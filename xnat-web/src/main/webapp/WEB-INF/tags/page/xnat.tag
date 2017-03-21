@@ -298,7 +298,12 @@ ${bodyTop}
                 <li class="hidden"><a id="browse" title="Browse" href="#Browse">Browse</a>
                     <ul class="" style="display:none; min-width: 120px;">
                         <!-- Browse/Default -->
-                        <li class="hidden"><a href="#BrowseProjects">Projects</a>
+                        <li class="hidden"><a href="#MyProjects">My Projects</a>
+                            <ul id="my-projects">
+                                <!-- Sequence: 10 -->
+                            </ul>
+                        </li>
+                        <li class="hidden"><a href="#BrowseProjects">All Projects</a>
                             <ul id="browse-projects">
                                 <!-- Sequence: 10 -->
                             </ul>

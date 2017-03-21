@@ -12,13 +12,11 @@ package org.nrg.dcm;
 import com.google.common.io.Files;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.zip.GZIPInputStream;
 
-import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;

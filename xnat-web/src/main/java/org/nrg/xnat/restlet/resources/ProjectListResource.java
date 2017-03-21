@@ -265,7 +265,7 @@ public class ProjectListResource extends QueryOrganizerResource {
 
                             dc = new DisplayCriteria();
                             dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_ACCESS");
-                            dc.setValue("6", false);
+                            dc.setValue("public", false);
                             cc.add(dc);
 
                             allCC.addCriteria(cc);

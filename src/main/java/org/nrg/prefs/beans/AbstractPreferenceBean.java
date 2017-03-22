@@ -162,42 +162,36 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public Map<String, Object> getPreferenceMap(final Set<String> preferenceNames) {
-        final boolean isFiltered = preferenceNames != null && preferenceNames.size() > 0;
         if (_preferenceMap.size() == 0) {
-            final Set<String>         allKeys     = getPreferenceKeys();
-            final Map<String, Object> preferences = Maps.newHashMap();
+            final Set<String> allKeys = getPreferenceKeys();
             for (final String preferenceName : _preferences.keySet()) {
-                if (!isFiltered || preferenceNames.contains(preferenceName)) {
-                    final PreferenceInfo info = getPreferenceInfo(preferenceName);
-                    if (info != null) {
-                        allKeys.remove(preferenceName);
-                        try {
-                            preferences.put(preferenceName, info.getGetter().invoke(this));
-                        } catch (IllegalAccessException e) {
-                            _log.error("An error occurred trying to access the value for the preference " + preferenceName + " in the tool " + getToolId(), e);
-                        } catch (InvocationTargetException e) {
-                            _log.error("An error occurred trying to access the getter method for the preference " + preferenceName + " in the tool " + getToolId(), e);
-                        }
+                final PreferenceInfo info = getPreferenceInfo(preferenceName);
+                if (info != null) {
+                    allKeys.remove(preferenceName);
+                    try {
+                        _preferenceMap.put(preferenceName, info.getGetter().invoke(this));
+                    } catch (IllegalAccessException e) {
+                        _log.error("An error occurred trying to access the value for the preference " + preferenceName + " in the tool " + getToolId(), e);
+                    } catch (InvocationTargetException e) {
+                        _log.error("An error occurred trying to access the getter method for the preference " + preferenceName + " in the tool " + getToolId(), e);
                     }
                 }
             }
             if (allKeys.size() > 0) {
                 for (final String preferenceName : allKeys) {
-                    preferences.put(preferenceName, getValue(preferenceName));
+                    _preferenceMap.put(preferenceName, getValue(preferenceName));
                 }
             }
-            return preferences;
-        } else {
-            if (preferenceNames == null || preferenceNames.size() == 0) {
-                return _preferenceMap;
-            }
-            return Maps.filterEntries(_preferenceMap, new Predicate<Map.Entry<String, Object>>() {
+        }
+        if (preferenceNames != null && preferenceNames.size() > 0) {
+            return ImmutableMap.copyOf(Maps.filterEntries(_preferenceMap, new Predicate<Map.Entry<String, Object>>() {
                 @Override
                 public boolean apply(@Nullable final Map.Entry<String, Object> entry) {
                     return entry != null && preferenceNames.contains(entry.getKey());
                 }
-            });
+            }));
         }
+        return ImmutableMap.copyOf(_preferenceMap);
     }
 
     @JsonIgnore
@@ -799,8 +793,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         if (initializationProperties.size() > 0) {
             if (tool.isStrict()) {
                 _log.warn("Extra initialization properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
-                        tool.getToolId(),
-                        Joiner.on(", ").join(initializationProperties.stringPropertyNames()));
+                          tool.getToolId(),
+                          Joiner.on(", ").join(initializationProperties.stringPropertyNames()));
             } else {
                 for (final String property : initializationProperties.stringPropertyNames()) {
                     if (!_preferenceService.hasPreference(getToolId(), property)) {
@@ -814,8 +808,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         if (overrideProperties.size() > 0) {
             if (tool.isStrict()) {
                 _log.warn("Extra override properties found, but tool {} is set to strict. The following preferences are being ignored: {}",
-                        tool.getToolId(),
-                        Joiner.on(", ").join(overrideProperties.stringPropertyNames()));
+                          tool.getToolId(),
+                          Joiner.on(", ").join(overrideProperties.stringPropertyNames()));
             } else {
                 for (final String property : overrideProperties.stringPropertyNames()) {
                     final String value = overrideProperties.getProperty(property);

@@ -192,15 +192,36 @@ public class Users {
     }
 
     /**
-     * Return the guest user for this server
+     * Return the guest user for this server. This calls the {@link #getGuest(boolean)} method, passing <b>false</b> for
+     * the <b>invalidate</b> parameter (i.e. the guest user is <i>not</i> regenerated).
      *
-     * @return Returns the guest user
+     * @return Returns the guest user.
+     *
      * @throws UserNotFoundException When the requested user can't be found.
      * @throws UserInitException     When an error occurs accessing the user records.
      */
     @Nonnull
     public static UserI getGuest() throws UserNotFoundException, UserInitException {
-        return getUserManagementService().getGuestUser();
+        return getGuest(false);
+    }
+
+    /**
+     * Return the guest user for this server.
+     *
+     * @param invalidate Indicates whether any cached guest user should be invalidated and regenerated.
+     *
+     * @return Returns the guest user.
+     *
+     * @throws UserNotFoundException When the requested user can't be found.
+     * @throws UserInitException     When an error occurs accessing the user records.
+     */
+    @Nonnull
+    public static UserI getGuest(final boolean invalidate) throws UserNotFoundException, UserInitException {
+        final UserManagementServiceI service = getUserManagementService();
+        if (invalidate) {
+            service.invalidateGuest();
+        }
+        return service.getGuestUser();
     }
 
     /**

@@ -57,6 +57,11 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
     }
 
     @Override
+    public void invalidateGuest() {
+        // Nothing here.
+    }
+
+    @Override
     public List<? extends UserI> getUsers() {
         return getDao().findAllEnabled();
     }

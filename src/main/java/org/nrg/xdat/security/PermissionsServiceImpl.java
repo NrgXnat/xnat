@@ -563,46 +563,40 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 		ArrayList<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
 
         UserI guest=Users.getGuest();
-        
-        if (accessibility.equals("public"))
-        {
-        	
-            //public
-            Permissions.setPermissions(guest,authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, true,true,ci);
 
-            for (ElementSecurity es: securedElements)
-            {
-            	if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")){
-            		Permissions.setPermissions(guest,authenticatedUser,es.getElementName(),es.getElementName() + "/project", tag, false, true, false, false, true,true,ci);
-            		Permissions.setPermissions(guest,authenticatedUser,es.getElementName(),es.getElementName() + "/sharing/share/project", tag, false, false, false, false, false,true,ci);
-            	}
-            }
-        }else if (accessibility.equals("protected"))
-        {
-            //protected;
-        	Permissions.setPermissions(guest,authenticatedUser,"xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, false,true,ci);
-            for (ElementSecurity es: securedElements)
-            {
-            	if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")){
-            		Permissions.setPermissions(guest,authenticatedUser,es.getElementName(),es.getElementName() + "/project", tag,  false, false, false, false, false,true,ci);
-            		Permissions.setPermissions(guest,authenticatedUser,es.getElementName(),es.getElementName() + "/sharing/share/project", tag,  false, false, false, false, false,true,ci);
-            	}
-            }
-        }else
-        {
-            //private
-        	Permissions.setPermissions(guest,authenticatedUser,"xnat:projectData", "xnat:projectData/ID", tag, false, false, false, false, false,true,ci);
-            for (ElementSecurity es: securedElements)
-            {
-            	if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")){
-            		Permissions.setPermissions(guest,authenticatedUser,es.getElementName(),es.getElementName() + "/project", tag,  false, false, false, false, false,true,ci);
-            		Permissions.setPermissions(guest,authenticatedUser,es.getElementName(),es.getElementName() + "/sharing/share/project", tag,  false, false, false, false, false,true,ci);
-            	}
-            }
+        switch (accessibility) {
+            case "public":
+                Permissions.setPermissions(guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, true, true, ci);
+
+                for (ElementSecurity es : securedElements) {
+                    if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
+                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/project", tag, false, true, false, false, true, true, ci);
+                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                    }
+                }
+                break;
+            case "protected":
+                Permissions.setPermissions(guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, true, false, false, false, true, ci);
+                for (ElementSecurity es : securedElements) {
+                    if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
+                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/project", tag, false, false, false, false, false, true, ci);
+                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                    }
+                }
+                break;
+            default: // "private"
+                Permissions.setPermissions(guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", tag, false, false, false, false, false, true, ci);
+                for (ElementSecurity es : securedElements) {
+                    if (es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
+                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/project", tag, false, false, false, false, false, true, ci);
+                        Permissions.setPermissions(guest, authenticatedUser, es.getElementName(), es.getElementName() + "/sharing/share/project", tag, false, false, false, false, false, true, ci);
+                    }
+                }
+                break;
         }
         
         ((XDATUser)authenticatedUser).resetCriteria();
-        
+        Users.getGuest(true);
         return true;
 	}
 

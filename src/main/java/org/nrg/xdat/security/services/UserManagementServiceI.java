@@ -65,7 +65,12 @@ public interface UserManagementServiceI {
 	 * @throws UserInitException If something goes wrong creating the user.
 	 */
 	UserI getGuestUser() throws UserNotFoundException, UserInitException;
-	
+
+	/**
+	 * Invalidates the cached guest user.
+	 */
+	void invalidateGuest();
+
 	/**
 	 * Return a complete list of all the users in the database.
 	 * @return A list of all the users in the database.

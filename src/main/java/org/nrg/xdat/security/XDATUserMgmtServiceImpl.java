@@ -44,10 +44,15 @@ import javax.annotation.Nonnull;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 @Service
 public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
+    private UserI _guest;
+    private String _guestName;
+    private Integer _guestId;
+
     @Override
     public UserI createUser() {
         return new XDATUser();
@@ -55,11 +60,17 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
 
     @Override
     public UserI getUser(String username) throws UserNotFoundException, UserInitException {
+        if (StringUtils.equals(_guestName, username)) {
+            return _guest;
+        }
         return new XDATUser(username);
     }
 
     @Override
     public UserI getUser(Integer userId) throws UserNotFoundException, UserInitException {
+        if (Objects.equals(_guestId, userId)) {
+            return _guest;
+        }
         XdatUser u = XdatUser.getXdatUsersByXdatUserId(userId, null, true);
         if (u != null) {
             return new XDATUser(u.getItem());
@@ -71,12 +82,28 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     @Override
     @Nonnull
     public UserI getGuestUser() throws UserNotFoundException, UserInitException {
-        try {
-            return getUser(XDAT.getSiteConfigurationProperty("security.user.guestName", "guest"));
-        } catch (ConfigServiceException e) {
-            logger.error("", e);
-            return getUser("guest");
+        if (_guest == null) {
+            try {
+                _guest = getUser(XDAT.getSiteConfigurationProperty("security.user.guestName", "guest"));
+            } catch (ConfigServiceException e) {
+                logger.error("", e);
+                _guest = getUser("guest");
+            }
+            if (_guest == null) {
+                logger.error("Unable to create the guest user");
+            } else {
+                _guestId = _guest.getID();
+                _guestName = _guest.getLogin();
+            }
         }
+        return _guest;
+    }
+
+    @Override
+    public void invalidateGuest() {
+        _guest = null;
+        _guestId = null;
+        _guestName = null;
     }
 
     @Override

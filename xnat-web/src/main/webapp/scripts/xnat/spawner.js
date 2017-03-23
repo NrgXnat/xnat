@@ -200,7 +200,10 @@ var XNAT = getObject(XNAT);
 
                 }
                 else {
-                    if (hasConsole) console.log('not spawned: ' + prop);
+                    if (hasConsole) {
+                        console.log('not spawned: ');
+                        console.log(prop);
+                    }
                     spawner.notSpawned.push(prop);
                 }
             }
@@ -345,7 +348,7 @@ var XNAT = getObject(XNAT);
     // and methods from the AJAX request will be in .get.done(), .get.fail(), etc.
     spawner.resolve = function(nsPath, opts) {
 
-        // you can pass a config object as the only argument
+            // you can pass a config object as the only argument
         opts = cloneObject(firstDefined(opts, getObject(nsPath)));
 
         var url = opts.url || XNAT.url.restUrl('/xapi/spawner/resolve/' + nsPath);
@@ -357,12 +360,24 @@ var XNAT = getObject(XNAT);
         function spawnRender(){
             var renderArgs = arguments;
             return request.done(function(obj){
-                spawner.spawn(obj).render.apply(request, renderArgs);
+                    spawner.spawn(obj).render.apply(request, renderArgs);
                 return request;
             });
         }
 
         return {
+            // returned 'ok' method only fires with 200 response
+            // and returns with 'this' as Spawner instance
+            ok: function(callback){
+                return request.done(function(obj, txtStatus, xhr){
+                    var spawnerInstance = spawner.spawn(obj);
+                    if (xhr.status === 200) {
+                        if (isFunction(callback)){
+                            callback.call(spawnerInstance, obj, txtStatus, xhr)
+                        }
+                    }
+                })
+            },
             done: request.done,
             fail: request.fail,
             always: request.always,

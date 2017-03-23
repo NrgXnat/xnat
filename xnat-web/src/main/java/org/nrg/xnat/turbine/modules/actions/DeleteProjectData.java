@@ -9,10 +9,6 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -21,15 +17,7 @@ import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatProjectparticipantI;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
-import org.nrg.xdat.om.ArcProject;
-import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatExperimentdataShare;
-import org.nrg.xdat.om.XnatImageassessordata;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatProjectparticipant;
-import org.nrg.xdat.om.XnatSubjectassessordata;
-import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -47,6 +35,10 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.utils.WorkflowUtils;
+
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 public class DeleteProjectData extends SecureAction {
     static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(DeleteProjectData.class);
@@ -189,7 +181,7 @@ public class DeleteProjectData extends SecureAction {
 				    
 				    Groups.deleteGroupsByTag(project.getId(), user, ci);
 				    
-				    if(XDAT.getBoolSiteConfigurationProperty("security.allowPojectIdReuse", true)){
+				    if(XDAT.getBoolSiteConfigurationProperty("security.allowProjectIdReuse", false)){
 						Date curr = new Date();
 	                    long timestamp = curr.getTime();
 	                    String query = "UPDATE xnat_projectdata_history SET id = '"+ project.getId() + timestamp +"' where id = '"+ project.getId() +"';";

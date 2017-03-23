@@ -14,7 +14,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import org.apache.commons.beanutils.BeanUtils;
 import org.nrg.framework.beans.Beans;
@@ -27,6 +29,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.nrg.xnat.services.XnatAppInfo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -111,7 +114,12 @@ public class RootConfig {
                 .mixIns(mixIns())
                 .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
                 .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
-                .modulesToInstall(new Hibernate4Module());
+                .modulesToInstall(_jacksonModules);
+    }
+
+    @Bean
+    public Module hibernateModule() {
+        return new Hibernate4Module();
     }
 
     @Bean
@@ -128,4 +136,7 @@ public class RootConfig {
     public SerializerRegistry serializerRegistry() {
         return new SerializerRegistry();
     }
+
+    @Autowired
+    private Module[] _jacksonModules;
 }

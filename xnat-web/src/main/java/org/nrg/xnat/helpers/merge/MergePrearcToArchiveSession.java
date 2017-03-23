@@ -58,7 +58,9 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
 
                 if (file instanceof XnatResourcecatalog) {
                     ((XnatResourcecatalog) file).clearFiles();
-                    CatalogUtils.populateStats((XnatResourcecatalog) file, root);
+                }
+                if (file instanceof XnatImageresource) {
+                    CatalogUtils.populateStats((XnatImageresource) file, root);
                 }
             }
         }

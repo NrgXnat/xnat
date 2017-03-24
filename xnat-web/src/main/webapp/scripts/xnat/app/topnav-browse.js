@@ -27,9 +27,9 @@
             // var TEXT = truncateText(val || '<i><i>&ndash;</i></i>', len || 30);
             var TEXT = (val || '<i><i>&ndash;</i></i>');
             var linkText = spawn('a.truncate', {
-                href: URL,
                 title: val,
-                style: { width: len }
+                // style: { width: len },
+                href: URL
             }, TEXT);
             return linkText;
             // return [spawn('div.hidden', [val]), linkText];
@@ -39,13 +39,18 @@
             name: '360px',
             pi: '240px'
         };
+        var shortList = projectData.length < 10;
         var _menuItem = spawn('li.table-list');
         XNAT.table.dataTable([], {
             container: _menuItem,
             sortable: false,
-            filter: 'secondary_id, name, pi',
-            header: false,
+            filter: shortList ? false : 'secondary_id, name, pi',
+            header: shortList,
             body: false,
+            table: {
+                style: { tableLayout: 'fixed' }
+            },
+            overflowY: shortList ? 'auto' : 'scroll',
             items: {
                 secondary_id: {
                     label: 'Running Title',
@@ -65,6 +70,10 @@
             container: _menuItem,
             // sortable: true,
             header: false,
+            table: {
+                style: { tableLayout: 'fixed' }
+            },
+            overflowY: shortList ? 'auto' : 'scroll',
             items: {
                 _id: '~data-id',
                 secondary_id: {
@@ -143,19 +152,7 @@
     xnatJSON({
         url: restUrl('/data/projects', ['accessible=true', 'users=true']),
         success: function(data){
-            var MY = data.ResultSet.Result.map(function(item){
-                var URL = XNAT.url.rootUrl('/data/projects/' + item.id);
-                return {
-                    // sorry for the confusing naming
-                    name: item.secondary_id,
-                    item: spawn('a.truncate', {
-                        href: URL,
-                        title: item.name,
-                        style: { width: '100%' }
-                    }, item.secondary_id)
-                }
-            });
-            displaySimpleList($myProjects, MY)
+            displayProjectList($myProjects, data.ResultSet.Result);
         },
         error: function(){
             /* set My Projects nav item to hidden, if necessary */

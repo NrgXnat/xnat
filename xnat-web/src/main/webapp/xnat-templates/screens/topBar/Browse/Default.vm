@@ -3,13 +3,13 @@
 
 <!-- Browse/Default -->
     <li class="hidden"><a href="#!" class="nolink">My Projects</a>
-        <ul id="my-projects">
-            <!-- Sequence: 20 -->
+        <ul id="my-projects" class="shadowed dark-shadow">
+            <!-- Sequence: 10 -->
         </ul>
     </li>
     <li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">All Projects</a>
         <ul id="browse-projects" class="shadowed dark-shadow">
-            <!-- Sequence: 10 -->
+            <!-- Sequence: 11 -->
             #if($siteConfig.uiAllowNonAdminProjectCreation || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData/project"))
                 <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
             #end

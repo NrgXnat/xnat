@@ -261,7 +261,7 @@ var XNAT = getObject(XNAT || {});
 
     // bind codeEditor to elements with [data-code-editor] attribute
     // <textarea name="foo" data-code-editor="language:html;" data-code-dialog="title:Edit The Code;width:500;height:300;"></textarea>
-    $('body').on('dblclick', '[data-code-editor]', function(){
+    $(document).on('dblclick', '[data-code-editor]', function(){
 
         var $source = $(this),
             opts = parseOptions($source.dataAttr('codeEditor')),

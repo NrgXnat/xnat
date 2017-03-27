@@ -1085,7 +1085,7 @@ public class TurbineUtils {
                 screens = new ArrayList<>();
                 List<String> exists = new ArrayList<>();
 
-                for (final String path : CustomClasspathResourceLoader.paths) {
+                for (final String path : CustomClasspathResourceLoader.TEMPLATE_PATHS) {
                     String forwardSlashSubFolder = subFolder;
                     if(forwardSlashSubFolder!=null){
                         forwardSlashSubFolder = subFolder.replace("\\", "/");

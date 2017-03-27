@@ -12,7 +12,6 @@ package org.nrg.xdat.servlet;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
-import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.utilities.*;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
@@ -75,7 +74,7 @@ public class XDATServlet extends HttpServlet {
 
             //store some  more convenience paths
             XDAT.setScreenTemplatesFolder(getWebAppPath("templates", "screens"));
-            for (final String path : CustomClasspathResourceLoader.paths) {
+            for (final String path : CustomClasspathResourceLoader.TEMPLATE_PATHS) {
                 XDAT.addScreenTemplatesFolder(path, new File(getWebAppPath(path, "screens")));
             }
 

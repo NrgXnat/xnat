@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Properties;
 
 @Api(description = "XNAT Notifications management API")
@@ -79,7 +78,7 @@ public class NotificationsApi extends AbstractXapiRestController {
             _log.debug("User " + username + " requested the site configuration.");
         }
 
-        final Properties preferences = convertToProperties(_notificationsPrefs.getPreferenceMap());
+        final Properties preferences = _notificationsPrefs.asProperties();
 
         if (!_appInfo.isInitialized()) {
             if (_log.isInfoEnabled()) {
@@ -709,24 +708,6 @@ public class NotificationsApi extends AbstractXapiRestController {
     @RequestMapping(value = {"subscribers/update"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getUpdateSubscribers() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailRecipientUpdate(), HttpStatus.OK);
-    }
-
-    private Properties convertToProperties(final Map<String, Object> preferenceMap) throws IOException {
-        final Properties properties = new Properties();
-        for (final String key : preferenceMap.keySet()) {
-            final Object object  = preferenceMap.get(key);
-            String       tempVal = "";
-            if (object != null) {
-                if (String.class.isAssignableFrom(object.getClass())) {
-                    tempVal = (String) object;
-                } else {
-                    tempVal = _serializer.toJson(object);
-                }
-            }
-            final String value = tempVal;
-            properties.setProperty(key, value);
-        }
-        return properties;
     }
 
     private void cleanProperties(final Properties properties) {

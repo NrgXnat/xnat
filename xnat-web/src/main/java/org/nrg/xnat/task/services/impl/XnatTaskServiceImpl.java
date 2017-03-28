@@ -192,8 +192,8 @@ public class XnatTaskServiceImpl implements XnatTaskService {
 	 */
 	private String getResolverPreferenceValue(final String taskId) {
 		final String prefKey = "task-" + taskId + "-resolver";
-		if (_preferences.getPreferenceKeys().contains(prefKey)) {
-			final Preference resolverPref = _preferences.get(prefKey);
+		if (_preferences.containsKey(prefKey)) {
+			final Preference resolverPref = _preferences.getPreference(prefKey);
 			return resolverPref.getValue();
 		}
 		return null;

@@ -54,13 +54,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @PostConstruct
     public void checkForFoundPreferences() {
         if (!_appInfo.isInitialized()) {
-            Map<String, String> tempPrefs = _appInfo.getFoundPreferences();
-            if (tempPrefs != null) {
-                _found.putAll(tempPrefs);
-            }
-            if (_found.size() > 0) {
-                _hasFoundPreferences = true;
-            }
+            _found.putAll(_appInfo.getFoundPreferences());
         }
     }
 
@@ -265,11 +259,13 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_appInfo.getFormattedUptime(), HttpStatus.OK);
     }
 
+    /**
+     * Returns all of the standard preference settings along with any found preferences.
+     *
+     * @return A map containing all standard and found preferences.
+     */
     private Map<String, Object> getPreferences() {
-        if (!_hasFoundPreferences) {
-            return _preferences.getPreferenceMap();
-        }
-        final Map<String, Object> preferences = new HashMap<>(_preferences.getPreferenceMap());
+        final Map<String, Object> preferences = new HashMap<>(_preferences);
         preferences.putAll(_found);
         return preferences;
     }
@@ -279,5 +275,4 @@ public class SiteConfigApi extends AbstractXapiRestController {
     private final SiteConfigPreferences _preferences;
     private final XnatAppInfo           _appInfo;
     private final Map<String, String> _found = new HashMap<>();
-    private boolean _hasFoundPreferences;
 }

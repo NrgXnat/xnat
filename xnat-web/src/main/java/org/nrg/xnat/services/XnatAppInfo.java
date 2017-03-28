@@ -211,11 +211,12 @@ public class XnatAppInfo {
         return _openUrlsPref.getUrlList(XnatPlugin.PLUGIN_ADMIN_URLS);
     }
 
+    /**
+     * Returns any found preferences. If no preferences were found, the returned map will be empty.
+     *
+     * @return A map containing the found preferences.
+     */
     public Map<String, String> getFoundPreferences() {
-        if (_foundPreferences.size() == 0) {
-            return null;
-        }
-
         return new HashMap<>(_foundPreferences);
     }
 

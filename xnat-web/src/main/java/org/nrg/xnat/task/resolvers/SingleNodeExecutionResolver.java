@@ -51,8 +51,8 @@ public class SingleNodeExecutionResolver implements XnatTaskExecutionResolverI {
 	@Override
 	public boolean shouldRunTask(final String taskId) {
 		final String prefKey = "task-" + taskId + "-node";
-		if (_preferences.getPreferenceKeys().contains(prefKey)) {
-			final Preference taskNodePref = _preferences.get(prefKey);
+		if (_preferences.containsKey(prefKey)) {
+			final Preference taskNodePref = _preferences.getPreference(prefKey);
 			if (taskNodePref.getValue() != null && taskNodePref.getValue().trim().length()>0) {
 				return _xnatNode.getNodeId().equals(taskNodePref.getValue()); 
 			}
@@ -75,7 +75,7 @@ public class SingleNodeExecutionResolver implements XnatTaskExecutionResolverI {
 				"description: Node on which to run this process. This configuration is not required on a single-node XNAT installation, " +
 					"however in a multi-node environment, where multiple XNAT instances point to the same database, this configuration " + 
 					"should be in place in order to avoid conflicts when the task tries to run simultaneously on multiple nodes. " +
-					"Nodes are defined by setting a <em>node.id</em> property value in a properies file called <em>node-conf.properties</em> located " +
+					"Nodes are defined by setting a <em>node.id</em> property value in a properties file called <em>node-conf.properties</em> located " +
 					"in the same directory as your <em>xnat-conf.properties</em> file.\n";
 		eleList.add(ele);
 		return eleList;

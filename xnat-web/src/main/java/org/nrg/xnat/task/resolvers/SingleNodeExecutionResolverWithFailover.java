@@ -79,19 +79,19 @@ public class SingleNodeExecutionResolverWithFailover implements XnatTaskExecutio
 		final String prefKeyWait = "task-" + taskId + "-wait";
 		Preference nodeListPref = null;
 		Preference nodeWaitPref = null;
-		if (_preferences.getPreferenceKeys().contains(prefKeyNodeList)) {
-			nodeListPref = _preferences.get(prefKeyNodeList);
+		if (_preferences.containsKey(prefKeyNodeList)) {
+			nodeListPref = _preferences.getPreference(prefKeyNodeList);
 		}	
-		if (_preferences.getPreferenceKeys().contains(prefKeyWait)) {
-			nodeWaitPref = _preferences.get(prefKeyWait);
+		if (_preferences.containsKey(prefKeyWait)) {
+			nodeWaitPref = _preferences.getPreference(prefKeyWait);
 		}	
 		if (nodeListPref == null) {
 			// If task not configured, we'll run.
 			_log.trace("ExecutionResolver:  No configuration found.  This node will run the task.");
 			return true;
 		}	
-		final List<String> nodeList = Arrays.asList(nodeListPref.getValue().toString().replaceAll(" ","").split(","));
-		final int waitMin = (nodeWaitPref.getValue()!=null) ? Integer.valueOf(nodeWaitPref.getValue()) : DEFAULT_WAIT_MIN;
+		final List<String> nodeList = Arrays.asList(nodeListPref.getValue().replaceAll(" ", "").split(","));
+		final int waitMin = (nodeWaitPref != null && nodeWaitPref.getValue() != null) ? Integer.valueOf(nodeWaitPref.getValue()) : DEFAULT_WAIT_MIN;
 		final List<XnatNodeInfo> nodeInfoList = _xnatNodeInfoService.getAll();
 		final List<XnatTaskInfo> taskInfoList = _xnatTaskInfoService.getXnatTaskInfoListByTaskIdAndNode(taskId);
 		final long currentTime = System.currentTimeMillis();

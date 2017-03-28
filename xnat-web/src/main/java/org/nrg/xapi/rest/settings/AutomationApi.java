@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Api(description = "Automation Service API")
@@ -55,7 +56,8 @@ public class AutomationApi extends AbstractXapiRestController {
             return new ResponseEntity<>(status);
         }
 
-        return new ResponseEntity<>(_preferences.getPreferenceMap(), HttpStatus.OK);
+        final Map<String, Object> map = new HashMap<>(_preferences);
+        return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Sets a map of automation properties.", notes = "Sets the automation properties specified in the map.", response = Void.class)

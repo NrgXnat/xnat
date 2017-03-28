@@ -77,14 +77,25 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             name = name.replace("//", "/");
         }
 
-        // See if the resource is already in the cache.
+        // See if the resource is already in the cache. First check isKeyInCache(), which is cheap first check.
         if (getCache().isKeyInCache(name)) {
+            // Get the element, but isKeyInCache() triggers expiration check, so can return true but cached object is
+            // evicted as a result, so...
             final Element element = getCache().get(name);
-            final Resource resource = (Resource) element.getObjectValue();
-            try {
-                return resource.getInputStream();
-            } catch (IOException e) {
-                throw new ResourceNotFoundException(e);
+
+            // Make sure element is actually returned to us.
+            if (element != null) {
+                // At this point, we're always stashing Resource objects in this cache so no need to check for cast.
+                final Resource resource = (Resource) element.getObjectValue();
+
+                // Just to be safe, check for null again.
+                if (resource != null) {
+                    try {
+                        return resource.getInputStream();
+                    } catch (IOException e) {
+                        throw new ResourceNotFoundException(e);
+                    }
+                }
             }
         }
 
@@ -122,7 +133,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
         synchronized (cacheManager) {
             if (!cacheManager.cacheExists(RESOURCE_CACHE_NAME)) {
                 final CacheConfiguration config = new CacheConfiguration(RESOURCE_CACHE_NAME, 0)
-                        .copyOnRead(false).copyOnWrite(false)
+                        .copyOnRead(false).copyOnWrite(false).clearOnFlush(true)
                         .eternal(false)
                         .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
                         .timeToLiveSeconds(3600);

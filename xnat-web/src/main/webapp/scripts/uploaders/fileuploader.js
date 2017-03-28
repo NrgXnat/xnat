@@ -253,6 +253,7 @@ abu.FileUploader = function(o){
 	}
 
 	this.activateUploadArea = function(e) {
+				$("#xmodal-abu").find(".scroll").scrollTop(0);
 				$(".abu-upload-drop-area").css('display','inline-block');
 				$(".abu-upload-drop-area").addClass('abu-upload-drop-area-active');
 				try { 

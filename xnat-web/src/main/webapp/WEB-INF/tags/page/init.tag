@@ -12,6 +12,8 @@
   ~ Released under the Simplified BSD.
   --%>
 
+<jsp:useBean id="themeService" class="org.nrg.xdat.services.impl.ThemeServiceImpl" scope="request"/>
+
 <c:if test="${empty requestScope.hasInit}">
 
     <%-- set empty user info --%>
@@ -39,7 +41,7 @@
         <c:set var="isGuest" value="true" scope="session"/>
     </sec:authorize>
 
-    <c:set var="themeName" value="${cookie.THEME_NAME.value}" scope="session"/>
+    <c:set var="themeName" value="${themeService.theme.name}" scope="session"/>
 
     <%-- if there's a theme specified in the request, use that --%>
     <c:if test="${empty themeName && not empty param.theme}">

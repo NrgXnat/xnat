@@ -25,7 +25,8 @@
     ## try to retrieve page content using the query string value
     <div id="view-page"></div>
     <script>
-        XNAT.app.customPage.getPage('${pg}', '#view-page');
+        console.log('$data.request.queryString');
+        XNAT.app.customPage.getPage('', '#view-page');
     </script>
 
     #end

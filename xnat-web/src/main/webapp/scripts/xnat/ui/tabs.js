@@ -26,7 +26,7 @@ var XNAT = getObject(XNAT || {});
 }(function(){
 
     var ui, tab, tabs, page,
-        urlHashValue = getUrlHashValue('#tab=','/#');
+        urlHashValue = getUrlHashValue('#tab=');
     
     XNAT.ui = ui =
         getObject(XNAT.ui || {});

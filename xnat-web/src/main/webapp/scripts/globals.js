@@ -69,7 +69,7 @@ function getUrlHashValue(start, end){
         hash = window.location.hash;
     if (!hash) { return '' }
     part = hash.split(start||'#')[1]||'';
-    part = part.split(end||'/')[0]||'';
+    part = part.split(end||/\/#|#/)[0]||'';
     return part;
 }
 

@@ -45,7 +45,6 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
-import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
@@ -542,7 +541,7 @@ public class XDAT implements Initializable, Configurable{
     public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
         if (preferences != null) {
-			final Object preference = preferences.getPreferenceMap().get(property);
+			final Object preference = preferences.get(property);
 			return preference != null ? preference.toString() : null;
         }
         return getSiteConfigPreferences().getValue(property);
@@ -561,7 +560,7 @@ public class XDAT implements Initializable, Configurable{
 
     public static Properties getSiteConfiguration() throws ConfigServiceException {
 		final Properties properties = new Properties();
-		final Map<String, Object> preferences = getSiteConfigPreferences().getPreferenceMap();
+		final SiteConfigPreferences preferences = getSiteConfigPreferences();
 		for (final String preference : preferences.keySet()) {
 			final Object value = preferences.get(preference);
 			properties.setProperty(preference, value != null ? value.toString() : "");

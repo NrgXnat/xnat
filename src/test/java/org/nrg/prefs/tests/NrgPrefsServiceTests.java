@@ -53,7 +53,7 @@ public class NrgPrefsServiceTests {
         _basicPrefsTool.setPrefB("valueBMod");
         assertEquals("valueAMod", _basicPrefsTool.getPrefA());
         assertEquals("valueBMod", _basicPrefsTool.getPrefB());
-        final Map<String, Object> preferences = _basicPrefsTool.getPreferenceMap();
+        final Map<String, Object> preferences = _basicPrefsTool.getPreferences();
         assertEquals(2, preferences.size());
     }
 
@@ -66,7 +66,7 @@ public class NrgPrefsServiceTests {
         _propertiesPrefsTool.setPropertyB("valueBMod");
         assertEquals("valueAMod", _propertiesPrefsTool.getPropertyA());
         assertEquals("valueBMod", _propertiesPrefsTool.getPropertyB());
-        final Map<String, Object> preferences = _propertiesPrefsTool.getPreferenceMap();
+        final Map<String, Object> preferences = _propertiesPrefsTool.getPreferences();
         assertEquals(2, preferences.size());
     }
 
@@ -89,7 +89,7 @@ public class NrgPrefsServiceTests {
         assertEquals("valueCMod", _relaxedPrefsTool.getRelaxedPrefC());
         _relaxedPrefsTool.setRelaxedWhatever("freeForm", "This can be anything!");
         assertEquals("This can be anything!", _relaxedPrefsTool.getRelaxedWhatever("freeForm"));
-        final Map<String, Object> preferences = _relaxedPrefsTool.getPreferenceMap();
+        final Map<String, Object> preferences = _relaxedPrefsTool.getPreferences();
         assertEquals(4, preferences.size());
     }
 
@@ -105,7 +105,7 @@ public class NrgPrefsServiceTests {
         final String prefC = _strictPrefsTool.getStrictPrefC();
         assertNull(prefC);
 
-        final Map<String, Object> preferences = _strictPrefsTool.getPreferenceMap();
+        final Map<String, Object> preferences = _strictPrefsTool.getPreferences();
         assertEquals(2, preferences.size());
 
         // This will throw the InvalidPreferenceName exception.
@@ -204,7 +204,7 @@ public class NrgPrefsServiceTests {
         assertTrue(prefEs.containsKey("CCIR"));
         assertEquals("XNAT", prefEs.get("XNAT").getAeTitle());
         assertEquals("CCIR", prefEs.get("CCIR").getAeTitle());
-        final Map<String, Object> preferences = _beanPrefsTool.getPreferenceMap();
+        final Map<String, Object> preferences = _beanPrefsTool.getPreferences();
         assertEquals(5, preferences.size());
     }
 

@@ -33,8 +33,8 @@ public class PropertiesPrefsTool {
         _preferences.setPropertyB(prefB);
     }
 
-    public Map<String, Object> getPreferenceMap() {
-        return _preferences.getPreferenceMap();
+    public Map<String, Object> getPreferences() {
+        return _preferences;
     }
 
     @Autowired

@@ -19,26 +19,66 @@ import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 import java.util.*;
 
 @SuppressWarnings("unused")
-public interface PreferenceBean {
+public interface PreferenceBean extends Map<String, Object> {
     String NAMESPACE_DELIMITER = ":";
 
     String getToolId();
 
+    /**
+     * Gets the keys for all the preferences.
+     *
+     * @return The set of preference keys.
+     *
+     * @deprecated Use the {@link #keySet()} method instead.
+     */
+    @Deprecated
     Set<String> getPreferenceKeys();
 
+    /**
+     * Gets the preferences for the current implementation as a map.
+     *
+     * @return The preferences for the current implementation as a map.
+     *
+     * @deprecated Preference beans are now themselves maps. This method just returns the preference bean itself.
+     */
+    @Deprecated
     Map<String, Object> getPreferenceMap();
 
+    /**
+     * Gets the preferences for the current implementation as a map, including only the specified keys.
+     *
+     * @param preferenceNames The preferences to return in the map.
+     *
+     * @return The preferences for the current implementation as a map.
+     *
+     * @deprecated Preference beans are now themselves maps. This method just returns the preference bean itself. Use
+     * streams or Guava methods to filter the resulting map.
+     */
+    @Deprecated
     Map<String, Object> getPreferenceMap(final String... preferenceNames);
 
+    /**
+     * Gets the preferences for the current implementation as a map, including only the specified keys.
+     *
+     * @param preferenceNames The preferences to return in the map.
+     *
+     * @return The preferences for the current implementation as a map.
+     *
+     * @deprecated Preference beans are now themselves maps. This method just returns the preference bean itself. Use
+     * streams or Guava methods to filter the resulting map.
+     */
+    @Deprecated
     Map<String, Object> getPreferenceMap(final Set<String> preferenceNames);
+
+    Map<String, Object> getPreferences(final Set<String> preferenceNames);
 
     Properties asProperties();
 
     Class<? extends PreferenceEntityResolver> getResolver();
 
-    Preference get(final String key, final String... subkeys) throws UnknownToolId;
+    Preference getPreference(final String key, final String... subkeys) throws UnknownToolId;
 
-    Preference get(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
+    Preference getPreference(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
 
     String getValue(final String key, final String... subkeys) throws UnknownToolId;
 

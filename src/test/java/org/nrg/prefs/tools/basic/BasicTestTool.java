@@ -33,8 +33,8 @@ public class BasicTestTool {
         _preferences.setPrefB(prefB);
     }
 
-    public Map<String, Object> getPreferenceMap() {
-        return _preferences.getPreferenceMap();
+    public Map<String, Object> getPreferences() {
+        return _preferences;
     }
 
     @Autowired

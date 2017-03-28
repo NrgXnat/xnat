@@ -41,8 +41,8 @@ public class StrictPrefsTool {
         _preferences.setStrictPrefC(strictPrefC);
     }
 
-    public Map<String, Object> getPreferenceMap() {
-        return _preferences.getPreferenceMap();
+    public Map<String, Object> getPreferences() {
+        return _preferences;
     }
 
     @Autowired

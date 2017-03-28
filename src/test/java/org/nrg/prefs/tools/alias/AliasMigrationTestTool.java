@@ -47,8 +47,8 @@ public class AliasMigrationTestTool {
         _preferences.setPrefC(prefC);
     }
 
-    public Map<String, Object> getPreferenceMap() {
-        return _preferences.getPreferenceMap();
+    public Map<String, Object> getPreferences() {
+        return _preferences;
     }
 
     private final AliasMigrationTestToolPreferenceBean _preferences;

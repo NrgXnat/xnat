@@ -469,6 +469,7 @@ var XNAT = getObject(XNAT);
                                         e.preventDefault();
                                         var modalId = $(this).closest('div.xmodal').attr('id');
                                         xmodal.modals[modalId].close();
+                                        window.top.usernameForUserThatIsCurrentlyBeingEdited = data.username;
                                         userProjectsAndSecurity(e, data.username);
                                     }
                                 }
@@ -811,6 +812,7 @@ var XNAT = getObject(XNAT);
                 $(this).data('username') ||
                 $(this).closest('tr').data('username') ||
                 (this.innerText || '').trim();
+            window.top.usernameForUserThatIsCurrentlyBeingEdited = username;
             getUserData(username).done(function(data){
                 getUserRoles(username).done(function(roles){
                     data.roles = roles;
@@ -898,7 +900,15 @@ var XNAT = getObject(XNAT);
                 okLabel: 'Close',
                 cancel: false,
                 onClose: function(){
-                    updateUsersTable(true);
+                    var editedUser = window.top.usernameForUserThatIsCurrentlyBeingEdited;
+                    if (editedUser){
+                        usersGroups.userData(editedUser).getProfile().done(function(profileData){
+                            updateUserRow(profileData)
+                        });
+                    }
+                    else {
+                        updateUsersTable(true);
+                    }
                 }
             })
         }

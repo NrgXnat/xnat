@@ -26,6 +26,7 @@ abu.FileUploader = function(o){
 	this.uploadsStarted = 0;
 	this.overwriteConfirmIssued = false;
 	this.doOverwrite = false;
+	this.anyFailedUploads = false;
 	$(this._options.element).html(""); 
 
 	this.buildUploaderDiv = function() {
@@ -208,6 +209,7 @@ abu.FileUploader = function(o){
 
 	this.doFileUpload = function(fileA) {
 		var start_i = $('form[id^=file-upload-form-]').length;				
+		$("#xmodal-abu-process-button").prop("disabled","disabled");
 		for (var i=0; i<fileA.length; i++) {
 			var cFile = fileA[i];
 			var adj_i = i + start_i;
@@ -261,6 +263,13 @@ abu.FileUploader = function(o){
 					e.stopPropogation();
 				} catch(e) { /* Do nothing */ }
 	}
+
+	this.uploaderUploadCompletedFunction = function(anyFailedUploads) {
+		if (anyFailedUploads) {
+			xmodal.message("Upload failed","WARNING:  One or more file uploads failed.  Please check before running any additional processing.", undefined, { id:"xmodal-abu-upload-failed" });
+		}
+		this.anyFailedUploads = false;
+	}.bind(this)
 
 	this.uploadFile = function(formSelector,formData) {
 		var infoSelector = formSelector.replace("-upload-form-","-info-div-");
@@ -325,7 +334,8 @@ abu.FileUploader = function(o){
 						uploader.uploadsInProgress--;
 						uploader.currentUploads--;
 						if (uploader.uploadsInProgress==0) {
-							uploader._options.uploadCompletedFunction();
+							uploader._options.uploadCompletedFunction(uploader.anyFailedUploads);
+							uploader.uploaderUploadCompletedFunction(uploader.anyFailedUploads);
 						}
 						arr.abort();
 						return false;
@@ -342,9 +352,10 @@ abu.FileUploader = function(o){
 			 		status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Failed</a>');
 			 		status.css("display","inline-block");
 			 		$(infoSelector).find(".abu-progress").css("display","none");
-					$("#xmodal-abu-done-button")
+					$("#xmodal-abu-cancel-button")
 						.show()
 						.prop("disabled",false);
+					uploader.anyFailedUploads = true;
 				},
 				success: function(result) {
 					$(status).data("rtn",result);
@@ -381,7 +392,8 @@ abu.FileUploader = function(o){
 					uploader.uploadsInProgress--;
 					uploader.currentUploads--;
 					if (uploader.currentUploads==0) {
-						uploader._options.uploadCompletedFunction();
+						uploader._options.uploadCompletedFunction(uploader.anyFailedUploads);
+						uploader.uploaderUploadCompletedFunction(uploader.anyFailedUploads);
 					}
 					uploader.manageUploads();
 				}

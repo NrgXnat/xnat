@@ -162,7 +162,7 @@ public class RestFileUtils {
 	// Uploading directories via linux (and likely Mac) will not fail due to "Everything is a file".  This is an initial
 	// implementation of a check of files to see if they might be uploaded "directories".  These file representations directories
 	// seem to be of a specific size and basically full of zero bytes.  It's possible this check could/should be improved over time.
-	public static boolean isFileRepresentationOfDirectory(File fl) {
+	public static boolean isFileRepresentationOfDirectoryOrEmpty(File fl) {
 		final long len = fl.length();
 		// Is this the best check?
 		if (len < 1024 || (len < (128*1024) && len%1024 == 0)) {

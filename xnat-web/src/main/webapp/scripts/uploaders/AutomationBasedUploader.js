@@ -45,7 +45,11 @@ if(typeof XNAT.app.abu.abuConfigs === 'undefined'){
 				},
 				cancel: {
 					label: 'Cancel',
-					close: true
+					close: true,
+					action: function() { 
+						// Clear buildPath so it's not reused
+						XNAT.app.abu.buildPath = '';
+					}
 				}
 			},
 			beforeShow: function(obj) {
@@ -645,7 +649,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					}
 					$("#usageSelect").prop('disabled','disabled');
 				},
-			uploadCompletedFunction:function(){
+			uploadCompletedFunction:function(anyFailedUploads){
 					var eventHandler = $('#eventHandlerSelect').val();
 					if (typeof eventHandler !== 'undefined' && eventHandler != null && eventHandler.length>0) {
 						if ($(".abu-upload-complete-text").length==0) {
@@ -655,7 +659,9 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 						} else {
 							// $("#abu-done-button").addClass("abu-button-disabled");
 							$("#abu-done-button").hide();
-							$("#xmodal-abu-cancel-button").hide();
+							if (!anyFailedUploads) {
+								$("#xmodal-abu-cancel-button").hide();
+							}
 						}
 						$("#xmodal-abu-process-button").prop("disabled",false);
 						$("#xmodal-abu-process-button").show();

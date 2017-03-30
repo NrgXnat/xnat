@@ -448,10 +448,10 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	 *             the client exception
 	 */
 	private void removeAndThrowExceptionIfDirectory(File file) throws ClientException {
-		if (RestFileUtils.isFileRepresentationOfDirectory(file)) {
+		if (RestFileUtils.isFileRepresentationOfDirectoryOrEmpty(file)) {
 			if (file.delete()) {
 				throw new ClientException(
-						"Upload of directories is not currently supported.  To upload a directory, please create a zip archive.");
+						"Upload of directories and empty files is not currently supported.  To upload a directory, please create a zip archive.");
 			}
 		}
 	}
@@ -661,8 +661,12 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		}
 		if (scriptOutputs != null && scriptOutputs.size() > 0) {
 			for (ScriptOutput scriptOut : scriptOutputs) {
-				returnList.add("<br><b>SCRIPT EXECUTION RESULT</b>");
-				returnList.add("<br><b>FINAL STATUS:  " + scriptOut.getStatus() + "</b>");
+				returnList.add("<br><b>SCRIPT EXECUTION RESULTS</b>");
+				// NOTE:  Lets not report success status, because we really only know failures.  The script itself 
+				// may report errors, so let's let the script do status reporting when it seems to have executed successfully.
+				if (!scriptOut.getStatus().equals(Status.SUCCESS)) {
+					returnList.add("<br><b>FINAL STATUS:  " + scriptOut.getStatus() + "</b>");
+				}
 				if (scriptOut.getStatus().equals(Status.ERROR) && scriptOut.getResults() != null
 						&& scriptOut.getResults().toString().length() > 0) {
 					returnList.add("<br><b>SCRIPT RESULTS</b><br>");

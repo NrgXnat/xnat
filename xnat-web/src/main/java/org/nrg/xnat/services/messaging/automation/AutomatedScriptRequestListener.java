@@ -141,7 +141,11 @@ public class AutomatedScriptRequestListener {
         StringBuilder sb = new StringBuilder();
         for (ScriptOutput scriptOut : scriptOutputs) {
             sb.append("<br><b>SCRIPT EXECUTION RESULTS</b><br>");
-            sb.append("<br><b>FINAL STATUS:  ").append(scriptOut.getStatus()).append("</b><br>");
+			// NOTE:  Lets not report success status, because we really only know failures.  The script itself 
+			// may report errors, so let's let the script do status reporting when it seems to have executed successfully.
+			if (!scriptOut.getStatus().equals(Status.SUCCESS)) {
+				sb.append("<br><b>FINAL STATUS:  ").append(scriptOut.getStatus()).append("</b><br>");
+			}
             if (scriptOut.getStatus().equals(Status.ERROR) && scriptOut.getResults() != null && scriptOut.getResults().toString().length() > 0) {
                 sb.append("<br><b>SCRIPT RESULTS</b><br>");
                 sb.append(scriptOut.getResults().toString().replace("\n", "<br>"));

@@ -680,8 +680,8 @@ public class CatalogUtils {
            				// Uploading directories via linux (and likely Mac) will not fail due to "Everything is a file".  In such cases we wind 
            				// up with a "file" generated.  Check for these "files".  Remove them, and thrown an exception.
            				// Windows uploads of directories should fail before hitting this class.
-                    	if (RestFileUtils.isFileRepresentationOfDirectory(saveTo) && saveTo.delete()) {
-                    		throw new Exception("Upload of directories/folders is not supported.  The uploaded file appears to have been a directory.");
+                    	if (RestFileUtils.isFileRepresentationOfDirectoryOrEmpty(saveTo) && saveTo.delete()) {
+                    		throw new Exception("Upload of directories/folders and empty files is not supported.  The uploaded file appears to have been a directory or empty file.");
                     	}
                         if (logger.isDebugEnabled()) {
                             logger.debug("Updating catalog entry for file " + saveTo.getAbsolutePath());

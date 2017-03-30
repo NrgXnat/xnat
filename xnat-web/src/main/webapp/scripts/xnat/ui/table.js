@@ -537,6 +537,8 @@ var XNAT = getObject(XNAT);
         function createTable(rows){
 
             var props = [], objRows = [],
+                LOOKUPREGEX = /^(\?\?[:=\s]*)/,
+                EVALREGEX = /^(!\?[:=\s]*)/,
                 DATAREGEX = /^(~data)/,
                 HIDDENREGEX = /^(~!)/,
                 hiddenItems = [],
@@ -545,6 +547,18 @@ var XNAT = getObject(XNAT);
 
             // xmodal.loading.closeAll();
             // xmodal.loading.open();
+
+            // handle 'rows' as a string for lookup or eval
+            if (isString(rows)){
+                if (LOOKUPREGEX.test(rows)){
+                    rows = rows.replace(LOOKUPREGEX, '').trim();
+                    rows = lookupObjectValue(window, rows);
+                }
+                else if (EVALREGEX.test(rows)) {
+                    rows = rows.replace(EVALREGEX, '').trim();
+                    rows = eval(rows);
+                }
+            }
 
             // convert object list to array list
             if (isPlainObject(rows)) {
@@ -555,6 +569,10 @@ var XNAT = getObject(XNAT);
                     // objRows.push(_obj);
                 });
                 rows = objRows; // now it's an array
+            }
+
+            if (!Array.isArray(rows)) {
+                rows = [].concat(rows);
             }
 
             // create <thead> element (it's ok if it's empty)
@@ -851,6 +869,11 @@ var XNAT = getObject(XNAT);
                                         applyFn = applyFn.replace(/^(\{\(\s*)/g, '(')
                                                          .replace(/(\s*\)})$/g, ')');
                                         itemVal = eval(applyFn).apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                    }
+                                    // or start with standard Spawner 'eval' string
+                                    else if (/^(!\?)/.test(applyFn)) {
+                                        applyFn = applyFn.replace(/^(!\?[:=\s]*)/, '');
+                                        itemVal = eval('(' + applyFn + ')').apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
                                     else if (applyFn = lookupObjectValue(window, applyFn)) {
                                         //          ^^^ correct, we're doing assignment in an 'if' statement

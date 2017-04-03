@@ -906,13 +906,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 								for (int i =0;i<items.size();i++)
 								{
 									ItemI temp = ((XFTItem)items.get(i)).populateRefItems();
-									this.setChild(field,temp,true);
+									this.setChild(field, temp, true);
 									temp.setParent(this);
 								}
 							}else
 							{
 								ItemI temp = ((XFTItem)items.get(0)).populateRefItems();
-								this.setChild(field,((XFTItem)items.get(0)).populateRefItems(),true);
+								this.setChild(field, ((XFTItem)items.get(0)).populateRefItems(), true);
 								temp.setParent(this);
 							}
 						} catch (XFTInitException e) {
@@ -1032,7 +1032,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 															XFTItem subItem = (XFTItem)subItemIter.next();
 															subItem.populateChildItems(subParents,rePopulateRefs);
 
-															this.setChild(field,subItem,true);
+															this.setChild(field, subItem, true);
 															checked.add(subItem.getField(tempKey));
 														}
 													}
@@ -1070,7 +1070,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 												  	if (! checked.contains(comparison))
 												  	{
 														subItem.populateChildItems(subParents,rePopulateRefs);
-														this.setChild(field,subItem,true);
+														this.setChild(field, subItem, true);
 												  	}
 											   	}
 											}
@@ -1100,7 +1100,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 												XFTItem subItem = (XFTItem)subItemIter.next();
 												subItem.populateChildItems(subParents,rePopulateRefs);
 
-												this.setChild(field,subItem,true);
+												this.setChild(field, subItem, true);
 											}
 										}
 									}
@@ -1141,7 +1141,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 											{
 												XFTItem sub = (XFTItem)itemIter.next();
 												sub.populateChildItems(subParents,rePopulateRefs);
-												this.setChild(field,sub,true);
+												this.setChild(field, sub, true);
 												checked.add(sub.getField(key));
 											}
 										}
@@ -1173,7 +1173,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 												if (! checked.contains(comparison))
 												{
 													sub.populateChildItems(subParents,rePopulateRefs);
-													this.setChild(field,sub,true);
+													this.setChild(field, sub, true);
 												}
 											}
 										}
@@ -1200,7 +1200,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 										{
 											XFTItem sub = (XFTItem)itemIter.next();
 											sub.populateChildItems(subParents,rePopulateRefs);
-											this.setChild(field,sub,true);
+											this.setChild(field, sub, true);
 										}
 									}
 								}
@@ -1218,7 +1218,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 								{
 									subParents.add(ref.getXSIType());
 									ref.populateChildItems(subParents,rePopulateRefs);
-									this.setChild(field,ref,true);
+									this.setChild(field, ref, true);
 								}
 							}
 						}
@@ -1288,7 +1288,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                             		if (! history.contains(newSub))
                             		{
                             			newSub.extendSubItems(history,allowMultiples);
-                            			this.setChild(f,newSub,true);
+                            			this.setChild(f, newSub, true);
                             			newSub.setParent(this);
                             		}
                             	}
@@ -1393,7 +1393,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		                                {
 		                                	XFTItem newSub = (XFTItem)items.get(0);
 		                                	newSub.extendSubItems(history,allowMultiples);
-		                                	this.setChild(f,newSub,true);
+		                                	this.setChild(f, newSub, true);
 		                                	newSub.setParent(this);
 		                                }
 		                            } catch (IllegalAccessException e) {
@@ -2591,7 +2591,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 				{
                     child = XFTItem.NewItem((GenericWrapperElement)eField.getReferenceElement(),user);
                     try {
-                        this.setChild(eField,(ItemI)child,true);
+                        this.setChild(eField, (ItemI)child, true);
                     } catch (FieldNotFoundException e1) {
                         logger.error("",e1);
                     }
@@ -2625,16 +2625,39 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * Adds the provided item (value) as a child of this item.  The replace variable governs whether or
-	 * not a previously existing matching element will be replaced... or reconciled.
+	 * Adds the provided item (value) as a child of this item.  The replace variable governs whether or not a previously
+	 * existing matching element will be replaced... or reconciled.
+	 *
+	 * This method calls {@link #setChild(XFTFieldWrapper, ItemI, boolean, boolean)}, setting the <b>blindAdd</b> flag
+	 * to <b>false</b>.
+	 *
+	 * @param field    The field to set.
+	 * @param value    The item to set.
+	 * @param replace  Whether the item should be replaced if it already exists.
+	 *
+	 * @throws ElementNotFoundException If the element isn't found.
+	 * @throws XFTInitException If there's an issue accessing XFT.
+	 * @throws FieldNotFoundException If the field isn't found.
+	 */
+	public void setChild(XFTFieldWrapper field, ItemI value, boolean replace) throws ElementNotFoundException, XFTInitException, FieldNotFoundException {
+		setChild(field, value, replace);
+	}
+
+	/**
+	 * Adds the provided item (value) as a child of this item.  The replace variable governs whether or not a previously
+	 * existing matching element will be replaced... or reconciled. For most calls to this method, you can use {@link
+	 * #setChild(XFTFieldWrapper, ItemI, boolean)}. This method is mostly to allow for performance optimization by XFT.
+	 *
 	 * @param field    The field to set.
 	 * @param value    The item to set.
      * @param replace  Whether the item should be replaced if it already exists.
-	 * @throws ElementNotFoundException
-	 * @throws XFTInitException
-	 * @throws FieldNotFoundException
+	 * @param blindAdd Indicates whether this method should check for children of this child.
+	 *
+	 * @throws ElementNotFoundException If the element isn't found.
+	 * @throws XFTInitException If there's an issue accessing XFT.
+	 * @throws FieldNotFoundException If the field isn't found.
 	 */
-	public void setChild(XFTFieldWrapper field,ItemI value, boolean replace) throws ElementNotFoundException,XFTInitException,FieldNotFoundException
+	public void setChild(XFTFieldWrapper field, ItemI value, boolean replace, final boolean blindAdd) throws ElementNotFoundException, XFTInitException, FieldNotFoundException
 	{
 		if (field != null)
 		{
@@ -2642,23 +2665,29 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 			{
 				int counter = 0;
 				boolean found = false;
-				Iterator children = this.getChildItems(field).iterator();
 				XFTItem match = null;
-				while (children.hasNext())
-				{
-					XFTItem currentChild = (XFTItem)children.next();
+				final ArrayList childItems = getChildItems(field);
+				if (!blindAdd) {
+					Iterator        children   = childItems.iterator();
+					match = null;
+					while (children.hasNext())
+                    {
+                        XFTItem currentChild = (XFTItem)children.next();
 
-					counter++;
-					try {
-                        if (CompareItemsByPKs((XFTItem)value,currentChild))
-                        {
-                            match = currentChild;
-                        	found = true;
-                        	break;
+                        counter++;
+                        try {
+                            if (CompareItemsByPKs((XFTItem)value,currentChild))
+                            {
+                                match = currentChild;
+                                found = true;
+                                break;
+                            }
+                        } catch (Exception e) {
+                            logger.error("",e);
                         }
-                    } catch (Exception e) {
-                        logger.error("",e);
                     }
+				} else {
+					counter += childItems.size();
 				}
 				if (! found)
 				{
@@ -2719,7 +2748,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
 		if (f.getParentElement().getFullXMLName().equals(this.getGenericSchemaElement().getFullXMLName()))
 		{
-			setChild(f,value,replace);
+			setChild(f, value, replace);
 		}else{
 		    if (this.getGenericSchemaElement().isExtension()) {
 				Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
@@ -2731,7 +2760,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 				    XFTItem sub = XFTItem.NewItem((GenericWrapperElement)getGenericSchemaElement().getExtensionField().getReferenceElement(),user);
 				    sub.setChild(xmlPath,value,replace);
-					this.setChild(getGenericSchemaElement().getExtensionField(),sub,true);
+					this.setChild(getGenericSchemaElement().getExtensionField(), sub, true);
 					return;
 				}
 		    }else{
@@ -2832,7 +2861,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 			XFTItem sub2 = (XFTItem)secondary.getField(refKey);
 			if (sub1 == null && sub2 != null)
 			{
-				primary.setChild(field,sub2,true);
+				primary.setChild(field, sub2, true);
 			}else if ((sub1 != null) && (sub2 != null))
 			{
 				if (CompareItemsByPKs(sub1,sub2))
@@ -2876,7 +2905,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 					if (!match)
 					{
 					    //org.nrg.xft.XFT.LogCurrentTime("\t\t\t\t\tBEGIN RECONCILE :" + primary.getName() + " :: WHILE(1) WHILE(2) ADD CHILD");
-						primary.setChild(field,multi2,true);
+						primary.setChild(field, multi2, true);
 					    //org.nrg.xft.XFT.LogCurrentTime("\t\t\t\t\tEND RECONCILE :" + primary.getName() + " :: WHILE(1) WHILE(2) ADD CHILD");
 					}
 					//org.nrg.xft.XFT.LogCurrentTime("\t\t\t\tEND RECONCILE :" + primary.getName() + " :: WHILE(1) WHILE(2)");
@@ -3079,7 +3108,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 			if (extItem==null)
 			{
 			    extItem= XFTItem.NewItem(f.getReferenceElement().getGenericXFTElement(),this.getUser());
-			    this.setChild(f,extItem,true);
+			    this.setChild(f, extItem, true);
 			}
 		    extItem.setExtenderName();
 
@@ -3130,7 +3159,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             	if (extItem==null)
             	{
             	    extItem= XFTItem.NewItem(f.getReferenceElement().getGenericXFTElement(),this.getUser());
-            	    this.setChild(f,extItem,true);
+            	    this.setChild(f, extItem, true);
             	}
 
             	XFTSuperiorReference ref = (XFTSuperiorReference)f.getXFTReference();
@@ -4401,7 +4430,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             				}else{
             				    XFTItem sub = XFTItem.NewItem((GenericWrapperElement)getGenericSchemaElement().getExtensionField().getReferenceElement(),user);
             				    sub.setProperty(next + XFT.PATH_SEPARATOR + xmlPath, value, parseValue);
-            					this.setChild(getGenericSchemaElement().getExtensionField(),sub,true);
+            					this.setChild(getGenericSchemaElement().getExtensionField(), sub, true);
             					return;
             				}
             		    }else{
@@ -4430,7 +4459,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             				if (sub == null)
             				{
             					sub = XFTItem.NewItem(foreign,user);
-            					this.setChild(lastField,sub,true);
+            					this.setChild(lastField, sub, true);
 
             				}
 //                            if (!sub.getXSIType().equals(foreign.getXSIType())){
@@ -4490,7 +4519,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                                             XFTItem sub = XFTItem.NewItem(foreign,user);
                                             sub.setProperty(wField, wValue);
                                             newSubs.add(sub);
-                                            this.setChild(lastField,sub,true);
+                                            this.setChild(lastField, sub, true);
                                         }
                                         counter++;
                                     }
@@ -4522,7 +4551,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             						if (subs.size()<=counter)
             						{
             							XFTItem sub = XFTItem.NewItem(foreign,user);
-            							this.setChild(lastField,sub,true);
+            							this.setChild(lastField, sub, true);
             						}
             						counter++;
             					}
@@ -4596,7 +4625,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             			    XFTItem sub = XFTItem.NewItem((GenericWrapperElement)getGenericSchemaElement().getExtensionField().getReferenceElement(),user);
             			    try {
                                 sub.setProperty(originalPath,value,parseValue);
-                                this.setChild(getGenericSchemaElement().getExtensionField(),sub,true);
+                                this.setChild(getGenericSchemaElement().getExtensionField(), sub, true);
                                 return;
                             } catch (FieldNotFoundException e1) {
                             }
@@ -4752,7 +4781,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                         if (value instanceof XFTItem)
                         {
                             if (multiIndex==null && where==null)
-                                setChild(lastField,(XFTItem)value,true);
+                                setChild(lastField, (XFTItem)value, true);
                             else{
                                 ArrayList subs = this.getChildItems(lastField,expectedXSIType,false);
 
@@ -4797,7 +4826,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                                         if (subs.size()<counter)
                                         {
                                             XFTItem sub = XFTItem.NewItem(foreign,user);
-                                            this.setChild(lastField,sub,true);
+                                            this.setChild(lastField, sub, true);
                                         }
                                         counter++;
                                     }
@@ -4856,7 +4885,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                                         if (subs.size()<=counter)
                                         {
                                             XFTItem sub = XFTItem.NewItem(expectedE,user);
-                                            this.setChild(lastField,sub,true);
+                                            this.setChild(lastField, sub, true);
                                         }
                                         counter++;
                                     }
@@ -4925,7 +4954,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                                         if (subs.size()<=counter)
                                         {
                                             XFTItem sub = XFTItem.NewItem(expectedE,user);
-                                            this.setChild(lastField,sub,true);
+                                            this.setChild(lastField, sub, true);
                                         }
                                         counter++;
                                     }
@@ -5424,6 +5453,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		}else{
 		    if (! this.isPauseDBAccess())//if we are allowed to query database
 		    {
+				final boolean blindAdd = al.size() == 0;
+
 			    postLoaded.add(f.getId().toLowerCase());
 			    if (! this.isChildOf(f.getReferenceElementName().getFullForeignType()))//prevent circular references
 			    {
@@ -5468,32 +5499,32 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		                                    if (extendedItems.size() > 0)
 		                                    {
 		                                    	XFTItem newSub = (XFTItem)extendedItems.get(0);
-		                                        this.setChild(f,newSub,true);
+		                                        this.setChild(f, newSub, true);
 		                                    	newSub.setParent(this);
 		                                    }else{
-		                                        this.setChild(f,child,true);
+		                                        this.setChild(f, child, true);
 		                                    }
 		                                } catch (IllegalAccessException e1) {
 
 		                                }
 			                        }else{
-									    this.setChild(f,child,true);
+									    this.setChild(f, child, true);
 								    }
 			                    } catch (ElementNotFoundException e) {
 			                        logger.error("",e);
-			    				    this.setChild(f,child,true);
+			    				    this.setChild(f, child, true);
 			                    } catch (XFTInitException e) {
 			                        logger.error("",e);
-			    				    this.setChild(f,child,true);
+			    				    this.setChild(f, child, true);
 			                    } catch (FieldNotFoundException e) {
 			                        logger.error("",e);
-			    				    this.setChild(f,child,true);
+			    				    this.setChild(f, child, true);
 			                    } catch (Exception e) {
 			                        logger.error("",e);
-			    				    this.setChild(f,child,true);
+			    				    this.setChild(f, child, true);
 			                    }
 						    }else{
-							    this.setChild(f,child,true);
+								this.setChild(f, child, true, blindAdd);
 						    }
 						}
 				    }

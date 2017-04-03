@@ -2640,7 +2640,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @throws FieldNotFoundException If the field isn't found.
 	 */
 	public void setChild(XFTFieldWrapper field, ItemI value, boolean replace) throws ElementNotFoundException, XFTInitException, FieldNotFoundException {
-		setChild(field, value, replace);
+		setChild(field, value, replace, false);
 	}
 
 	/**

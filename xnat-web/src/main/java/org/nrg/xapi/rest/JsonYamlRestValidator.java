@@ -28,14 +28,14 @@ public class JsonYamlRestValidator {
 
     @ApiOperation(value = "Validates the JSON string passed in as an escaped query variable.", notes = "Query string variable is json", response = String.class, responseContainer = "String")
     @ApiResponses({@ApiResponse(code = 200, message = "Reports \"Success\" if valid or the parsing error message if not."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.GET)
+    @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.GET)
     public ResponseEntity<String> validateQueryJson(@ApiParam(value="the JSON string to validate", required=true) @RequestParam(value="json") String json) {
         return validate(json);
     }
 
     @ApiOperation(value = "Validates the posted JSON string.", response = String.class, responseContainer = "String")
     @ApiResponses({@ApiResponse(code = 200, message = "Reports \"Success\" if valid or the parsing error message if not."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.POST)
+    @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.POST)
     public ResponseEntity<String> validatePostedJson(@ApiParam(value="the JSON string to validate", required=true) @RequestParam(value="json") String json) {
         return validate(json);
     }

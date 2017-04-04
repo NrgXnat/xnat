@@ -15,9 +15,10 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SmtpServer;
-import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -67,7 +68,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Properties> getNotificationsProperties(@ApiParam(hidden = true) final HttpServletRequest request) throws IOException {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -100,7 +101,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set notifications properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setNotificationsProperties(@ApiParam(value = "The map of notifications properties to be set.", required = true) @RequestBody final Properties properties) throws InitializationException {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -143,7 +144,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = "smtp", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = "smtp", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Properties> getSmtpServerProperties() {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -162,7 +163,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"smtp"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setAllMailProperties(@ApiParam("The value to set for the email host.") @RequestParam(value = "hostname", required = false, defaultValue = NOT_SET) final String hostname,
                                                            @ApiParam("The value to set for the email port.") @RequestParam(value = "port", required = false, defaultValue = "-1") final int port,
                                                            @ApiParam("The value to set for the email username.") @RequestParam(value = "username", required = false, defaultValue = NOT_SET) final String username,
@@ -189,7 +190,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<Properties> setSubmittedMailProperties(@ApiParam("The value to set for the email host.") @RequestParam(value = "hostname", required = false, defaultValue = NOT_SET) final String host,
                                                                  @ApiParam("The value to set for the email port.") @RequestParam(value = "port", required = false, defaultValue = "-1") final int port,
                                                                  @ApiParam("The value to set for the email username.") @RequestParam(value = "username", required = false, defaultValue = NOT_SET) final String username,
@@ -215,7 +216,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service host."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp/host/{host}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/host/{host}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<Properties> setHostProperty(@ApiParam(value = "The value to set for the email host.", required = true) @PathVariable final String host) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -235,7 +236,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service port."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp/port/{port}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/port/{port}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<Properties> setPortProperty(@ApiParam(value = "The value to set for the email port.", required = true) @PathVariable final int port) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -255,7 +256,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service protocol."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp/protocol/{protocol}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/protocol/{protocol}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<Properties> setProtocolProperty(@ApiParam(value = "The value to set for the email protocol.", required = true) @PathVariable final String protocol) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -275,7 +276,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service username."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp/username/{username}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/username/{username}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<Properties> setUsernameProperty(@ApiParam(value = "The value to set for the email username.", required = true) @PathVariable final String username) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -295,7 +296,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service password."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp/password/{password}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/password/{password}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<Properties> setPasswordProperty(@ApiParam(value = "The value to set for the email password.", required = true) @PathVariable final String password) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -316,7 +317,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 404, message = "Specified key not found in the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp/property/{property}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"smtp/property/{property}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getExtendedProperty(@ApiParam(value = "The mail property to be retrieved.", required = true) @PathVariable final String property) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -337,7 +338,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 404, message = "Specified key not found in the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp/property/{property}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/property/{property}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<String> setExtendedProperty(@ApiParam(value = "The name of the extended mail property to set.", required = true) @PathVariable final String property,
                                                       @ApiParam(value = "The value to set for the extended mail property.", required = true) @RequestBody final String value) {
         return setExtendedPropertyFromPath(property, value);
@@ -351,7 +352,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service password."),
                    @ApiResponse(code = 404, message = "Specified key not found in the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"smtp/property/{property}/{value}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/property/{property}/{value}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<String> setExtendedPropertyFromPath(@ApiParam(value = "The name of the extended mail property to set.", required = true) @PathVariable final String property,
                                                               @ApiParam(value = "The value to set for the extended mail property.", required = true) @PathVariable final String value) {
         final HttpStatus status = isPermitted();
@@ -372,7 +373,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 404, message = "Specified key not found in the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = "smtp/property/{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "smtp/property/{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
     public ResponseEntity<String> removeExtendedProperty(@ApiParam(value = "The mail property to be removed.", required = true) @PathVariable final String property) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -392,7 +393,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the help email message."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"messages/help"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"messages/help"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setHelpContactInfo(@ApiParam(value = "The email message for contacting help.", required = true) @RequestParam final String message) {
         _notificationsPrefs.setHelpContactInfo(message);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -405,7 +406,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the user registration email message."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"messages/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"messages/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setEmailMessageUserRegistration(@ApiParam(value = "The email message for user registration.", required = true) @RequestParam final String message) {
         _notificationsPrefs.setEmailMessageUserRegistration(message);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -418,7 +419,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the forgot username email message."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"messages/forgotusername"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"messages/forgotusername"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setEmailMessageForgotUsernameRequest(@ApiParam(value = "The email message for forgot username.", required = true) @RequestParam final String message) {
         _notificationsPrefs.setEmailMessageForgotUsernameRequest(message);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -431,7 +432,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the password reset message."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"messages/passwordreset"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"messages/passwordreset"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setEmailMessageForgotPasswordReset(@ApiParam(value = "The email message for password reset.", required = true) @RequestParam final String message) {
         _notificationsPrefs.setEmailMessageForgotPasswordReset(message);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -444,7 +445,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for contacting help."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"messages/help"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"messages/help"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getHelpContactInfo() {
         return new ResponseEntity<>(_notificationsPrefs.getHelpContactInfo(), HttpStatus.OK);
     }
@@ -456,7 +457,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for user registration."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"messages/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"messages/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getEmailMessageUserRegistration() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailMessageUserRegistration(), HttpStatus.OK);
     }
@@ -468,7 +469,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for forgot username."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"messages/forgotusername"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"messages/forgotusername"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getEmailMessageForgotUsernameRequest() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailMessageForgotUsernameRequest(), HttpStatus.OK);
     }
@@ -480,7 +481,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for password reset."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"messages/passwordreset"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"messages/passwordreset"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getEmailMessageForgotPasswordReset() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailMessageForgotPasswordReset(), HttpStatus.OK);
     }
@@ -492,7 +493,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of user registration."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"notify/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"notify/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setNotifyAdminUserRegistration(@ApiParam(value = "Whether admins should be notified of user registration successfully set.", required = true) @RequestParam final boolean notify) {
         _notificationsPrefs.setNotifyAdminUserRegistration(notify);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -505,7 +506,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of pipeline processing submit."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"notify/pipeline"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"notify/pipeline"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setNotifyAdminPipelineEmails(@ApiParam(value = "Whether admins should be notified of pipeline processing submit successfully set.", required = true) @RequestParam final boolean notify) {
         _notificationsPrefs.setNotifyAdminPipelineEmails(notify);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -518,7 +519,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of project access requests."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"notify/par"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"notify/par"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setNotifyAdminProjectAccessRequest(@ApiParam(value = "Whether admins should be notified of project access requests successfully set.", required = true) @RequestParam final boolean notify) {
         _notificationsPrefs.setNotifyAdminProjectAccessRequest(notify);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -531,7 +532,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of session transfer."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"notify/transfer"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"notify/transfer"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setNotifyAdminSessionTransfer(@ApiParam(value = "Whether admins should be notified of session transfer successfully set.", required = true) @RequestParam final boolean notify) {
         _notificationsPrefs.setNotifyAdminSessionTransfer(notify);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -544,7 +545,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for contacting help."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"notify/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"notify/registration"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Boolean> getNotifyAdminUserRegistration() {
         return new ResponseEntity<>(_notificationsPrefs.getNotifyAdminUserRegistration(), HttpStatus.OK);
     }
@@ -556,7 +557,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for user registration."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"notify/pipeline"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"notify/pipeline"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Boolean> getNotifyAdminPipelineEmails() {
         return new ResponseEntity<>(_notificationsPrefs.getNotifyAdminPipelineEmails(), HttpStatus.OK);
     }
@@ -568,7 +569,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for forgot username."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"notify/par"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"notify/par"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Boolean> getNotifyAdminProjectAccessRequest() {
         return new ResponseEntity<>(_notificationsPrefs.getNotifyAdminProjectAccessRequest(), HttpStatus.OK);
     }
@@ -580,7 +581,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for password reset."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"notify/transfer"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"notify/transfer"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Boolean> getNotifyAdminSessionTransfer() {
         return new ResponseEntity<>(_notificationsPrefs.getNotifyAdminSessionTransfer(), HttpStatus.OK);
     }
@@ -592,7 +593,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether non-users should be able to subscribe to notifications."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"allow/nonusersubscribers/{setting}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"allow/nonusersubscribers/{setting}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setEmailAllowNonuserSubscribers(@ApiParam(value = "Whether non-users should be able to subscribe to notifications.", required = true) @PathVariable final boolean setting) {
         _notificationsPrefs.setEmailAllowNonuserSubscribers(setting);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -605,7 +606,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get whether non-users should be able to subscribe to notifications."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"allow/nonusersubscribers"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"allow/nonusersubscribers"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Boolean> getEmailAllowNonuserSubscribers() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailAllowNonuserSubscribers(), HttpStatus.OK);
     }
@@ -617,7 +618,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the error subscribers."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"subscribers/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"subscribers/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setErrorSubscribers(@ApiParam(value = "The values to set for email addresses for error notifications.", required = true) @RequestParam final String subscribers) {
         _notificationsPrefs.setEmailRecipientErrorMessages(subscribers);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -630,7 +631,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the issue subscribers."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"subscribers/issue"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"subscribers/issue"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setIssueSubscribers(@ApiParam(value = "The values to set for email addresses for issue notifications.", required = true) @RequestParam final String subscribers) {
         _notificationsPrefs.setEmailRecipientIssueReports(subscribers);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -643,7 +644,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the new user subscribers."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"subscribers/newuser"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"subscribers/newuser"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setNewUserSubscribers(@ApiParam(value = "The values to set for email addresses for new user notifications.", required = true) @RequestParam final String subscribers) {
         _notificationsPrefs.setEmailRecipientNewUserAlert(subscribers);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -656,7 +657,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the update subscribers."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"subscribers/update"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"subscribers/update"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Properties> setUpdateSubscribers(@ApiParam(value = "The values to set for email addresses for update notifications.", required = true) @RequestParam final String subscribers) {
         _notificationsPrefs.setEmailRecipientUpdate(subscribers);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -669,7 +670,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"subscribers/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"subscribers/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getErrorSubscribers() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailRecipientErrorMessages(), HttpStatus.OK);
     }
@@ -681,7 +682,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"subscribers/issue"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"subscribers/issue"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getIssueSubscribers() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailRecipientIssueReports(), HttpStatus.OK);
     }
@@ -693,7 +694,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"subscribers/newuser"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"subscribers/newuser"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getNewUserSubscribers() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailRecipientNewUserAlert(), HttpStatus.OK);
     }
@@ -705,7 +706,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"subscribers/update"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"subscribers/update"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<String> getUpdateSubscribers() {
         return new ResponseEntity<>(_notificationsPrefs.getEmailRecipientUpdate(), HttpStatus.OK);
     }

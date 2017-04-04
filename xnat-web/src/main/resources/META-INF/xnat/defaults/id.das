@@ -6,6 +6,7 @@
 //
 // Released under the Simplified BSD.
 //
+version "6.1"
 project != "Unassigned" ? (0008,1030) := project
 (0010,0010) := subject
 (0010,0020) := session

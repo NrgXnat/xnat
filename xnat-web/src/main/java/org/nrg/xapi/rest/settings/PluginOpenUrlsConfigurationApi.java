@@ -10,13 +10,13 @@
 package org.nrg.xapi.rest.settings;
 
 import com.google.common.collect.Lists;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.nrg.framework.annotations.XapiRestController;
-import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -26,9 +26,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,9 +60,9 @@ public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
      *
      * @return the plugin open url configuration
      */
-    @ApiOperation(value = "Gets the plugin open URL configuration.", notes = "Returns plugin open URL configration for this installation.", response = Properties.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "An array of propeties"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/pluginOpenUrls/settings"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @ApiOperation(value = "Gets the plugin open URL configuration.", notes = "Returns plugin open URL configuration for this installation.", response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"/pluginOpenUrls/settings"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<Properties> getPluginOpenUrlsConfiguration() {
     	final HttpStatus status = isPermitted();
@@ -84,9 +84,9 @@ public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
      * @param config the config
      * @return the response entity
      */
-    @ApiOperation(value = "Sets the plugin open URL configuration.", notes = "Sets plugin open URL configration for this installation.", response = Void.class)
+    @ApiOperation(value = "Sets the plugin open URL configuration.", notes = "Sets plugin open URL configuration for this installation.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "OK"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/pluginOpenUrls/settings"}, consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    @XapiRequestMapping(value = {"/pluginOpenUrls/settings"}, consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<Void> setPluginOpenUrlsConfiguration(@RequestBody final Map<String, Boolean> config) {
     	if (!Roles.isSiteAdmin(getSessionUser())) {
@@ -99,7 +99,7 @@ public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
     		}
     	}
     	_openUrlsPreference.setAllowedPluginOpenUrls(authList);
-    	// Commenting this call out.  Changes to the hanges to the openUrlList still require Tomcat retart.
+    	// Commenting this call out.  Changes to the changes to the openUrlList still require Tomcat restart.
        	return new ResponseEntity<>(HttpStatus.OK);
     }
 

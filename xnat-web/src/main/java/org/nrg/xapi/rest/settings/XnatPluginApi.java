@@ -17,7 +17,8 @@ import io.swagger.annotations.ApiResponses;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
-import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,7 @@ public class XnatPluginApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "XNAT plugin properties successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Map<String, XnatPluginBean>> getAllDataTypeSchemas() throws IOException {
         return new ResponseEntity<>(_plugins, HttpStatus.OK);
     }
@@ -59,7 +60,7 @@ public class XnatPluginApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = "{plugin}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = "{plugin}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<XnatPluginBean> getRequestedDataTypeSchema(@PathVariable("plugin") final String plugin) throws IOException {
         if (!_plugins.containsKey(plugin)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

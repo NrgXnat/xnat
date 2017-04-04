@@ -12,7 +12,8 @@ package org.nrg.xapi.rest.settings;
 import io.swagger.annotations.*;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.preferences.AutomationPreferences;
@@ -45,7 +46,7 @@ public class AutomationApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> getAllAutomationPreferences() {
         if (_log.isDebugEnabled()) {
             _log.info("User " + getSessionUser().getUsername() + " requested the system automation settings.");
@@ -65,7 +66,7 @@ public class AutomationApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set automation properties."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST)
+    @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST)
     public ResponseEntity<Void> setBatchAutomationPreferences(@ApiParam(value = "The map of automation preferences to be set.", required = true) @RequestBody final Map<String, String> properties) {
         if (_log.isDebugEnabled()) {
             _log.info("User " + getSessionUser().getUsername() + " requested to set a batch of automation preferences.");
@@ -96,7 +97,7 @@ public class AutomationApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Boolean> isInternalScriptingEnabled() {
         if (_log.isDebugEnabled()) {
             _log.debug("User " + getSessionUser().getUsername() + " requested the internal scripting enabled setting.");
@@ -115,7 +116,7 @@ public class AutomationApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Insufficient privileges to change the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "enabled/{setting}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "enabled/{setting}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Boolean> setInternalScriptingEnabled(@PathVariable("setting") final boolean setting) {
         if (_log.isDebugEnabled()) {
             _log.warn("User {} requested to change the internal scripting enabled setting to {}.", getSessionUser().getUsername(), setting);

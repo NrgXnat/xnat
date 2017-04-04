@@ -15,7 +15,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import javassist.Modifier;
-
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationEventIdsIds;
 import org.nrg.automation.event.entities.AutomationFilters;
@@ -27,9 +26,10 @@ import org.nrg.framework.event.Filterable;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.model.event.EventClassInfo;
 import org.nrg.xapi.model.event.EventHandlerFilterInfo;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
-import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -45,19 +45,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * The Class EventHandlerApi.
@@ -81,7 +75,7 @@ public class EventHandlerApi extends AbstractXapiRestController {
      */
     @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = EventClassInfo.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/projects/{project_id}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @XapiRequestMapping(value = {"/projects/{project_id}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<EventClassInfo>> automationEventClassesGetByProject(@PathVariable("project_id") String project_id) {
         final HttpStatus status = canEditProject(project_id);
@@ -103,7 +97,7 @@ public class EventHandlerApi extends AbstractXapiRestController {
      */
     @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = EventClassInfo.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @XapiRequestMapping(value = {"/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<EventClassInfo>> automationEventClassesGet() {
         final HttpStatus status = isPermitted();

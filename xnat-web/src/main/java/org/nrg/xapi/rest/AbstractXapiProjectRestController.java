@@ -11,7 +11,6 @@ package org.nrg.xapi.rest;
 
 import org.jetbrains.annotations.Nullable;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -63,6 +62,4 @@ public abstract class AbstractXapiProjectRestController extends AbstractXapiRest
         }
         return null;
     }
-
-
 }

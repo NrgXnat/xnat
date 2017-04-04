@@ -11,18 +11,17 @@ package org.nrg.xapi.rest.task;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.task.XnatTask;
 import org.nrg.framework.task.services.XnatTaskService;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
-import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.node.entities.XnatNodeInfo;
@@ -35,7 +34,6 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -70,9 +68,9 @@ public class XnatTaskApi extends AbstractXapiRestController {
      *
      * @return nodeAndTaskConfigurationStatus
      */
-    @ApiOperation(value = "Get node configuration status.", notes = "Returns node configration status for this installation.", response = Properties.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "An array of propeties"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/xnatTask/checkNodeConfigurationStatus"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @ApiOperation(value = "Get node configuration status.", notes = "Returns node configuration status for this installation.", response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"/xnatTask/checkNodeConfigurationStatus"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<Properties> getNodeConfigurationStatus() {
         final HttpStatus status = isPermitted();
@@ -98,8 +96,8 @@ public class XnatTaskApi extends AbstractXapiRestController {
      * @return the task list
      */
     @ApiOperation(value = "Get list of XnatTask classes.", notes = "Returns a list of XnatTask properties", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "An array of propeties"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/xnatTask/taskList"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"/xnatTask/taskList"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<Properties>> getTaskList() {
         final HttpStatus status = isPermitted();

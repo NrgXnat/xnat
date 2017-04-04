@@ -22,8 +22,9 @@ import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.model.users.UserFactory;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
@@ -76,7 +77,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<String>> usersGet() {
         if (_preferences.getRestrictUserListAccessToAdmins()) {
@@ -93,7 +94,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "profiles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "profiles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<User>> usersProfilesGet() {
         if (_preferences.getRestrictUserListAccessToAdmins()) {
@@ -129,7 +130,7 @@ public class UsersApi extends AbstractXapiRestController {
             @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
             @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
             @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "profile/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "profile/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<User> usersProfileGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username) {
         if (_preferences.getRestrictUserListAccessToAdmins()) {
@@ -173,7 +174,7 @@ public class UsersApi extends AbstractXapiRestController {
             @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
             @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
             @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "current", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "current", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<User>> currentUsersProfilesGet() {
         if (_preferences.getRestrictUserListAccessToAdmins()) {
@@ -209,7 +210,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "active", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "active", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<Map<String, Map<String, Object>>> getActiveUsers() {
         final HttpStatus status = isPermitted();
@@ -256,7 +257,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
                    @ApiResponse(code = 404, message = "The indicated user has no active sessions or is not a valid user."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<String>> getUserActiveSessions(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username) {
         final HttpStatus status = isPermitted(username);
@@ -286,7 +287,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<User> getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable("username") final String username) {
         if (_preferences.getRestrictUserListAccessToAdmins()) {
             final HttpStatus status = isPermitted(username);
@@ -312,7 +313,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
     public ResponseEntity<User> createUser(@RequestBody final User model) throws NotFoundException, PasswordComplexityException, DataFormatException, UserInitException, ResourceAlreadyExistsException {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -366,7 +367,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") final String username, @RequestBody final User model) throws NotFoundException, PasswordComplexityException, UserInitException {
         final HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -459,7 +460,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to create or update this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
     public ResponseEntity<List<String>> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable("username") final String username) throws NotFoundException {
         HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -509,7 +510,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "{username}/enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Boolean> usersIdEnabledGet(@ApiParam(value = "The ID of the user to retrieve the enabled status for.", required = true) @PathVariable("username") final String username) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -535,7 +536,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/enabled/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{username}/enabled/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Boolean> usersIdEnabledFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username, @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable("flag") Boolean flag) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -574,7 +575,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/verified", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "{username}/verified", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Boolean> usersIdVerifiedGet(@ApiParam(value = "The ID of the user to retrieve the verified status for.", required = true) @PathVariable("username") final String username) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -600,7 +601,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to verify or un-verify this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/verified/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{username}/verified/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Boolean> usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable("flag") Boolean flag) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -642,7 +643,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Collection<String>> usersIdRolesGet(@ApiParam(value = "The ID of the user to retrieve the roles for.", required = true) @PathVariable("username") final String username) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -659,7 +660,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Collection<String>> usersIdAddRoles(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable("username") final String username,
                                                               @ApiParam(value = "The user's new roles.", required = true) @RequestBody final List<String> roles) {
         HttpStatus status = isPermitted(username);
@@ -703,7 +704,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
     public ResponseEntity<Collection<String>> usersIdRemoveRoles(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable("username") final String username,
                                                                  @ApiParam(value = "The roles to be removed.", required = true) @RequestBody final List<String> roles) {
         HttpStatus status = isPermitted(username);
@@ -746,7 +747,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Boolean> usersIdAddRole(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable("username") final String username,
                                                   @ApiParam(value = "The user's new role.", required = true) @PathVariable("role") final String role) {
         HttpStatus status = isPermitted(username);
@@ -779,7 +780,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
     public ResponseEntity<Boolean> usersIdRemoveRole(@ApiParam(value = "ID of the user to delete a role from", required = true) @PathVariable("username") final String username,
                                                      @ApiParam(value = "The user role to delete.", required = true) @PathVariable("role") String role) {
         HttpStatus status = isPermitted(username);
@@ -812,7 +813,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Set<String>> usersIdGroupsGet(@ApiParam(value = "The ID of the user to retrieve the groups for.", required = true) @PathVariable("username") final String username) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -840,7 +841,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Collection<String>> usersIdAddGroups(@ApiParam(value = "ID of the user to add to the specified groups", required = true) @PathVariable("username") final String username,
                                                                @ApiParam(value = "The groups to which the user should be added.", required = true) @RequestBody final List<String> groups) {
         HttpStatus status = isPermitted(username);
@@ -884,7 +885,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
     public ResponseEntity<Collection<String>> usersIdRemoveGroups(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable("username") final String username,
                                                                   @ApiParam(value = "The groups from which the user should be removed.", required = true) @RequestBody final List<String> groups) {
         HttpStatus status = isPermitted(username);
@@ -927,7 +928,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/groups/{group}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{username}/groups/{group}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<Boolean> usersIdAddGroup(@ApiParam(value = "ID of the user to add to a group", required = true) @PathVariable("username") final String username, @ApiParam(value = "The user's new group.", required = true) @PathVariable("group") final String group) {
         HttpStatus status = isPermitted(username);
         if (status != null) {
@@ -962,7 +963,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "{username}/groups/{group}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "{username}/groups/{group}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
     public ResponseEntity<Boolean> usersIdRemoveGroup(@ApiParam(value = "ID of the user to remove from group", required = true) @PathVariable("username") final String username, @ApiParam(value = "The group to remove the user from.", required = true) @PathVariable("group") final String group) {
         HttpStatus status = isPermitted(username);
         if (status != null) {

@@ -16,9 +16,10 @@ import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.model.investigators.Investigator;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xnat.services.investigators.InvestigatorService;
 import org.nrg.xdat.om.XnatInvestigatordata;
-import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -49,7 +50,7 @@ public class InvestigatorsApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get list of investigators.", notes = "The investigators function returns a list of all investigators configured in the XNAT system.", response = Investigator.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of all of the currently configured investigators."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<Investigator>> getInvestigators() {
         return new ResponseEntity<>(_service.getInvestigators(), HttpStatus.OK);
@@ -59,7 +60,7 @@ public class InvestigatorsApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Returns the requested investigator."),
                    @ApiResponse(code = 404, message = "The requested investigator wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @RequestMapping(value = "{investigatorId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "{investigatorId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<Investigator> getInvestigator(@PathVariable("investigatorId") final int investigatorId) {
         final Investigator investigator = _service.getInvestigator(investigatorId);
@@ -74,7 +75,7 @@ public class InvestigatorsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to create the submitted investigator."),
                    @ApiResponse(code = 404, message = "The requested investigator wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @RequestMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    @XapiRequestMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<Investigator> createInvestigator(@RequestBody final Investigator investigator) throws Exception {
         if (StringUtils.isBlank(investigator.getFirstname()) || StringUtils.isBlank(investigator.getLastname())) {
@@ -103,7 +104,7 @@ public class InvestigatorsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to edit the requested investigator."),
                    @ApiResponse(code = 404, message = "The requested investigator wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @RequestMapping(value = "{investigatorId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "{investigatorId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
     @ResponseBody
     public ResponseEntity<Investigator> updateInvestigator(@PathVariable("investigatorId") final int investigatorId, @RequestBody final Investigator investigator) throws Exception {
         final UserI user = getSessionUser();
@@ -160,7 +161,7 @@ public class InvestigatorsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "The user doesn't have permission to delete investigators."),
                    @ApiResponse(code = 404, message = "The requested investigator wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @RequestMapping(value = "{investigatorId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "{investigatorId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
     @ResponseBody
     public ResponseEntity<Boolean> deleteInvestigator(@PathVariable("investigatorId") final int investigatorId) throws Exception {
         final UserI user = getSessionUser();

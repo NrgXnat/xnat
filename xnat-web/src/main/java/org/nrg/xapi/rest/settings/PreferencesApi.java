@@ -16,7 +16,8 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
-import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public class PreferencesApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, Properties>> getAllPreferenceSettings() {
         if (_log.isDebugEnabled()) {
             _log.info("User " + getSessionUser().getUsername() + " requested the system preference settings.");
@@ -78,7 +79,7 @@ public class PreferencesApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @RequestMapping(value = "ini", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "ini", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET)
     public ResponseEntity<String> getPreferenceSettingsIni() {
         if (_log.isDebugEnabled()) {
             _log.info("User " + getSessionUser().getUsername() + " requested the system preference settings in ini format.");

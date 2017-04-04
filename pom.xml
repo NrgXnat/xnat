@@ -91,6 +91,7 @@
         <antlr4.version>4.5.1-1</antlr4.version>
         <hsqldb.version>2.3.4</hsqldb.version>
         <aopalliance.version>1.0</aopalliance.version>
+        <aspectj.version>1.8.10</aspectj.version>
         <avalon.version>4.3</avalon.version>
         <axis.version>1.4</axis.version>
         <cglib.version>2.2.2</cglib.version>
@@ -642,6 +643,16 @@
                 <groupId>aopalliance</groupId>
                 <artifactId>aopalliance</artifactId>
                 <version>${aopalliance.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjweaver</artifactId>
+                <version>${aspectj.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjrt</artifactId>
+                <version>${aspectj.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>

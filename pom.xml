@@ -193,24 +193,10 @@
         <dependency>
             <groupId>turbine</groupId>
             <artifactId>turbine</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-email</groupId>
-                    <artifactId>commons-email</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>velocity</groupId>
-                    <artifactId>velocity</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jamon</groupId>
-                    <artifactId>jamon</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>fulcrum</groupId>
-                    <artifactId>fulcrum-yaafi</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>torque</groupId>
+            <artifactId>torque</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.velocity</groupId>
@@ -223,24 +209,6 @@
         <dependency>
             <groupId>ecs</groupId>
             <artifactId>ecs</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>torque</groupId>
-            <artifactId>torque</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>velocity</groupId>
-                    <artifactId>velocity</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jamon</groupId>
-                    <artifactId>jamon</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>fulcrum</groupId>
-                    <artifactId>fulcrum-yaafi</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>

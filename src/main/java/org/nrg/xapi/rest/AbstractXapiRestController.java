@@ -7,7 +7,7 @@
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xdat.rest;
+package org.nrg.xapi.rest;
 
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,11 +30,10 @@ import java.util.*;
 /**
  * Provides basic functions for integrating Spring REST controllers with XNAT.
  *
- * @deprecated Use the {@link org.nrg.xapi.rest.AbstractXapiRestController} implementation instead.
+ * This replaces the {@link org.nrg.xdat.rest.AbstractXapiRestController} implementation.
  */
 // TODO: This is because IntelliJ refuses to make module associations between Gradle and Maven projects, so these show as unused.
-@SuppressWarnings({"unused", "DeprecatedIsStillUsed"})
-@Deprecated
+@SuppressWarnings("unused")
 public abstract class AbstractXapiRestController {
     protected AbstractXapiRestController(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
         _userManagementService = userManagementService;

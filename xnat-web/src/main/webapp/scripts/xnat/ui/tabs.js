@@ -247,9 +247,11 @@ var XNAT = getObject(XNAT || {});
         tabs.navTabs = navTabs;
 
         // set up the group elements, if present
-        if (obj.meta && obj.meta.tabGroups){
+        if (obj.groups || obj.tabGroups || (obj.meta && obj.meta.tabGroups)){
             tabs.hasGroups = true;
-            $navTabs.append(tab.groups(obj.meta.tabGroups));
+            obj.groups = obj.tabGroups =
+                obj.groups || obj.tabGroups || obj.meta.tabGroups;
+            $navTabs.append(tab.groups(obj.groups));
         }
         else {
             tabs.hasGroups = false;

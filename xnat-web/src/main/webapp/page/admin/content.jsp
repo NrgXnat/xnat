@@ -78,12 +78,19 @@
                         XNAT.tabs.container = $('#admin-config-tabs').find('div.content-tabs');
                         XNAT.tabs.layout = 'left';
 
-                        var adminTabs = XNAT.spawner.resolve('siteAdmin/adminPage');
-                        adminTabs.render(XNAT.tabs.container, 200, function(){
-                            //initInfoLinks();
-                            // SAVE THE UI JSON
-                            XNAT.app.adminTabs = adminTabs;
-                        });
+                        var adminTabs =
+                                XNAT.spawner
+                                    .resolve('siteAdmin/adminPage')
+                                    .ok(function(){
+                                        this.render(XNAT.tabs.container, 200, function(){
+                                            //initInfoLinks();
+                                            // SAVE THE UI JSON
+                                            XNAT.app.adminTabs = adminTabs;
+                                        });
+                                        this.done(function(){
+                                            XNAT.tab.activate(XNAT.tab.active, XNAT.tabs.container);
+                                        })
+                                    });
 
                     })();
 

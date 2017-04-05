@@ -39,9 +39,6 @@ var XNAT = getObject(XNAT || {});
     XNAT.ui =
         getObject(XNAT.ui || {});
 
-    XNAT.ui.panel = panel =
-        getObject(XNAT.ui.panel || {});
-
     function setDisabled(elements, disabled){
         $$(elements).each(function(idx){
             var _disabled = !!disabled;
@@ -134,7 +131,7 @@ var XNAT = getObject(XNAT || {});
      * @param [opts] {Object} Config object
      * @returns {{}}
      */
-    panel.init = function panelInit(opts){
+    panel = function panelInit(opts){
 
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -182,6 +179,7 @@ var XNAT = getObject(XNAT || {});
             }
         }
     };
+    panel.init = panel;
 
     function footerButton(text, type, disabled, classes){
         var button = {

@@ -77,6 +77,7 @@
                         XNAT.app.pluginSettings.projectSettings(projectSettingsTabs, function(data){
                             console.log(data);
                             console.log(arguments);
+                            XNAT.tab.activate(XNAT.tab.active, projectSettingsTabs);
                         });
                     },
                     failure: function(){

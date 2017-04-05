@@ -58,20 +58,22 @@ var XNAT = getObject(XNAT);
             adminMenuItem = true;
             return 'hidden';
         });
-    };
+    }
     pluginSettings.showAdminMenuItem = showAdminMenuItem;
 
 
 
     // render settings tabs (for any context)
-    // this MUST be called in the context a Spawner instance
+    // this MUST be called in the context of a Spawner instance
     function renderPluginSettingsTabs(container){
         if (!container) return this;
         var container$ = $$(container);
         // only render the tabs if there's a container for them
         if (container$.length) {
-            this.render(container$).done(function(){
+            this.render(container$, 200);
+            this.done(function(){
                 container$.fadeIn(200);
+                XNAT.tab.activate(XNAT.tab.active, container$);
             });
         }
         return this;
@@ -92,7 +94,7 @@ var XNAT = getObject(XNAT);
             // stop if there are already site settings
             return false;
         }
-        return getPluginSettings(name, 'siteSettings').ok(function(data){
+        return getPluginSettings(name, 'siteSettings').ok(function(){
             hasSiteSettings = true;
             if (tabs === false){
                 showAdminMenuItem();
@@ -101,7 +103,7 @@ var XNAT = getObject(XNAT);
                 renderPluginSettingsTabs.call(this, pluginSettings.siteSettingsTabs || null);
             }
         })
-    }
+    };
 
 
 
@@ -110,11 +112,11 @@ var XNAT = getObject(XNAT);
         if (hasProjectSettings){
             return false;
         }
-        return getPluginSettings(name, 'projectSettings').ok(function(data){
+        return getPluginSettings(name, 'projectSettings').ok(function(){
             hasProjectSettings = true;
             renderPluginSettingsTabs.call(this, pluginSettings.projectSettingsTabs || null);
         });
-    }
+    };
 
 
 
@@ -184,6 +186,7 @@ var XNAT = getObject(XNAT);
      * with a matching Spawner namespace and 'type' element
      * @param {Array|String} [types] - single 'type' string or array of multiple 'types'
      * @param {Boolean} [tabs] - render tabs? (set to false to show admin menu item)
+     * @param {Function} [callback] - function to call after rendering settings elements
      */
     pluginSettings.renderSettings = function renderSettings(types, tabs, callback){
 
@@ -202,7 +205,7 @@ var XNAT = getObject(XNAT);
                         if (namespace.split(/[:.]/)[0] === name) {
                             pluginsWithElements.push(name);
                         }
-                    })
+                    });
                     // if any plugins have Spawner elements, check
                     // for element 'types'
                     if (pluginsWithElements.length) {

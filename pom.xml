@@ -408,12 +408,12 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
-                <artifactId>xnat_pipeline</artifactId>
+                <artifactId>xnat-pipeline</artifactId>
                 <version>${pipeline.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
-                <artifactId>xnat_tools</artifactId>
+                <artifactId>xnat-tools</artifactId>
                 <version>${pipeline.version}</version>
             </dependency>
             <dependency>

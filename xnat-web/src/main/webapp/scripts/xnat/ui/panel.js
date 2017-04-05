@@ -63,6 +63,39 @@ var XNAT = getObject(XNAT || {});
         return input;
     }
 
+    // replace url params with values from [data-param] attribute (if it exists)
+    // <form data-method="put" action="/xapi/theme/{{themeName}}">
+    //     <input type="text" name="themeName">
+    // </form>
+    function urlParams(form, url, params){
+
+        var $form = $$(form);
+        var URL = url || $form.attr('action') || $form.data('url');
+
+        // which params are we replacing?
+        // /url/path/{{param1}}/{{param2}}
+        var urlParams = URL.split('{{').slice(1).map(function(name){
+            return name.split('}}')[0].trim();
+        });
+
+        // return url if no params to replace
+        if (!urlParams.length) {
+            return URL;
+        }
+
+        // optionally pass an object map with the values
+        params = getObject(params);
+
+        forEach(urlParams, function(name){
+            var _str = '{{' + name + '}}';
+            var _val = params[name] || $form.find('[name="' + name + '"]').val() || '';
+            URL = URL.replace(_str, _val);
+        });
+
+        return URL;
+
+    }
+
     function loadingDialog(id){
         id = id ? '#'+id : '#loading';
         // make sure xmodal script is loaded
@@ -107,7 +140,7 @@ var XNAT = getObject(XNAT || {});
         opts.element = opts.element || opts.config || {};
         opts.title = opts.title || opts.label || opts.header;
 
-        var _target = spawn('div.panel-body', opts.element),
+        var _target = spawn('div.panel-body', opts.element, [].concat(opts.body||[])),
 
             hideHeader = (isDefined(opts.header) && (opts.header === false || /^-/.test(opts.title))),
 
@@ -137,6 +170,15 @@ var XNAT = getObject(XNAT || {});
             spawned: _panel,
             get: function(){
                 return _panel;
+            },
+            render: function(container){
+                if (!container){
+                    return _panel;
+                }
+                else {
+                    $$(container).append(_panel);
+                    return _panel;
+                }
             }
         }
     };
@@ -184,11 +226,14 @@ var XNAT = getObject(XNAT || {});
             return;
         }
 
-        var $form = $(form);
+        var $form = $$(form);
         var _form = $form[0];
         var values = {};
 
         obj.load = (obj.load+'').trim();
+
+        // replace url params
+        obj.load = urlParams($form, obj.load);
 
         // if 'load' starts with '$?', '~/', or just '/'
         // then values need to load via REST
@@ -196,10 +241,10 @@ var XNAT = getObject(XNAT || {});
         var doAjax = ajaxPrefix.test(obj.load);
 
         // if 'load' starts with '!?' do an eval()
-        var evalPrefix = '!?';
+        var evalPrefix = /^!\?/;
 
         // if 'load' starts with ?? (or NOT evalPrefix or ajaxPrefix), do lookup
-        var lookupPrefix = '??';
+        var lookupPrefix = /^\?\?/;
 
         // ...BUT...
         // if there's an existing property name:
@@ -213,7 +258,7 @@ var XNAT = getObject(XNAT || {});
 
         if (!doAjax) {
 
-            var doLookup = obj.load.indexOf(lookupPrefix) === 0;
+            var doLookup = lookupPrefix.test(obj.load);
             if (doLookup) {
                 obj.load = (obj.load.split(lookupPrefix)[1]||'').trim().split('|')[0];
                 obj.prop = obj.prop || obj.load.split('|')[1] || '';
@@ -232,7 +277,7 @@ var XNAT = getObject(XNAT || {});
 
             }
 
-            var doEval = obj.load.indexOf(evalPrefix) === 0;
+            var doEval = evalPrefix.test(obj.load);
             if (doEval) {
                 obj.load = (obj.load.split(evalPrefix)[1]||'').trim();
             }
@@ -269,7 +314,7 @@ var XNAT = getObject(XNAT || {});
         // value: ~/path/to/data|obj.prop.name
         if (doAjax) {
             ajaxUrl = (obj.load.split(ajaxPrefix)[2]||'').trim().split('|')[0];
-            ajaxProp = ajaxUrl.split('|')[1] || '';
+            ajaxProp = obj.load.split('|')[1] || '';
         }
 
         // need a url to get the data
@@ -328,10 +373,11 @@ var XNAT = getObject(XNAT || {});
         // data-* attributes to add to panel
         addDataObjects(opts, {
             panel: toDashed(opts.name),
-            method: (opts.method || 'POST').toLowerCase()
+            method: (opts.method || 'POST').toLowerCase(),
+            load: opts.load || opts.action
         });
 
-        var _target = spawn('div.panel-body'),
+        var _target = spawn('div.panel-body', {}, [].concat(opts.body||[])),
 
             hideHeader = (isDefined(opts.header) && (opts.header === false || /^-/.test(opts.title))),
 
@@ -540,7 +586,7 @@ var XNAT = getObject(XNAT || {});
             var ajaxConfig = {
                 //method: opts.method,
                 method: $form.data('method') || opts.method || 'POST',
-                url: $form.attr('action') || $form.data('url'),
+                url: urlParams($form),
                 validate: function(){
 
                     // TODO: enable this after testing validation methods more thoroughly
@@ -656,6 +702,15 @@ var XNAT = getObject(XNAT || {});
             spawned: _formPanel,
             get: function(){
                 return _formPanel;
+            },
+            render: function(container){
+                if (!container) {
+                    return _formPanel;
+                }
+                else {
+                    $$(container).append(_formPanel);
+                    return _formPanel;
+                }
             }
         }
     };
@@ -1047,17 +1102,17 @@ var XNAT = getObject(XNAT || {});
             id: opts.id + '-form',
             method: opts.method || 'POST',
             action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
-            className: addClassName(opts, 'file-upload')
+            className: addClassName(opts, 'file-upload ignore')
         }, [
             ['input', {
                 type: 'file',
                 id: opts.id + '-input',
                 multiple: true,
-                className: addClassName(opts, 'file-upload-input')
+                className: addClassName(opts, 'file-upload-input ignore')
             }],
             ['button.btn.btn-sm', {
                 type: 'submit',
-                id: opts.id +'-button',
+                id: opts.id +'-submit',
                 html: 'Upload'
             }]
         ]];
@@ -1087,17 +1142,17 @@ var XNAT = getObject(XNAT || {});
 
         var val1 = opts.element.value;
         var val2 = opts.value;
+        var _val = firstDefined(val1, val2, '');
 
-        opts.element.value = firstDefined(val1, val2, '');
+        // opts.element.value = firstDefined(val1, val2, '');
 
-        opts.element.html = firstDefined(
-            opts.element.html+'',
-            opts.element.value+'',
-            opts.text+'',
-            opts.html+'',
-            '');
+        // opts.element.html = firstDefined(
+        //     opts.element.html+'',
+        //     opts.element.value+'',
+        //     opts.text+'',
+        //     opts.html+'',
+        //     '');
 
-        opts.element.html = lookupValue(opts.element.html);
         opts.element.title = 'Double-click to open in code editor.';
 
         if (opts.code || opts.codeLanguage) {
@@ -1116,6 +1171,8 @@ var XNAT = getObject(XNAT || {});
         opts.element.rows = opts.rows || opts.element.rows || 10;
 
         var textarea = spawn('textarea', opts.element);
+
+        XNAT.ui.input.setValue(textarea, _val);
 
         return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
 

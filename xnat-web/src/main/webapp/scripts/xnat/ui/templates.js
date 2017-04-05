@@ -53,16 +53,17 @@ var XNAT = getObject(XNAT);
     // retrieve value via REST and put it in the element
     function ajaxValue(el, url, prop){
         var opts = {
-            url: XNAT.url.rootUrl(url),
+            url: XNAT.url.restUrl(url),
             success: function(data){
+                console.log(data);
                 if (prop && isPlainObject(data)) {
                     data = lookupObjectValue(data, prop.trim());
                     // data = lookupValue(prop.trim());
                 }
-                $$(el).val(data).change();
+                $$(el).changeVal(data);
             }
         };
-        return $.get(opts);
+        return XNAT.xhr.get(opts);
     }
 
 
@@ -157,10 +158,12 @@ var XNAT = getObject(XNAT);
     };
     // ========================================
 
+    var panelInputCount = 0;
 
     // ========================================
     // input element for form panels
     template.panelInput = function(opts, element){
+        // console.log(++panelInputCount);
         opts = cloneObject(opts);
         opts.name = opts.name || opts.id || randomID('input-', false);
         opts.id = opts.id||toDashed(opts.name||'');
@@ -213,45 +216,52 @@ var XNAT = getObject(XNAT);
         // set the value of individual form elements
         var hasValue = isDefined(opts.value);
 
-        // look up a namespaced object value if the value starts with '??'
-        var doLookup = '??';
-        if (hasValue && opts.value.toString().indexOf(doLookup) === 0) {
-            // element.value = lookupValue(opts.value.split(doLookup)[1].trim());
-            $element.val(lookupObjectValue(opts.value.split(doLookup)[1].trim()));
+        if (hasValue){
+            XNAT.ui.input.setValue($element, opts.value);
         }
 
-        var doEval = '!?';
-        if (hasValue && opts.value.toString().indexOf(doEval) === 0) {
-            opts.value = (opts.value.split(doEval)[1]||'').trim();
-            try {
-                $element.changeVal(eval(opts.value));
-            }
-            catch (e) {
-                $element.val('').change();
-            }
-        }
+        // // look up a namespaced object value if the value starts with '??'
+        // var doLookup = '??';
+        // if (hasValue && opts.value.toString().indexOf(doLookup) === 0) {
+        //     // element.value = lookupValue(opts.value.split(doLookup)[1].trim());
+        //     $element.val(lookupObjectValue(opts.value.split(doLookup)[1].trim()));
+        // }
+        //
+        // var doEval = '!?';
+        // if (hasValue && opts.value.toString().indexOf(doEval) === 0) {
+        //     opts.value = (opts.value.split(doEval)[1]||'').trim();
+        //     try {
+        //         $element.changeVal(eval(opts.value));
+        //     }
+        //     catch (e) {
+        //         $element.val('').change();
+        //     }
+        // }
+        //
+        // // get value via REST/ajax if value starts with $?
+        // // value: $? /path/to/data | obj:prop:name
+        // var ajaxPrefix = '$?';
+        // var ajaxUrl = '';
+        // var ajaxProp = '';
+        // if (hasValue && opts.value.toString().indexOf(ajaxPrefix) === 0) {
+        //     ajaxUrl = (opts.value.split(ajaxPrefix)[1]||'').split('|')[0].trim();
+        //     ajaxProp = (opts.value.split('|')[1] || '').trim();
+        //     console.log(element);
+        //     console.log(ajaxUrl);
+        //     console.log(ajaxProp);
+        //     ajaxValue(element, ajaxUrl, ajaxProp);
+        // }
 
-        // get value via REST/ajax if value starts with $?
-        // value: $? /path/to/data | obj:prop:name
-        var ajaxPrefix = '$?';
-        var ajaxUrl = '';
-        var ajaxProp = '';
-        if (hasValue && opts.value.toString().indexOf(ajaxPrefix) === 0) {
-            ajaxUrl = (opts.value.split(ajaxPrefix)[1]||'').split('|')[0];
-            ajaxProp = opts.value.split('|')[1] || '';
-            ajaxValue(element, ajaxUrl.trim(), ajaxProp.trim());
-        }
-
-        // trigger an 'onchange' event
-        $element.change();
-
-        // add value to [data-value] attribute
-        // (except for textareas - that could get ugly)
-        if (!/textarea/i.test(element.tagName) && !/password/i.test(element.type)){
-            if (isArray(element.value) || stringable(element.value)) {
-                $element.dataAttr('value', element.value);
-            }
-        }
+        // // trigger an 'onchange' event
+        // $element.change();
+        //
+        // // add value to [data-value] attribute
+        // // (except for textareas - that could get ugly)
+        // if (!/textarea/i.test(element.tagName) && !/password/i.test(element.type)){
+        //     if (isArray(element.value) || stringable(element.value)) {
+        //         $element.dataAttr('value', element.value);
+        //     }
+        // }
 
         var inner = [];
 

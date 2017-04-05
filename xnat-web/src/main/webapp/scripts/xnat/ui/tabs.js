@@ -76,14 +76,28 @@ var XNAT = getObject(XNAT || {});
 
 
     // save the id of the active tab
-    tab.active = '';
+    tab.active = tabs.active = '';
 
 
     // ==================================================
     // SELECT A TAB
-    tab.select = tab.activate = function(name, container){
+    tab.activate = tab.select = function(name, container){
+        // console.log('tab.select / tab.activate');
+        tab.active = tabs.active =
+            name || tab.active || tabs.active;
         container = container || tabs.container || 'body';
-        $$(container).find('li.tab[data-tab="' + name + '"]').trigger('click');
+        $$(container)
+            .find('li.tab')
+            .removeClass('active')
+            .filter('[data-tab="' + tab.active + '"]')
+            .addClass('active');
+        $$(container)
+            .find('div.tab-pane')
+            .removeClass('active')
+            .filter('[data-tab="' + tab.active + '"]')
+            .addClass('active');
+        var newUrl = XNAT.url.updateHashQuery('', 'tab', tab.active);
+        window.location.replace(newUrl);
     };
     // ==================================================
 
@@ -130,6 +144,10 @@ var XNAT = getObject(XNAT || {});
 
         _pane = spawn('div.tab-pane', obj.element);
 
+        // set the first spawned tab as the 'active' tab if not already set
+        tabs.active = tab.active =
+            tab.active || tabs.active || tabId;
+
         // if 'active' is explicitly set, use the tabId value
         obj.active = (obj.active) ? tabId : '';
 
@@ -157,7 +175,7 @@ var XNAT = getObject(XNAT || {});
         // add all the flippers
         $group.append(_flipper).show();
 
-        function onRender(){
+        function load(){
             console.log('tab: ' + tabId)
         }
 
@@ -171,7 +189,7 @@ var XNAT = getObject(XNAT || {});
             pane: _pane,
             element: _pane,
             spawned: _pane,
-            onRender: onRender,
+            load: load,
             get: get
         }
     };
@@ -182,7 +200,7 @@ var XNAT = getObject(XNAT || {});
     // MAIN FUNCTION
     tabs.init = function tabsInit(obj){
 
-        var layout, container, $container, 
+        var layout, container, $container, $thisContainer,
             navTabs, $navTabs, tabContent, $tabContent,
             NAV_TABS = 'div.xnat-nav-tabs',
             TAB_CONTENT = 'div.xnat-tab-content';
@@ -238,28 +256,31 @@ var XNAT = getObject(XNAT || {});
             $navTabs.spawn('ul.tab-group');
         }
 
+        $thisContainer = $container;
+
         // bind tab click events
-        $container.on('click', 'li.tab', function(e){
+        $(document).on('click', 'li.tab', function(e){
             e.preventDefault();
-            var clicked = $(this).data('tab');
-            // de-activate all tabs and panes
-            $container.find('[data-tab]').removeClass('active');
+            // console.log('tab click');
+            var $thisTab = $(this);
+            var clicked = $thisTab.data('tab');
+            console.log('tab: ' + clicked);
+            // find the parent container
+            $thisContainer = $thisTab.closest('div.xnat-nav-tabs').parent();
             // activate the clicked tab and pane
-            $container.find('[data-tab="' + clicked + '"]').addClass('active');
-            // set the url hash
-            //var baseUrl = window.location.href.split('#')[0];
-            var newUrl = XNAT.url.updateHashQuery('', 'tab', clicked);
-            window.location.replace(newUrl);
+            tab.activate(clicked, $thisContainer);
         });
 
-        function onRender($element){
-            $container.find('li.tab, div.tab-pane').removeClass('active');
-            $container.find('[data-tab="' + tabs.active + '"]').addClass('active');
-            // console.log($element);
-            // $container.find('li.tab.active').last().trigger('click');
+        function load($element){
+            console.log('tabs load');
+            console.log($element);
+            // $container.find('li.tab.active').first().trigger('click');
+            tab.activate(tab.active, $thisContainer);
         }
 
         function get(){
+            console.log('tabs get');
+            load();
             return tabContent;
         }
 
@@ -267,7 +288,10 @@ var XNAT = getObject(XNAT || {});
             // contents: obj.tabs||obj.contents||obj.content||'',
             element: tabContent,
             spawned: tabContent,
-            onRender: onRender,
+            load: function(){
+                // console.log('tabs.load');
+                return load.apply(this, arguments);
+            },
             get: get
         };
 

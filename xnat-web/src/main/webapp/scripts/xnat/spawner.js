@@ -31,6 +31,8 @@ var XNAT = getObject(XNAT);
         $          = jQuery || null, // check and localize
         hasConsole = console && console.log;
 
+    var appendCount = 0;
+
     XNAT.ui =
         getObject(XNAT.ui || {});
     XNAT.spawner = spawner =
@@ -212,7 +214,7 @@ var XNAT = getObject(XNAT);
             if (!spawnedElement) return;
 
             // spawn child elements from...
-            // 'contents' or 'content' or 'children' or
+            // 'contents' or 'children' or
             // a property matching the value of either 'contains' or 'kind'
             if (prop.contains || prop.contents || prop[prop.kind]) {
                 prop.contents = prop[prop.contains] || prop.contents || prop[prop.kind];
@@ -260,15 +262,17 @@ var XNAT = getObject(XNAT);
 
             // if there's a .load() method, fire that
             if (isFunction(spawnedElement.load||null)) {
+                // console.log('spawnedElement.load');
                 spawnedElement.load.call(spawnedElement);
             }
 
+            // console.log('load / onRender');
+
             // if there's an .onRender() method, queue it
             if (isFunction(spawnedElement.onRender||null)) {
-                callbacks.push({
-                    onRender: spawnedElement.onRender,
-                    spawned: spawnedElement,
-                    $element: $spawnedElement
+                console.log('spawnedElement.onRender');
+                callbacks.push(function(){
+                    return spawnedElement.onRender.call(spawnedElement);
                 });
             }
 
@@ -289,36 +293,66 @@ var XNAT = getObject(XNAT);
         };
 
         spawnerInit.done = function(callback){
+            // console.log('spawnerInit.done');
             if (isFunction(callback)) {
-                callback(spawnerInit, frag, $frag)
+                // console.log('spawnerInit.done callback');
+                callback.call(spawnerInit, frag, $frag)
             }
             return spawnerInit;
         };
 
         spawnerInit.render = function(container, wait, callback){
 
+            console.log('spawnerInit.render');
+
             var $container = $$(container).hide();
 
-            wait = wait !== undefined ? wait : 100;
+            wait = firstDefined(wait, 100);
 
-            $container.append(frag);
-            $container.fadeIn(wait);
-
-            // fire collected callbacks
-            callbacks.forEach(function(obj){
-                try {
-                    obj.onRender.call(obj.spawned, obj.$element, obj);
-                }
-                catch(e) {
-                    console.log(e)
-                }
-            });
+            $container.append(frag).fadeIn(wait);
 
             setTimeout(function(){
+
+                // fire collected callbacks
+                callbacks.forEach(function(fn){
+                    try {
+                        fn.call(spawnerInit, obj);
+                    }
+                    catch(e) {
+                        console.log(e)
+                    }
+                });
+
                 if (isFunction(callback)) {
                     callback.call(spawnerInit, obj);
                 }
-            }, wait/2);
+
+            }, wait * 2);
+
+            // $container.fadeIn(wait, function(){
+            //     console.log('append ' + (appendCount+=1));
+            //     $frag.fadeIn(wait/2, function(){
+            //         console.log('$frag fadeIn');
+            //         // fire collected callbacks
+            //         callbacks.forEach(function(fn){
+            //             console.log('callbacks.forEach');
+            //             // setTimeout(function(){
+            //             try {
+            //                 fn.call(spawnerInit);
+            //             }
+            //             catch (e) {
+            //                 console.log(e)
+            //             }
+            //             // }, wait * 3)
+            //         });
+            //     });
+            //     // setTimeout(function(){
+            //     if (isFunction(callback)) {
+            //         console.log('render callback');
+            //         callback.call(spawnerInit, obj);
+            //     }
+            //     // }, wait * 2);
+            // });
 
             return spawnerInit;
 
@@ -358,6 +392,7 @@ var XNAT = getObject(XNAT);
         }, opts));
 
         function spawnRender(){
+            // console.log('spawnRender');
             var renderArgs = arguments;
             return request.done(function(obj){
                     spawner.spawn(obj).render.apply(request, renderArgs);
@@ -369,6 +404,7 @@ var XNAT = getObject(XNAT);
             // returned 'ok' method only fires with 200 response
             // and returns with 'this' as Spawner instance
             ok: function(callback){
+                console.log('spawner.resolve().ok()');
                 return request.done(function(obj, txtStatus, xhr){
                     var spawnerInstance = spawner.spawn(obj);
                     if (xhr.status === 200) {

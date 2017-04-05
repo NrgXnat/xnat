@@ -83,6 +83,38 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         setSmtpMailProperties(smtpServer.getMailProperties());
     }
 
+    public String getEmailRecipientErrorMessages() {
+        return XDAT.getSubscriberEmailsListAsString(NotificationType.Error);
+    }
+
+    public void setEmailRecipientErrorMessages(final String emailRecipientErrorMessages) {
+        XDAT.replaceSubscriberList(emailRecipientErrorMessages, NotificationType.Error, getEmailAllowNonuserSubscribers());
+    }
+
+    public String getEmailRecipientIssueReports() {
+        return XDAT.getSubscriberEmailsListAsString(NotificationType.Issue);
+    }
+
+    public void setEmailRecipientIssueReports(final String emailRecipientIssueReports) {
+        XDAT.replaceSubscriberList(emailRecipientIssueReports, NotificationType.Issue, getEmailAllowNonuserSubscribers());
+    }
+
+    public String getEmailRecipientNewUserAlert() {
+        return XDAT.getSubscriberEmailsListAsString(NotificationType.NewUser);
+    }
+
+    public void setEmailRecipientNewUserAlert(final String emailRecipientNewUserAlert) {
+        XDAT.replaceSubscriberList(emailRecipientNewUserAlert, NotificationType.NewUser, getEmailAllowNonuserSubscribers());
+    }
+
+    public String getEmailRecipientUpdate() {
+        return XDAT.getSubscriberEmailsListAsString(NotificationType.Update);
+    }
+
+    public void setEmailRecipientUpdate(final String emailRecipientUpdate) {
+        XDAT.replaceSubscriberList(emailRecipientUpdate, NotificationType.Update, getEmailAllowNonuserSubscribers());
+    }
+
     @NrgPreference(defaultValue = "localhost", aliases = {"host", "hostname"})
     public String getSmtpHostname() {
         return getValue("smtpHostname");
@@ -353,42 +385,6 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'notifyAdminSessionTransfer': something is very wrong here.", e);
         }
-    }
-
-    @NrgPreference
-    public String getEmailRecipientErrorMessages() {
-        return XDAT.getSubscriberEmailsListAsString(NotificationType.Error);
-    }
-
-    public void setEmailRecipientErrorMessages(final String emailRecipientErrorMessages) {
-        XDAT.replaceSubscriberList(emailRecipientErrorMessages, NotificationType.Error, getEmailAllowNonuserSubscribers());
-    }
-
-    @NrgPreference
-    public String getEmailRecipientIssueReports() {
-        return XDAT.getSubscriberEmailsListAsString(NotificationType.Issue);
-    }
-
-    public void setEmailRecipientIssueReports(final String emailRecipientIssueReports) {
-        XDAT.replaceSubscriberList(emailRecipientIssueReports, NotificationType.Issue, getEmailAllowNonuserSubscribers());
-    }
-
-    @NrgPreference
-    public String getEmailRecipientNewUserAlert() {
-        return XDAT.getSubscriberEmailsListAsString(NotificationType.NewUser);
-    }
-
-    public void setEmailRecipientNewUserAlert(final String emailRecipientNewUserAlert) {
-        XDAT.replaceSubscriberList(emailRecipientNewUserAlert, NotificationType.NewUser, getEmailAllowNonuserSubscribers());
-    }
-
-    @NrgPreference
-    public String getEmailRecipientUpdate() {
-        return XDAT.getSubscriberEmailsListAsString(NotificationType.Update);
-    }
-
-    public void setEmailRecipientUpdate(final String emailRecipientUpdate) {
-        XDAT.replaceSubscriberList(emailRecipientUpdate, NotificationType.Update, getEmailAllowNonuserSubscribers());
     }
 
     @NrgPreference(defaultValue = "true")

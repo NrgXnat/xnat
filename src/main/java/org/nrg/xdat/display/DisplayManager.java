@@ -1036,8 +1036,7 @@ public class DisplayManager {
      * @throws ConfigServiceException When the name can't be located.
      */
     public String getSingularDisplayNameForImageSession() throws ConfigServiceException {
-        return StringUtils.defaultIfEmpty(
-                XDAT.getSiteConfigurationProperty("imageSessionDisplayNameSingular"), "Session");
+        return XDAT.getSiteConfigurationProperty("imageSessionDisplayNameSingular", "Session");
     }
 
     /**
@@ -1047,8 +1046,7 @@ public class DisplayManager {
      * @throws ConfigServiceException When the name can't be located.
      */
     public String getPluralDisplayNameForImageSession() throws ConfigServiceException {
-        return StringUtils.defaultIfEmpty(
-                XDAT.getSiteConfigurationProperty("imageSessionDisplayNamePlural"), "Sessions");
+        return XDAT.getSiteConfigurationProperty("imageSessionDisplayNamePlural", "Sessions");
     }
 
     /**

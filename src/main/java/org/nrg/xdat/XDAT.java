@@ -12,6 +12,7 @@ package org.nrg.xdat;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -33,7 +34,6 @@ import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
-import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -117,40 +117,31 @@ public class XDAT implements Initializable, Configurable{
         return whitelist.getContents();
     }
 
-    public static String getSiteConfigurationProperty(String property,String _default) throws ConfigServiceException {
-    	Properties properties = getSiteConfiguration();
-        if(properties.containsKey(property)){
-        	return properties.getProperty(property);
-        }else{
-        	return _default;
-        }
-    }
+	public static String getSiteConfigurationProperty(final String property) throws ConfigServiceException {
+    	return getSiteConfigurationProperty(property, null);
+	}
 
-    public static boolean getBoolSiteConfigurationProperty(String property,boolean _default) {
-    	try {
-			Properties properties = getSiteConfiguration();
-			if(properties.containsKey(property)){
-				return Boolean.valueOf(properties.getProperty(property));
-			}else{
-				return _default;
-			}
+	public static String getSiteConfigurationProperty(final String property, final String _default) throws ConfigServiceException {
+		final SiteConfigPreferences preferences = getSiteConfigPreferences();
+		final String value = preferences.getValue(property);
+		return StringUtils.defaultIfBlank(value, _default);
+	}
+
+	public static boolean getBoolSiteConfigurationProperty(final String property, final boolean _default) {
+		try {
+			return BooleanUtils.toBoolean(getSiteConfigurationProperty(property, BooleanUtils.toStringTrueFalse(_default)));
 		} catch (ConfigServiceException e) {
 			return _default;
 		}
-    }
+	}
 
-    public static String safeSiteConfigProperty(String property, String _default){
-    	try{
-	    	Properties properties = getSiteConfiguration();
-	        if(properties.containsKey(property)){
-	        	return properties.getProperty(property);
-	        }else{
-	        	return _default;
-	        }
-    	}catch(Throwable e){
-        	return _default;
-    	}
-    }
+	public static String safeSiteConfigProperty(final String property, final String _default) {
+		try {
+			return getSiteConfigurationProperty(property, _default);
+		} catch (Throwable e) {
+			return _default;
+		}
+	}
 
 	public static boolean verificationOn() {
 		return getBoolSiteConfigurationProperty("emailVerification",false);
@@ -270,7 +261,7 @@ public class XDAT implements Initializable, Configurable{
 
 	public static String getSiteLogoPath() {
         try {
-            return getSiteConfigurationProperty("siteLogoPath");
+            return getSiteConfigurationProperty("siteLogoPath", "");
         } catch (ConfigServiceException e) {
             logger.error("An error occurred trying to retrieve the site logo path setting, using the default", e);
             return "/images/logo.png";
@@ -538,34 +529,12 @@ public class XDAT implements Initializable, Configurable{
 	    return _configurationService;
 	}
 
-    public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
-		final SiteConfigPreferences preferences = getSiteConfigPreferences();
-        if (preferences != null) {
-			final Object preference = preferences.get(property);
-			return preference != null ? preference.toString() : null;
-        }
-        return getSiteConfigPreferences().getValue(property);
-    }
-
-    public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
-		final UserI userDetails = getUserDetails();
-		if (userDetails != null) {
-			try {
-				getSiteConfigPreferences().set(value, property);
-			} catch (InvalidPreferenceName invalidPreferenceName) {
-				throw new ConfigServiceException("Unknown preference setting: " + invalidPreferenceName.getMessage(), invalidPreferenceName);
-			}
-		}
-	}
-
     public static Properties getSiteConfiguration() throws ConfigServiceException {
-		final Properties properties = new Properties();
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
-		for (final String preference : preferences.keySet()) {
-			final Object value = preferences.get(preference);
-			properties.setProperty(preference, value != null ? value.toString() : "");
+		if (preferences == null) {
+			throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "The site configuration preferences aren't available for some reason.");
 		}
-		return properties;
+		return preferences.asProperties();
     }
 
     /**

@@ -75,7 +75,6 @@
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.1</nrg.ecat.version>
         <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
-        <nrg.nrgutil.version>2.0.0</nrg.nrgutil.version>
         <nrg.extattr.version>4.2.1</nrg.extattr.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
@@ -335,11 +334,6 @@
                 <groupId>org.nrg</groupId>
                 <artifactId>ecat-edit</artifactId>
                 <version>${nrg.ecat.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.nrg</groupId>
-                <artifactId>nrgutil</artifactId>
-                <version>${nrg.nrgutil.version}</version>
             </dependency>
 
             <!-- XNAT/XDAT dependency definitions -->

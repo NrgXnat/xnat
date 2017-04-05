@@ -9,6 +9,7 @@
 
 package org.nrg.prefs.tools.properties;
 
+import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,10 @@ public class PropertiesPrefsTool {
     }
 
     public Map<String, Object> getPreferences() {
+        return _preferences;
+    }
+
+    public PreferenceBean getPreferenceBean() {
         return _preferences;
     }
 

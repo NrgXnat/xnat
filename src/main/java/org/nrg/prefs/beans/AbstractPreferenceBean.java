@@ -35,7 +35,7 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.framework.utilities.OrderedProperties;
-import org.nrg.framework.utilities.Reflection;
+import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.PreferenceInfo;
@@ -45,6 +45,7 @@ import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.services.PreferenceBeanHelper;
+import org.reflections.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -58,6 +59,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import static com.google.common.base.Predicates.*;
+import static org.nrg.framework.utilities.Reflection.findAnnotationInClassHierarchy;
+import static org.nrg.framework.utilities.Reflection.getGetter;
 
 public abstract class AbstractPreferenceBean extends HashMap<String, Object> implements PreferenceBean {
     /**
@@ -272,7 +275,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Override
     public Object getProperty(final String preference, final Object defaultValue) throws UnknownToolId {
         if (containsKey(preference)) {
-            final Object value = super.get(preference);
+            final Object value = getFromCache(preference);
             if (value != null) {
                 _log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
                 return value;
@@ -283,34 +286,33 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         if (_methods.containsKey(preference)) {
             method = _methods.get(preference);
         } else {
-            try {
-                method = getClass().getMethod("get" + StringUtils.capitalize(preference));
-                _methods.put(preference, method);
-            } catch (NoSuchMethodException e) {
+            method = getGetter(getClass(), AbstractPreferenceBean.class, preference, ReflectionUtils.withAnnotation(NrgPreference.class));
+            if (method == null) {
                 final Tool tool = _preferenceService.getTool(getToolId());
                 if (tool.isStrict()) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
                 }
                 final String returnValue = getValue(preference);
                 if (StringUtils.isNotBlank(returnValue)) {
-                    super.put(preference, returnValue);
+                    storeToCache(preference, returnValue);
                     return returnValue;
                 }
                 if (defaultValue == null) {
                     return null;
                 }
 
-                super.put(preference, defaultValue);
+                storeToCache(preference, defaultValue);
                 return defaultValue;
             }
+            _methods.put(preference, method);
         }
         try {
             final Object returnValue = method.invoke(this);
             if (returnValue != null) {
-                super.put(preference, returnValue);
+                storeToCache(preference, returnValue);
                 return returnValue;
             }
-            super.put(preference, defaultValue);
+            storeToCache(preference, defaultValue);
             return defaultValue;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
@@ -498,6 +500,34 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     @JsonIgnore
     @Override
+    public <T> T getObjectValue(final String preferenceName) throws UnknownToolId {
+        return getObjectValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName);
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> T getObjectValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
+        final PreferenceInfo preference = _preferences.get(preferenceName);
+        //noinspection unchecked
+        return (T) getObjectValue(scope, entityId, preferenceName, preference.getValueType());
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> T getObjectValue(final Scope scope, final String entityId, final String preferenceName, final Class<T> clazz) throws UnknownToolId {
+        final String value = getValue(scope, entityId, preferenceName);
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        try {
+            return deserialize(value, clazz);
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to deserialize the preference " + preferenceName + " to type " + clazz.getName(), e);
+        }
+    }
+
+    @JsonIgnore
+    @Override
     public void create(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _preferenceService.create(getToolId(), getNamespacedPropertyId(key, subkeys), value);
     }
@@ -535,6 +565,12 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         } else {
             _preferenceService.setPreferenceValue(getToolId(), namespacedPropertyId, scope, entityId, value);
         }
+        // This caches string values that aren't sub-items in other preferences. Other data types use setBooleanValue(),
+        // setIntegerValue(), etc.: map caching is performed in those methods before serializing to a string and calling
+        // this method. String values don't have that layer and so need to be handled here.
+        if (subkeys.length == 0 && _preferences.containsKey(key) && _preferences.get(key).getValueType().equals(String.class)) {
+            storeToCache(key, value);
+        }
         return current;
     }
 
@@ -544,7 +580,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
         // Cheap map caching here is only for site-level settings.
         if (subkeys.length == 0) {
-            super.put(key, value);
+            storeToCache(key, value);
         }
         setBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
@@ -561,7 +597,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
         // Cheap map caching here is only for site-level settings.
         if (subkeys.length == 0) {
-            super.put(key, value);
+            storeToCache(key, value);
         }
         setIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
@@ -578,7 +614,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
         // Cheap map caching here is only for site-level settings.
         if (subkeys.length == 0) {
-            super.put(key, value);
+            storeToCache(key, value);
         }
         setLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
@@ -595,7 +631,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
         // Cheap map caching here is only for site-level settings.
         if (subkeys.length == 0) {
-            super.put(key, value);
+            storeToCache(key, value);
         }
         setFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
@@ -612,7 +648,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
         // Cheap map caching here is only for site-level settings.
         if (subkeys.length == 0) {
-            super.put(key, value);
+            storeToCache(key, value);
         }
         setDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
@@ -629,7 +665,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
         // Cheap map caching here is only for site-level settings.
         if (subkeys.length == 0) {
-            super.put(key, value);
+            storeToCache(key, value);
         }
         setDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
@@ -642,9 +678,27 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     @JsonIgnore
     @Override
+    public <T> void setObjectValue(final T value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        // Cheap map caching here is only for site-level settings.
+        storeToCache(key, value);
+        setObjectValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> void setObjectValue(final Scope scope, final String entityId, T value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        try {
+            set(scope, entityId, serialize(value), key, subkeys);
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", e);
+        }
+    }
+
+    @JsonIgnore
+    @Override
     public <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
         // Cheap map caching here is only for site-level settings.
-        super.put(preferenceName, map);
+        storeToCache(preferenceName, map);
         setMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, map);
     }
 
@@ -665,7 +719,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Override
     public <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
         // Cheap map caching here is only for site-level settings.
-        super.put(preferenceName, list);
+        storeToCache(preferenceName, list);
         setListValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, list);
     }
 
@@ -683,7 +737,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Override
     public <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
         // Cheap map caching here is only for site-level settings.
-        super.put(preferenceName, array);
+        storeToCache(preferenceName, array);
         setArrayValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, array);
     }
 
@@ -706,13 +760,13 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         // Delete the value here if this is the primary value without subkeys. If subkeys present, refresh value.
         // Cheap map caching here is only for site-level settings.
         if (subkeys.length == 0) {
-            super.remove(key);
+            removeFromCache(key);
         } else {
             final Object value = getProperty(key);
             if (value == null) {
-                super.remove(key);
+                removeFromCache(key);
             } else {
-                super.put(key, value);
+                storeToCache(key, value);
             }
         }
     }
@@ -770,7 +824,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             return null;
         }
         final String keyed = key.toString();
-        return containsKey(keyed) ? super.get(keyed) : getProperty(keyed);
+        return containsKey(keyed) ? getFromCache(keyed) : getProperty(keyed);
     }
 
     /**
@@ -911,13 +965,25 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     private NrgPreferenceBean getNrgPreferenceBean() {
         if (_annotation == null) {
-            _annotation = Reflection.findAnnotationInClassHierarchy(getClass(), NrgPreferenceBean.class);
+            _annotation = findAnnotationInClassHierarchy(getClass(), NrgPreferenceBean.class);
         }
         return _annotation;
     }
 
     private String resolveAlias(final String preferenceName) {
         return _aliases.containsKey(preferenceName) ? _aliases.get(preferenceName) : preferenceName;
+    }
+
+    private Object getFromCache(final String key) {
+        return super.get(key);
+    }
+
+    private void storeToCache(final String key, final Object value) {
+        super.put(key, value);
+    }
+
+    private void removeFromCache(final String key) {
+        super.remove(key);
     }
 
     private void processDefaultPreferences() {

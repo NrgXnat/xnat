@@ -13,6 +13,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.utilities.Reflection;
+import org.nrg.prefs.annotations.NrgPreference;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
+import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.configuration.NrgPrefsServiceTestsConfiguration;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
@@ -22,6 +26,7 @@ import org.nrg.prefs.tools.beans.BeanPrefsToolPreference;
 import org.nrg.prefs.tools.properties.PropertiesPrefsTool;
 import org.nrg.prefs.tools.relaxed.RelaxedPrefsTool;
 import org.nrg.prefs.tools.strict.StrictPrefsTool;
+import org.reflections.ReflectionUtils;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -29,12 +34,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
+import static org.nrg.prefs.services.PreferenceBeanHelper.propertize;
 
 /**
  * Tests the NRG preferences service. This tests the full range of operations of the preferences service.
@@ -43,7 +51,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = NrgPrefsServiceTestsConfiguration.class)
 @Rollback
 @Transactional
-public class NrgPrefsServiceTests {
+public class PreferenceBeanTests {
     @Test
     public void testBasicPrefsTool() throws InvalidPreferenceName {
         assertNotNull(_basicPrefsTool);
@@ -55,9 +63,11 @@ public class NrgPrefsServiceTests {
         assertEquals("valueBMod", _basicPrefsTool.getPrefB());
         final Map<String, Object> preferences = _basicPrefsTool.getPreferences();
         assertEquals(2, preferences.size());
+        validateBeanCache(_basicPrefsTool.getPreferenceBean(), preferences);
     }
 
     @Test
+    @Ignore("This tests for something (using non-bean property names) that I don't want to have happen any more.")
     public void testPropertiesTestTool() throws InvalidPreferenceName {
         assertNotNull(_propertiesPrefsTool);
         assertEquals("valueA", _propertiesPrefsTool.getPropertyA());
@@ -68,6 +78,7 @@ public class NrgPrefsServiceTests {
         assertEquals("valueBMod", _propertiesPrefsTool.getPropertyB());
         final Map<String, Object> preferences = _propertiesPrefsTool.getPreferences();
         assertEquals(2, preferences.size());
+        validateBeanCache(_propertiesPrefsTool.getPreferenceBean(), preferences);
     }
 
     @Test
@@ -91,6 +102,7 @@ public class NrgPrefsServiceTests {
         assertEquals("This can be anything!", _relaxedPrefsTool.getRelaxedWhatever("freeForm"));
         final Map<String, Object> preferences = _relaxedPrefsTool.getPreferences();
         assertEquals(4, preferences.size());
+        validateBeanCache(_relaxedPrefsTool.getPreferenceBean(), preferences);
     }
 
     @Test(expected = InvalidPreferenceName.class)
@@ -107,6 +119,8 @@ public class NrgPrefsServiceTests {
 
         final Map<String, Object> preferences = _strictPrefsTool.getPreferences();
         assertEquals(2, preferences.size());
+
+        validateBeanCache(_strictPrefsTool.getPreferenceBean(), preferences);
 
         // This will throw the InvalidPreferenceName exception.
         _strictPrefsTool.setStrictPrefC("defaultC");
@@ -204,8 +218,11 @@ public class NrgPrefsServiceTests {
         assertTrue(prefEs.containsKey("CCIR"));
         assertEquals("XNAT", prefEs.get("XNAT").getAeTitle());
         assertEquals("CCIR", prefEs.get("CCIR").getAeTitle());
+
         final Map<String, Object> preferences = _beanPrefsTool.getPreferences();
         assertEquals(5, preferences.size());
+
+        validateBeanCache(_beanPrefsTool.getPreferenceBean(), preferences);
     }
 
     @Ignore
@@ -245,6 +262,28 @@ public class NrgPrefsServiceTests {
         // _service.createTool("siteConfig", "Site Configuration", "This is the main tool for mapping the site configuration", defaults, false, AbstractPreferenceBean.class.getName(), null);
         // Assert.assertEquals("true", _service.getPreferenceValue("siteConfig", "enableDicomReceiver"));
         // Assert.assertEquals("org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", _service.getPreferenceValue("siteConfig", "checksums.property.changed.listener"));
+    }
+
+    private void validateBeanCache(final PreferenceBean bean, final Map<String, Object> preferences) {
+        @SuppressWarnings("unchecked")
+        final List<Method> getters = Reflection.getGetters(bean.getClass(), AbstractPreferenceBean.class, ReflectionUtils.withAnnotation(NrgPreference.class));
+        for (final Method getter : getters) {
+            final String name = propertize(getter.getName());
+            assertTrue(preferences.containsKey(name));
+            final Object value = preferences.get(name);
+            assertNotNull(value);
+            assertTrue(getter.getReturnType().isAssignableFrom(value.getClass()));
+            try {
+                if (value instanceof List) {
+                    //noinspection unchecked
+                    assertTrue(((List) value).containsAll((List) getter.invoke(bean)));
+                } else {
+                    assertEquals(value, getter.invoke(bean));
+                }
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                fail("An " + e.getClass().getName() + " error occurred invoking the " + getter.getName() + " method on the " + bean.getClass().getName() + " class: " + e.getMessage());
+            }
+        }
     }
 
     @Inject

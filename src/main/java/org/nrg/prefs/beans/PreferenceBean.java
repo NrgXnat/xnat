@@ -116,6 +116,12 @@ public interface PreferenceBean extends Map<String, Object> {
 
     Date getDateValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
 
+    <T> T getObjectValue(String preferenceName) throws UnknownToolId;
+
+    <T> T getObjectValue(Scope scope, String entityId, String preferenceName) throws UnknownToolId;
+
+    <T> T getObjectValue(Scope scope, String entityId, String preferenceName, Class<T> clazz) throws UnknownToolId;
+
     <T> Map<String, T> getMapValue(final String preferenceName) throws UnknownToolId;
 
     <T> Map<String, T> getMapValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId;
@@ -159,6 +165,10 @@ public interface PreferenceBean extends Map<String, Object> {
     void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
     void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    <T> void setObjectValue(T value, String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    <T> void setObjectValue(Scope scope, String entityId, T value, String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
     <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName;
 

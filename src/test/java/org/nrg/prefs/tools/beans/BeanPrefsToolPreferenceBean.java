@@ -9,6 +9,7 @@
 
 package org.nrg.prefs.tools.beans;
 
+import com.google.common.collect.Lists;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
@@ -32,11 +33,11 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
 
     @NrgPreference(defaultValue = "{'scpId':'CCIR','aeTitle':'CCIR','port':8104,'enabled':true}")
     public BeanPrefsToolPreference getPrefA() throws IOException {
-        return deserialize(getValue("prefA"), BeanPrefsToolPreference.class);
+        return getObjectValue("prefA");
     }
 
     public void setPrefA(final BeanPrefsToolPreference preference) throws IOException, InvalidPreferenceName {
-        set(serialize(preference), "prefA");
+        setObjectValue(preference, "prefA");
     }
 
     @NrgPreference(defaultValue = "['XNAT','CCIR']")
@@ -45,7 +46,7 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setPrefBs(final List<String> preferences) throws IOException, InvalidPreferenceName {
-        set(serialize(preferences), "prefBs");
+        setListValue("prefBs", preferences);
     }
 
     @NrgPreference(defaultValue = "[{'scpId':'XNAT','aeTitle':'XNAT','port':8104,'enabled':true},{'scpId':'CCIR','aeTitle':'CCIR','port':8104,'enabled':true}]", key = "scpId")
@@ -54,24 +55,50 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setPrefCs(final List<BeanPrefsToolPreference> preferences) throws IOException, InvalidPreferenceName {
-        for (final BeanPrefsToolPreference preference : preferences) {
-            setPrefC(preference);
-        }
+        setListValue("prefCs", preferences);
     }
 
     public BeanPrefsToolPreference getPrefC(final String scpId) throws IOException {
-        final String value = getValue("prefCs", scpId);
-        return deserialize(value, BeanPrefsToolPreference.class);
+        final List<BeanPrefsToolPreference> prefCs = getPrefCs();
+        for (final BeanPrefsToolPreference prefC : prefCs) {
+            if (prefC.getScpId().equals(scpId)) {
+                return prefC;
+            }
+        }
+        return null;
     }
 
-    public void setPrefC(final BeanPrefsToolPreference instance) throws IOException, InvalidPreferenceName {
-        final String prefCId = getPrefId("prefCs", instance);
-        set(serialize(instance), prefCId);
+    public void setPrefC(final BeanPrefsToolPreference preference) throws IOException, InvalidPreferenceName {
+        final String scpId = preference.getScpId();
+        final List<BeanPrefsToolPreference> prefCs = getPrefCs();
+        final List<BeanPrefsToolPreference> newPrefCs = Lists.newArrayList();
+        for (final BeanPrefsToolPreference prefC : prefCs) {
+            if (prefC.getScpId().equals(scpId)) {
+                newPrefCs.add(preference);
+                break;
+            } else {
+                newPrefCs.add(prefC);
+            }
+        }
+        if (!newPrefCs.contains(preference)) {
+            newPrefCs.add(preference);
+        }
+        setPrefCs(newPrefCs);
     }
 
-    public void deletePrefC(final String scpId) throws InvalidPreferenceName {
-        final String prefCId = getNamespacedPropertyId("prefCs", scpId);
-        delete(prefCId);
+    public void deletePrefC(final String scpId) throws InvalidPreferenceName, IOException {
+        final List<BeanPrefsToolPreference> prefCs = getPrefCs();
+        BeanPrefsToolPreference target = null;
+        for (final BeanPrefsToolPreference prefC : prefCs) {
+            if (prefC.getScpId().equals(scpId)) {
+                target = prefC;
+                break;
+            }
+        }
+        if (target != null) {
+            prefCs.remove(target);
+            setPrefCs(prefCs);
+        }
     }
 
     @NrgPreference(defaultValue = "{'XNAT':'192.168.10.1','CCIR':'192.168.10.100'}")
@@ -88,7 +115,9 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setPrefD(final String scpId, final String preference) throws InvalidPreferenceName, IOException {
-        set(serialize(preference), "prefDs", scpId);
+        final Map<String, String> prefDs = getPrefDs();
+        prefDs.put(scpId, preference);
+        setPrefDs(prefDs);
     }
 
     public void deletePrefD(final String scpId) throws InvalidPreferenceName {
@@ -110,16 +139,16 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setPrefE(final String scpId, final BeanPrefsToolPreference preference) throws InvalidPreferenceName, IOException {
-        set(serialize(preference), "prefEs", scpId);
+        final Map<String, BeanPrefsToolPreference> prefEs = getPrefEs();
+        prefEs.put(scpId, preference);
+        setPrefEs(prefEs);
     }
 
-    public void deletePrefE(final String scpId) throws InvalidPreferenceName {
-        final String prefEId = getNamespacedPropertyId("prefEs", scpId);
-        delete(prefEId);
-    }
-
-    private String getPrefId(final String prefId, final BeanPrefsToolPreference preference) {
-        final String scpId = preference.getScpId();
-        return getNamespacedPropertyId(prefId, scpId);
+    public void deletePrefE(final String scpId) throws InvalidPreferenceName, IOException {
+        final Map<String, BeanPrefsToolPreference> prefEs = getPrefEs();
+        if (prefEs.containsKey(scpId)) {
+            prefEs.remove(scpId);
+            setPrefEs(prefEs);
+        }
     }
 }

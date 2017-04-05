@@ -9,6 +9,9 @@
 
 package org.nrg.prefs.tools.beans;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 /**
  * For this test, this class represents any preference that might be set as a full object, i.e. as a bean. This
  * particular bean is based on the requirements for the DICOM SCP manager service, which manages multiple instances of
@@ -64,10 +67,44 @@ public class BeanPrefsToolPreference {
         _enabled = enabled;
     }
 
-    private String _scpId;
-    private int _port;
-    private String _aeTitle;
-    private String _identifier;
-    private String _fileNamer;
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || getClass() != other.getClass()) {
+            return false;
+        }
+
+        final BeanPrefsToolPreference that = (BeanPrefsToolPreference) other;
+
+        return new EqualsBuilder()
+                .append(getPort(), that.getPort())
+                .append(isEnabled(), that.isEnabled())
+                .append(getScpId(), that.getScpId())
+                .append(getAeTitle(), that.getAeTitle())
+                .append(getIdentifier(), that.getIdentifier())
+                .append(getFileNamer(), that.getFileNamer())
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(getScpId())
+                .append(getPort())
+                .append(getAeTitle())
+                .append(getIdentifier())
+                .append(getFileNamer())
+                .append(isEnabled())
+                .toHashCode();
+    }
+
+    private String  _scpId;
+    private int     _port;
+    private String  _aeTitle;
+    private String  _identifier;
+    private String  _fileNamer;
     private boolean _enabled;
 }

@@ -9,6 +9,7 @@
 
 package org.nrg.prefs.tools.beans;
 
+import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.stereotype.Component;
 
@@ -52,7 +53,7 @@ public class BeanPrefsTool {
         _bean.setPrefC(bean);
     }
 
-    public void deletePrefC(final String prefC) throws InvalidPreferenceName {
+    public void deletePrefC(final String prefC) throws InvalidPreferenceName, IOException {
         _bean.deletePrefC(prefC);
     }
 
@@ -92,11 +93,15 @@ public class BeanPrefsTool {
         _bean.setPrefE(scpId, bean);
     }
 
-    public void deletePrefE(final String prefE) throws InvalidPreferenceName {
+    public void deletePrefE(final String prefE) throws InvalidPreferenceName, IOException {
         _bean.deletePrefE(prefE);
     }
 
     public Map<String, Object> getPreferences() {
+        return _bean;
+    }
+
+    public PreferenceBean getPreferenceBean() {
         return _bean;
     }
 

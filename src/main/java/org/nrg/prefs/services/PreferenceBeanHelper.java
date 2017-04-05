@@ -16,7 +16,6 @@ import org.nrg.framework.exceptions.NotParameterizedTypeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
-import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
@@ -33,8 +32,10 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.regex.Matcher;
 
-import static org.reflections.ReflectionUtils.*;
+import static org.nrg.framework.utilities.Reflection.*;
+import static org.reflections.ReflectionUtils.withAnnotation;
 
 /**
  * Utility methods for working with preference beans.
@@ -75,24 +76,24 @@ public class PreferenceBeanHelper {
             final Type genericType;
             final Method getter;
             final Method setter;
-            if (Reflection.isGetter(method)) {
-                name = propertize(method.getName(), "get");
+            if (isGetter(method)) {
+                name = propertize(method.getName());
                 property = annotation.property();
                 type = method.getReturnType();
                 genericType = method.getGenericReturnType();
                 getter = method;
-                setter = getPropertyMethod(clazz, "set", name);
-            } else if (Reflection.isSetter(method)) {
+                setter = getSetter(clazz, name);
+            } else if (isSetter(method)) {
                 final Class<?>[] parameterTypes = method.getParameterTypes();
                 if (parameterTypes.length != 1) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You can't annotate the " + method.getName() + "() method with " + parameterTypes.length + " parameters: it must have one and only one parameter.");
                 }
-                name = propertize(method.getName(), "set");
+                name = propertize(method.getName());
                 property = annotation.property();
                 type = parameterTypes[0];
                 genericType = method.getGenericParameterTypes()[0];
                 setter = method;
-                getter = getPropertyMethod(clazz, "get", name);
+                getter = getGetter(clazz, name);
             } else {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method doesn't appear to be a getter or a setter, but is annotated anyway. Only getter and setter methods should be annotated.");
             }
@@ -120,7 +121,7 @@ public class PreferenceBeanHelper {
             if (isArray || isList) {
                 final Class<?> itemType;
                 try {
-                    itemType = isArray ? type.getComponentType() : Reflection.getClassesFromParameterizedType(genericType).get(0);
+                    itemType = isArray ? type.getComponentType() : getClassesFromParameterizedType(genericType).get(0);
                 } catch (NotParameterizedTypeException e) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a list that is not parameterized, i.e. is just a List rather than List<String>. This is not currently supported.");
                 } catch (NotConcreteTypeException e) {
@@ -135,7 +136,7 @@ public class PreferenceBeanHelper {
             } else if (isMap) {
                 final List<Class<?>> classes;
                 try {
-                    classes = Reflection.getClassesFromParameterizedType(genericType);
+                    classes = getClassesFromParameterizedType(genericType);
                 } catch (NotParameterizedTypeException e) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that is not parameterized, i.e. is just a Map rather than Map<String, String>. This is not currently supported.");
                 } catch (NotConcreteTypeException e) {
@@ -180,21 +181,12 @@ public class PreferenceBeanHelper {
         }
     }
 
-    private static String propertize(final String name, final String type) {
-        final String prefix;
-        if (type.equals("get")) {
-            prefix = name.startsWith("is") ? "is" : "get";
-        } else {
-            prefix = type;
+    public static String propertize(final String name) {
+        final Matcher matcher = PATTERN_PROPERTY.matcher(name);
+        if (!matcher.matches()) {
+            return name;
         }
-        return StringUtils.uncapitalize(name.replace(prefix, ""));
-    }
-
-    private static Method getPropertyMethod(final Class<?> clazz, final String type, final String name) {
-        final int typeArgsCount = StringUtils.equals("get", type) ? 0 : 1;
-        @SuppressWarnings("unchecked")
-        final Set<Method> methods = ReflectionUtils.getAllMethods(clazz, withName(type + StringUtils.capitalize(name)), withParametersCount(typeArgsCount));
-        return methods.size() > 0 ? methods.toArray(new Method[methods.size()])[0] : null;
+        return StringUtils.uncapitalize(matcher.group("property"));
     }
 
     private static final Logger _log = LoggerFactory.getLogger(PreferenceBeanHelper.class);

@@ -59,7 +59,7 @@ import java.util.*;
 
 import static com.google.common.base.Predicates.*;
 
-public abstract class AbstractPreferenceBean implements PreferenceBean {
+public abstract class AbstractPreferenceBean extends HashMap<String, Object> implements PreferenceBean {
     /**
      * Initializes default preferences for the bean and sets the preference service to be used for managing system
      * preferences.
@@ -203,7 +203,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
      *
      * @return The requested preferences.
      */
-    public Map<String, Object> getPreferences(final Set<String> preferenceNames){
+    public Map<String, Object> getPreferences(final Set<String> preferenceNames) {
         return Maps.filterKeys(this, Predicates.in(preferenceNames));
     }
 
@@ -271,6 +271,14 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public Object getProperty(final String preference, final Object defaultValue) throws UnknownToolId {
+        if (containsKey(preference)) {
+            final Object value = super.get(preference);
+            if (value != null) {
+                _log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
+                return value;
+            }
+            _log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
+        }
         final Method method;
         if (_methods.containsKey(preference)) {
             method = _methods.get(preference);
@@ -284,12 +292,26 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
                 }
                 final String returnValue = getValue(preference);
-                return StringUtils.defaultIfBlank(returnValue, defaultValue == null ? null : defaultValue.toString());
+                if (StringUtils.isNotBlank(returnValue)) {
+                    super.put(preference, returnValue);
+                    return returnValue;
+                }
+                if (defaultValue == null) {
+                    return null;
+                }
+
+                super.put(preference, defaultValue);
+                return defaultValue;
             }
         }
         try {
             final Object returnValue = method.invoke(this);
-            return returnValue == null ? defaultValue : returnValue;
+            if (returnValue != null) {
+                super.put(preference, returnValue);
+                return returnValue;
+            }
+            super.put(preference, defaultValue);
+            return defaultValue;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
         }
@@ -519,6 +541,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public void setBooleanValue(final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
+        // Cheap map caching here is only for site-level settings.
+        if (subkeys.length == 0) {
+            super.put(key, value);
+        }
         setBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
@@ -531,6 +558,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public void setIntegerValue(final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
+        // Cheap map caching here is only for site-level settings.
+        if (subkeys.length == 0) {
+            super.put(key, value);
+        }
         setIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
@@ -543,6 +575,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public void setLongValue(final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
+        // Cheap map caching here is only for site-level settings.
+        if (subkeys.length == 0) {
+            super.put(key, value);
+        }
         setLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
@@ -555,6 +592,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public void setFloatValue(final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
+        // Cheap map caching here is only for site-level settings.
+        if (subkeys.length == 0) {
+            super.put(key, value);
+        }
         setFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
@@ -567,6 +609,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public void setDoubleValue(final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
+        // Cheap map caching here is only for site-level settings.
+        if (subkeys.length == 0) {
+            super.put(key, value);
+        }
         setDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
@@ -579,6 +626,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        // Only set the value here if this is the primary value without subkeys. Value before subkeys should be set at List or Map setter.
+        // Cheap map caching here is only for site-level settings.
+        if (subkeys.length == 0) {
+            super.put(key, value);
+        }
         setDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
@@ -591,6 +643,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
+        // Cheap map caching here is only for site-level settings.
+        super.put(preferenceName, map);
         setMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, map);
     }
 
@@ -610,6 +664,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
+        // Cheap map caching here is only for site-level settings.
+        super.put(preferenceName, list);
         setListValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, list);
     }
 
@@ -626,6 +682,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
+        // Cheap map caching here is only for site-level settings.
+        super.put(preferenceName, array);
         setArrayValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, array);
     }
 
@@ -642,7 +700,21 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public void delete(final String key, final String... subkeys) throws InvalidPreferenceName {
-        _preferenceService.deletePreference(getToolId(), getNamespacedPropertyId(key, subkeys));
+        final String namespacedPropertyId = getNamespacedPropertyId(key, subkeys);
+        _preferenceService.deletePreference(getToolId(), namespacedPropertyId);
+
+        // Delete the value here if this is the primary value without subkeys. If subkeys present, refresh value.
+        // Cheap map caching here is only for site-level settings.
+        if (subkeys.length == 0) {
+            super.remove(key);
+        } else {
+            final Object value = getProperty(key);
+            if (value == null) {
+                super.remove(key);
+            } else {
+                super.put(key, value);
+            }
+        }
     }
 
     @JsonIgnore
@@ -697,7 +769,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         if (key == null) {
             return null;
         }
-        return getProperty(key.toString());
+        final String keyed = key.toString();
+        return containsKey(keyed) ? super.get(keyed) : getProperty(keyed);
     }
 
     /**
@@ -856,6 +929,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
 
         final String toolId = tool.getToolId();
+        final List<String> preferenceIds = Lists.newArrayList();
         final Properties initializationProperties = getInitializationProperties();
         initializationProperties.putAll(resolvePreferenceAliases(_initPrefs.getPropertiesForNamespace(toolId)));
         final Properties overrideProperties = _initPrefs.getProperties("prefs-override");
@@ -895,6 +969,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
                     try {
                         final Properties properties = convertValueForPreference(info, defaultValue);
+                        preferenceIds.add(info.getName());
 
                         for (final String property : properties.stringPropertyNames()) {
                             if (!_preferenceService.hasPreference(getToolId(), property)) {
@@ -951,6 +1026,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                     if (!_preferenceService.hasPreference(getToolId(), property)) {
                         final String value = initializationProperties.getProperty(property);
                         _preferenceService.create(tool.getToolId(), property, value);
+                        preferenceIds.add(property);
                         _log.info("Created a new preference entry from the initialization settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
                     }
                 }
@@ -966,11 +1042,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                     final String value = overrideProperties.getProperty(property);
                     if (!_preferenceService.hasPreference(getToolId(), property)) {
                         _preferenceService.create(tool.getToolId(), property, value);
+                        preferenceIds.add(property);
                         _log.info("Created a new preference entry from the override settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
                     } else {
                         try {
                             if (!StringUtils.equals(_preferenceService.getPreferenceValue(tool.getToolId(), property), value)) {
                                 _preferenceService.setPreferenceValue(tool.getToolId(), property, value);
+                                preferenceIds.add(property);
                                 _log.info("Updated a preference entry from the override settings for tool {} with the name {} set to value {}.", tool.getToolId(), property, value);
                             }
                         } catch (InvalidPreferenceName invalidPreferenceName) {
@@ -979,6 +1057,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                     }
                 }
             }
+        }
+        // This initializes the preference bean map to allow using that rather than reflected proxied calls to the
+        // bean methods later, which is time consuming.
+        for (final String preferenceId : preferenceIds) {
+            getProperty(preferenceId);
         }
     }
 

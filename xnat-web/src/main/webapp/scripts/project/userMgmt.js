@@ -307,7 +307,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 			this.allUserResultSet= eval("(" + o.responseText +")");
 			this.setFormDisabled(false);
 			this.allLoader.close();
-			this.createPopup();
+			document.getElementById("popup_all_users_button").disabled=false;
 		}catch(e){
 			this.displayError("ERROR " + o.status+ ": Failed to parse complete user list.");
 			this.allLoader.close();
@@ -497,82 +497,6 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 			selections[user_name] = access_level;
         }
     };
-
-	this.createPopup=function(){
-		this.popupLoader=prependLoader("user_list_header","Preparing user list");
-		this.popupLoader.render();
-		var popupDIV = document.createElement("DIV");
-		popupDIV.id="all_users_popup";
-		var popupHD = document.createElement("DIV");
-		popupHD.className="hd";
-		popupDIV.appendChild(popupHD);
-		var popupBD = document.createElement("DIV");
-		popupBD.className="bd";
-		popupDIV.appendChild(popupBD);
-
-		popupHD.innerHTML="Select User(s) and the desired level of access";
-
-		var all_users_table = document.createElement("div");
-		all_users_table.id="all_users_table";
-		all_users_table.style.marginTop="5px";
-		popupBD.appendChild(all_users_table);
-
-		//add to page
-		var tp_fm=document.getElementById("tp_fm");
-		tp_fm.appendChild(popupDIV);
-
-		this.allUsersPopup=new YAHOO.widget.Dialog(popupDIV,{zIndex:999,visible:false,width:"520px",fixedcenter:true});
-
-		var handleCancel = function() {
-			this.hide();
-		};
-
-        var handleSubmit = function() {
-
-		};
-		var myButtons = [ { text:"Submit", handler:handleSubmit, isDefault:true },
-		                  { text:"Cancel", handler:handleCancel } ];
-		this.allUsersPopup.cfg.queueProperty("buttons", myButtons);
-
-        var allUserColumnDefs=[
-            {key:"displayname",label:"Group",formatter:allUsersGroupDropdownFormatter},
-            {key:"login",label:"Username",sortable:true},
-            {key:"firstname",label:"Firstname",sortable:true},
-            {key:"lastname",label:"Lastname",sortable:true},
-            {key:"email",label:"Email",sortable:true}];
-
-        //build all users datatable
-		this.allUsersPopup.alluserDataSource = new YAHOO.util.DataSource(this.allUserResultSet.ResultSet.Result);
-		this.allUsersPopup.alluserDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
-		this.allUsersPopup.alluserDataSource.responseSchema = {
-				fields: ["login","firstname","lastname","email","displayname"]
-		};
-		this.allUsersPopup.allUsersDataTable = new YAHOO.widget.DataTable("all_users_table", allUserColumnDefs,this.allUsersPopup.alluserDataSource,{scrollable:true,height:"300px",width:"600px"});
-
-		this.allUsersPopup.render();
-
-		this.allUsersPopup.show();
-		this.allUsersPopup.hide();
-
-		document.getElementById("popup_all_users_button").disabled=false;
-		this.popupLoader.close();
-	};
-
-	/**************
-	 * Popup dialog box which allows existing users to be selected and added to project.
-	 */
-	this.popupAllUsersBox=function(){
-        if (!this.retrieveAllUsers) {
-            return;
-        }
-		if(this.allUsersPopup==undefined){
-			this.createPopup();
-		}
-
-		document.getElementById("tp_fm").style.display="block";
-
-		this.allUsersPopup.show();
-	};
 
 	this.getAvailableUsers = function(){
 		var availableUsers = [],

@@ -4,6 +4,5 @@
 </li>
 
 <script>
-    XNAT.app.pluginSettings.showTabs = false;
     XNAT.app.pluginSettings.siteSettingsMenuItem('#view-plugin-settings');
 </script>

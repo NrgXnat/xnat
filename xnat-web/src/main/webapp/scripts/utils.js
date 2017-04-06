@@ -484,27 +484,25 @@ $.fn.changeVal = function(){
     if ( arguments.length > 0 && prev !== result ){
         this.trigger('change');
     }
-    return result;
+    return this;
 };
 
 
 // add or remove 'hidden' class
 // and trigger .show() or .hide()
-$.fn.hidden = function(bool){
+// or .fadeIn() or .fadeOut()
+$.fn.hidden = function(bool, speed){
+    var method = 'hide';
     if (bool || bool == null) {
-        this.addClass('hidden').hide();
+        if (speed) method = 'fadeOut';
+        this.addClass('hidden')[method](speed);
     }
     else {
-        this.removeClass('hidden').show();
+        method = speed ? 'fadeIn' : 'show';
+        this.removeClass('hidden')[method](speed);
     }
     return this;
 };
-$.fn.shown = function(bool){
-    bool = !(bool || bool == null);
-    return this.hidden(bool);
-};
-$.fn.unhide = $.fn.shown;
-$.fn.unhidden = $.fn.shown;
 
 
 // Make elements draggable.

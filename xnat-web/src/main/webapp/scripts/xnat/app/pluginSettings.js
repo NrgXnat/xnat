@@ -72,7 +72,7 @@ var XNAT = getObject(XNAT);
         if (container$.length) {
             this.render(container$, 200);
             this.done(function(){
-                container$.removeClass('hidden').fadeIn(200);
+                //container$.removeClass('hidden').fadeIn(200);
                 XNAT.tab.activate(XNAT.tab.active, container$);
             });
         }
@@ -96,12 +96,12 @@ var XNAT = getObject(XNAT);
         }
         return getPluginSettings(name, 'siteSettings').ok(function(){
             hasSiteSettings = true;
-            if (tabs === false || pluginSettings.showTabs === false){
-                showAdminMenuItem();
-            }
-            else {
+            // if (tabs === false || pluginSettings.showTabs === false){
+            //     showAdminMenuItem();
+            // }
+            // else {
                 renderPluginSettingsTabs.call(this, pluginSettings.siteSettingsTabs || null);
-            }
+            // }
         })
     };
 

@@ -85,17 +85,20 @@ var XNAT = getObject(XNAT || {});
         // console.log('tab.select / tab.activate');
         tab.active = tabs.active =
             name || tab.active || tabs.active;
-        container = container || tabs.container || 'body';
-        $$(container)
+        var $container = $$(container || tabs.container || 'body');
+        $container
             .find('li.tab')
             .removeClass('active')
             .filter('[data-tab="' + tab.active + '"]')
             .addClass('active');
-        $$(container)
+        $container
             .find('div.tab-pane')
             .removeClass('active')
             .filter('[data-tab="' + tab.active + '"]')
             .addClass('active');
+        // if a tab is being activated, make sure
+        // the container is NOT hidden
+        $container.hidden(false, 200);
         var newUrl = XNAT.url.updateHashQuery('', 'tab', tab.active);
         window.location.replace(newUrl);
     };
@@ -284,11 +287,13 @@ var XNAT = getObject(XNAT || {});
             tab.activate(clicked, $thisContainer);
         });
 
-        function load($element){
+        function load(){
             // console.log('tabs load');
             // console.log($element);
             // $container.find('li.tab.active').first().trigger('click');
             tab.activate(tab.active, $thisContainer);
+            $thisContainer.hidden(false, 200);
+            return tabContent;
         }
 
         function get(){
@@ -308,7 +313,8 @@ var XNAT = getObject(XNAT || {});
             get: get,
             render: function(container){
                 $container = container ? $$(container) : $container;
-                $container.append(tabContent).hidden(false);
+                $thisContainer = $container.append(tabContent);
+                load();
                 return tabContent;
             }
         };

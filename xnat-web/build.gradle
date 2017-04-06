@@ -10,6 +10,10 @@
 import org.gradle.internal.jvm.Jvm
 
 buildscript {
+    ext {
+        vXnatDev = '1.7.3-SNAPSHOT'
+        vXnat = '1.7.2'
+    }
     repositories {
         mavenLocal()
         jcenter()
@@ -33,8 +37,6 @@ buildscript {
     }
 }
 
-def vXnatDev = '1.7.3-SNAPSHOT'
-def vXnat = '1.7.2'
 def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.9.RELEASE'
 def vSpringSecurity = '4.0.4.RELEASE'
@@ -286,7 +288,6 @@ configurations {
     all*.exclude group: 'com.metaparadigm'
     all*.exclude group: 'com.sun.jdmk', module: 'jmxtools'
     all*.exclude group: 'com.sun.jmx', module: 'jmxri'
-    all*.exclude group: 'com.sun.mail', module: 'javax.mail'
     all*.exclude group: 'commons-beanutils', module: 'commons-beanutils-core'
     all*.exclude group: 'commons-betwixt'
     all*.exclude group: 'commons-dbcp'
@@ -446,7 +447,6 @@ dependencies {
     compile "commons-net:commons-net:3.4"
 
     compile "org.apache.commons:commons-configuration2:2.1"
-    compile "org.apache.commons:commons-email:1.4"
     compile "org.apache.commons:commons-math:2.2"
 
     compile "org.apache.httpcomponents:httpclient:4.5.1"
@@ -480,7 +480,6 @@ dependencies {
     compile "org.slf4j:jul-to-slf4j:${vSlf4j}"
     compile "log4j:log4j:${vLog4j}"
     compile "javax.servlet:jstl:1.2"
-    compile "javax.mail:javax.mail-api:1.5.5"
     compile 'com.google.code.gson:gson:2.6.2'
     compile 'com.google.guava:guava:20.0'
 

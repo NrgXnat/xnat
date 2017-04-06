@@ -22,6 +22,7 @@ import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.status.ListenerUtils;
 import org.nrg.status.StatusListenerI;
 import org.nrg.xdat.XDAT;
@@ -801,7 +802,7 @@ public final class PrearcDatabase {
     private static void copySessionMetaData(final XnatPetmrsessiondataBean petmrSession, final XnatPetsessiondataBean petSession, final XnatMrsessiondataBean mrSession) {
         final Method[] methods = XnatPetmrsessiondataBean.class.getMethods();
         for (final Method method : methods) {
-            if (method.isAccessible() && method.getName().startsWith("get") && method.getParameterTypes().length == 0) {
+            if (Reflection.isGetter(method)) {
                 try {
                     final Object value = method.invoke(petmrSession);
                     invokeSetter(method, petSession, value);

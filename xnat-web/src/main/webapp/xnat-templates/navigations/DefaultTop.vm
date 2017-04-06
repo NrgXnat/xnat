@@ -41,7 +41,7 @@
     }
 
     #main_nav ul.nav #browse-projects div.data-table-wrapper {
-        width: 880px;
+        /*width: 880px;*/
         overflow-y: scroll;
     }
 

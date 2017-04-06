@@ -89,34 +89,27 @@ var XNAT = getObject(XNAT);
 
 
     // return site-level settings Spawner object for specified plugin
-    getPluginSettings.siteSettings = function getPluginSiteSettings(name, tabs){
+    getPluginSettings.siteSettings = function getPluginSiteSettings(name, id){
         if (hasSiteSettings) {
             // stop if there are already site settings
             return false;
         }
-        return getPluginSettings(name, 'siteSettings').ok(function(){
+        return getPluginSettings(name, id || 'siteSettings').ok(function(){
             hasSiteSettings = true;
-            // if (tabs === false || pluginSettings.showTabs === false){
-            //     showAdminMenuItem();
-            // }
-            // else {
-                renderPluginSettingsTabs.call(this, pluginSettings.siteSettingsTabs || null);
-            // }
+            renderPluginSettingsTabs.call(this, pluginSettings.siteSettingsTabs || null);
         })
     };
 
 
 
     // return project-level settings Spawner object for specified plugin
-    getPluginSettings.projectSettings = function getPluginProjectSettings(name, tabs){
+    getPluginSettings.projectSettings = function getPluginProjectSettings(name, id){
         if (hasProjectSettings){
             return false;
         }
-        return getPluginSettings(name, 'projectSettings').ok(function(){
+        return getPluginSettings(name, id || 'projectSettings').ok(function(){
             hasProjectSettings = true;
-            if (tabs !== false || pluginSettings.showTabs !== false){
-                renderPluginSettingsTabs.call(this, pluginSettings.projectSettingsTabs || null);
-            }
+            renderPluginSettingsTabs.call(this, pluginSettings.projectSettingsTabs || null);
         });
     };
 
@@ -187,10 +180,9 @@ var XNAT = getObject(XNAT);
      * Render settings 'type' for each installed plugin
      * with a matching Spawner namespace and 'type' element
      * @param {Array|String} [types] - single 'type' string or array of multiple 'types'
-     * @param {Boolean} [tabs] - render tabs? (set to false to show admin menu item)
      * @param {Function} [callback] - function to call after rendering settings elements
      */
-    pluginSettings.renderSettings = function renderSettings(types, tabs, callback){
+    pluginSettings.renderSettings = function renderSettings(types, callback){
 
         types = types || ['siteSettings', 'projectSettings'];
 
@@ -214,9 +206,14 @@ var XNAT = getObject(XNAT);
                         pluginsWithElements.forEach(function(plugin){
                             getPluginElementNames(namespace).done(function(ids){
                                 // --- CALLBACK --- //
+                                var allIds = ids.join(';') + ';';
+                                console.log(allIds);
                                 [].concat(types).forEach(function(type){
                                     var pluginNamespace = plugin;
-                                    if (ids.indexOf(type) > -1) {
+                                    var hasElementType = ids.indexOf(type) > -1;
+                                    var hasRootElement = ids.indexOf('root') > -1;
+                                    var elementId = hasElementType ? type : 'root';
+                                    if (hasRootElement || hasElementType) {
                                         // a file named 'plugin-name.site-settings.yaml' will work
                                         if (plugin + '.' + type === namespace){
                                             pluginNamespace = plugin + '.' + type
@@ -225,7 +222,7 @@ var XNAT = getObject(XNAT);
                                         if (plugin + ':' + type === namespace){
                                             pluginNamespace = plugin + ':' + type
                                         }
-                                        getPluginSettings[type](pluginNamespace, tabs, callback);
+                                        getPluginSettings[type](pluginNamespace, elementId, callback);
                                     }
                                 })
                             });

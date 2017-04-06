@@ -101,18 +101,22 @@ var XNAT = getObject(XNAT);
         var ajaxDataType = '';
         if (ajaxPrefix.test(_value)) {
             ajaxUrl = _value.replace(ajaxPrefix, '').split('$:')[0].trim();
-            ajaxDataType = _value.split('$:')[1] || 'text';
+            ajaxDataType = (_value.split('$:')[1] || 'text').trim();
             // console.log(ajaxDataType);
             _value = '';
             return XNAT.xhr.get({
                 url: XNAT.url.restUrl(ajaxUrl),
                 dataType: ajaxDataType,
                 success: function(val, status, xhr){
-                    // console.log('ajaxValue');
-                    // console.log(val);
-                    // $input.val(val);
                     // _value = xhr.responseText;
                     _value = val;
+                    // format JSON
+                    if (/json/i.test(ajaxDataType)) {
+                        if (typeof val === 'string') {
+                            val = JSON.parse(val);
+                        }
+                        _value = JSON.stringify(val, null, 2);
+                    }
                     _input.value = '';
                     // console.log(_input);
                     setValue(_input, _value)
@@ -536,10 +540,61 @@ var XNAT = getObject(XNAT);
         }
     });
 
-    // // not *technically* an <input> element, but a form input nonetheless
-    // input.textarea = function(config){
-    //
-    // };
+    // not *technically* an <input> element, but a form input nonetheless
+    input.textarea = function(opts){
+
+        opts = cloneObject(opts);
+        opts.element = opts.element || opts.config || {};
+
+        if (opts.id) opts.element.id = opts.id;
+        if (opts.name) opts.element.name = opts.name;
+
+        var val1 = opts.element.value;
+        var val2 = opts.value;
+        var _val = firstDefined(val1, val2, '');
+
+        // opts.element.value = firstDefined(val1, val2, '');
+
+        // opts.element.html = firstDefined(
+        //     opts.element.html+'',
+        //     opts.element.value+'',
+        //     opts.text+'',
+        //     opts.html+'',
+        //     '');
+
+        if (opts.code || opts.codeLanguage) {
+            opts.code = opts.code || opts.codeLanguage;
+            addDataObjects(opts.element, {
+                codeEditor: opts.code,
+                codeLanguage: opts.codeLanguage || opts.code
+            });
+            opts.element.title = 'Double-click to open in code editor.';
+            // open code editor on double-click
+            // opts.element.ondblclick = function(){
+            //     var panelTextarea = XNAT.app.codeEditor.init(this, { language: opts.code || 'html' });
+            //     panelTextarea.openEditor();
+            // };
+        }
+
+        opts.element.rows = opts.rows || opts.element.rows || 10;
+
+        var textarea = spawn('textarea', opts.element);
+
+        setValue(textarea, _val);
+
+        return {
+            element: textarea,
+            spawned: textarea,
+            get: function(){
+                return textarea;
+            },
+            render: function(container){
+                $$(container).append(textarea);
+            }
+        };
+
+    };
+    XNAT.ui.textarea = input.textarea;
 
     // after the page is finished loading, set empty
     // input values from [data-lookup] attribute

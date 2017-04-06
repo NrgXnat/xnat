@@ -101,7 +101,7 @@ var XNAT = getObject(XNAT);
         _templ = [
             'div|data-name='+opts.name,
             { className: opts.className },
-            [].concat(content, spawn('br.clear'))
+            [].concat(content, spawn('div.clear'))
         ];
         _spawn = function(){
             return spawn.apply(null, _templ);
@@ -149,7 +149,9 @@ var XNAT = getObject(XNAT);
             addClassName(element, [opts.className, opts.classes, opts.addClass]);
         }
 
-        return template.panelElement(opts, [
+        var inner = spawn('div.inner');
+
+        var panelElement = template.panelElement(opts, [
 
             // only add a label if specified
             (opts.label ? ['label.element-label|for='+element.id||opts.id, opts.label] : ''),
@@ -158,14 +160,23 @@ var XNAT = getObject(XNAT);
 
                 (opts.beforeElement ? opts.beforeElement : []),
 
-                element ,
+                element,
+
+                inner,
 
                 (opts.afterElement ? opts.afterElement : []),
 
-                spawn('div.description', opts.description||'')
+                spawn('div.description', opts.description||''),
+
+                spawn('div.clear')
 
             )]
         ]);
+
+        panelElement.target = panelElement.inner = inner;
+
+        return panelElement;
+
     };
     // ========================================
 

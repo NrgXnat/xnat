@@ -495,7 +495,7 @@ $.fn.hidden = function(bool, speed){
     var method = 'hide';
     if (bool || bool == null) {
         if (speed) method = 'fadeOut';
-        this.addClass('hidden')[method](speed);
+        this[method](speed).addClass('hidden');
     }
     else {
         method = speed ? 'fadeIn' : 'show';

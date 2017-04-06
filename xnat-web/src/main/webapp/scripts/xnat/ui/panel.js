@@ -1144,49 +1144,8 @@ var XNAT = getObject(XNAT || {});
     };
 
     panel.textarea = function(opts){
-
-        opts = cloneObject(opts);
-        opts.element = opts.element || opts.config || {};
-
-        if (opts.id) opts.element.id = opts.id;
-        if (opts.name) opts.element.name = opts.name;
-
-        var val1 = opts.element.value;
-        var val2 = opts.value;
-        var _val = firstDefined(val1, val2, '');
-
-        // opts.element.value = firstDefined(val1, val2, '');
-
-        // opts.element.html = firstDefined(
-        //     opts.element.html+'',
-        //     opts.element.value+'',
-        //     opts.text+'',
-        //     opts.html+'',
-        //     '');
-
-        opts.element.title = 'Double-click to open in code editor.';
-
-        if (opts.code || opts.codeLanguage) {
-            opts.code = opts.code || opts.codeLanguage;
-            addDataObjects(opts.element, {
-                codeEditor: opts.code,
-                codeLanguage: opts.codeLanguage || opts.code
-            });
-            // open code editor on double-click
-            // opts.element.ondblclick = function(){
-            //     var panelTextarea = XNAT.app.codeEditor.init(this, { language: opts.code || 'html' });
-            //     panelTextarea.openEditor();
-            // };
-        }
-
-        opts.element.rows = opts.rows || opts.element.rows || 10;
-
-        var textarea = spawn('textarea', opts.element);
-
-        XNAT.ui.input.setValue(textarea, _val);
-
+        var textarea = XNAT.ui.input.textarea(opts);
         return XNAT.ui.template.panelDisplay(opts, textarea).get();
-
     };
     panel.input.textarea = panel.textarea;
 

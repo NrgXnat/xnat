@@ -129,7 +129,14 @@ var XNAT = getObject(XNAT || {});
         var _this = this;
 
         _this.code = _this.getSourceCode();
-        
+
+        if (/json/i.test(_this.language)) {
+            if (typeof _this.code === 'string') {
+                _this.code = JSON.parse(_this.code);
+            }
+            _this.code = JSON.stringify(_this.code, null, 2);
+        }
+
         var editor = spawn('div', {
             className: 'editor-content',
             html: '',

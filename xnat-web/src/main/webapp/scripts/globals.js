@@ -1306,7 +1306,7 @@ function formatJSON(json, indent){
 }
 
 function prettifyJSON(data, indent) {
-    var json;
+    var json = data;
     if (typeof data != 'string') {
         json = JSON.stringify(data, null, indent||2);
     }

@@ -60,8 +60,13 @@ var XNAT = getObject(XNAT);
             callbacks = [],
             undefined;
 
-        if (firstDefined(obj.kind || false, undefined) === null) {
-            return null;
+        try {
+            if (!obj || firstDefined(obj.kind || false, undefined) === null) {
+                return null;
+            }
+        }
+        catch (e){
+            console.error(e);
         }
 
         spawner.counter++;
@@ -403,13 +408,19 @@ var XNAT = getObject(XNAT);
         return {
             // returned 'ok' method only fires with 200 response
             // and returns with 'this' as Spawner instance
-            ok: function(callback){
+            ok: function(success, failure){
                 console.log('spawner.resolve().ok()');
                 return request.done(function(obj, txtStatus, xhr){
                     var spawnerInstance = spawner.spawn(obj);
                     if (xhr.status === 200) {
-                        if (isFunction(callback)){
-                            callback.call(spawnerInstance, obj, txtStatus, xhr)
+                        if (isFunction(success)){
+                            success.call(spawnerInstance, obj, txtStatus, xhr)
+                        }
+                    }
+                    else {
+                        // try something else if element isn't present
+                        if (isFunction(failure)) {
+                            failure.call(spawnerInstance, obj, txtStatus, xhr)
                         }
                     }
                 })

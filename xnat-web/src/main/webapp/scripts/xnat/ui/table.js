@@ -1076,6 +1076,7 @@ var XNAT = getObject(XNAT);
                 if (isFunction(callback)) {
                     callback.call(this, newTable);
                 }
+                return tableWrapper;
             }
         };
 

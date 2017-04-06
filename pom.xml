@@ -64,14 +64,14 @@
         <nrg.config.version>${xnat.version}</nrg.config.version>
         <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
-        <nrg.mail.version>${xnat.version}</nrg.mail.version>
-        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.mail.version>${xnatdev.version}</nrg.mail.version>
+        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
         <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.dicomedit.version>6.0.2</nrg.dicomedit.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.1</nrg.ecat.version>
         <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
@@ -701,12 +701,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-email</artifactId>
                 <version>${commons-email.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.mail</groupId>
-                        <artifactId>javax.mail</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>commons-logging</groupId>
@@ -1022,9 +1016,8 @@
             </dependency>
             <dependency>
                 <groupId>com.sun.mail</groupId>
-                <artifactId>mailapi</artifactId>
+                <artifactId>javax.mail</artifactId>
                 <version>${javax-mail.version}</version>
-                <scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>

@@ -152,6 +152,10 @@ var XNAT = getObject(XNAT);
             spawned: frag,
             get: function(){
                 return frag;
+            },
+            render: function(container){
+                $$(container).append(frag);
+                return frag;
             }
         }
     };

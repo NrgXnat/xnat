@@ -907,14 +907,14 @@ var XNAT = getObject(XNAT || {});
         _inner.push(['div.element-label', [_info, opts.label]]);
 
         // 'contents' will be inserted into the 'target' element
-        _target = spawn('div.element-wrapper');
+        _target = spawn('div.element-wrapper', [].concat(opts.body||opts.html||[]));
 
         // add the target to the content array
         _inner.push(_target);
 
         // add a description if there is one
         if (opts.description){
-            _inner.push(['div.description', opts.description||opts.body||opts.html]);
+            _inner.push(['div.description', opts.description]);
         }
 
         // add element to clear floats
@@ -946,7 +946,7 @@ var XNAT = getObject(XNAT || {});
     panel.subhead = function(opts){
         opts = cloneObject(opts);
         opts.html = opts.html || opts.text || opts.label;
-        return XNAT.ui.template.panelSubhead(opts).spawned;
+        return XNAT.ui.template.panelSubhead(opts);
     };
 
     // return a generic panel 'section'
@@ -957,6 +957,7 @@ var XNAT = getObject(XNAT || {});
         opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
         opts.header = opts.header || opts.label || opts.title || '';
+        opts.body = [].concat(opts.body||[]);
 
         if (opts.header) {
             _inner.push(['header.section-header', opts.header]);
@@ -964,7 +965,7 @@ var XNAT = getObject(XNAT || {});
 
         // this needs to be spawned here to act as
         // the target for this elements 'contents'
-        _body = spawn('div.section-body');
+        _body = spawn('div.section-body', opts.body);
 
         _inner.push(_body);
 
@@ -980,6 +981,10 @@ var XNAT = getObject(XNAT || {});
             spawned: _section,
             get: function(){
                 return _section;
+            },
+            render: function(container){
+                $$(container).append(_section);
+                return _section;
             }
         }
 
@@ -990,25 +995,25 @@ var XNAT = getObject(XNAT || {});
     };
 
     panel.input = function(opts, contents){
-        return XNAT.ui.template.panelInput(opts, contents);
+        return XNAT.ui.template.panelInput(opts, contents).get();
     };
 
     panel.input.text = function(opts){
-        return XNAT.ui.template.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).get();
     };
 
     panel.input.number = function panelInputNumber(opts){
         opts = cloneObject(opts);
         opts.type = 'number';
         addClassName(opts, 'input-text number');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).get();
     };
 
     panel.input.email = function panelInputEmail(opts){
         opts = cloneObject(opts);
         opts.type = 'text';
         addClassName(opts, 'input-text email');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).get();
     };
 
     panel.input.username = function panelInputUsername(opts){
@@ -1016,7 +1021,7 @@ var XNAT = getObject(XNAT || {});
         opts.element = getObject(opts.element||{});
         opts.element.autocomplete = 'off';
         addClassName(opts, 'input-text username');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).get();
     };
 
     panel.input.password = function panelInputPassword(opts){
@@ -1035,35 +1040,35 @@ var XNAT = getObject(XNAT || {});
         var passwordInput = XNAT.ui.input.password(opts.element);
         // return XNAT.ui.template.panelInput(opts, passwordInput.element).spawned;
         // return panel.display(opts, passwordInput.element).spawned;
-        return XNAT.ui.template.panelDisplay(opts, passwordInput.element).spawned;
+        return XNAT.ui.template.panelDisplay(opts, passwordInput.element).get();
     };
 
     panel.input.date = function panelInputDate(opts){
         opts = cloneObject(opts);
         opts.type = 'date';
         addClassName(opts, 'input-text date');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).get();
     };
 
     panel.input.checkbox = function panelInputCheckbox(opts){
         opts = cloneObject(opts);
         opts.type = 'checkbox';
         addClassName(opts, 'checkbox');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).get();
     };
 
     panel.input.switchbox = function panelInputSwitchbox(opts){
         opts = cloneObject(opts);
         opts.type = 'checkbox';
         addClassName(opts, 'switchbox');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).get();
     };
 
     panel.input.radio = function panelInputRadio(opts){
         opts = cloneObject(opts);
         opts.type = 'radio';
         addClassName(opts, 'radio');
-        return XNAT.ui.template.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).get();
     };
 
     panel.input.hidden = function panelInputHidden(opts){
@@ -1114,17 +1119,25 @@ var XNAT = getObject(XNAT || {});
                 html: 'Upload'
             }]
         ]];
-        return XNAT.ui.template.panelInput(opts, form).spawned;
+        return XNAT.ui.template.panelInput(opts, form).get();
     };
 
-    panel.input.group = function panelInputGroup(obj){
-        var _inner = spawn('div.element-group');
-        var _outer = XNAT.ui.template.panelElementGroup(obj, [_inner]).spawned;
+    panel.input.group = function panelInputGroup(opts){
+        var _inner = [];
+        _inner.push(spawn('div.element-group'));
+        if (opts.body) {
+            _inner.push(opts.body);
+        }
+        var _outer = XNAT.ui.template.panelElementGroup(opts, _inner).get();
         return {
             target: _inner,
             element: _outer,
             spawned: _outer,
             get: function(){
+                return _outer;
+            },
+            render: function(container){
+                $$(container).append(_outer);
                 return _outer;
             }
         }
@@ -1172,7 +1185,7 @@ var XNAT = getObject(XNAT || {});
 
         XNAT.ui.input.setValue(textarea, _val);
 
-        return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
+        return XNAT.ui.template.panelDisplay(opts, textarea).get();
 
     };
     panel.input.textarea = panel.textarea;
@@ -1215,9 +1228,9 @@ var XNAT = getObject(XNAT || {});
         //opts.label = false;
 
         // use XNAT.ui.select.menu() to normalize rendering
-        _menu = XNAT.ui.select.menu(extend({}, opts, { label: false })).element;
+        _menu = XNAT.ui.select.menu(extend({}, opts, { label: false })).get();
 
-        return XNAT.ui.template.panelInput(opts, _menu).spawned;
+        return XNAT.ui.template.panelInput(opts, _menu).get();
 
     };
     panel.select.init = panel.select.menu;

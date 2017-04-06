@@ -66,13 +66,13 @@ var XNAT = getObject(XNAT);
     // render settings tabs (for any context)
     // this MUST be called in the context of a Spawner instance
     function renderPluginSettingsTabs(container){
-        if (!container) return this;
-        var container$ = $$(container);
+        if (!container || pluginSettings.showTabs === false) return this;
+        var container$ = $$(container).hide();
         // only render the tabs if there's a container for them
         if (container$.length) {
             this.render(container$, 200);
             this.done(function(){
-                container$.fadeIn(200);
+                container$.removeClass('hidden').fadeIn(200);
                 XNAT.tab.activate(XNAT.tab.active, container$);
             });
         }
@@ -96,7 +96,7 @@ var XNAT = getObject(XNAT);
         }
         return getPluginSettings(name, 'siteSettings').ok(function(){
             hasSiteSettings = true;
-            if (tabs === false){
+            if (tabs === false || pluginSettings.showTabs === false){
                 showAdminMenuItem();
             }
             else {
@@ -108,13 +108,15 @@ var XNAT = getObject(XNAT);
 
 
     // return project-level settings Spawner object for specified plugin
-    getPluginSettings.projectSettings = function getPluginProjectSettings(name){
+    getPluginSettings.projectSettings = function getPluginProjectSettings(name, tabs){
         if (hasProjectSettings){
             return false;
         }
         return getPluginSettings(name, 'projectSettings').ok(function(){
             hasProjectSettings = true;
-            renderPluginSettingsTabs.call(this, pluginSettings.projectSettingsTabs || null);
+            if (tabs !== false || pluginSettings.showTabs !== false){
+                renderPluginSettingsTabs.call(this, pluginSettings.projectSettingsTabs || null);
+            }
         });
     };
 
@@ -246,11 +248,20 @@ var XNAT = getObject(XNAT);
     };
 
     pluginSettings.siteSettingsMenuItem = function(elementId){
-        if (elementId) {
-            adminMenuElement = elementId;
+        if (pluginSettings.hasAdminMenuItem === true) {
+            return;
         }
-        pluginSettings.siteSettingsTabs = false;
-        return pluginSettings.renderSettings('siteSettings', false);
+        getSpawnerNamespaces().done(function(namespaces){
+            // plugins with site-level settings
+            // MUST have a site-settings.yaml file
+            var nsSiteSettings = namespaces.filter(function(ns){
+                return /([:.]sitesettings)$/i.test(ns);
+            });
+            if (nsSiteSettings.length) {
+                $$(elementId).hidden(false);
+                pluginSettings.hasAdminMenuItem = true;
+            }
+        });
     };
 
     // render site-level settings for installed plugins
@@ -261,6 +272,7 @@ var XNAT = getObject(XNAT);
         // these properties MUST be set before spawning 'tabs' widgets
         XNAT.tabs.container = $$(XNAT.tabs.container || pluginSettings.siteSettingsTabs).empty();
         XNAT.tabs.layout = XNAT.tabs.layout || 'left';
+        pluginSettings.showTabs = true;
         return pluginSettings.renderSettings('siteSettings', pluginSettings.siteSettingsTabs, callback);
     };
 
@@ -273,6 +285,7 @@ var XNAT = getObject(XNAT);
                 $('#project-settings-tabs').find('div.content-tabs');
         XNAT.tabs.container = $$(XNAT.tabs.container || pluginSettings.projectSettingsTabs).empty();
         XNAT.tabs.layout = XNAT.tabs.layout || 'left';
+        pluginSettings.showTabs = true;
         return pluginSettings.renderSettings('projectSettings', pluginSettings.projectSettingsTabs, callback);
     };
 

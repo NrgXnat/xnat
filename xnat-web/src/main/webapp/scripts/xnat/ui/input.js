@@ -136,12 +136,12 @@ var XNAT = getObject(XNAT);
             // setValue(_input, eval('(' + evalString + ')'));
         }
 
-        if (Array.isArray(value)) {
-            _value = value.join(', ');
+        if (Array.isArray(_value)) {
+            _value = _value.join(', ');
             $input.addClass('array-list')
         }
         else {
-            _value = stringable(value) ? value+'' : JSON.stringify(value);
+            _value = stringable(_value) ? _value+'' : JSON.stringify(_value);
         }
 
         // _value = realValue((_value+'').replace(/^("|')?|("|')?$/g, '').trim());
@@ -272,8 +272,14 @@ var XNAT = getObject(XNAT);
             spawned: _input,
             get: function(){
                 return _input;
+            },
+            render: function(container){
+                $$(container).append(_input);
             }
         }
+    };
+    input.init = function(){
+        return input.apply(null, arguments);
     };
     // ========================================
 
@@ -365,6 +371,11 @@ var XNAT = getObject(XNAT);
         config.method = config.method || 'POST';
         config.contentType = config.contentType || 'multipart/form-data';
 
+        config.form = extend(true, {
+            method: config.method,
+            attr: { 'content-type': config.contentType }
+        }, config.form);
+
         // adding 'ignore' class to prevent submitting with parent form
         var fileInput = spawn('input.ignore|type=file|multiple', config.input);
         var uploadBtn = spawn('button.upload.btn.btn-sm|type=submit', config.button, 'Upload');
@@ -392,15 +403,39 @@ var XNAT = getObject(XNAT);
                 }
             });
             XHR.open(config.method, config.url, true);
+            XHR.setRequestHeader('Content-type', config.contentType);
             XHR.onload = function(){
+                if (XHR.status !== 200) {
+                    console.error(XHR.statusText);
+                    console.error(XHR.responseText);
+                    xmodal.message({
+                        title: 'Upload Error',
+                        content: '' +
+                            'There was a problem uploading your theme package.' +
+                            '<br>' +
+                            'Server responded with: ' +
+                            '<br>' +
+                            '<b>' + XHR.statusText + '</b>'
 
+                    });
+                }
             };
             XHR.send(formData);
         }
 
         $(uploadBtn).on('click', doUpload);
 
-        return fileForm;
+        return {
+            element: fileForm,
+            spawned: fileForm,
+            get: function(){
+                return fileForm
+            },
+            render: function(container){
+                $$(container).append(fileForm);
+                return fileForm;
+            }
+        };
 
         // TODO: FINISH THIS
 

@@ -449,7 +449,7 @@ jQuery.loadScript = function (url, arg1, arg2) {
                     attrMap[name].value;
         });
         return obj;
-    }
+    };
 
     // given: <div id="foo" title="Foo" class="bar">Foo</div>
     // $('#foo').attr();
@@ -478,14 +478,33 @@ jQuery.loadScript = function (url, arg1, arg2) {
 $.fn.changeVal = function(){
     var prev;
     if ( arguments.length > 0 ){
-        prev = $.fn.val.apply(this, []);
+        prev = this.val();
     }
-    var result = $.fn.val.apply(this, arguments);
-    if ( arguments.length > 0 && prev != $.fn.val.apply(this, []) ){
-        $(this).trigger('change');
+    var result = $.fn.val.apply(this, arguments).val();
+    if ( arguments.length > 0 && prev !== result ){
+        this.trigger('change');
     }
     return result;
 };
+
+
+// add or remove 'hidden' class
+// and trigger .show() or .hide()
+$.fn.hidden = function(bool){
+    if (bool || bool == null) {
+        this.addClass('hidden').hide();
+    }
+    else {
+        this.removeClass('hidden').show();
+    }
+    return this;
+};
+$.fn.shown = function(bool){
+    bool = !(bool || bool == null);
+    return this.hidden(bool);
+};
+$.fn.unhide = $.fn.shown;
+$.fn.unhidden = $.fn.shown;
 
 
 // Make elements draggable.

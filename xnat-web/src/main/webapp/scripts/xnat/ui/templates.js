@@ -70,19 +70,22 @@ var XNAT = getObject(XNAT);
     // ========================================
     // subhead element to segment panels
     template.panelSubhead = function(opts){
-        var _templ, _spawn, _html;
+        var _templ, _spawn, _spawned, _html;
         opts = cloneObject(opts);
         _templ = ['h4.panel-subhead', opts];
         _spawn = function(){
             return spawn.apply(null, _templ);
         };
-        _html = _spawn().outerHTML;
+        _spawned = _spawn();
+        _html = _spawned.outerHTML;
         return {
             template: _templ,
-            spawned: _spawn(),
+            spawned: _spawned,
             spawn: _spawn,
             html: _html,
-            get: _spawn
+            get: function(){
+                return _spawned;
+            }
         }
     };
     // ========================================
@@ -91,7 +94,7 @@ var XNAT = getObject(XNAT);
     // ========================================
     // generic panel element
     template.panelElement = function(opts, content){
-        var _templ, _spawn, _html;
+        var _templ, _spawn, _spawned, _html;
         opts = cloneObject(opts);
         addClassName(opts, 'panel-element');
         opts.name = (opts.name||'').replace(/^:*/,'');
@@ -103,15 +106,22 @@ var XNAT = getObject(XNAT);
         _spawn = function(){
             return spawn.apply(null, _templ);
         };
-        _html = _spawn().outerHTML;
+        _spawned = _spawn();
+        _html = _spawned.outerHTML;
         return {
             template: _templ, // the raw template (Spawn array)
-            spawned: _spawn(), // pre-spawned
+            spawned: _spawned, // pre-spawned
             spawn: _spawn, // call to make a fresh spawn
             html: _html, // pre-spawned HTML
-            get: _spawn,
+            get: function(){
+                return _spawned;
+            },
             getHTML: function(){ // call to get fresh HTML
                 return _spawn().outerHTML;
+            },
+            render: function(container){
+                $$(container).append(_spawned);
+                return _spawned;
             }
         }
     };
@@ -125,14 +135,15 @@ var XNAT = getObject(XNAT);
         opts = cloneObject(opts);
         opts.id = opts.id||toDashed(opts.name||'');
         opts.label = opts.label||'';
+        opts.body = [].concat(opts.body||[]);
 
         // pass in an element or create a new 'div' element
         element =
             element || spawn('div', extend(true, {
                 id: opts.id,
                 title: opts.title||opts.name||opts.id,
-                html: opts.value||opts.html||opts.text||opts.body||''
-            }, opts.element));
+                html: opts.value||opts.html||opts.text||''
+            }, opts.element), opts.body);
 
         if (opts.className || opts.classes || opts.addClass) {
             addClassName(element, [opts.className, opts.classes, opts.addClass]);
@@ -362,6 +373,7 @@ var XNAT = getObject(XNAT);
             ['label.element-label|for='+element.id||opts.id, opts.label],
             ['div.element-wrapper', inner]
         ]);
+
     };
     // ========================================
 

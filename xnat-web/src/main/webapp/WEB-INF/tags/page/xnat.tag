@@ -213,9 +213,12 @@
     <script src="${SITE_ROOT}/scripts/xnat/ui/banner.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/popup.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
 
     <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>
+
+    <!-- XNAT app scripts -->
+    <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
 
     ${headBottom}
 

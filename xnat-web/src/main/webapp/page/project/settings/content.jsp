@@ -38,15 +38,13 @@
             </div>
         </div>
 
-        <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
-
         <script>
             (function(){
 
                 var PROJECT_ID = '${id}' || getQueryStringValue('id') || getUrlHashValue('#id=');
 
                 if (!PROJECT_ID) {
-                    $('#project-not-specified').removeClass('hidden');
+                    $('#project-not-specified').hidden(false);
                     return;
                 }
 
@@ -73,6 +71,7 @@
                         // show the header since we should have the data
                         projectSettingsHeader$.removeClass('hidden');
                         // render the project settings tabs
+                        XNAT.app.pluginSettings.showTabs = true;
                         XNAT.app.pluginSettings.projectSettingsTabs = projectSettingsTabs;
                         XNAT.app.pluginSettings.projectSettings(projectSettingsTabs, function(data){
                             console.log(data);
@@ -82,8 +81,8 @@
                     },
                     failure: function(){
                         // if REST call for project data fails,
-                        projectSettingsHeader$.addClass('hidden');
-                        $('#project-data-error').removeClass('hidden');
+                        projectSettingsHeader$.hidden();
+                        $('#project-data-error').hidden(false);
                     }
                 })
 

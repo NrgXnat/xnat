@@ -176,7 +176,7 @@ var XNAT = getObject(XNAT || {});
         $group.append(_flipper).show();
 
         function load(){
-            console.log('tab: ' + tabId)
+            // console.log('render tab: ' + tabId)
         }
 
         function get(){
@@ -190,7 +190,11 @@ var XNAT = getObject(XNAT || {});
             element: _pane,
             spawned: _pane,
             load: load,
-            get: get
+            get: get,
+            render: function(container){
+                $$(container).append(_pane).hidden(false);
+                return _pane;
+            }
         }
     };
     // ==================================================
@@ -210,7 +214,14 @@ var XNAT = getObject(XNAT || {});
         container = obj.container || tabs.container || 'div.xnat-tab-container';
 
         // the main container - contains tabs and content
-        $container = $$(container).hide();
+        $container = $$(container).hidden();
+
+        // if no container exists, spawn a new one
+        $container =
+            $container.length ? $container : $.spawn('div.xnat-tab-container');
+
+        // fresh assignment
+        container = $container[0];
 
         // use existing tabs if already present
         if ($container.find(NAV_TABS).length) {
@@ -274,8 +285,8 @@ var XNAT = getObject(XNAT || {});
         });
 
         function load($element){
-            console.log('tabs load');
-            console.log($element);
+            // console.log('tabs load');
+            // console.log($element);
             // $container.find('li.tab.active').first().trigger('click');
             tab.activate(tab.active, $thisContainer);
         }
@@ -294,7 +305,12 @@ var XNAT = getObject(XNAT || {});
                 // console.log('tabs.load');
                 return load.apply(this, arguments);
             },
-            get: get
+            get: get,
+            render: function(container){
+                $container = container ? $$(container) : $container;
+                $container.append(tabContent).hidden(false);
+                return tabContent;
+            }
         };
 
     };

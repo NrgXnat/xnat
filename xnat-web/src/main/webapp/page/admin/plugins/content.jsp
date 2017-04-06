@@ -57,7 +57,7 @@
                 <c:import url="${pluginsUrl}" var="plugins"/>
                 <c:import url="${spawnerNamespacesUrl}" var="spawnerNamespaces"/>
 
-                <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
+                <%--<script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>--%>
 
                 <script>
                     (function(){
@@ -81,6 +81,7 @@
 
                         // render siteSettings tab into specified container
                         var siteSettingsTabs = $('#plugin-settings-tabs').find('div.content-tabs');
+                        XNAT.app.pluginSettings.showTabs = true;
                         XNAT.app.pluginSettings.siteSettings(siteSettingsTabs);
 
                     })();

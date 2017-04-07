@@ -2,28 +2,62 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 <!--[if lt IE 9]><html class="ie ie8 ltie9 ltie10"><![endif]-->
 <!--[if IE 9]><html class="ie ie9 ltie10"><![endif]-->
-<!--[if gt IE 9]><!--><html><!--<![endif]-->
+<!--[if gt IE 9]><!-->
+<html>
+<!--<![endif]-->
 <head>
-<script type="text/javascript">
-    var XNAT = {};
-    #if ($themedRedirect) <!-- Reload the appropriate page if a global theme style specifies a redirect -->
-    window.location = "$content.getURI("")$themedRedirect";
-    #end
-    #if ($theme)
-    XNAT.theme = "$theme";
-    #end
-</script>
 
-<!-- path: xnat-templates/navigations/htmlOpen -->
+    <!-- start xnat-templates/navigations/htmlOpen -->
+
+    #set ($SITE_ROOT = $content.getURI(""))
+
+    ## <!-- Reload the appropriate page if a global theme style specifies a redirect -->
+    #if ($themedRedirect)
+        <script type="text/javascript">
+            ## there's probably a better way to redirect...
+            ## window.location = "$content.getURI("")$themedRedirect";
+            console.log('$content.getURI($themedRedirect)')
+        </script>
+    #end
+
     <title>$!systemName</title>
     <!-- HeaderIncludes -->
     $navigation.setTemplate("/HeaderIncludes.vm")
     <!-- /HeaderIncludes -->
 
-#if ($themedScript) <!-- Load active global theme script -->
-    <script type="text/javascript" src="$content.getURI("")$themedScript"></script>
-#end
+    #if (${theme})
 
-#if ($themedStyle) <!-- Load active global theme style -->
-    <link rel="stylesheet" type="text/css" href="$content.getURI("")$themedStyle">
-#end
+        <script>
+            XNAT.theme = {};
+            XNAT.theme.name =  '${theme}';
+            XNAT.themeName = XNAT.app.themeName = XNAT.theme.name;
+        </script>
+
+        #set ($THEME_CSS = "$SITE_ROOT/themes/${theme}/style/theme.css")
+
+        #if ($turbineUtils.resourceExists($THEME_CSS))
+        ## /themes/theme-name/style/theme.css
+            <!-- ${THEME_CSS} -->
+            <link rel="stylesheet" type="text/css" href="${THEME_CSS}">
+        #elseif ($themedStyle)
+            <!-- Load active global theme style -->
+        ## /themes/theme-name/styles/theme.css
+            <!-- $themedStyle -->
+            <link rel="stylesheet" type="text/css" href="${SITE_ROOT}${themedStyle}">
+        #end
+
+        #set ($THEME_JS = "$SITE_ROOT/themes/${theme}/scripts/theme.js")
+
+        #if ($turbineUtils.resourceExists($THEME_JS))
+        ## /themes/theme-name/scripts/theme.js
+            <!-- ${THEME_JS} -->
+            <script type="text/javascript" src="${THEME_JS}"></script>
+        #elseif ($themedScript)
+            <!-- Load active global theme script -->
+            <!-- $themedScript -->
+            <script type="text/javascript" src="${SITE_ROOT}${themedScript}"></script>
+        #end
+
+    #end
+
+    <!-- end xnat-templates/navigations/htmlOpen -->

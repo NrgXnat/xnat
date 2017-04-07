@@ -1,13 +1,14 @@
 ## Main JavaScript and CSS files for XNAT
 
-#set($versionString = "v=1.7.1")
+#set($versionString = "v=1.7.3b")
 #set($SITE_ROOT = $content.getURI(""))
 
 ## only load once
 #if (!$appJS)
 
-    <!-- app.css loaded last -->
+    <!-- app.css loaded first -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
+
     <!-- Icon sets -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.css?${versionString}">
@@ -15,6 +16,9 @@
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xmodal-v1/xmodal.css?${versionString}">
     <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.js"></script>
     <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.js"></script>
+
+    <!-- XNAT JLAPI stylesheets -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xnat/ui/dialog.css?${versionString}">
 
     <!-- XNAT JLAPI scripts -->
     <script src="${SITE_ROOT}/scripts/xnat/validate.js"></script>

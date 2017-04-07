@@ -1,6 +1,6 @@
 ## Base JavaScript files
 
-#set($versionString = "v=1.7.1")
+#set($versionString = "v=1.7.3b")
 #set($SITE_ROOT = $content.getURI(""))
 
 ## only load once

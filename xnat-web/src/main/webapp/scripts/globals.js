@@ -889,8 +889,8 @@ function parseOptions(obj_or_str, str, delim, sep){
 
     forEach(parts, function(part){
 
-        var prop = part.split(sep)[0],
-            val = part.split(sep)[1];
+        var prop = part.split(sep)[0].trim(),
+            val = part.split(sep)[1].trim();
 
         obj[prop] = realValue(val);
 

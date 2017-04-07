@@ -37,7 +37,7 @@ XNAT.app = getObject(XNAT.app||{});
         if (urlParts.length > 1) {
             pageName = urlParts[1].split(end||'/#')[0];
         }
-        return pageName;
+        return pageName.replace(/^\/|\/$/g, '');
     };
 
     customPage.getName = function(end){
@@ -70,6 +70,32 @@ XNAT.app = getObject(XNAT.app||{});
 
         var $container = customPage.container || $$(container);
 
+        function setPaths(pg, prefixes){
+            var paths = [];
+            pg = pg.replace(/^\/+|\/+$/g, ''); // remove leading and trailing slashes
+            [].concat(prefixes).forEach(function(prefix){
+                paths.push(prefix + '/' + pg + '/content.jsp');
+                paths.push(prefix + '/' + pg + '/content.html');
+                paths.push(prefix + '/' + pg + '.jsp');
+                paths.push(prefix + '/' + pg + '.html');
+                // paths.push(prefix + '/' + pg + '/'); // that could be dangerous
+            });
+            return paths;
+        }
+
+        pagePaths = setPaths(name, ['/page', '/pages']);
+
+        // if we're using a theme, check that theme's folder
+        if (XNAT.themeName || (XNAT.theme && XNAT.theme.name)){
+            XNAT.themeName = XNAT.themeName || XNAT.theme.name;
+            themePaths = setPaths(name, [
+                '/themes/' + XNAT.themeName + '/page',
+                '/themes/' + XNAT.themeName,
+                '/themes/' + XNAT.themeName + '/pages'
+            ]);
+            pagePaths = themePaths.concat(pagePaths);
+        }
+
         function getPage(path){
             return XNAT.xhr.get({
                 url: XNAT.url.rootUrl(path),
@@ -78,31 +104,6 @@ XNAT.app = getObject(XNAT.app||{});
                     $container.html(content)
                 }
             })
-        }
-
-        var setPaths = function(pg, prefixes){
-            var paths = [];
-            pg = pg.replace(/^\/+|\/+$/g, ''); // remove leading and trailing slashes
-            [].concat(prefixes).forEach(function(prefix){
-                paths.push(prefix + '/' + pg + '/content.jsp');
-                paths.push(prefix + '/' + pg + '.jsp');
-                paths.push(prefix + '/' + pg + '/content.html');
-                paths.push(prefix + '/' + pg + '.html');
-                // paths.push(prefix + '/' + pg + '/'); // that could be dangerous
-            });
-            return paths;
-        };
-
-        pagePaths = setPaths(name, ['/page', '/pages']);
-
-        // if we're using a theme, check that theme's folder
-        if (XNAT.theme){
-            themePaths = setPaths(name, [
-                '/themes/' + XNAT.theme + '/page',
-                '/themes/' + XNAT.theme,
-                '/themes/' + XNAT.theme + '/pages'
-            ]);
-            pagePaths = themePaths.concat(pagePaths);
         }
 
         function lookForPage(i) {

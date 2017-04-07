@@ -1,0 +1,162 @@
+/*
+ * web: dialog.css
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
+/*
+    CSS for XNAT.ui.dialog() elements
+*/
+
+body { display: block !important ; overflow-y: scroll ; }
+
+html.xnat-dialog-open,
+body.xnat-dialog-open {
+    width: 100%; height: 100%;
+}
+
+body.xnat-dialog-open {
+    position: fixed;
+    padding-right: 15px;
+}
+
+div.xnat-dialog-container,
+div.xnat-dialog-mask { display: none ; margin: auto ; position: fixed ; left: 0 ; top: 0 ; width: 100% ; height: 100% ; background: rgba(0,0,0,0.3) ; }
+div.xnat-dialog-mask { background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABhJREFUeNpiZGBg8GVAAkwMaICwAECAAQAUlABVw7mtDgAAAABJRU5ErkJggg==); }
+/*div.xnat-dialog-mask.open { display: block ; z-index: 100 ; }*/
+
+div.xnat-dialog-container {
+    position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+    background: none !important; overflow: visible;
+}
+
+div.xnat-dialog {
+    display: none ;
+    /*min-width: 400px ; min-height: 100px ; */
+    max-width: 90% ; max-height: 90% ;
+    position: relative ; margin: 3% auto ; overflow: hidden ;
+    background: #fff ; border: 1px solid #a0a0a0 ; box-shadow: 0 10px 30px rgba(0,0,0,0.5) ;
+    /*font-family: Arial, Helvetica, sans-serif ; */
+}
+
+div.xnat-dialog,
+div.xnat-dialog > div,
+div.xnat-dialog > div > .inner {
+    box-sizing: border-box;
+}
+
+div.xnat-dialog.open { display: block; }
+
+div.xnat-dialog:focus { outline: 1px solid #808080; }
+
+div.xnat-dialog.dialog { width: 600px ; height: 400px ; }
+
+div.xnat-dialog.loading { min-height: 80px; }
+
+div.xnat-dialog.maxxed {
+    width: 98% !important; height: 98% !important;
+    max-width: 98% !important; max-height: 98% !important;
+    position: fixed !important; margin: auto !important;
+    top: 0 !important; right: 0 !important;
+    bottom: 0 !important; left: 0 !important; }
+
+div.xnat-dialog .button:hover,
+div.xnat-dialog .close:hover { cursor: pointer ; }
+
+div.xnat-dialog .buttons :focus { box-shadow: 0 0 5px rgba(0, 100, 200, 0.8); }
+
+div.xnat-dialog .title {
+    height: 40px; padding: 0 ; overflow: hidden ;
+    color: #303030 ; background: #f0f0f0 ; border-bottom: 1px solid #e0e0e0 ; }
+div.xnat-dialog .title .inner {
+    display: inline-block; padding-left: 15px ; overflow: hidden; white-space: nowrap;
+    font-size: 15px ; font-weight: normal ; line-height: 42px ; vertical-align: middle ; }
+div.xnat-dialog .title .inner > i { color: #505050; font-weight: normal; font-style: normal; }
+div.xnat-dialog .title .close,
+div.xnat-dialog .title .maximize {
+    width: 24px; height: 18px; margin: 0; padding: 0;
+    position: absolute ; top: 8px ; right: 8px ;
+    font-size: 18px ; font-weight: normal ; text-align: center; line-height: 19px;
+    color: #808080 ; background: #f8f8f8 ;
+    border: 1px solid #a0a0a0 ; border-radius: 2px; }
+div.xnat-dialog .title .maximize { right: 38px; line-height: 10px; }
+div.xnat-dialog .title .close:hover,
+div.xnat-dialog .title .maximize:hover { color: #606060; background: #fafafa; border-color: #a0a0a0; cursor: pointer; }
+
+div.xnat-dialog .body { max-height: 100%; overflow-x: hidden ; overflow-y: auto; }
+div.xnat-dialog .body.scroll,
+div.xnat-dialog .body.scroll > .inner { overflow: auto ; }
+div.xnat-dialog .body > .inner > iframe {
+    width: 100%; height: 100%; position: absolute;
+    top: 0; bottom: 0; right: 0; left: 0; }
+div.xnat-dialog .body .inner { display: none ; margin: 20px ; font-size: 13px ; line-height: 17px ; }
+div.xnat-dialog.nopad .body .inner { margin: 0; padding: 0; }
+div.xnat-dialog.open .body .inner { display: block ; }
+
+/* Only styles for the dialog elements should be in this file */
+div.xnat-dialog .body h1,
+div.xnat-dialog .body h2,
+div.xnat-dialog .body h3,
+div.xnat-dialog .body h4 { /* margin-bottom: 1em !important; */ }
+div.xnat-dialog .body p { margin: 0 0 1em ; }
+
+div.xnat-dialog .footer {
+    display: block ; width: 100% ; height: 60px ; margin-top: -1px ; padding: 0 ;
+    position: absolute ; bottom: 0 ;
+    background: #f0f0f0; border-top: 1px solid #e0e0e0 ; overflow: hidden ; }
+div.xnat-dialog .footer.white { background: #fff ; border-top-color: #fff ; }
+div.xnat-dialog .footer .inner { display: table ; width: 100% ; height: 100% ; position: relative ; }
+div.xnat-dialog .footer .content { display: table-cell ; padding-left: 15px ; vertical-align: middle ; text-align: left ; }
+div.xnat-dialog .footer .buttons { display: table-cell ; padding-right: 15px ; vertical-align: middle ; text-align: right ; }
+div.xnat-dialog .footer .buttons .link { display: inline-block; padding: 10px; font-size: 13px; text-decoration: underline; }
+div.xnat-dialog .footer .button {
+    display: inline-block ; margin-left: 10px ; padding: 6px 12px !important ; float: right ;
+    vertical-align: middle; box-shadow: 0 1px 1px #a0a0a0;
+    font-size: 13px ; font-weight: normal; letter-spacing: 0.02em; text-decoration: none !important ; }
+div.xnat-dialog .footer a.button { height: 24px ; line-height: 24px; } /* set height only for <a> buttons */
+div.xnat-dialog .footer .button,
+div.xnat-dialog .footer .button.cancel.default {
+    color: #000 ; background: #f8f8f8 linear-gradient( #ffffff, #f0f0f0 ) ; border: 1px solid #a0a0a0 ; border-radius: 3px ; }
+div.xnat-dialog .footer .button:hover,
+div.xnat-dialog .footer .button.cancel.default:hover { background: #e8e8e8; }
+div.xnat-dialog .footer .button:active,
+div.xnat-dialog .footer .button.cancel.default:active { color: inherit ; background: #d0d0d0 }
+div.xnat-dialog .footer .button.default { color: #fff ; background: #1A75BB linear-gradient( #3C8BC7, #1A75BB ); border-color: #085895 ; }
+div.xnat-dialog .footer .button.default:active { background: #1A75BB ; border-color: #085895 ; }
+div.xnat-dialog .footer .button.default:hover { background: #1A75BB; }
+div.xnat-dialog .footer .button.hidden,
+div.xnat-dialog .footer .button.disabled { opacity: 0.6; }
+div.xnat-dialog .footer .button.hidden:hover,
+div.xnat-dialog .footer .button.disabled:hover { cursor: not-allowed !important ; }
+
+div.xnat-dialog.loading .title .close { display: none ; }
+div.xnat-dialog.loading .body .inner { text-align: center ; }
+
+div.xnat-dialog-shell.loading {
+    width: 330px;
+    position: absolute;
+    top: 82px;
+    bottom: auto;
+    right: 0;
+    left: 0;
+    margin: 5% auto 0;
+    background: rgba(255,255,255,0.9);
+    text-align: center;
+    line-height: 0;
+    /*vertical-align: middle;*/
+    /* box-sizing: border-box; */
+    padding: 15px 0;
+    border-radius: 13px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    border: 2px solid rgba(0,0,0,0.3);
+    /*opacity: 0.8;*/
+}
+/*div.xnat-dialog.loading.loader { display: block; }*/
+
+.ie8 body div.xnat-dialog .footer .button { /* margin: 10px ; */ padding: 3px 6px ; }
+.ie9 body div.xnat-dialog .footer .button { /* margin: 12px ; */ padding: 4px 6px 3px ; }
+
+div.xnat-dialog.embedded { top: 0; left: 0; border: none; box-shadow: none; display: block; z-index: auto;  }

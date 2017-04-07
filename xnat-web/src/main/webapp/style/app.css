@@ -76,6 +76,7 @@ input[type="number"] {
 
 textarea {
     padding: 4px;
+    box-sizing: border-box;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 13px;
     border: 1px solid #c0c0c0;

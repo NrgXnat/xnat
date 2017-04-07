@@ -205,31 +205,33 @@
 
         function setupSwitches(){
 
-            usersGroups = topXNAT.admin.usersGroups;
-
             var verifiedSwitch = usersGroups.userSwitchElement(USERNAME, 'verified', isVerified);
-            verifiedSwitch.render(userVerifiedSwitch);
+            userVerifiedSwitch.append(verifiedSwitch);
 
             var enabledSwitch = usersGroups.userSwitchElement(USERNAME, 'enabled', isEnabled);
-            enabledSwitch.render(userEnabledSwitch);
+            userEnabledSwitch.append(enabledSwitch);
 
             var userAccountDetailsTable = $('#user-account-details');
             userAccountDetailsTable.on('change', 'input.user-verified', usersGroups.setVerified);
             userAccountDetailsTable.on('change', 'input.user-enabled', usersGroups.setEnabled);
+
         }
 
-
         topXNAT.xhr.get(topXNAT.url.rootUrl('/xapi/siteConfig')).done(function(siteConfig){
+
+            topXNAT = window.top.XNAT;
 
             topXNAT.data = extend(true, XNAT.data||{}, {
                 siteConfig: siteConfig
             });
 
             if (topXNAT && topXNAT.admin && topXNAT.admin.usersGroups && topXNAT.admin.usersGroups.loaded) {
+                usersGroups = topXNAT.admin.usersGroups;
                 setupSwitches();
             }
             else {
                 loadjs(XNAT.url.rootUrl('/scripts/xnat/admin/usersGroups.js'), function(){
+                    topXNAT = window.top.XNAT;
                     usersGroups = topXNAT.admin.usersGroups;
                     setupSwitches();
                 }, function(){

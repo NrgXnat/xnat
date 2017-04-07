@@ -407,7 +407,7 @@ var XNAT = getObject(XNAT);
                 }
             });
             XHR.open(config.method, config.url, true);
-            XHR.setRequestHeader('Content-type', config.contentType);
+            XHR.setRequestHeader('Content-Type', config.contentType);
             XHR.onload = function(){
                 if (XHR.status !== 200) {
                     console.error(XHR.statusText);
@@ -568,6 +568,7 @@ var XNAT = getObject(XNAT);
                 codeEditor: opts.code,
                 codeLanguage: opts.codeLanguage || opts.code
             });
+            addClassName(opts.element, 'code mono');
             opts.element.title = 'Double-click to open in code editor.';
             // open code editor on double-click
             // opts.element.ondblclick = function(){

@@ -149,7 +149,7 @@ var XNAT = getObject(XNAT);
             addClassName(element, [opts.className, opts.classes, opts.addClass]);
         }
 
-        var inner = spawn('div.inner');
+        var inner = spawn('div.panel-element-content');
 
         var panelElement = template.panelElement(opts, [
 
@@ -166,9 +166,7 @@ var XNAT = getObject(XNAT);
 
                 (opts.afterElement ? opts.afterElement : []),
 
-                spawn('div.description', opts.description||''),
-
-                spawn('div.clear')
+                spawn('div.description', opts.description||'')
 
             )]
         ]);

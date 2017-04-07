@@ -84,6 +84,10 @@
                         //XNAT.tabs.layout = 'top';
 
                     })();
+
+                    XNAT.page = getObject(XNAT.page);
+                    XNAT.page.userAdminPage = true;
+
                 </script>
 
                 <script src="${SITE_ROOT}/scripts/xnat/admin/usersGroups.js"></script>

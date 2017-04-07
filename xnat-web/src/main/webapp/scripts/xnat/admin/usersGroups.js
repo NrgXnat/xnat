@@ -32,6 +32,8 @@ var XNAT = getObject(XNAT);
         passwordComplexityMessage = XNAT.data.siteConfig.passwordComplexityMessage,
         activeUsers = XNAT.data['/xapi/users/active'];
 
+    var userTableContainer = 'div#user-table-container';
+
     XNAT.admin = getObject(XNAT.admin || {});
 
     XNAT.admin.usersGroups = usersGroups =
@@ -393,6 +395,7 @@ var XNAT = getObject(XNAT);
                 var doSave = saveUserData($form);
                 doSave.done(function(){
                     updated = true;
+
                     obj.close();
                 });
             },
@@ -447,18 +450,22 @@ var XNAT = getObject(XNAT);
 
 
     // render or update the users table
-    function renderUsersTable(container){
+    function renderUsersTable(container, url){
         // console.log('renderUsersTable');
         var $container = container ? $$(container) : $(userTableContainer);
         var _usersTable;
         if ($container.length) {
-            $container.html('loading...');
-            // setTimeout(function(){
-            _usersTable = XNAT.spawner.spawn({
-                usersTable: spawnUsersTable()
-            });
-            _usersTable.render($container.empty(), 200, showUsersTable);
-            // }, 200);
+            setTimeout(function(){
+                $container.html('loading...');
+            }, 1);
+            setTimeout(function(){
+                _usersTable = XNAT.spawner.spawn({
+                    usersTable: usersGroups.spawnUsersTable(url)
+                });
+                _usersTable.done(function(){
+                    this.render($container.empty(), 20);
+                });
+            }, 100);
             // return _usersTable;
         }
     }
@@ -466,8 +473,9 @@ var XNAT = getObject(XNAT);
 
 
     // TODO: re-render *only* the table rows, not the whole table
-    function updateUsersTable(refresh){
-        if (!refresh && XNAT.data['/xapi/users/profiles']) {
+    function updateUsersTable(refresh, all){
+        var URL = all ? '/xapi/users/profiles' : '/xapi/users/current';
+        if (!refresh && XNAT.data[URL]) {
             getActiveUsers(function(){
                 renderUsersTable();
             });
@@ -478,9 +486,9 @@ var XNAT = getObject(XNAT);
             }
         }
         return XNAT.xhr.get({
-            url: XNAT.url.restUrl('/xapi/users/profiles'),
+            url: XNAT.url.restUrl(URL),
             success: function(data){
-                XNAT.data['/xapi/users/profiles'] = data;
+                XNAT.data[URL] = data;
                 // console.log(data);
                 getActiveUsers(function(){
                     renderUsersTable();
@@ -505,6 +513,22 @@ var XNAT = getObject(XNAT);
         })
     }
     usersGroups.getUserProfiles = getUserProfiles;
+
+
+    // get profile data for users considered 'current'
+    function getCurrentUsers(success, failure){
+        return XNAT.xhr.get({
+            url: XNAT.url.restUrl('/xapi/users/current'),
+            success: function(data){
+                XNAT.data['/xapi/users/current'] = data;
+                if (isFunction(success)) {
+                    success.apply(this, arguments);
+                }
+            },
+            failure: failure
+        })
+    }
+    usersGroups.getCurrentUsers = getCurrentUsers;
 
 
     function setRowId(profile){
@@ -604,7 +628,7 @@ var XNAT = getObject(XNAT);
 
     function updateUserData(username, delay){
         var USERNAME = typeof username === 'string' ? username : this.title.split(':')[0];
-        var USER_URL = '/xapi/users/profile/' + USERNAME;
+        var USER_URL = USERNAME === 'profiles' ? '/xapi/users/profiles' : '/xapi/users/profile/' + USERNAME;
         return XNAT.xhr.get({
             url: XNAT.url.restUrl(USER_URL),
             success: function(DATA){
@@ -613,9 +637,9 @@ var XNAT = getObject(XNAT);
                     window.setTimeout(function(){
                         getActiveUsers().done(function(ACTIVE){
                             XNAT.data['/xapi/users/active'] = ACTIVE;
-                            forEach([].concat(DATA), function(profile){
+                            forEach([].concat(DATA), function(profile, i){
                                 updateUserRow(profile);
-                            })
+                            });
                         })
                     }, delay||100);
                 }
@@ -857,12 +881,43 @@ var XNAT = getObject(XNAT);
     }
 
 
+    // open a dialog for creating a new user
+    function newUserDialog(){
+        var updated = false;
+        return xmodal.open({
+            width: 600,
+            height: 500,
+            title: 'Create New User',
+            content: '<div class="new-user-form"></div>',
+            beforeShow: function(){
+                var _container = this.$modal.find('div.new-user-form');
+                renderUserAccountForm(null, _container)
+            },
+            okLabel: 'Save',
+            okClose: 'false',
+            okAction: function(obj){
+                var $form = obj.$modal.find('form#user-account-form-panel');
+                var doSave = saveUserData($form);
+                doSave.done(function(){
+                    updated = true;
+                    obj.close();
+                });
+            },
+            onClose: function(){
+                // always update the whole table when adding a user.
+                // usersGroups.spawnTabs();
+                renderUsersTable();
+                // if (updated) {
+                //     updateUsersTable(true);
+                // }
+            }
+        })
+    }
+
 
     function setupTabs(){
 
         // console.log(setupTabs.name);
-
-        var userTableContainer = 'div#user-table-container';
 
         function tabs(){
             return {
@@ -966,16 +1021,21 @@ var XNAT = getObject(XNAT);
 
         function updateUserTableButton(){
             return {
-                tag: 'button#refresh-user-list',
+                tag: 'button#reload-user-list',
                 element: {
-                    html: 'Refresh User List',
+                    html: 'Reload User List',
                     style: {
                         marginLeft: '20px'
                     },
                     on: {
                         click: function(e){
                             // console.log('clicked');
-                            updateUserData('profiles', 10);
+                            // updateUserData('profiles', 10);
+                            // var $container = $('#user-table-container');
+                            // $container.empty().html('loading...');
+                            // spawnUsersTable().render($container.empty());
+                            // usersGroups.spawnTabs();
+                            renderUsersTable();
                         }
                     }
                 }
@@ -994,36 +1054,6 @@ var XNAT = getObject(XNAT);
                 $inputs.prop('checked', true);
                 $this.addClass('selected');
             }
-        }
-
-        // open a dialog for creating a new user
-        function newUserDialog(){
-            var updated = false;
-            return xmodal.open({
-                width: 600,
-                height: 500,
-                title: 'Create New User',
-                content: '<div class="new-user-form"></div>',
-                beforeShow: function(){
-                    var _container = this.$modal.find('div.new-user-form');
-                    renderUserAccountForm(null, _container)
-                },
-                okLabel: 'Save',
-                okClose: 'false',
-                okAction: function(obj){
-                    var $form = obj.$modal.find('form#user-account-form-panel');
-                    var doSave = saveUserData($form);
-                    doSave.done(function(){
-                        updated =  true;
-                        obj.close();
-                    });
-                },
-                onClose: function(){
-                    if (updated) {
-                        updateUsersTable(true);
-                    }
-                }
-            })
         }
 
         // kill all active sessions for the specified user
@@ -1095,12 +1125,15 @@ var XNAT = getObject(XNAT);
         }
 
         // Spawner element config for the users list table
-        function spawnUsersTable(){
+        function spawnUsersTable(url){
 
             // console.log(spawnUsersTable.name);
 
             //var _data = XNAT.xapi.users.profiles || XNAT.data['/xapi/users/profiles'];
             var $dataRows = [];
+
+            // load 'current' users initially
+            var URL = url || '/xapi/users/current';
 
             // TODO:
             // TODO: set min-width as well as max-width
@@ -1124,7 +1157,7 @@ var XNAT = getObject(XNAT);
                 kind: 'table.dataTable',
                 name: 'userProfiles',
                 id: 'user-profiles',
-                load: '/xapi/users/profiles',
+                load: URL,
                 before: {
                     filterCss: {
                         tag: 'style|type=text/css',
@@ -1422,6 +1455,7 @@ var XNAT = getObject(XNAT);
                 }
             }
         }
+        usersGroups.spawnUsersTable = spawnUsersTable;
 
         function groupsTab(){
             return {

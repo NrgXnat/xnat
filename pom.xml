@@ -69,8 +69,11 @@
         <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.dicomedit.version>6.0.2</nrg.dicomedit.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
+        <nrg.dicom-edit4.version>1.0-SNAPSHOT</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>1.0-SNAPSHOT</nrg.dicom-edit6.version>
+        <nrg.dicomedit.version>6.0.2</nrg.dicomedit.version>
+        <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.1</nrg.ecat.version>
@@ -89,8 +92,8 @@
 
         <activemq.version>5.7.0</activemq.version>
         <ant.version>1.9.8</ant.version>
-        <antlr.version>3.5.2</antlr.version>
-        <antlr4.version>4.5.1-1</antlr4.version>
+        <antlr3.version>3.5.2</antlr3.version>
+        <antlr4.version>4.5.3</antlr4.version>
         <hsqldb.version>2.3.4</hsqldb.version>
         <aopalliance.version>1.0</aopalliance.version>
         <aspectj.version>1.8.10</aspectj.version>
@@ -139,7 +142,7 @@
         <jai_imageio.version>1.1</jai_imageio.version>
         <itext.version>1.1.4</itext.version>
         <jackson.version>2.6.5</jackson.version>
-        <java-uuid-generator.version>3.1.3</java-uuid-generator.version>
+        <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
@@ -165,6 +168,7 @@
         <log4j.version>1.2.17</log4j.version>
         <log4j2.version>2.6.2</log4j2.version>
         <mockito.version>1.8.5</mockito.version>
+        <easymock.version>1.2_Java1.3</easymock.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <org.postgresql.version>9.4.1209.jre7</org.postgresql.version>
@@ -193,12 +197,12 @@
         <xmlbeans.version>2.6.0</xmlbeans.version>
 
         <!-- Plugin versions -->
-        <antlr4-maven-plugin.version>4.5.3</antlr4-maven-plugin.version>
         <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
         <jacoco-maven-plugin.version>0.7.9</jacoco-maven-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
         <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+        <copy-rename-maven-plugin.version>1.0</copy-rename-maven-plugin.version>
         <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
         <maven-jarsigner-plugin.version>1.4</maven-jarsigner-plugin.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
@@ -274,6 +278,18 @@
                 <artifactId>nrg-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- DicomEdit 4 and 6 engines -->
+            <dependency>
+                <groupId>org.nrg.dicom</groupId>
+                <artifactId>dicom-edit4</artifactId>
+                <version>${nrg.dicom-edit4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.dicom</groupId>
+                <artifactId>dicom-edit6</artifactId>
+                <version>${nrg.dicom-edit6.version}</version>
+            </dependency>
+            <!-- Older version of DicomEdit 6 -->
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>DicomEdit</artifactId>
@@ -1027,17 +1043,22 @@
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr</artifactId>
-                <version>${antlr.version}</version>
+                <version>${antlr3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr-runtime</artifactId>
+                <version>${antlr3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4</artifactId>
+                <version>${antlr4.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr4.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr-runtime</artifactId>
-                <version>${antlr.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hsqldb</groupId>
@@ -1423,6 +1444,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>easymock</groupId>
+                <artifactId>easymock</artifactId>
+                <version>${easymock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-test</artifactId>
                 <version>${spring-framework.version}</version>
@@ -1460,8 +1487,20 @@
             <plugins>
                 <plugin>
                     <groupId>org.antlr</groupId>
+                    <artifactId>antlr3-maven-plugin</artifactId>
+                    <version>${antlr3.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>antlr</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.antlr</groupId>
                     <artifactId>antlr4-maven-plugin</artifactId>
-                    <version>${antlr4-maven-plugin.version}</version>
+                    <version>${antlr4.version}</version>
                     <configuration>
                         <listener>true</listener>
                         <visitor>true</visitor>
@@ -1500,6 +1539,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>${maven-resources-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.coderplus.maven.plugins</groupId>
+                    <artifactId>copy-rename-maven-plugin</artifactId>
+                    <version>${copy-rename-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1600,6 +1644,9 @@
                             </goals>
                         </execution>
                     </executions>
+                <configuration>
+                        <shortRevisionLength>7</shortRevisionLength>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

@@ -1144,8 +1144,8 @@ var XNAT = getObject(XNAT || {});
     };
 
     panel.textarea = function(opts){
-        var textarea = XNAT.ui.input.textarea(opts);
-        return XNAT.ui.template.panelDisplay(opts, textarea).get();
+        var textarea = XNAT.ui.input.textarea(opts).get();
+        return XNAT.ui.template.panelDisplay(opts, textarea);
     };
     panel.input.textarea = panel.textarea;
 

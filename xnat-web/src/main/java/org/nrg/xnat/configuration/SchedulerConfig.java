@@ -15,6 +15,8 @@ import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.PreferenceEvent;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.ResetEmailRequests;
+import org.nrg.xnat.services.PETTracerUtils;
+import org.nrg.xnat.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +26,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.PeriodicTrigger;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 
@@ -78,7 +81,19 @@ public class SchedulerConfig implements SchedulingConfigurer {
         _service.triggerEvent(new PreferenceEvent("archivePath", String.valueOf(_siteConfigPreferences.getArchivePath())));
         _service.triggerEvent(new PreferenceEvent("roleService", String.valueOf(_siteConfigPreferences.getRoleService())));
         _service.triggerEvent(new PreferenceEvent("checksums", String.valueOf(_siteConfigPreferences.getChecksums())));
-        _service.triggerEvent(new PreferenceEvent("sitewidePetTracers", String.valueOf(_siteConfigPreferences.getSitewidePetTracers())));
+
+        try {
+            String tracers = _siteConfigPreferences.getSitewidePetTracers();
+            if (StringUtils.isEmpty(tracers)) {
+                tracers = PETTracerUtils.getDefaultTracerList();
+                _siteConfigPreferences.setSitewidePetTracers(tracers); //set tracers to default ones from text file if unset, which triggers change event so they get set up.
+            }
+            else{
+                //Still need to trigger event so they get set up (setSiteWideTracerList needs to be invoked)
+                _service.triggerEvent(new PreferenceEvent("sitewidePetTracers", _siteConfigPreferences.getSitewidePetTracers()));
+            }
+        } catch (Exception e) {
+        }
 
         for (final TriggerTask triggerTask : _tasks) {
             taskRegistrar.addTriggerTask(triggerTask);

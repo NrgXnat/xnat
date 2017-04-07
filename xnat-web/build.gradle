@@ -365,7 +365,6 @@ dependencies {
     compile "org.nrg:dicom-xnat-util:${vXnatDev}"
     compile "org.nrg:ecat4xnat:${vXnat}"
     compile "org.nrg:ExtAttr:4.2.1"
-    compile "org.nrg:DicomEdit:6.0.2"
     compile "org.nrg:DicomImageUtils:${vXnat}"
     compile "org.nrg:PrearcImporter:${vXnat}"
     compile "org.nrg:SessionBuilders:${vXnat}"

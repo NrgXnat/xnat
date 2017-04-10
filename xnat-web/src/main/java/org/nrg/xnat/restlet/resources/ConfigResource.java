@@ -395,7 +395,7 @@ public class ConfigResource extends SecureResource {
                 }
                 configService.disable(user.getLogin(), "Disabling this setting", toolName, path);
             } else {
-                if (!((StringUtils.isNotBlank(projectId) && Permissions.canEdit(user, "xnat:subjectData/project", projectId)) && !Roles.isSiteAdmin(user))) {
+                if (!(Permissions.canEdit(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if have project edit permissions or are site admins. Otherwise they are forbidden.
                     final String message = String.format("User %s can not access project %s to modify configuration setting %s for the tool %s", user.getUsername(), projectId, path, toolName);
                     _log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);

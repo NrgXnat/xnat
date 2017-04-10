@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,14 +60,14 @@ public class PETTracerUtils {
     }
 
     public static String getDefaultTracerList() throws IOException {
-        final StringBuilder tracers = new StringBuilder();
+        final List<String> tracers = Lists.newArrayList();
         final List<Resource> resources = BasicXnatResourceLocator.getResources(DEFAULT_TRACER_LIST);
         for (final Resource resource : resources) {
             try (final InputStream input = resource.getInputStream()) {
-                tracers.append(IOUtils.readLines(input, "UTF-8"));
+                tracers.addAll(IOUtils.readLines(input, "UTF-8"));
             }
         }
-        return tracers.toString();
+        return Joiner.on("\n").join(tracers);
     }
 
     // flat out stolen from DicomEdit.java

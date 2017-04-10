@@ -143,7 +143,7 @@ public class UsersApi extends AbstractXapiRestController {
         List<User> usersList = null;
         String regex = "^[a-zA-Z0-9]+[a-zA-Z0-9._-]*$";
         if(username.matches(regex)){
-            usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.xdat_user_id=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login='"+username+"'", new RowMapper<User>() {
+            usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login='"+username+"'", new RowMapper<User>() {
                 @Override
                 public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
                     Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");
@@ -184,7 +184,7 @@ public class UsersApi extends AbstractXapiRestController {
             }
         }
 
-        final List<User> usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.xdat_user_id=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - INTERVAL '1 year') OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - INTERVAL '1 year') ) ) )) ORDER BY xdat_user.xdat_user_id", new RowMapper<User>() {
+        final List<User> usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - INTERVAL '1 year') OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - INTERVAL '1 year') ) ) )) ORDER BY xdat_user.xdat_user_id", new RowMapper<User>() {
             @Override
             public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
                 Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");

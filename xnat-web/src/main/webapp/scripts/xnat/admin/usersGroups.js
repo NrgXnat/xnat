@@ -178,41 +178,10 @@ var XNAT = getObject(XNAT);
     };
 
 
-    // common config function for DOM and Spawner elements
-    function userSwitchConfig(username, type, status){
-        status = !!realValue(status);
-        return {
-            config: {
-                element: {
-                    name: type,
-                    className: 'user-' + type,
-                    checked: status,
-                    title: username + ':' + type
-                },
-                onText: '',
-                offText: ''
-            }
-        }
-    }
-
-
     // RETURNS A DOM ELEMENT
-    function userSwitch(type, status){
-        var element = userSwitchConfig(this.username, type, status);
-        return XNAT.ui.input.switchbox(element.config)
-    }
-
-
-    // spawns a status switchbox element
-    // RETURNS A SPAWNER INSTANCE
     usersGroups.userSwitchElement = function(username, type, status){
-        // var element = userSwitchConfig(username, type, status);
-        // element.config.kind = 'input.switchbox'; // add 'kind' property for spawner function
-        // element.config.onText = 'Yes';
-        // element.config.offText = 'No';
-        // return XNAT.spawner.spawn(element);
         return XNAT.ui.input.switchbox({
-            value: status,
+            value: realValue(status),
             element: {
                 name: type,
                 className: 'user-' + type,
@@ -1002,29 +971,17 @@ var XNAT = getObject(XNAT);
                 tag: 'span.tip.shadowed',
                 element: {
                     style: {
-                        width: '315px',
-                        left: '-350px',
+                        width: '350px',
+                        left: '-385px',
                         top: '-75px',
                         // backgroundColor: '#ffc',
                         zIndex: 10000
                     }
                 },
-                // contents: {
-                //     infoText: {
-                //         kind: 'html',
-                //         html: '' +
-                //         'By default, the table below only shows "current" users: users that are <b>enabled</b>, or who ' +
-                //         'may be <b>disabled</b> but have logged in in the past year, or have an account created more ' +
-                //         'than a year ago but have never logged in.' +
-                //         '<br><br>' +
-                //         'Click the "Load All Users" button to view <i>all</i> users that have accounts on this system, ' +
-                //         'regardles of their "current" status.'
-                //     }
-                // },
                 content: [
                     'By default, the table below only shows "current" users: users that are <b>enabled</b>, or who ' +
-                    'may be <b>disabled</b> but have logged in during the past year, or have an account created more ' +
-                    'than a year ago and have never logged in.' +
+                    'may be <b>disabled</b> but have logged in during the past year, or have an unused account created less ' +
+                    'than a year ago.' +
                     '<br><br>' +
                     'Click the <b>"Load All Users"</b> button to view <i>all</i> users that have accounts on this system, ' +
                     'even if their account is not "current."'
@@ -1032,6 +989,17 @@ var XNAT = getObject(XNAT);
                 filler: null
             }
         }
+
+        // var alternateInfoText = '' +
+        //
+        //     'By default, the table below only shows "current" users: users that are <b>enabled</b>, users that have ' +
+        //     'logged in during the past year but are <b>disabled</b>, or users with accounts that were ' +
+        //     'created created in the past year but never used.' +
+        //     '<br><br>' +
+        //     'Click the <b>"Load All Users"</b> button to view <i>all</i> users that have accounts on this system, ' +
+        //     'even if their account is not "current."' +
+        //
+        //     '';
 
         function allUsersButtonInfo(){
             return {
@@ -1054,9 +1022,6 @@ var XNAT = getObject(XNAT);
                 tag: 'div',
                 element: {
                     style: {
-                        // position: 'absolute',
-                        // top: '30px',
-                        // right: '0',
                         float: 'right'
                     }
                 },
@@ -1130,9 +1095,6 @@ var XNAT = getObject(XNAT);
                         }
                     },
                     usersTablePanel: {
-                        // kind: 'panel',
-                        // label: 'User Accounts',
-                        // footer: false,
                         tag: 'div#user-accounts',
                         contents: {
                             tableContainer: {

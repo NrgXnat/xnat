@@ -465,7 +465,7 @@ var XNAT = getObject(XNAT);
                 _usersTable.done(function(){
                     this.render($container.empty(), 20);
                 });
-            }, 100);
+            }, 10);
             // return _usersTable;
         }
     }
@@ -940,6 +940,147 @@ var XNAT = getObject(XNAT);
             }
         }
 
+        function createUserButton(){
+            return {
+                tag: 'button#create-new-user',
+                element: {
+                    html: 'Create New User',
+                    on: {
+                        click: function(e){
+                            // console.log('clicked');
+                            newUserDialog();
+                        }
+                    }
+                }
+            }
+        }
+
+        function reloadUserListButton(){
+            return {
+                tag: 'button#reload-user-list',
+                element: {
+                    html: 'Reload User List',
+                    style: {
+                        marginLeft: '20px'
+                    },
+                    on: {
+                        click: function(e){
+                            // console.log('clicked');
+                            // updateUserData('profiles', 10);
+                            // var $container = $('#user-table-container');
+                            // $container.empty().html('loading...');
+                            // spawnUsersTable().render($container.empty());
+                            // usersGroups.spawnTabs();
+                            setTimeout(function(){
+                                updateUsersTable(true);
+                            }, 10);
+                        }
+                    }
+                }
+            }
+        }
+
+        function loadAllUsersButton(){
+            return {
+                tag: 'button#load-all-users',
+                element: {
+                    html: 'Load All Users',
+                    style: {
+                        marginLeft: '10px'
+                    },
+                    on: {
+                        click: function(e){
+                            renderUsersTable($(userTableContainer), '/xapi/users/profiles');
+                        }
+                    }
+                }
+            }
+        }
+
+        function allUsersButtonInfoText(){
+            return {
+                tag: 'span.tip.shadowed',
+                element: {
+                    style: {
+                        width: '315px',
+                        left: '-350px',
+                        top: '-75px',
+                        // backgroundColor: '#ffc',
+                        zIndex: 10000
+                    }
+                },
+                // contents: {
+                //     infoText: {
+                //         kind: 'html',
+                //         html: '' +
+                //         'By default, the table below only shows "current" users: users that are <b>enabled</b>, or who ' +
+                //         'may be <b>disabled</b> but have logged in in the past year, or have an account created more ' +
+                //         'than a year ago but have never logged in.' +
+                //         '<br><br>' +
+                //         'Click the "Load All Users" button to view <i>all</i> users that have accounts on this system, ' +
+                //         'regardles of their "current" status.'
+                //     }
+                // },
+                content: [
+                    'By default, the table below only shows "current" users: users that are <b>enabled</b>, or who ' +
+                    'may be <b>disabled</b> but have logged in during the past year, or have an account created more ' +
+                    'than a year ago and have never logged in.' +
+                    '<br><br>' +
+                    'Click the <b>"Load All Users"</b> button to view <i>all</i> users that have accounts on this system, ' +
+                    'even if their account is not "current."'
+                ],
+                filler: null
+            }
+        }
+
+        function allUsersButtonInfo(){
+            return {
+                tag: 'span.tip_icon',
+                element: {
+                    style: {
+                        marginRight: '3px',
+                        left: '2px',
+                        top: '3px'
+                    }
+                },
+                contents: {
+                    allUsersButtonInfoText: allUsersButtonInfoText()
+                }
+            }
+        }
+
+        function allUsersButtonElements(){
+            return {
+                tag: 'div',
+                element: {
+                    style: {
+                        // position: 'absolute',
+                        // top: '30px',
+                        // right: '0',
+                        float: 'right'
+                    }
+                },
+                contents: {
+                    allUsersButtonInfo: allUsersButtonInfo(),
+                    loadAllUsersButton: loadAllUsersButton()
+                }
+            }
+        }
+
+        function selectAllUsers(){
+            var $this = $(this);
+            var $table = $this.closest('table');
+            var $inputs = $table.find('input.select-user');
+            if ($this.hasClass('selected')) {
+                $inputs.prop('checked', false);
+                $this.removeClass('selected');
+            }
+            else {
+                $inputs.prop('checked', true);
+                $this.addClass('selected');
+            }
+        }
+
         function usersTabContents(){
             return {
                 tag: 'div.manage-users',
@@ -976,6 +1117,7 @@ var XNAT = getObject(XNAT);
                         tag: 'div.user-actions',
                         element: {
                             style: {
+                                position: 'relative',
                                 marginBottom: '30px',
                                 paddingTop: '30px',
                                 borderTop: '1px solid #c8c8c8'
@@ -983,7 +1125,8 @@ var XNAT = getObject(XNAT);
                         },
                         contents: {
                             createUserButton: createUserButton(),
-                            updateUserTableButton: updateUserTableButton()
+                            reloadUserListButton: reloadUserListButton(),
+                            allUsersButtonElements: allUsersButtonElements()
                         }
                     },
                     usersTablePanel: {
@@ -1001,58 +1144,6 @@ var XNAT = getObject(XNAT);
                         }
                     }
                 }
-            }
-        }
-
-        function createUserButton(){
-            return {
-                tag: 'button#create-new-user',
-                element: {
-                    html: 'Create New User',
-                    on: {
-                        click: function(e){
-                            // console.log('clicked');
-                            newUserDialog();
-                        }
-                    }
-                }
-            }
-        }
-
-        function updateUserTableButton(){
-            return {
-                tag: 'button#reload-user-list',
-                element: {
-                    html: 'Reload User List',
-                    style: {
-                        marginLeft: '20px'
-                    },
-                    on: {
-                        click: function(e){
-                            // console.log('clicked');
-                            // updateUserData('profiles', 10);
-                            // var $container = $('#user-table-container');
-                            // $container.empty().html('loading...');
-                            // spawnUsersTable().render($container.empty());
-                            // usersGroups.spawnTabs();
-                            renderUsersTable();
-                        }
-                    }
-                }
-            }
-        }
-
-        function selectAllUsers(){
-            var $this = $(this);
-            var $table = $this.closest('table');
-            var $inputs = $table.find('input.select-user');
-            if ($this.hasClass('selected')) {
-                $inputs.prop('checked', false);
-                $this.removeClass('selected');
-            }
-            else {
-                $inputs.prop('checked', true);
-                $this.addClass('selected');
             }
         }
 
@@ -1389,7 +1480,7 @@ var XNAT = getObject(XNAT);
                         td: { className: 'last-login center mono' },
                         filter: function(table){
                             var MIN = 60*1000;
-                            var HOUR = 60*60*1000;
+                            var HOUR = MIN*60;
                             var X8HRS = HOUR*8;
                             var X24HRS = HOUR*24;
                             var X7DAYS = X24HRS*7;

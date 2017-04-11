@@ -45,6 +45,9 @@ var XNAT = getObject(XNAT || {});
     // keep track of dialog objects
     dialog.dialogs = {};
 
+    // keep track of special loading dialog objects
+    dialog.loaders = {};
+
     // keep track of just uids
     dialog.uids = [];
 
@@ -147,6 +150,8 @@ var XNAT = getObject(XNAT || {});
         this.uid = this.uid || randomID('dlgx', false);
 
         this.count = ++dialog.count;
+
+        this.delay = this.delay || 0;
 
         this.zIndex = {};
         this.zIndex.container = ++dialog.zIndex;
@@ -402,6 +407,13 @@ var XNAT = getObject(XNAT || {});
     // add all of the content - title, body, footer, buttons, etc.
     // Dialog.fn.render = function(opts){};
 
+    Dialog.fn.setUID = Dialog.fn.setUid = function(uid){
+        this.uid = uid || this.uid || randomID('dlgx', false);
+        dialog.dialogs[this.uid] = this;
+        dialog.updateUIDs();
+        return this;
+    };
+
     // re-calculate height of modal body if window.innerHeight has changed
     Dialog.fn.setHeight = function(scale){
 
@@ -470,7 +482,7 @@ var XNAT = getObject(XNAT || {});
 
         this.setSpeed(firstDefined(duration, 0));
 
-        if (this.speed === -1) {
+        if (this.speed < 0) {
             return this;
         }
 
@@ -574,7 +586,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     Dialog.fn.fadeOut = function(duration, callback){
-        this.showMethod = 'fadeOut';
+        this.hideMethod = 'fadeOut';
         this.setSpeed(firstDefined(duration, 200));
         this.hide(this.speed, callback);
         return this;
@@ -619,13 +631,26 @@ var XNAT = getObject(XNAT || {});
 
     // render the elements and show the dialog immediately (on top)
     Dialog.fn.open = function(duration, callback){
+        var _this = this;
         // use -1 to suppress opening
         this.setSpeed(firstDefined(duration, 0));
-        if (this.speed === -1) {
+        if (this.speed < 0) {
             return this;
         }
         this.toTop();
-        this.show(this.speed , callback);
+        if (this.delay){
+            window.setTimeout(function(){
+                try {
+                    _this.show(_this.speed , callback);
+                }
+                catch(e) {
+                    console.log(e);
+                }
+            }, _this.delay||1);
+        }
+        else {
+            this.show(this.speed, callback);
+        }
         return this;
     };
 
@@ -893,17 +918,20 @@ var XNAT = getObject(XNAT || {});
     //    return _loading;
     //};
 
-    dialog.loading = function(){
-        // only one loadingBar
-        // if (dialog.loadingBar instanceof Dialog) {
-        //     console.log('loadingBar present');
-        //     return dialog.loadingBar;
-        // }
+    var loadingBarCounter = 0;
+
+    dialog.loading = function(delay, callback){
+        // only one loadingBar?
+        if (dialog.loadingBar instanceof Dialog) {
+            console.log('loadingBar');
+            return dialog.loadingBar.toTop();
+        }
         var LDG = dialog.shell({
-            uid: 'loadingbar',
-            width: 328,
+            uid: 'loadingbar' + (loadingBarCounter += 1),
+            width: 240,
             height: 'auto',
-            top: 0,
+            top: 60,
+            delay: +delay,
             protected: true, // prevents being tracked in dialogs object
             destroyOnClose: false
         });
@@ -911,10 +939,38 @@ var XNAT = getObject(XNAT || {});
             .addClass('loader loading')
             .append(spawn('img', {
                 src: XNAT.url.rootUrl('/images/loading_bar.gif'),
-                width: 300,
+                width: 220,
                 height: 19
             }));
+        if (isFunction(callback)) {
+            LDG.afterShow = callback;
+        }
+        dialog.loaders[LDG.uid] = LDG;
         return LDG;
+    };
+
+    dialog.loading.open = function(id, delay, callback){
+        var LDG = dialog.loading(delay, callback);
+        if (id) LDG.uid = LDG.id = id;
+        dialog.loaders[LDG.uid] = LDG;
+        return LDG.open();
+    };
+
+    // close a specific 'loading' dialog by UID
+    dialog.loading.close = function(dlg, destroy){
+        var ldg = isString(dlg) ? dialog.loaders[dlg] : dlg;
+        var LDG = dialog.toggle(ldg, 'close');
+        if (!LDG) return null;
+        if (LDG.nuke || LDG.destroyOnClose || destroy) {
+            LDG.destroy();
+        }
+        return LDG;
+    };
+
+    dialog.loading.closeAll = function(){
+        forOwn(dialog.loaders, function(uid, dlg){
+            dlg.close(true);
+        })
     };
 
     $(function(){
@@ -967,3 +1023,4 @@ var XNAT = getObject(XNAT || {});
     return XNAT.ui.dialog = XNAT.dialog = dialog;
 
 }));
+

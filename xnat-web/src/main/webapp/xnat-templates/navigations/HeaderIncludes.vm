@@ -202,8 +202,8 @@ $navigation.setTemplate("/BaseJS.vm")
     // The YUIDOM alias is used throughout XNAT
     var YUIDOM = YAHOO.util.Dom;
 
-    XNAT.dom = getObject(XNAT.dom||{});
-    XNAT.dom.addFormCSRF = function(form){
+    XNAT.app = getObject(XNAT.app||{});
+    XNAT.app.addFormCSRF = function(form){
         $$(form||'form').each(function(){
             var form$ = $(this);
             if (!form$.has('input[name="XNAT_CSRF"]').length){
@@ -215,7 +215,7 @@ $navigation.setTemplate("/BaseJS.vm")
     jq(function(){
         // add hidden input with CSRF data
         // to all forms on page load
-        XNAT.dom.addFormCSRF();
+        XNAT.app.addFormCSRF();
     });
 
 </script>

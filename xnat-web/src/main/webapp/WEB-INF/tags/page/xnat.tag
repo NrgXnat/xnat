@@ -152,8 +152,8 @@
 
     <script type="text/javascript">
 
-        XNAT.dom = getObject(XNAT.dom || {});
-        XNAT.dom.addFormCSRF = function($form){
+        XNAT.app = getObject(XNAT.app || {});
+        XNAT.app.addFormCSRF = function($form){
             $form = $$($form || 'form');
             $form.each(function(form){
                 var form$ = $(form);
@@ -167,7 +167,7 @@
         jq(function(){
             // add hidden input with CSRF data
             // to all forms on page load
-            XNAT.dom.addFormCSRF();
+            XNAT.app.addFormCSRF();
         });
 
     </script>

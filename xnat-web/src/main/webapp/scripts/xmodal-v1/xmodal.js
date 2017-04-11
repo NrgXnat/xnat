@@ -1342,6 +1342,7 @@ if (typeof jQuery == 'undefined') {
             opts.id = 'xmodal-loading-' + (++xmodal.loading.count);
             opts.width = 260;
             opts.height = 90;
+            opts.scroll = false;
             opts.content = $('#xmodal-loading').html();
             opts.animation = false;
             opts.closeBtn = false;

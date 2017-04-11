@@ -650,32 +650,57 @@ function sortTable(tbody, col, reverse) {
     console.log(Date.now() - startTime);
 }
 
-function sortTableToo($tbody, col, reverse) {
+function sortTableToo($tbody, col, reverse){
     console.log('sortTableToo');
+    var _tbody = $tbody[0];
     var startTime = Date.now();
-    var i = -1;
-    xmodal.loading.open();
-    setTimeout(function(){
-        var trs = $tbody.find('> tr').detach().toArray().sort(function (a, b) {
-            var aValue, bValue;
-            if (col === -1) {
-                aValue = getDataAttrValue(a, 'index');
-                bValue = getDataAttrValue(b, 'index');
-            }
-            else {
-                aValue = a.cells[col].textContent;
-                bValue = b.cells[col].textContent;
-            }
-            return (+reverse || -1) * (aValue < bValue ? -1 : (aValue > bValue ? 1 : 0));
-            // return (+reverse || -1) * (aValue.localeCompare(bValue));
-        });
+    var endTime = 0;
+    var trs = $tbody.find('> tr').detach().toArray().sort(function(a, b){
+        var aValue, bValue;
+        if (col === -1) {
+            aValue = getDataAttrValue(a, 'index');
+            bValue = getDataAttrValue(b, 'index');
+        }
+        else {
+            aValue = a.cells[col].textContent;
+            bValue = b.cells[col].textContent;
+        }
+        return (+reverse || -1) * (aValue < bValue ? -1 : (aValue > bValue ? 1 : 0));
+        // return (+reverse || -1) * (aValue.localeCompare(bValue));
+    });
+
+    // just append all the rows if there are less than 300
+    if (trs.length < 200) {
         $tbody.append(trs);
-        console.log(Date.now() - startTime);
-        xmodal.loading.closeAll();
-    }, 100);
-    // while (++i < trs.length) {
-    //     tbody.appendChild(trs[i]);
-    // }
+    }
+    else {
+
+        // only open the loading dialog if more than 600 rows
+        var loader = XNAT.ui.dialog.loadingBar;
+        if (trs.length > 400) {
+            loader.show();
+        }
+
+        window.setTimeout(function(){
+            // chunk rows into groups of 200
+            var trChunks = chunkArray(trs, 200);
+                forEach(trChunks, function(chunk, i){
+                    window.setTimeout(function(){
+                        // $tbody.append(chunk);
+                        forEach(chunk, function(row){
+                            _tbody.appendChild(row);
+                        });
+                    }, 0);
+                });
+                window.setTimeout(function(){
+                    loader.fadeOut(100);
+                }, 0);
+            endTime = (Date.now() - startTime);
+            console.log(endTime);
+
+        }, 100);
+
+    }
 }
 
 // http://stackoverflow.com/questions/3160277/jquery-table-sort

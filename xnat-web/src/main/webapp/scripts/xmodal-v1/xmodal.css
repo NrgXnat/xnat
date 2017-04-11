@@ -32,7 +32,10 @@ div.xmodal:focus { outline: 1px solid #808080; }
 
 div.xmodal.dialog { width: 600px ; height: 400px ; }
 
-div.xmodal.loading { min-height: 80px; }
+div.xmodal.loading { min-height: 80px;  }
+div.xmodal.loading .title { height: 20px;  }
+div.xmodal.loading .title .inner { padding-left: 10px; font-size: 12px; line-height: 20px; }
+div.xmodal.loading .body > .inner { overflow: hidden !important; }
 
 div.xmodal.maxxed {
     width: 98% !important; height: 98% !important;

@@ -189,6 +189,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
         AdminUtils.sendNewUserVerificationEmail(found);
         context.put("emailTo", found.getEmail());
         context.put("emailUsername", found.getLogin());
+        context.put("siteLogoPath", XDAT.getSiteLogoPath());
         data.setRedirectURI(null);
         data.setScreenTemplate("VerificationSent.vm");
     }

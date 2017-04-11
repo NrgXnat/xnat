@@ -9,22 +9,18 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.util.Date;
-
-import javax.mail.MessagingException;
-
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+
+import javax.mail.MessagingException;
+import java.util.Date;
 
 
 public class ResendVerification extends SecureScreen {
@@ -40,6 +36,7 @@ public class ResendVerification extends SecureScreen {
     @Override
     protected void doBuildTemplate(final RunData data, final Context context) {
     	try {
+            context.put("siteLogoPath", XDAT.getSiteLogoPath());
     		EmailRequestLogService requestLog = XDAT.getContextService().getBean(EmailRequestLogService.class);
     		if(storeParameterIfPresent(data, context, "emailTo") && storeParameterIfPresent(data, context, "emailUsername")){
     			String emailTo = (String)context.get("emailTo");

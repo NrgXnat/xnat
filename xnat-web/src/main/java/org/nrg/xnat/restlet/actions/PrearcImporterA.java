@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.status.StatusProducer;
+import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.exception.InvalidPermissionException;

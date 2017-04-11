@@ -46,9 +46,8 @@ import org.iso_relax.verifier.VerifierConfigurationException;
 import org.iso_relax.verifier.VerifierFactory;
 import org.iso_relax.verifier.VerifierHandler;
 import org.nrg.PrearcImporter;
-import org.nrg.status.StatusMessage;
-import org.nrg.status.StatusMessage.Status;
-import org.nrg.status.StatusQueue;
+import org.nrg.framework.status.StatusMessage;
+import org.nrg.framework.status.StatusQueue;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.PrearcImporterFactory;
@@ -57,10 +56,12 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import static org.nrg.framework.status.StatusMessage.Status.*;
+
 public final class Inbox {
     private static final String LOCKNAME = ".importing";
 
-    private static final Map<String,StatusQueue> active = Collections.synchronizedMap(new HashMap<String,StatusQueue>());
+    private static final Map<String,StatusQueue> active   = Collections.synchronizedMap(new HashMap<String,StatusQueue>());
     private static final Map<String,StatusQueue> complete = Collections.synchronizedMap(new HashMap<String,StatusQueue>());
 
     // This is configurable from inside the webapp, so it might change from one instantiation to the next.
@@ -453,12 +454,12 @@ public final class Inbox {
     }
 
 
-    private static final Map<Status,String> statusTags = new HashMap<Status,String>();
+    private static final Map<StatusMessage.Status,String> statusTags = new HashMap<>();
     static {
-	statusTags.put(Status.PROCESSING, "processing");
-	statusTags.put(Status.WARNING, "warning");
-	statusTags.put(Status.FAILED, "failed");
-	statusTags.put(Status.COMPLETED, "completed");
+	statusTags.put(PROCESSING, "processing");
+	statusTags.put(WARNING, "warning");
+	statusTags.put(FAILED, "failed");
+	statusTags.put(COMPLETED, "completed");
     }
 
     private String toXML(final StatusMessage m) {

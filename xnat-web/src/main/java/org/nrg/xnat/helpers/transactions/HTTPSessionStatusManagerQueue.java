@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.helpers.transactions;
 
-import org.nrg.status.StatusList;
+import org.nrg.xnat.status.StatusList;
 
 import javax.servlet.http.HttpSession;
 

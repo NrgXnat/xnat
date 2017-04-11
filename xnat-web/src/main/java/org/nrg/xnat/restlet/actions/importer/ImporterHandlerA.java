@@ -15,29 +15,26 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.status.StatusProducer;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.status.StatusProducer;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.DicomZipImporter;
 import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 @SuppressWarnings({ "rawtypes", "unchecked", "deprecation" })
-public abstract class ImporterHandlerA  extends StatusProducer implements Callable<List<String>>{
+public abstract class ImporterHandlerA extends StatusProducer implements Callable<List<String>>{
 
 
     public ImporterHandlerA(final Object listenerControl, final UserI u,  final FileWriterWrapperI fw, final Map<String,Object> params) {

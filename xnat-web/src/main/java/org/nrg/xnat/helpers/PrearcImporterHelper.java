@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.status.ListenerUtils;
+import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.om.XnatProjectdata;

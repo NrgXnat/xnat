@@ -26,10 +26,9 @@ import org.apache.log4j.Logger;
 import org.nrg.PrearcImporter;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.status.StatusListenerI;
-import org.nrg.status.StatusMessage;
-import org.nrg.status.StatusMessage.Status;
-import org.nrg.status.StatusProducer;
+import org.nrg.framework.status.StatusListenerI;
+import org.nrg.framework.status.StatusMessage;
+import org.nrg.framework.status.StatusProducer;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.PrearcImporterFactory;
@@ -151,7 +150,7 @@ public class ImageUploadHelper extends StatusProducer implements Callable<List<F
 
 
 		for (final StatusMessage s : localListener.getCachedMessages()){
-			if (s.getStatus().equals(Status.FAILED)){
+			if (s.getStatus().equals(StatusMessage.Status.FAILED)){
 				logger.error(s.getMessage());
 			}else{
 				logger.info(s.getMessage());

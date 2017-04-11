@@ -13,9 +13,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.nrg.action.InvalidParamsException;
-import org.nrg.status.StatusList;
-import org.nrg.status.StatusMessage;
-import org.nrg.status.StatusMessage.Status;
+import org.nrg.framework.status.StatusMessage;
+import org.nrg.xnat.status.StatusList;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xnat.helpers.transactions.HTTPSessionStatusManagerQueue;
 import org.nrg.xnat.helpers.transactions.PersistentStatusQueueManagerI;
@@ -34,6 +33,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+
+import static org.nrg.framework.status.StatusMessage.Status.*;
 
 public class SQListenerRepresentation extends SecureResource {
 	final String transaction_id;
@@ -82,21 +83,21 @@ public class SQListenerRepresentation extends SecureResource {
 		}
 	}
 	
-	private Status buildStatus(final String s) throws InvalidParamsException {
-		if(Status.COMPLETED.toString().equals(s)){
-			return Status.COMPLETED;
-		}else if(Status.FAILED.toString().equals(s)){
-			return Status.FAILED;
-		}else if(Status.PROCESSING.toString().equals(s)){
-			return Status.PROCESSING;
-		}else if(Status.WARNING.toString().equals(s)){
-			return Status.WARNING;
+	private StatusMessage.Status buildStatus(final String s) throws InvalidParamsException {
+		if(COMPLETED.toString().equals(s)){
+			return COMPLETED;
+		}else if(FAILED.toString().equals(s)){
+			return FAILED;
+		}else if(PROCESSING.toString().equals(s)){
+			return PROCESSING;
+		}else if(WARNING.toString().equals(s)){
+			return WARNING;
 		}else{
 			throw new InvalidParamsException("Status", s + " is not a valid Status.");
 		}
 	}
 	
-	private StatusMessage buildMessage(final Status s,final String msg) throws InvalidParamsException {
+	private StatusMessage buildMessage(final StatusMessage.Status s, final String msg) throws InvalidParamsException {
 		return new StatusMessage(this.transaction_id,s,msg);
 	}
 

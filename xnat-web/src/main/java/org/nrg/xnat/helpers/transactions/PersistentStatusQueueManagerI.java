@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.helpers.transactions;
 
-import org.nrg.status.StatusList;
+import org.nrg.xnat.status.StatusList;
 
 public interface PersistentStatusQueueManagerI {
 	public StatusList storeStatusQueue(final String id, final StatusList sq) throws IllegalArgumentException;

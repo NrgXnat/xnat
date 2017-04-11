@@ -9,24 +9,19 @@
 
 package org.nrg.xnat.helpers.merge;
 
-import com.google.common.collect.Maps;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.status.StatusProducer;
+import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.FileUtils.OldFileHandlerI;
-import org.nrg.xnat.archive.XNATSessionBuilder;
-import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
@@ -35,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends StatusProducer implements Callable<A> {
@@ -46,6 +40,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
     protected final String destRootPath, srcRootPath;
     protected final boolean allowSessionMerge, overwiteFiles;
     protected final SaveHandlerI<A> saver;
+    @SuppressWarnings("unused")
     protected ArrayList<Callable<A>> befores    = new ArrayList<>();
     protected AnonymizerA            anonymizer = null;
     protected final Object     control;
@@ -137,7 +132,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                     //when we didn't access the scans prior to this line, then none of this was necessary
                     //as a temporary workaround, we'll generate the xml off of a copy of the session.
                     //a more permanent solution will probably be Hibernate related.
-                    A full_copy = (A) BaseElement.GetGeneratedItem((((XnatImagesessiondata) dest).getCurrentDBVersion()));
+                    @SuppressWarnings("unchecked") A full_copy = (A) BaseElement.GetGeneratedItem((((XnatImagesessiondata) dest).getCurrentDBVersion()));
                     backupXML(full_copy, rootBackup);
                 } else {
                     backupXML(dest, rootBackup);
@@ -221,7 +216,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         File backup = new File(rootBackup, "dest_backup");
         backup.mkdirs();
 
-        this.processing("Backing up destination directory");
+        processing("Backing up destination directory");
         try {
             FileUtils.CopyDir(destDIR2, backup, false);
         } catch (Exception e) {
@@ -232,6 +227,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         return backup;
     }
 
+    @SuppressWarnings("unused")
     private File backupSourceDIR(File sourceDIR2, File rootBackup) throws ServerException {
         File backup = new File(rootBackup, "src_backup");
         backup.mkdirs();
@@ -278,7 +274,8 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
      *
      * @param session The session to be finalized.
      *
-     * @throws Exception When something goes wrong finalizing the session.
+     * @throws ClientException When something goes wrong on the client side.
+     * @throws ServerException When something goes wrong on the server side.
      */
     public abstract void finalize(A session) throws ClientException, ServerException;
 
@@ -344,6 +341,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             return beforeDirMerge;
         }
 
+        @SuppressWarnings("unchecked")
         public Results<A> addAll(Results r) {
             this.after.addAll(r.getAfter());
             this.beforeDirMerge.addAll(r.getBeforeDirMerge());

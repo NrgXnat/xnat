@@ -49,7 +49,7 @@ def vPostgreSQL = '9.4.1209.jre7'
 def vServletApi = '3.1.0'
 def vTomcat = '7.0.68'
 def vCargo = '1.4.18'
-def vSlf4j = '1.7.21'
+def vSlf4j = '1.7.25'
 def vLog4j = '1.2.17'
 def vJunit = '4.12'
 def vJacoco = '0.7.8'
@@ -99,6 +99,12 @@ targetCompatibility = 1.7
 
 def javaVersion = Jvm.current().javaVersion
 if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
+    allprojects {
+        tasks.withType(Javadoc) {
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
+
     if (hasProperty("rt.17.jar")) {
         // Solution for bootstrap classpath warning and possible issues with compatibility with 1.7 libraries
         // was taken from this post on discuss.gradle.org: http://bit.ly/24xD9j0
@@ -159,14 +165,6 @@ cargo {
         hostname = propertyWithDefault('deployHost', 'localhost')
         username = propertyWithDefault('deployUser', 'deploy')
         password = propertyWithDefault('deployPassword', 'deploy')
-    }
-}
-
-if (JavaVersion.current().isJava8Compatible()) {
-    allprojects {
-        tasks.withType(Javadoc) {
-            options.addStringOption('Xdoclint:none', '-quiet')
-        }
     }
 }
 
@@ -366,7 +364,7 @@ dependencies {
     compile "org.nrg:ecat4xnat:${vXnat}"
     compile "org.nrg:ExtAttr:4.2.1"
     compile "org.nrg:DicomImageUtils:${vXnat}"
-    compile "org.nrg:PrearcImporter:${vXnat}"
+    compile "org.nrg:PrearcImporter:${vXnatDev}"
     compile "org.nrg:SessionBuilders:${vXnat}"
 
     compile "org.nrg:pipelineBase:1.0"

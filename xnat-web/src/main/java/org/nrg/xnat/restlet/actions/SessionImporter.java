@@ -22,8 +22,8 @@ import org.apache.log4j.Logger;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.status.ListenerUtils;
-import org.nrg.status.StatusProducer;
+import org.nrg.framework.status.StatusProducer;
+import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.exception.InvalidPermissionException;
@@ -101,7 +101,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 		}
 	}
 		
-	public static List<PrearcSession> importToPrearc(StatusProducer parent,String format,Object listener,UserI user,FileWriterWrapperI fw,Map<String,Object> params,boolean allowSessionMerge, boolean overwriteFiles) throws ActionException{
+	public static List<PrearcSession> importToPrearc(StatusProducer parent, String format, Object listener, UserI user, FileWriterWrapperI fw, Map<String,Object> params, boolean allowSessionMerge, boolean overwriteFiles) throws ActionException{
 		//write file
 		try {
 			final PrearcImporterA destination = PrearcImporterA.buildImporter(format, listener, user, fw, params, allowSessionMerge, overwriteFiles);

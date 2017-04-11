@@ -22,7 +22,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
-import org.nrg.status.StatusListenerI;
+import org.nrg.framework.status.StatusListenerI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
@@ -67,7 +67,7 @@ public class Archiver extends BatchPrearchiveActionsA  {
 				
 	}
 	
-	final Map<String,Object> additionalValues= new HashMap<String, Object>();
+	final Map<String,Object> additionalValues= new HashMap<>();
 	
 	String project_id=null;
 	String overwriteV=null;
@@ -203,7 +203,7 @@ public class Archiver extends BatchPrearchiveActionsA  {
 				}
 			}
 				
-			Set<StatusListenerI> listeners=(Set<StatusListenerI>)Collections.EMPTY_SET;
+			@SuppressWarnings("unchecked") Set<StatusListenerI> listeners=(Set<StatusListenerI>)Collections.EMPTY_SET;
 			
 			if(sessions.size()==1){
 				String _return;
@@ -228,8 +228,7 @@ public class Archiver extends BatchPrearchiveActionsA  {
 				}else{
 					getResponse().setEntity(_return+CRLF, MediaType.TEXT_URI_LIST);
 				}
-				return;
-				
+
 			}else{				
 				Map<SessionDataTriple,Boolean> m;
 				

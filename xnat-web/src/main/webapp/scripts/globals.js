@@ -476,25 +476,25 @@ function once(func, args) {
 // execute a function on each item in an
 // array(-like) object with a length property
 // works like native Array.forEach();
-function forEach( arr, fn, context ){
+function forEach(arr, fn, context){
     var i = -1, len;
     if (!arr || !arr.length) { return }
     len = arr.length;
     if (isFunction(fn)) {
-        while (++i < len){
-            fn.call(context||arr[i], arr[i], i);
+        while (++i < len) {
+            fn.call(context || arr[i], arr[i], i);
         }
     }
 }
 
-function forIn(obj, fn){
+function forIn(obj, fn, context){
     var keys = [],
         key;
     if (!isPlainObject(obj)) { return }
     for (key in obj) {
         keys.push(key);
         if (!isFunction(fn)) continue;
-        fn(key, obj[key]);
+        fn.call(context || obj[key], key, obj[key]);
     }
     return keys;
 }
@@ -504,7 +504,7 @@ function forIn(obj, fn){
 // works like jQuery's $.each()
 // but only for objects
 // returns array of property names
-function forOwn(obj, fn){
+function forOwn(obj, fn, context){
     var keys = [],
         key;
     if (!isPlainObject(obj)) { return }
@@ -512,7 +512,7 @@ function forOwn(obj, fn){
         if (obj.hasOwnProperty(key)) {
             keys.push(key);
             if (!fn || !isFunction(fn)) continue;
-            fn(key, obj[key]);
+            fn.call(context || obj[key], key, obj[key]);
         }
     }
     return keys;

@@ -290,18 +290,19 @@
        <span style="color:red;">&#8658</span>
     #end
  #end
-   #if($item.isPKField($name) && (!$vr.getField($name)))
+  #if($item.isPKField($name) && (!$vr.getField($name)))
       <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
       $item.getProperty($name)
-   #else
-           <select id="$name" name="$name"></select>
-
-          <script type="text/javascript" src="$content.getURI("scripts/customizableSelectBox.js")"></script>
-          <script type="text/javascript">
-             var comboBox=new CustomSelectBox("$name",$settings_alias);
-             comboBox.render("$!turbineUtils.escapeHTML($!item.getProperty($name))");
-          </script>
-   #end
+  #else
+      <select id="$name" name="$name"></select>
+      <script type="text/javascript" src="$content.getURI("scripts/customizableSelectBox.js")"></script>
+      <script type="text/javascript">
+          (function(){
+              var comboBox = new CustomSelectBox("$name", $settings_alias);
+              comboBox.render("$!turbineUtils.escapeHTML($!item.getProperty($name))");
+          })();
+      </script>
+  #end
 #end
 
 #macro (xdatSelectBox $name $item $possibleValues $vr)

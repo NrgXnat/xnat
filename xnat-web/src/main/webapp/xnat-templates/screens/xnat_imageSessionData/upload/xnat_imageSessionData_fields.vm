@@ -51,7 +51,8 @@
 			#xdatComboBox("${datatype}.scanner" $item "window.ss" $vr)
 			<a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><img border="0" src="$content.getURI("images/qm.gif")"/></a>
 			#if($item.getStringProperty("${datatype}/scanner/manufacturer") || $item.getStringProperty("${datatype}/scanner/model") || $!item.getStringProperty("${datatype}/scanner"))
-				&nbsp;($!item.getStringProperty("${datatype}/scanner/manufacturer") 					 $!item.getStringProperty("${datatype}/scanner/model")					 $!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner")))
+                &nbsp; ($!item.getStringProperty("${datatype}/scanner/manufacturer") $!item.getStringProperty("${datatype}/scanner/model") $!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner")))
+                ##<script>document.write(escapeHtml(unescapeAllHtml('$!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner"))')))</script>
 			#end
 		</td>
 	#end

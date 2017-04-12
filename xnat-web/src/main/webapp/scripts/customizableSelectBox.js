@@ -25,92 +25,142 @@ function CustomSelectBox(_input,_settings){
 		this.settings.displayField=this.settings.valueField;
 	}
 	
-	this.render=function(_default){		
-		this.select.manager=this;
-		
-		this.select.onchange=function(obj){
-			if(this.options[this.selectedIndex].text=="View more options..."){
-				if(this.manager.settings.all_values==undefined){
-					 this.initCallback={
-						success:function(obj){
-							this.manager.settings.all_values= eval("(" + obj.responseText +")").ResultSet.Result;
-							closeModalPanel("values_loading");
-							this.populate();
-						},
-						failure:function(obj){},
-                         cache:false, // Turn off caching for IE
-						scope:this
-					}
+	var menu = this.select;
+	
+	this.render=function(_default){
+        
+        var selectManager = this;
+
+        menu.onchange=function(obj){
+            if (menu.options[menu.selectedIndex].text == "View more options...") {
+                if (selectManager.settings.all_values == undefined) {
+                    var initCallback = {
+                        success: function(obj){
+                            var _json = obj.responseText ? JSON.parse(obj.responseText) : obj;
+                            selectManager.settings.all_values = _json.ResultSet.Result;
+                            closeModalPanel("values_loading");
+                            selectManager.populate();
+                        },
+                        failure: function(obj){},
+                        cache: false, // Turn off caching for IE
+                        scope: selectManager
+                    };
 					openModalPanel("values_loading","Loading additional values...");
-					YAHOO.util.Connect.asyncRequest('GET',this.manager.settings.uri,this.initCallback,null,this);
-				}else{						
-					this.populate();
+					XNAT.xhr.get(selectManager.settings.uri, initCallback);
+                    // YAHOO.util.Connect.asyncRequest('GET', selectManager.settings.uri, initCallback, null, selectManager);
+                }
+                else {						
+					selectManager.populate();
 				}
-			}else if(this.options[this.selectedIndex].text=="Add custom entry..."){
+            }
+            else if (menu.options[menu.selectedIndex].text == "Add custom entry...") {
 				var creator=new CustomValueCreator({});
 				creator.select=this;
 				creator.onResponse.subscribe(function(obj1,obj2){
 					var new_value=this.new_value;
-					if(this.select.manager.settings.custom==undefined)this.select.manager.settings.custom=new Array();
-					this.select.manager.settings.custom.push(new_value);
-					this.select.populate(null,new_value);
+                    if (selectManager.settings.custom == undefined) selectManager.settings.custom = [];
+					selectManager.settings.custom.push(new_value);
+					selectManager.populate(null,new_value);
 				},creator,true);
 				creator.render();
 			}
-		}
-		
-		this.select.populate=function(obj,_v){
-			while(this.options.length>0){
-				this.remove(0);
-			}
+		};
+        
+		selectManager.populate=function(obj,_v){
+
+		    menu.innerHTML = '';
+
+		    function newOption(value, label, isDefault, selected){
+                var option = document.createElement('option');
+                value = window.unescapeAllHTML(value||'');
+                label = window.unescapeAllHTML(label||'');
+                // value = window.escapeHTML(value);
+                option.value = value;
+                label = window.escapeHTML(label);
+                option.innerHTML = label;
+                option.defaultSelected = isDefault || false;
+                option.selected = selected || false;
+                return option;
+            }
 
             var hasDefault = false;
 
-			this.options[0]=new Option("(SELECT)","NULL");
+			menu.options[0]=new Option("Select...","NULL");
 					
-			if(this.manager.settings.custom!=undefined){
-				for(var tC=0;tC<this.manager.settings.custom.length;tC++){
-					var v=this.manager.settings.custom[tC];
-					this.options[this.options.length]=new Option(v,v,(v==_v)?true:false,(v==_v)?true:false);
-					if(v==_v){
+			if(selectManager.settings.custom!=undefined){
+				for(var tC=0;tC<selectManager.settings.custom.length;tC++){
+					var v=selectManager.settings.custom[tC];
+
+					menu.appendChild(newOption(v, v, v==_v, v==_v));
+
+					// menu.options[menu.options.length]=new Option(v,v,(v==_v)?true:false,(v==_v)?true:false);
+
+                    if(v==_v){
                         hasDefault = true
-						this.selectedIndex=(this.options.length-1);
+						menu.selectedIndex=(menu.options.length-1);
 					}
 				}
 			}
 			
-			if(this.manager.settings.all_values!=undefined){
-				for(var tC=0;tC<this.manager.settings.all_values.length;tC++){
-					var v=this.manager.settings.all_values[tC];
-					this.options[this.options.length]=new Option(v[this.manager.settings.valueField],v[this.manager.settings.displayField],(v[this.manager.settings.valueField]==_v)?true:false,(v[this.manager.settings.valueField]==_v)?true:false);
-					if(v[this.manager.settings.valueField]==_v){
+			if(selectManager.settings.all_values!=undefined){
+				for(var tC=0;tC<selectManager.settings.all_values.length;tC++){
+					var v=selectManager.settings.all_values[tC];
+					
+                    menu.appendChild(newOption(
+                        v[selectManager.settings.valueField],
+                        v[selectManager.settings.displayField],
+                        v[selectManager.settings.valueField]==_v,
+                        v[selectManager.settings.valueField]==_v
+                    ));
+                    
+                    // menu.options[menu.options.length]=new Option(v[selectManager.settings.valueField],v[selectManager.settings.displayField],(v[selectManager.settings.valueField]==_v)?true:false,(v[selectManager.settings.valueField]==_v)?true:false);
+					
+                    if(v[selectManager.settings.valueField]==_v){
                         hasDefault = true
-						this.selectedIndex=(this.options.length-1);
+						menu.selectedIndex=(menu.options.length-1);
 					}
 				}
 			}else{
-				for(var tC=0;tC<this.manager.settings.local_values.length;tC++){
-					var v=this.manager.settings.local_values[tC];
-					this.options[this.options.length]=new Option(v[this.manager.settings.valueField],v[this.manager.settings.displayField],(v[this.manager.settings.valueField]==_v)?true:false,(v[this.manager.settings.valueField]==_v)?true:false);
-					if(v[this.manager.settings.valueField]==_v){
+				for(var tC=0;tC<selectManager.settings.local_values.length;tC++){
+					var v=selectManager.settings.local_values[tC];
+
+                    menu.appendChild(newOption(
+                        v[selectManager.settings.valueField],
+                        v[selectManager.settings.displayField],
+                        v[selectManager.settings.valueField]==_v,
+                        v[selectManager.settings.valueField]==_v
+                    ));
+
+                    // menu.options[menu.options.length]=new Option(v[selectManager.settings.valueField],v[selectManager.settings.displayField],(v[selectManager.settings.valueField]==_v)?true:false,(v[selectManager.settings.valueField]==_v)?true:false);
+
+                    if(v[selectManager.settings.valueField]==_v){
                         hasDefault = true
-						this.selectedIndex=(this.options.length-1);
+						menu.selectedIndex=(menu.options.length-1);
 					}
 				}
-				if(this.manager.settings.uri!=undefined){
-					this.options[this.options.length]=new Option("View more options...","");
+				if(selectManager.settings.uri!=undefined){
+					menu.options[menu.options.length]=new Option("View more options...","");
 				}
 			}
 
             if(!hasDefault){
-                this.options[this.options.length]=new Option(_v,_v,true,true);
-                this.selectedIndex=(this.options.length-1);
+
+			    if (_v) {
+                    // menu.options[menu.options.length]=new Option(_v,_v,true,true);
+                    menu.appendChild(newOption(_v, _v, true, true));
+                    menu.selectedIndex=(menu.options.length-1);
+                }
+                else {
+                    menu.selectedIndex=0;
+                }
+
             }
 			
-			this.options[this.options.length]=new Option("Add custom entry...","");
-		}
+			menu.options[menu.options.length]=new Option("Add custom entry...","");
+
+		};
 		
-		this.select.populate(null,_default);
+		selectManager.populate(null,_default);
 	}
 }
 
@@ -139,9 +189,9 @@ function CustomValueCreator(_options){
 		bd.appendChild(table);
 		
 		//modality
-		tr=document.createElement("tr");
-		td1=document.createElement("th");
-		td2=document.createElement("td");
+		var tr=document.createElement("tr");
+		var td1=document.createElement("th");
+		var td2=document.createElement("td");
 		
 		td1.innerHTML="New Value:";
 		td1.align="left";
@@ -170,9 +220,7 @@ function CustomValueCreator(_options){
 				this.cancel();
 			}}}];
 		this.panel.cfg.queueProperty("buttons",buttons);
-		
-		
-		this.panel.render("page_body");
+        this.panel.render("page_body");
 		this.panel.show();
 	}
 }

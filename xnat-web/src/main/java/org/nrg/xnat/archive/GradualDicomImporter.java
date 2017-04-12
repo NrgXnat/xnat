@@ -29,8 +29,6 @@ import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.Anonymize;
 import org.nrg.dcm.Decompress;
-import org.nrg.dcm.DicomFileNamer;
-import org.nrg.dcm.xnat.SOPHashDicomFileNamer;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -139,9 +137,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final String name = _fileWriter.getName();
         final DicomObject dicom;
         final XnatProjectdata project;
+        final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = null == _transferSyntax ? new DicomInputStream(bis) : new DicomInputStream(bis, _transferSyntax)) {
-            final int lastTag = Math.max(_dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription) + 1;
+            final int lastTag = Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription) + 1;
             logger.trace("reading object into memory up to {}", TagUtils.toString(lastTag));
             dis.setHandler(new StopTagInputHandler(lastTag));
             dicom = dis.readDicomObject();
@@ -152,7 +151,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 project = getProject(PrearcUtils.identifyProject(_parameters),
                                      new Callable<XnatProjectdata>() {
                                          public XnatProjectdata call() {
-                                             return _dicomObjectIdentifier.getProject(dicom);
+                                             return dicomObjectIdentifier.getProject(dicom);
                                          }
                                      });
             } catch (MalformedURLException e1) {
@@ -214,7 +213,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 sessionLabel = (String) _parameters.get(URIManager.EXPT_LABEL);
                 logger.trace("using provided experiment label {}", _parameters.get(URIManager.EXPT_LABEL));
             } else {
-                sessionLabel = _dicomObjectIdentifier.getSessionLabel(dicom);
+                sessionLabel = dicomObjectIdentifier.getSessionLabel(dicom);
             }
 
             String visit;
@@ -233,9 +232,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
             if (_parameters.containsKey(URIManager.SUBJECT_ID)) {
                 subject = (String) _parameters.get(URIManager.SUBJECT_ID);
             } else {
-                subject = _dicomObjectIdentifier.getSubjectLabel(dicom);
+                subject = dicomObjectIdentifier.getSubjectLabel(dicom);
             }
-
 
             final File timestamp = new File(root, PrearcUtils.makeTimestamp());
 
@@ -372,31 +370,18 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
             } finally {
-                if (null != lock) {
-                    //release the file lock
-                    lock.release();
-                }
+                //release the file lock
+                lock.release();
             }
 
             logger.trace("Stored object {}/{}/{} as {} for {}", project, studyInstanceUID, dicom.getString(Tag.SOPInstanceUID), session.getUrl(), source);
             return Collections.singletonList(session.getExternalUrl());
-
         } catch (ClientException e) {
             throw e;
         } catch (Throwable t) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
         }
 
-    }
-
-    public GradualDicomImporter setIdentifier(final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier) {
-        _dicomObjectIdentifier = dicomObjectIdentifier;
-        return this;
-    }
-
-    public GradualDicomImporter setNamer(final DicomFileNamer namer) {
-        _fileNamer = namer;
-        return this;
     }
 
     private boolean canCreateIn(final XnatProjectdata p) {
@@ -456,7 +441,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     private File getSafeFile(File sessionDir, String scan, String name, DicomObject o, boolean forceRename) {
-        String fileName = _fileNamer.makeFileName(o);
+        String fileName = getNamer().makeFileName(o);
         while (fileName.charAt(0) == '.') {
             fileName = fileName.substring(1);
         }
@@ -512,7 +497,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         if (null == project) {
             return null;
         }
-        Boolean fromDicomObject = _dicomObjectIdentifier.requestsAutoarchive(o);
+        Boolean fromDicomObject = getIdentifier().requestsAutoarchive(o);
         if (fromDicomObject != null) {
             return fromDicomObject ? PrearchiveCode.AutoArchive : PrearchiveCode.Manual;
         }
@@ -645,7 +630,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private static final Object         NOT_A_WRITABLE_PROJECT       = new Object();
     private static final String         DEFAULT_TRANSFER_SYNTAX      = TransferSyntax.ImplicitVRLittleEndian.uid();
     private static final String         RENAME_PARAM                 = "rename";
-    private static final DicomFileNamer DEFAULT_NAMER                = new SOPHashDicomFileNamer();
     private static final long           PROJECT_CACHE_EXPIRY_SECONDS = 120;
     private static final boolean        canDecompress                = initializeCanDecompress();
     private static final CacheManager   cacheManager                 = CacheManager.getInstance();
@@ -654,10 +638,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final UserI               _user;
     private final Map<String, Object> _parameters;
 
-    private DicomFileNamer _fileNamer = DEFAULT_NAMER;
-
     private TransferSyntax                         _transferSyntax;
     private Cache                                  _projectCache;
     private DicomFilterService                     _filterService;
-    private DicomObjectIdentifier<XnatProjectdata> _dicomObjectIdentifier;
 }

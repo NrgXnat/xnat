@@ -9,10 +9,13 @@
 
 package org.nrg.config.configuration;
 
-import org.nrg.config.resolvers.SimplePrefsEntityResolver;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.nrg.framework.test.OrmTestConfiguration;
 import org.nrg.prefs.configuration.NrgPrefsConfiguration;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
+import org.nrg.prefs.resolvers.SimplePrefsEntityResolver;
+import org.nrg.prefs.services.PreferenceService;
+import org.nrg.test.utils.TestBeans;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -27,12 +30,17 @@ import java.util.List;
 @ComponentScan("org.nrg.config.util")
 public class NrgConfigTestConfiguration {
     @Bean
-    public List<String> configFilesLocations() {
-	    return Collections.singletonList("src/test/resources/org/nrg/config");
+    public JsonNode siteMap() throws IOException {
+        return TestBeans.getDefaultTestSiteMap();
     }
 
     @Bean
-    public PreferenceEntityResolver defaultResolver() throws IOException {
-        return new SimplePrefsEntityResolver();
+    public PreferenceEntityResolver defaultResolver(final PreferenceService service, final JsonNode siteMap) throws IOException {
+        return new SimplePrefsEntityResolver(service, siteMap);
+    }
+
+    @Bean
+    public List<String> configFilesLocations() {
+	    return Collections.singletonList("src/test/resources/org/nrg/config");
     }
 }

@@ -61,13 +61,13 @@
         <xdat.version>${xnatdev.version}</xdat.version>
         <nrg.anonymize.version>${xnat.version}</nrg.anonymize.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
-        <nrg.config.version>${xnat.version}</nrg.config.version>
+        <nrg.config.version>${xnatdev.version}</nrg.config.version>
         <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnatdev.version}</nrg.mail.version>
         <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
         <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
-        <nrg.test.version>${xnat.version}</nrg.test.version>
+        <nrg.test.version>${xnatdev.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0-SNAPSHOT</nrg.dicom-edit4.version>

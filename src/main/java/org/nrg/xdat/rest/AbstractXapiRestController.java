@@ -32,8 +32,8 @@ import java.util.*;
  *
  * @deprecated Use the {@link org.nrg.xapi.rest.AbstractXapiRestController} implementation instead.
  */
-// TODO: This is because IntelliJ refuses to make module associations between Gradle and Maven projects, so these show as unused.
-@SuppressWarnings({"unused", "DeprecatedIsStillUsed"})
+// TODO: The "unused" is because IntelliJ refuses to make module associations between Gradle and Maven projects, so these show as unused.
+@SuppressWarnings({"unused", "DeprecatedIsStillUsed", "Duplicates", "deprecation"})
 @Deprecated
 public abstract class AbstractXapiRestController {
     protected AbstractXapiRestController(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {

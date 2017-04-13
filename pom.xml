@@ -268,6 +268,11 @@
 
         <!-- Unit testing dependencies -->
         <dependency>
+            <groupId>org.nrg</groupId>
+            <artifactId>test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>

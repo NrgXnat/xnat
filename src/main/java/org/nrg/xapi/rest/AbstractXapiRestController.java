@@ -33,7 +33,7 @@ import java.util.*;
  * This replaces the {@link org.nrg.xdat.rest.AbstractXapiRestController} implementation.
  */
 // TODO: This is because IntelliJ refuses to make module associations between Gradle and Maven projects, so these show as unused.
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "deprecation"})
 public abstract class AbstractXapiRestController {
     protected AbstractXapiRestController(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
         _userManagementService = userManagementService;
@@ -114,9 +114,9 @@ public abstract class AbstractXapiRestController {
      * administrator <i>or</i> the user's login name matches one of the submitted <b>id</b> values. The latter case is
      * useful to test whether a user can edit the corresponding user account or is an owner of a project, for example.
      *
-     * @param request     The request with a URI path to test.
-     * @param openUrls    The list of open URLs configured for the system.
-     * @param ids         One or more IDs that can be tested against the username.
+     * @param request  The request with a URI path to test.
+     * @param openUrls The list of open URLs configured for the system.
+     * @param ids      One or more IDs that can be tested against the username.
      *
      * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
      */
@@ -130,16 +130,23 @@ public abstract class AbstractXapiRestController {
     }
 
     /**
-     * Indicates whether the user is permitted to access a particular REST function. Access is granted if the user is a
-     * site administrator <i>or</i> the user's login name matches one of the submitted <b>id</b> values. The latter case
-     * is useful to test whether a user can edit the corresponding user account or is an owner of a project, for
-     * example.
+     * Indicates whether the user is permitted to access a particular REST function. Access is granted if:
      *
-     * @param ids One or more IDs that can be tested against the username.
+     * <ul>
+     * <li>The user is a site administrator</li>
+     * <li>
+     * The user's login name matches one of the submitted <b>idsAndRoles</b> values (useful to test whether the
+     * user can edit the corresponding user account)</li>
+     * <li>
+     * One of the user's roles matches one of the submitted <b>idsAndRoles</b> values (useful to test whether
+     * the user is an owner or member of a project, for example)</li>
+     * </ul>
+     *
+     * @param idsAndRoles One or more IDs or roles that can be tested against the user's login name and authorities.
      *
      * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
      */
-    protected HttpStatus isPermitted(final String... ids) {
+    protected HttpStatus isPermitted(final String... idsAndRoles) {
         final UserI user = getSessionUser();
         if (user == null) {
             if (_log.isDebugEnabled()) {
@@ -147,10 +154,17 @@ public abstract class AbstractXapiRestController {
             }
             return HttpStatus.UNAUTHORIZED;
         }
-        if (Arrays.asList(ids).contains(user.getUsername()) || _roleHolder.isSiteAdmin(user)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("User " + user.getUsername() + (_roleHolder.isSiteAdmin(user) ? " is a site administrator, permitted." : " appeared in the list of permitted users."));
-            }
+        final List<String> idsAndRolesList = Arrays.asList(idsAndRoles);
+        if (_roleHolder.isSiteAdmin(user)) {
+            _log.debug("User {} is a site administrator, permitted.", user.getUsername());
+            return null;
+        }
+        if (idsAndRolesList.contains(user.getUsername())) {
+            _log.debug("User {} appeared in the list of permitted users, permitted.", user.getUsername());
+            return null;
+        }
+        if (!Collections.disjoint(idsAndRolesList, _roleHolder.getRoles(user))) {
+            _log.debug("User {} has a role included in the list of permitted roles.", user.getUsername());
             return null;
         }
         return HttpStatus.FORBIDDEN;
@@ -165,7 +179,10 @@ public abstract class AbstractXapiRestController {
      * @param roles One or more roles that can be tested against the user.
      *
      * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
+     *
+     * @deprecated Use the {@link #isPermitted(String...)} method instead, which allows both user login names and roles.
      */
+    @Deprecated
     protected HttpStatus hasPermittedRole(final String... roles) {
         final UserI user = getSessionUser();
         if (user == null) {

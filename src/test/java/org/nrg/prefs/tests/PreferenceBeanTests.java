@@ -251,7 +251,7 @@ public class PreferenceBeanTests {
     @Test
     public void testLoadSiteConfigurationProperties() throws IOException, InvalidPreferenceName, UnknownToolId {
         final Properties properties = new Properties();
-        properties.load(Properties.class.getResourceAsStream("/org/nrg/prefs/services/siteConfiguration.properties"));
+        properties.load(Properties.class.getResourceAsStream("/org/nrg/prefs/configuration/siteConfiguration.properties"));
         assertNotNull(properties);
         assertTrue(properties.size() > 0);
         final Map<String, String> defaults = new HashMap<>();

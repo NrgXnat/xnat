@@ -998,7 +998,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         final List<String> preferenceIds = Lists.newArrayList();
         final Properties initializationProperties = getInitializationProperties();
         initializationProperties.putAll(resolvePreferenceAliases(_initPrefs.getPropertiesForNamespace(toolId)));
-        final Properties overrideProperties = _initPrefs.getProperties("prefs-override");
+        final Properties overrideProperties = cleanOverrides(_initPrefs.getProperties("prefs-override"));
 
         if (_initPrefs.getProperties("prefs-init").size() > 0 || overrideProperties.size() > 0) {
             _initFromConfig = true;
@@ -1129,6 +1129,15 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         for (final String preferenceId : preferenceIds) {
             getProperty(preferenceId);
         }
+    }
+
+    private Properties cleanOverrides(final Properties properties) {
+        final Properties clean = new Properties();
+        final int prefixSize = getToolId().length() + 1;
+        for (final Map.Entry<?, ?> property : properties.entrySet()) {
+            clean.setProperty(StringUtils.substring((String) property.getKey(), prefixSize), (String) property.getValue());
+        }
+        return clean;
     }
 
     private String getOverrideValue(final Properties overrideProperties, final PreferenceInfo info) {

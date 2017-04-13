@@ -9,7 +9,6 @@
 
 package org.nrg.prefs.configuration;
 
-import org.h2.Driver;
 import org.hibernate.SessionFactory;
 import org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory;
 import org.hibernate.cache.spi.RegionFactory;
@@ -18,8 +17,7 @@ import org.nrg.framework.configuration.FrameworkConfig;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy;
-import org.nrg.prefs.resolvers.PreferenceEntityResolver;
-import org.nrg.prefs.resolvers.SimplePrefsEntityResolver;
+import org.nrg.test.utils.TestBeans;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
@@ -28,7 +26,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -36,28 +33,17 @@ import org.springframework.transaction.support.ResourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
-@Import({FrameworkConfig.class, NrgPrefsConfiguration.class})
+@Import({DefaultResolverConfiguration.class, FrameworkConfig.class})
 @ComponentScan("org.nrg.prefs.tools.alias")
 public class AliasMigrationTestsConfiguration {
     @Bean
-    public PreferenceEntityResolver defaultResolver() throws IOException {
-        return new SimplePrefsEntityResolver();
-    }
-
-    @Bean
     public DataSource dataSource() {
-        final SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
-        dataSource.setDriverClass(Driver.class);
-        dataSource.setUrl("jdbc:h2:mem:test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
-        dataSource.setUsername("sa");
-        dataSource.setPassword("");
-        return dataSource;
+        return TestBeans.getInMemoryTestDataSource();
     }
 
     @Bean

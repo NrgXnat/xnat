@@ -1,0 +1,111 @@
+{
+    "projects": [
+        {
+            "id": "project1",
+            "subjects": [
+                {
+                    "id": "p1s1",
+                    "experiments": [
+                        {"id": "p1s1e1"},
+                        {"id": "p1s1e2"},
+                        {"id": "p1s1e3"}
+                    ]
+                },
+                {
+                    "id": "p1s2",
+                    "experiments": [
+                        {"id": "p1s2e1"},
+                        {"id": "p1s2e2"},
+                        {"id": "p1s2e3"}
+                    ]
+                },
+                {
+                    "id": "p1s3",
+                    "experiments": [
+                        {"id": "p1s3e1"},
+                        {"id": "p1s3e2"},
+                        {"id": "p1s3e3"}
+                    ]
+                },
+                {
+                    "id": "p1s4",
+                    "experiments": [
+                        {"id": "p1s4e1"},
+                        {"id": "p1s4e2"},
+                        {"id": "p1s4e3"}
+                    ]
+                },
+                {
+                    "id": "p1s5",
+                    "experiments": [
+                        {"id": "p1s5e1"},
+                        {"id": "p1s5e2"},
+                        {"id": "p1s5e3"}
+                    ]
+                },
+                {
+                    "id": "p1s6",
+                    "experiments": [
+                        {"id": "p1s6e1"},
+                        {"id": "p1s6e2"},
+                        {"id": "p1s6e3"}
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "project2",
+            "subjects": [
+                {
+                    "id": "p2s1",
+                    "experiments": [
+                        {"id": "p2s1e1"},
+                        {"id": "p2s1e2"},
+                        {"id": "p2s1e3"}
+                    ]
+                },
+                {
+                    "id": "p2s2",
+                    "experiments": [
+                        {"id": "p2s2e1"},
+                        {"id": "p2s2e2"},
+                        {"id": "p2s2e3"}
+                    ]
+                },
+                {
+                    "id": "p2s3",
+                    "experiments": [
+                        {"id": "p2s3e1"},
+                        {"id": "p2s3e2"},
+                        {"id": "p2s3e3"}
+                    ]
+                },
+                {
+                    "id": "p2s4",
+                    "experiments": [
+                        {"id": "p2s4e1"},
+                        {"id": "p2s4e2"},
+                        {"id": "p2s4e3"}
+                    ]
+                },
+                {
+                    "id": "p2s5",
+                    "experiments": [
+                        {"id": "p2s5e1"},
+                        {"id": "p2s5e2"},
+                        {"id": "p2s5e3"}
+                    ]
+                },
+                {
+                    "id": "p2s6",
+                    "experiments": [
+                        {"id": "p2s6e1"},
+                        {"id": "p2s6e2"},
+                        {"id": "p2s6e3"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+

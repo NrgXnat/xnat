@@ -52,7 +52,7 @@ def vCargo = '1.4.18'
 def vSlf4j = '1.7.25'
 def vLog4j = '1.2.17'
 def vJunit = '4.12'
-def vJacoco = '0.7.8'
+def vJacoco = '0.7.9'
 def vSaxon = '9.1.0.8'
 def vGroovy = '2.4.7'
 def vJython = '2.7.0'
@@ -275,7 +275,7 @@ publishing {
     }
 }
 
-def propertyWithDefault(def String property, def Object value) {
+def propertyWithDefault(String property, Object value) {
     hasProperty(property) ? getProperty(property) : value
 }
 
@@ -504,4 +504,3 @@ dependencies {
     testCompile "junit:junit:${vJunit}"
     testCompile "org.springframework:spring-test:${vSpring}"
 }
-

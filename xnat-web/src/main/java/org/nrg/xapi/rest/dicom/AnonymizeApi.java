@@ -13,6 +13,7 @@ import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.exceptions.NoContentException;
 import org.nrg.xapi.rest.AbstractXapiProjectRestController;
@@ -21,6 +22,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.helpers.merge.AnonUtils;
+import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @Api(description = "XNAT DICOM Anonymization API")
 @XapiRestController
@@ -38,6 +42,24 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         super(userManagementService, roleHolder);
         _anonUtils = anonUtils;
         _preferences = preferences;
+    }
+
+    @ApiOperation(value = "Gets the default anonymization script.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved the contents of the default anonymization script."),
+                   @ApiResponse(code = 403, message = "Insufficient permissions to access the default anonymization script."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "default", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<String> getDefaultAnonScript() throws NrgServiceException {
+        final HttpStatus status = isPermitted("ROLE_USER");
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        try {
+            return new ResponseEntity<>(DefaultAnonUtils.getDefaultScript(), HttpStatus.OK);
+        } catch (IOException e) {
+            throw new NrgServiceException(NrgServiceError.Unknown, "An error occurred trying to retrieve the default anonymization script.");
+        }
     }
 
     @ApiOperation(value = "Gets the site-wide anonymization script.", response = String.class)

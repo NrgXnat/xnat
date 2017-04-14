@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.2</version>
+        <version>1.7.3-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
@@ -51,6 +51,22 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
 
         <!-- BEGIN Test dependencies -->
         <dependency>
@@ -58,16 +74,10 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!-- END Test dependencies -->
     </dependencies>
 
     <build>
-        <finalName>nrg-transaction-${project.version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>

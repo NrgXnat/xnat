@@ -13,7 +13,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.bean.CatCatalogBean;
+import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
 import org.springframework.core.io.Resource;
@@ -78,7 +78,7 @@ public interface CatalogService {
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
-    CatCatalogBean getCatalogForResources(final UserI user, final String catalogId) throws InsufficientPrivilegesException;
+    CatCatalogI getCatalogForResources(final UserI user, final String catalogId) throws InsufficientPrivilegesException;
 
     /**
      * Returns the size of the requested catalog. This is useful when making the catalog available for download.
@@ -89,7 +89,7 @@ public interface CatalogService {
      * @return The size of the specified catalog.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
-     * @throws IOException When an error occurs accessing the catalog.
+     * @throws IOException                     When an error occurs accessing the catalog.
      */
     long getCatalogSize(UserI user, String catalogId) throws InsufficientPrivilegesException, IOException;
 
@@ -104,7 +104,7 @@ public interface CatalogService {
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
-    Map<String, Resource> getResourcesForCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException;
+    PathResourceMap<String, Resource> getResourcesForCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException;
 
     /**
      * Creates a catalog and resources for a specified XNAT data object. The resource folder is created in the archive
@@ -126,6 +126,7 @@ public interface CatalogService {
      *
      * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("unused")
     XnatResourcecatalog insertResources(final UserI user, final String parentUri, final File resource, final String label, final String description, final String format, final String content, final String... tags) throws Exception;
 
     /**
@@ -214,6 +215,7 @@ public interface CatalogService {
      *
      * @throws Exception Thrown when an error occurs at some stage of creating the resource catalog.
      */
+    @SuppressWarnings("unused")
     XnatResourcecatalog insertResourceCatalog(final UserI user, final BaseElement parent, final XnatResourcecatalog catalog) throws Exception;
 
     /**
@@ -270,6 +272,7 @@ public interface CatalogService {
      * @throws ClientException When an error occurs that is caused somehow by the requested operation.
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
+    @SuppressWarnings("unused")
     void refreshResourceCatalog(final UserI user, final String resource, final Collection<Operation> operations) throws ServerException, ClientException;
 
     /**

@@ -40,19 +40,68 @@ import java.util.List;
 @Service
 public class DefaultAnonUtils implements AnonUtils {
     @Autowired
-    public DefaultAnonUtils(final ConfigService configService) throws Exception {
+    public DefaultAnonUtils(final ConfigService configService, final CacheManager cacheManager) throws Exception {
         if (_instance != null) {
             throw new Exception("The AnonUtils service is already initialized, try calling getInstance() instead.");
         }
         _instance = this;
         _configService = configService;
+        if (!cacheManager.cacheExists(ANON_SCRIPT_CACHE)) {
+            final CacheConfiguration config = new CacheConfiguration(ANON_SCRIPT_CACHE, 0)
+                    .copyOnRead(false).copyOnWrite(false)
+                    .eternal(false)
+                    .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
+                    .timeToLiveSeconds(ANON_CACHE_EXPIRY_SECONDS)
+                    .maxEntriesLocalHeap(MAX_ENTRIES_LOCAL_HEAP);
+            _cache = new Cache(config);
+            cacheManager.addCache(_cache);
+        } else {
+            _cache = cacheManager.getCache(ANON_SCRIPT_CACHE);
+        }
     }
 
     public static AnonUtils getService() {
         if (_instance == null) {
-            _instance = XDAT.getContextService().getBean(AnonUtils.class);
+            _instance = (DefaultAnonUtils) XDAT.getContextService().getBean(AnonUtils.class);
         }
         return _instance;
+    }
+
+    public static String getDefaultScript() throws IOException {
+        final List<Resource> resources = BasicXnatResourceLocator.getResources(DEFAULT_ANON_SCRIPT);
+        if (resources.size() == 0) {
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Didn't find any default anonymization scripts at: " + DEFAULT_ANON_SCRIPT);
+        } else if (resources.size() > 1) {
+            boolean isFirst = true;
+            final StringBuilder duplicates = new StringBuilder();
+            for (final Resource resource : resources) {
+                if (!isFirst) {
+                    duplicates.append(", ");
+                } else {
+                    isFirst = false;
+                }
+                duplicates.append(resource.getURI());
+            }
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Found more than one \"default\" anonymization script: " + duplicates.toString());
+        }
+        try (final InputStream input = resources.get(0).getInputStream()) {
+            return Joiner.on("\n").join(IOUtils.readLines(input, "UTF-8"));
+        }
+    }
+
+    public static void invalidateSitewideAnonCache() {
+        _instance._cache.removeAndReturnElement(SITE_WIDE);
+    }
+
+    public static Configuration getCachedSitewideAnon() throws Exception {
+        final Element cached = _instance._cache.get(SITE_WIDE);
+        if (null != cached) {
+            return (Configuration) cached.getObjectValue();
+        } else {
+            final Configuration configuration = getService().getSiteWideScriptConfiguration();
+            _instance._cache.put(new Element(SITE_WIDE, configuration));
+            return configuration;
+        }
     }
 
     @Override
@@ -189,80 +238,17 @@ public class DefaultAnonUtils implements AnonUtils {
         }
     }
 
-    public static String getDefaultScript() throws IOException {
-        final List<Resource> resources = BasicXnatResourceLocator.getResources(DEFAULT_ANON_SCRIPT);
-        if (resources.size() == 0) {
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Didn't find any default anonymization scripts at: " + DEFAULT_ANON_SCRIPT);
-        } else if (resources.size() > 1) {
-            boolean isFirst = true;
-            final StringBuilder duplicates = new StringBuilder();
-            for (final Resource resource : resources) {
-                if (!isFirst) {
-                    duplicates.append(", ");
-                } else {
-                    isFirst = false;
-                }
-                duplicates.append(resource.getURI());
-            }
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Found more than one \"default\" anonymization script: " + duplicates.toString());
-        }
-        try (final InputStream input = resources.get(0).getInputStream()) {
-            return Joiner.on("\n").join(IOUtils.readLines(input, "UTF-8"));
-        }
-    }
-
-    /**
-     * Adds a cache of site wide anon scripts.  This is currently used by GradualDicomImporter.
-     *
-     * @return The site anonymization script cache.
-     */
-    public static Cache getSiteAnonCache() {
-        synchronized (cacheManager) {
-            if (!cacheManager.cacheExists(ANON_SCRIPT_CACHE)) {
-                final CacheConfiguration config = new CacheConfiguration(ANON_SCRIPT_CACHE, 0)
-                        .copyOnRead(false).copyOnWrite(false)
-                        .eternal(false)
-                        .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
-                        .timeToLiveSeconds(ANON_CACHE_EXPIRY_SECONDS)
-                        .maxEntriesLocalHeap(MAX_ENTRIES_LOCAL_HEAP);
-                final Cache cache = new Cache(config);
-                cacheManager.addCache(cache);
-                return cache;
-            } else {
-                return cacheManager.getCache(ANON_SCRIPT_CACHE);
-            }
-        }
-    }
-
-    public static void invalidateSitewideAnonCache() {
-        getSiteAnonCache().removeAndReturnElement(SITE_WIDE);
-    }
-
-    public static Configuration getCachedSitewideAnon() throws Exception {
-        final Cache anonCache = getSiteAnonCache();
-
-        Element cached = anonCache.get(SITE_WIDE);
-        if (null != cached) {
-            return (Configuration) cached.getObjectValue();
-        } else {
-            Configuration c = getService().getSiteWideScriptConfiguration();
-            anonCache.put(new Element(SITE_WIDE, c));
-            return c;
-        }
-    }
-
     private static final Logger logger = LoggerFactory.getLogger(AnonUtils.class);
 
     private static final String DEFAULT_ANON_SCRIPT       = "classpath*:META-INF/xnat/defaults/**/id.das";
     private static final String SITE_WIDE_PATH            = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null);
     private static final String SITE_WIDE                 = "site-wide";
-    private static final String ANON_SCRIPT_CACHE         = "scripts-anon";
+    private static final String ANON_SCRIPT_CACHE         = DefaultAnonUtils.class.getSimpleName() + "ScriptsCache";
     private static final long   ANON_CACHE_EXPIRY_SECONDS = 120;
     private static final int    MAX_ENTRIES_LOCAL_HEAP    = 5000;
 
-    private static final CacheManager cacheManager              = CacheManager.getInstance();
+    private static DefaultAnonUtils _instance;
 
-    private static AnonUtils _instance;
-
-    private final ConfigService         _configService;
+    private final Cache _cache;
+    private final ConfigService _configService;
 }

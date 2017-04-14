@@ -1,3 +1,4 @@
+#* @vtlvariable name="project" type="java.lang.String" *#
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
@@ -137,6 +138,8 @@
     XNAT.app.projectDownload = getObject(XNAT.app.projectDownload);
     XNAT.app.projectDownload.items = extend(true, XNAT.app.projectDownload.items || {}, {
         counts: {},
+        project: {
+        },
         sessions: {
             list: [],
             data: []
@@ -190,10 +193,11 @@
                         XNAT.app.projectDownload.items.sessions.list.push('$!sessionRow.get(0)');
                         XNAT.app.projectDownload.items.sessions.data.push({
                             id: '$!sessionRow.get(0)',
-                            value: '$!sessionRow.get(0)',
+                            value: '$!sessionRow.get(3):$!sessionRow.get(1):$!sessionRow.get(0)',
                             name: '$!sessionRow.get(0)',
                             label: '$!sessionRow.get(1)',
-                            type: '$!sessionRow.get(2)'
+                            type: '$!sessionRow.get(2)',
+                            subject: '$!sessionRow.get(3)'
                         });
                         #end
                 </script>
@@ -395,6 +399,7 @@
 
                 <h4>Options</h4>
                 <section>
+                    <input type="hidden" name="options[]" value="project:${project}"/>
                     <dl>
                         <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="direct" checked></dt>
                         <dd><label for="direct-download"><b>Option 1: Direct download</b></label></dd>

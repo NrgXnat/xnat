@@ -115,19 +115,18 @@ public class GradualDicomImporter extends ImporterHandlerA {
      */
     public static Cache getUserProjectCache(final UserI user) {
         final String cacheName = user.getLogin() + "-projects";
-        synchronized (cacheManager) {
-            if (!cacheManager.cacheExists(cacheName)) {
-                final CacheConfiguration config = new CacheConfiguration(cacheName, 0)
-                        .copyOnRead(false).copyOnWrite(false)
-                        .eternal(false)
-                        .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
-                        .timeToLiveSeconds(PROJECT_CACHE_EXPIRY_SECONDS);
-                final Cache cache = new Cache(config);
-                cacheManager.addCache(cache);
-                return cache;
-            } else {
-                return cacheManager.getCache(cacheName);
-            }
+        final CacheManager cacheManager = getCacheManager();
+        if (!cacheManager.cacheExists(cacheName)) {
+            final CacheConfiguration config = new CacheConfiguration(cacheName, 0)
+                    .copyOnRead(false).copyOnWrite(false)
+                    .eternal(false)
+                    .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
+                    .timeToLiveSeconds(PROJECT_CACHE_EXPIRY_SECONDS);
+            final Cache cache = new Cache(config);
+            cacheManager.addCache(cache);
+            return cache;
+        } else {
+            return cacheManager.getCache(cacheName);
         }
     }
 
@@ -506,6 +505,21 @@ public class GradualDicomImporter extends ImporterHandlerA {
         return PrearchiveCode.code(project.getArcSpecification().getPrearchiveCode());
     }
 
+    private static CacheManager getCacheManager() {
+        if (_cacheManager == null) {
+            initializeCacheManager();
+        }
+        return _cacheManager;
+    }
+
+    private static void initializeCacheManager() {
+        synchronized (logger) {
+            if (_cacheManager == null) {
+                _cacheManager = CacheManager.getCacheManager("xnatCacheManager");
+            }
+        }
+    }
+
     private static boolean initializeCanDecompress() {
         try {
             return Decompress.isSupported();
@@ -628,19 +642,20 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private static final Logger         logger                       = LoggerFactory.getLogger(GradualDicomImporter.class);
-    private static final Object         NOT_A_WRITABLE_PROJECT       = new Object();
-    private static final String         DEFAULT_TRANSFER_SYNTAX      = TransferSyntax.ImplicitVRLittleEndian.uid();
-    private static final String         RENAME_PARAM                 = "rename";
-    private static final long           PROJECT_CACHE_EXPIRY_SECONDS = 120;
-    private static final boolean        canDecompress                = initializeCanDecompress();
-    private static final CacheManager   cacheManager                 = CacheManager.getInstance();
+    private static final Logger  logger                       = LoggerFactory.getLogger(GradualDicomImporter.class);
+    private static final Object  NOT_A_WRITABLE_PROJECT       = new Object();
+    private static final String  DEFAULT_TRANSFER_SYNTAX      = TransferSyntax.ImplicitVRLittleEndian.uid();
+    private static final String  RENAME_PARAM                 = "rename";
+    private static final long    PROJECT_CACHE_EXPIRY_SECONDS = 120;
+    private static final boolean canDecompress                = initializeCanDecompress();
+
+    private static CacheManager _cacheManager = CacheManager.getCacheManager("xnatCacheManager");
 
     private final FileWriterWrapperI  _fileWriter;
     private final UserI               _user;
     private final Map<String, Object> _parameters;
 
-    private TransferSyntax                         _transferSyntax;
-    private Cache                                  _projectCache;
-    private DicomFilterService                     _filterService;
+    private TransferSyntax     _transferSyntax;
+    private Cache              _projectCache;
+    private DicomFilterService _filterService;
 }

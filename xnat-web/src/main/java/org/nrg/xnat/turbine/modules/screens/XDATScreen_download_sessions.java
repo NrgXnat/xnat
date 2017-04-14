@@ -9,14 +9,11 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
@@ -24,10 +21,13 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.XftStringUtils;
 
-import com.google.common.collect.Lists;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+@SuppressWarnings("unused")
 public class XDATScreen_download_sessions extends SecureScreen {
 
     @Override
@@ -45,7 +45,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
             if(StringUtils.isNotBlank(element) && StringUtils.isNotBlank(field) && StringUtils.isNotBlank(value)){
             	SchemaElement se=SchemaElement.GetElement(element);
             	if(se.getGenericXFTElement().instanceOf("xnat:imageSessionData")){
-            		sessionList = new ArrayList<String>();
+            		sessionList = new ArrayList<>();
                     sessionList.add(value);
             	}
             }
@@ -59,50 +59,54 @@ public class XDATScreen_download_sessions extends SecureScreen {
         }
              
         if (sessionList != null) {
-            String sessionString = "";
+            final StringBuilder sessionString = new StringBuilder();
             int counter = 0;
             for(String s : sessionList)
             {
             	if(s!=null){
                     if (counter++>0){
-                        sessionString+=",";
+                        sessionString.append(",");
                     }
                     if(s.contains("'"))
                     {
                     	s= StringUtils.remove(s, '\'');
                     }
-                    sessionString+="'" + s + "'";
+                    sessionString.append("'").append(s).append("'");
             	}
             }
-            
-            String project = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
-            
-            String query;
-            if (project==null)
-            {
-            	query= "SELECT expt.id,COALESCE(expt.label,expt.id) AS IDS,modality"+
-            	" FROM xnat_imageSessionData isd"+
-            	" LEFT JOIN xnat_experimentData expt ON expt.id=isd.id"+
-            	" LEFT JOIN xnat_experimentData_share pp ON expt.id=pp.sharing_share_xnat_experimentda_id"+
-            	" WHERE isd.ID IN (" + sessionString +") ORDER BY IDS" +
-            	                    ";";
-            }else{
-            	if(!retrieveAllTags(TurbineUtils.getUser(data)).contains(project)){
-                	Exception e=new Exception("Unknown project: "+ project);
-                	logger.error("",e);
-                	this.error(e, data);
-                	return;
+
+            final UserI user = XDAT.getUserDetails();
+            final String login = user.getLogin();
+
+            final String project = ((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project", data));
+
+            final String query;
+            if (project == null) {
+                query = "SELECT expt.id,COALESCE(expt.label,expt.id) AS IDS, modality, subj.id as subject" +
+                        " FROM xnat_imageSessionData isd" +
+                        " LEFT JOIN xnat_experimentData expt ON expt.id=isd.id" +
+                        " LEFT JOIN xnat_subjectassessordata sa ON sa.id=expt.id" +
+                        " LEFT JOIN xnat_subjectdata subj ON sa.subject_id=subj.id" +
+                        " LEFT JOIN xnat_experimentData_share pp ON expt.id=pp.sharing_share_xnat_experimentda_id" +
+                        " WHERE isd.ID IN (" + sessionString + ") ORDER BY IDS;";
+            } else {
+                if (!retrieveAllTags(user).contains(project)) {
+                    Exception e = new Exception("Unknown project: " + project);
+                    logger.error("", e);
+                    this.error(e, data);
+                    return;
                 }
-            	
-            	query= "SELECT expt.id,COALESCE(pp.label,expt.label,expt.id) AS IDS,modality"+
-            	" FROM xnat_imageSessionData isd"+
-            	" LEFT JOIN xnat_experimentData expt ON expt.id=isd.id"+
-            	" LEFT JOIN xnat_experimentData_share pp ON expt.id=pp.sharing_share_xnat_experimentda_id AND pp.project='" + project + "'"+
-            	" WHERE isd.ID IN (" + sessionString +") ORDER BY IDS" +
-            	                    ";";
+
+                query = "SELECT expt.id,COALESCE(pp.label,expt.label,expt.id) AS IDS, modality, subj.label as subject " +
+                        " FROM xnat_imageSessionData isd" +
+                        " LEFT JOIN xnat_experimentData expt ON expt.id=isd.id" +
+                        " LEFT JOIN xnat_subjectassessordata sa ON sa.id=expt.id" +
+                        " LEFT JOIN xnat_subjectdata subj ON sa.subject_id=subj.id" +
+                        " LEFT JOIN xnat_experimentData_share pp ON expt.id=pp.sharing_share_xnat_experimentda_id AND pp.project='" + project + "'" +
+                        " WHERE isd.ID IN (" + sessionString + ") ORDER BY IDS;";
             }
-                      
-            XFTTable table = XFTTable.Execute(query, TurbineUtils.getUser(data).getDBName(), TurbineUtils.getUser(data).getLogin());
+
+            XFTTable table = XFTTable.Execute(query, null, login);
             
             ArrayList<List> sessionSummary =table.toArrayListOfLists();
             
@@ -110,27 +114,27 @@ public class XDATScreen_download_sessions extends SecureScreen {
             
             //SELECT SCANS
 
-            query= "SELECT type,COUNT(*) FROM xnat_imagescandata " +
+            final String scansQuery = "SELECT type,COUNT(*) FROM xnat_imagescandata " +
                     " WHERE xnat_imagescandata.image_session_id IN (" + sessionString +") GROUP BY type ORDER BY type;";
             
-            table = XFTTable.Execute(query, TurbineUtils.getUser(data).getDBName(), TurbineUtils.getUser(data).getLogin());
+            table = XFTTable.Execute(scansQuery, null, login);
             
             ArrayList<List> scans =table.toArrayListOfLists();
             context.put("scans", scans);
             
             //SELECT RECONS
 
-            query= "SELECT type,COUNT(*) FROM xnat_reconstructedimagedata " +
+            final String reconsQuery= "SELECT type,COUNT(*) FROM xnat_reconstructedimagedata " +
                     " WHERE xnat_reconstructedimagedata.image_session_id IN (" + sessionString +") GROUP BY type ORDER BY type;";
             
-            table = XFTTable.Execute(query, TurbineUtils.getUser(data).getDBName(), TurbineUtils.getUser(data).getLogin());
+            table = XFTTable.Execute(reconsQuery, null, login);
             
             scans =table.toArrayListOfLists();
             context.put("recons", scans);
             
             //SELECT ASSESSORS
 
-            query= "SELECT element_name,COUNT(*) " +
+            final String assessorsQuery = "SELECT element_name,COUNT(*) " +
                     "FROM (SELECT xnat_imageassessordata_id, COUNT(*) FROM img_assessor_out_resource GROUP BY xnat_imageassessordata_id) img_ass_count  " +
                     "LEFT JOIN xnat_imageassessorData img_ass ON img_ass_count.xnat_imageassessordata_id=img_ass.id  " +
                     "LEFT JOIN xnat_experimentData expt ON img_ass.id=expt.id " +
@@ -138,15 +142,16 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     " WHERE img_ass.imagesession_id IN (" + sessionString +") " +
                     "GROUP BY element_name ORDER BY element_name;";
             
-            table = XFTTable.Execute(query, TurbineUtils.getUser(data).getDBName(), TurbineUtils.getUser(data).getLogin());
+            table = XFTTable.Execute(assessorsQuery, null, login);
             
             scans =table.toArrayListOfLists();
             
-            ArrayList<ArrayList> assessors = new ArrayList<ArrayList>();
-            for(List assessor : scans){
-                ArrayList sub = new ArrayList();
+            final List<List<String>> assessors = new ArrayList<>();
+            //noinspection unchecked
+            for(final List<String> assessor : scans){
+                final List<String> sub = new ArrayList<>();
                 sub.addAll(assessor);
-                sub.add(ElementSecurity.GetPluralDescription((String)assessor.get(0)));
+                sub.add(ElementSecurity.GetPluralDescription(assessor.get(0)));
                 assessors.add(sub);
             }
             
@@ -154,20 +159,20 @@ public class XDATScreen_download_sessions extends SecureScreen {
             
             //SELECT SCAN_FORMATS
 
-            query= "SELECT label,COUNT(*) FROM xnat_imagescandata JOIN xnat_abstractResource ON xnat_imagescandata.xnat_imagescandata_id=xnat_abstractResource.xnat_imagescandata_xnat_imagescandata_id " +
+            final String scanFormatsQuery = "SELECT label,COUNT(*) FROM xnat_imagescandata JOIN xnat_abstractResource ON xnat_imagescandata.xnat_imagescandata_id=xnat_abstractResource.xnat_imagescandata_xnat_imagescandata_id " +
                     " WHERE xnat_imagescandata.image_session_id IN (" + sessionString +") GROUP BY label;";
             
-            table = XFTTable.Execute(query, TurbineUtils.getUser(data).getDBName(), TurbineUtils.getUser(data).getLogin());
+            table = XFTTable.Execute(scanFormatsQuery, null, login);
             
             ArrayList<List> formats =table.toArrayListOfLists();
             context.put("scan_formats", formats);
             
             //SELECT RESOURCES
 
-            query= "SELECT label,COUNT(*) FROM xnat_experimentData_resource JOIN xnat_abstractResource ON xnat_experimentData_resource.xnat_abstractresource_xnat_abstractresource_id=xnat_abstractResource.xnat_abstractresource_id " +
+            final String resourceQuery = "SELECT label,COUNT(*) FROM xnat_experimentData_resource JOIN xnat_abstractResource ON xnat_experimentData_resource.xnat_abstractresource_xnat_abstractresource_id=xnat_abstractResource.xnat_abstractresource_id " +
                     " WHERE xnat_experimentData_resource.xnat_experimentdata_id IN (" + sessionString +") GROUP BY label;";
             
-            table = XFTTable.Execute(query, TurbineUtils.getUser(data).getDBName(), TurbineUtils.getUser(data).getLogin());
+            table = XFTTable.Execute(resourceQuery, null, login);
             
             ArrayList<List> resources =table.toArrayListOfLists();
             context.put("resources", resources);
@@ -175,14 +180,13 @@ public class XDATScreen_download_sessions extends SecureScreen {
     }
 	public List<String> retrieveAllTags(final UserI user){
 		try {
-			return (List<String>)(XFTTable.Execute("SELECT DISTINCT id from xnat_projectData;", user.getDBName(), user.getLogin()).convertColumnToArrayList("id"));
-		} catch (SQLException e) {
-			logger.error("",e);
-		} catch (DBPoolException e) {
+            //noinspection unchecked
+            return (List<String>)(XFTTable.Execute("SELECT DISTINCT id from xnat_projectData;", user.getDBName(), user.getLogin()).convertColumnToArrayList("id"));
+		} catch (SQLException | DBPoolException e) {
 			logger.error("",e);
 		}
-		
-		return Lists.newArrayList();
+
+        return Lists.newArrayList();
 	}
 
 }

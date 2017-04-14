@@ -15,12 +15,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NoContentException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.bean.CatCatalogBean;
+import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -104,7 +108,7 @@ public class CatalogApi extends AbstractXapiRestController {
             throw new NoContentException("There were no resources specified in the request.");
         }
 
-        _log.info("User {} requested download catalog for the following resources: {}", resources);
+        _log.info("User {} requested download catalog for {} resources", user.getUsername(), resources.get("sessions").size());
         return new ResponseEntity<>(_service.buildCatalogForResources(user, resources), HttpStatus.OK);
     }
 
@@ -119,7 +123,7 @@ public class CatalogApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download/{catalogId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<CatCatalogBean> getDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
+    public ResponseEntity<CatCatalogI> getDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
         final UserI user = getSessionUser();
 
         if (StringUtils.isBlank(catalogId)) {
@@ -127,7 +131,7 @@ public class CatalogApi extends AbstractXapiRestController {
         }
 
         _log.info("User {} requested download catalog: {}", catalogId);
-        final CatCatalogBean catalog = _service.getCatalogForResources(user, catalogId);
+        final CatCatalogI catalog = _service.getCatalogForResources(user, catalogId);
         if (catalog == null) {
             throw new NotFoundException("No catalog with ID " + catalogId + " was found.");
         }
@@ -144,7 +148,7 @@ public class CatalogApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download/{catalogId}/xml", produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogXml(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException, IOException {
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogXml(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException, IOException, NrgServiceException {
         final UserI user = getSessionUser();
 
         if (StringUtils.isBlank(catalogId)) {
@@ -152,22 +156,37 @@ public class CatalogApi extends AbstractXapiRestController {
         }
 
         _log.info("User {} requested download catalog: {}", catalogId);
-        final CatCatalogBean catalog = _service.getCatalogForResources(user, catalogId);
+        final CatCatalogI catalog = _service.getCatalogForResources(user, catalogId);
         if (catalog == null) {
             throw new NotFoundException("No catalog with ID " + catalogId + " was found.");
         }
-        return ResponseEntity.ok()
-                             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
-                             .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "xml"))
-                             .header(HttpHeaders.CONTENT_LENGTH, Long.toString(_service.getCatalogSize(user, catalogId)))
-                             .body((StreamingResponseBody) new StreamingResponseBody() {
-                                 @Override
-                                 public void writeTo(final OutputStream outputStream) throws IOException {
-                                     try (final OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
-                                         catalog.toXML(writer, true);
+        try {
+            return ResponseEntity.ok()
+                                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                                 .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "xml"))
+                                 .header(HttpHeaders.CONTENT_LENGTH, Long.toString(_service.getCatalogSize(user, catalogId)))
+                                 .body((StreamingResponseBody) new StreamingResponseBody() {
+                                     @Override
+                                     public void writeTo(final OutputStream outputStream) throws IOException {
+                                         try (final OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
+                                             if (catalog instanceof CatCatalogBean) {
+                                                 ((CatCatalogBean) catalog).toXML(writer, true);
+                                             } else {
+                                                 try {
+                                                     catalog.toXML(writer);
+                                                 } catch (Exception e) {
+                                                     throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to write the catalog " + catalogId + ".", e);
+                                                 }
+                                             }
+                                         }
                                      }
-                                 }
-                             });
+                                 });
+        } catch (NrgServiceRuntimeException e) {
+            if (e.getCause() != null) {
+                throw new NrgServiceException(e.getServiceError(), e.getMessage(), e.getCause());
+            }
+            throw new NrgServiceException(e.getServiceError(), e.getMessage());
+        }
     }
 
     @ApiOperation(value = "Downloads the contents of the specified catalog as a zip archive.",

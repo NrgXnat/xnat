@@ -12,19 +12,28 @@ package org.nrg.xnat.services.archive.impl.legacy;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
+import net.sf.ehcache.config.CacheConfiguration;
+import net.sf.ehcache.config.PersistenceConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
+import org.nrg.xdat.bean.CatEntryBean;
+import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
@@ -37,19 +46,29 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.*;
 import org.nrg.xnat.services.archive.CatalogService;
+import org.nrg.xnat.services.archive.PathResourceMap;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
+import org.nrg.xnat.web.http.CatalogPathResourceMap;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp;
@@ -59,42 +78,116 @@ import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp
  */
 @Service
 public class DefaultCatalogService implements CatalogService {
-    @Override
-    public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resources) throws InsufficientPrivilegesException {
-        final String catalogId = String.format(CATALOG_FORMAT, user.getLogin(), getPrearchiveTimestamp());
-        final CatCatalogBean catalog = new CatCatalogBean();
-        catalog.setId(catalogId);
-        final List<String> sessions = resources.get("sessions");
-        for (final String session : sessions) {
-            final CatCatalogBean sessionCatalog = new CatCatalogBean();
-            sessionCatalog.setId(session);
-            catalog.addSets_entryset(sessionCatalog);
+    @Autowired
+    public DefaultCatalogService(final JdbcTemplate template, final CacheManager cacheManager, final SiteConfigPreferences preferences) {
+        _template = template;
+        _parameterized = new NamedParameterJdbcTemplate(_template);
+        if (!cacheManager.cacheExists(CATALOG_SERVICE_CACHE)) {
+            final CacheConfiguration config = new CacheConfiguration(CATALOG_SERVICE_CACHE, 0)
+                    .copyOnRead(false).copyOnWrite(false)
+                    .eternal(false)
+                    .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
+                    .timeToLiveSeconds(3600)
+                    .maxEntriesLocalHeap(5000);
+            _cache = new Cache(config);
+            cacheManager.addCache(_cache);
+        } else {
+            _cache = cacheManager.getCache(CATALOG_SERVICE_CACHE);
         }
-        _catalogs.put(catalogId, catalog);
-        return catalogId;
+        _archiveRoot = preferences.getArchivePath();
     }
 
     @Override
-    public CatCatalogBean getCatalogForResources(final UserI user, final String catalogId) throws InsufficientPrivilegesException {
-        return _catalogs.get(catalogId);
+    public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
+        final CatCatalogBean catalog = new CatCatalogBean();
+        catalog.setId(String.format(CATALOG_FORMAT, user.getLogin(), getPrearchiveTimestamp()));
+
+        final DownloadArchiveOptions options = new DownloadArchiveOptions(resourceMap.get("options"));
+        catalog.setDescription(options.getDescription());
+
+        final List<String> sessions = resourceMap.get("sessions");
+        final List<String> scanTypes = resourceMap.get("scan_types");
+        final List<String> scanFormats = resourceMap.get("scan_formats");
+        final List<String> resources = resourceMap.get("resources");
+        final List<String> reconstructions = resourceMap.get("reconstructions");
+        final List<String> assessors = resourceMap.get("assessors");
+
+        for (final String subjectSession : sessions) {
+            final String[] atoms = subjectSession.split(":");
+            final String subject = atoms[0];
+            final String label = atoms[1];
+            final String session = atoms[2];
+
+            final CatCatalogBean sessionCatalog = new CatCatalogBean();
+            sessionCatalog.setId(session);
+            sessionCatalog.setDescription(subject);
+
+            final CatCatalogI sessionsByScanTypesAndFormats = getSessionsByScanTypesAndFormats(subject, label, session, scanTypes, scanFormats, options);
+            if (sessionsByScanTypesAndFormats != null) {
+                addSafeEntrySet(sessionCatalog, sessionsByScanTypesAndFormats);
+            }
+
+            final CatCatalogI resourcesCatalog = getRelatedData(subject, label, session, resources, "resources", options);
+            if (resourcesCatalog != null) {
+                addSafeEntrySet(sessionCatalog, resourcesCatalog);
+            }
+
+            final CatCatalogI reconstructionsCatalog = getRelatedData(subject, subject, session, reconstructions, "reconstructions", options);
+            if (reconstructionsCatalog != null) {
+                addSafeEntrySet(sessionCatalog, reconstructionsCatalog);
+            }
+
+            final CatCatalogI assessorsCatalog = getRelatedData(subject, subject, session, assessors, "assessors", options);
+            if (assessorsCatalog != null) {
+                addSafeEntrySet(sessionCatalog, assessorsCatalog);
+            }
+
+            catalog.addSets_entryset(sessionCatalog);
+        }
+
+        storeToCache(user, catalog);
+
+        return catalog.getId();
+    }
+
+    @Override
+    public CatCatalogI getCatalogForResources(final UserI user, final String catalogId) throws InsufficientPrivilegesException {
+        final CatCatalogI catalog = getFromCache(user, catalogId);
+        if (catalog == null) {
+            throw new InsufficientPrivilegesException(user.getUsername());
+        }
+        return catalog;
     }
 
     @Override
     public long getCatalogSize(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException {
-        final CatCatalogBean bean = _catalogs.get(catalogId);
+        final CatCatalogI catalog = getFromCache(user, catalogId);
+        if (catalog == null) {
+            throw new InsufficientPrivilegesException(user.getUsername());
+        }
         final StringWriter writer = new StringWriter();
-        bean.toXML(writer, true);
+        if (catalog instanceof CatCatalogBean) {
+            ((CatCatalogBean) catalog).toXML(writer, true);
+        } else {
+            try {
+                catalog.toXML(writer);
+            } catch (Exception e) {
+                throw new IOException("An error occurred trying to access the catalog " + catalogId + " for the user " + user.getLogin());
+            }
+        }
         return writer.toString().length();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Map<String, Resource> getResourcesForCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException {
-        final Path parent = BasicXnatResourceLocator.getResource("classpath:testdata").getFile().toPath();
-        final Map<String, Resource> resources = Maps.newHashMap();
-        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:testdata/**/*.dcm")) {
-            resources.put(parent.relativize(resource.getFile().toPath()).toString(), resource);
+    public PathResourceMap<String, Resource> getResourcesForCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException {
+        final CatCatalogI catalog = getFromCache(user, catalogId);
+        if (catalog == null) {
+            throw new InsufficientPrivilegesException(user.getUsername());
         }
-        return resources;
+        return new CatalogPathResourceMap(catalog, _archiveRoot);
     }
 
     /**
@@ -189,6 +282,7 @@ public class DefaultCatalogService implements CatalogService {
     /**
      * {@inheritDoc}
      */
+
     public XnatResourcecatalog insertResourceCatalog(final UserI user, final String parentUri, final XnatResourcecatalog catalog) throws Exception {
         return insertResourceCatalog(user, parentUri, catalog, null);
     }
@@ -595,7 +689,7 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
-    private boolean refreshResourceCatalog(final XnatAbstractresource resource, final String projectPath, final boolean populateStats, final boolean checksums, final boolean removeMissingFiles, final boolean addUnreferencedFiles, final UserI user, final EventMetaI now) throws ServerException {
+    private void refreshResourceCatalog(final XnatAbstractresource resource, final String projectPath, final boolean populateStats, final boolean checksums, final boolean removeMissingFiles, final boolean addUnreferencedFiles, final UserI user, final EventMetaI now) throws ServerException {
         if (resource instanceof XnatResourcecatalog) {
             final XnatResourcecatalog catRes = (XnatResourcecatalog) resource;
 
@@ -627,28 +721,194 @@ public class DefaultCatalogService implements CatalogService {
                 if (populateStats || modified) {
                     if (CatalogUtils.populateStats(resource, projectPath) || modified) {
                         try {
-                            if (resource.save(user, false, false, now)) {
-                                modified = true;
-                            }
+                            resource.save(user, false, false, now);
                         } catch (Exception e) {
                             throw new ServerException("An error occurred saving the resource " + resource.getFullPath(projectPath), e);
                         }
                     }
                 }
 
-                return modified;
             }
         } else if (populateStats) {
             if (CatalogUtils.populateStats(resource, projectPath)) {
                 try {
-                    return resource.save(user, false, false, now);
+                    resource.save(user, false, false, now);
                 } catch (Exception e) {
                     throw new ServerException("An error occurred saving the resource " + resource.getFullPath(projectPath), e);
                 }
             }
         }
 
-        return false;
+    }
+
+    private CatCatalogI getFromCache(final UserI user, final String catalogId) {
+        final Element cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, catalogId));
+        if (cached == null) {
+            return null;
+        }
+        final File file = (File) cached.getObjectValue();
+        if (file.exists()) {
+            return CatalogUtils.getCatalog(file);
+        }
+        final File cacheFile = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
+        if (cacheFile.exists()) {
+            return CatalogUtils.getCatalog(cacheFile);
+        }
+        return null;
+    }
+
+    private void storeToCache(final UserI user, final CatCatalogBean catalog) {
+        final String catalogId = catalog.getId();
+        final File file = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
+        file.getParentFile().mkdirs();
+
+        try {
+            try (final FileWriter writer = new FileWriter(file)) {
+                catalog.toXML(writer, true);
+            }
+            _cache.put(new Element(String.format(CATALOG_CACHE_KEY_FORMAT, catalogId), file));
+        } catch (IOException e) {
+            _log.error("An error occurred writing the catalog " + catalogId + " for user " + user.getLogin(), e);
+        }
+
+    }
+
+    private CatCatalogI getSessionsByScanTypesAndFormats(final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {
+        if (StringUtils.isBlank(session)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Got a blank session to retrieve, that shouldn't happen.");
+        }
+        final CatCatalogBean catalog = new CatCatalogBean();
+        try {
+            final StringBuilder query = new StringBuilder("SELECT id FROM xnat_imagescandata WHERE image_session_id = '").append(session).append("'");
+            if (scanTypes != null && scanTypes.size() > 0) {
+                query.append(" AND ").append(getTypeClause(scanTypes));
+            }
+            final List<String> scans = _template.queryForList(query.toString(), String.class);
+            if (scans.size() == 0) {
+                return null;
+            }
+
+            catalog.setId("RAW");
+
+            final boolean hasFormatLimits = scanFormats != null && scanFormats.size() > 0;
+            if (hasFormatLimits) {
+                final MapSqlParameterSource parameters = new MapSqlParameterSource();
+                parameters.addValue("sessionId", session);
+                parameters.addValue("scanFormats", scanFormats);
+                final List<Map<String, Object>> existing = _parameterized.queryForList(QUERY_SCAN_FORMATS, parameters);
+
+                for (final Map<String, Object> result : existing) {
+                    final CatEntryBean entry = new CatEntryBean();
+                    final String scan = (String) result.get("scan");
+                    final String resource = URLEncoder.encode((String) result.get("resource"), "UTF-8");
+                    entry.setName(getPath(options, subject, label, "scans", scan, "resources", resource));
+                    entry.setUri("/archive/experiments/" + session + "/scans/" + scan + "/resources/" + resource + "/files");
+                    catalog.addEntries_entry(entry);
+                }
+            } else {
+                for (final String scan : scans) {
+                    final CatEntryBean entry = new CatEntryBean();
+                    entry.setName(getPath(options, subject, label, "scans", scan));
+                    entry.setUri("/archive/experiments/" + session + "/scans/" + scan + "/files");
+                    catalog.addEntries_entry(entry);
+                }
+            }
+        } catch (UnsupportedEncodingException ignored) {
+            //
+        }
+        return catalog;
+    }
+
+    private CatCatalogI getRelatedData(final String subject, final String label, final String session, final List<String> resources, final String type, final DownloadArchiveOptions options) {
+        if (resources == null || resources.size() == 0) {
+            return null;
+        }
+
+        final CatCatalogBean catalog = new CatCatalogBean();
+        catalog.setId(StringUtils.upperCase(type));
+
+        // Limit the resource URIs to those associated with the current session.
+        final MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("sessionId", session);
+        parameters.addValue("resourceIds", resources);
+        final List<String> existing = _parameterized.query(QUERY_SESSION_RESOURCES, parameters, new RowMapper<String>() {
+            @Override
+            public String mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
+                return resultSet.getString("resource");
+            }
+        });
+
+        try {
+            for (final String resource : existing) {
+                final CatEntryBean entry = new CatEntryBean();
+                final String resourceId = URLEncoder.encode(resource, "UTF-8");
+                entry.setName(getPath(options, subject, label, "resources", resourceId));
+                entry.setUri("/archive/experiments/" + session + "/resources/" + resourceId + "/files");
+                catalog.addEntries_entry(entry);
+            }
+        } catch (UnsupportedEncodingException ignored) {
+            //
+        }
+        return catalog;
+    }
+
+    private String getPath(final DownloadArchiveOptions options, final String subject, final String element, final String... elements) {
+        final Path base;
+        if (options.isSimplified()) {
+            final String[] reduced = new String[elements.length / 2];
+            for (int index = 1; index < elements.length; index += 2) {
+                reduced[(index - 1) / 2] = elements[index];
+            }
+            base = Paths.get(element, reduced);
+        } else {
+            base = Paths.get(element, elements);
+        }
+        if (options.isProjectIncludedInPath()) {
+            return Paths.get(options.getProject(), subject).resolve(base).toString();
+        } else if (options.isSubjectIncludedInPath()) {
+            return Paths.get(subject).resolve(base).toString();
+        } else {
+            return base.toString();
+        }
+    }
+
+    private void addSafeEntrySet(final CatCatalogI catalog, final CatCatalogI innerCatalog) {
+        try {
+            catalog.addSets_entryset(innerCatalog);
+        } catch (Exception e) {
+            _log.warn("An error occurred trying to add a catalog entry to another catalog.", e);
+        }
+    }
+
+    private String getTypeClause(final List<String> requestScanTypes) {
+        final StringBuilder buffer = new StringBuilder();
+        boolean foundNull = false;
+        for (String item : requestScanTypes) {
+            if (StringUtils.isBlank(item) || item.equalsIgnoreCase("NULL")) {
+                foundNull = true;
+                continue;
+            }
+            buffer.append("'").append(item).append("', ");
+        }
+        final int length = buffer.length();
+        if (length == 0 && !foundNull) {
+            throw new RuntimeException("Bad state found: no scan types specified, not even NULL!");
+        }
+        if (length > 0) {
+            buffer.delete(length - 2, length);
+        }
+        if (foundNull) {
+            if (length > 0) {
+                buffer.insert(0, "(type IN (");
+                buffer.append(") OR type is NULL)");
+            } else {
+                buffer.append("type is NULL");
+            }
+        } else {
+            buffer.insert(0, "type IN (");
+            buffer.append(")");
+        }
+        return buffer.toString();
     }
 
     private static Collection<Operation> getOperations(final Collection<Operation> operations) {
@@ -668,10 +928,62 @@ public class DefaultCatalogService implements CatalogService {
         return operations;
     }
 
-    private static final String CATALOG_FORMAT = "%s-%s";
+    private static class DownloadArchiveOptions {
+        DownloadArchiveOptions(final List<String> options) {
+            _project = getProjectFromOptions(options);
+            _description = Joiner.on(", ").join(options);
+            _projectIncludedInPath = options.contains("projectIncludedInPath");
+            _subjectIncludedInPath = options.contains("subjectIncludedInPath");
+            _simplified = options.contains("simplified");
+        }
+
+        private String getProjectFromOptions(final List<String> options) {
+            for (final String option : options) {
+                if (option.startsWith("project:")) {
+                    return option.split(":")[1];
+                }
+            }
+            return null;
+        }
+
+        public String getProject() {
+            return _project;
+        }
+
+        public String getDescription() {
+            return _description;
+        }
+
+        public boolean isProjectIncludedInPath() {
+            return _projectIncludedInPath;
+        }
+
+        public boolean isSubjectIncludedInPath() {
+            return _subjectIncludedInPath;
+        }
+
+        public boolean isSimplified() {
+            return _simplified;
+        }
+
+        private final String  _project;
+        private final String  _description;
+        private final boolean _projectIncludedInPath;
+        private final boolean _subjectIncludedInPath;
+        private final boolean _simplified;
+    }
+
+    private static final String CATALOG_FORMAT           = "%s-%s";
+    private static final String CATALOG_SERVICE_CACHE    = DefaultCatalogService.class.getSimpleName() + "Cache";
+    private static final String CATALOG_CACHE_KEY_FORMAT = DefaultCatalogService.class.getSimpleName() + ".%s";
+    private static final String QUERY_SESSION_RESOURCES  = "SELECT res.label resource FROM xnat_abstractresource res LEFT JOIN xnat_experimentdata_resource exptRes ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id WHERE expt.ID = :sessionId AND res.label in (:resourceIds)";
+    private static final String QUERY_SCAN_FORMATS       = "SELECT scan.id scan, res.label resource FROM xnat_imagescandata scan JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id WHERE scan.image_session_id = :sessionId AND res.label IN (:scanFormats) ORDER BY scan";
 
     private static final Logger              _log      = LoggerFactory.getLogger(DefaultCatalogService.class);
     private static final Map<String, String> EMPTY_MAP = ImmutableMap.of();
 
-    private final Map<String, CatCatalogBean> _catalogs = Maps.newHashMap();
+    private final JdbcTemplate               _template;
+    private final NamedParameterJdbcTemplate _parameterized;
+    private final Cache                      _cache;
+    private final String                     _archiveRoot;
 }

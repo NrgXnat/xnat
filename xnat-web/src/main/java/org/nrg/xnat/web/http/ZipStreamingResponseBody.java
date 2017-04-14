@@ -1,11 +1,13 @@
 package org.nrg.xnat.web.http;
 
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xnat.services.archive.PathResourceMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.*;
-import java.util.Map;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -31,36 +33,40 @@ public final class ZipStreamingResponseBody implements StreamingResponseBody {
     public static final String MEDIA_TYPE = "application/zip";
 
     /**
-     * Initializes the instance with the map of resources. The map key should be the path to be used in the resulting
-     * zip file, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
+     * Initializes the instance with the path mapper. The map key should be the path to be used in the resulting
+     * archive, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
      * sets the size of the transfer buffer to {@link FileUtils#LARGE_DOWNLOAD}.
      *
-     * @param resources The map of zip paths and corresponding resources.
+     * @param mapper A mapper implementation that provides the path for the archive entry and a specific resource.
      */
-    public ZipStreamingResponseBody(final Map<String, Resource> resources) {
-        this(resources, FileUtils.LARGE_DOWNLOAD);
+    public ZipStreamingResponseBody(final PathResourceMap<String, Resource> mapper) {
+        this(mapper, FileUtils.LARGE_DOWNLOAD);
     }
 
     /**
-     * Initializes the instance with the map of resources. The map key should be the path to be used in the resulting
-     * zip file, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
+     * Initializes the instance with the path mapper. The map key should be the path to be used in the resulting
+     * archive, while the resource should resolve to a retrievable item to be stored in the zip file. This constructor
      * sets the size of the transfer buffer to the value specified for the buffer size parameter.
      *
-     * @param resources  The map of zip paths and corresponding resources.
+     * @param mapper     A mapper implementation that provides the path for the archive entry and a specific resource.
      * @param bufferSize The size to use for the transfer buffer.
      */
-    public ZipStreamingResponseBody(final Map<String, Resource> resources, final int bufferSize) {
-        _resources = resources;
+    public ZipStreamingResponseBody(final PathResourceMap<String, Resource> mapper, final int bufferSize) {
+        _mapper = mapper;
         _buffer = new byte[bufferSize];
     }
 
     @Override
     public void writeTo(final OutputStream output) throws IOException {
+
         try (final ZipOutputStream zip = new ZipOutputStream(output)) {
-            for (final String path : _resources.keySet()) {
-                final Resource resource = _resources.get(path);
-                final ZipEntry entry    = new ZipEntry(path);
-                final File     file     = resource.getFile();
+            while (_mapper.hasNext()) {
+                final PathResourceMap.Mapping<String, Resource> map = _mapper.next();
+                final String path = map.getPath();
+                final File file = map.getResource().getFile();
+                _log.info("Preparing to write zip entry to path {}: {}", path, file.getAbsolutePath());
+
+                final ZipEntry entry = new ZipEntry(path);
                 entry.setSize(file.length());
                 entry.setCrc(getCrc(file));
                 entry.setTime(file.lastModified());
@@ -89,6 +95,8 @@ public final class ZipStreamingResponseBody implements StreamingResponseBody {
         return crc.getValue();
     }
 
-    private final Map<String, Resource> _resources;
-    private final byte[]                _buffer;
+    private static final Logger _log = LoggerFactory.getLogger(ZipStreamingResponseBody.class);
+
+    private final PathResourceMap<String, Resource> _mapper;
+    private final byte[]                            _buffer;
 }

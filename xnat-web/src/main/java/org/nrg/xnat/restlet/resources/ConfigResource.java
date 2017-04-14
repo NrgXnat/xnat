@@ -329,7 +329,7 @@ public class ConfigResource extends SecureResource {
                     return;
                 }
 
-                if(StringUtils.isBlank(projectId)){
+                if(StringUtils.isBlank(projectId)) {
                     DefaultAnonUtils.invalidateSitewideAnonCache();
                 }
             }

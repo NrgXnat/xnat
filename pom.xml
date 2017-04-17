@@ -1187,6 +1187,10 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>xmlrpc</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1282,6 +1286,12 @@
                 <groupId>fop</groupId>
                 <artifactId>fop</artifactId>
                 <version>${fop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>jcs</groupId>

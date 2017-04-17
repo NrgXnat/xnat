@@ -12,16 +12,13 @@ package org.nrg.xnat.helpers.prearchive;
 import com.google.common.base.Function;
 import org.dcm4che2.data.DicomObject;
 import org.nrg.config.entities.Configuration;
-import org.nrg.dcm.Anonymize;
 import org.nrg.dcm.edit.ScriptApplicator;
+import org.nrg.dcm.edit.ScriptEvaluationException;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.session.SessionBuilder;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
-import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.helpers.editscript.DicomEdit;
-import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase.SyncFailedException;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
@@ -129,6 +126,8 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                         final DICOMSessionBuilder db = new DICOMSessionBuilder(f, params,
                                 new Function<DicomObject, DicomObject>() {
                                     public DicomObject apply(final DicomObject o) {
+                                        // TODO: MIZER: Removed Anonymize.anonymize() reference.
+                                        /*
                                         try {
                                             Anonymize.anonymize(o, newProject, subject, session, scriptapplicator);
                                         } catch (RuntimeException e) {
@@ -136,6 +135,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                                         } catch (Exception e) {
                                             throw new RuntimeException(e);
                                         }
+                                        */
                                         return o;
                                     }
                                 });
@@ -146,7 +146,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                     }
                     //modified to also set the new prearchive path.
                     doc.setPrearchivepath(newDirPath);
-                } catch ( SAXException | SQLException | SessionBuilder.NoUniqueSessionException | IOException e) {
+                } catch ( SAXException | SQLException | ScriptEvaluationException | SessionBuilder.NoUniqueSessionException | IOException e) {
                     throwSync(e);
                 }
 
@@ -255,8 +255,8 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                 logger.warn("moved session " + session + " to " + newProject + ", but unable to delete original directory.");
             }
             // timestamp directory might contain another session, so no warning if deletion fails.
-            if (timestampDir.list().length == 0) {
-
+            final String[] list = timestampDir.list();
+            if (list != null && list.length == 0) {
                 timestampDir.delete();
             }
         }

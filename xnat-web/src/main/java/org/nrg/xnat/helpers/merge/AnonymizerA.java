@@ -10,7 +10,6 @@
 package org.nrg.xnat.helpers.merge;
 
 import org.nrg.config.entities.Configuration;
-import org.nrg.dcm.Anonymize;
 import org.nrg.dcm.edit.AttributeException;
 import org.nrg.dcm.edit.ScriptEvaluationException;
 import org.slf4j.Logger;
@@ -67,6 +66,8 @@ public abstract class AnonymizerA implements Callable<Boolean> {
         if (script != null) {
             if (isEnabled()) {
                 //noinspection deprecation
+                // TODO: MIZER: Removed Anonymize.anonymize() reference.
+                /*
                 Anonymize.anonymize(file,
                                     getProjectName(),
                                     getSubject(),
@@ -74,6 +75,7 @@ public abstract class AnonymizerA implements Callable<Boolean> {
                                     true,
                                     script.getId(),
                                     script.getContents());
+                */
                 if (_next != null) {
                     _next.anonymize(file);
                 }

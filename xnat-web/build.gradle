@@ -37,6 +37,7 @@ buildscript {
     }
 }
 
+def vMizer = '1.0-SNAPSHOT'
 def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.9.RELEASE'
 def vSpringSecurity = '4.0.4.RELEASE'
@@ -351,12 +352,12 @@ dependencies {
     compile "org.nrg:framework:${vXnatDev}"
     compile "org.nrg:transaction:${vXnat}"
     compile "org.nrg:prefs:${vXnatDev}"
-    compile "org.nrg:config:${vXnat}"
-    compile "org.nrg:automation:${vXnat}"
+    compile "org.nrg:config:${vXnatDev}"
+    compile "org.nrg:automation:${vXnatDev}"
     compile "org.nrg:dicomtools:${vXnatDev}"
-    compile "org.nrg:anonymize:${vXnat}"
-    compile "org.nrg:mail:${vXnat}"
-    compile "org.nrg:notify:${vXnat}"
+    compile "org.nrg.dicom:mizer:${vMizer}"
+    compile "org.nrg:mail:${vXnatDev}"
+    compile "org.nrg:notify:${vXnatDev}"
 
     compile "org.nrg:dicom-xnat-mx:${vXnatDev}"
     compile "org.nrg:dicom-xnat-sop:${vXnatDev}"

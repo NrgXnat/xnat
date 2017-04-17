@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.preferences.NotificationsPreferences;
@@ -16,7 +17,6 @@ import org.nrg.xdat.preferences.PreferenceEvent;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.ResetEmailRequests;
 import org.nrg.xnat.services.PETTracerUtils;
-import org.nrg.xnat.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +26,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.PeriodicTrigger;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 
@@ -92,7 +91,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
                 //Still need to trigger event so they get set up (setSiteWideTracerList needs to be invoked)
                 _service.triggerEvent(new PreferenceEvent("sitewidePetTracers", _siteConfigPreferences.getSitewidePetTracers()));
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
 
         for (final TriggerTask triggerTask : _tasks) {

@@ -11,7 +11,6 @@ package org.nrg.xnat.helpers.merge;
 
 import org.dcm4che2.iod.module.macro.Code;
 import org.nrg.config.entities.Configuration;
-import org.nrg.dcm.Anonymize;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
@@ -88,7 +87,9 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
      * @throws IOException When an error occurs accessing the file.
      */
     boolean needsAnonymization(File file) throws IOException {
-        Code[]  codes              = Anonymize.getCodes(file);
+        // TODO: MIZER: Removed reference to Anonymize.getCodes(file)
+        // Code[]  codes              = Anonymize.getCodes(file);
+        Code[]  codes              = new Code[0];
         boolean needsAnonymization = true;
         if (codes != null && codes.length != 0) {
             Code          last          = codes[codes.length - 1];

@@ -27,7 +27,6 @@ import org.dcm4che2.util.TagUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
-import org.nrg.dcm.Anonymize;
 import org.nrg.dcm.Decompress;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
@@ -341,6 +340,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
                     if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
                         //noinspection deprecation
+                        // TODO: MIZER: Removed Anonymize.anonymize() reference.
+                        /*
                         Anonymize.anonymize(outputFile,
                                             session.getProject(),
                                             session.getSubject(),
@@ -348,6 +349,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                                             true,
                                             c.getId(),
                                             c.getContents());
+                        */
                     } else {
                         logger.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without anonymization.", session.getProject(), session.getSubject(), session.getName());
                     }

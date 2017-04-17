@@ -59,20 +59,19 @@
         <xnatdev.version>1.7.3-SNAPSHOT</xnatdev.version>
         <xnat.version>1.7.2</xnat.version>
         <xdat.version>${xnatdev.version}</xdat.version>
-        <nrg.anonymize.version>${xnatdev.version}</nrg.anonymize.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
         <nrg.config.version>${xnatdev.version}</nrg.config.version>
-        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnatdev.version}</nrg.mail.version>
         <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
         <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
         <nrg.test.version>${xnatdev.version}</nrg.test.version>
         <nrg.transaction.version>${xnatdev.version}</nrg.transaction.version>
+        <nrg.mizer.version>1.0-SNAPSHOT</nrg.mizer.version>
+        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0-SNAPSHOT</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>1.0-SNAPSHOT</nrg.dicom-edit6.version>
-        <nrg.dicomedit.version>6.0.2</nrg.dicomedit.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
@@ -228,11 +227,6 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
-                <artifactId>dicomtools</artifactId>
-                <version>${nrg.dicomtools.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.nrg</groupId>
                 <artifactId>prefs</artifactId>
                 <version>${nrg.prefs.version}</version>
             </dependency>
@@ -258,11 +252,6 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
-                <artifactId>anonymize</artifactId>
-                <version>${nrg.anonymize.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.nrg</groupId>
                 <artifactId>test</artifactId>
                 <version>${nrg.test.version}</version>
                 <scope>test</scope>
@@ -272,7 +261,12 @@
                 <artifactId>nrg-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!-- DicomEdit 4 and 6 engines -->
+            <!-- Mizer, DicomEdit 4 and 6 engines -->
+            <dependency>
+                <groupId>org.nrg.dicom</groupId>
+                <artifactId>mizer</artifactId>
+                <version>${nrg.mizer.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.nrg.dicom</groupId>
                 <artifactId>dicom-edit4</artifactId>
@@ -283,17 +277,10 @@
                 <artifactId>dicom-edit6</artifactId>
                 <version>${nrg.dicom-edit6.version}</version>
             </dependency>
-            <!-- Older version of DicomEdit 6 -->
             <dependency>
                 <groupId>org.nrg</groupId>
-                <artifactId>DicomEdit</artifactId>
-                <version>${nrg.dicomedit.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.nrg</groupId>
-                        <artifactId>nrgutil</artifactId>
-                    </exclusion>
-                </exclusions>
+                <artifactId>dicomtools</artifactId>
+                <version>${nrg.dicomtools.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

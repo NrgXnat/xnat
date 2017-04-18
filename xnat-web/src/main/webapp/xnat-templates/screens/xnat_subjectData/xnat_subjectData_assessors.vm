@@ -1,5 +1,5 @@
 <!-- start /screens/xnat_subjectData/xnat_subjectData_assessors.vm -->
-
+#set($assessorTemplateName = $turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
 <BR>
 
 <div id="expts_container">
@@ -30,7 +30,7 @@
                 <tbody>
                 #foreach ($assessor in $subject.getMinimalLoadAssessors())
                     #if($assessor.hasProject($project))
-                        #parse($turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
+                        #parse($assessorTemplateName)
                     #else
                         #set($hasOtherProjects=true)
                     #end
@@ -53,7 +53,7 @@
             </thead>
             <tbody>
             #foreach ($assessor in $subject.getMinimalLoadAssessors())
-                #parse($turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
+                #parse($assessorTemplateName)
             #end
             </tbody>
         </table>

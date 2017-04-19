@@ -12,6 +12,9 @@ package org.nrg.xnat.helpers.merge;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.edit.AttributeException;
 import org.nrg.dcm.edit.ScriptEvaluationException;
+import org.nrg.dicom.mizer.service.AnonException;
+import org.nrg.dicom.mizer.service.MizerService;
+import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,21 +64,15 @@ public abstract class AnonymizerA implements Callable<Boolean> {
         _next = anonymizer;
     }
 
-    public void anonymize(final File file) throws AttributeException, ScriptEvaluationException, IOException {
+    public void anonymize(final File file) throws AttributeException, ScriptEvaluationException, IOException, AnonException {
         final Configuration script = getScript();
         if (script != null) {
             if (isEnabled()) {
                 //noinspection deprecation
-                // TODO: MIZER: Removed Anonymize.anonymize() reference.
-                /*
-                Anonymize.anonymize(file,
-                                    getProjectName(),
-                                    getSubject(),
-                                    getLabel(),
-                                    true,
-                                    script.getId(),
-                                    script.getContents());
-                */
+
+                final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
+                service.anonymize( file, getProjectName(), getSubject(), getLabel(), true, script.getId(), script.getContents());
+
                 if (_next != null) {
                     _next.anonymize(file);
                 }

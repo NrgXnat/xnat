@@ -16,7 +16,13 @@ import org.nrg.dcm.edit.ScriptApplicator;
 import org.nrg.dcm.edit.ScriptEvaluationException;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
+import org.nrg.dicom.mizer.service.AnonException;
+import org.nrg.dicom.mizer.service.DEScript;
+import org.nrg.dicom.mizer.service.MizerService;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.session.SessionBuilder;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
@@ -121,21 +127,21 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                     Configuration c = DefaultAnonUtils.getService().getProjectScriptConfiguration(newProject);
                     if (c != null) {
                         final String anonScript = c.getContents();
-                        final ScriptApplicator scriptapplicator = new ScriptApplicator(new ByteArrayInputStream(anonScript.getBytes("UTF-8")));
+//                        final ScriptApplicator scriptapplicator = new ScriptApplicator(new ByteArrayInputStream(anonScript.getBytes("UTF-8")));
                         final XnatAttrDef[] params = {new XnatAttrDef.Constant("project", newProject)};
                         final DICOMSessionBuilder db = new DICOMSessionBuilder(f, params,
                                 new Function<DicomObject, DicomObject>() {
                                     public DicomObject apply(final DicomObject o) {
-                                        // TODO: MIZER: Removed Anonymize.anonymize() reference.
-                                        /*
                                         try {
-                                            Anonymize.anonymize(o, newProject, subject, session, scriptapplicator);
-                                        } catch (RuntimeException e) {
-                                            throw e;
-                                        } catch (Exception e) {
+                                            final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
+                                            if (service == null) {
+                                                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Can't find the mizer service");
+                                            }
+                                            service.anonymize( o, newProject, subject, session, anonScript);
+                                        }
+                                        catch ( AnonException e) {
                                             throw new RuntimeException(e);
                                         }
-                                        */
                                         return o;
                                     }
                                 });
@@ -146,7 +152,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                     }
                     //modified to also set the new prearchive path.
                     doc.setPrearchivepath(newDirPath);
-                } catch ( SAXException | SQLException | ScriptEvaluationException | SessionBuilder.NoUniqueSessionException | IOException e) {
+                } catch ( SAXException | SQLException | SessionBuilder.NoUniqueSessionException | IOException e) {
                     throwSync(e);
                 }
 

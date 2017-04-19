@@ -61,7 +61,7 @@ public class DisplayManager {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public Hashtable getElements() {
-        return new Hashtable(elements);
+        return elements;
     }
 
     /**

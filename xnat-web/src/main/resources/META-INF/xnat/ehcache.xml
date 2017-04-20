@@ -10,7 +10,7 @@
 
 <ehcache name="xnatCacheManager" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd">
 
-    <diskStore path="xnat.home/work/cache"/>
+    <diskStore path="${xnat.home}/work/cache"/>
 
     <defaultCache
             maxElementsInMemory="10000"

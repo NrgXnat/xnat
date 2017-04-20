@@ -446,9 +446,8 @@
         </div><!-- /#script-editor-template -->
 
 
-        <script type="text/javascript" src="$content.getURI("scripts/lib/ace/ace.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/xnat/app/automation.js")"></script>
-    <script type="text/javascript" src="$content.getURI("scripts/xnat/app/scriptEditor.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/xnat/app/scriptEditor.js")"></script>
 
     #else
         <div class="clearfix clear"></div>

@@ -198,6 +198,10 @@
     <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.min.css?${versionString}">
     <script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.min.js"></script>
 
+    <!-- XNAT JLAPI stylesheets -->
+    <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/ui/dialog.css?${versionString}">
+
+
     <!-- XNAT JLAPI scripts -->
     <script src="${SITE_ROOT}/scripts/xnat/validate.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
@@ -246,7 +250,8 @@ ${bodyTop}
                 <b>|</b>
                 <a id="logout_user" href="${SITE_ROOT}/app/action/LogoutUser">Logout</a>
             </span>
-            <script src="${SITE_ROOT}/scripts/xnat/app/timeout.js"></script>
+            <%--<script src="${SITE_ROOT}/scripts/xnat/app/timeout.js"></script>--%>
+            <script src="${SITE_ROOT}/scripts/xnat/app/sessionTimer.js"></script>
 
         </c:if>
 

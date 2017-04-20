@@ -127,8 +127,14 @@
                     enabled: enableEvery.value + ''
                 }, function(){
                     xmodal.closeAll();
-                    xmodal.message(false, '<div class="success">Users created.</div>', 'Close');
-//                    XNAT.ui.banner.top(3000, 'Users created.', 'success');
+                    XNAT.ui.dialog.message({
+                        title: false,
+                        content: '<div class="success">Users created.</div>',
+                        padding: 0,
+                        okLabel: 'Sweet!'
+                    });
+                    // xmodal.message(false, '<div class="success">Users created.</div>', 'Close');
+                    // XNAT.ui.banner.top(3000, 'Users created.', 'success');
                 })
             });
 

@@ -56,7 +56,12 @@ var XNAT = getObject(XNAT || {});
 
     dialog.updateUIDs = function(){
         // save keys from dialog.dialogs
-        dialog.uids = forOwn(dialog.dialogs);
+        dialog.uids = [];
+        forOwn(dialog.dialogs).forEach(function(uid){
+            if (!/loading/i.test(uid)) {
+                dialog.uids.push(uid);
+            }
+        });
     };
 
     dialog.bodyPosition = window.scrollY;
@@ -395,7 +400,7 @@ var XNAT = getObject(XNAT || {});
         // save a reference to this instance
         // (unless it's 'protected')
         if (this.protected !== true) {
-            dialog.dialogs[this.uid] = this;
+        dialog.dialogs[this.uid] = this;
         }
 
         dialog.updateUIDs();
@@ -486,9 +491,10 @@ var XNAT = getObject(XNAT || {});
             return this;
         }
 
-        dialog.bodyPosition = window.scrollY;
-
-        this.dialog$.css('top', dialog.bodyPosition + (this.top || 0));
+        if (dialog.uids.length <= 1) {
+            dialog.bodyPosition = window.scrollY;
+            this.dialog$.css('top', dialog.bodyPosition + (this.top || 0));
+        }
 
         if (isFunction(this.beforeShow)) {
             this.beforeShowResult = this.beforeShow.call(this, this);
@@ -523,7 +529,9 @@ var XNAT = getObject(XNAT || {});
         window.html$.addClass('xnat-dialog-open');
         window.body$.addClass('xnat-dialog-open').css('top', -dialog.bodyPosition);
 
-        window.scrollTo(0, 0);
+        if (dialog.uids.length <= 1) {
+            window.scrollTo(0, 0);
+        }
 
         return this;
     };
@@ -619,7 +627,8 @@ var XNAT = getObject(XNAT || {});
 
     // remove the dialog and all its events from the DOM
     Dialog.fn.destroy = function(){
-        if (this.template$) {
+        if (this.template$ && this.templateContent) {
+            this.templateContent.detach();
             this.template$.empty().append(this.templateContent);
         }
         this.container$.remove();
@@ -936,12 +945,12 @@ var XNAT = getObject(XNAT || {});
             destroyOnClose: false
         });
         LDG.dialog$
-            .addClass('loader loading')
-            .append(spawn('img', {
-                src: XNAT.url.rootUrl('/images/loading_bar.gif'),
+           .addClass('loader loading')
+           .append(spawn('img', {
+               src: XNAT.url.rootUrl('/images/loading_bar.gif'),
                 width: 220,
-                height: 19
-            }));
+               height: 19
+           }));
         if (isFunction(callback)) {
             LDG.afterShow = callback;
         }
@@ -1023,4 +1032,3 @@ var XNAT = getObject(XNAT || {});
     return XNAT.ui.dialog = XNAT.dialog = dialog;
 
 }));
-

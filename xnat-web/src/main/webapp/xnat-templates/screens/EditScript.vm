@@ -16,7 +16,6 @@
         border: 3px ridge cornflowerblue;
     }
 </style>
-<script type="text/javascript" src="$content.getURI("scripts/lib/ace/ace.js")"></script>
 <script type="text/javascript">
     jq(function(){
         jq('body').addClass('administer configuration no_left_bar');

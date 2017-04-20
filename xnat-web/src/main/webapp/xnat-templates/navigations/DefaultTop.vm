@@ -16,6 +16,8 @@
   #set($projectString="/project/$project")
 #end
 
+#set ($SITE_ROOT = $content.getURI(""))
+
 <style type="text/css">
 
     #attention_icon { float: left ; padding-top: 7px ; padding-left: 11px ; }
@@ -250,6 +252,12 @@
 
         });
 
+        mainNav.on('click', 'a', function(e){
+            var href = $(this).attr('href');
+            if (href.indexOf('#') !== 0) {
+                mainNavClose.call(this, e)
+            }
+        });
         mainNavBackdrop.on('click', mainNavClose);
 
         // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
@@ -365,8 +373,10 @@
 <script>
     window.loggedIn = true;
 </script>
-<script src="$content.getURI("scripts/xnat/app/timeout.js")"></script>
+##<script src="$content.getURI("scripts/xnat/app/timeout.js")"></script>
+<script src="${SITE_ROOT}/scripts/xnat/app/sessionTimer.js"></script>
 
-<div id="tp_fm"></div>
+
+    <div id="tp_fm"></div>
 
 <!-- END: xnat-templates/navigations/DefaultTop.vm -->

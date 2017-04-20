@@ -36,10 +36,20 @@ public class SiteWideAnonymizer extends AnonymizerA {
 	public SiteWideAnonymizer(XnatImagesessiondataI s){
 		this(s,false);
 	}
-	
+
+	/**
+	 * Returns the project string that will be passed to the Mizer service.
+	 *
+	 * @return The project name if known, "Unknown" otherwise.
+	 */
 	@Override
 	String getProjectName() {
-		return null;
+		String projectName = null;
+		if(s instanceof XnatImagesessiondata){
+			projectName = ((XnatImagesessiondata)this.s).getProjectName();
+		}
+
+		return (projectName != null) ? projectName : "Unknown";
 	}
 	
 	/**

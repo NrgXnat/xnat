@@ -9,12 +9,10 @@
         #else
             <span id="expts_header" class="edit_header1">Experiments</span>
         #end
-        <a id="toggle_expts_link" style="display:none;text-decoration:underline;" onClick="XNAT.app.subject.toggleExptView();">View All Experiments</a>
-        <span id="expt_shared_legend" style="display:none;background-color:#FC9;margin-right: 2px;" class="expt-legend withThinBorder">Shared</span>
-        <span id="expt_denied_legend" style="display:none;background-color:#F99;margin-right: 2px;" class="expt-legend withThinBorder">Access Denied</span>
+        <a id="toggle_expts_link" style="display:none;text-decoration:underline;" onClick="XNAT.app.subject.toggleExptView();">View All Available Data For This Subject</a>
     </div>
 
-    #set($hasOtherProjects=false)
+    #set ($hasOtherProjects = false)
     #if($pScope)
         <div id="proj_expts" style="display:none">
 
@@ -28,12 +26,20 @@
                 </tr>
                 </thead>
                 <tbody>
+                #set ($subjectHasData = false)
                 #foreach ($assessor in $subject.getMinimalLoadAssessors())
                     #if($assessor.hasProject($project))
                         #parse($assessorTemplateName)
+                        #set ($subjectHasData = true)
                     #else
-                        #set($hasOtherProjects=true)
+                        #set ($hasOtherProjects = true)
                     #end
+                #end
+
+                #if(!$subjectHasData)
+                <tr>
+                    <td colspan="4">No data to show</td>
+                </tr>
                 #end
                 </tbody>
             </table>
@@ -52,11 +58,22 @@
             </tr>
             </thead>
             <tbody>
-            #foreach ($assessor in $subject.getMinimalLoadAssessors())
-                #parse($assessorTemplateName)
+            #if ($subject.getMinimalLoadAssessors().isEmpty())
+            <tr>
+                <td colspan="4">No data to show</td>
+            </tr>
+            #else
+                #foreach ($assessor in $subject.getMinimalLoadAssessors())
+                    #parse($assessorTemplateName)
+                #end
             #end
             </tbody>
         </table>
+
+        <p class="data-table-key" style="margin-top: 1em;"><strong>Key:</strong>
+            <span id="expt_shared_legend" style="display:none; margin-right: 2em;" class="expt-legend"><b style="background-color:#FC9;margin-right: 2px; width: 1em; height: 1em; display: inline-block;" class="withThinBorder"></b> Shared</span>
+            <span id="expt_denied_legend" style="display:none; margin-right: 2em;" class="expt-legend"><b style="background-color:#F99;margin-right: 2px; width: 1em; height: 1em; display: inline-block;" class="withThinBorder"></b> You do not have access to this project</span>
+        </p>
 
     </div><!-- /all_expts -->
 
@@ -67,7 +84,7 @@
         #if($pScope && $hasOtherProjects)
             XNAT.app.subject.toggleExptView = function(){
                 if (document.getElementById("all_expts").style.display == "block") {
-                    document.getElementById("toggle_expts_link").innerHTML = "View All Experiments";
+                    document.getElementById("toggle_expts_link").innerHTML = "View All Available Data For This Subject";
                     document.getElementById("expts_header").innerHTML = "Experiments in ${project}";
                     document.getElementById("proj_expts").style.display = "block";
                     document.getElementById("all_expts").style.display = "none";

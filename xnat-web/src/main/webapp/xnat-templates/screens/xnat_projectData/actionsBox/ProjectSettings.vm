@@ -1,0 +1,10 @@
+#if($data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user))
+<!-- position 99 -->
+    <li class="yuimenuitem" id="project-settings-action" class="hidden">
+        #set ( $projectSettingsUri = "/page/project/settings/?id=$project.getId()" )
+        <a href="$content.getURI($projectSettingsUri)">Project Settings</a>
+    </li>
+    <script>
+        XNAT.app.pluginSettings.projectSettingsActionItem('#project-settings-action');
+    </script>
+#end

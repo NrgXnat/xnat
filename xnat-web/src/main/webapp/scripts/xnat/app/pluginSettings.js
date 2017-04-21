@@ -261,6 +261,23 @@ var XNAT = getObject(XNAT);
         });
     };
 
+    pluginSettings.projectSettingsActionItem = function(elementId){
+        if (pluginSettings.hasProjectActionItem === true) {
+            return;
+        }
+        getSpawnerNamespaces().done(function(namespaces){
+            // plugins with project-level settings
+            // MUST have a project-settings.yaml file
+            var nsProjectSettings = namespaces.filter(function(ns){
+                return /([:.]projectSettings)$/i.test(ns);
+            });
+            if (nsProjectSettings.length) {
+                $$(elementId).hidden(false);
+                pluginSettings.hasProjectActionItem = true;
+            }
+        });
+    };
+
     // render site-level settings for installed plugins
     pluginSettings.siteSettings = function(tabContainer, callback){
         pluginSettings.siteSettingsTabs =

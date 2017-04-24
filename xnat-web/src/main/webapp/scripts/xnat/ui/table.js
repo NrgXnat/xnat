@@ -280,6 +280,73 @@ var XNAT = getObject(XNAT);
         return this.table.outerHTML;
     };
 
+    // set this.body to <tbody> element
+    // (at specified index if more than one is present)
+    Table.p.getBody = function(idx){
+        // https://en.wikipedia.org/wiki/Body_Count
+        var bodyCount = this.table.tBodies.length;
+        var lastBody  = bodyCount ? bodyCount-1 : 0;
+        var bodyIndex = idx !== undefined ? idx : lastBody;
+        this.body = this.table.tBodies[bodyIndex] || null;
+        return this;
+    };
+
+    // return a real array of <tr> elements
+    // var newTable = XNAT.table().init(data);
+    // var tableRows = newTable.getBody().getRows();
+    Table.p.getRows = function(start, end){
+        this.bodyRows = [];
+        if (this.body === undefined) {
+            this.getBody();
+        }
+        if (!this.body) {
+            this.bodyRows = toArray(this.body.rows);
+        }
+        if (this.bodyRows.length) {
+            if (firstDefined(start, end, null)) {
+                start = start || 0;
+                end = end || this.body.rows.length-1;
+                this.bodyRows = this.bodyRows.slice(start, end);
+            }
+        }
+        return this;
+    };
+
+    // return a 2-D array of cell contents;
+    // if rowIndex is specified, get just that row
+    Table.p.getCells = function(rowIndex){
+        this.cells = [];
+        if (this.bodyRows === undefined) {
+            this.getRows();
+        }
+        if (rowIndex !== undefined) {
+
+        }
+        this.cells = this.bodyRows[rowIndex||0].map(function(row){
+            return
+        });
+    };
+
+    // return a 2-D array of all cells' HTML content
+    // EXCLUDING header and footer rows
+    Table.p.getCellContent = function(tbodyIndex){
+        var tbodyi  = tbodyIndex || 0;
+        var rows = this.table.tBodies[tbodyi].rows;
+        var rowLen  = rows.length;
+        var rowData = new Array(rowLen);
+        var curRow;
+        var rowi = -1;
+        var coli = -1;
+        var colLen, colData;
+        while (++rowi < rowLen){
+            curRow = rows[rowi];
+
+        }
+        forEach(this.table.tBodies[tbodyi].rows, function(tbody){
+
+        });
+    };
+
     /**
      * Populate table with data
      * @param data {Array} array of row arrays
@@ -395,8 +462,12 @@ var XNAT = getObject(XNAT);
         tableHeader = firstDefined(opts.header||undefined, tableHeader);
         fixedHeader = firstDefined(opts.fixedHeader||undefined, fixedHeader);
 
+        // allow 'items' or 'columns' or 'properties'
+        // to specify property names for column items   [*L*]
+        opts.items = opts.items || opts.columns || opts.properties || undefined;
+
         // this should allow use of items: true or items: 'all'
-        allItems = firstDefined(opts.items||undefined, allItems);
+        allItems = firstDefined(opts.items, allItems);
         allItems = allItems === 'all' || allItems === true;
 
         // properties for spawned <table> element
@@ -528,7 +599,7 @@ var XNAT = getObject(XNAT);
                 // one more pass to make sure everything's lined up
                 // adjustCellWidths(bodyCells$, footerCells$, headerCells$);
 
-                table$.find('> .loading').addClass('hidden');
+                table$.find('> .loading').hidden(true);
                 table$.find('> .invisible').removeClass('invisible');
 
             // });
@@ -579,12 +650,12 @@ var XNAT = getObject(XNAT);
             newTable.thead({ style: { position: 'relative' } });
 
             // create header row
-            if (allItems !== true && (opts.items || opts.properties)) {
+            if (allItems !== true && opts.items) {
 
                 // if 'val' is a string, it's the text for the <th>
                 // if it's an object, get the 'label' property
                 //var label = stringable(val) ? val+'' : val.label;
-                forOwn(opts.items||opts.properties, function(name, val){
+                forOwn(opts.items, function(name, val){
                     props.push(name);
                     // don't create <th> for items labeled as '~data'
                     if (DATAREGEX.test(val)) {
@@ -603,7 +674,7 @@ var XNAT = getObject(XNAT);
 
                 if (opts.header !== false) {
                     newTable.tr();
-                    forOwn(opts.items||opts.properties, function(name, val){
+                    forOwn(opts.items, function(name, val){
 
                         if (DATAREGEX.test(val)) {
                             hiddenItems.push(name);
@@ -1116,6 +1187,7 @@ var XNAT = getObject(XNAT);
 
     XNAT.ui = getObject(XNAT.ui||{});
     XNAT.ui.table = XNAT.table = table;
+    XNAT.ui.dataTable = XNAT.dataTable = table.dataTable;
     XNAT.ui.inputTable = XNAT.inputTable = table.inputTable;
 
 }));

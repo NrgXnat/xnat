@@ -89,6 +89,10 @@
         border-bottom: 1px solid #e0e0e0;
     }
 
+    div.download-column .xnat-table.data-table tr .filter {
+        border: none;
+    }
+
     div.download-column dl {
         position: relative;
         margin: 15px 0;
@@ -110,8 +114,12 @@
         /*font-weight: bold;*/
     }
 
-    section.list table.data-table {
+    section.list div.data-table-wrapper {
         border: none;
+    }
+
+    section.list table.data-table {
+        border: none !important;
         border-collapse: collapse;
     }
 

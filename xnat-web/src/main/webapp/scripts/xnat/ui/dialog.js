@@ -42,6 +42,20 @@ var XNAT = getObject(XNAT || {});
     dialog.count = 0;
     dialog.zIndex = 9000;
 
+    // get the highest z-index value for dialogs
+    // created with either xmodal or XNAT.dialog
+    dialog.zIndexTop = function(){
+        var xmodalZ = dialog.zIndex + 1;
+        var dialogZ = dialog.zIndex + 1;
+        if (xmodal && xmodal.topZ) {
+            xmodalZ = xmodal.topZ + 1;
+            return dialog.zIndex =
+                xmodal.topZ =
+                    dialogZ > xmodalZ ? dialogZ : xmodalZ;
+        }
+        return dialog.zIndex = dialogZ;
+    };
+
     // keep track of dialog objects
     dialog.dialogs = {};
 
@@ -51,20 +65,36 @@ var XNAT = getObject(XNAT || {});
     // keep track of just uids
     dialog.uids = [];
 
+    // keep track of OPEN dialogs
+    dialog.openDialogs = [];
+
     // which dialog is on top?
     dialog.topUID = null;
 
     dialog.updateUIDs = function(){
         // save keys from dialog.dialogs
         dialog.uids = [];
+        dialog.openDialogs = [];
         forOwn(dialog.dialogs).forEach(function(uid){
             if (!/loading/i.test(uid)) {
                 dialog.uids.push(uid);
+            }
+            if (dialog.dialogs[uid].isOpen){
+                dialog.openDialogs.push(uid);
             }
         });
     };
 
     dialog.bodyPosition = window.scrollY;
+
+    dialog.getPosition = function(){
+        var dialogPosition = dialog.bodyPosition;
+        var yPosition = window.scrollY || dialogPosition;
+        if (dialogPosition !== yPosition) {
+            dialogPosition = yPosition;
+        }
+        return dialog.bodyPosition = dialogPosition;
+    };
 
     // update <body> className and window scroll position
     dialog.updateWindow = function(){
@@ -100,7 +130,7 @@ var XNAT = getObject(XNAT || {});
         // opts.tag = 'button';
         opts.id = btnId;
         opts.tabindex = '0';
-        opts.html = _btn.label || _btn.html || _btn.text || '(no label)';
+        opts.html = _btn.label || _btn.html || _btn.text || 'OK';
         opts.attr = _btn.attr || {};
         opts.attr.tabindex = 0;
         opts.className = (function(){
@@ -130,7 +160,7 @@ var XNAT = getObject(XNAT || {});
 
         btn$.on('click', function(e){
             e.preventDefault();
-            var action = _btn.action || _btn.onclick || diddly;
+            var action = _btn.action || _btn.handler || _btn.onclick || diddly;
             action.call(this, _this);
             if (_btn.close) {
                 _this.close(_btn.destroy);
@@ -159,7 +189,7 @@ var XNAT = getObject(XNAT || {});
         this.delay = this.delay || 0;
 
         this.zIndex = {};
-        this.zIndex.container = ++dialog.zIndex;
+        this.zIndex.container = dialog.zIndexTop();
         // this.zIndex.mask = ++dialog.zIndex;
         // this.zIndex.dialog = ++dialog.zIndex;
 
@@ -169,7 +199,7 @@ var XNAT = getObject(XNAT || {});
 
         // use an outer container for correct positioning
         this.container$ = $.spawn('div.xnat-dialog-container', {
-            id: this.uid,
+            id: (this.id || this.uid) + '-container',
             style: {
                 display: 'none',
                 zIndex: this.zIndex.container
@@ -207,7 +237,7 @@ var XNAT = getObject(XNAT || {});
 
             // outermost dialog <div>
             this.dialog$ = $.spawn('div.xnat-dialog', {
-                id: this.id || (this.uid + '-dialog'), // use given id as-is or use uid-dialog
+                id: this.id || this.uid, // use given id as-is or use uid-dialog
                 attr: { tabindex: '0' },
                 style: {
                     // zIndex: this.zIndex.dialog,
@@ -276,7 +306,7 @@ var XNAT = getObject(XNAT || {});
             }
 
             // body content (text, html, DOM nodes, or jQuery-wrapped elements
-            this.content = this.content || '';
+            this.content = this.content || '<span>&nbsp;</span>';
 
             // if a template is specified, and no content, grab the template
             if (this.template && !this.content) {
@@ -321,6 +351,29 @@ var XNAT = getObject(XNAT || {});
                 // footer content (on the left side)
                 this.footerContent$ =
                     $.spawn('span.content', this.footerContent);
+
+                // add default buttons if not defined
+                if (this.buttons === undef) {
+                    this.buttons = [];
+                    // default 'ok' button
+                    this.buttons.push({
+                        id: this.okId || this.id + '-btn-ok',
+                        label: this.okLabel || 'OK',
+                        className: 'ok',
+                        isDefault: true,
+                        action: this.okAction || diddly,
+                        close: this.okClose || true
+                    });
+                    // default 'cancel' button
+                    this.buttons.push({
+                        id: this.cancelId || this.id + '-btn-cancel',
+                        label: this.cancelLabel || 'Cancel',
+                        className: 'cancel',
+                        isDefault: false,
+                        action: this.cancelAction || diddly,
+                        close: this.cancelClose || true
+                    });
+                }
 
                 // footer buttons (on the right side)
                 this.footerButtons$ =
@@ -399,8 +452,13 @@ var XNAT = getObject(XNAT || {});
 
         // save a reference to this instance
         // (unless it's 'protected')
-        if (this.protected !== true) {
-        dialog.dialogs[this.uid] = this;
+        if (this.protected === true) {
+            this.container$.addClass('protected');
+            this.mask$.addClass('protected');
+            this.dialog$.addClass('protected');
+        }
+        else {
+            dialog.dialogs[this.uid] = this;
         }
 
         dialog.updateUIDs();
@@ -462,16 +520,16 @@ var XNAT = getObject(XNAT || {});
     // bring the dialog to the top
     Dialog.fn.toTop = function(){
         // return early if already top
-        if (dialog.topUID === this.uid) {
-            return this;
-        }
+        // if (dialog.topUID === this.uid) {
+        //     return this;
+        // }
         // otherwise...
         // remove 'top' class from existing dialogs
         forOwn(dialog.dialogs, function(uid, dlg){
             dlg.container$.removeClass('top');
         });
         // and put it at the top
-        this.zIndex.container = ++dialog.zIndex;
+        this.zIndex.container = dialog.zIndexTop();
         this.container$.addClass('top').css('z-index', this.zIndex.container);
         this.mask$.addClass('top');
         this.dialog$.addClass('top');
@@ -487,18 +545,25 @@ var XNAT = getObject(XNAT || {});
 
         this.setSpeed(firstDefined(duration, 0));
 
-        if (this.speed < 0) {
+        if (this.isOpen || this.speed < 0) {
             return this;
         }
 
-        if (dialog.uids.length <= 1) {
-            dialog.bodyPosition = window.scrollY;
-            this.dialog$.css('top', dialog.bodyPosition + (this.top || 0));
-        }
+        // if (!dialog.openDialogs.length) {
+        //     dialog.bodyPosition = dialog.bodyPosition || window.scrollY;
+            this.dialog$.css('top', dialog.getPosition() + (this.top || 0));
+        // }
 
         if (isFunction(this.beforeShow)) {
             this.beforeShowResult = this.beforeShow.call(this, this);
             if (this.beforeShowResult === false) {
+                return this;
+            }
+        }
+
+        if (isFunction(this.onShow)) {
+            this.onShowResult = this.onShow.call(this, this);
+            if (this.onShowResult === false) {
                 return this;
             }
         }
@@ -514,24 +579,32 @@ var XNAT = getObject(XNAT || {});
 
         this.showMethod = (/^(0|-1)$/.test(this.speed+'') ? 'show' : this.showMethod || 'fadeIn');
 
-        this.container$[this.showMethod](this.speed, function(){
+        this.container$[this.showMethod](this.speed * 0.3, function(){
             _this.container$.addClass('open')
         });
 
-        this.mask$[this.showMethod](this.speed * 0.3, function(){
+        this.mask$[this.showMethod](this.speed * 0.6, function(){
             _this.mask$.addClass('open');
         });
-        this.dialog$[this.showMethod](this.speed * 0.6, function(){
+        this.dialog$[this.showMethod](this.speed, function(){
             _this.dialog$.addClass('open');
             _this.focus(showCallback);
         });
 
-        window.html$.addClass('xnat-dialog-open');
-        window.body$.addClass('xnat-dialog-open').css('top', -dialog.bodyPosition);
+        this.isOpen = true;
+        this.isHidden = !this.isOpen;
 
-        if (dialog.uids.length <= 1) {
-            window.scrollTo(0, 0);
-        }
+        dialog.updateUIDs();
+        dialog.updateWindow();
+
+        window.html$.addClass('xnat-dialog-open');
+        window.body$
+            .addClass('xnat-dialog-open')
+            .css('top', -dialog.bodyPosition);
+
+        // if (!dialog.openDialogs.length) {
+        //     window.scrollTo(0, 0);
+        // }
 
         return this;
     };
@@ -544,11 +617,27 @@ var XNAT = getObject(XNAT || {});
 
         this.setSpeed(firstDefined(duration, 0));
 
+        if (isFunction(this.beforeHide)) {
+            this.beforeHideResult = this.beforeHide.call(this, this);
+            if (this.beforeHideResult === false) {
+                return this;
+            }
+        }
+
         if (isFunction(this.onHide)) {
             this.onHideResult = this.onHide.call(this, this);
             // return false from onHide to stop dialog from hiding
             if (this.onHideResult === false) {
                 return this;
+            }
+        }
+
+        function hideCallback(){
+            if (isFunction(_this.afterHide)) {
+                _this.afterHideResult = _this.afterHide.call(_this, _this);
+            }
+            if (isFunction(callback)) {
+                _this.hideCallbackResult = callback.call(_this, _this);
             }
         }
 
@@ -561,15 +650,6 @@ var XNAT = getObject(XNAT || {});
             _this.mask$.removeClass('open top');
         });
 
-        function hideCallback(){
-            if (isFunction(_this.afterHide)) {
-                _this.afterHideResult = _this.afterHide.call(_this, _this);
-            }
-            if (isFunction(callback)) {
-                _this.hideCallbackResult = callback.call(_this, _this);
-            }
-        }
-
         if (isPlainObject(arguments[0])) {
             this.container$[this.hideMethod].apply(this.container$, arguments[0]);
         }
@@ -579,6 +659,11 @@ var XNAT = getObject(XNAT || {});
                 _this.container$.removeClass('open top');
             });
         }
+
+        this.isHidden = true;
+        this.isOpen = !this.isHidden;
+
+        dialog.updateUIDs();
 
         // update classes on <html> and <body> elements
         dialog.updateWindow();
@@ -643,10 +728,10 @@ var XNAT = getObject(XNAT || {});
         var _this = this;
         // use -1 to suppress opening
         this.setSpeed(firstDefined(duration, 0));
-        if (this.speed < 0) {
+        this.toTop();
+        if (this.isOpen || this.speed < 0) {
             return this;
         }
-        this.toTop();
         if (this.delay){
             window.setTimeout(function(){
                 try {
@@ -772,6 +857,13 @@ var XNAT = getObject(XNAT || {});
     };
     ////////////////////////////////////////////////////////////
 
+
+    // destroy all existing dialogs, whether they're visible or not
+    dialog.destroyAll = function(){
+        forOwn(dialog.dialogs, function(uid, dlg){
+            dlg.destroy();
+        })
+    };
 
     // global function to close and optionally destroy ANY dialog
     dialog.close = function(dlg, destroy){
@@ -936,7 +1028,7 @@ var XNAT = getObject(XNAT || {});
             return dialog.loadingBar.toTop();
         }
         var LDG = dialog.shell({
-            uid: 'loadingbar' + (loadingBarCounter += 1),
+            id: 'loadingbar' + (loadingBarCounter += 1),
             width: 240,
             height: 'auto',
             top: 60,

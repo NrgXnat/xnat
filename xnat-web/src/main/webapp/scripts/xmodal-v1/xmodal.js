@@ -27,7 +27,7 @@ if (typeof jQuery == 'undefined') {
     var _xmodal = {}, $html, $body, $mask, $modal, undefined;
 
 
-    _xmodal.topZ = 10000;
+    _xmodal.topZ = 8000;
 
     // polyfill for string.trim(); method
     if (!String.prototype.trim) {
@@ -230,6 +230,20 @@ if (typeof jQuery == 'undefined') {
     // properties attached to global 'xmodal' object
     xmodal = $.extend(true, _xmodal, xmodal);
 
+    // get the highest z-index value for dialogs
+    // created with either xmodal or XNAT.dialog
+    xmodal.zIndexTop = function(){
+        var xmodalZ = xmodal.topZ + 1;
+        var dialogZ = xmodal.topZ + 1;
+        if (XNAT && XNAT.dialog && XNAT.dialog.zIndex) {
+            dialogZ = XNAT.dialog.zIndex + 1;
+            return xmodal.topZ =
+                XNAT.dialog.zIndex =
+                    dialogZ > xmodalZ ? dialogZ : xmodalZ;
+        }
+        return xmodal.topZ = xmodalZ;
+    };
+
 
     //////////////////////////////////////////////////
     // after DOM load (just do everything then)
@@ -309,7 +323,7 @@ if (typeof jQuery == 'undefined') {
             if ( $open.length ) {
                 $open.removeClass('top');
                 //xmodal.topZ = $modal.css('z-index')+10;
-                $(this).not('.static').css('z-index',++xmodal.topZ).addClass('top');
+                $(this).not('.static').css('z-index',xmodal.zIndexTop()).addClass('top');
             }
         });
 
@@ -564,10 +578,20 @@ if (typeof jQuery == 'undefined') {
                         }
                         var thisModal = xmodal.getModalObject(modal.id);
                         if ($.isFunction(button_action)) {
-                            button_action(thisModal);
+                            try {
+                                button_action(thisModal);
+                            }
+                            catch (e) {
+                                console.error(e);
+                            }
                         }
                         if ($(this).hasClass('close')) {
-                            xmodal.close(thisModal.$modal);
+                            try {
+                                xmodal.close(modal.id);
+                            }
+                            catch (e) {
+                                console.error(e);
+                            }
                         }
                     });
                 });
@@ -685,11 +709,11 @@ if (typeof jQuery == 'undefined') {
         //////////////////////////////////////////////////
         // xmodal.Modal constructor - magic starts here
         //////////////////////////////////////////////////
-        xmodal.Modal = function (_opts) {
+        xmodal.Modal = function (opts) {
 
             // extending _opts with an empty object SHOULD make sure
             // we're working with an object, even if it's empty
-            _opts = getObject(_opts);
+            var _opts = cloneObject(opts);
 
             var _this = this;
 
@@ -848,7 +872,7 @@ if (typeof jQuery == 'undefined') {
             if ( !isFalse(modal.mask) ){
                 modal.$mask = $mask = $(modal_id + '-mask');
                 modal.$mask.css({
-                    'z-index': ++xmodal.topZ
+                    'z-index': xmodal.zIndexTop()
                 });
                 modal.$mask.show().addClass('open');
             }
@@ -881,7 +905,7 @@ if (typeof jQuery == 'undefined') {
                 'right': (left_ !== 0) ? 'auto' : 0,
                 'width': modal.width,
                 'height': modal.height,
-                'z-index': ++xmodal.topZ
+                'z-index': xmodal.zIndexTop()
             };
 
             // only set min/max if defined

@@ -472,7 +472,7 @@ var XNAT = getObject(XNAT);
                     return false;
                 }
                 cookie.SESSION_DIALOG_CANCELLED.set('false');
-                timeout.warning.show(0);
+                timeout.warning.toTop().show(0);
                 return false;
             }
 
@@ -541,7 +541,7 @@ var XNAT = getObject(XNAT);
     timeout.loaded = true;
 
 
-    return XNAT.app.timeout = timeout;
+    return XNAT.app.timeout = XNAT.app.timer = timeout;
 
 
 }));

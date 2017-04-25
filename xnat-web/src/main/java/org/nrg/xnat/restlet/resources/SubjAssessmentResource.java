@@ -19,6 +19,8 @@ import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -385,7 +387,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
 					
 					if(existing==null){
-						if(!Permissions.canCreate(user,expt)){
+						if(!Permissions.canCreate(user,expt) && !Roles.isSiteAdmin(user)){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient create privileges for experiments in this project.");
 							return;
 						}
@@ -405,7 +407,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 							return;
 						}
 
-						if(!Permissions.canEdit(user,expt)){
+						if(!Permissions.canEdit(user,expt) && !Roles.isSiteAdmin(user)){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient edit privileges for experiments in this project.");
 							return;
 						}
@@ -539,7 +541,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Project must be modified through separate URI.");
 							return;
 						}
-						
+
 						//MATCHED
 						if(existing !=null && !StringUtils.equals(existing.getLabel(),expt.getLabel())){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Label must be modified through separate URI.");

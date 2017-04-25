@@ -759,7 +759,7 @@ var XNAT = getObject(XNAT || {});
             }
         }
 
-        this.setSpeed(firstDefined(duration, 0));
+        this.setSpeed(firstDefined(duration||undef, 0));
 
         this.hide(this.speed, callback);
 
@@ -824,7 +824,10 @@ var XNAT = getObject(XNAT || {});
         return newDialog;
     };
 
-    // global function to toggle visibility of a dialog
+    // global function to toggle visibility of a dialog...
+    // 'method' arg can be one of the following:
+    // 'open', 'close', 'show', 'hide', 'fadeIn', 'fadeOut'
+    // or... any jQuery method that toggles visibility
     dialog.toggle = function(dlg, method){
         var DLG = null;
         if (dlg instanceof Dialog) {
@@ -836,7 +839,22 @@ var XNAT = getObject(XNAT || {});
         else if (dialog.dialogs[dialog.topUID]) {
             DLG = dialog.dialogs[dialog.topUID];
         }
-        return DLG ? DLG[method || 'show']() : null;
+        else {
+            return null;
+        }
+        if (!method && DLG.isOpen) {
+            method = DLG.hideMethod || 'hide';
+        }
+        else {
+            method = DLG.showMethod || 'show';
+        }
+        if (/^(open|close|show|hide|fadeIn|fadeOut)$/i.test(method)) {
+            DLG[method]();
+        }
+        else {
+            DLG.container$[method]();
+        }
+        return DLG;
     };
 
     // global function to show an existing dialog
@@ -857,6 +875,16 @@ var XNAT = getObject(XNAT || {});
     };
     ////////////////////////////////////////////////////////////
 
+    // global function to destroy an existing dialog
+    dialog.destroy = function(dlg){
+        var DLG = dialog.toggle(dlg, 'close');
+        var UID;
+        if (!DLG) return null;
+        UID = DLG.uid;
+        DLG.destroy();
+        // return uid of destroyed dialog
+        return UID;
+    };
 
     // destroy all existing dialogs, whether they're visible or not
     dialog.destroyAll = function(){
@@ -977,9 +1005,15 @@ var XNAT = getObject(XNAT || {});
 
     }
 
+    // use XNAT.ui.dialog.message the same as xmodal.message
     dialog.message = function(title, msg, okLabel, okAction, obj){
         var opts = message.apply(null, arguments);
         return dialog.init(opts).open();
+    };
+
+    // 'alert' dialog has no title text or title bar buttons
+    dialog.alert = function(msg, okLabel, okAction, obj){
+        return dialog.message(false, msg, okLabel, okAction, obj);
     };
 
     // simple confirmation dialog with 'Cancel' and 'OK' buttons
@@ -993,6 +1027,9 @@ var XNAT = getObject(XNAT || {});
                 action: opts.cancelAction || diddly
             })
         }
+        // DO NOT render a 'close' button in the title bar
+        // we want the user to explicitly confirm or cancel
+        opts.closeBtn = false;
         return dialog.init(opts).open();
     };
 
@@ -1040,7 +1077,7 @@ var XNAT = getObject(XNAT || {});
            .addClass('loader loading')
            .append(spawn('img', {
                src: XNAT.url.rootUrl('/images/loading_bar.gif'),
-                width: 220,
+               width: 220,
                height: 19
            }));
         if (isFunction(callback)) {

@@ -1060,6 +1060,7 @@ var XNAT = getObject(XNAT || {});
     panel.input.switchbox = function panelInputSwitchbox(opts){
         opts = cloneObject(opts);
         opts.type = 'checkbox';
+        opts.kind = 'switchbox';
         addClassName(opts, 'switchbox');
         return XNAT.ui.template.panelInput(opts).get();
     };

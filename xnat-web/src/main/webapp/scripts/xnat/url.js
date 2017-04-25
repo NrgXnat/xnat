@@ -410,7 +410,7 @@ var XNAT = getObject(XNAT||{});
         var newHash = XNAT.url.updateHashPart('', key, value, delim);
         //window.location.replace(newHash);
         //window.location.reload();
-        $(window).trigger('reload-hash', [callback, args]);
+        $(window).trigger('reload-hash', [callback, arguments]);
     };
 
 

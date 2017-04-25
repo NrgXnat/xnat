@@ -689,7 +689,7 @@ var XNAT = getObject(XNAT||{}),
         if ($.isFunction(opts.validate)) {
             if (!opts.validate.call(_form, opts)) {
                 $form.removeClass('valid').addClass('invalid');
-                return false;
+                opts.validated = false;
             }
             else {
                 $form.removeClass('invalid').addClass('valid');

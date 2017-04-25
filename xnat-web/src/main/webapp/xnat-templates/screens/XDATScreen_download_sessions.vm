@@ -146,8 +146,7 @@
     XNAT.app.projectDownload = getObject(XNAT.app.projectDownload);
     XNAT.app.projectDownload.items = extend(true, XNAT.app.projectDownload.items || {}, {
         counts: {},
-        project: {
-        },
+        project: {},
         sessions: {
             list: [],
             data: []
@@ -285,9 +284,9 @@
                         #end
                 </script>
 
-                <!-- Project Resources -->
+                <!-- Additional Resources -->
                 #if($showResources)
-                    <h4>Project Resources</h4>
+                    <h4>Additional Resources</h4>
                     <section class="resources list">
                         <!-- list project resources -->
                     </section>

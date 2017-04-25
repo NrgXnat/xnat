@@ -165,7 +165,7 @@ var XNAT = getObject(XNAT);
                         // renders a menu in the filter row
                         return spawn('div.center', [selectAllLabel]);
                     },
-                    call: function(){
+                    apply: function(){
                         // renders the actual checkbox cell
                         // this.uid = randomID('i$', false);
                         this.newId = typeDashed + '-' + toDashed(this.name);
@@ -176,7 +176,7 @@ var XNAT = getObject(XNAT);
                     // label: 'Session ID',
                     // sort: true,
                     filter: true,
-                    call: function(){
+                    apply: function(){
                         var item = this;
                         return spawn('label', {
                             title: item.name,
@@ -227,35 +227,53 @@ var XNAT = getObject(XNAT);
         $('#download-form').off('submit').on('submit', function(e){
             e.preventDefault();
             e.stopImmediatePropagation();
-            var $form = $(this);
+            var $form = $(this).removeClass('invalid');
             var type = $form.find('.download-type:checked').val();
             var getZip = (type === 'direct');
             var msg = [];
             $form.find('[name="XNAT_CSRF"]').remove();
-            var $formSubmit = $form.submitJSON();
-            $formSubmit.always(function(data){
-                var ID = data.responseText;
-                var URL = setupDownloadUrl(ID, getZip);
-                if (getZip) {
-                    msg.push('Click "Download" to start the zip download.');
-                }
-                else {
-                    msg.push('Click "Download" to download the catalog XML.');
-                }
-                msg.push('<br><br>');
-                msg.push('The download id is <b>' + ID + '</b>.');
-
-                xmodal.confirm({
-                    content: msg.join(' '),
-                    okLabel: 'Download',
-                    okAction: function(){
-                        window.open(URL)
+            $form.submitJSON({
+                // dataType: 'text/plain',
+                validate: function(){
+                    var countChecked = $form.find('input.select-item:checked').length;
+                    if (!countChecked) {
+                        XNAT.ui.dialog.message({
+                            title: false,
+                            content: '' +
+                            '<div class="warning" style="font-size:14px;">' +
+                                'You must select at least one item to download.' +
+                            '</div>'
+                        });
                     }
-                })
-            });
-            $formSubmit.done(function(id){
-                console.log(id);
-                // xmodal.message('Catalog ID', data);
+                    return !!countChecked;
+                },
+                failure: function(){
+                    var i = -1;
+                    while (++i < arguments.length){
+                        console.log(arguments[i]);
+                    }
+                },
+                complete: function(data){
+                    var ID = data.responseText;
+                    var URL = setupDownloadUrl(ID, getZip);
+                    if (getZip) {
+                        msg.push('Click "Download" to start the zip download.');
+                    }
+                    else {
+                        msg.push('Click "Download" to download the catalog XML.');
+                    }
+                    msg.push('<br><br>');
+                    msg.push('The download id is <b>' + ID + '</b>.');
+
+                    XNAT.ui.dialog.message({
+                        title: false,
+                        content: msg.join(' '),
+                        okLabel: 'Download',
+                        okAction: function(){
+                            window.open(URL)
+                        }
+                    });
+                }
             });
             return false;
         });

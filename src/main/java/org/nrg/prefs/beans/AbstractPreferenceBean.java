@@ -572,7 +572,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             if(valueType.equals(String.class) || valueType.equals(Date.class) || valueType.equals(Integer.class) || valueType.equals(Double.class) || valueType.equals(Float.class) || valueType.equals(Long.class) || valueType.equals(Boolean.class) ||
                     valName.equals("boolean") || valName.equals("int") || valName.equals("long") || valName.equals("float") || valName.equals("double")) {
                 storeToCache(key, value);
-            }                     setEnableSitewideAnonymizationScript
+            }
         }
 
         return current;

@@ -12,12 +12,9 @@ package org.nrg.xnat.helpers.prearchive;
 import com.google.common.base.Function;
 import org.dcm4che2.data.DicomObject;
 import org.nrg.config.entities.Configuration;
-import org.nrg.dcm.edit.ScriptApplicator;
-import org.nrg.dcm.edit.ScriptEvaluationException;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
-import org.nrg.dicom.mizer.service.AnonException;
-import org.nrg.dicom.mizer.service.DEScript;
+import org.nrg.dicom.mizer.service.MizerException;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -32,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -138,8 +134,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                                                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Can't find the mizer service");
                                             }
                                             service.anonymize( o, newProject, subject, session, anonScript);
-                                        }
-                                        catch ( AnonException e) {
+                                        } catch (MizerException e) {
                                             throw new RuntimeException(e);
                                         }
                                         return o;

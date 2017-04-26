@@ -565,11 +565,14 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         } else {
             _preferenceService.setPreferenceValue(getToolId(), namespacedPropertyId, scope, entityId, value);
         }
-        // This caches string values that aren't sub-items in other preferences. Other data types use setBooleanValue(),
-        // setIntegerValue(), etc.: map caching is performed in those methods before serializing to a string and calling
-        // this method. String values don't have that layer and so need to be handled here.
+        // This caches primitive values that aren't sub-items in other preferences.
         if (subkeys.length == 0 && _preferences.containsKey(key)){
-            storeToCache(key, value);
+            final Class<?> valueType = _preferences.get(key).getValueType();
+            final String valName = valueType.getName();
+            if(valueType.equals(String.class) || valueType.equals(Date.class) || valueType.equals(Integer.class) || valueType.equals(Double.class) || valueType.equals(Float.class) || valueType.equals(Long.class) || valueType.equals(Boolean.class) ||
+                    valName.equals("boolean") || valName.equals("int") || valName.equals("long") || valName.equals("float") || valName.equals("double")) {
+                storeToCache(key, value);
+            }                     setEnableSitewideAnonymizationScript
         }
 
         return current;

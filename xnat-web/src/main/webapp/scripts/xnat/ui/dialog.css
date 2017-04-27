@@ -92,7 +92,11 @@ div.xnat-dialog .body.scroll > .inner { overflow: auto ; }
 div.xnat-dialog .body > .inner > iframe {
     width: 100%; height: 100%; position: absolute;
     top: 0; bottom: 0; right: 0; left: 0; }
-div.xnat-dialog .body .inner { display: none ; margin: 20px ; font-size: 13px ; line-height: 17px ; }
+div.xnat-dialog .body .inner {
+    display: none ; margin: 20px ;
+    font-size: 14px ;
+    line-height: 17px ;
+}
 div.xnat-dialog.nopad .body .inner { margin: 0; padding: 0; }
 div.xnat-dialog.open .body .inner { display: block ; }
 

@@ -45,6 +45,10 @@ var XNAT = getObject(XNAT);
     // general function to generate listing of data items
     function spawnDataList(type){
 
+        if (ITEMS[type].list && !ITEMS[type].list.length) {
+            return {};
+        }
+
         var typeDashed = toDashed(type);
 
         // store a reference to all
@@ -125,11 +129,11 @@ var XNAT = getObject(XNAT);
         }
 
         function itemCheckbox(item){
-            var checkbox = spawn('input|checked', {
+            var checkbox = spawn('input', {
                 type: 'checkbox',
                 id: item.newId,
                 className: 'select-item select-' + typeDashed,
-                value: item.value,
+                value: window.unescapeHTML(item.value),
                 name: type + '[]',
                 title: type + ': ' + item.name,
                 checked: true
@@ -138,56 +142,80 @@ var XNAT = getObject(XNAT);
             return checkbox;
         }
 
-        var itemDataTable = XNAT.table.dataTable(ITEMS[type].data, {
+        var itemTableConfig = {
             classes: typeDashed,
             header: false,
             sortable: false,
             table: {
+                style: { tableLayout: 'fixed' },
                 on: [
                     ['change', 'input.select-all', toggleAllItems],
                     ['change', 'input.select-item', toggleSelectAllCheckbox]
                 ]
             },
-            items: {
-                _name: '~data-id',
-                CHECKBOX: {
-                    // label: '&nbsp;',
-                    // sort: false,
-                    td: {
-                        style: { width: CKBX_WIDTH },
-                        className: 'center'
-                    },
-                    th: {
-                        style: { width: CKBX_WIDTH },
-                        className: 'center'
-                    },
-                    filter: function(){
-                        // renders a menu in the filter row
-                        return spawn('div.center', [selectAllLabel]);
-                    },
-                    apply: function(){
-                        // renders the actual checkbox cell
-                        // this.uid = randomID('i$', false);
-                        this.newId = typeDashed + '-' + toDashed(this.name);
-                        return itemCheckbox(this);
-                    }
-                },
-                label: {
-                    // label: 'Session ID',
-                    // sort: true,
-                    filter: true,
-                    apply: function(){
-                        var item = this;
-                        return spawn('label', {
-                            title: item.name,
-                            attr: { 'for': item.newId },
-                            // data: { uid: item.uid },
-                            html: item.label + (item.count !== UNDEF ? ' (' + item.count + ')' : '')
-                        })
-                    }
-                }
+            columns: {
+                _name: '~data-id'//,
+                // _id: function(){
+                //     // this.uid = randomID('i$', false);
+                //     // saves a 'newId' property back to the data object
+                //     this.newId = typeDashed + '-' + toDashed(this.name);
+                //     return false;
+                // }
             }
-        });
+        };
+
+        // checkbox column
+        itemTableConfig.columns[typeDashed + '-ckbx'] = {
+            // label: '&nbsp;',
+            // sort: false,
+            td: {
+                style: { width: CKBX_WIDTH },
+                className: 'center'
+            },
+            th: {
+                style: { width: CKBX_WIDTH },
+                className: 'center'
+            },
+            filter: function(){
+                // renders a menu in the filter row
+                return spawn('div.center', [selectAllLabel]);
+            },
+            apply: function(){
+                // this.uid = randomID('i$', false);
+                // saves a 'newId' property back to the data object
+                this.newId = typeDashed + '-' + toDashed(this.name);
+                // renders the actual checkbox cell
+                return itemCheckbox(this);
+            }
+        };
+
+
+        // item column
+        itemTableConfig.columns[typeDashed + '-label'] = {
+            // label: 'Session ID',
+            // sort: true,
+            filter: true,
+            apply: function(){
+                var item = this;
+                var hasCount = item.count !== UNDEF;
+                var _label = spawn('label.truncate.pull-left', {
+                    title: item.name,
+                    style: { width: hasCount ? '80%' : '98%' },
+                    attr: { 'for': item.newId },
+                    // data: { uid: item.uid },
+                    html: item.label
+                });
+                var _count = hasCount ?
+                    spawn('span.item-count.mono.pull-right.text-right', {
+                        style: { width: '20%' },
+                        html: ' (' + item.count + ') &nbsp;'
+                    }) :
+                    '';
+                return spawn('!', [_label, _count]);
+            }
+        };
+
+        var itemDataTable = XNAT.table.dataTable(ITEMS[type].data, itemTableConfig);
 
         // cache checkboxes so they're available for filtering
         $itemCheckboxes = $(itemCheckboxes);
@@ -203,9 +231,14 @@ var XNAT = getObject(XNAT);
     forEach(['scan_formats', 'scan_types', 'resources', 'reconstructions', 'assessors'],
         function(dataType){
             projectImagingData$.find('section.' + toDashed(dataType) + '.list')
-                .empty()
-                .append(spawnDataList(dataType).get());
-
+                               .each(function(){
+                                   if (ITEMS[dataType].list && ITEMS[dataType].list.length) {
+                                       $(this).empty().append(spawnDataList(dataType).table);
+                                   }
+                                   else {
+                                       $(this).find('> .none').hidden(false);
+                                   }
+                               });
         }
     );
 
@@ -235,29 +268,46 @@ var XNAT = getObject(XNAT);
             $form.submitJSON({
                 // dataType: 'text/plain',
                 validate: function(){
-                    var countChecked = $form.find('input.select-item:checked').length;
-                    if (!countChecked) {
+                    var errorMsg = '';
+                    var sessionSelected, countChecked;
+                    sessionSelected = $form.find('input.select-sessions:checked').length;
+                    if (!sessionSelected) {
+                        errorMsg = 'You must select at least one session.';
+                    }
+                    else {
+                        countChecked = $form.find('input.select-item:checked').not('.select-sessions').length;
+                        if (!countChecked) {
+                            errorMsg = 'You must select at least one item to download.';
+                        }
+                    }
+                    if (errorMsg) {
                         XNAT.ui.dialog.message({
                             title: false,
                             content: '' +
                             '<div class="warning" style="font-size:14px;">' +
-                                'You must select at least one item to download.' +
+                            errorMsg +
                             '</div>'
                         });
+                        return false;
                     }
-                    return !!countChecked;
+                    return true;
                 },
                 failure: function(){
-                    var i = -1;
-                    while (++i < arguments.length){
-                        console.log(arguments[i]);
-                    }
+                    // var i = -1;
+                    // while (++i < arguments.length){
+                    //     console.log(arguments[i]);
+                    // }
                 },
                 complete: function(data){
                     var ID = data.responseText;
                     var URL = setupDownloadUrl(ID, getZip);
                     if (getZip) {
-                        msg.push('Click "Download" to start the zip download.');
+                        msg.push('' +
+                            'Click "Download" to start the zip download. ' +
+                            'After the download begins, you may navigate ' +
+                            'away from this page &ndash; the download will ' +
+                            'continue in the background.' +
+                            '');
                     }
                     else {
                         msg.push('Click "Download" to download the catalog XML.');
@@ -265,13 +315,17 @@ var XNAT = getObject(XNAT);
                     msg.push('<br><br>');
                     msg.push('The download id is <b>' + ID + '</b>.');
 
-                    XNAT.ui.dialog.message({
+                    XNAT.ui.dialog.confirm({
                         title: false,
                         content: msg.join(' '),
+                        width: 450,
                         okLabel: 'Download',
                         okAction: function(){
+                            // tickle the server every minute to keep the session alive
+                            window.setInterval(XNAT.app.timer.touch, 60*1000);
                             window.open(URL)
-                        }
+                        },
+                        cancelLabel: 'Cancel'
                     });
                 }
             });

@@ -144,7 +144,7 @@ var XNAT = getObject(XNAT || {});
                 opts.href = '#!';
             }
             else {
-                cls.push('button btn btn-sm');
+                cls.push('button btn');
             }
             if (_btn.isDefault || btn['default']) {
                 cls.push('default')
@@ -443,8 +443,6 @@ var XNAT = getObject(XNAT || {});
             this.dialog$
         ]);
 
-        console.log(window.body$.length);
-
         // add the container to the DOM (at the end of the <body>)
         if (window.body$.length) {
             window.body$.append(this.container$);
@@ -480,7 +478,7 @@ var XNAT = getObject(XNAT || {});
     // re-calculate height of modal body if window.innerHeight has changed
     Dialog.fn.setHeight = function(scale){
 
-        console.log('dialog-resize');
+        // console.log('dialog-resize');
 
         var winHt = window.innerHeight;
         var ftrHt = this.footerHeight || 50;
@@ -977,7 +975,7 @@ var XNAT = getObject(XNAT || {});
                 break;
 
             default:
-                opts = arg5;  // fifth is a config object
+                opts = arg5 || {};  // fifth is a config object
                 opts.title = arg1;  // first is the title
                 opts.content = arg2;  // second is the message content
                 opts.buttonLabel = arg3;  // third is a custom button label
@@ -1061,7 +1059,7 @@ var XNAT = getObject(XNAT || {});
     dialog.loading = function(delay, callback){
         // only one loadingBar?
         if (dialog.loadingBar instanceof Dialog) {
-            console.log('loadingBar');
+            // console.log('loadingBar');
             return dialog.loadingBar.toTop();
         }
         var LDG = dialog.shell({

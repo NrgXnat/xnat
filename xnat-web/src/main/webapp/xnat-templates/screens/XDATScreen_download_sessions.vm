@@ -60,12 +60,12 @@
     }
 
     div.download-column section {
-        margin: 15px 0;
+        margin: 7px 0 15px;
         padding: 0 15px;
     }
 
     div.download-column section.list {
-        margin: 10px 0 30px;
+        margin: 0 0 30px;
         padding: 0 10px;
         /*border: 1px solid #ccc;*/
     }
@@ -82,15 +82,18 @@
     }
 
     div.download-column h4 {
-        margin: 10px 15px;
-        padding-bottom: 3px;
-        font-size: 15px;
-        font-weight: normal;
-        border-bottom: 1px solid #e0e0e0;
+        margin: 10px 10px 0;
+        padding: 0 5px 5px;
+        font-size: 14px;
+        /*font-weight: normal;*/
+        border-bottom: 1px solid #d0d0d0;
     }
 
-    div.download-column .xnat-table.data-table tr .filter {
+    div.download-column .xnat-table.data-table thead td {
+        padding: 6px 8px;
+        background: #f0f0f0;
         border: none;
+        border-bottom: 5px solid #fff;
     }
 
     div.download-column dl {
@@ -182,6 +185,15 @@
 
 <form id="download-form" class="json" method="post" content-type="application/json" action="/xapi/archive/download">
 
+    #set($counter=0)
+    #set($_ID="")
+    #set($_NAME="")
+    #set($_LABEL="")
+    #set($_VALUE="")
+    #set($_COUNT="")
+    #set($_TYPE="")
+    #set($_SUBJECT="")
+
     <!-- Select Sessions -->
     <div id="project-sessions" class="download-column">
         <div class="pad">
@@ -192,22 +204,51 @@
 
                 <h4>Sessions</h4>
                 <section class="sessions list">
+                    <i class="hidden none">(none)</i>
                     <!-- list project sessions -->
                 </section>
-                <script>
-                    // gather sessions
+
+                <div class="html-template hidden">
+
+                    ##<ul id="sessions-list-items hidden">
+
+                        ## gather sessions
                         #foreach($sessionRow in $sessionSummary)
-                        XNAT.app.projectDownload.items.sessions.list.push('$!sessionRow.get(0)');
-                        XNAT.app.projectDownload.items.sessions.data.push({
-                            id: '$!sessionRow.get(0)',
-                            value: '$!sessionRow.get(3):$!sessionRow.get(1):$!sessionRow.get(0)',
-                            name: '$!sessionRow.get(0)',
-                            label: '$!sessionRow.get(1)',
-                            type: '$!sessionRow.get(2)',
-                            subject: '$!sessionRow.get(3)'
-                        });
+
+                            #set($_ID = $!turbineUtils.escapeHTML("$!sessionRow.get(0)"))
+                            #set($_NAME = $!turbineUtils.escapeHTML("$!sessionRow.get(0)"))
+                            #set($_LABEL = $!turbineUtils.escapeHTML("$!sessionRow.get(1)"))
+                            #set($_VALUE = $!turbineUtils.escapeHTML("$!sessionRow.get(3):$!sessionRow.get(1):$!sessionRow.get(0)"))
+                            #set($_TYPE = $!turbineUtils.escapeHTML("$!sessionRow.get(2)"))
+                            #set($_SUBJECT = $!turbineUtils.escapeHTML("$!sessionRow.get(3)"))
+
+                            ##<li class="session-item hidden">
+                            ##    <i class="id hidden">$_ID</i>
+                            ##    <i class="name hidden">$_NAME</i>
+                            ##    <i class="label hidden">$_LABEL</i>
+                            ##    <i class="value hidden">$_VALUE</i>
+                            ##    <i class="type hidden">$_TYPE</i>
+                            ##    <i class="subject hidden">$_SUBJECT</i>
+
+                                <script>
+                                    XNAT.app.projectDownload.items.sessions.list.push('$_ID');
+                                    XNAT.app.projectDownload.items.sessions.data.push({
+                                        id: '$_ID',
+                                        name: '$_NAME',
+                                        label: '$_LABEL',
+                                        value: '$_VALUE',
+                                        type: '$_TYPE',
+                                        subject: '$_SUBJECT'
+                                    });
+                                </script>
+
+                            ##</li>
+
                         #end
-                </script>
+
+                    ##</ul>
+
+                </div>
 
             </div>
         </div>
@@ -225,129 +266,140 @@
                 <!-- Scan Formats -->
                 <h4>Scan Formats</h4>
                 <section class="scan-formats list">
+                    <i class="hidden none">(none)</i>
                     <!-- list scan formats -->
                 </section>
-                <script>
-                    // gather scan formats
-                        #set($counter = 0)
-                        #foreach($format in $scan_formats)
-                            #if($!format.get(0))
-                            XNAT.app.projectDownload.items.scan_formats.list.push('$!format.get(0)')
+                #set($counter=0)
+                #set($_FORMAT="")
+                #foreach($format in $scan_formats)
+                    #set($_FORMAT = $!turbineUtils.escapeHTML("$!format.get(0)"))
+                    <script>
+                            #if($_FORMAT)
+                            XNAT.app.projectDownload.items.scan_formats.list.push('$_FORMAT')
                             XNAT.app.projectDownload.items.scan_formats.data.push({
-                                counter: $counter,
-                                value: '$!format.get(0)',
-                                name: '$!format.get(0)',
-                                label: '$!format.get(0)'
+                                counter: +'$counter',
+                                value: '$_FORMAT',
+                                name: '$_FORMAT',
+                                label: '$_FORMAT'
                             });
                             #else
                             XNAT.app.projectDownload.items.scan_formats.list.push('Unspecified')
                             XNAT.app.projectDownload.items.scan_formats.data.push({
-                                counter: $counter,
+                                counter: +'$counter',
                                 value: null,
                                 name: 'Unspecified',
                                 label: 'Unspecified'
                             });
                             #end
-                            #set($counter = $counter + 1)
-                        #end
-                </script>
+                    </script>
+                    #set($counter = $counter + 1)
+                #end
 
                 <!-- Scan Types -->
                 <h4>Scan Types</h4>
                 <section class="scan-types list">
+                    <i class="hidden none">(none)</i>
                     <!-- list scan types -->
                 </section>
-                <script>
-                    // gather scan types
-                        #set($counter = 0)
-                        #foreach($scan in $scans)
+
+            ## gather scan types
+                #set($counter = 0)
+                #foreach($scan in $scans)
+                    #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)"))
+                    #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
+                    <script>
                             #if($!scan.get(0))
-                            XNAT.app.projectDownload.items.scan_types.list.push('$!scan.get(0)');
+                            XNAT.app.projectDownload.items.scan_types.list.push('$_ID');
                             XNAT.app.projectDownload.items.scan_types.data.push({
                                 counter: $counter,
-                                value: '$!scan.get(0)',
-                                name: '$!scan.get(0)',
-                                label: '$!scan.get(0)',
-                                count: '$!scan.get(1)'
+                                value: '$_ID',
+                                name: '$_ID',
+                                label: '$_ID',
+                                count: '$_COUNT'
                             });
                             #else
                             XNAT.app.projectDownload.items.scan_types.list.push('Unassigned');
                             XNAT.app.projectDownload.items.scan_types.data.push({
-                                counter: $counter,
+                                counter: +'$counter',
                                 value: null,
                                 name: 'Unassigned',
                                 label: 'Unassigned',
-                                count: '$!scan.get(1)'
+                                count: '$_COUNT'
                             });
                             #end
-                            #set($counter = $counter + 1)
-                        #end
-                </script>
+                    </script>
+                    #set($counter = $counter + 1)
+                #end
 
                 <!-- Additional Resources -->
                 #if($showResources)
                     <h4>Additional Resources</h4>
                     <section class="resources list">
+                        <i class="hidden none">(none)</i>
                         <!-- list project resources -->
                     </section>
-                    <script>
-                        // gather resources
-                            #set($counter = 0)
-                            #foreach($resource in $resources)
+                    ## gather resources
+                    #set($counter = 0)
+                    #foreach($resource in $resources)
+                        #set($_RESOURCE_ID = $!turbineUtils.escapeHTML("$!resource.get(0)"))
+                        <script>
                                 #if($!resource.get(0))
-                                XNAT.app.projectDownload.items.resources.list.push('$!resource.get(0)');
+                                XNAT.app.projectDownload.items.resources.list.push('$_RESOURCE_ID');
                                 XNAT.app.projectDownload.items.resources.data.push({
-                                    counter: $counter,
-                                    value: '$!resource.get(0)',
-                                    name: '$!resource.get(0)',
-                                    label: '$!resource.get(0)'
+                                    counter: +'$counter',
+                                    value: '$_RESOURCE_ID',
+                                    name: '$_RESOURCE_ID',
+                                    label: '$_RESOURCE_ID'
                                 });
                                 #else
                                 XNAT.app.projectDownload.items.resources.list.push('Unspecified');
                                 XNAT.app.projectDownload.items.resources.data.push({
-                                    counter: $counter,
+                                    counter: +'$counter',
                                     value: null,
                                     name: 'Unspecified',
                                     label: 'Unspecified'
                                 });
                                 #end
-                                #set($counter = $counter + 1)
-                            #end
-                    </script>
+                        </script>
+                        #set($counter = $counter + 1)
+                    #end
                 #end
 
                 <!-- Reconstructions -->
                 #if($showRecons)
                     <h4>Reconstructions</h4>
                     <section class="reconstructions list">
+                        <i class="hidden none">(none)</i>
                         <!-- list reconstructions -->
                     </section>
-                    <script>
-                        // gather reconstructions
-                            #set($counter = 0)
-                            #foreach($item in $recons)
+                    ## gather reconstructions
+                    #set($counter = 0)
+                    #foreach($item in $recons)
+                        #set($_ID = $!turbineUtils.escapeHTML("$!item.get(0)"))
+                        #set($_COUNT = $!turbineUtils.escapeHTML("$!item.get(1)"))
+                        <script>
                                 #if($!item.get(0))
-                                XNAT.app.projectDownload.items.reconstructions.list.push('$!item.get(0)');
+                                XNAT.app.projectDownload.items.reconstructions.list.push('$_ID');
                                 XNAT.app.projectDownload.items.reconstructions.data.push({
-                                    counter: $counter,
-                                    value: '$!item.get(0)',
-                                    name: '$!item.get(0)',
-                                    label: '$!item.get(0)',
-                                    count: +'$!item.get(1)'
+                                    counter: +'$counter',
+                                    value: '$_ID',
+                                    name: '$_ID',
+                                    label: '$_ID',
+                                    count: +'$_COUNT'
                                 });
                                 #else
                                 XNAT.app.projectDownload.items.reconstructions.list.push('Unassigned');
                                 XNAT.app.projectDownload.items.reconstructions.data.push({
-                                    counter: $counter,
+                                    counter: +'$counter',
                                     value: null,
                                     name: 'Unassigned',
                                     label: 'Unassigned',
-                                    count: +'$!item.get(1)'
+                                    count: +'$_COUNT'
                                 });
                                 #end
-                                #set($counter = $counter + 1)
-                            #end
-                    </script>
+                        </script>
+                        #set($counter = $counter + 1)
+                    #end
                 #end
 
 
@@ -355,34 +407,38 @@
                 #if($showAssessors)
                     <h4>Assessments</h4>
                     <section class="assessors">
+                        <i class="hidden none">(none)</i>
                         <!-- list assessors -->
                     </section>
-                    <script>
-                        // gather assessors
-                            #set($counter = 0)
-                            #foreach($item in $assessors)
-                                #if($!item.get(2))
-                                XNAT.app.projectDownload.items.assessors.list.push('$!item.get(2)');
+                    ## gather assessors
+                    #set($counter = 0)
+                    #foreach($scan in $assessors)
+                        #set($_NAME = $!turbineUtils.escapeHTML("$!scan.get(2)"))
+                        #set($_VALUE = $!turbineUtils.escapeHTML("$!scan.get(0)"))
+                        #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
+                        <script>
+                                #if($!scan.get(2))
+                                XNAT.app.projectDownload.items.assessors.list.push('$_NAME');
                                 XNAT.app.projectDownload.items.assessors.data.push({
-                                    counter: $counter,
-                                    value: '$!item.get(0)',
-                                    name: '$!item.get(2)',
-                                    label: '$!item.get(2)',
-                                    count: +'$!item.get(1)'
+                                    counter: +'$counter',
+                                    value: '$_VALUE',
+                                    name: '$_NAME',
+                                    label: '$_NAME',
+                                    count: +'$_COUNT'
                                 });
                                 #else
-                                XNAT.app.projectDownload.items.assessors.list.push('$!item.get(0)');
+                                XNAT.app.projectDownload.items.assessors.list.push('$_VALUE');
                                 XNAT.app.projectDownload.items.assessors.data.push({
-                                    counter: $counter,
-                                    value: '$!item.get(0)',
-                                    name: '$!item.get(0)',
-                                    label: '$!item.get(0)',
-                                    count: +'$!item.get(1)'
+                                    counter: +'$counter',
+                                    value: '$_VALUE',
+                                    name: '$_VALUE',
+                                    label: '$_VALUE',
+                                    count: +'$_COUNT'
                                 });
                                 #end
                                 #set($counter = $counter + 1)
-                            #end
-                    </script>
+                        </script>
+                    #end
                 #end
 
             </div>
@@ -392,7 +448,6 @@
     <script>
         // cache the list containers
     </script>
-
 
 
 
@@ -426,20 +481,20 @@
                         </dd>
                     </dl>
                     <dl>
-                        <dt><input type="checkbox" name="options[]" value="projectIncludedInPath"></dt>
+                        <dt><input id="project-in-path" type="checkbox" name="options[]" value="projectIncludedInPath"></dt>
                         <dd>
-                            <label for="projectIncludedInPath">Include $displayManager.getSingularDisplayNameForProject().toLowerCase() in file paths</label>
+                            <label for="project-in-path">Include $displayManager.getSingularDisplayNameForProject().toLowerCase() in file paths</label>
                         </dd>
                     </dl>
                     <dl>
-                        <dt><input type="checkbox" name="options[]" value="subjectIncludedInPath"></dt>
+                        <dt><input id="subject-in-path" type="checkbox" name="options[]" value="subjectIncludedInPath"></dt>
                         <dd>
-                            <label for="subjectIncludedInPath">Include $displayManager.getSingularDisplayNameForSubject().toLowerCase() in file paths</label>
+                            <label for="subject-in-path">Include $displayManager.getSingularDisplayNameForSubject().toLowerCase() in file paths</label>
                         </dd>
                     </dl>
                     <dl>
-                        <dt><input type="checkbox" name="options[]" checked value="simplified"></dt>
-                        <dd><label for="simplified">Simplify downloaded archive structure</label></dd>
+                        <dt><input id="simplify-archive" type="checkbox" name="options[]" checked value="simplified"></dt>
+                        <dd><label for="simplify-archive">Simplify downloaded archive structure</label></dd>
                     </dl>
                 </section>
                 <br>

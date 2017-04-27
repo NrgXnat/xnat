@@ -738,13 +738,15 @@ var XNAT = getObject(XNAT);
                 newTable.tr({ className: 'filter' });
 
                 function cacheRows(){
-                    // if (!$dataRows.length || $dataRows.length != dataRows.length) {
-                    //     $dataRows = dataRows.length ? $(dataRows) : $tableWrapper.find('.table-body').find('tr');
-                    // }
-                    $dataRows =
-                            $dataRows.length ?
-                                    $dataRows :
-                                    ($tableContainer||$tableWrapper).find('.table-body').find('tr');
+                    if (!$dataRows.length || $dataRows.length != dataRows.length) {
+                        $dataRows = dataRows.length ?
+                            $(dataRows) :
+                            ($tableContainer||$tableWrapper).find('.table-body').find('tr');
+                    }
+                    // $dataRows =
+                    //         $dataRows.length ?
+                    //                 $dataRows :
+                    //                 ($tableContainer||$tableWrapper).find('.table-body').find('tr');
                     return $dataRows;
                 }
 
@@ -942,8 +944,8 @@ var XNAT = getObject(XNAT);
                                         itemVal = eval(applyFn).apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
                                     // or start with standard Spawner 'eval' string
-                                    else if (/^(!\?)/.test(applyFn)) {
-                                        applyFn = applyFn.replace(/^(!\?[:=\s]*)/, '');
+                                    else if (EVALREGEX.test(applyFn)) {
+                                        applyFn = applyFn.replace(EVALREGEX, '');
                                         itemVal = eval('(' + applyFn + ')').apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
                                     else if (applyFn = lookupObjectValue(window, applyFn)) {

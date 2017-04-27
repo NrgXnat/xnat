@@ -319,6 +319,51 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
     }
 
+    protected Object getPropertyNoCache(final String preference, final Object defaultValue) throws UnknownToolId {
+        if (containsKey(preference)) {
+            final Object value = getFromCache(preference);
+            if (value != null) {
+                _log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
+                return value;
+            }
+            _log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
+        }
+        final Method method;
+        if (_methods.containsKey(preference)) {
+            method = _methods.get(preference);
+        } else {
+            method = getGetter(getClass(), AbstractPreferenceBean.class, preference, ReflectionUtils.withAnnotation(NrgPreference.class));
+            if (method == null) {
+                final Tool tool = _preferenceService.getTool(getToolId());
+                if (tool.isStrict()) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
+                }
+                final String returnValue = getValue(preference);
+                if (StringUtils.isNotBlank(returnValue)) {
+                    storeToCache(preference, returnValue);
+                    return returnValue;
+                }
+                if (defaultValue == null) {
+                    return null;
+                }
+
+                storeToCache(preference, defaultValue);
+                return defaultValue;
+            }
+            _methods.put(preference, method);
+        }
+        try {
+            final Object returnValue = method.invoke(this);
+            if (returnValue != null) {
+//                storeToCache(preference, returnValue);
+                return returnValue;
+            }
+            return defaultValue;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
+        }
+    }
+
     @JsonIgnore
     @Override
     public Object getProperty(final Scope scope, final String entityId, final String preference) throws UnknownToolId {
@@ -1041,6 +1086,13 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                         final Properties properties = convertValueForPreference(info, defaultValue);
                         preferenceIds.add(info.getName());
 
+                        Object tempO = null;
+                        try{
+                            tempO = this.getPropertyNoCache(preference,null);
+                        }
+                        catch(Throwable e){
+                        }
+
                         for (final String property : properties.stringPropertyNames()) {
                             if (!_preferenceService.hasPreference(getToolId(), property)) {
                                 // If we have this preference, but it's under an alias...
@@ -1050,7 +1102,10 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                                     migrateAliasedPreference(alias, overrideValue);
                                 } else {
                                     try {
-                                        create(properties.getProperty(property), property);
+                                        if(!property.contains(":") || !(tempO!=null && HashMap.class.isAssignableFrom(tempO.getClass()) && ((HashMap)tempO).size()>0)){
+                                            //Don't add the default version of this property is there is already a non-empty map of properties for it
+                                            create(properties.getProperty(property), property);
+                                        }
                                     } catch (InvalidPreferenceName invalidPreferenceName) {
                                         throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info + " preference for the " + getToolId() + " tool.");
                                     }

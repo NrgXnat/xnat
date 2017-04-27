@@ -13,8 +13,8 @@ import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 
-public class EnabledDICOMReceiverWithDuplicatePortException extends NrgServiceException {
-    public EnabledDICOMReceiverWithDuplicatePortException(final DicomSCPInstance existing, final DicomSCPInstance inserted) {
+public class DICOMReceiverWithDuplicateAeTitleException extends NrgServiceException {
+    public DICOMReceiverWithDuplicateAeTitleException(final DicomSCPInstance existing, final DicomSCPInstance inserted) {
         super(NrgServiceError.AlreadyInitialized);
         _existing = existing;
         _inserted = inserted;
@@ -30,7 +30,7 @@ public class EnabledDICOMReceiverWithDuplicatePortException extends NrgServiceEx
 
     @Override
     public String toString() {
-        return "Tried to insert DICOM SCP receiver ID " + _inserted.getId() + " [" + _inserted.toString() + "], which replicated the port as the enabled receiver ID " + _existing.getId() + " [" + _existing.toString() + "]";
+        return "Tried to insert DICOM SCP receiver ID " + _inserted.getId() + " [" + _inserted.toString() + "], which replicated the AE title of the receiver ID " + _existing.getId() + " [" + _existing.toString() + "]";
     }
     
     private final DicomSCPInstance _existing;

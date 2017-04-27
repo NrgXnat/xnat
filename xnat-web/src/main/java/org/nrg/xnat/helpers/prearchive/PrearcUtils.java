@@ -173,6 +173,7 @@ public class PrearcUtils {
         } else {
             final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
             assert userHelperService != null;
+
             for (final List<String> row : userHelperService.getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
                 final String id = row.get(0);
                 if (projects.contains(id))

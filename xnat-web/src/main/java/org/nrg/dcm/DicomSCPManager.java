@@ -14,7 +14,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
+import org.nrg.dcm.exceptions.DICOMReceiverWithDuplicateAeTitleException;
 import org.nrg.dcm.id.CompositeDicomObjectIdentifier;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.dcm.preferences.DicomSCPPreference;
@@ -71,7 +71,7 @@ public class DicomSCPManager {
         stopDicomSCPs();
     }
 
-    public DicomSCP create(final DicomSCPInstance instance) throws IOException, EnabledDICOMReceiverWithDuplicatePortException {
+    public DicomSCP create(final DicomSCPInstance instance) throws IOException, DICOMReceiverWithDuplicateAeTitleException {
         instance.setId(getNextKey());
         _dicomScpPreferences.setDicomSCPInstance(instance);
         if (_log.isDebugEnabled()) {
@@ -114,7 +114,7 @@ public class DicomSCPManager {
         return _dicomScpPreferences.getDicomSCPInstance(id);
     }
 
-    public void setDicomSCPInstance(final DicomSCPInstance instance) throws EnabledDICOMReceiverWithDuplicatePortException {
+    public void setDicomSCPInstance(final DicomSCPInstance instance) throws DICOMReceiverWithDuplicateAeTitleException {
         try {
             _dicomScpPreferences.setDicomSCPInstance(instance);
         } catch (IOException e) {
@@ -195,7 +195,7 @@ public class DicomSCPManager {
         }
     }
 
-    public void enableDicomSCP(final int id) throws EnabledDICOMReceiverWithDuplicatePortException {
+    public void enableDicomSCP(final int id) throws DICOMReceiverWithDuplicateAeTitleException {
         final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(id);
         try {
             if (!instance.isEnabled()) {
@@ -211,7 +211,7 @@ public class DicomSCPManager {
         }
     }
 
-    public void disableDicomSCP(final int id) {
+    public void disableDicomSCP(final int id)  {
         final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(id);
         try {
             if (instance.isEnabled()) {
@@ -224,10 +224,8 @@ public class DicomSCPManager {
             }
         } catch (IOException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to disable DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
-        } catch (EnabledDICOMReceiverWithDuplicatePortException ignored) {
-            // We can ignore this: the exception comes when an enabled instance is inserted with the same port as
-            // another enabled instance. Since we're explicitly disabling this instance, we won't actually get this
-            // error.
+        }  catch (DICOMReceiverWithDuplicateAeTitleException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to disable DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
         }
     }
 

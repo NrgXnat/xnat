@@ -13,7 +13,7 @@ import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.DicomSCP;
 import org.nrg.dcm.DicomSCPManager;
-import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
+import org.nrg.dcm.exceptions.DICOMReceiverWithDuplicateAeTitleException;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
@@ -85,7 +85,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "The newly created DICOM SCP receiver definition."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to view this DICOM SCP receiver definition."), @ApiResponse(code = 409, message = "A DICOM SCP receiver already exists and is enabled at the same port."), @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
     @ResponseBody
-    public ResponseEntity<DicomSCPInstance> dicomSCPCreate(@RequestBody final DicomSCPInstance instance) throws IOException, EnabledDICOMReceiverWithDuplicatePortException {
+    public ResponseEntity<DicomSCPInstance> dicomSCPCreate(@RequestBody final DicomSCPInstance instance) throws IOException, DICOMReceiverWithDuplicateAeTitleException {
         HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -109,7 +109,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
     @ApiOperation(value = "Updates the DICOM SCP receiver definition object with the specified ID.", notes = "Returns the updated DICOM SCP receiver definition.", response = DicomSCPInstance.class)
     @ApiResponses({@ApiResponse(code = 200, message = "DICOM SCP receiver definition successfully updated."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to create or update this DICOM SCP receiver definition."), @ApiResponse(code = 404, message = "DICOM SCP receiver definition not found."), @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"{id}"}, produces = MediaType.APPLICATION_JSON_VALUE, method = {RequestMethod.PUT})
-    public ResponseEntity<DicomSCPInstance> dicomSCPInstanceCreateOrUpdate(@ApiParam(value = "The ID of the DICOM SCP receiver definition to update.", required = true) @PathVariable("id") final int id, @RequestBody final DicomSCPInstance instance) throws NotFoundException, EnabledDICOMReceiverWithDuplicatePortException {
+    public ResponseEntity<DicomSCPInstance> dicomSCPInstanceCreateOrUpdate(@ApiParam(value = "The ID of the DICOM SCP receiver definition to update.", required = true) @PathVariable("id") final int id, @RequestBody final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicateAeTitleException {
         HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -169,7 +169,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "DICOM SCP receiver definition enabled status successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to enable or disable this DICOM SCP receiver definition."), @ApiResponse(code = 404, message = "DICOM SCP receiver definition not found."), @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"{id}/enabled/{flag}"}, produces = MediaType.APPLICATION_JSON_VALUE, method = {RequestMethod.PUT})
     public ResponseEntity<Void> dicomSCPInstanceSetEnabledFlag(@ApiParam(value = "ID of the DICOM SCP receiver definition to modify", required = true) @PathVariable("id") final int id,
-                                                               @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable("flag") final Boolean flag) throws EnabledDICOMReceiverWithDuplicatePortException {
+                                                               @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable("flag") final Boolean flag) throws DICOMReceiverWithDuplicateAeTitleException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);

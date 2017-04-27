@@ -12,7 +12,7 @@ package org.nrg.dcm.preferences;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.DicomSCP;
-import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
+import org.nrg.dcm.exceptions.DICOMReceiverWithDuplicateAeTitleException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.annotations.NrgPreference;
@@ -88,14 +88,17 @@ public class DicomSCPPreference extends AbstractPreferenceBean {
         return getDicomSCPInstances().get(Integer.toString(id));
     }
 
-    public void setDicomSCPInstance(final DicomSCPInstance instance) throws IOException, EnabledDICOMReceiverWithDuplicatePortException {
+    public void setDicomSCPInstance(final DicomSCPInstance instance) throws IOException, DICOMReceiverWithDuplicateAeTitleException {
         final int id = instance.getId();
 
-        final DicomSCPInstance atPort = getDicomSCPAtPort(instance.getPort());
-        if (atPort != null && atPort.getId() != id) {
-            throw new EnabledDICOMReceiverWithDuplicatePortException(atPort, instance);
+        final List<DicomSCPInstance> atAe = getDicomSCPAtAETitle(instance.getAeTitle());
+        if (atAe!=null && atAe.size()>0) {
+            for (DicomSCPInstance tempInstance : atAe) {
+                if (tempInstance.getId() != id) {
+                    throw new DICOMReceiverWithDuplicateAeTitleException(tempInstance, instance);
+                }
+            }
         }
-
         if (hasDicomSCPInstance(id)) {
             deleteDicomSCP(id);
         }

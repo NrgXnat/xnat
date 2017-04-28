@@ -70,6 +70,9 @@ var XNAT = getObject(XNAT || {});
     }
 
     // keep track of used ports to help prevent port conflicts
+    dicomScpManager.usedPorts = [];
+
+    // keep track of used aes to help prevent AE title conflicts
     dicomScpManager.usedAe = [];
 
     // keep track of scpIds to prevent id conflicts
@@ -78,6 +81,7 @@ var XNAT = getObject(XNAT || {});
     // get the list of DICOM SCP Receivers
     dicomScpManager.getReceivers = dicomScpManager.getAll = function(callback){
         callback = isFunction(callback) ? callback : function(){};
+        dicomScpManager.usedPorts = [];
         dicomScpManager.usedAe = [];
         dicomScpManager.ids = [];
         return XNAT.xhr.get({
@@ -85,8 +89,12 @@ var XNAT = getObject(XNAT || {});
             dataType: 'json',
             success: function(data){
                 dicomScpManager.receivers = data;
+                // refresh the 'usedPorts' array every time this function is called
                 // refresh the 'usedAe' array every time this function is called
                 data.forEach(function(item){
+                    if(dicomScpManager.enabled) {
+                        dicomScpManager.usedPorts.push(item.port);
+                    }
                     dicomScpManager.usedAe.push(item.aeTitle);
                     dicomScpManager.ids.push(item.id);
                 });
@@ -126,6 +134,7 @@ var XNAT = getObject(XNAT || {});
     dicomScpManager.dialog = function(item, isNew){
         var tmpl = $('#dicom-scp-editor-template');
         var doWhat = !item ? 'New' : 'Edit';
+        var oldPort = item && item.port ? item.port : null;
         var oldTitle = item && item.aeTitle ? item.aeTitle : null;
         var modalDimensions = (Object.keys(dicomScpManager.identifiers).length > 1) ? { height: '320', width: '600'} : { height: '250', width: '350' };
         isNew = firstDefined(isNew, doWhat === 'New');
@@ -186,11 +195,25 @@ var XNAT = getObject(XNAT || {});
                             }
                         });
 
-                        var newTitle = $title.val();
+                        var newPort = $port.val();
+                        console.log(newPort);
 
+                        var newTitle = $title.val();
                         console.log(newTitle);
 
                         // only check for port conflicts if we're changing the port
+                        if (newPort+'' !== oldPort+''){
+                            dicomScpManager.usedPorts.forEach(function(usedPort){
+                                if (usedPort+'' === newPort+''){
+                                    errors++;
+                                    errorMsg += '<li>Port <b>' + newPort + '</b> is already in use. Please use another port number.</li>';
+                                    $port.addClass('invalid');
+                                    return false;
+                                }
+                            });
+                        }
+
+                        // only check for AE conflicts if we're changing the AE
                         if (newTitle+'' !== oldTitle+''){
                             dicomScpManager.usedAe.forEach(function(usedTitle){
                                 if (usedTitle+'' === newTitle+''){

@@ -13,6 +13,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dcm.exceptions.DICOMReceiverWithDuplicateAeTitleException;
+import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -37,6 +38,11 @@ import java.util.List;
 
 @ControllerAdvice
 public class XapiRestControllerAdvice {
+    @ExceptionHandler(EnabledDICOMReceiverWithDuplicatePortException.class)
+    public ModelAndView handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final EnabledDICOMReceiverWithDuplicatePortException exception) {
+        return handleException(request, exception.getMessage());
+    }
+
     @ExceptionHandler(DICOMReceiverWithDuplicateAeTitleException.class)
     public ModelAndView handleDICOMReceiverWithDuplicateAeTitle(final HttpServletRequest request, final DICOMReceiverWithDuplicateAeTitleException exception) {
         return handleException(request, exception.getMessage());

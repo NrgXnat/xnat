@@ -134,7 +134,8 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                                                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Can't find the mizer service");
                                             }
                                             service.anonymize( o, newProject, subject, session, anonScript);
-                                        } catch (MizerException e) {
+                                        }
+                                        catch ( MizerException e) {
                                             throw new RuntimeException(e);
                                         }
                                         return o;

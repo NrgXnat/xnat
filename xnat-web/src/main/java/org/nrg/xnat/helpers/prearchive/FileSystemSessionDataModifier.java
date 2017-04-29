@@ -16,8 +16,7 @@ import org.nrg.dcm.edit.ScriptApplicator;
 import org.nrg.dcm.edit.ScriptEvaluationException;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
-import org.nrg.dicom.mizer.service.AnonException;
-import org.nrg.dicom.mizer.service.DEScript;
+import org.nrg.dicom.mizer.service.MizerException;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -139,7 +138,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                                             }
                                             service.anonymize( o, newProject, subject, session, anonScript);
                                         }
-                                        catch ( AnonException e) {
+                                        catch ( MizerException e) {
                                             throw new RuntimeException(e);
                                         }
                                         return o;

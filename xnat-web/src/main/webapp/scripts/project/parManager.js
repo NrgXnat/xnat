@@ -7,166 +7,357 @@
  *
  * Released under the Simplified BSD.
  */
-function PARManager(_div,_obj){
-	if(_div.id==undefined){
-		this.div=document.getElementById(_div);
-	}else{
-		this.div=div_id;
-	}
-	this.obj=_obj;
-	
-	this.init=function(){
-		//load from search xml from server
-		this.initCallback={
-			success:this.completeInit,
-			failure:this.initFailure,
-            cache:false, // Turn off caching for IE
-			scope:this
-		}
-				
-		YAHOO.util.Connect.asyncRequest('GET',this.obj.URI +'?format=json&stamp='+ (new Date()).getTime(),this.initCallback,null,this);
-	}
-	
-	
-	
-	this.initFailure=function(o){
-        if (!window.leaving) {
-            closeModalPanel("par");
-            displayError("ERROR " + o.status+ ": Failed to load par list." + e.toString());
-        }
-	};
-	
-	this.completeInit=function(o){
-		this.pars=null;
-		try{
-		    this.pars= (eval("(" + o.responseText +")")).ResultSet.Result;
-		}catch(e){
-			displayError("ERROR " + o.status+ ": Failed to parse par list." + e.toString());
-		}
-		try{
-		    this.render();
-		}catch(e){
-			displayError("ERROR : Failed to render par list." + e.toString());
-			throw(e);
-		}
-	};
-	
-	this.accept=function(par_id){
-		var callback={
-			success:function(o){
-				closeModalPanel("par");
-				this.init();
-				window.projList.init();
-			},			
-			failure:this.initFailure,
-            cache:false, // Turn off caching for IE
-			scope:this
-		}
-			
-		openModalPanel("par","Accepting invitation...");
-		
-		YAHOO.util.Connect.asyncRequest('PUT',serverRoot +'/REST/pars/' + par_id + '?accept=true&format=json&XNAT_CSRF='+csrfToken,callback,null,this);
-	}
-	
-	this.decline=function(par_id,msg){
-		var callback={
-			success:function(o){
-				closeModalPanel("par");
-				this.init();
-			},			
-			failure:this.initFailure,
-            cache:false, // Turn off caching for IE
-			scope:this
-		}
-		if(msg==undefined)
-		   msg="Declining invitation...";
-		openModalPanel("par",msg);
-				
-		YAHOO.util.Connect.asyncRequest('PUT',serverRoot +'/REST/pars/' + par_id + '?decline=true&format=json&XNAT_CSRF='+csrfToken,callback,null,this);
-	}
-	
-	this.render=function(){
-		this.div.innerHTML="";
+var XNAT = getObject(XNAT || {});
 
-        if (this.pars.length == 0) {
-            jq('#heading').html('Sorry...');
-            jq('#pil').html('<p>There are no outstanding project access requests for the current user.</p>');
-            return;
-        }
-		for(var parC=0;parC<this.pars.length;parC++){
-			var p=this.pars[parC];
-		
-			var newDisplay = document.createElement("div");
-			
-			if(this.obj.projectBased){
-				if(p.approval_date!=""){ 
-					newDisplay.style.color="gray";
-				}
-				newDisplay.innerHTML=p.create_date + ' ' + p.email;
-				if(p.approved==""){ 
-					
-				}else if(p.approved){ 
-					newDisplay.innerHTML+=" ACCEPTED";
-				}else{
-					newDisplay.innerHTML+=" DECLINED";
-				}
-			}else{
-			
-				if(parC%2==0){
-				  newDisplay.className="even";
-				}else{
-				  newDisplay.className="odd";
-				}
-				var row=document.createElement("div");
-				row.innerHTML="<h3 style='margin-bottom:3px'>" +p.name + "</h3>";
-				newDisplay.appendChild(row);
-				
-				row=document.createElement("div");
-				row.innerHTML="<b>" + XNAT.app.displayNames.singular.project + " ID: " + p.id +"</b>";;
-				if(p.pi!=undefined && p.pi!=""){
-					row.innerHTML+="&nbsp;&nbsp;&nbsp;<b>PI: "+ p.pi +"</b>";
-				}
-				newDisplay.appendChild(row);
-				
-				row=document.createElement("div");
-				if(p.description!=null && p.description.length>260){
-					row.innerHTML=p.description.substring(0,157) + "&nbsp;...";
-				}else{
-					row.innerHTML=p.description;
-				}
-				newDisplay.appendChild(row);
-				
-				this.div.appendChild(newDisplay);
-				
-				var row=document.createElement("div");
-				
-				var aB=document.createElement("button");
-				aB.innerHTML="Join";
-				aB.value="Accept";
-				aB.par_id=p.par_id;
-				aB.manager=this;
-				aB.onclick=function(o,o2){
-					this.manager.accept(this.par_id);
-				}
-				row.appendChild(aB);
-				
-				var aB=document.createElement("button");
-				aB.value="Decline";
-				aB.innerHTML="Decline";
-				aB.par_id=p.par_id;
-				aB.manager=this;
-				aB.onclick=function(o,o2){
-					this.manager.decline(this.par_id);
-				}
-				row.appendChild(aB);
-				
-				newDisplay.appendChild(row);
+(function(factory){
+	if (typeof define === 'function' && define.amd) {
+		define(factory);
+	}
+	else if (typeof exports === 'object') {
+		module.exports = factory();
+	}
+	else {
+		return factory();
+	}
+}(function() {
+	var projectAccess,
+		pars,
+		undefined,
+		parContainer = $('#user_mgmt_div'),
+		rootUrl = XNAT.url.rootUrl,
+		projectId = XNAT.data.context.projectID;
+	
+	projectParUrl = function(){
+		return rootUrl('/REST/projects/'+projectId+'/pars')
+	};
+    siteParUrl = function(){
+        return rootUrl('/REST/pars');
+    };
+    parActionUrl = function(parId,action){
+        return rootUrl('/REST/pars/'+parId+'?'+action+'=true&format=json')
+    };
+
+	XNAT.projectAccess = projectAccess =
+		getObject(XNAT.projectAccess || {});
+
+	function errorHandler(e){
+		console.log(e);
+		xmodal.alert({
+			title: 'Error',
+			content: '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>',
+			okAction: function () {
+				xmodal.closeAll();
 			}
-			
-			
-			this.div.appendChild(newDisplay);
-		}
-		//this.menu=new YAHOO.widget.Menu(this.div_id,{itemdata:items,visible:true, scrollincrement:5,position:"static"});
-
+		});
 	}
-}
+
+	/*
+	 * Project PAR table
+	 */
+	function parDate(dateString){
+		var d = new Date(dateString);
+		return d.toLocaleString();
+	}
+	function parStatus(approved){
+		switch (approved) {
+			case 'false':
+				return 'Declined';
+				break;
+			case 'true':
+				return 'Accepted';
+				break;
+			default:
+				return '';
+		}
+	}
+    function parLevel(groupId){
+        // split the project ID from the group ID and return just the group label
+        var g = groupId.split('_');
+        return g[g.length-1];
+    }
+
+	XNAT.projectAccess.showParsInProject = function(pars){
+		var parContainer = $('#invite_container');
+		if (pars.length) {
+			parContainer.append(
+				XNAT.table.dataTable(pars,{
+					className: 'clean compact',
+					items: {
+						create_date: {
+							label: 'Date Created',
+							td: { className: 'left' },
+                            th: { className: 'left' },
+							apply: function(create_date){
+								return parDate.call(this, create_date);
+							}
+						},
+						email: {
+							label: 'Invited User',
+                            td: { className: 'left' },
+                            th: { className: 'left' }
+						},
+                        level: {
+                            label: 'Project Role',
+                            td: { className: 'left' },
+                            th: { className: 'left' },
+                            apply: function(level){
+                                return parLevel.call(this, level);
+                            }
+                        },
+						approved: {
+							label: 'Status',
+                            td: { className: 'left' },
+                            th: { className: 'left' },
+							apply: function(approved){
+								return parStatus.call(this, approved);
+							}
+                        }
+					}
+				}).element
+			);
+		} else {
+			parContainer.append('<p>No outstanding invitations to this project</p>');
+		}
+	};
+
+	/*
+	 * PAR notice on home page
+	 */
+    function parActions(parId,project){
+        var acceptButton = '<a href="javascript:XNAT.projectAccess.acceptPar(\''+parId+'\',\''+project.id+'\',\''+project.name+'\')"><button class="btn">Accept</button></a>';
+        var declineButton = '<a href="javascript:XNAT.projectAccess.declinePar(\''+parId+'\',\''+project.id+'\',\''+project.name+'\')"><button class="btn">Decline</button></a>';
+        return acceptButton + '&nbsp;' + declineButton;
+    }
+
+	XNAT.projectAccess.showParsAtLogin = function(pars){
+		XNAT.ui.dialog.open({
+			title: 'Project Invitations',
+            width: 500,
+            nuke: true,
+            content: '<div class="panel"></div>',
+            beforeShow: function(obj){
+                var parContainer = obj.$modal.find('.panel');
+                if (pars.length > 0) {
+                    parContainer.append(
+                        XNAT.table.dataTable(pars, {
+                            items: {
+                                secondary_id: {
+                                    label: 'Project',
+                                    td: { className: 'left' },
+                                    th: { className: 'left' }
+                                },
+                                level: {
+                                    label: 'Role',
+                                    td: { className: 'left' },
+                                    th: { className: 'left' },
+                                    apply: function(level){
+                                        return parLevel.call(this, level);
+                                    }
+                                },
+                                buttons: {
+                                    label: 'Action',
+                                    th: { className: 'left' },
+                                    apply: function(){
+                                        var project = { id: this.proj_id, name: this.name };
+                                        return parActions.call(this, this.par_id, project);
+                                    }
+                                }
+
+                            }
+                        }).element
+                    );
+                } else {
+                    parContainer.append('<p>You have no outstanding Project Access Requests.</p>');
+                }
+            },
+            buttons: [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true,
+                    action: function(){
+                        if (pars.length === 0) {
+                            $('#login_par_message').slideUp();
+                        }
+                    }
+                }
+            ]
+		});
+	};
+
+    /*
+     * User-initiated actions -- request to join project, accept or decline invitation
+     */
+    XNAT.projectAccess.requestAccess = function(reqProjectId){
+        if (!reqProjectId) {
+            errorHandler({
+                status: 'Function: requestAccess',
+                statusText: 'Cannot request access, no project ID specified.'
+            });
+            return false;
+        }
+        XNAT.xhr.getJSON({
+            url: rootUrl('/REST/projects/'+reqProjectId+'/groups?format=json'),
+            fail: function(e){
+                errorHandler(e);
+            },
+            success: function(data){
+                var groups = data.ResultSet.Result;
+                if (groups.length > 0) {
+                    var groupSelectOptions = {};
+                    groups.forEach(function(group){
+                        // split the group ID name (e.g. "project_id_owners") and use just the last element.
+                        var id = group.id.split('_');
+                        id = id[id.length-1];
+                        groupSelectOptions[id] = group.displayname;
+                    });
+                    XNAT.ui.dialog.open({
+                        title: 'Project Access Request Form',
+                        width: 480,
+                        content: '<div class="panel"><form method="post" action="/app/action/RequestAccess"></form></div>',
+                        beforeShow: function(obj){
+                            var form = obj.$modal.find('form');
+                            form.prepend(
+                                spawn('p',['Upon submission of this form an email will be sent to the project manager. The manager will be asked to give you access to this project. Once the manager approves or denies your access, an email will be sent to you.'])
+                            );
+                            form.append(
+                                XNAT.ui.panel.input.hidden({
+                                    name: 'project',
+                                    value: reqProjectId
+                                })
+                            );
+                            form.append(
+                                XNAT.ui.panel.select.single({
+                                    name: 'access_level',
+                                    className: 'required',
+                                    options: groupSelectOptions,
+                                    label: 'Requested Access Level'
+                                })
+                            );
+                            form.append(
+                                XNAT.ui.panel.textarea({
+                                    name: 'comments',
+                                    label: 'Comments',
+                                    code: 'text',
+                                    description: 'These will be included in the email to the project manager.'
+                                }).spawned
+                            );
+                        },
+                        buttons: [
+                            {
+                                label: 'Submit Request',
+                                isDefault: true,
+                                close: false,
+                                onclick: function(obj){
+                                    // validate role selection
+                                    if (XNAT.validate(obj.$modal.find('.required')).all('not-empty').check()) {
+                                        obj.$modal.find('form').submit();
+                                        xmodal.loading.open('Submitting Request');
+                                    } else {
+                                        XNAT.ui.banner.top(2500, '<b>Error:</b> Please Select A Role.', 'alert');
+                                    }
+                                }
+                            },
+                            {
+                                label: 'Cancel',
+                                isDefault: false,
+                                close: true
+                            }
+                        ]
+
+                    });
+                } else {
+                    errorHandler({
+                        status: 'No groups found',
+                        statusText: 'Could not request access to this project.'
+                    });
+                    return false;
+                }
+
+            }
+        });
+
+    };
+
+    XNAT.projectAccess.acceptPar = function(parId,projectId,projectName){
+        if (!parId) {
+            errorHandler({
+                status: 'Function: acceptPar',
+                statusText: 'Could not accept access request. No PAR ID found.'
+            });
+            return false;
+        }
+        XNAT.xhr.putJSON({
+            url: parActionUrl(parId,'accept'),
+            success: function(){
+                XNAT.ui.banner.top(2000, '<b>Accepted Invitation</b> to <a href="/REST/projects/'+projectId+'">'+projectName+'</a>.', 'success');
+                XNAT.ui.dialog.closeAll();
+                XNAT.projectAccess.initPars('site');
+            },
+            fail: function(e){
+                errorHandler(e);
+            }
+        });
+    };
+
+    XNAT.projectAccess.declinePar = function(parId,projectId,projectName){
+        if (!parId) {
+            errorHandler({
+                status: 'Function: declinePar',
+                statusText: 'Could not decline access request. No PAR ID found.'
+            });
+            return false;
+        }
+        XNAT.xhr.putJSON({
+            url: parActionUrl(parId,'decline'),
+            success: function(){
+                XNAT.ui.banner.top(2000, '<b>Declined Invitation</b> to '+projectName+'.', 'note');
+                XNAT.ui.dialog.closeAll();
+                XNAT.projectAccess.initPars('site');
+            },
+            fail: function(e){
+                errorHandler(e);
+            }
+        });
+    };
+	
+	/*
+	 * Init
+	 */
+	XNAT.projectAccess.initPars = function(config){
+		switch (config) {
+            case 'project':
+                XNAT.xhr.getJSON({
+                    url: projectParUrl(),
+                    success: function(data){
+                        var rawPars = data.ResultSet.Result, pars = [];
+                        rawPars.forEach(function(par){
+                            if (par.email) pars.push(par); // weed out improperly captured PARs.
+                        });
+                        XNAT.projectAccess.showParsInProject(pars);
+                    },
+                    fail: function(e){
+                        errorHandler(e);
+                    }
+                });
+                break;
+            case 'site':
+                XNAT.xhr.getJSON({
+                    url: siteParUrl(),
+                    success: function(data){
+                        pars = data.ResultSet.Result;
+                        XNAT.projectAccess.showParsAtLogin(pars);
+                    },
+                    fail: function(e){
+                        errorHandler(e);
+                    }
+                });
+                break;
+            default:
+                console.log('Sorry, I don\'t know what PAR action to take.');
+                return false;
+        }
+	};
+
+}));
+

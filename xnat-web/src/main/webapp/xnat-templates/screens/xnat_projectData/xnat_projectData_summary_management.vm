@@ -3,21 +3,22 @@
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #set($showUserList = !$siteConfig.restrictUserListAccessToAdmins || $turbineUtils.isSiteAdmin($user))
-<script type="text/javascript" src="$content.getURI("scripts/project/userMgmt.js")"></script>
 
 
-<p style="margin-bottom: 3px;"><label><input id="showDeactivatedUsersCheck" type="checkbox" onclick="window.userManager.reloadUsersForProject();">Show Deactivated Users</label></p>
+<p style="margin-bottom: 3px;"><label><input id="showDeactivatedUsersCheck" type="checkbox" onclick="XNAT.projectAccess.renderUsersTable();">Show Deactivated Users</label></p>
 <div id="user_mgmt_div" class="panel-table-container"></div>
 <div class="clearfix clear"></div>
 
 <div id="access_controls_container" class="pad10v">
     <div class="inline-thirds" id="user_invite_div" >
         <h4 id="add_invite_user_header" style="margin-bottom:3px">Add/Invite User</h4>
-        <p>Enter the username or email address of the user to add.</p>
+        <p>Enter the username or email address of the user(s) to add. Separate multiple users by spaces or commas.</p>
         <p>
-           <input type="text" name="email" ID="invite_email" style="margin-bottom:3px"/><br>
-           <select name="access_level" id="access_level" style="margin-bottom:3px"></select><br>
-           <input type="button" class="btn sm" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" onclick="window.userManager.inviteUserFromForm();"/>
+           <textarea name="email" ID="invite_user" style="margin-bottom:3px; height: 2em;"></textarea><br>
+           <select name="access_level" id="invite_access_level" style="margin-bottom:3px">
+               <option value selected></option>
+           </select><br>
+           <input type="button" class="btn sm" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" onclick="XNAT.projectAccess.inviteMultipleUsersFromForm();"/>
         </p>
     </div>
 
@@ -25,78 +26,68 @@
         <div class="inline-thirds" id="user_invite_list">
             <h4 id="user_list_header" style="margin-bottom:3px">Add Users from List</h4>
             <p>
-                <input type="button" id="popup_all_users_button" disabled="true" value="Show List" onclick="window.userManager.inviteUserFromList();"/>
+                <input type="button" id="popup_all_users_button" disabled="true" value="Show List" onclick="XNAT.projectAccess.inviteUserFromList();"/>
             </p>
         </div>
     #end
     <div class="inline-thirds">
         <h4 style="margin-bottom: 3px;">Project Access Settings</h4>
-        <p id="project_access_settings"></p>
+        <p>
+            <button class="btn" onclick="XNAT.projectAccess.showGroups();" style="margin-bottom: 6px">Manage Groups</button><br>
+            <button class="btn" onclick="window.location.assign('$content.getURI("/app/template/ManageProjectFeatures.vm/project/$project.getId()")')">Manage Features</button>
+        </p>
     </div>
 </div>
 <div id="availableUserList" class="hidden"></div>
 <div class="clearfix clear pad10v"></div>
 
+<div id="access_container">
+    #set($guest=$om.getPublicAccessibility())
+    #if($guest=="")
+        #set($guest="private")
+    #end
+    <input type="hidden" id="current_accessibility" value="$guest"/>
+    <h4 style="margin: 0 0 3px;">Define Default $displayManager.getSingularDisplayNameForProject() Accessibility</h4>
+    <table class="xnat-table clean">
+        <tr>
+            <td nowrap>
+                <label><input name="accessibility" type="radio" value="private" #if($guest=="private")CHECKED#end /> Private</label>
+            </td>
+            <td>Only you and study members will be able to access study data.</td>
+        </tr>
+        <tr>
+            <td nowrap>
+                <label><input name="accessibility" type="radio" value="protected" #if($guest=="protected")CHECKED#end /> Protected</label>
+            </td>
+            <td>All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data.</td>
+        </tr>
+        <tr>
+            <td nowrap>
+                <label><input name="accessibility" type="radio" value="public" #if($guest=="public")CHECKED#end /> Public</label>
+            </td>
+            <td>All users will be able to access study data for analysis and download.</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <button class="btn" onclick="javascript:XNAT.projectAccess.setAccessibility()" id="accessibility_save" disabled="disabled">Set Accessibility</button>
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="clearfix clear pad10v"></div>
 
-<table width="100%">
-    <tr>
-        <td class="highlighted" id="access_container">
-            <div style="padding: 10px;">
-                #set($guest=$om.getPublicAccessibility())
-                #if($guest=="")
-                    #set($guest="private")
-                #end
-                <input type="hidden" id="current_accessibility" value="$guest"/>
-                <h4 style="margin: 0 0 3px;">Define Default $displayManager.getSingularDisplayNameForProject() Accessibility</h4>
-                <TABLE cellpadding="5" cellspacing="0">
-                    <TR>
-                        <TD NOWRAP>
-                            <input id="private_access" onclick="if(document.getElementById('current_accessibility').value!=this.value)document.getElementById('accessibility_save').disabled=false;else document.getElementById('accessibility_save').disabled=true;" type="radio" name="accessibility" value="private" #if($guest==
-                                "private")CHECKED#end/> Private
-                        </TD>
-                        <TD>Only you and study members will be able to access study data.</TD>
-                    </TR>
-                    <TR>
-                        <TD NOWRAP>
-                            <input id="protected_access" onclick="if(document.getElementById('current_accessibility').value!=this.value)document.getElementById('accessibility_save').disabled=false;else document.getElementById('accessibility_save').disabled=true;" type="radio" name="accessibility" value="protected" #if($guest==
-                                "protected")CHECKED#end/> Protected
-                        </TD>
-                        <TD>All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data.</TD>
-                    </TR>
-                    <TR>
-                        <TD NOWRAP>
-                            <input id="public_access" onclick="if(document.getElementById('current_accessibility').value!=this.value)document.getElementById('accessibility_save').disabled=false;else document.getElementById('accessibility_save').disabled=true;" type="radio" name="accessibility" value="public" #if($guest==
-                                "public")CHECKED#end/> Public
-                        </TD>
-                        <TD>All users will be able to access study data for analysis and download.</TD>
-                    </TR>
-                    <TR>
-                        <TD COLSPAN="2">
-                            <input type="button" onclick="(new DefaultAccessibilityManager(document.getElementById('access_container'),'$project.getId()')).set();" id="accessibility_save" value="Save" disabled="true"/>
-                        </TD>
-                    </TR>
-                </TABLE>
-            </div>
-        </td>
-    </tr>
-    <tr>
-        <td class="highlighted" id="invite_container" colspan="5">
-            <div style="padding: 10px;">
-                <h4 style="margin: 0 0 3px;">$displayManager.getSingularDisplayNameForProject() Invitations</h4>
-                <script type="text/javascript" src="$content.getURI("scripts/project/parManager.js")"></script>
-                <div id="pil"></div>
-                <script type="text/javascript">
-                    var parList = new PARManager("pil", {
-                        URI: serverRoot + "/REST/projects/$om.getId()/pars",
-                        projectBased: true
-                    });
-                    parList.init();
-                </script>
-            </div>
-        </td>
-    </tr>
+<div>
+    <h4 style="margin: 0 0 3px;">$displayManager.getSingularDisplayNameForProject() Invitations</h4>
+    <div id="invite_container"></div>
+    <script type="text/javascript" src="$content.getURI("scripts/project/parManager.js")"></script>
+    <script>
+        $(document).ready(function(){
+            XNAT.projectAccess.initPars('project');
+        });
+    </script>
+</div>
 
-</table>
+<script type="text/javascript" src="$content.getURI("scripts/project/userAccessMgmt.js")"></script>
 <script language="javascript">
     function summaryUserTabChange(obj){
         if (obj.newValue.get("href") == "#tab3") {

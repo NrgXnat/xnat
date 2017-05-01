@@ -11,6 +11,8 @@
 #else
     $!template.setLayoutTemplate($siteConfig.siteHomeLayout)
 #end
+<script src="$content.getURI("scripts/project/parManager.js")"></script>
+
 #if ($data.message)
 <div class="note" id="messageToDisplay">$data.message</div><br>
 <script>
@@ -22,8 +24,8 @@
 #end
 
 #if(0 < $par_count)
-<div class="message">You have been invited to join $par_count $displayManager.getSingularDisplayNameForProject().toLowerCase()(s).&nbsp;
-<button onclick="window.location='$content.getURI("/app/template/PARManager.vm")'">Review</button>
+<div class="message" id="login_par_message">You have been invited to join $par_count $displayManager.getSingularDisplayNameForProject().toLowerCase()(s).&nbsp;
+<button onclick="XNAT.projectAccess.initPars('site')">Review</button>
 </div>
 <div style="line-height:6px">&nbsp;</div>
 #end

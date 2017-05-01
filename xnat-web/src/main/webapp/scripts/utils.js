@@ -15,7 +15,7 @@
 (function(){
 
     function escapeHtml(str) {
-        return str.replace(/[&<>"'\/]/g, function (s) {
+        return (str + '').replace(/[&<>"'\/]/g, function(s){
             var entityMap = {
                 '&': '&amp;',
                 '<': '&lt;',
@@ -33,7 +33,7 @@
 
 
     function unescapeHtml(str) {
-        return str.replace(/(&(amp|lt|gt|quot|apos|#39|#x2F);)/g, function (s) {
+        return (str + '').replace(/(&(amp|lt|gt|quot|apos|#39|#x2F);)/g, function(s){
             var entityMap = {
                 '&amp;': '&',
                 '&lt;': '<',

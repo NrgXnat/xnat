@@ -56,7 +56,7 @@ var XNAT = getObject(XNAT);
         var itemCheckboxes = [];
         var $itemCheckboxes = null;
 
-        var CKBX_WIDTH = '60px';
+        var CKBX_WIDTH = '50px';
 
         // keeping track of the select-all toggle
         // in the DOM is a nightmare
@@ -112,7 +112,7 @@ var XNAT = getObject(XNAT);
                 display: 'block',
                 width: CKBX_WIDTH
             }
-        }, [selectAllCheckbox, '&nbsp;', '<span style="text-decoration:underline;">All</span>']);
+        }, [selectAllCheckbox, ' <span style="text-decoration:underline;">All</span>']);
 
         function toggleAllItems(){
             selectAll = (selectAll === false || selectAll === null);
@@ -169,16 +169,16 @@ var XNAT = getObject(XNAT);
             // label: '&nbsp;',
             // sort: false,
             td: {
-                style: { width: CKBX_WIDTH },
-                className: 'center'
+                // className: 'center',
+                style: { width: CKBX_WIDTH }
             },
             th: {
-                style: { width: CKBX_WIDTH },
-                className: 'center'
+                // className: 'center',
+                style: { width: CKBX_WIDTH }
             },
             filter: function(){
                 // renders a menu in the filter row
-                return spawn('div.center', [selectAllLabel]);
+                return spawn('div', [selectAllLabel]);
             },
             apply: function(){
                 // this.uid = randomID('i$', false);
@@ -197,21 +197,28 @@ var XNAT = getObject(XNAT);
             filter: true,
             apply: function(){
                 var item = this;
+                var hasType = item.type !== UNDEF;
                 var hasCount = item.count !== UNDEF;
                 var _label = spawn('label.truncate.pull-left', {
                     title: item.name,
-                    style: { width: hasCount ? '80%' : '98%' },
+                    style: { width: hasType || hasCount ? '74%' : '98%' },
                     attr: { 'for': item.newId },
                     // data: { uid: item.uid },
                     html: item.label
                 });
-                var _count = hasCount ?
-                    spawn('span.item-count.mono.pull-right.text-right', {
-                        style: { width: '20%' },
-                        html: ' (' + item.count + ') &nbsp;'
+                var _type = hasType ?
+                    spawn('span.item-type.mono.pull-right.text-right', {
+                        style: { width: '24%' },
+                        html: item.type.trim() ? ' (' + item.type + ')' : ''
                     }) :
                     '';
-                return spawn('!', [_label, _count]);
+                var _count = hasCount ?
+                    spawn('span.item-count.mono.pull-right.text-right', {
+                        style: { width: '24%' },
+                        html: ' (' + item.count + ')'
+                    }) :
+                    '';
+                return spawn('!', [_label, _count || _type]);
             }
         };
 

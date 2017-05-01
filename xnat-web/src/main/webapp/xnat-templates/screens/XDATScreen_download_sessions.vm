@@ -132,7 +132,7 @@
 
     section.list table.data-table td,
     section.list table.data-table th {
-        padding: 4px 6px;
+        padding: 4px 8px;
         border: none;
         /*border-bottom: 1px solid #e0e0e0;*/
     }
@@ -274,7 +274,7 @@
                 #foreach($format in $scan_formats)
                     #set($_FORMAT = $!turbineUtils.escapeHTML("$!format.get(0)"))
                     <script>
-                            #if($_FORMAT)
+                            #if($!format.get(0))
                             XNAT.app.projectDownload.items.scan_formats.list.push('$_FORMAT')
                             XNAT.app.projectDownload.items.scan_formats.data.push({
                                 counter: +'$counter',
@@ -286,7 +286,7 @@
                             XNAT.app.projectDownload.items.scan_formats.list.push('Unspecified')
                             XNAT.app.projectDownload.items.scan_formats.data.push({
                                 counter: +'$counter',
-                                value: null,
+                                value: 'null',
                                 name: 'Unspecified',
                                 label: 'Unspecified'
                             });
@@ -321,7 +321,7 @@
                             XNAT.app.projectDownload.items.scan_types.list.push('Unassigned');
                             XNAT.app.projectDownload.items.scan_types.data.push({
                                 counter: +'$counter',
-                                value: null,
+                                value: 'null',
                                 name: 'Unassigned',
                                 label: 'Unassigned',
                                 count: '$_COUNT'
@@ -355,7 +355,7 @@
                                 XNAT.app.projectDownload.items.resources.list.push('Unspecified');
                                 XNAT.app.projectDownload.items.resources.data.push({
                                     counter: +'$counter',
-                                    value: null,
+                                    value: 'null',
                                     name: 'Unspecified',
                                     label: 'Unspecified'
                                 });
@@ -374,11 +374,11 @@
                     </section>
                     ## gather reconstructions
                     #set($counter = 0)
-                    #foreach($item in $recons)
-                        #set($_ID = $!turbineUtils.escapeHTML("$!item.get(0)"))
-                        #set($_COUNT = $!turbineUtils.escapeHTML("$!item.get(1)"))
+                    #foreach($scan in $recons)
+                        #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)"))
+                        #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
                         <script>
-                                #if($!item.get(0))
+                                #if($!scan.get(0))
                                 XNAT.app.projectDownload.items.reconstructions.list.push('$_ID');
                                 XNAT.app.projectDownload.items.reconstructions.data.push({
                                     counter: +'$counter',
@@ -391,7 +391,7 @@
                                 XNAT.app.projectDownload.items.reconstructions.list.push('Unassigned');
                                 XNAT.app.projectDownload.items.reconstructions.data.push({
                                     counter: +'$counter',
-                                    value: null,
+                                    value: 'null',
                                     name: 'Unassigned',
                                     label: 'Unassigned',
                                     count: +'$_COUNT'
@@ -406,7 +406,7 @@
                 <!-- Assessors -->
                 #if($showAssessors)
                     <h4>Assessments</h4>
-                    <section class="assessors">
+                    <section class="assessors list">
                         <i class="hidden none">(none)</i>
                         <!-- list assessors -->
                     </section>

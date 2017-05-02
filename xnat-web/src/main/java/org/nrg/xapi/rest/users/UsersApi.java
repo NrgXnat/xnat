@@ -319,9 +319,12 @@ public class UsersApi extends AbstractXapiRestController {
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-
-        validateUser(model);
-
+        try {
+            validateUser(model);
+        }
+        catch(Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         final UserI user = getUserManagementService().createUser();
 
         if (user == null) {

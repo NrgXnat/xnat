@@ -25,6 +25,7 @@ var XNAT = getObject(XNAT || {});
 		undefined,
 		parContainer = $('#user_mgmt_div'),
 		rootUrl = XNAT.url.rootUrl,
+        csrfUrl = XNAT.url.csrfUrl,
 		projectId = XNAT.data.context.projectID;
 	
 	projectParUrl = function(){
@@ -34,7 +35,7 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/REST/pars');
     };
     parActionUrl = function(parId,action){
-        return rootUrl('/REST/pars/'+parId+'?'+action+'=true&format=json')
+        return csrfUrl('/REST/pars/'+parId+'?'+action+'=true&format=json')
     };
 
 	XNAT.projectAccess = projectAccess =
@@ -42,13 +43,15 @@ var XNAT = getObject(XNAT || {});
 
 	function errorHandler(e){
 		console.log(e);
-		xmodal.alert({
-			title: 'Error',
-			content: '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>',
-			okAction: function () {
-				xmodal.closeAll();
-			}
-		});
+        e.status = e.status || '';
+        XNAT.ui.dialog.open({
+            title: 'Error',
+            content: '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>',
+            buttons: [{
+                label: 'OK',
+                action: function () { XNAT.ui.dialog.closeAll(); }
+            }]
+        });
 	}
 
 	/*
@@ -79,7 +82,7 @@ var XNAT = getObject(XNAT || {});
 	XNAT.projectAccess.showParsInProject = function(pars){
 		var parContainer = $('#invite_container');
 		if (pars.length) {
-			parContainer.append(
+			parContainer.empty().append(
 				XNAT.table.dataTable(pars,{
 					className: 'clean compact',
 					items: {
@@ -191,8 +194,8 @@ var XNAT = getObject(XNAT || {});
     XNAT.projectAccess.requestAccess = function(reqProjectId){
         if (!reqProjectId) {
             errorHandler({
-                status: 'Function: requestAccess',
-                statusText: 'Cannot request access, no project ID specified.'
+                statusText: 'Function: requestAccess',
+                responseText: 'Cannot request access, no project ID specified.'
             });
             return false;
         }
@@ -268,8 +271,8 @@ var XNAT = getObject(XNAT || {});
                     });
                 } else {
                     errorHandler({
-                        status: 'No groups found',
-                        statusText: 'Could not request access to this project.'
+                        statusText: 'No groups found',
+                        responseText: 'Could not request access to this project.'
                     });
                     return false;
                 }
@@ -282,8 +285,8 @@ var XNAT = getObject(XNAT || {});
     XNAT.projectAccess.acceptPar = function(parId,projectId,projectName){
         if (!parId) {
             errorHandler({
-                status: 'Function: acceptPar',
-                statusText: 'Could not accept access request. No PAR ID found.'
+                statusText: 'Function: acceptPar',
+                responseText: 'Could not accept access request. No PAR ID found.'
             });
             return false;
         }
@@ -303,8 +306,8 @@ var XNAT = getObject(XNAT || {});
     XNAT.projectAccess.declinePar = function(parId,projectId,projectName){
         if (!parId) {
             errorHandler({
-                status: 'Function: declinePar',
-                statusText: 'Could not decline access request. No PAR ID found.'
+                statusText: 'Function: declinePar',
+                responseText: 'Could not decline access request. No PAR ID found.'
             });
             return false;
         }
@@ -333,6 +336,11 @@ var XNAT = getObject(XNAT || {});
                         var rawPars = data.ResultSet.Result, pars = [];
                         rawPars.forEach(function(par){
                             if (par.email) pars.push(par); // weed out improperly captured PARs.
+                        });
+                        pars.sort(function(a,b){
+                            var aTimestamp = new Date(a.create_date),
+                                bTimestamp = new Date(b.create_date);
+                            return (bTimestamp - aTimestamp) / Math.abs(bTimestamp - aTimestamp);
                         });
                         XNAT.projectAccess.showParsInProject(pars);
                     },

@@ -25,6 +25,7 @@ var XNAT = getObject(XNAT || {});
         undefined,
         userTableContainer = $('#user_mgmt_div'),
         rootUrl = XNAT.url.rootUrl,
+        csrfUrl = XNAT.url.csrfUrl,
         projectId = XNAT.data.context.projectID,
         currAccessibility = $('#current_accessibility').val(),
         allUsers,
@@ -42,12 +43,14 @@ var XNAT = getObject(XNAT || {});
 
     function errorHandler(e){
         console.log(e);
-        xmodal.alert({
+        e.status = e.status || '';
+        XNAT.ui.dialog.open({
             title: 'Error',
             content: '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>',
-            okAction: function () {
-                xmodal.closeAll();
-            }
+            buttons: [{
+                    label: 'OK',
+                    action: function () { XNAT.ui.dialog.closeAll(); }
+            }]
         });
     }
     
@@ -56,7 +59,7 @@ var XNAT = getObject(XNAT || {});
     };
     var projectUsersUrl = function(showDeactivatedUsers){
         showDeactivatedUsers = (showDeactivatedUsers) ? '/true' : '';
-        return rootUrl('/REST/projects/'+projectId+'/users'+ showDeactivatedUsers );
+        return csrfUrl('/REST/projects/'+projectId+'/users'+ showDeactivatedUsers );
     };
     var xnatUsersUrl = function(userId){
         return (userId) ? rootUrl('/REST/users/'+userId+'?format=json') : rootUrl('/REST/users?format=json');
@@ -64,7 +67,11 @@ var XNAT = getObject(XNAT || {});
     var addUserRoleUrl = function(user,group,sendemail){
         if (!user || !group) return false;
         sendemail = (sendemail) ? '&sendemail=true' : '';
-        return rootUrl('/REST/projects/'+projectId+'/users/'+group+'/'+user+'?format=json'+sendemail);
+        return csrfUrl('/REST/projects/'+projectId+'/users/'+group+'/'+user+'?format=json'+sendemail);
+    };
+    var removeUserUrl = function(user,group){
+        if (!user || !group) return false;
+        return csrfUrl('/REST/projects/'+projectId+'/users/' + group + '/' + user);
     };
 
     /*
@@ -72,12 +79,13 @@ var XNAT = getObject(XNAT || {});
      */
     XNAT.projectAccess.setUserAccess = function(user,group,opts){ // opts: { sendEmail, hideNotification, notificationMessage }
         if (!user || !group.length) return false;
+        opts = opts || { hideNotification: false };
         var sendemail = (opts) ? opts.sendEmail : false;
         XNAT.xhr.putJSON({
             url: addUserRoleUrl(user,group,sendemail),
             success: function(){
                 if (!opts.hideNotification) {
-                    message = (opts.notificationMessage) ? opts.notificationMessage : '<b>' + user + '</b> access level updated.';
+                    message = (opts.notificationMessage) ? opts.notificationMessage : 'Access level updated for <b>' + user + '</b>.';
                     XNAT.ui.banner.top(2000, message, 'success');
                 }
             },
@@ -90,7 +98,7 @@ var XNAT = getObject(XNAT || {});
     XNAT.projectAccess.removeUser = function(user,group){
         if (!user || !group) return false;
         XNAT.xhr.delete({
-            url: projectUsersUrl() + '/' + group + '/' + user,
+            url: removeUserUrl(user,group),
             success: function(){
                 XNAT.ui.banner.top(2000, '<b>' + user + '</b> removed from project.', 'success');
                 XNAT.projectAccess.renderUsersTable();
@@ -216,15 +224,15 @@ var XNAT = getObject(XNAT || {});
 
         invitedUserList.forEach(function(user){
             XNAT.projectAccess.inviteUserFromForm(user);
-        })
+        });
     };
 
     XNAT.projectAccess.inviteUserFromForm = function(user){
         var group = $('#invite_access_level').find('option:selected').val();
         if (!user || !group) {
             errorHandler({
-                status: 'Function: inviteUserFromForm',
-                statusText: 'Please be sure a user and role have been specified.'
+                statusText: 'Function: inviteUserFromForm',
+                responseText: 'Please be sure a user and role have been specified.'
             });
             return false;
         }
@@ -277,6 +285,7 @@ var XNAT = getObject(XNAT || {});
                 message: 'An email invitation has been sent to <b>'+user+'</b> to register an account with XNAT and join your project.'
             });
             $('#invite_user').val('');
+            XNAT.projectAccess.initPars('project');
             return true;
         }
 
@@ -475,7 +484,10 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.projectAccess.showGroups = function(){
         if (!XNAT.projectAccess.groups.length) {
-            errorHandler({ status: 'Function: showGroups', statusText: 'Could not load groups.' });
+            errorHandler({
+                statusText: 'Function: showGroups',
+                responseText: 'Could not load groups.'
+            });
             return false;
         }
         var groups = XNAT.projectAccess.groups;
@@ -541,13 +553,13 @@ var XNAT = getObject(XNAT || {});
         var accessibility = $('input[name=accessibility]:checked').val();
         if (!accessibility) {
             errorHandler({
-                status: 'Function: setAccessibility',
-                statusText: 'No accessibility setting found. Please select one.'
+                statusText: 'Function: setAccessibility',
+                responseText: 'No accessibility setting found. Please select one.'
             });
             return false;
         }
         XNAT.xhr.putJSON({
-            url: '/REST/projects/'+projectId+'/accessibility/'+accessibility,
+            url: csrfUrl('/REST/projects/'+projectId+'/accessibility/'+accessibility),
             success: function(){
                 XNAT.ui.banner.top(2000,'<b>Success.</b> Project accessibility set to '+accessibility+'.', 'success');
             },

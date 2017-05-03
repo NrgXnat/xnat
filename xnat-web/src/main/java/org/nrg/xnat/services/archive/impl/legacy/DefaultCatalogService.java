@@ -443,6 +443,14 @@ public class DefaultCatalogService implements CatalogService {
             final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
             final ArchivableItem item = resourceURI.getSecurityItem();
 
+            try {
+                if (!Permissions.canEdit(user, item)) {
+                    throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() + " does not have permission to access the resource " + resource);
+                }
+            } catch (Exception e) {
+                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " + user.getLogin() + " permissions for resource " + resource);
+            }
+
             if (item != null) {
                 final EventDetails event = new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS, "Catalog(s) Refreshed", "Refreshed catalog for resource " + resourceURI.getUri(), "");
 

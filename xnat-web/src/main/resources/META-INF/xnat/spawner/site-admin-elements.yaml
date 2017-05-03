@@ -857,6 +857,7 @@ pluginTable:
         pluginClass:
             label: Plugin Class
             className: center
+        version: Plugin Version
         viewPluginInfo:
             label: Contents
             value: "&ndash;" # this gets overwritten with 'html' below

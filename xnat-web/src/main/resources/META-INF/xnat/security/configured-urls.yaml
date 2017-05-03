@@ -61,3 +61,4 @@ adminUrls:
   - /app/template/XDATScreen_roles.vm
   - /monitoring
   - /setup/
+  - /log4j/

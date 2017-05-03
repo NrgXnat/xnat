@@ -9,6 +9,8 @@
 
 package org.nrg.xdat.security.helpers;
 
+import com.google.common.base.Joiner;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
@@ -18,6 +20,8 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
@@ -28,23 +32,26 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Permissions {
     static Logger logger = Logger.getLogger(Permissions.class);
-
 
     private static PermissionsServiceI singleton = null;
 
     /**
      * Returns the currently configured permissions service
-     * 
+     *
      * You can customize the implementation returned by adding a new implementation to the org.nrg.xdat.security.user.custom package (or a diffently configured package).
-     * 
+     *
      * You can change the default implementation returned via the security.userManagementService.default configuration parameter
      *
      * @return The permissions service.
@@ -91,9 +98,11 @@ public class Permissions {
     /**
      * Get current XDAT criteria objects for current permission settings.  The XDAT criteria are used within the search engine to build long ugly WHERE clauses which limit the users access.  We'll want to refactor this if it isn't rewritten.
      *
-     * @param user           The user.
-     * @param rootElement    The root element.
+     * @param user        The user.
+     * @param rootElement The root element.
+     *
      * @return The requested criteria collection.
+     *
      * @throws Exception When something goes wrong.
      */
     public static CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement rootElement) throws Exception {
@@ -103,9 +112,11 @@ public class Permissions {
     /**
      * Get current XFT criteria used when querying XFT items out of the database.
      *
-     * @param user           The user.
-     * @param rootElement    The root element.
+     * @param user        The user.
+     * @param rootElement The root element.
+     *
      * @return The requested criteria collection.
+     *
      * @throws Exception When something goes wrong.
      */
     public static CriteriaCollection getCriteriaForXFTRead(UserI user, SchemaElementI rootElement) throws Exception {
@@ -114,13 +125,15 @@ public class Permissions {
 
     /**
      * Can the user create an element based on a collection of key/value pairs {@link SecurityValues}.
-     * 
+     *
      * This is similar to running canCreate(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user      The user.
-     * @param root      The root element.
-     * @param values    The security values.
+     * @param user   The user.
+     * @param root   The root element.
+     * @param values The security values.
+     *
      * @return Whether the user can create an element of the indicated type.
+     *
      * @throws Exception When something goes wrong.
      */
     @SuppressWarnings("unused")
@@ -130,13 +143,15 @@ public class Permissions {
 
     /**
      * Can the user read an element based on a collection of key/value pairs {@link SecurityValues}.
-     * 
+     *
      * This is similar to running canRead(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user      The user.
-     * @param root      The root element.
-     * @param values    The security values.
+     * @param user   The user.
+     * @param root   The root element.
+     * @param values The security values.
+     *
      * @return Whether the user can read an element of the indicated type.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean canRead(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
@@ -145,13 +160,15 @@ public class Permissions {
 
     /**
      * Can the user edit an element based on a collection of key/value pairs {@link SecurityValues}.
-     * 
+     *
      * This is similar to running canEdit(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user      The user.
-     * @param root      The root element.
-     * @param values    The security values.
+     * @param user   The user.
+     * @param root   The root element.
+     * @param values The security values.
+     *
      * @return Whether the user can edit an element of the indicated type.
+     *
      * @throws Exception When something goes wrong.
      */
     @SuppressWarnings("unused")
@@ -161,13 +178,15 @@ public class Permissions {
 
     /**
      * Can the user activate an element based on a collection of key/value pairs {@link SecurityValues}.
-     * 
+     *
      * This is similar to running canActivate(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user      The user.
-     * @param root      The root element.
-     * @param values    The security values.
+     * @param user   The user.
+     * @param root   The root element.
+     * @param values The security values.
+     *
      * @return Whether the user can activate an element of the indicated type.
+     *
      * @throws Exception When something goes wrong.
      */
     @SuppressWarnings("unused")
@@ -177,13 +196,15 @@ public class Permissions {
 
     /**
      * Can the user delete an element based on a collection of key/value pairs {@link SecurityValues}.
-     * 
+     *
      * This is similar to running canDelete(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user      The user.
-     * @param root      The root element.
-     * @param values    The security values.
+     * @param user   The user.
+     * @param root   The root element.
+     * @param values The security values.
+     *
      * @return Whether the user can delete an element of the indicated type.
+     *
      * @throws Exception When something goes wrong.
      */
     @SuppressWarnings("unused")
@@ -194,10 +215,12 @@ public class Permissions {
     /**
      * Can the user do the specified action for the item
      *
-     * @param user      The user to test.
-     * @param item      The item to test.
-     * @param action    The action to be performed.
+     * @param user   The user to test.
+     * @param item   The item to test.
+     * @param action The action to be performed.
+     *
      * @return Whether the user can perform the specified action on the item.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean can(UserI user, ItemI item, String action) throws Exception {
@@ -207,11 +230,13 @@ public class Permissions {
     /**
      * Can the user do the specified action for the String/Object pair
      *
-     * @param user       The user.
-     * @param xmlPath    The XML path to the attribute.
-     * @param value      The value to test.
-     * @param action     The action to be performed.
+     * @param user    The user.
+     * @param xmlPath The XML path to the attribute.
+     * @param value   The value to test.
+     * @param action  The action to be performed.
+     *
      * @return Whether the user can perform the specified action.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean can(UserI user, String xmlPath, Object value, String action) throws Exception {
@@ -221,9 +246,11 @@ public class Permissions {
     /**
      * Can the user read the specified item
      *
-     * @param user    The user.
-     * @param item    The item.
+     * @param user The user.
+     * @param item The item.
+     *
      * @return Whether the user can read the specified item.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean canRead(UserI user, ItemI item) throws Exception {
@@ -233,9 +260,11 @@ public class Permissions {
     /**
      * Can the user edit the specified item
      *
-     * @param user    The user.
-     * @param item    The item.
+     * @param user The user.
+     * @param item The item.
+     *
      * @return Whether the user can edit the specified item.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean canEdit(UserI user, ItemI item) throws Exception {
@@ -245,9 +274,11 @@ public class Permissions {
     /**
      * Can the user create the specified item
      *
-     * @param user    The user.
-     * @param item    The item.
+     * @param user The user.
+     * @param item The item.
+     *
      * @return Whether the user can create the specified item.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean canCreate(UserI user, ItemI item) throws Exception {
@@ -257,9 +288,11 @@ public class Permissions {
     /**
      * Can the user activate the specified item
      *
-     * @param user    The user.
-     * @param item    The item.
+     * @param user The user.
+     * @param item The item.
+     *
      * @return Whether the user can activate the specified item.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean canActivate(UserI user, ItemI item) throws Exception {
@@ -269,9 +302,11 @@ public class Permissions {
     /**
      * Can the user delete the specified item
      *
-     * @param user    The user.
-     * @param item    The item.
+     * @param user The user.
+     * @param item The item.
+     *
      * @return Whether the user can delete the specified item.
+     *
      * @throws Exception When something goes wrong.
      */
     public static boolean canDelete(UserI user, ItemI item) throws Exception {
@@ -281,10 +316,12 @@ public class Permissions {
     /**
      * Can the user create/update this item and potentially all of its descendants
      *
-     * @param user       The user.
-     * @param item       The item.
-     * @param descend    Whether the descendants should be tested.
+     * @param user    The user.
+     * @param item    The item.
+     * @param descend Whether the descendants should be tested.
+     *
      * @return Whether the user can store the item.
+     *
      * @throws Exception When something goes wrong.
      */
     public static String canStoreItem(UserI user, ItemI item, boolean descend) throws Exception {
@@ -294,9 +331,11 @@ public class Permissions {
     /**
      * Review the passed item and remove any child items that this user doesn't have access to.
      *
-     * @param user    The user.
-     * @param item    The item.
+     * @param user The user.
+     * @param item The item.
+     *
      * @return The cleared item.
+     *
      * @throws IllegalAccessException
      * @throws MetaDataException
      */
@@ -307,10 +346,12 @@ public class Permissions {
     /**
      * Can the user read items for the String/Object pair
      *
-     * @param user       The user to test.
-     * @param xmlPath    The property to test.
-     * @param value      The value to test.
+     * @param user    The user to test.
+     * @param xmlPath The property to test.
+     * @param value   The value to test.
+     *
      * @return True or false.
+     *
      * @throws InvalidItemException
      * @throws Exception
      */
@@ -321,10 +362,12 @@ public class Permissions {
     /**
      * Can the user edit items for the String/Object pair
      *
-     * @param user       The user to test.
-     * @param xmlPath    The property to test.
-     * @param value      The value to test.
+     * @param user    The user to test.
+     * @param xmlPath The property to test.
+     * @param value   The value to test.
+     *
      * @return True or false.
+     *
      * @throws InvalidItemException
      * @throws Exception
      */
@@ -335,10 +378,12 @@ public class Permissions {
     /**
      * Can the user create items for the String/Object pair
      *
-     * @param user       The user to test.
-     * @param xmlPath    The property to test.
-     * @param value      The value to test.
+     * @param user    The user to test.
+     * @param xmlPath The property to test.
+     * @param value   The value to test.
+     *
      * @return True or false.
+     *
      * @throws InvalidItemException
      * @throws Exception
      */
@@ -349,10 +394,12 @@ public class Permissions {
     /**
      * Can the user activate items for the String/Object pair
      *
-     * @param user       The user to test.
-     * @param xmlPath    The property to test.
-     * @param value      The value to test.
+     * @param user    The user to test.
+     * @param xmlPath The property to test.
+     * @param value   The value to test.
+     *
      * @return True or false.
+     *
      * @throws InvalidItemException
      * @throws Exception
      */
@@ -363,10 +410,12 @@ public class Permissions {
     /**
      * Can the user delete items for the String/Object pair
      *
-     * @param user       The user to test.
-     * @param xmlPath    The property to test.
-     * @param value      The value to test.
+     * @param user    The user to test.
+     * @param xmlPath The property to test.
+     * @param value   The value to test.
+     *
      * @return True or false.
+     *
      * @throws InvalidItemException
      * @throws Exception
      */
@@ -381,6 +430,7 @@ public class Permissions {
      * @param elementName
      * @param xmlPath
      * @param action
+     *
      * @return Returns whether the user can read any of the given elementName/xmlPath/action combination
      */
     public static boolean canAny(UserI user, String elementName, String xmlPath, String action) {
@@ -393,6 +443,7 @@ public class Permissions {
      * @param user
      * @param elementName
      * @param action
+     *
      * @return Returns whether the user can read any of the given elementName/action combination
      */
     public static boolean canAny(UserI user, String elementName, String action) {
@@ -405,7 +456,9 @@ public class Permissions {
      * @param set
      * @param root
      * @param action
+     *
      * @return Returns current XDAT criteria objects for current permission settings
+     *
      * @throws IllegalAccessException
      * @throws Exception
      */
@@ -443,7 +496,9 @@ public class Permissions {
      *
      * @param set
      * @param action
+     *
      * @return Returns a collection of the current XFT criteria used when querying XFT items out of the database
+     *
      * @throws Exception
      */
     public static CriteriaCollection getXFTCriteria(PermissionSetI set, String action) throws Exception {
@@ -478,6 +533,7 @@ public class Permissions {
      *
      * @param user
      * @param elementName
+     *
      * @return Returns whether the user can perform this query
      */
     public static boolean canQuery(final UserI user, final String elementName) {
@@ -494,6 +550,7 @@ public class Permissions {
      *
      * @param user
      * @param elementName
+     *
      * @return Returns whether the user can access any items of this type
      */
     public static boolean canReadAny(final UserI user, final String elementName) {
@@ -513,6 +570,7 @@ public class Permissions {
      * @param elementName
      * @param xmlPath
      * @param action
+     *
      * @return Returns a list of the values that this user can do the specified action on for the given element/xmlpath combo
      */
     public static List<Object> getAllowedValues(UserI user, String elementName, String xmlPath, String action) {
@@ -525,6 +583,7 @@ public class Permissions {
      * @param user
      * @param elementName
      * @param action
+     *
      * @return Returns a map of the xmlpath/value combos that this user can do the specified action on for the given element
      */
     public static Map<String, Object> getAllowedValues(UserI user, String elementName, String action) {
@@ -559,7 +618,9 @@ public class Permissions {
      * @param forceInit
      * @param authenticatedUser
      * @param ci
+     *
      * @return Returns whether the accessibility was set for entity
+     *
      * @throws Exception
      */
     public static boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception {
@@ -571,6 +632,7 @@ public class Permissions {
      *
      * @param user
      * @param dataType
+     *
      * @return Returns a list of active permission criteria for this user account / data type combination (including group permissions, etc)
      */
     public static List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType) {
@@ -582,6 +644,7 @@ public class Permissions {
      *
      * @param group
      * @param dataType
+     *
      * @return Returns a list of active permission criteria for this user group / data type combination
      */
     public static List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType) {
@@ -592,6 +655,7 @@ public class Permissions {
      * Get all active permission criteria for this user group (organized by data type).
      *
      * @param group
+     *
      * @return Returns a map of active permission criteria for this user group (organized by data type)
      */
     public static Map<String, List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group) {
@@ -600,13 +664,14 @@ public class Permissions {
 
     /**
      * Adds/modifies specified permissions for this group.  However, nothing is saved to the database.
-     * 
+     *
      * Call Groups.save() to save the modifications.
      *
      * @param group
      * @param criteria
      * @param meta
      * @param authenticatedUser
+     *
      * @throws Exception
      */
     public static void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception {
@@ -617,10 +682,67 @@ public class Permissions {
      * Return an SQL statement that will return a list of this user's permissions
      *
      * @param user
+     *
      * @return Returns the SQL statement that will return a list of this user's permissions
      */
     public static String getUserPermissionsSQL(UserI user) {
         return getPermissionsService().getUserPermissionsSQL(user);
     }
 
+    public static boolean canReadProject(final UserI user, final String projectId) throws Exception {
+        return Roles.isSiteAdmin(user) || isProjectPublic(projectId) | StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
+    }
+
+    public static boolean canEditProject(final UserI user, final String projectId) {
+        if (Roles.isSiteAdmin(user)) {
+            return true;
+        }
+        final String access = getUserProjectAccess(user, projectId);
+        return StringUtils.isNotBlank(access) && PROJECT_GROUPS.subList(1, PROJECT_GROUP_COUNT).contains(access);
+    }
+
+    public static boolean ownsProject(final UserI user, final String projectId) {
+        return StringUtils.equals("owner", getUserProjectAccess(user, projectId));
+    }
+
+    public static String getUserProjectAccess(final UserI user, final String projectId) {
+        final Pattern pattern = Pattern.compile(String.format(PROJECT_ROLE_TEMPLATE, projectId));
+        for (final GrantedAuthority authority : user.getAuthorities()) {
+            final Matcher matcher = pattern.matcher(authority.getAuthority());
+            if (matcher.find()) {
+                final String access = matcher.group("access");
+                if (PROJECT_GROUPS.contains(access)) {
+                    return access;
+                }
+            }
+        }
+        return null;
+    }
+
+    public static boolean isProjectPublic(final String projectId) throws Exception {
+        return StringUtils.equals("public", getProjectAccess(projectId));
+    }
+
+    public static boolean isProjectProtected(final String projectId) throws Exception {
+        return StringUtils.equals("protected", getProjectAccess(projectId));
+    }
+
+    public static boolean isProjectPrivate(final String projectId) throws Exception {
+        return StringUtils.equals("private", getProjectAccess(projectId));
+    }
+
+    public static String getProjectAccess(final String projectId) throws Exception {
+        final UserI guest = Users.getGuest();
+        if (Permissions.canRead(guest, "xnat:subjectData/project", projectId)) {
+            return "public";
+        } else if (Permissions.canRead(guest, "xnat:projectData/ID", projectId)) {
+            return "protected";
+        } else {
+            return "private";
+        }
+    }
+
+    private static final List<String> PROJECT_GROUPS        = Arrays.asList("collaborator", "member", "owner");
+    private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();
+    private static final String       PROJECT_ROLE_TEMPLATE = "^%s_(?<access>" + Joiner.on("|").join(PROJECT_GROUPS) + ")$";
 }

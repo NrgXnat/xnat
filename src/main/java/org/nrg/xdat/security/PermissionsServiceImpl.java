@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import com.google.common.base.Joiner;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
@@ -43,14 +43,14 @@ import org.nrg.xft.utils.XftStringUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"unused", "DuplicateThrows"})
 public class PermissionsServiceImpl implements PermissionsServiceI {
-    static Logger logger = Logger.getLogger(PermissionsServiceImpl.class);
-
 	@Override
     public List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType){
-    	List<PermissionCriteriaI> criteria =((XDATUser)user).getPermissionsByDataType(dataType);
-        return criteria;
+        return ((XDATUser)user).getPermissionsByDataType(dataType);
     }
     
 	@Override
@@ -145,7 +145,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public String canStoreItem(UserI user, ItemI item, boolean allowDataDeletion) throws InvalidItemException, Exception {
-        String invalidItemName = null;
+        String invalidItemName;
         try {
             if (!canCreate(user,item)) {
                 return item.getXSIType();
@@ -281,25 +281,30 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
             return false;
         }
-        boolean isOK = false;
-        if (!ElementSecurity.HasDefinedElementSecurity(item.getXSIType())) {
-            isOK = true;
-        } else if (ElementSecurity.IsInSecureElement(item.getXSIType())) {
-            isOK = true;
+        final String xsiType = item.getXSIType();
+        if (!ElementSecurity.HasDefinedElementSecurity(xsiType)) {
+            return true;
+        } else if (ElementSecurity.IsInSecureElement(xsiType)) {
+            return true;
         } else {
-            ElementSecurity es = ElementSecurity.GetElementSecurity(item.getXSIType());
-            if (es.isSecure(action)) {
-                SecurityValues sv = item.getItem().getSecurityValues();
-                if (securityCheckByXMLPath(user, action, SchemaElement.GetElement(item.getXSIType()), sv)) {
-                    isOK = true;
-                } else {
-                    isOK = false;
+            final ElementSecurity elementSecurity = ElementSecurity.GetElementSecurity(xsiType);
+            if (elementSecurity.isSecure(action)) {
+                final SchemaElement schemaElement = SchemaElement.GetElement(xsiType);
+                final SecurityValues securityValues = item.getItem().getSecurityValues();
+                final boolean isOK = securityCheckByXMLPath(user, action, schemaElement, securityValues);
+                if (!isOK) {
+                    logger.info("User {} doesn't have permission to {} the schema element {} for XSI type {}. The security values are: {}.",
+                                user.getUsername(),
+                                action,
+                                schemaElement.getFormattedName(),
+                                xsiType,
+                                Joiner.on(", ").withKeyValueSeparator(" : ").join(securityValues.getHash()));
                 }
+                return isOK;
             } else {
-                isOK = true;
+                return true;
             }
         }
-        return isOK;
     }
     
     @Override
@@ -621,4 +626,6 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 	public String getUserPermissionsSQL(UserI user) {
 		return String.format("SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user u JOIN xdat_user_groupID map ON u.xdat_user_id=map.groups_groupid_xdat_user_xdat_user_id JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE u.login='guest' UNION SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user_groupID map JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE map.groups_groupid_xdat_user_xdat_user_id=%s",user.getID());
 	}
+
+    private static final Logger logger = LoggerFactory.getLogger(PermissionsServiceImpl.class);
 }

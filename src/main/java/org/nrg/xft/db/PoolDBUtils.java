@@ -885,6 +885,7 @@ public class PoolDBUtils {
 				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
 				return null;
 			} else {
+				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
 				throw e;
 			}
 		}
@@ -915,6 +916,7 @@ public class PoolDBUtils {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
 				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
 			}else{
+				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
 				throw e;
 			}
 		}

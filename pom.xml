@@ -112,7 +112,7 @@
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.4</commons-lang3.version>
+        <commons-lang3.version>3.5</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <commons-net.version>3.3</commons-net.version>
         <dcm4che.version>2.0.29</dcm4che.version>

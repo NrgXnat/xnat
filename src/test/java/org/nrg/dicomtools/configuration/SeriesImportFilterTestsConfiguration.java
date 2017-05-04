@@ -20,7 +20,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 @ComponentScan({"org.nrg.config.daos", "org.nrg.dicomtools.filters"})
 @Import({OrmTestConfiguration.class})
 @ImportResource("classpath:/META-INF/configuration/nrg-automation-context.xml")
-@PropertySource("classpath:org/nrg/dicomtools/filters/filter-definitions.properties")
+@PropertySources(@PropertySource("classpath:org/nrg/dicomtools/filters/filter-definitions.properties"))
 public class SeriesImportFilterTestsConfiguration {
     @Bean
     public ConfigService configService() {

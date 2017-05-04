@@ -99,17 +99,35 @@ public class CatalogApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
                    @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(value = "download", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.POST)
+    @XapiRequestMapping(value = "download/{projectId}", restrictTo = "read", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.POST)
     @ResponseBody
-    public ResponseEntity<String> createDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @RequestBody final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
+    public ResponseEntity<String> createDownloadSessionsCatalog(@ApiParam("The project containing the resources to be cataloged.") @PathVariable final String projectId,
+                                                                @ApiParam("The resources to be cataloged.") @RequestBody final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
 
         if (resources.size() == 0) {
             throw new NoContentException("There were no resources specified in the request.");
         }
 
-        _log.info("User {} requested download catalog for {} resources", user.getUsername(), resources.get("sessions").size());
-        return new ResponseEntity<>(_service.buildCatalogForResources(user, resources), HttpStatus.OK);
+        _log.info("User {} requested download catalog for {} resources in project {}", user.getUsername(), resources.get("sessions").size(), projectId);
+        return new ResponseEntity<>(_service.buildCatalogForResources(user, projectId, resources), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Retrieves the download catalog for the submitted catalog ID.",
+                  notes = "This retrieves a catalog created earlier by the catalog service.",
+                  response = CatCatalogBean.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "The download catalog was successfully built."),
+                   @ApiResponse(code = 204, message = "No resources were specified."),
+                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
+                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @XapiRequestMapping(value = "download/{projectId}/{catalogId}", restrictTo = "read", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<CatCatalogI> getDownloadSessionsCatalog(@ApiParam("The ID of the project containing the catalog.") @PathVariable final String projectId,
+                                                                  @ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
+        _log.debug("Downloading the catalog {} from project {}", catalogId, projectId);
+        return getDownloadSessionsCatalog(catalogId);
     }
 
     @ApiOperation(value = "Retrieves the download catalog for the submitted catalog ID.",
@@ -123,14 +141,10 @@ public class CatalogApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download/{catalogId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<CatCatalogI> getDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
+    public ResponseEntity<CatCatalogI> getDownloadSessionsCatalog(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
         final UserI user = getSessionUser();
 
-        if (StringUtils.isBlank(catalogId)) {
-            throw new NoContentException("There was no catalog specified in the request.");
-        }
-
-        _log.info("User {} requested download catalog: {}", catalogId);
+        _log.info("User {} requested download catalog {}", user.getUsername(), catalogId);
         final CatCatalogI catalog = _service.getCatalogForResources(user, catalogId);
         if (catalog == null) {
             throw new NotFoundException("No catalog with ID " + catalogId + " was found.");
@@ -138,8 +152,22 @@ public class CatalogApi extends AbstractXapiRestController {
         return new ResponseEntity<>(catalog, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Downloads the specified catalog as an XML file.",
-                  response = StreamingResponseBody.class)
+    @ApiOperation(value = "Downloads the specified catalog as an XML file.", response = StreamingResponseBody.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "The requested catalog was successfully downloaded."),
+                   @ApiResponse(code = 204, message = "No catalog was specified."),
+                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
+                   @ApiResponse(code = 403, message = "The user is not authorized to access the specified catalog."),
+                   @ApiResponse(code = 404, message = "The request was valid but the specified catalog was not found."),
+                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @XapiRequestMapping(value = "download/{projectId}/{catalogId}/xml", restrictTo = "read", produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogXml(@ApiParam("The ID of the project containing the catalog.") @PathVariable final String projectId,
+                                                                           @ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException, IOException, NrgServiceException {
+        _log.debug("Downloading the catalog {} from project {}", catalogId, projectId);
+        return downloadSessionCatalogXml(catalogId);
+    }
+
+    @ApiOperation(value = "Downloads the specified catalog as an XML file.", response = StreamingResponseBody.class)
     @ApiResponses({@ApiResponse(code = 200, message = "The requested catalog was successfully downloaded."),
                    @ApiResponse(code = 204, message = "No catalog was specified."),
                    @ApiResponse(code = 400, message = "Something is wrong with the request format."),
@@ -150,10 +178,6 @@ public class CatalogApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalogXml(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException, IOException, NrgServiceException {
         final UserI user = getSessionUser();
-
-        if (StringUtils.isBlank(catalogId)) {
-            throw new NoContentException("There was no catalog specified in the request.");
-        }
 
         _log.info("User {} requested download catalog: {}", catalogId);
         final CatCatalogI catalog = _service.getCatalogForResources(user, catalogId);
@@ -187,6 +211,22 @@ public class CatalogApi extends AbstractXapiRestController {
             }
             throw new NrgServiceException(e.getServiceError(), e.getMessage());
         }
+    }
+
+    @ApiOperation(value = "Downloads the contents of the specified catalog as a zip archive.",
+                  response = StreamingResponseBody.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "The requested resources were successfully downloaded."),
+                   @ApiResponse(code = 204, message = "No resources were specified."),
+                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
+                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @XapiRequestMapping(value = "download/{projectId}/{catalogId}/zip", restrictTo = "read", produces = ZipStreamingResponseBody.MEDIA_TYPE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZip(@ApiParam("The ID of the project containing the catalog.") @PathVariable final String projectId,
+                                                                           @ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, IOException {
+        _log.debug("Downloading the catalog {} from project {}", catalogId, projectId);
+        return downloadSessionCatalogZip(catalogId);
     }
 
     @ApiOperation(value = "Downloads the contents of the specified catalog as a zip archive.",

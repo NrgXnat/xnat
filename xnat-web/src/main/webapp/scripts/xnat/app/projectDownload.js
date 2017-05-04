@@ -258,11 +258,6 @@ var XNAT = getObject(XNAT);
     // (in case there's another conflicting handler, which will be removed)
     $(function(){
 
-        function setupDownloadUrl(id, zip){
-            var base = XNAT.url.rootUrl('/xapi/archive/download/' + id);
-            return zip ? (base + '/zip') : (base + '/xml');
-        }
-
         // the 'off' method should clear out any existing event handlers
         $('#download-form').off('submit').on('submit', function(e){
             e.preventDefault();
@@ -307,7 +302,7 @@ var XNAT = getObject(XNAT);
                 },
                 complete: function(data){
                     var ID = data.responseText;
-                    var URL = setupDownloadUrl(ID, getZip);
+                    var URL = XNAT.url.rootUrl($form.attr('action') + '/' + ID + '/' + (getZip ? 'zip' : 'xml'));
                     if (getZip) {
                         msg.push('' +
                             'Click "Download" to start the zip download. ' +

@@ -183,7 +183,7 @@
 
 <h2>Imaging Data Download</h2>
 
-<form id="download-form" class="json" method="post" content-type="application/json" action="/xapi/archive/download">
+<form id="download-form" class="json" method="post" content-type="application/json" action="/xapi/archive/download/${project}">
 
     #set($counter=0)
     #set($_ID="")
@@ -461,7 +461,6 @@
 
                 <h4>Options</h4>
                 <section>
-                    <input type="hidden" name="options[]" value="project:${project}"/>
                     <dl>
                         <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="direct" checked></dt>
                         <dd><label for="direct-download"><b>Option 1: Direct download</b></label></dd>

@@ -60,20 +60,19 @@ public interface CatalogService {
      * created catalog. You can retrieve the catalog itself by calling {@link #getResourcesForCatalog(UserI, String)}.
      *
      * @param user      The user requesting the resources.
+     * @param projectId The ID of the project containing the requested resources.
      * @param resources The resources to be included in the catalog.
-     *
      * @return The ID of the newly created catalog containing the requested resources.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
-    String buildCatalogForResources(final UserI user, final Map<String, List<String>> resources) throws InsufficientPrivilegesException;
+    String buildCatalogForResources(final UserI user, final String projectId, final Map<String, List<String>> resources) throws InsufficientPrivilegesException;
 
     /**
      * Retrieves the catalog with the submitted ID.
      *
      * @param user      The user requesting the catalog.
      * @param catalogId The ID of the catalog to be retrieved.
-     *
      * @return The specified catalog.
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.

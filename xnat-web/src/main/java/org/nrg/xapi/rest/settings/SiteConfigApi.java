@@ -14,7 +14,6 @@ import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.xapi.exceptions.ApiException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
@@ -87,7 +86,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST)
-    public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) throws ApiException, InitializationException {
+    public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) throws InitializationException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -174,7 +173,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{property}", consumes = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
     public ResponseEntity<Void> setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property,
-                                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException, ApiException {
+                                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);

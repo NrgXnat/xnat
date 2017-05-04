@@ -98,11 +98,11 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     @Override
-    public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
+    public String buildCatalogForResources(final UserI user, final String projectId, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(String.format(CATALOG_FORMAT, user.getLogin(), getPrearchiveTimestamp()));
 
-        final DownloadArchiveOptions options = new DownloadArchiveOptions(resourceMap.get("options"));
+        final DownloadArchiveOptions options = new DownloadArchiveOptions(projectId, resourceMap.get("options"));
         catalog.setDescription(options.getDescription());
 
         final List<String> sessions = resourceMap.get("sessions");
@@ -750,17 +750,19 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {
-        final Element cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, catalogId));
+        final Element cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
         if (cached == null) {
-            return null;
-        }
-        final File file = (File) cached.getObjectValue();
-        if (file.exists()) {
-            return CatalogUtils.getCatalog(file);
-        }
-        final File cacheFile = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
-        if (cacheFile.exists()) {
-            return CatalogUtils.getCatalog(cacheFile);
+            final File cacheFile = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
+            if (cacheFile.exists()) {
+                final CatCatalogBean catalog = CatalogUtils.getCatalog(cacheFile);
+                storeToCache(user, catalog);
+                return catalog;
+            }
+        } else {
+            final File file = (File) cached.getObjectValue();
+            if (file.exists()) {
+                return CatalogUtils.getCatalog(file);
+            }
         }
         return null;
     }
@@ -774,7 +776,7 @@ public class DefaultCatalogService implements CatalogService {
             try (final FileWriter writer = new FileWriter(file)) {
                 catalog.toXML(writer, true);
             }
-            _cache.put(new Element(String.format(CATALOG_CACHE_KEY_FORMAT, catalogId), file));
+            _cache.put(new Element(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId), file));
         } catch (IOException e) {
             _log.error("An error occurred writing the catalog " + catalogId + " for user " + user.getLogin(), e);
         }
@@ -937,21 +939,12 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private static class DownloadArchiveOptions {
-        DownloadArchiveOptions(final List<String> options) {
-            _project = getProjectFromOptions(options);
+        DownloadArchiveOptions(final String project, final List<String> options) {
+            _project = project;
             _description = Joiner.on(", ").join(options);
             _projectIncludedInPath = options.contains("projectIncludedInPath");
             _subjectIncludedInPath = options.contains("subjectIncludedInPath");
             _simplified = options.contains("simplified");
-        }
-
-        private String getProjectFromOptions(final List<String> options) {
-            for (final String option : options) {
-                if (option.startsWith("project:")) {
-                    return option.split(":")[1];
-                }
-            }
-            return null;
         }
 
         public String getProject() {
@@ -983,7 +976,7 @@ public class DefaultCatalogService implements CatalogService {
 
     private static final String CATALOG_FORMAT           = "%s-%s";
     private static final String CATALOG_SERVICE_CACHE    = DefaultCatalogService.class.getSimpleName() + "Cache";
-    private static final String CATALOG_CACHE_KEY_FORMAT = DefaultCatalogService.class.getSimpleName() + ".%s";
+    private static final String CATALOG_CACHE_KEY_FORMAT = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
     private static final String QUERY_SESSION_RESOURCES  = "SELECT res.label resource FROM xnat_abstractresource res LEFT JOIN xnat_experimentdata_resource exptRes ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id WHERE expt.ID = :sessionId AND res.label in (:resourceIds)";
     private static final String QUERY_SCAN_FORMATS       = "SELECT scan.id scan, res.label resource FROM xnat_imagescandata scan JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id WHERE scan.image_session_id = :sessionId AND res.label IN (:scanFormats) ORDER BY scan";
 

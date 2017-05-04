@@ -22,7 +22,7 @@ import java.util.Map;
 
 @Configuration
 @Import(BasicPlatformTestConfiguration.class)
-@PropertySource(value = "classpath:org/nrg/notify/services/test.properties")
+@PropertySources(@PropertySource(value = "classpath:org/nrg/notify/services/test.properties"))
 @ComponentScan("org.nrg.mail.services.impl")
 public class NotificationServiceTestConfiguration {
     @Bean

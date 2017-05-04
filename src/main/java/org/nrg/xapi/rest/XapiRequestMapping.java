@@ -66,4 +66,12 @@ public @interface XapiRequestMapping {
      */
     @AliasFor(annotation = RequestMapping.class, attribute = "produces")
     String[] produces() default {};
+
+    /**
+     * The level of project access required to access the annotated API method. This requires that the method have a
+     * parameter named <b>projectId</b> that indicates the project being accessed. Valid values for this attribute
+     * include "admin, "authenticated", "read", "edit", and "owner". Note that specifying the latter three values
+     * requires including a String named <b>projectId</b> in the method parameters.
+     */
+    String restrictTo() default "";
 }

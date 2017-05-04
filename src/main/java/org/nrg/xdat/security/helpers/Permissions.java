@@ -20,8 +20,6 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.services.PermissionsServiceI;
-import org.nrg.xdat.security.user.exceptions.UserInitException;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
@@ -35,7 +33,6 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +45,10 @@ public class Permissions {
     private static PermissionsServiceI singleton = null;
 
     /**
-     * Returns the currently configured permissions service
-     *
-     * You can customize the implementation returned by adding a new implementation to the org.nrg.xdat.security.user.custom package (or a diffently configured package).
-     *
-     * You can change the default implementation returned via the security.userManagementService.default configuration parameter
+     * Returns the currently configured permissions service. You can customize the implementation returned by adding a
+     * new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured package). You
+     * can change the default implementation returned via the security.userManagementService.default configuration
+     * parameter.
      *
      * @return The permissions service.
      */
@@ -336,8 +332,8 @@ public class Permissions {
      *
      * @return The cleared item.
      *
-     * @throws IllegalAccessException
-     * @throws MetaDataException
+     * @throws IllegalAccessException When the user is not permitted to access the item. 
+     * @throws MetaDataException When an error occurs with the item metadata.
      */
     public static ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, MetaDataException {
         return getPermissionsService().secureItem(user, item);
@@ -352,8 +348,8 @@ public class Permissions {
      *
      * @return True or false.
      *
-     * @throws InvalidItemException
-     * @throws Exception
+     * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static boolean canRead(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canRead(user, xmlPath, value);
@@ -368,8 +364,8 @@ public class Permissions {
      *
      * @return True or false.
      *
-     * @throws InvalidItemException
-     * @throws Exception
+     * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static boolean canEdit(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canEdit(user, xmlPath, value);
@@ -384,8 +380,8 @@ public class Permissions {
      *
      * @return True or false.
      *
-     * @throws InvalidItemException
-     * @throws Exception
+     * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static boolean canCreate(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canCreate(user, xmlPath, value);
@@ -400,8 +396,8 @@ public class Permissions {
      *
      * @return True or false.
      *
-     * @throws InvalidItemException
-     * @throws Exception
+     * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static boolean canActivate(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canActivate(user, xmlPath, value);
@@ -416,8 +412,8 @@ public class Permissions {
      *
      * @return True or false.
      *
-     * @throws InvalidItemException
-     * @throws Exception
+     * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static boolean canDelete(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canDelete(user, xmlPath, value);
@@ -426,23 +422,23 @@ public class Permissions {
     /**
      * Can the user read any of the given elementName/xmlPath/action combination
      *
-     * @param user
-     * @param elementName
-     * @param xmlPath
-     * @param action
+     * @param user        The user requesting access.
+     * @param elementName The name of the element being requested.
+     * @param xmlPath     The XML path being requested.
+     * @param action      The action being requested.
      *
      * @return Returns whether the user can read any of the given elementName/xmlPath/action combination
      */
-    public static boolean canAny(UserI user, String elementName, String xmlPath, String action) {
+    public static boolean canAny(UserI user, String elementName, String xmlPath, @SuppressWarnings("SameParameterValue") String action) {
         return getPermissionsService().canAny(user, elementName, xmlPath, action);
     }
 
     /**
      * Can the user read any of the given elementName/action combination
      *
-     * @param user
-     * @param elementName
-     * @param action
+     * @param user        The user requesting access.
+     * @param elementName The name of the element being requested.
+     * @param action      The action being requested.
      *
      * @return Returns whether the user can read any of the given elementName/action combination
      */
@@ -451,36 +447,27 @@ public class Permissions {
     }
 
     /**
-     * Get current XDAT criteria objects for current permission settings.  The XDAT criteria are used within the search engine to build long ugly WHERE clauses which limit the users access.  We'll want to refactor this if it isn't rewritten.
+     * Get current XDAT criteria objects for current permission settings.  The XDAT criteria are used within the search
+     * engine to build long ugly WHERE clauses which limit the users access.  We'll want to refactor this if it isn't
+     * rewritten.
      *
-     * @param set
-     * @param root
-     * @param action
+     * @param set    The permission set.
+     * @param root   The root schema element.
+     * @param action The action being requested.
      *
      * @return Returns current XDAT criteria objects for current permission settings
      *
-     * @throws IllegalAccessException
-     * @throws Exception
+     * @throws IllegalAccessException When the user is not permitted to access the item.
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static CriteriaCollection getXDATCriteria(PermissionSetI set, SchemaElement root, String action) throws Exception {
-        final ElementSecurity es = root.getElementSecurity();
-
         final CriteriaCollection coll = new CriteriaCollection(set.getMethod());
-        final List<String> checkedValues = new ArrayList<String>();
 
         for (PermissionCriteriaI c : set.getPermCriteria()) {
-            checkedValues.add(c.getFieldValue().toString());
-
-            boolean can = false;
-
-            if (!can) {
-                if (c.isActive()) {
-                    can = c.getAction(action);
+            if (c.isActive()) {
+                if (c.getAction(action)) {
+                    coll.addClause(DisplayCriteria.buildCriteria(root, c));
                 }
-            }
-
-            if (can) {
-                coll.addClause(DisplayCriteria.buildCriteria(root, c));
             }
         }
 
@@ -494,30 +481,22 @@ public class Permissions {
     /**
      * Get current XFT criteria used when querying XFT items out of the database.
      *
-     * @param set
-     * @param action
+     * @param set    The permission set.
+     * @param action The requested action.
      *
      * @return Returns a collection of the current XFT criteria used when querying XFT items out of the database
      *
-     * @throws Exception
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static CriteriaCollection getXFTCriteria(PermissionSetI set, String action) throws Exception {
         final CriteriaCollection coll = new CriteriaCollection(set.getMethod());
-        final List<String> checkedValues = new ArrayList<String>();
 
         for (PermissionCriteriaI c : set.getPermCriteria()) {
-            checkedValues.add(c.getFieldValue().toString());
-            boolean can = false;
-
-            if (!can) {
                 if (c.isActive()) {
-                    can = c.getAction(action);
+                    if (c.getAction(action)) {
+                        coll.addClause(SearchCriteria.buildCriteria(c));
+                    }
                 }
-            }
-
-            if (can) {
-                coll.addClause(SearchCriteria.buildCriteria(c));
-            }
         }
 
         for (PermissionSetI subset : set.getPermSets()) {
@@ -531,8 +510,8 @@ public class Permissions {
      * Checks the security settings of the data type to see if the user can perform this query.
      * To check if users have been specifically allowed to see any objects of that type, use canReadAny.
      *
-     * @param user
-     * @param elementName
+     * @param user        The user to test.
+     * @param elementName The element to test.
      *
      * @return Returns whether the user can perform this query
      */
@@ -548,11 +527,12 @@ public class Permissions {
     /**
      * Checks the security settings of the data type and the user's permissions to see if the user can access any items of this type.
      *
-     * @param user
-     * @param elementName
+     * @param user        The user to test.
+     * @param elementName The element to test.
      *
      * @return Returns whether the user can access any items of this type
      */
+    @SuppressWarnings("unused")
     public static boolean canReadAny(final UserI user, final String elementName) {
         try {
             Authorizer.getInstance().authorizeRead(GenericWrapperElement.GetElement(elementName), user);
@@ -566,10 +546,10 @@ public class Permissions {
     /**
      * Get the values that this user can do the specified action on for the given element/xmlpath combo
      *
-     * @param user
-     * @param elementName
-     * @param xmlPath
-     * @param action
+     * @param user        The user requesting access.
+     * @param elementName The name of the element being requested.
+     * @param xmlPath     The XML path being requested.
+     * @param action      The action being requested.
      *
      * @return Returns a list of the values that this user can do the specified action on for the given element/xmlpath combo
      */
@@ -580,9 +560,9 @@ public class Permissions {
     /**
      * Get the xmlpath/value combos that this user can do the specified action on for the given element
      *
-     * @param user
-     * @param elementName
-     * @param action
+     * @param user        The user requesting access.
+     * @param elementName The name of the element being requested.
+     * @param action      The action being requested.
      *
      * @return Returns a map of the xmlpath/value combos that this user can do the specified action on for the given element
      */
@@ -591,37 +571,38 @@ public class Permissions {
     }
 
     /**
-     * initialize or update the permissions of the 'effected' user based on thee parameters
+     * initialize or update the permissions of the 'affected' user based on the parameters
      *
-     * @param effected
-     * @param authenticated
-     * @param elementName
-     * @param psf
-     * @param value
-     * @param create
-     * @param read
-     * @param delete
-     * @param edit
-     * @param activate
-     * @param activateChanges
-     * @param ci
+     * @param affected        The affected user.
+     * @param authenticated   The authenticated user.
+     * @param elementName     The name of the element.
+     * @param psf             Path to a property on the element.
+     * @param value           The value to set.
+     * @param create          Whether the user can perform a create operation.
+     * @param read            Whether the user can perform a read operation.
+     * @param delete          Whether the user can perform a delete operation.
+     * @param edit            Whether the user can perform an edit operation.
+     * @param activate        Whether the user can perform an activate operation.
+     * @param activateChanges Whether the user can perform an activate changes operation.
+     * @param ci              Event metadata.
      */
-    public static void setPermissions(UserI effected, UserI authenticated, String elementName, String psf, String value, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, EventMetaI ci) {
-        getPermissionsService().setPermissions(effected, authenticated, elementName, psf, value, create, read, delete, edit, activate, activateChanges, ci);
+    @SuppressWarnings("SameParameterValue")
+    public static void setPermissions(UserI affected, UserI authenticated, String elementName, String psf, String value, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, EventMetaI ci) {
+        getPermissionsService().setPermissions(affected, authenticated, elementName, psf, value, create, read, delete, edit, activate, activateChanges, ci);
     }
 
     /**
      * Set the accessibility (public/protected/private) of the entity represented by the tag
      *
-     * @param tag
-     * @param accessibility
-     * @param forceInit
-     * @param authenticatedUser
-     * @param ci
+     * @param tag               The tag to set.
+     * @param accessibility     The accessibility level to set.
+     * @param forceInit         Whether the entity should be initialized.
+     * @param authenticatedUser The user setting the accessibility.
+     * @param ci                Event metadata.
      *
      * @return Returns whether the accessibility was set for entity
      *
-     * @throws Exception
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception {
         return getPermissionsService().setDefaultAccessibility(tag, accessibility, forceInit, authenticatedUser, ci);
@@ -630,11 +611,12 @@ public class Permissions {
     /**
      * Get all active permission criteria for this user account / data type combination (including group permissions, etc).
      *
-     * @param user
-     * @param dataType
+     * @param user     The user to evaluate.
+     * @param dataType The datatype to evaluate.
      *
      * @return Returns a list of active permission criteria for this user account / data type combination (including group permissions, etc)
      */
+    @SuppressWarnings("unused")
     public static List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType) {
         return getPermissionsService().getPermissionsForUser(user, dataType);
     }
@@ -642,11 +624,12 @@ public class Permissions {
     /**
      * Get all active permission criteria for this user group / data type combination.
      *
-     * @param group
-     * @param dataType
+     * @param group    The group to set permissions for.
+     * @param dataType The datatype to set permissions for.
      *
      * @return Returns a list of active permission criteria for this user group / data type combination
      */
+    @SuppressWarnings("unused")
     public static List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType) {
         return getPermissionsService().getPermissionsForGroup(group, dataType);
     }
@@ -654,10 +637,11 @@ public class Permissions {
     /**
      * Get all active permission criteria for this user group (organized by data type).
      *
-     * @param group
+     * @param group The group to retrieve permissions for.
      *
      * @return Returns a map of active permission criteria for this user group (organized by data type)
      */
+    @SuppressWarnings("unused")
     public static Map<String, List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group) {
         return getPermissionsService().getPermissionsForGroup(group);
     }
@@ -667,12 +651,12 @@ public class Permissions {
      *
      * Call Groups.save() to save the modifications.
      *
-     * @param group
-     * @param criteria
-     * @param meta
-     * @param authenticatedUser
+     * @param group             The group to modify.
+     * @param criteria          The criteria to set.
+     * @param meta              Event metadata.
+     * @param authenticatedUser The user setting the permissions.
      *
-     * @throws Exception
+     * @throws Exception When an unknown or unexpected error occurs.
      */
     public static void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception {
         getPermissionsService().setPermissionsForGroup(group, criteria, meta, authenticatedUser);
@@ -681,7 +665,7 @@ public class Permissions {
     /**
      * Return an SQL statement that will return a list of this user's permissions
      *
-     * @param user
+     * @param user The user to evaluate.
      *
      * @return Returns the SQL statement that will return a list of this user's permissions
      */
@@ -702,7 +686,7 @@ public class Permissions {
     }
 
     public static boolean ownsProject(final UserI user, final String projectId) {
-        return StringUtils.equals("owner", getUserProjectAccess(user, projectId));
+        return Roles.isSiteAdmin(user) || StringUtils.equals("owner", getUserProjectAccess(user, projectId));
     }
 
     public static String getUserProjectAccess(final UserI user, final String projectId) {
@@ -723,10 +707,12 @@ public class Permissions {
         return StringUtils.equals("public", getProjectAccess(projectId));
     }
 
+    @SuppressWarnings("unused")
     public static boolean isProjectProtected(final String projectId) throws Exception {
         return StringUtils.equals("protected", getProjectAccess(projectId));
     }
 
+    @SuppressWarnings("unused")
     public static boolean isProjectPrivate(final String projectId) throws Exception {
         return StringUtils.equals("private", getProjectAccess(projectId));
     }

@@ -157,6 +157,7 @@ var XNAT = getObject(XNAT);
             }
         };
         methods.allUsers = methods.userList;
+        methods.usernames = methods.userList;
         methods.profiles = methods.allProfiles;
         methods.userProfiles = methods.allProfiles;
         methods.allUserProfiles = methods.allProfiles;
@@ -211,6 +212,15 @@ var XNAT = getObject(XNAT);
             doSubmit.done(function(){
                 // xmodal.loading.open();
                 XNAT.ui.banner.top(2000, 'User info saved.', 'success')
+            });
+        }
+        if (doSubmit.fail) {
+            doSubmit.fail(function(e){
+                XNAT.ui.dialog.alert('' +
+                    'An error occurred saving user data.' +
+                    '<br>' +
+                    '<div class="error">' + e + '</div>' +
+                    '');
             });
         }
         return doSubmit;
@@ -500,11 +510,6 @@ var XNAT = getObject(XNAT);
     usersGroups.getCurrentUsers = getCurrentUsers;
 
 
-    function setRowId(profile){
-        return profile.username + '-' + profile.id;
-    }
-
-
     // renders cells for 'verified' and 'enabled' status
     function userStatusInfo(type, off){
         var username = this.username;
@@ -554,6 +559,13 @@ var XNAT = getObject(XNAT);
             ['input.hidden.last-login.timestamp.filtering|type=hidden', { value: value }],
             ['span.date-time', (value ? (new Date(value)).toLocaleString() : '&mdash;')]
         ])
+    }
+
+
+    // set unique id attribute for <tr> elements
+    // by combining username and user id
+    function setRowId(profile){
+        return profile.username + '-' + profile.id;
     }
 
 
@@ -860,16 +872,28 @@ var XNAT = getObject(XNAT);
             content: '<div class="new-user-form"></div>',
             beforeShow: function(){
                 var _container = this.$modal.find('div.new-user-form');
-                renderUserAccountForm(null, _container)
+                renderUserAccountForm(null, _container);
             },
             okLabel: 'Save',
             okClose: 'false',
             okAction: function(obj){
                 var $form = obj.$modal.find('form#user-account-form-panel');
-                var doSave = saveUserData($form);
-                doSave.done(function(){
-                    updated = true;
-                    obj.close();
+                var _username = $form.find('input[name="username"]').val();
+                // make sure new username is not a duplicate
+                var getUserList = usersGroups.userData().usernames();
+                getUserList.done(function(users){
+                    if (users.indexOf(_username) > -1) {
+                        XNAT.ui.dialog.alert('The username ' +
+                            '<b>' + _username + '</b> is already in use. ' +
+                            'Please enter a different username value and ' +
+                            'try again.');
+                        return false;
+                    }
+                    var doSave = saveUserData($form);
+                    doSave.done(function(){
+                        updated = true;
+                        obj.close();
+                    });
                 });
             },
             onClose: function(){

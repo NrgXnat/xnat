@@ -892,10 +892,11 @@ var XNAT = getObject(XNAT || {});
 
             panel.info.dialog[infoId] = function(){
                 console.log('info for ' + opts.label);
-                xmodal.message({
+                XNAT.ui.dialog.message({
                     title: opts.label,
                     content: opts.info,
-                    height: 240,
+                    nuke: true,
+                    // height: 240,
                     footer: false
                 });
             };

@@ -342,9 +342,10 @@ generalSecuritySettings:
             kind: panel.element
             label: Security Channel
             info: >
-                If you're using another service for SSL termination, including a front-end proxy such as Apache HTTPD
+                <p>If you're using another service for SSL termination, including a front-end proxy such as Apache HTTPD
                 or nginx, or a load balancer such as AWS elastic load balancing, you should leave the security channel
-                set to "any". For more information, see <a target="_blank" href="https://wiki.xnat.org/display/XNAT17/XNAT+Security+Settings+in+the+Admin+UI#XNATSecuritySettingsintheAdminUI-channel">our documentation page</a>.
+                set to "any".</p>
+                <p>For more information, see <a target="_blank" href="https://wiki.xnat.org/display/XNAT17/XNAT+Security+Settings+in+the+Admin+UI#XNATSecuritySettingsintheAdminUI-channel">our documentation page</a>.</p>
             contents:
                 securityChannelMenu:
                     kind: select.menu

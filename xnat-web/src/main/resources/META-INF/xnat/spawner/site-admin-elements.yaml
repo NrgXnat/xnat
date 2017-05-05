@@ -849,29 +849,39 @@ pluginTable:
     name: pluginList
     load: /xapi/plugins
     # specify which properties to show in the table
-    items:
-        #id: ~!  # '~!' creates hidden column
-        id: ~data  # '~data' adds this item as a [data-] attribute to each <tr>
-        beanName: ~data.bean
-        name: Plugin Name
-        pluginClass:
-            label: Plugin Class
-            className: center
-        version: Plugin Version
+    columns:
+        id: ~data-id  # '~data' adds this item as a [data-] attribute to each <tr>
+        beanName: ~data-bean
+        pluginInfo:
+            label: Plugin Info
+            filter: true
+            apply: >
+                !? function(){
+                       var item = this;
+                       var itemTable = XNAT.table({
+                           className: 'xnat-table clean compact borderless'
+                       });
+                       itemTable.tbody();
+                       function itemRow(TH, TD){
+                           var _TH = spawn('b', TH);
+                           itemTable.tr().td({ className: 'text-right' }, _TH).td({}, TD);
+                       }
+                       itemRow('Plugin Name:', spawn('b', item.name));
+                       itemRow('Plugin ID:', item.id);
+                       itemRow('Plugin Version:', item.version);
+                       itemRow('Plugin Class:', item.pluginClass);
+                       itemRow('Description:', item.description);
+                       return itemTable.table;
+                   }
         viewPluginInfo:
-            label: Contents
+            label: Plugin JSON
             value: "&ndash;" # this gets overwritten with 'html' below
             className: center
             # function that accepts current item as sole argument and parent object as 'this'
             # returned value will be new value - if nothing's returned, value is passed through
-            apply: "{(  function(){ return formatJSON(this) }  )}"
+            # apply: "{(  function(){ return formatJSON(this) }  )}"
             html: >
                 <a href="#!" class="view-plugin-info link">View Plugin Info</a>
-                <div data-code-language="json" class="hidden plugin-json-string">__VALUE__</div>
-            td:
-                title: "Plugin JSON"
-            $:
-                addClass: plugin-info
     messages:
         noData: >
             There are no plugins installed in this XNAT. Try searching for plugins on <a href="http://marketplace.xnat.org/plugins/" title="XNAT Marketplace" target="_blank">XNAT Marketplace</a>.
@@ -884,9 +894,9 @@ pluginTableScript:
 pluginOpenUrlsConfig:
     kind: panel
     name: pluginOpenUrlsConfig
-    header: false 
-    footer: false 
-    contents: 
+    header: false
+    footer: false
+    contents:
         pluginOpenUrlsScript:
             tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
 

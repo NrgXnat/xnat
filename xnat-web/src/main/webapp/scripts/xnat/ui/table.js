@@ -916,6 +916,9 @@ var XNAT = getObject(XNAT);
                             cellContent = itemVal;
                             hidden = HIDDENREGEX.test(cellObj);
                         }
+                        else if (typeof cellObj === 'function') {
+                            cellContent = cellObj.apply(item, [].concat(itemVal, _tr)) || itemVal;
+                        }
                         else {
                             if (cellObj.td || cellObj.element) {
                                 extend(true, tdElement, cellObj.td || cellObj.element);
@@ -927,9 +930,7 @@ var XNAT = getObject(XNAT);
                             if (cellObj.className) {
                                 addClassName(tdElement, cellObj.className);
                             }
-                            // if (cellObj.apply) {
-                            //     itemVal = eval(cellObj.apply).apply(item, [itemVal]);
-                            // }
+                            // transform cell data before rendering
                             if (cellObj['apply'] || cellObj['call']) {
                                 applyFn = cellObj['call'] || cellObj['apply'];
                                 if (isFunction(applyFn)) {

@@ -36,18 +36,6 @@ $(function(){
                 classes: 'plugin-json',
                 footerContent: '(read-only)',
                 buttons: {
-                    // json: {
-                    //     label: 'View JSON',
-                    //     link: true,
-                    //     action: function(){
-                    //         xmodal.iframe({
-                    //             title: data.id,
-                    //             url: _url,
-                    //             width: 720, height: 480,
-                    //             buttons: { close: { label: 'Close' } }
-                    //         })
-                    //     }
-                    // },
                     close: { label: 'Close' }
                 },
                 afterShow: function(dialog, obj){
@@ -56,20 +44,6 @@ $(function(){
             });
         });
     });
-
-    // // alternate function that gets JSON from a hidden <div>
-    // $body.on('click', 'a.view-plugin-info', function(){
-    //     var _source = $(this).next('div.plugin-json-string');
-    //     XNAT.app.codeEditor.init(_source).openEditor({
-    //         title: 'Plugin Info',
-    //         classes: 'plugin-json',
-    //         footerContent: '(read-only)',
-    //         buttons: { close: { label: 'Close' } },
-    //         afterShow: function(dialog, obj){
-    //             obj.aceEditor.setReadOnly(true);
-    //         }
-    //     });
-    // });
 
 });
 

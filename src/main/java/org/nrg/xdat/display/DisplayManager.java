@@ -12,6 +12,7 @@ package org.nrg.xdat.display;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tools.ant.DirectoryScanner;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.collections.DisplayFieldCollection;
@@ -30,6 +31,7 @@ import org.nrg.xft.utils.XMLUtils;
 import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.w3c.dom.Document;
@@ -37,8 +39,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -93,6 +97,20 @@ public class DisplayManager {
         if (instance == null) {
             instance = new DisplayManager();
             instance.init();
+        }
+        return instance;
+    }
+
+    /**
+     * Gets an instance of the display manager.
+     *
+     * @param location The location of the plugin schemas directory when getting an instance while building a plugin.
+     * @return An instance of the display manager.
+     */
+    public static DisplayManager GetInstance(String location) {
+        if (instance == null) {
+            instance = new DisplayManager();
+            instance.init(location);
         }
         return instance;
     }
@@ -420,6 +438,10 @@ public class DisplayManager {
     }
 
     public void init() {
+        init(null);
+    }
+
+    public void init(String location) {
         List<String> loaded=Lists.newArrayList();
 
 //        Enumeration enumer = XFTManager.GetDataModels().elements();
@@ -448,28 +470,70 @@ public class DisplayManager {
         final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
         final Map<String, Exception> errors = Maps.newHashMap();
         try {
-			final Resource[] resources = resolver.getResources("classpath*:schemas/*/display/*_display.xml");
-			logger.info("Discovered " + resources.length + " display documents on classpath.");
-			for (final Resource resource : resources) {
-				if(!loaded.contains(resource.getFilename())){
-					logger.info("Importing display document: " + resource.getFilename());
-			    	try {
-						InputStream in=resource.getInputStream();
-                    if (in != null) {
-                        Document doc = XMLUtils.GetDOM(in);
-                        assignDisplays(doc);
-						    
-						    loaded.add(resource.getFilename());
-						}
-					} catch (IOException | RuntimeException e) {
+            final Resource[] resources = resolver.getResources("classpath*:schemas/*/display/*_display.xml");
+            logger.info("Discovered " + resources.length + " display documents on classpath.");
+            for (final Resource resource : resources) {
+                if(!loaded.contains(resource.getFilename())){
+                    logger.info("Importing display document: " + resource.getFilename());
+                    try {
+                        InputStream in=resource.getInputStream();
+                        if (in != null) {
+                            Document doc = XMLUtils.GetDOM(in);
+                            assignDisplays(doc);
+
+                            loaded.add(resource.getFilename());
+                        }
+                    } catch (IOException | RuntimeException e) {
                         //noinspection ThrowableResultOfMethodCallIgnored
                         errors.put(resource.getURI().toString(), e);
                     }
                 }
             }
-		} catch (IOException e1) {
-			logger.error("Unable to discover display.xml's from classpath.",e1);
+        } catch (IOException e1) {
+            logger.error("Unable to discover display.xml's from classpath.",e1);
         }
+
+
+
+            if(!StringUtils.isEmpty(location)) {
+                try {
+                    ArrayList<String> buildPathDisplayXml = new ArrayList<>();
+                    try {
+                        DirectoryScanner scanner = new DirectoryScanner();
+                        scanner.setBasedir(location);
+                        scanner.setIncludes(new String[]{"*/display/*_display.xml"});
+                        scanner.setCaseSensitive(false);
+                        scanner.scan();
+                        String[] displayFilePaths = scanner.getIncludedFiles();
+                        for (String displayFilePath : displayFilePaths) {
+                            buildPathDisplayXml.add(String.valueOf(Paths.get(location, displayFilePath)));
+                        }
+                    } catch (Throwable e) {
+                        logger.error("Unable to locate display xml files in build location.", e);
+                    }
+
+                    //final Resource[] pathResourcesArray = (AbstractResource[]) pathResources.toArray((AbstractResource[]) Array.newInstance(AbstractResource.class, pathResources.size()));
+                    logger.info("Discovered " + buildPathDisplayXml.size() + " display documents on build path.");
+                    for (final String displayXmlFilePath : buildPathDisplayXml) {
+                        File displayXmlFile = new File(displayXmlFilePath);
+                        if (!loaded.contains(displayXmlFile.getName())) {
+                            logger.info("Importing display document: " + displayXmlFile.getName());
+                            try {
+                                    Document doc = XMLUtils.GetDOM(displayXmlFile);
+                                    assignDisplays(doc);
+
+                                    loaded.add(displayXmlFile.getName());
+                            } catch (RuntimeException e) {
+                                //noinspection ThrowableResultOfMethodCallIgnored
+                                errors.put(displayXmlFile.getPath(), e);
+                            }
+                        }
+                    }
+
+                } catch (Throwable e1) {
+                    logger.error("Unable to discover display.xml's from build path.",e1);
+                }
+            }
 
         if (errors.size() > 0) {
             logger.error("{} errors occurred while processing the following display documents:", errors.size());

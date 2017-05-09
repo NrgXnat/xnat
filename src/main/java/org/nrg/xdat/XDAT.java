@@ -346,7 +346,7 @@ public class XDAT implements Initializable, Configurable{
 		}
 
 		logger.info("Initializing Display Manager");
-		DisplayManager.GetInstance();
+		DisplayManager.GetInstance(location);
 	}
 
 	public static void GenerateUpdateSQL(String file) throws Exception

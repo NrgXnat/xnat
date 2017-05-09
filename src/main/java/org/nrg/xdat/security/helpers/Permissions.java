@@ -673,6 +673,49 @@ public class Permissions {
         return getPermissionsService().getUserPermissionsSQL(user);
     }
 
+    public static boolean hasAccess(final UserI user, final AccessLevel accessLevel) throws Exception {
+        switch (accessLevel) {
+            case Null:
+                return true;
+
+            case Admin:
+                return Roles.isSiteAdmin(user);
+
+            case Authenticated:
+                return !user.isGuest();
+
+            default:
+                return false;
+        }
+    }
+
+    public static boolean hasAccess(final UserI user, final String projectId, final AccessLevel accessLevel) throws Exception {
+        switch (accessLevel) {
+            case Null:
+            case Admin:
+            case Authenticated:
+                return hasAccess(user, accessLevel);
+
+            case Read:
+                return Permissions.canReadProject(user, projectId);
+
+            case Edit:
+                return Permissions.canEditProject(user, projectId);
+
+            case Owner:
+                return Permissions.isProjectOwner(user, projectId);
+
+            case Member:
+                return Permissions.isProjectMember(user, projectId);
+
+            case Collaborator:
+                return Permissions.isProjectCollaborator(user, projectId);
+
+            default:
+                return false;
+        }
+    }
+
     public static boolean canReadProject(final UserI user, final String projectId) throws Exception {
         return Roles.isSiteAdmin(user) || isProjectPublic(projectId) | StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
     }
@@ -685,8 +728,16 @@ public class Permissions {
         return StringUtils.isNotBlank(access) && PROJECT_GROUPS.subList(1, PROJECT_GROUP_COUNT).contains(access);
     }
 
-    public static boolean ownsProject(final UserI user, final String projectId) {
-        return Roles.isSiteAdmin(user) || StringUtils.equals("owner", getUserProjectAccess(user, projectId));
+    public static boolean isProjectOwner(final UserI user, final String projectId) {
+        return AccessLevel.Owner.equals(getUserProjectAccess(user, projectId));
+    }
+
+    public static boolean isProjectMember(final UserI user, final String projectId) {
+        return AccessLevel.Member.equals(getUserProjectAccess(user, projectId));
+    }
+
+    public static boolean isProjectCollaborator(final UserI user, final String projectId) {
+        return AccessLevel.Collaborator.equals(getUserProjectAccess(user, projectId));
     }
 
     public static String getUserProjectAccess(final UserI user, final String projectId) {
@@ -728,7 +779,7 @@ public class Permissions {
         }
     }
 
-    private static final List<String> PROJECT_GROUPS        = Arrays.asList("collaborator", "member", "owner");
+    private static final List<String> PROJECT_GROUPS        = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();
     private static final String       PROJECT_ROLE_TEMPLATE = "^%s_(?<access>" + Joiner.on("|").join(PROJECT_GROUPS) + ")$";
 }

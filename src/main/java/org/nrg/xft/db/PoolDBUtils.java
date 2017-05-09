@@ -76,7 +76,7 @@ public class PoolDBUtils {
 								o = rs.getObject(pk);
 							}
 						} catch (SQLException e3) {
-						    newQuery = "SELECT pg_get_serial_sequence('"+ table + "','"+ pk + "') AS col_name";
+						    newQuery = "SELECT pg_get_serial_sequence('"+ table + "', '"+ StringUtils.lowerCase(pk) + "') AS col_name";
 						    try {
 								rs = executeQuery(db, newQuery, "");
 								if (rs.first())

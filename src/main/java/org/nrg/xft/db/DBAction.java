@@ -1790,7 +1790,7 @@ public class DBAction {
 
             GenericWrapperField key = e.getAllPrimaryKeys().get(0);
 
-            String newQuery = "SELECT pg_get_serial_sequence('" + e.getSQLName() + "','" + key.getSQLName() + "') AS col_name";
+            String newQuery = "SELECT pg_get_serial_sequence('" + e.getSQLName() + "', '" + StringUtils.lowerCase(key.getSQLName()) + "') AS col_name";
             try {
                 Object o = PoolDBUtils.ReturnStatisticQuery(newQuery, "col_name", e.getDbName(), null);
                 col_name = o.toString();
@@ -1827,7 +1827,7 @@ public class DBAction {
 
     public static String getSequenceName(String table, String key, String dbName) {
         String col_name;
-        String newQuery = "SELECT pg_get_serial_sequence('" + table + "','" + key + "') AS col_name";
+        String newQuery = "SELECT pg_get_serial_sequence('" + table + "', '" + StringUtils.lowerCase(key) + "') AS col_name";
         try {
             Object o = PoolDBUtils.ReturnStatisticQuery(newQuery, "col_name", dbName, null);
             col_name = o.toString();

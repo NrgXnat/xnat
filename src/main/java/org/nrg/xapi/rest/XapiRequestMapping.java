@@ -1,5 +1,7 @@
 package org.nrg.xapi.rest;
 
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -68,10 +70,24 @@ public @interface XapiRequestMapping {
     String[] produces() default {};
 
     /**
-     * The level of project access required to access the annotated API method. This requires that the method have a
-     * parameter named <b>projectId</b> that indicates the project being accessed. Valid values for this attribute
-     * include "admin, "authenticated", "read", "edit", and "owner". Note that specifying the latter three values
-     * requires including a String named <b>projectId</b> in the method parameters.
+     * The access level required to access the annotated API method. The values {@link AccessLevel#Admin} and {@link
+     * AccessLevel#Authenticated} check whether the current user is an administrator or is logged in, respectively. The
+     * other values for {@link AccessLevel} include:
+     *
+     * <ul>
+     *     <li>{@link AccessLevel#Read}</li>
+     *     <li>{@link AccessLevel#Edit}</li>
+     *     <li>{@link AccessLevel#Collaborator}</li>
+     *     <li>{@link AccessLevel#Member}</li>
+     *     <li>{@link AccessLevel#Owner}</li>
+     * </ul>
+     *
+     * These values require that the annotated method have a parameter that indicates the project being accessed. You
+     * must annotate this parameter with the {@link ProjectId} annotation. If a single project ID is specified, XNAT
+     * checks that the current user has the specified access level to that project. If multiple project IDs are
+     * specified, XNAT checks that the current user has the specified access level for <i>all</i> of the specified
+     * projects. If the user fails the access check for <i>any</i> of the specified projects, * the {@link
+     * InsufficientPrivilegesException} is thrown.
      */
-    String restrictTo() default "";
+    AccessLevel restrictTo() default AccessLevel.Null;
 }

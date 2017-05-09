@@ -334,13 +334,14 @@ var XNAT = getObject(XNAT || {});
     }
 
     var getAvailableUsers = XNAT.projectAccess.getAvailableUsers = function(){
-        if (!allUsers.length || !projectUsers.length) return false;
+        if (!allUsers.length) return false;
+
         var availableUsers = [];
 
         allUsers.forEach(function(userObj){
-            var available=true;
+            var available = (userObj.login !== 'guest'); // don't pass the guest user as an available user to be added to a project.  
             for (var i=0, j=projectUsers.length; i<j; i++) {
-                if (userObj.login === projectUsers[i].login || userObj.login === 'guest') {
+                if (userObj.login === projectUsers[i].login) {
                     // don't add users if they already exist in the project, or the "guest" user
                     available=false;
                     break;

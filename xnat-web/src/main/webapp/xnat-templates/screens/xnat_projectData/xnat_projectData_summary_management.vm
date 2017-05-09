@@ -30,7 +30,9 @@
             </p>
         </div>
         <script type="text/javascript">
-            XNAT.projectAccess.initSiteUsers();
+            $(document).ready(function(){
+                XNAT.projectAccess.initSiteUsers();
+            });
         </script>
     #end
     <div class="inline-thirds">

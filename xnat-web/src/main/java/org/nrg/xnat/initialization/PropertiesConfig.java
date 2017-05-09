@@ -57,30 +57,26 @@ public class PropertiesConfig {
     public static final String NODE_CONFIG_HOME_URL  = "file:${" + JAVA_XNAT_CONFIG_HOME + "}/" + NODE_CONF_FILE;
     public static final String NODE_CONFIG_URL       = "file:${" + JAVA_XNAT_CONFIG + "}";
 
-    public static final List<String> CONFIG_LOCATIONS = Collections.unmodifiableList(Arrays.asList(JAVA_XNAT_CONFIG, JAVA_XNAT_CONFIG_HOME, JAVA_XNAT_HOME, ENV_XNAT_HOME, ENV_HOME, ENV_HOME));
-    public static final List<String> CONFIG_PATHS     = Collections.unmodifiableList(Arrays.asList("", XNAT_CONF_FILE, Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString()));
-    public static final List<String> NODE_CONFIG_PATHS     = Collections.unmodifiableList(Arrays.asList("", NODE_CONF_FILE, Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString()));
+    public static final List<String> CONFIG_LOCATIONS  = Collections.unmodifiableList(Arrays.asList(JAVA_XNAT_CONFIG, JAVA_XNAT_CONFIG_HOME, JAVA_XNAT_HOME, ENV_XNAT_HOME, ENV_HOME, ENV_HOME));
+    public static final List<String> CONFIG_PATHS      = Collections.unmodifiableList(Arrays.asList("", XNAT_CONF_FILE, Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString()));
+    public static final List<String> NODE_CONFIG_PATHS = Collections.unmodifiableList(Arrays.asList("", NODE_CONF_FILE, Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString()));
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer properties(final Environment environment) throws ConfigurationException {
         final PropertySourcesPlaceholderConfigurer configurer = new PropertySourcesPlaceholderConfigurer();
         configurer.setIgnoreUnresolvablePlaceholders(true);
+
         final File xnatConfiguration = getXnatConfigurationFile(environment);
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found xnat configuration file " + xnatConfiguration.getAbsolutePath());
-        }
+        _log.debug("Found xnat configuration file {}", xnatConfiguration.getAbsolutePath());
+
         try {
-        	final File nodeConfiguration = getNodeConfigurationFile(environment);
-        	if (_log.isDebugEnabled()) {
-        		_log.debug("Found node configuration file " + nodeConfiguration.getAbsolutePath());
-        	}
+            final File nodeConfiguration = getNodeConfigurationFile(environment);
+            _log.debug("Found node configuration file {}", nodeConfiguration.getAbsolutePath());
         } catch (RuntimeException e) {
-        	// We won't throw a runtime exception for the node configuration.  Just log it.  Node configuration is currently not required.
-        	_log.warn("No node configuration found.");
-        	
+            // We won't throw a runtime exception for the node configuration.  Just log it.  Node configuration is currently not required.
+            _log.info("No node configuration found.");
         }
-        // final ConfigurationBuilder configurationBuilder = new DefaultConfigurationBuilder(getConfigurationFile(environment));
-        // configurer.setProperties(ConfigurationConverter.getProperties(configurationBuilder.getConfiguration()));
+
         return configurer;
     }
 
@@ -91,9 +87,7 @@ public class PropertiesConfig {
             // null because, if there are no valid configuration folders, the config folders method will have already
             // thrown an exception.
             _xnatHome = configFolderPaths(environment).get(0).getParent();
-            if (_log.isInfoEnabled()) {
-                _log.info("Set path {} as the XNAT home folder.", _xnatHome);
-            }
+            _log.info("Set path {} as the XNAT home folder.", _xnatHome);
         }
         return _xnatHome;
     }
@@ -128,9 +122,7 @@ public class PropertiesConfig {
                 paths.put(CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index));
                 final Path path = getConfigFolder(environment, CONFIG_LOCATIONS.get(index), CONFIG_PATHS.get(index), XNAT_CONF_FILE, CONFIG_URLS);
                 if (path != null) {
-                    if (_log.isInfoEnabled()) {
-                        _log.info("Adding path {} to the list of available configuration folders.", path.toString());
-                    }
+                    _log.info("Adding path {} to the list of available configuration folders.", path);
                     _configFolderPaths.add(path);
                     _configFolderLocations.add(path.toString());
                 }
@@ -152,32 +144,26 @@ public class PropertiesConfig {
         }
         return _configFolderPaths;
     }
-    
+
     private static File getNodeConfigurationFile(final Environment environment) {
-    	return findConfigurationFile(environment, NODE_CONF_FILE, NODE_CONFIG_PATHS, NODE_CONFIG_URLS);
+        return findConfigurationFile(environment, NODE_CONF_FILE, NODE_CONFIG_PATHS, NODE_CONFIG_URLS);
     }
-    
+
     private static File getXnatConfigurationFile(final Environment environment) {
-    	return findConfigurationFile(environment, XNAT_CONF_FILE, CONFIG_PATHS, CONFIG_URLS);
+        return findConfigurationFile(environment, XNAT_CONF_FILE, CONFIG_PATHS, CONFIG_URLS);
     }
 
     private static File findConfigurationFile(final Environment environment, String configFile, final List<String> configPathList, final List<String> configUrlList) {
         final List<Path> folders = getConfigFolderPaths(environment, configFile, configPathList, configUrlList);
         for (final Path path : folders) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Checking path {}", path.toString());
-            }
+            _log.debug("Checking path {}", path);
             if (path.toFile().exists() && path.toFile().isFile()) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("The path {} exists and is a file, using this to initialize", path.toString());
-                }
+                _log.debug("The path {} exists and is a file, using this to initialize", path);
                 return path.toFile();
             }
             final File candidate = path.resolve(configFile).toFile();
             if (candidate.exists()) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Found the file {} at the candidate path {}, using this to initialize", configFile, path.toString());
-                }
+                _log.debug("Found the file {} at the candidate path {}, using this to initialize", configFile, path);
                 return candidate;
             }
         }
@@ -189,11 +175,9 @@ public class PropertiesConfig {
         for (int index = 0; index < CONFIG_LOCATIONS.size(); index++) {
             final Path path = getConfigFolder(environment, CONFIG_LOCATIONS.get(index), paths.get(index), configFile, urls);
             if (path != null) {
-                if (_log.isInfoEnabled()) {
-                    _log.info("Adding path {} to the list of available configuration folders.", path.toString());
-                }
+                _log.info("Adding path {} to the list of available configuration folders.", path);
                 configFolderPaths.add(path);
-            } else if (_log.isDebugEnabled()) {
+            } else {
                 _log.debug("The location {} and path {} did not resolve to a usable path.", CONFIG_LOCATIONS.get(index), paths.get(index));
             }
         }
@@ -208,16 +192,12 @@ public class PropertiesConfig {
         if (!urls.contains(url)) {
             urls.add(url);
         }
-        if (_log.isDebugEnabled()) {
-            _log.debug("Testing path for XNAT home candidate: {}", url);
-        }
+        _log.debug("Testing path for XNAT home candidate: {}", url);
         final String value = environment.getProperty(variable);
         if (StringUtils.isBlank(value)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Value of environment variable {} was blank, not a candidate.", variable);
-            }
+            _log.debug("Value of environment variable {} was blank, not a candidate.", variable);
             return null;
-        } else if (_log.isDebugEnabled()) {
+        } else {
             _log.debug("Found value of '{}' for environment variable {}", value, variable);
         }
 
@@ -226,40 +206,32 @@ public class PropertiesConfig {
         if (file.exists()) {
             // If it's a directory...
             if (file.isDirectory()) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Environment variable {} resolved to path {}, which exists and is a directory, returning as XNAT home.", variable, candidate.toString());
-                }
                 // Then cool, just return that.
+                _log.debug("Environment variable {} resolved to path {}, which exists and is a directory, returning as XNAT home.", variable, candidate);
                 return candidate;
             } else {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Environment variable {} resolved to path {}, which exists but is not a directory, checking to see if it's a known configuration file.", variable, candidate.toString());
-                }
+                _log.debug("Environment variable {} resolved to path {}, which exists but is not a directory, checking to see if it's a known configuration file.", variable, candidate);
                 // If it's a file, then the parent is probably a config folder, so if this is xnat-conf.properties (the default) or the specific file identified by xnat.config...
                 if (file.getName().equals(configFile) || StringUtils.equals(candidate.toString(), environment.getProperty(JAVA_XNAT_CONFIG))) {
                     // So its parent is a config folder, QED.
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Environment variable {} resolved to path {}, this is a known configuration file so returning this.", variable, candidate.toString());
-                    }
+                    _log.debug("Environment variable {} resolved to path {}, this is a known configuration file so returning this.", variable, candidate);
                     return candidate.getParent();
                 }
             }
         }
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("The environment variable {} resolved to path {}, this doesn't indicate a directory or known configuration file so returning null.", variable, candidate.toString());
-        }
+        _log.debug("The environment variable {} resolved to path {}, this doesn't indicate a directory or known configuration file so returning null.", variable, candidate);
 
         return null;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(PropertiesConfig.class);
-    
-    private static final List<String> CONFIG_URLS = new ArrayList<>();
+
+    private static final List<String> CONFIG_URLS      = new ArrayList<>();
     private static final List<String> NODE_CONFIG_URLS = new ArrayList<>();
-    
-    private final ConfigPaths   _configFolderPaths     = new ConfigPaths();
+
+    private final ConfigPaths  _configFolderPaths     = new ConfigPaths();
     private final List<String> _configFolderLocations = new ArrayList<>();
     private Path _xnatHome;
-    
+
 }

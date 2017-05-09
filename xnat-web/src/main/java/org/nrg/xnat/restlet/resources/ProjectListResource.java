@@ -20,10 +20,7 @@ import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.SecurityManager;
-import org.nrg.xdat.security.helpers.Groups;
-import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.helpers.*;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -195,13 +192,13 @@ public class ProjectListResource extends QueryOrganizerResource {
             return (resource.containsQueryVariable(ACCESSIBLE)
                     || resource.containsQueryVariable(DATA_ACCESSIBILITY)
                     || resource.containsQueryVariable("prearc_code")
-                    || resource.containsQueryVariable("owner")
-                    || resource.containsQueryVariable("member")
-                    || resource.containsQueryVariable("collaborator")
+                    || resource.containsQueryVariable(AccessLevel.Owner.code())
+                    || resource.containsQueryVariable(AccessLevel.Member.code())
+                    || resource.containsQueryVariable(AccessLevel.Collaborator.code())
                     || resource.containsQueryVariable("activeSince")
                     || resource.containsQueryVariable("recent")
                     || resource.containsQueryVariable("favorite")
-                    || resource.containsQueryVariable("admin")
+                    || resource.containsQueryVariable(AccessLevel.Admin.code())
                     || (resource.requested_format != null && resource.requested_format.equals("search_xml")));
         }
 
@@ -330,7 +327,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                     }
                 }
 
-                String owner = resource.getQueryVariable("owner");
+                String owner = resource.getQueryVariable(AccessLevel.Owner.code());
                 if (owner != null) {
                     if (owner.equalsIgnoreCase("true")) {
                         CriteriaCollection cc = new CriteriaCollection("OR");

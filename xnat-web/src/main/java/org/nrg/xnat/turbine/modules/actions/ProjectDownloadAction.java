@@ -17,9 +17,9 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.List;
@@ -27,6 +27,10 @@ import java.util.Map;
 
 @SuppressWarnings("unused")
 public class ProjectDownloadAction extends SecureAction {
+    public ProjectDownloadAction() {
+        _parameterized = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
+    }
+
     @SuppressWarnings("Duplicates")
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
@@ -42,13 +46,11 @@ public class ProjectDownloadAction extends SecureAction {
         final boolean isAuthorized = isAuthorized(data);
         if (!isAuthorized) {
             data.setMessage("You must be logged in to gain access to this page.");
-            data.getResponse().sendError(403);
+            data.setScreenTemplate("Error.vm");
             return;
         }
 
-        final JdbcTemplate template = XDAT.getContextService().getBean(JdbcTemplate.class);
-
-        if (!template.queryForList("SELECT DISTINCT id from xnat_projectData", String.class).contains(projectId)) {
+        if (!XNATUtils.getAllProjectIds(_parameterized).contains(projectId)) {
             final Exception e = new Exception("Unknown project: " + projectId);
             logger.error("", e);
             this.error(e, data);
@@ -59,13 +61,13 @@ public class ProjectDownloadAction extends SecureAction {
 
         if (!Permissions.canReadProject(user, projectId)) {
             data.setMessage("You are not authorized to access the project " + projectId + ".");
-            data.getResponse().sendError(403);
+            data.setScreenTemplate("Error.vm");
             return;
         }
 
         final Map<String, String> attributes = Maps.newHashMap();
         attributes.put("projectId", projectId);
-        final List<String> sessions = new NamedParameterJdbcTemplate(template).queryForList(QUERY_IMG_SESSION_IDS, attributes, String.class);
+        final List<String> sessions = _parameterized.queryForList(QUERY_IMG_SESSION_IDS, attributes, String.class);
         for (final String session : sessions) {
             data.getParameters().add("sessions", session);
         }
@@ -75,4 +77,6 @@ public class ProjectDownloadAction extends SecureAction {
 
     private static final Logger logger = LoggerFactory.getLogger(ProjectDownloadAction.class);
     private static final String QUERY_IMG_SESSION_IDS = "SELECT DISTINCT isd.id FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xnat_experimentData_meta_data meta ON expt.experimentData_info=meta.meta_data_id LEFT JOIN xnat_experimentData_share proj ON expt.id=proj.sharing_share_xnat_experimentda_id WHERE (proj.project=:projectId OR expt.project=:projectId) AND (meta.status='active' OR meta.status='locked');";
+
+    private final NamedParameterJdbcTemplate _parameterized;
 }

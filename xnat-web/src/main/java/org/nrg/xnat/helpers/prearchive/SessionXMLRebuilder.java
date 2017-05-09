@@ -56,15 +56,15 @@ public class SessionXMLRebuilder extends AbstractXnatTask implements Runnable {
         _helper = new DatabaseHelper(jdbcTemplate);
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Runnable#run()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void run() {
         try {
             if (!_appInfo.isInitialized() || !_helper.tableExists("xdat_search", "prearchive") || !XFTManager.isInitialized()) {
                 if (!_markedUninitialized) {
-                    logger.warn("Application is not yet initialized, session XML rebuild operation delayed until initialization completed.");
+                    logger.info("Application is not yet initialized, session XML rebuild operation delayed until initialization completed.");
                     _markedUninitialized = true;
                 }
                 return;
@@ -184,5 +184,4 @@ public class SessionXMLRebuilder extends AbstractXnatTask implements Runnable {
 
     /** The _marked uninitialized. */
     private boolean _markedUninitialized = false;
-
 }

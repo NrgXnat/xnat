@@ -58,7 +58,6 @@ public final class ZipStreamingResponseBody implements StreamingResponseBody {
 
     @Override
     public void writeTo(final OutputStream output) throws IOException {
-
         try (final ZipOutputStream zip = new ZipOutputStream(output)) {
             while (_mapper.hasNext()) {
                 final PathResourceMap.Mapping<String, Resource> map = _mapper.next();

@@ -9,184 +9,326 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
-import com.google.common.collect.Lists;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.exceptions.InvalidSearchException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFTTable;
-import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.turbine.utils.XNATUtils;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import javax.annotation.Nullable;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public class XDATScreen_download_sessions extends SecureScreen {
+    public XDATScreen_download_sessions() {
+        _parameterized = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
+    }
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context)
-            throws Exception {
-        List<String> sessionList = null;
-        String[] sessions = ((String[])TurbineUtils.GetPassedObjects("sessions",data));
+    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+        // Do a first smell test to see if the user is even logged in, legit, etc.
+        final boolean isAuthorized = isAuthorized(data);
+        if (!isAuthorized) {
+            data.setMessage("You must be logged in to gain access to this page.");
+            data.setScreenTemplate("Error.vm");
+            return;
+        }
+
+        final UserI user = XDAT.getUserDetails();
+        if (user == null) {
+            data.setMessage("An error occurred trying to access your user record. Please try logging back into XNAT or contact your system administrator.");
+            data.setScreenTemplate("Error.vm");
+            return;
+        }
+
+        final String[] sessions = ((String[]) TurbineUtils.GetPassedObjects("sessions", data));
+        final List<String> sessionIds = new ArrayList<>();
+
         if (sessions == null) {
             // If the sessions aren't directly embedded in the data, check for a search element.
-            String element = (String) TurbineUtils.GetPassedParameter("search_element", data);
-            String field = (String) TurbineUtils.GetPassedParameter("search_field", data);
-            String value = (String) TurbineUtils.GetPassedParameter("search_value", data);
-            
-            // TODO: For now, hard-limit this to MR sessions.
-            if(StringUtils.isNotBlank(element) && StringUtils.isNotBlank(field) && StringUtils.isNotBlank(value)){
-            	SchemaElement se=SchemaElement.GetElement(element);
-            	if(se.getGenericXFTElement().instanceOf("xnat:imageSessionData")){
-            		sessionList = new ArrayList<>();
-                    sessionList.add(value);
-            	}
+            final String element = (String) TurbineUtils.GetPassedParameter("search_element", data);
+            final String field = (String) TurbineUtils.GetPassedParameter("search_field", data);
+            final String value = (String) TurbineUtils.GetPassedParameter("search_value", data);
+
+            if (StringUtils.isNotBlank(element) && StringUtils.isNotBlank(field) && StringUtils.isNotBlank(value)) {
+                final SchemaElement schemaElement = SchemaElement.GetElement(element);
+                if (schemaElement.getGenericXFTElement().instanceOf("xnat:imageSessionData")) {
+                    sessionIds.add(value);
+                }
             }
 
             // Add the targeted flag so that the page can display based on the single session-targeted action.
             context.put("targeted", true);
-        }else{
+        } else {
             // Add the targeted flag so that the page can display based on the multiple session-targeted action.
             context.put("targeted", false);
-            sessionList = Arrays.asList(sessions);
+            sessionIds.addAll(Arrays.asList(sessions));
         }
-             
-        if (sessionList != null) {
-            final StringBuilder sessionString = new StringBuilder();
-            int counter = 0;
-            for(String s : sessionList)
-            {
-            	if(s!=null){
-                    if (counter++>0){
-                        sessionString.append(",");
-                    }
-                    if(s.contains("'"))
-                    {
-                    	s= StringUtils.remove(s, '\'');
-                    }
-                    sessionString.append("'").append(s).append("'");
-            	}
-            }
 
-            final UserI user = XDAT.getUserDetails();
-            final String login = user.getLogin();
+        if (!sessionIds.isEmpty()) {
+            final String login = user.getUsername();
 
-            final String project = ((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project", data));
+            final String submittedProjectId = (String) TurbineUtils.GetPassedParameter("project", data);
 
-            final String query;
-            if (project == null) {
-                query = "SELECT expt.id,COALESCE(expt.label,expt.id) AS IDS, modality, subj.id as subject" +
-                        " FROM xnat_imageSessionData isd" +
-                        " LEFT JOIN xnat_experimentData expt ON expt.id=isd.id" +
-                        " LEFT JOIN xnat_subjectassessordata sa ON sa.id=expt.id" +
-                        " LEFT JOIN xnat_subjectdata subj ON sa.subject_id=subj.id" +
-                        " LEFT JOIN xnat_experimentData_share pp ON expt.id=pp.sharing_share_xnat_experimentda_id" +
-                        " WHERE isd.ID IN (" + sessionString + ") ORDER BY IDS;";
+            final Multimap<String, String> projectSessionMap;
+            if (StringUtils.isNotBlank(submittedProjectId)) {
+                projectSessionMap = ArrayListMultimap.create();
+                projectSessionMap.putAll(submittedProjectId, sessionIds);
             } else {
-                if (!retrieveAllTags(user).contains(project)) {
-                    Exception e = new Exception("Unknown project: " + project);
-                    logger.error("", e);
-                    this.error(e, data);
-                    return;
+                projectSessionMap = getProjectsForSessions(sessionIds);
+            }
+
+            final Set<String> projectIds = projectSessionMap.keySet();
+            final Set<String> invalidProjectIds = XNATUtils.getInvalidProjectIds(_parameterized, projectIds);
+            if (invalidProjectIds.size() > 0) {
+                error(new Exception("A number of sessions were in invalid projects: " + Joiner.on(", ").join(invalidProjectIds)), data);
+                return;
+            }
+
+            final List<String> unauthorized = Lists.newArrayList();
+            for (final String projectId : projectIds) {
+                if (!Permissions.canReadProject(user, projectId)) {
+                    unauthorized.add(projectId);
                 }
-
-                query = "SELECT expt.id,COALESCE(pp.label,expt.label,expt.id) AS IDS, modality, subj.label as subject " +
-                        " FROM xnat_imageSessionData isd" +
-                        " LEFT JOIN xnat_experimentData expt ON expt.id=isd.id" +
-                        " LEFT JOIN xnat_subjectassessordata sa ON sa.id=expt.id" +
-                        " LEFT JOIN xnat_subjectdata subj ON sa.subject_id=subj.id" +
-                        " LEFT JOIN xnat_experimentData_share pp ON expt.id=pp.sharing_share_xnat_experimentda_id AND pp.project='" + project + "'" +
-                        " WHERE isd.ID IN (" + sessionString + ") ORDER BY IDS;";
             }
 
-            XFTTable table = XFTTable.Execute(query, null, login);
-            
-            ArrayList<List> sessionSummary =table.toArrayListOfLists();
-            
-            context.put("sessionSummary", sessionSummary);
-            
-            //SELECT SCANS
-
-            final String scansQuery = "SELECT type,COUNT(*) FROM xnat_imagescandata " +
-                    " WHERE xnat_imagescandata.image_session_id IN (" + sessionString +") GROUP BY type ORDER BY type;";
-            
-            table = XFTTable.Execute(scansQuery, null, login);
-            
-            ArrayList<List> scans =table.toArrayListOfLists();
-            context.put("scans", scans);
-            
-            //SELECT RECONS
-
-            final String reconsQuery= "SELECT type,COUNT(*) FROM xnat_reconstructedimagedata " +
-                    " WHERE xnat_reconstructedimagedata.image_session_id IN (" + sessionString +") GROUP BY type ORDER BY type;";
-            
-            table = XFTTable.Execute(reconsQuery, null, login);
-            
-            scans =table.toArrayListOfLists();
-            context.put("recons", scans);
-            
-            //SELECT ASSESSORS
-
-            final String assessorsQuery = "SELECT element_name,COUNT(*) " +
-                    "FROM (SELECT xnat_imageassessordata_id, COUNT(*) FROM img_assessor_out_resource GROUP BY xnat_imageassessordata_id) img_ass_count  " +
-                    "LEFT JOIN xnat_imageassessorData img_ass ON img_ass_count.xnat_imageassessordata_id=img_ass.id  " +
-                    "LEFT JOIN xnat_experimentData expt ON img_ass.id=expt.id " +
-                    "LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id  " +
-                    " WHERE img_ass.imagesession_id IN (" + sessionString +") " +
-                    "GROUP BY element_name ORDER BY element_name;";
-            
-            table = XFTTable.Execute(assessorsQuery, null, login);
-            
-            scans =table.toArrayListOfLists();
-            
-            final List<List<String>> assessors = new ArrayList<>();
-            //noinspection unchecked
-            for(final List<String> assessor : scans){
-                final List<String> sub = new ArrayList<>();
-                sub.addAll(assessor);
-                sub.add(ElementSecurity.GetPluralDescription(assessor.get(0)));
-                assessors.add(sub);
+            if (unauthorized.size() > 0) {
+                data.setMessage("You are not authorized to access the projects " + Joiner.on(", ").join(unauthorized) + ".");
+                data.setScreenTemplate("Error.vm");
+                return;
             }
-            
-            context.put("assessors", assessors);
-            
-            //SELECT SCAN_FORMATS
 
-            final String scanFormatsQuery = "SELECT label,COUNT(*) FROM xnat_imagescandata JOIN xnat_abstractResource ON xnat_imagescandata.xnat_imagescandata_id=xnat_abstractResource.xnat_imagescandata_xnat_imagescandata_id " +
-                    " WHERE xnat_imagescandata.image_session_id IN (" + sessionString +") GROUP BY label;";
-            
-            table = XFTTable.Execute(scanFormatsQuery, null, login);
-            
-            ArrayList<List> formats =table.toArrayListOfLists();
-            context.put("scan_formats", formats);
-            
-            //SELECT RESOURCES
-
-            final String resourceQuery = "SELECT label,COUNT(*) FROM xnat_experimentData_resource JOIN xnat_abstractResource ON xnat_experimentData_resource.xnat_abstractresource_xnat_abstractresource_id=xnat_abstractResource.xnat_abstractresource_id " +
-                    " WHERE xnat_experimentData_resource.xnat_experimentdata_id IN (" + sessionString +") GROUP BY label;";
-            
-            table = XFTTable.Execute(resourceQuery, null, login);
-            
-            ArrayList<List> resources =table.toArrayListOfLists();
-            context.put("resources", resources);
+            context.put("projectIds", projectIds);
+            context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, new HashMap<String, Object>() {{
+                put("sessionIds", sessionIds);
+                put("projectIds", projectIds);
+            }}, new RowMapper<List<String>>() {
+                @Override
+                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                    return new ArrayList<String>() {{
+                        add(result.getString("id"));
+                        add(result.getString("ids"));
+                        add(result.getString("modality"));
+                        add(result.getString("subject"));
+                        add(result.getString("project"));
+                    }};
+                }
+            }));
+            context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, new HashMap<String, Object>() {{
+                put("sessionIds", sessionIds);
+            }}, new RowMapper<List<String>>() {
+                @Override
+                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                    return new ArrayList<String>() {{
+                        add(result.getString("type"));
+                        add(Integer.toString(result.getInt("count")));
+                    }};
+                }
+            }));
+            context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, new HashMap<String, Object>() {{
+                put("sessionIds", sessionIds);
+            }}, new RowMapper<List<String>>() {
+                @Override
+                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                    return new ArrayList<String>() {{
+                        add(result.getString("type"));
+                        add(Integer.toString(result.getInt("count")));
+                    }};
+                }
+            }));
+            context.put("assessors", Lists.transform(_parameterized.query(QUERY_GET_SESSION_ASSESSORS, new HashMap<String, Object>() {{
+                put("sessionIds", sessionIds);
+            }}, new RowMapper<List<String>>() {
+                @Override
+                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                    return new ArrayList<String>() {{
+                        add(result.getString("element_name"));
+                        add(Integer.toString(result.getInt("count")));
+                    }};
+                }
+            }), new Function<List<String>, List<String>>() {
+                @Nullable
+                @Override
+                public List<String> apply(@Nullable final List<String> assessor) {
+                    if (assessor == null) {
+                        return null;
+                    }
+                    assessor.add(ElementSecurity.GetPluralDescription(assessor.get(0)));
+                    return assessor;
+                }
+            }));
+            context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, new HashMap<String, Object>() {{
+                put("sessionIds", sessionIds);
+            }}, new RowMapper<List<String>>() {
+                @Override
+                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                    return new ArrayList<String>() {{
+                        add(result.getString("label"));
+                        add(Integer.toString(result.getInt("count")));
+                    }};
+                }
+            }));
+            context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, new HashMap<String, Object>() {{
+                put("sessionIds", sessionIds);
+            }}, new RowMapper<List<String>>() {
+                @Override
+                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                    return new ArrayList<String>() {{
+                        add(result.getString("label"));
+                        add(Integer.toString(result.getInt("count")));
+                    }};
+                }
+            }));
         }
     }
-	public List<String> retrieveAllTags(final UserI user){
-		try {
-            //noinspection unchecked
-            return (List<String>)(XFTTable.Execute("SELECT DISTINCT id from xnat_projectData;", user.getDBName(), user.getLogin()).convertColumnToArrayList("id"));
-		} catch (SQLException | DBPoolException e) {
-			logger.error("",e);
-		}
 
-        return Lists.newArrayList();
-	}
+    private Multimap<String, String> getProjectsForSessions(final List<String> sessions) {
+        final List<Map<String, Object>> located = _parameterized.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new HashMap<String, Object>() {{
+            put("sessionIds", sessions);
+        }});
+        if (located.size() == 0) {
+            throw new InvalidSearchException("The submitted sessions are not associated with any projects:\n * Sessions: " + Joiner.on(", ").join(sessions));
+        }
 
+        final ArrayListMultimap<String, String> projectSessionMap = ArrayListMultimap.create();
+        for (final Map<String, Object> session : located) {
+            projectSessionMap.put(session.get("project").toString(), session.get("experiment").toString());
+        }
+        return projectSessionMap;
+    }
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_PROJECTS_FROM_EXPTS = "SELECT expt.id AS experiment, expt.project AS project " +
+                                                                "FROM xnat_experimentData expt " +
+                                                                "  LEFT JOIN xnat_imageSessionData isd ON expt.id = isd.id " +
+                                                                "WHERE expt.id IN (:sessionIds) " +
+                                                                "ORDER BY project";
+
+    /**
+     * Requires two parameters:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * <li><b>project</b> is the project that contains the referenced sessions</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_SESSION_ATTRIBUTES = "SELECT "
+                                                               + "  expt.id, "
+                                                               + "  COALESCE(pp.label, expt.label, expt.id) AS IDS, "
+                                                               + "  modality, "
+                                                               + "  subj.label                              AS subject, "
+                                                               + "  COALESCE(pp.project, expt.project)      AS project "
+                                                               + "FROM xnat_imageSessionData isd "
+                                                               + "  LEFT JOIN xnat_experimentData expt ON expt.id = isd.id "
+                                                               + "  LEFT JOIN xnat_subjectassessordata sa ON sa.id = expt.id "
+                                                               + "  LEFT JOIN xnat_subjectdata subj ON sa.subject_id = subj.id "
+                                                               + "  LEFT JOIN xnat_experimentData_share pp "
+                                                               + "    ON expt.id = pp.sharing_share_xnat_experimentda_id AND pp.project IN (:projectIds) "
+                                                               + "WHERE isd.ID IN (:sessionIds) "
+                                                               + "ORDER BY IDS ";
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_SESSION_SCANS = "SELECT " +
+                                                          "  type, " +
+                                                          "  COUNT(*) AS count " +
+                                                          "FROM xnat_imagescandata " +
+                                                          "WHERE xnat_imagescandata.image_session_id IN (:sessionIds) " +
+                                                          "GROUP BY type " +
+                                                          "ORDER BY type";
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_SESSION_RECONS = "SELECT " +
+                                                           "  type, " +
+                                                           "  COUNT(*) AS count " +
+                                                           "FROM xnat_reconstructedimagedata " +
+                                                           "WHERE xnat_reconstructedimagedata.image_session_id IN (:sessionIds) " +
+                                                           "GROUP BY type " +
+                                                           "ORDER BY type";
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_SESSION_ASSESSORS = "SELECT " +
+                                                              "  element_name, " +
+                                                              "  COUNT(*) AS count " +
+                                                              "FROM (SELECT " +
+                                                              "        xnat_imageassessordata_id, " +
+                                                              "        COUNT(*) AS count " +
+                                                              "      FROM img_assessor_out_resource " +
+                                                              "      GROUP BY xnat_imageassessordata_id) img_ass_count " +
+                                                              "  LEFT JOIN xnat_imageassessorData img_ass ON img_ass_count.xnat_imageassessordata_id = img_ass.id " +
+                                                              "  LEFT JOIN xnat_experimentData expt ON img_ass.id = expt.id " +
+                                                              "  LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
+                                                              "WHERE img_ass.imagesession_id IN (:sessionIds) " +
+                                                              "GROUP BY element_name " +
+                                                              "ORDER BY element_name";
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_SESSION_SCAN_FORMATS = "SELECT " +
+                                                                 "  label, " +
+                                                                 "  COUNT(*) AS count " +
+                                                                 "FROM xnat_imagescandata " +
+                                                                 "  JOIN xnat_abstractResource " +
+                                                                 "    ON xnat_imagescandata.xnat_imagescandata_id = xnat_abstractResource.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                 "WHERE xnat_imagescandata.image_session_id IN (:sessionIds) " +
+                                                                 "GROUP BY LABEL";
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_SESSION_RESOURCES = "SELECT " +
+                                                              "  label, " +
+                                                              "  COUNT(*) AS count " +
+                                                              "FROM xnat_experimentData_resource expt_res " +
+                                                              "  JOIN xnat_abstractResource abst_res ON expt_res.xnat_abstractresource_xnat_abstractresource_id = abst_res.xnat_abstractresource_id " +
+                                                              "WHERE expt_res.xnat_experimentdata_id IN (:sessionIds) " +
+                                                              "GROUP BY label";
+
+    private final NamedParameterJdbcTemplate _parameterized;
 }

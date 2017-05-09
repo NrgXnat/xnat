@@ -1,4 +1,4 @@
-#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="projectIds" type="java.util.List" *#
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
@@ -149,7 +149,7 @@
     XNAT.app.projectDownload = getObject(XNAT.app.projectDownload);
     XNAT.app.projectDownload.items = extend(true, XNAT.app.projectDownload.items || {}, {
         counts: {},
-        project: {},
+        projectIds: [],
         sessions: {
             list: [],
             data: []
@@ -183,7 +183,7 @@
 
 <h2>Imaging Data Download</h2>
 
-<form id="download-form" class="json" method="post" content-type="application/json" action="/xapi/archive/download/${project}">
+<form id="download-form" class="json" method="post" content-type="application/json" action="/xapi/archive/download">
 
     #set($counter=0)
     #set($_ID="")
@@ -193,6 +193,7 @@
     #set($_COUNT="")
     #set($_TYPE="")
     #set($_SUBJECT="")
+    #set($_PROJECT="")
 
     <!-- Select Sessions -->
     <div id="project-sessions" class="download-column">
@@ -212,15 +213,23 @@
 
                     ##<ul id="sessions-list-items hidden">
 
+                        #foreach($projectId in $projectIds)
+                            <input type="hidden" name="projectIds[]" value="$!projectId">
+                            <script>
+                                XNAT.app.projectDownload.items.projectIds.push('$!projectId');
+                            </script>
+                        #end
+
                         ## gather sessions
                         #foreach($sessionRow in $sessionSummary)
 
                             #set($_ID = $!turbineUtils.escapeHTML("$!sessionRow.get(0)"))
                             #set($_NAME = $!turbineUtils.escapeHTML("$!sessionRow.get(0)"))
                             #set($_LABEL = $!turbineUtils.escapeHTML("$!sessionRow.get(1)"))
-                            #set($_VALUE = $!turbineUtils.escapeHTML("$!sessionRow.get(3):$!sessionRow.get(1):$!sessionRow.get(0)"))
+                            #set($_VALUE = $!turbineUtils.escapeHTML("$!sessionRow.get(4):$!sessionRow.get(3):$!sessionRow.get(1):$!sessionRow.get(0)"))
                             #set($_TYPE = $!turbineUtils.escapeHTML("$!sessionRow.get(2)"))
                             #set($_SUBJECT = $!turbineUtils.escapeHTML("$!sessionRow.get(3)"))
+                            #set($_PROJECT = $!turbineUtils.escapeHTML("$!sessionRow.get(4)"))
 
                             ##<li class="session-item hidden">
                             ##    <i class="id hidden">$_ID</i>
@@ -238,7 +247,8 @@
                                         label: '$_LABEL',
                                         value: '$_VALUE',
                                         type: '$_TYPE',
-                                        subject: '$_SUBJECT'
+                                        subject: '$_SUBJECT',
+                                        project: '$_PROJECT'
                                     });
                                 </script>
 

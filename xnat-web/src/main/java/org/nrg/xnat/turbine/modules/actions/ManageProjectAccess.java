@@ -14,6 +14,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -91,7 +92,7 @@ public class ManageProjectAccess extends SecureAction {
                         context.put("siteLogoPath", XDAT.getSiteLogoPath());
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
-                        context.put("access_level", "owner");
+                        context.put("access_level", AccessLevel.Owner.code());
                         context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
                         context.put("projectOM", project);
                         org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newOwner, TurbineUtils.getUser(data), TurbineUtils.GetSystemName() + " Access Granted for " + project.getName());

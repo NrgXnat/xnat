@@ -12,16 +12,15 @@ package org.nrg.xnat.turbine.utils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
@@ -42,6 +41,9 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+
 /**
  * @author Tim
  *
@@ -50,10 +52,26 @@ public class XNATUtils {
 	static Logger logger = Logger.getLogger(XNATUtils.class);
     public static String MAP_COLUMN_NAME="map";
     public static String LAB_COLUMN_NAME="lab_id";
-    
+
+    public static Set<String> getInvalidProjectIds(final JdbcTemplate template, final Set<String> projectIds) {
+        return Sets.difference(projectIds, getAllProjectIds(template));
+    }
+
+    public static Set<String> getInvalidProjectIds(final NamedParameterJdbcTemplate template, final Set<String> projectIds) {
+        return Sets.difference(projectIds, getAllProjectIds(template));
+    }
+
+    public static Set<String> getAllProjectIds(final JdbcTemplate template) {
+        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", String.class));
+    }
+
+    public static Set<String> getAllProjectIds(final NamedParameterJdbcTemplate template) {
+        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", Collections.<String, Object>emptyMap(), String.class));
+    }
+
     public static Hashtable getInvestigatorsForRead(String elementName, RunData data)
     {
-        UserI tempUser = TurbineUtils.getUser(data);
+        UserI tempUser = XDAT.getUserDetails();
         return getInvestigatorsForRead(elementName,tempUser);
     }
     
@@ -76,7 +94,7 @@ public class XNATUtils {
     
     public static Hashtable getInvestigatorsForCreate(String elementName, RunData data)
     {
-        UserI tempUser = TurbineUtils.getUser(data);
+        UserI tempUser = XDAT.getUserDetails();
         return getInvestigatorsForCreate(elementName,tempUser);
     }
     
@@ -100,13 +118,13 @@ public class XNATUtils {
   
   public static Hashtable getProjectsForCreate(String elementName, RunData data)
   {
-      UserI tempUser = TurbineUtils.getUser(data);
+      UserI tempUser = XDAT.getUserDetails();
       return getProjectsForCreate(elementName,tempUser);
   }
   
   public static Hashtable getProjectsForEdit(String elementName, RunData data)
   {
-      UserI tempUser = TurbineUtils.getUser(data);
+      UserI tempUser = XDAT.getUserDetails();
       return getProjectsForAction(elementName,tempUser,SecurityManager.EDIT);
   }
   

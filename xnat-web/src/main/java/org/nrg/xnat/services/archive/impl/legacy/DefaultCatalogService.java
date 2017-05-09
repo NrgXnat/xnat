@@ -19,6 +19,7 @@ import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.PersistenceConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -79,9 +80,9 @@ import static org.nrg.xnat.restlet.util.XNATRestConstants.getPrearchiveTimestamp
 @Service
 public class DefaultCatalogService implements CatalogService {
     @Autowired
-    public DefaultCatalogService(final JdbcTemplate template, final CacheManager cacheManager, final SiteConfigPreferences preferences) {
+    public DefaultCatalogService(final JdbcTemplate template, final NamedParameterJdbcTemplate parameterized, final CacheManager cacheManager, final SiteConfigPreferences preferences) {
         _template = template;
-        _parameterized = new NamedParameterJdbcTemplate(_template);
+        _parameterized = parameterized;
         if (!cacheManager.cacheExists(CATALOG_SERVICE_CACHE)) {
             final CacheConfiguration config = new CacheConfiguration(CATALOG_SERVICE_CACHE, 0)
                     .copyOnRead(false).copyOnWrite(false)
@@ -98,11 +99,11 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     @Override
-    public String buildCatalogForResources(final UserI user, final String projectId, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
+    public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(String.format(CATALOG_FORMAT, user.getLogin(), getPrearchiveTimestamp()));
 
-        final DownloadArchiveOptions options = new DownloadArchiveOptions(projectId, resourceMap.get("options"));
+        final DownloadArchiveOptions options = new DownloadArchiveOptions(resourceMap.get("options"));
         catalog.setDescription(options.getDescription());
 
         final List<String> sessions = resourceMap.get("sessions");
@@ -114,30 +115,31 @@ public class DefaultCatalogService implements CatalogService {
 
         for (final String subjectSession : sessions) {
             final String[] atoms = subjectSession.split(":");
-            final String subject = atoms[0];
-            final String label = atoms[1];
-            final String session = atoms[2];
+            final String project = atoms[0];
+            final String subject = atoms[1];
+            final String label = atoms[2];
+            final String session = atoms[3];
 
             final CatCatalogBean sessionCatalog = new CatCatalogBean();
             sessionCatalog.setId(session);
             sessionCatalog.setDescription(subject);
 
-            final CatCatalogI sessionsByScanTypesAndFormats = getSessionsByScanTypesAndFormats(subject, label, session, scanTypes, scanFormats, options);
+            final CatCatalogI sessionsByScanTypesAndFormats = getSessionsByScanTypesAndFormats(project, subject, label, session, scanTypes, scanFormats, options);
             if (sessionsByScanTypesAndFormats != null) {
                 addSafeEntrySet(sessionCatalog, sessionsByScanTypesAndFormats);
             }
 
-            final CatCatalogI resourcesCatalog = getRelatedData(subject, label, session, resources, "resources", options);
+            final CatCatalogI resourcesCatalog = getRelatedData(project, subject, label, session, resources, "resources", options);
             if (resourcesCatalog != null) {
                 addSafeEntrySet(sessionCatalog, resourcesCatalog);
             }
 
-            final CatCatalogI reconstructionsCatalog = getRelatedData(subject, subject, session, reconstructions, "reconstructions", options);
+            final CatCatalogI reconstructionsCatalog = getRelatedData(project, subject, subject, session, reconstructions, "reconstructions", options);
             if (reconstructionsCatalog != null) {
                 addSafeEntrySet(sessionCatalog, reconstructionsCatalog);
             }
 
-            final CatCatalogI assessorsCatalog = getRelatedData(subject, subject, session, assessors, "assessors", options);
+            final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, session, assessors, options);
             if (assessorsCatalog != null) {
                 addSafeEntrySet(sessionCatalog, assessorsCatalog);
             }
@@ -783,43 +785,46 @@ public class DefaultCatalogService implements CatalogService {
 
     }
 
-    private CatCatalogI getSessionsByScanTypesAndFormats(final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {
+    private CatCatalogI getSessionsByScanTypesAndFormats(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {
         if (StringUtils.isBlank(session)) {
             throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Got a blank session to retrieve, that shouldn't happen.");
         }
         final CatCatalogBean catalog = new CatCatalogBean();
+        catalog.setId("RAW");
         try {
-            final StringBuilder query = new StringBuilder("SELECT id FROM xnat_imagescandata WHERE image_session_id = '").append(session).append("'");
-            if (scanTypes != null && scanTypes.size() > 0) {
-                query.append(" AND ").append(getTypeClause(scanTypes));
-            }
-            final List<String> scans = _template.queryForList(query.toString(), String.class);
-            if (scans.size() == 0) {
-                return null;
-            }
-
-            catalog.setId("RAW");
-
             final boolean hasFormatLimits = scanFormats != null && scanFormats.size() > 0;
             if (hasFormatLimits) {
                 final MapSqlParameterSource parameters = new MapSqlParameterSource();
                 parameters.addValue("sessionId", session);
+                parameters.addValue("scanTypes", scanTypes);
                 parameters.addValue("scanFormats", scanFormats);
-                final List<Map<String, Object>> existing = _parameterized.queryForList(QUERY_SCAN_FORMATS, parameters);
+                final List<Map<String, Object>> scans = _parameterized.queryForList(QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT, parameters);
+                if (scans.isEmpty()) {
+                    return null;
+                }
 
-                for (final Map<String, Object> result : existing) {
+                for (final Map<String, Object> scan : scans) {
                     final CatEntryBean entry = new CatEntryBean();
-                    final String scan = (String) result.get("scan");
-                    final String resource = URLEncoder.encode((String) result.get("resource"), "UTF-8");
-                    entry.setName(getPath(options, subject, label, "scans", scan, "resources", resource));
-                    entry.setUri("/archive/experiments/" + session + "/scans/" + scan + "/resources/" + resource + "/files");
+                    final String scanId = (String) scan.get("scan_id");
+                    final String resource = URLEncoder.encode((String) scan.get("resource"), "UTF-8");
+                    entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                    entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
                     catalog.addEntries_entry(entry);
                 }
             } else {
-                for (final String scan : scans) {
+                final StringBuilder query = new StringBuilder("SELECT id FROM xnat_imagescandata WHERE image_session_id = '").append(session).append("'");
+                if (scanTypes != null && scanTypes.size() > 0) {
+                    query.append(" AND ").append(getTypeClause(scanTypes));
+                }
+                final List<String> scanIds = _template.queryForList(query.toString(), String.class);
+                if (scanIds.isEmpty()) {
+                    return null;
+                }
+
+                for (final String scanId : scanIds) {
                     final CatEntryBean entry = new CatEntryBean();
-                    entry.setName(getPath(options, subject, label, "scans", scan));
-                    entry.setUri("/archive/experiments/" + session + "/scans/" + scan + "/files");
+                    entry.setName(getPath(options, project, subject, label, "scans", scanId));
+                    entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/files");
                     catalog.addEntries_entry(entry);
                 }
             }
@@ -829,7 +834,7 @@ public class DefaultCatalogService implements CatalogService {
         return catalog;
     }
 
-    private CatCatalogI getRelatedData(final String subject, final String label, final String session, final List<String> resources, final String type, final DownloadArchiveOptions options) {
+    private CatCatalogI getRelatedData(final String project, final String subject, final String label, final String session, final List<String> resources, final String type, final DownloadArchiveOptions options) {
         if (resources == null || resources.size() == 0) {
             return null;
         }
@@ -852,7 +857,7 @@ public class DefaultCatalogService implements CatalogService {
             for (final String resource : existing) {
                 final CatEntryBean entry = new CatEntryBean();
                 final String resourceId = URLEncoder.encode(resource, "UTF-8");
-                entry.setName(getPath(options, subject, label, "resources", resourceId));
+                entry.setName(getPath(options, project, subject, label, "resources", resourceId));
                 entry.setUri("/archive/experiments/" + session + "/resources/" + resourceId + "/files");
                 catalog.addEntries_entry(entry);
             }
@@ -862,7 +867,37 @@ public class DefaultCatalogService implements CatalogService {
         return catalog;
     }
 
-    private String getPath(final DownloadArchiveOptions options, final String subject, final String element, final String... elements) {
+    private CatCatalogI getSessionAssessors(final String project, final String subject, final String sessionId, final List<String> assessorTypes, final DownloadArchiveOptions options) {
+        if (assessorTypes == null || assessorTypes.size() == 0) {
+            return null;
+        }
+
+        final CatCatalogBean catalog = new CatCatalogBean();
+        catalog.setId(StringUtils.upperCase("assessors"));
+
+        // Limit the resource URIs to those associated with the current session.
+        final MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("sessionId", sessionId);
+        parameters.addValue("assessorTypes", assessorTypes);
+        final List<Map<String, Object>> resources = _parameterized.queryForList(QUERY_SESSION_ASSESSORS, parameters);
+
+        try {
+            for (final Map<String, Object> resource : resources) {
+                final CatEntryBean entry = new CatEntryBean();
+                final String resourceLabel = URLEncoder.encode(resource.get("resource_label").toString(), "UTF-8");
+                final String assessorLabel = URLEncoder.encode(resource.get("assessor_label").toString(), "UTF-8");
+                final String sessionLabel = URLEncoder.encode(resource.get("session_label").toString(), "UTF-8");
+                entry.setName(getPath(options, project, subject, sessionLabel, "assessors", assessorLabel, "resources", resourceLabel));
+                entry.setUri(StrSubstitutor.replace("/archive/experiments/${session_id}/assessors/${assessor_id}/out/resources/${resource_label}/files", resource));
+                catalog.addEntries_entry(entry);
+            }
+        } catch (UnsupportedEncodingException ignored) {
+            //
+        }
+        return catalog;
+    }
+
+    private String getPath(final DownloadArchiveOptions options, final String project, final String subject, final String element, final String... elements) {
         final Path base;
         if (options.isSimplified()) {
             final String[] reduced = new String[elements.length / 2];
@@ -874,7 +909,7 @@ public class DefaultCatalogService implements CatalogService {
             base = Paths.get(element, elements);
         }
         if (options.isProjectIncludedInPath()) {
-            return Paths.get(options.getProject(), subject).resolve(base).toString();
+            return Paths.get(project, subject).resolve(base).toString();
         } else if (options.isSubjectIncludedInPath()) {
             return Paths.get(subject).resolve(base).toString();
         } else {
@@ -939,16 +974,11 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private static class DownloadArchiveOptions {
-        DownloadArchiveOptions(final String project, final List<String> options) {
-            _project = project;
+        DownloadArchiveOptions(final List<String> options) {
             _description = Joiner.on(", ").join(options);
             _projectIncludedInPath = options.contains("projectIncludedInPath");
             _subjectIncludedInPath = options.contains("subjectIncludedInPath");
             _simplified = options.contains("simplified");
-        }
-
-        public String getProject() {
-            return _project;
         }
 
         public String getDescription() {
@@ -967,18 +997,44 @@ public class DefaultCatalogService implements CatalogService {
             return _simplified;
         }
 
-        private final String  _project;
         private final String  _description;
         private final boolean _projectIncludedInPath;
         private final boolean _subjectIncludedInPath;
         private final boolean _simplified;
     }
 
-    private static final String CATALOG_FORMAT           = "%s-%s";
-    private static final String CATALOG_SERVICE_CACHE    = DefaultCatalogService.class.getSimpleName() + "Cache";
-    private static final String CATALOG_CACHE_KEY_FORMAT = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
-    private static final String QUERY_SESSION_RESOURCES  = "SELECT res.label resource FROM xnat_abstractresource res LEFT JOIN xnat_experimentdata_resource exptRes ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id WHERE expt.ID = :sessionId AND res.label in (:resourceIds)";
-    private static final String QUERY_SCAN_FORMATS       = "SELECT scan.id scan, res.label resource FROM xnat_imagescandata scan JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id WHERE scan.image_session_id = :sessionId AND res.label IN (:scanFormats) ORDER BY scan";
+    private static final String CATALOG_FORMAT                      = "%s-%s";
+    private static final String CATALOG_SERVICE_CACHE               = DefaultCatalogService.class.getSimpleName() + "Cache";
+    private static final String CATALOG_CACHE_KEY_FORMAT            = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
+    private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT = "SELECT "
+                                                                      + "  scan.id   AS scan_id, "
+                                                                      + "  res.label AS resource "
+                                                                      + "FROM xnat_imagescandata scan "
+                                                                      + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
+                                                                      + "WHERE scan.image_session_id = :sessionId AND scan.type IN (:scanTypes) AND res.label IN (:scanFormats) "
+                                                                      + "ORDER BY scan";
+    private static final String QUERY_SESSION_RESOURCES             = "SELECT res.label resource "
+                                                                      + "FROM xnat_abstractresource res  "
+                                                                      + "  LEFT JOIN xnat_experimentdata_resource exptRes "
+                                                                      + "    ON exptRes.xnat_abstractresource_xnat_abstractresource_id = res.xnat_abstractresource_id "
+                                                                      + "  LEFT JOIN xnat_experimentdata expt ON expt.id = exptRes.xnat_experimentdata_id "
+                                                                      + "WHERE expt.ID = :sessionId AND res.label IN (:resourceIds);";
+    private static final String QUERY_SESSION_ASSESSORS             = "SELECT "
+                                                                      + "  abstract.xnat_abstractresource_id AS resource_id, "
+                                                                      + "  abstract.label AS resource_label, "
+                                                                      + "  assessor.id AS assessor_id, "
+                                                                      + "  assessor.label AS assessor_label, "
+                                                                      + "  session.id AS session_id, "
+                                                                      + "  session.label AS session_label "
+                                                                      + "FROM xnat_abstractresource abstract "
+                                                                      + "  LEFT JOIN img_assessor_out_resource imgOut "
+                                                                      + "    ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id "
+                                                                      + "  LEFT JOIN xnat_imageassessordata imgAssessor ON imgOut.xnat_imageassessordata_id = imgAssessor.id "
+                                                                      + "  LEFT JOIN xnat_experimentdata assessor ON assessor.id = imgAssessor.id "
+                                                                      + "  LEFT JOIN xnat_experimentdata session ON session.id = imgAssessor.imagesession_id "
+                                                                      + "  LEFT JOIN xdat_meta_element xme ON assessor.extension = xme.xdat_meta_element_id "
+                                                                      + "WHERE xme.element_name IN (:assessorTypes) AND "
+                                                                      + "      session.id = :sessionId";
 
     private static final Logger              _log      = LoggerFactory.getLogger(DefaultCatalogService.class);
     private static final Map<String, String> EMPTY_MAP = ImmutableMap.of();

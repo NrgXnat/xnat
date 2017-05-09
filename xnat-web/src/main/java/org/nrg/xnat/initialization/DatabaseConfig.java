@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.sql.DataSource;
 import java.lang.reflect.InvocationTargetException;
@@ -59,66 +60,54 @@ public class DatabaseConfig {
         return new JdbcTemplate(dataSource);
     }
     
+    @Bean
+    public NamedParameterJdbcTemplate namedParameterJdbcTemplate(final DataSource dataSource) throws NrgServiceException {
+        return new NamedParameterJdbcTemplate(dataSource);
+    }
+
     @Bean(name="dbUsername")
     public String dbUsername(final Environment environment) throws NrgServiceException {
         final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
         return properties.getProperty("username");
     }
 
-    private static Properties setDefaultDatasourceProperties(final Properties properties) {
+    private static void setDefaultDatasourceProperties(final Properties properties) {
         // Configure some defaults if they're not already set.
         if (!properties.containsKey("class")) {
-            if (_log.isWarnEnabled()) {
-                _log.warn("No value set for the XNAT datasource class, using the default value of " + DEFAULT_DATASOURCE_CLASS);
-            }
+            _log.info("No value set for the XNAT datasource class, using the default setting {}", DEFAULT_DATASOURCE_CLASS);
             properties.setProperty("class", DEFAULT_DATASOURCE_CLASS);
         }
         // If the BasicDataSource class is specified, then set some default database connection pooling parameters.
         if (StringUtils.equals(properties.getProperty("class"), DEFAULT_DATASOURCE_CLASS)) {
             if (!properties.containsKey("initialSize")) {
-                if (_log.isWarnEnabled()) {
-                    _log.warn("No value set for the XNAT datasource initial connection pool size, using the default value of " + DEFAULT_DATASOURCE_INITIAL_SIZE);
-                }
+                _log.info("No value set for the XNAT datasource initial connection pool size, using default setting {}", DEFAULT_DATASOURCE_INITIAL_SIZE);
                 properties.setProperty("initialSize", DEFAULT_DATASOURCE_INITIAL_SIZE);
             }
             if (!properties.containsKey("maxTotal")) {
-                if (_log.isWarnEnabled()) {
-                    _log.warn("No value set for the XNAT datasource maximum connection pool size, using the default value of " + DEFAULT_DATASOURCE_MAX_TOTAL);
-                }
+                _log.info("No value set for the XNAT datasource maximum connection pool size, using default setting {}", DEFAULT_DATASOURCE_MAX_TOTAL);
                 properties.setProperty("maxTotal", DEFAULT_DATASOURCE_MAX_TOTAL);
             }
             if (!properties.containsKey("maxIdle")) {
-                if (_log.isWarnEnabled()) {
-                    _log.warn("No value set for the XNAT datasource connection pool idle size, using the default value of " + DEFAULT_DATASOURCE_MAX_IDLE);
-                }
+                _log.info("No value set for the XNAT datasource connection pool idle size, using default setting {}", DEFAULT_DATASOURCE_MAX_IDLE);
                 properties.setProperty("maxIdle", DEFAULT_DATASOURCE_MAX_IDLE);
             }
         }
         if (!properties.containsKey("driver")) {
-            if (_log.isWarnEnabled()) {
-                _log.warn("No value set for the XNAT datasource driver, using the default value of " + DEFAULT_DATASOURCE_DRIVER);
-            }
+            _log.info("No value set for the XNAT datasource driver, using default setting {}", DEFAULT_DATASOURCE_DRIVER);
             properties.setProperty("driver", DEFAULT_DATASOURCE_DRIVER);
         }
         if (!properties.containsKey("url")) {
-            if (_log.isWarnEnabled()) {
-                _log.warn("No value set for the XNAT datasource URL, using the default value of " + DEFAULT_DATASOURCE_URL);
-            }
+            _log.info("No value set for the XNAT datasource URL, using default setting {}", DEFAULT_DATASOURCE_URL);
             properties.setProperty("url", DEFAULT_DATASOURCE_URL);
         }
         if (!properties.containsKey("username")) {
-            if (_log.isWarnEnabled()) {
-                _log.warn("No value set for the XNAT datasource username, using the default value of " + DEFAULT_DATASOURCE_USERNAME + ". Note that you can set the username to an empty value if you really need an empty string.");
-            }
+            _log.info("No value set for the XNAT datasource username, using default setting {}. Note that you can set the username to an empty value if you really need an empty string.", DEFAULT_DATASOURCE_USERNAME);
             properties.setProperty("username", DEFAULT_DATASOURCE_USERNAME);
         }
         if (!properties.containsKey("password")) {
-            if (_log.isWarnEnabled()) {
-                _log.warn("No value set for the XNAT datasource password, using the default value of " + DEFAULT_DATASOURCE_PASSWORD + ". Note that you can set the password to an empty value if you really need an empty string.");
-            }
+            _log.info("No value set for the XNAT datasource password, using default setting. Note that you can set the password to an empty value if you really need an empty string.");
             properties.setProperty("password", DEFAULT_DATASOURCE_PASSWORD);
         }
-        return properties;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(DatabaseConfig.class);

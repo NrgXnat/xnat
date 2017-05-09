@@ -27,6 +27,7 @@ var XNAT = getObject(XNAT || {});
         rootUrl = XNAT.url.rootUrl,
         csrfUrl = XNAT.url.csrfUrl,
         projectId = XNAT.data.context.projectID,
+        siteName = XNAT.data.context.siteName,
         currAccessibility = $('#current_accessibility').val(),
         allUsers,
         availableUsers,
@@ -87,6 +88,7 @@ var XNAT = getObject(XNAT || {});
                 if (!opts.hideNotification) {
                     message = (opts.notificationMessage) ? opts.notificationMessage : 'Access level updated for <b>' + user + '</b>.';
                     XNAT.ui.banner.top(2000, message, 'success');
+                    XNAT.projectAccess.renderUsersTable();
                 }
             },
             fail: function(e){
@@ -109,6 +111,29 @@ var XNAT = getObject(XNAT || {});
         })
     };
 
+    XNAT.projectAccess.updateProjectUser = function(user,group){
+        if (!user || !group) {
+            errorHandler({
+                statusText: 'Function: updateProjectUser',
+                responseText: 'Cannot add user ('+user+') to group ('+group+')'
+            });
+            return false;
+        }
+        xmodal.confirm({
+            content: "You have updated the user role for "+user+" for this project. Do you want to send a confirmation email?",
+            okLabel: "Send Email",
+            okAction: function(){
+                XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, notificationMessage: 'Email sent to '+user+'.' });
+                xmodal.closeAll();
+            },
+            cancelLabel: "No",
+            cancelAction: function(){
+                XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: false, hideNotification: true });
+                xmodal.closeAll();
+            }
+        });
+    };
+
 
     /*
      * populate user tables
@@ -123,7 +148,7 @@ var XNAT = getObject(XNAT || {});
         // if a user already belongs to this project, a group selection will be specified. This changes the behavior of the select.
         groupSelection = groupSelection || '';
         var selector = (groupSelection)
-            ? '<select onchange="XNAT.projectAccess.setUserAccess(\''+login+'\', this.value)">'
+            ? '<select onchange="XNAT.projectAccess.updateProjectUser(\''+login+'\', this.value)">'
             : '<select><option value selected></option>';
 
         XNAT.projectAccess.groups.forEach(function(group){
@@ -280,10 +305,9 @@ var XNAT = getObject(XNAT || {});
         if (newUser === undefined && !isEmail) {
             xmodal.confirm({
                 title: 'Confirm Invite',
-                message: 'Are you sure '+ user +' is a valid username in XNAT?',
+                message: 'Are you sure '+ user +' is a valid username in ' + siteName + '?',
                 okAction: function(){
                     XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true });
-                    XNAT.projectAccess.renderUsersTable();
                     $('#invite_user').val('');
                 }
             });
@@ -297,7 +321,6 @@ var XNAT = getObject(XNAT || {});
                 message: '<b>'+user+'</b> has been invited to join your project, and an email notification has been sent.'
             });
             $('#invite_user').val('');
-            XNAT.projectAccess.renderUsersTable();
             XNAT.projectAccess.initPars('project');
             return true;
         }
@@ -305,7 +328,7 @@ var XNAT = getObject(XNAT || {});
         if (newUser && isEmail) {
             XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
             xmodal.alert({
-                message: 'An email invitation has been sent to <b>'+user+'</b> to register an account with XNAT and join your project.'
+                message: 'An email invitation has been sent to <b>'+user+'</b> to register an account with ' + siteName + ' and join your project.'
             });
             $('#invite_user').val('');
             XNAT.projectAccess.initPars('project');
@@ -314,7 +337,6 @@ var XNAT = getObject(XNAT || {});
 
         if (newUser === false) {
             XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true });
-            XNAT.projectAccess.renderUsersTable();
             $('#invite_user').val('');
             return true;
         }
@@ -339,7 +361,7 @@ var XNAT = getObject(XNAT || {});
         var availableUsers = [];
 
         allUsers.forEach(function(userObj){
-            var available = (userObj.login !== 'guest'); // don't pass the guest user as an available user to be added to a project.  
+            var available = (userObj.login !== 'guest'); // don't pass the guest user as an available user to be added to a project.
             for (var i=0, j=projectUsers.length; i<j; i++) {
                 if (userObj.login === projectUsers[i].login) {
                     // don't add users if they already exist in the project, or the "guest" user
@@ -440,7 +462,6 @@ var XNAT = getObject(XNAT || {});
                             usersToAdd.forEach(function(user){
                                 XNAT.projectAccess.setUserAccess(user.login,user.group,{ sendEmail: true, notificationMessage: user.login + ' added to project.' });
                             });
-                            XNAT.projectAccess.renderUsersTable();
                             xmodal.closeAll();
                         },
                         cancelLabel: "Invite Only",
@@ -448,7 +469,6 @@ var XNAT = getObject(XNAT || {});
                             usersToAdd.forEach(function(user){
                                 XNAT.projectAccess.setUserAccess(user.login,user.group,{ sendEmail: false,  notificationMessage: user.login + ' added to project.' });
                             });
-                            XNAT.projectAccess.renderUsersTable();
                             xmodal.closeAll();
                         }
                     });

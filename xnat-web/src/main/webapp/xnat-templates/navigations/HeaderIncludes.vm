@@ -58,6 +58,7 @@ $navigation.setTemplate("/BaseJS.vm")
         data: {
             context: {
                 #set($projectName = $turbineUtils.getProjectDisplayID($om, $project))
+                siteName: "$!systemName",
                 projectName: "$!projectName",
                 projectID: "$!om.getProject()",
                 project: "$!om.getProject()",

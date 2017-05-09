@@ -29,6 +29,9 @@
                 <input type="button" id="popup_all_users_button" disabled="true" value="Show List" onclick="XNAT.projectAccess.inviteUserFromList();"/>
             </p>
         </div>
+        <script type="text/javascript">
+            XNAT.projectAccess.initSiteUsers();
+        </script>
     #end
     <div class="inline-thirds">
         <h4 style="margin-bottom: 3px;">Project Access Settings</h4>

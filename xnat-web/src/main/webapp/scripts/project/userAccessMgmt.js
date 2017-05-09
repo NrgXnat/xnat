@@ -237,9 +237,9 @@ var XNAT = getObject(XNAT || {});
             return false;
         }
 
-        var newUser = true, inviteUser = false;
-        // determine if input is username or email.
+        var newUser = undefined;
 
+        // determine if input is username or email.
         var isEmail = XNAT.validation.regex.email.test(user);
 
         // determine whether user is already in project
@@ -252,16 +252,21 @@ var XNAT = getObject(XNAT || {});
             }
         }
 
-        // determine whether to invite new user or existing user
-        for (var i=0, j=allUsers.length; i<j; i++) {
-            if (allUsers[i].login === user || allUsers[i].email === user) {
+        if (allUsers.length > 0) {
+            // if this user can view the full user's list, we can check whether this invite is for a new user
+            // determine whether to invite new user or existing user
+            newUser = true;
 
-                // if input was an email, convert it to the appropriate username.
-                if (isEmail) {
-                    user = allUsers[i].login;
+            for (var i=0, j=allUsers.length; i<j; i++) {
+                if (allUsers[i].login === user || allUsers[i].email === user) {
+
+                    // if input was an email, convert it to the appropriate username.
+                    if (isEmail) {
+                        user = allUsers[i].login;
+                    }
+                    newUser = false;
+                    break;
                 }
-                newUser = false;
-                break;
             }
         }
 
@@ -272,10 +277,28 @@ var XNAT = getObject(XNAT || {});
             return false;
         }
 
-        if (!newUser) {
-            XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true });
-            XNAT.projectAccess.renderUsersTable();
+        if (newUser === undefined && !isEmail) {
+            xmodal.confirm({
+                title: 'Confirm Invite',
+                message: 'Are you sure '+ user +' is a valid username in XNAT?',
+                okAction: function(){
+                    XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true });
+                    XNAT.projectAccess.renderUsersTable();
+                    $('#invite_user').val('');
+                }
+            });
+            return true;
+        }
+
+        if (newUser === undefined && isEmail) {
+            // attempt to add new user
+            XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
+            xmodal.alert({
+                message: '<b>'+user+'</b> has been invited to join your project, and an email notification has been sent.'
+            });
             $('#invite_user').val('');
+            XNAT.projectAccess.renderUsersTable();
+            XNAT.projectAccess.initPars('project');
             return true;
         }
 
@@ -286,6 +309,13 @@ var XNAT = getObject(XNAT || {});
             });
             $('#invite_user').val('');
             XNAT.projectAccess.initPars('project');
+            return true;
+        }
+
+        if (newUser === false) {
+            XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true });
+            XNAT.projectAccess.renderUsersTable();
+            $('#invite_user').val('');
             return true;
         }
 
@@ -582,8 +612,7 @@ var XNAT = getObject(XNAT || {});
      * Init
      */
 
-    XNAT.projectAccess.init = function() {
-        // get users and project access groups, then initialize user table
+    XNAT.projectAccess.initSiteUsers = function() {
         XNAT.xhr.getJSON({
             url: xnatUsersUrl(),
             fail: function (e) {
@@ -591,30 +620,36 @@ var XNAT = getObject(XNAT || {});
             },
             success: function(data) {
                 allUsers = XNAT.projectAccess.allUsers = data.ResultSet.Result;
-
-                XNAT.xhr.getJSON({
-                    url: projectGroupsUrl(),
-                    fail: function (e) {
-                        errorHandler(e);
-                    },
-                    success: function (data) {
-                        var groups = XNAT.projectAccess.groups = data.ResultSet.Result;
-                        renderUsersTable();
-
-                        // set a standard height for the user table to stop page flickering on table refresh.
-                        setTimeout(function () {
-                            userTableContainer.css('min-height', userTableContainer.height());
-                        }, 1000);
-
-                        // enable invite UI
-                        groups.forEach(function (group) {
-                            $('#invite_access_level').append('<option value="' + group.id + '">' + group.displayname + '</option>')
-                        });
-                        $('#popup_all_users_button').prop('disabled', false);
-                    }
-                })
             }
         });
+    };
+
+    XNAT.projectAccess.init = function() {
+        // get project access groups, then initialize user table
+
+
+        XNAT.xhr.getJSON({
+            url: projectGroupsUrl(),
+            fail: function (e) {
+                errorHandler(e);
+            },
+            success: function (data) {
+                var groups = XNAT.projectAccess.groups = data.ResultSet.Result;
+                renderUsersTable();
+
+                // set a standard height for the user table to stop page flickering on table refresh.
+                setTimeout(function () {
+                    userTableContainer.css('min-height', userTableContainer.height());
+                }, 1000);
+
+                // enable invite UI
+                groups.forEach(function (group) {
+                    $('#invite_access_level').append('<option value="' + group.id + '">' + group.displayname + '</option>')
+                });
+                $('#popup_all_users_button').prop('disabled', false);
+            }
+        });
+
     };
 
     XNAT.projectAccess.init();

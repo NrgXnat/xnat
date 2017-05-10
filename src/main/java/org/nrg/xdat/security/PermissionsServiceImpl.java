@@ -52,7 +52,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     public List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType){
         return ((XDATUser)user).getPermissionsByDataType(dataType);
     }
-    
+
 	@Override
 	public CriteriaCollection getCriteriaForXDATRead(UserI user,	SchemaElement root) throws IllegalAccessException, Exception {
 
@@ -102,12 +102,27 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         if (ElementSecurity.IsInSecureElement(root.getFullXMLName())) {
             return true;
         } else {
-        	List<PermissionCriteriaI> criteria =getPermissionsForUser(user, root.getFullXMLName());
+            final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
+            for (PermissionCriteriaI criterion : criteria) {
+                if (criterion.canAccess(action, values)) {
+                    return true;
+                }
+            }
 
-            for(PermissionCriteriaI crit: criteria){
-            	if(crit.canAccess(action, values)){
-            		return true;
-            	}
+            // If we've reached here, the security check has failed so let's provide some information on the context but
+            // only if the log level is INFO or below...
+            if (logger.isInfoEnabled()) {
+                final StringBuilder buffer = new StringBuilder("User {} not able to {} the schema element {} with the security values: {}. {} permission criteria found for that user, action, and element.");
+                final String count = criteria.isEmpty() ? "No" : Integer.toString(criteria.size());
+                if (!criteria.isEmpty()) {
+                    for (PermissionCriteriaI criterion : criteria) {
+                        buffer.append("\n * ").append(criterion.toString());
+                    }
+                }
+
+                final String username = user.getUsername();
+                final String formattedName = root.getFormattedName();
+                logger.info(buffer.toString(), username, action, formattedName, Joiner.on(", ").withKeyValueSeparator(": ").join(values.getHash()), count);
             }
         }
 
@@ -181,7 +196,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
         return null;
     }
-    
+
     @Override
     public ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, org.nrg.xft.exception.MetaDataException {
         try {
@@ -275,7 +290,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return item;
     }
 
-    
+
     @Override
     public boolean can(UserI user, ItemI item, String action) throws InvalidItemException, Exception {
         if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
@@ -306,33 +321,33 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             }
         }
     }
-    
+
     @Override
     public boolean canRead(UserI user, ItemI item) throws InvalidItemException, Exception {
     	return can(user,item,SecurityManager.READ);
     }
-    
+
     @Override
     public boolean canEdit(UserI user, ItemI item) throws InvalidItemException, Exception {
     	return can(user,item,SecurityManager.EDIT);
     }
-    
+
     @Override
     public boolean canCreate(UserI user, ItemI item) throws Exception {
     	return can(user,item,SecurityManager.CREATE);
     }
-    
+
     @Override
     public boolean canActivate(UserI user, ItemI item) throws InvalidItemException, Exception {
     	return can(user,item,SecurityManager.ACTIVATE);
     }
-    
+
     @Override
     public boolean canDelete(UserI user, ItemI item) throws InvalidItemException, Exception {
     	return can(user,item,SecurityManager.DELETE);
     }
 
-    
+
     @Override
     public boolean can(UserI user, String xmlPath, Object value, String action) throws Exception {
         if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
@@ -355,27 +370,27 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
         return isOK;
     }
-    
+
     @Override
     public boolean canRead(UserI user, String xmlPath, Object value) throws Exception {
     	return can(user,xmlPath,value,SecurityManager.READ);
     }
-    
+
     @Override
     public boolean canEdit(UserI user, String xmlPath, Object value) throws Exception {
     	return can(user,xmlPath,value,SecurityManager.EDIT);
     }
-    
+
     @Override
     public boolean canCreate(UserI user, String xmlPath, Object value) throws Exception {
         return can(user, xmlPath, value, SecurityManager.CREATE);
     }
-    
+
     @Override
     public boolean canActivate(UserI user, String xmlPath, Object value) throws Exception {
         return can(user, xmlPath, value, SecurityManager.ACTIVATE);
     }
-    
+
     @Override
     public boolean canDelete(UserI user, String xmlPath, Object value) throws Exception {
         return can(user, xmlPath, value, SecurityManager.DELETE);
@@ -395,7 +410,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     @Override
     public List<Object> getAllowedValues(UserI user, String elementName, String xmlPath, String action) {
     	List allowedValues = Lists.newArrayList();
-    	
+
     	try {
 			SchemaElement root=SchemaElement.GetElement(elementName);
 
@@ -411,7 +426,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 			} else {
 			    allowedValues = GenericWrapperElement.GetUniqueValuesForField(xmlPath);
 			}
-			
+
 	        Collections.sort(allowedValues);
 		} catch (Exception e) {
 			logger.error("",e);
@@ -423,7 +438,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     @Override
     public Map<String,Object> getAllowedValues(UserI user, String elementName, String action) {
     	Map<String,Object> allowedValues = Maps.newHashMap();
-    	
+
     	try {
 			SchemaElement root=SchemaElement.GetElement(elementName);
 
@@ -599,7 +614,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 }
                 break;
         }
-        
+
         ((XDATUser)authenticatedUser).resetCriteria();
         Users.getGuest(true);
         return true;

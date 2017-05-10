@@ -10,11 +10,17 @@
 package org.nrg.xdat.security.helpers;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.exceptions.InvalidSearchException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.*;
@@ -30,12 +36,12 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -332,8 +338,8 @@ public class Permissions {
      *
      * @return The cleared item.
      *
-     * @throws IllegalAccessException When the user is not permitted to access the item. 
-     * @throws MetaDataException When an error occurs with the item metadata.
+     * @throws IllegalAccessException When the user is not permitted to access the item.
+     * @throws MetaDataException      When an error occurs with the item metadata.
      */
     public static ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, MetaDataException {
         return getPermissionsService().secureItem(user, item);
@@ -349,7 +355,7 @@ public class Permissions {
      * @return True or false.
      *
      * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
-     * @throws Exception When an unknown or unexpected error occurs.
+     * @throws Exception            When an unknown or unexpected error occurs.
      */
     public static boolean canRead(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canRead(user, xmlPath, value);
@@ -365,7 +371,7 @@ public class Permissions {
      * @return True or false.
      *
      * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
-     * @throws Exception When an unknown or unexpected error occurs.
+     * @throws Exception            When an unknown or unexpected error occurs.
      */
     public static boolean canEdit(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canEdit(user, xmlPath, value);
@@ -381,7 +387,7 @@ public class Permissions {
      * @return True or false.
      *
      * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
-     * @throws Exception When an unknown or unexpected error occurs.
+     * @throws Exception            When an unknown or unexpected error occurs.
      */
     public static boolean canCreate(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canCreate(user, xmlPath, value);
@@ -397,7 +403,7 @@ public class Permissions {
      * @return True or false.
      *
      * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
-     * @throws Exception When an unknown or unexpected error occurs.
+     * @throws Exception            When an unknown or unexpected error occurs.
      */
     public static boolean canActivate(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canActivate(user, xmlPath, value);
@@ -413,7 +419,7 @@ public class Permissions {
      * @return True or false.
      *
      * @throws InvalidItemException When the submitted properties don't resolve to a valid item.
-     * @throws Exception When an unknown or unexpected error occurs.
+     * @throws Exception            When an unknown or unexpected error occurs.
      */
     public static boolean canDelete(UserI user, String xmlPath, Object value) throws Exception {
         return getPermissionsService().canDelete(user, xmlPath, value);
@@ -458,7 +464,7 @@ public class Permissions {
      * @return Returns current XDAT criteria objects for current permission settings
      *
      * @throws IllegalAccessException When the user is not permitted to access the item.
-     * @throws Exception When an unknown or unexpected error occurs.
+     * @throws Exception              When an unknown or unexpected error occurs.
      */
     public static CriteriaCollection getXDATCriteria(PermissionSetI set, SchemaElement root, String action) throws Exception {
         final CriteriaCollection coll = new CriteriaCollection(set.getMethod());
@@ -492,11 +498,11 @@ public class Permissions {
         final CriteriaCollection coll = new CriteriaCollection(set.getMethod());
 
         for (PermissionCriteriaI c : set.getPermCriteria()) {
-                if (c.isActive()) {
-                    if (c.getAction(action)) {
-                        coll.addClause(SearchCriteria.buildCriteria(c));
-                    }
+            if (c.isActive()) {
+                if (c.getAction(action)) {
+                    coll.addClause(SearchCriteria.buildCriteria(c));
                 }
+            }
         }
 
         for (PermissionSetI subset : set.getPermSets()) {
@@ -778,6 +784,115 @@ public class Permissions {
             return "private";
         }
     }
+
+    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds) throws InsufficientPrivilegesException {
+        return verifyAccessToSessions(template, user, new ArrayList<>(sessionIds), null);
+    }
+
+    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
+        return verifyAccessToSessions(template, user, new ArrayList<>(sessionIds), scopedProjectId);
+    }
+
+    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds) throws InsufficientPrivilegesException {
+        return verifyAccessToSessions(template, user, sessionIds, null);
+    }
+
+    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
+        // Get all projects, primary and shared, that contain the specified session IDs.
+        final Multimap<String, String> projectSessionMap = getProjectsForSessions(template, sessionIds);
+
+        // If they specified a project ID...
+        final Set<String> projectIds = projectSessionMap.keySet();
+        if (StringUtils.isNotBlank(scopedProjectId)) {
+            // Make sure that it's in the list of projects associated with the session IDs.
+            if (!projectSessionMap.containsKey(scopedProjectId)) {
+                // If it's not, then it's time to freak out.
+                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, sessionIds);
+            }
+
+            // Now check that all of the requested sessions are available in the scoped project.
+            final Collection<String> located = projectSessionMap.get(scopedProjectId);
+            if (!located.containsAll(sessionIds)) {
+                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, new ArrayList<>(Sets.difference(new HashSet<>(sessionIds), new HashSet<>(located))));
+            }
+
+            // Limit the map to just the specified project.
+            for (final String projectId : new ArrayList<>(projectIds)) {
+                if (!StringUtils.equals(scopedProjectId, projectId)) {
+                    projectSessionMap.removeAll(projectId);
+                }
+            }
+        }
+
+        final List<String> unauthorized = Lists.newArrayList();
+        for (final String projectId : projectIds) {
+            try {
+                if (!Permissions.canReadProject(user, projectId)) {
+                    unauthorized.add(projectId);
+                }
+            } catch (Exception e) {
+                logger.warn("An exception occurred trying to test read access for user " + user.getUsername() + " on project " + projectId + ". Adding project as unauthorized but this may be incorrect depending on the nature of the error.", e);
+                unauthorized.add(projectId);
+            }
+        }
+
+        if (unauthorized.size() > 0) {
+            throw new InsufficientPrivilegesException(user.getUsername(), unauthorized);
+        }
+
+        return projectSessionMap;
+    }
+
+    public static Multimap<String, String> getProjectsForSessions(final NamedParameterJdbcTemplate template, final List<String> sessions) {
+        final List<Map<String, Object>> located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new HashMap<String, Object>() {{
+            put("sessionIds", sessions);
+        }});
+        if (located.size() == 0) {
+            throw new InvalidSearchException("The submitted sessions are not associated with any projects:\n * Sessions: " + Joiner.on(", ").join(sessions));
+        }
+
+        final ArrayListMultimap<String, String> projectSessionMap = ArrayListMultimap.create();
+        for (final Map<String, Object> session : located) {
+            projectSessionMap.put(session.get("project").toString(), session.get("experiment").toString());
+        }
+        return projectSessionMap;
+    }
+
+    public static Set<String> getInvalidProjectIds(final JdbcTemplate template, final Set<String> projectIds) {
+        return Sets.difference(projectIds, getAllProjectIds(template));
+    }
+
+    public static Set<String> getInvalidProjectIds(final NamedParameterJdbcTemplate template, final Set<String> projectIds) {
+        return Sets.difference(projectIds, getAllProjectIds(template));
+    }
+
+    public static Set<String> getAllProjectIds(final JdbcTemplate template) {
+        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", String.class));
+    }
+
+    public static Set<String> getAllProjectIds(final NamedParameterJdbcTemplate template) {
+        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", Collections.<String, Object>emptyMap(), String.class));
+    }
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_PROJECTS_FROM_EXPTS = "SELECT "
+                                                                + "  expt.project AS project, "
+                                                                + "  expt.id      AS experiment "
+                                                                + "FROM xnat_experimentdata expt "
+                                                                + "WHERE expt.id IN (:sessionIds) "
+                                                                + "UNION DISTINCT "
+                                                                + "SELECT "
+                                                                + "  share.project                            AS project, "
+                                                                + "  share.sharing_share_xnat_experimentda_id AS experiment "
+                                                                + "FROM xnat_experimentdata_share share "
+                                                                + "WHERE share.sharing_share_xnat_experimentda_id IN (:sessionIds) "
+                                                                + "ORDER BY project";
 
     private static final List<String> PROJECT_GROUPS        = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();

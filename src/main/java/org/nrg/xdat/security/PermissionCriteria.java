@@ -10,9 +10,10 @@
 
 package org.nrg.xdat.security;
 
-import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.utils.XftStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 /**
@@ -35,7 +36,7 @@ public class PermissionCriteria implements PermissionCriteriaI{
 	private static final String FIELD_VALUE = "field_value";
 	private static final String FIELD = "field";
 
-	static org.apache.log4j.Logger logger = Logger.getLogger(PermissionCriteria.class);
+	private static final Logger logger = LoggerFactory.getLogger(PermissionCriteria.class);
 	
 	private String field=null;
 	private String comparison=null;

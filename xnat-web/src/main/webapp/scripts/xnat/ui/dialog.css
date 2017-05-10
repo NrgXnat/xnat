@@ -37,7 +37,8 @@ div.xnat-dialog {
     display: none ;
     /*min-width: 400px ; min-height: 100px ; */
     max-width: 90% ; max-height: 90% ;
-    position: relative ; margin: 3% auto ; overflow: hidden ;
+    position: fixed ; left: 0; right: 0; top: 3%;
+    margin: 0 auto ; overflow: hidden ;
     background: #fff ; border: 1px solid #a0a0a0 ; box-shadow: 0 10px 30px rgba(0,0,0,0.5) ;
     /*font-family: Arial, Helvetica, sans-serif ; */
 }

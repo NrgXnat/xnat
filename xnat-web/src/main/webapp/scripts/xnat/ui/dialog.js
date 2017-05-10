@@ -11,7 +11,8 @@
  * XNAT dialogs (replaces xmodal functions)
  */
 
-var XNAT = getObject(XNAT || {});
+window.XNAT   = getObject(window.XNAT || {});
+window.xmodal = getObject(window.xmodal);
 
 (function(factory){
     if (typeof define === 'function' && define.amd) {
@@ -44,16 +45,13 @@ var XNAT = getObject(XNAT || {});
 
     // get the highest z-index value for dialogs
     // created with either xmodal or XNAT.dialog
-    dialog.zIndexTop = function(){
-        var xmodalZ = dialog.zIndex + 1;
-        var dialogZ = dialog.zIndex + 1;
-        if (xmodal && xmodal.topZ) {
-            xmodalZ = xmodal.topZ + 1;
-            return dialog.zIndex =
-                xmodal.topZ =
-                    dialogZ > xmodalZ ? dialogZ : xmodalZ;
-        }
-        return dialog.zIndex = dialogZ;
+    dialog.zIndexTop = function(x){
+        var xmodalZ = window.xmodal.topZ || dialog.zIndex;
+        var dialogZ = dialog.zIndex;
+        var _topZ = dialogZ > xmodalZ ? dialogZ : xmodalZ;
+        return window.xmodal.topZ =
+            dialog.zIndex =
+                (_topZ + 1) + (x || 0);
     };
 
     // keep track of dialog objects
@@ -97,7 +95,9 @@ var XNAT = getObject(XNAT || {});
     };
 
     // update <body> className and window scroll position
-    dialog.updateWindow = function(){
+    dialog.updateWindow = function(isModal){
+        // only change scroll and position for modal dialogs
+        if (!firstDefined(isModal, false)) return;
         if (!window.body$.find('div.xnat-dialog.open').length) {
             window.html$.removeClass('xnat-dialog-open open');
             window.body$.removeClass('xnat-dialog-open open');
@@ -189,59 +189,73 @@ var XNAT = getObject(XNAT || {});
         this.delay = this.delay || 0;
 
         this.zIndex = {};
-        this.zIndex.container = dialog.zIndexTop();
-        // this.zIndex.mask = ++dialog.zIndex;
-        // this.zIndex.dialog = ++dialog.zIndex;
+        // this.zIndex.container = dialog.zIndexTop();
+        this.zIndex.mask      = dialog.zIndexTop();
+        this.zIndex.dialog    = dialog.zIndexTop();
 
         this.maxxed = !!this.maxxed;
 
         this.id = this.id || null;
 
         // use an outer container for correct positioning
-        this.container$ = $.spawn('div.xnat-dialog-container', {
-            id: (this.id || this.uid) + '-container',
-            style: {
-                display: 'none',
-                zIndex: this.zIndex.container
-            },
-            data: {
-                uid: this.uid,
-                count: this.count
-            }
-        });
+        // this.container$ = $.spawn('div.xnat-dialog-container', {
+        //     id: (this.id || this.uid) + '-container',
+        //     style: {
+        //         display: 'none',
+        //         zIndex: this.zIndex.container
+        //     },
+        //     data: {
+        //         uid: this.uid,
+        //         count: this.count
+        //     }
+        // });
 
         // will this dialog be 'modal' (with a mask behind it)
         this.isModal = firstDefined(this.isModal, this.mask, this.modal, true);
 
         // mask div
         this.mask$ = this.isModal ? $.spawn('div.xnat-dialog-mask', {
-                // style: { zIndex: this.zIndex.mask },
+                style: { zIndex: this.zIndex.mask },
                 id: (this.id || this.uid) + '-mask' // append 'mask' to given id
             }) : frag();
         this.$mask = this.__mask = this.mask$;
+
+        // set up style object for dialog element
+        this.dialogStyle = extend(true, {}, this.dialogStyle || this.style || {}, {
+            zIndex: this.zIndex.dialog
+        });
 
         // set content: false to prevent an actual dialog from opening
         // (will just render the container and mask with a 'shell' div)
         if (this.content === false) {
 
+            this.dialogStyle.width = pxSuffix(this.width || '100%');
+
             this.dialog$ = $.spawn('div.xnat-dialog-shell', {
                 id: this.id || (this.uid + '-shell'),
-                style: {
-                    // zIndex: this.zIndex.dialog,
-                    width: pxSuffix(this.width || '100%')
-                }
+                style: this.dialogStyle
             });
 
         }
         else {
 
+            this.dialogStyle.width = pxSuffix(this.width || 600);
+
+            if (this.top) this.dialogStyle.top = this.top;
+            if (this.bottom) this.dialogStyle.bottom = this.bottom;
+            if (this.right) this.dialogStyle.right = this.right;
+            if (this.left) this.dialogStyle.left = this.left;
+
             // outermost dialog <div>
             this.dialog$ = $.spawn('div.xnat-dialog', {
                 id: this.id || this.uid, // use given id as-is or use uid-dialog
                 attr: { tabindex: '0' },
-                style: {
-                    // zIndex: this.zIndex.dialog,
-                    width: pxSuffix(this.width || 600)
+                style: this.dialogStyle,
+                on: {
+                    mousedown: function(){
+                        // only bring non-modal dialogs to top onclick
+                        _this.toTop(false);
+                    }
                 }
             });
             this.$modal = this.__modal = this.dialog$;
@@ -274,8 +288,12 @@ var XNAT = getObject(XNAT || {});
 
                     this.headerButtons.close$ = (this.closeBtn) ? $.spawn('b.close', {
                             title: 'click to close (alt-click to close all modals)'
-                        }, '&times;').on('click', function(){
+                        }, '&times;').on('click', function(e){
                             _this.close();
+                            // option-click to close all open dialogs
+                            if (e.altKey) {
+                                dialog.closeAll();
+                            }
                         }) : frag();
 
                     this.headerButtons.max$ = (this.maxBtn) ?
@@ -350,7 +368,7 @@ var XNAT = getObject(XNAT || {});
 
                 // footer content (on the left side)
                 this.footerContent$ =
-                    $.spawn('span.content', this.footerContent);
+                    $.spawn('span.content', [].concat(this.footerContent));
 
                 // add default buttons if not defined
                 if (this.buttons === undef) {
@@ -419,7 +437,7 @@ var XNAT = getObject(XNAT || {});
         // directly specify css for dialog element
         this.style = this.style || this.css || {};
         this.style.height = this.style.height || this.height || 'auto';
-        this.style.top = this.style.top || this.top || 0;
+        this.style.top = this.style.top || this.top || '3%';
 
         // only set min/max if defined
         ['minWidth', 'maxWidth', 'minHeight', 'maxHeight'].forEach(function(prop){
@@ -438,20 +456,21 @@ var XNAT = getObject(XNAT || {});
         });
 
         // add the mask and the dialog box to the container
-        this.container$.append([
-            this.mask$,
-            this.dialog$
-        ]);
+        // this.container$.append([
+        //     this.mask$,
+        //     this.dialog$
+        // ]);
 
         // add the container to the DOM (at the end of the <body>)
         if (window.body$.length) {
-            window.body$.append(this.container$);
+            window.body$.append([this.mask$, this.dialog$]);
+            // window.body$.append(this.container$);
         }
 
         // save a reference to this instance
         // (unless it's 'protected')
         if (this.protected === true) {
-            this.container$.addClass('protected');
+            // this.container$.addClass('protected');
             this.mask$.addClass('protected');
             this.dialog$.addClass('protected');
         }
@@ -516,22 +535,38 @@ var XNAT = getObject(XNAT || {});
     };
 
     // bring the dialog to the top
-    Dialog.fn.toTop = function(){
-        // return early if already top
-        // if (dialog.topUID === this.uid) {
-        //     return this;
-        // }
+    Dialog.fn.toTop = function(topMask){
+        // passing -1 to dialog.zIndexTop(-1)
+        // just returns the topmost z-index
+        // without changing the values
+        var _topZ  = dialog.zIndexTop(-1);
+        var _thisZ = this.zIndex.dialog;
+        // return if already on top
+        if (_thisZ >= _topZ) return this;
+        // make sure this dialog is on top
         // otherwise...
         // remove 'top' class from existing dialogs
         forOwn(dialog.dialogs, function(uid, dlg){
-            dlg.container$.removeClass('top');
+            // dlg.container$.removeClass('top');
+            dlg.mask$.removeClass('top');
+            dlg.dialog$.removeClass('top');
         });
-        // and put it at the top
-        this.zIndex.container = dialog.zIndexTop();
-        this.container$.addClass('top').css('z-index', this.zIndex.container);
-        this.mask$.addClass('top');
-        this.dialog$.addClass('top');
+        // this.zIndex.container = dialog.zIndexTop();
+        // this.container$.addClass('top').css('z-index', this.zIndex.container);
+
+        // set topMask argument to false to prevent bringing mask with the dialog
+        if (firstDefined(topMask, true)){
+            this.zIndex.mask   = dialog.zIndexTop();
+            this.mask$.addClass('top').css('z-index', this.zIndex.mask);
+        }
+
+        this.zIndex.dialog = dialog.zIndexTop();
+        this.dialog$.addClass('top').css('z-index', this.zIndex.dialog);
+
+        this.focus();
+
         dialog.topUID = this.uid;
+
         return this;
     };
 
@@ -549,7 +584,7 @@ var XNAT = getObject(XNAT || {});
 
         // if (!dialog.openDialogs.length) {
         //     dialog.bodyPosition = dialog.bodyPosition || window.scrollY;
-            this.dialog$.css('top', dialog.getPosition() + (this.top || 0));
+        //     this.dialog$.css('top', dialog.getPosition() + (this.top || 0));
         // }
 
         if (isFunction(this.beforeShow)) {
@@ -577,9 +612,9 @@ var XNAT = getObject(XNAT || {});
 
         this.showMethod = (/^(0|-1)$/.test(this.speed+'') ? 'show' : this.showMethod || 'fadeIn');
 
-        this.container$[this.showMethod](this.speed * 0.3, function(){
-            _this.container$.addClass('open')
-        });
+        // this.container$[this.showMethod](this.speed * 0.3, function(){
+        //     _this.container$.addClass('open')
+        // });
 
         this.mask$[this.showMethod](this.speed * 0.6, function(){
             _this.mask$.addClass('open');
@@ -593,12 +628,15 @@ var XNAT = getObject(XNAT || {});
         this.isHidden = !this.isOpen;
 
         dialog.updateUIDs();
-        dialog.updateWindow();
+        dialog.getPosition();
 
-        window.html$.addClass('xnat-dialog-open');
-        window.body$
-            .addClass('xnat-dialog-open')
-            .css('top', -dialog.bodyPosition);
+        if (this.isModal) {
+            dialog.updateWindow(this.isModal);
+            window.html$.addClass('xnat-dialog-open');
+            window.body$
+                .addClass('xnat-dialog-open')
+                .css('top', -dialog.bodyPosition);
+        }
 
         // if (!dialog.openDialogs.length) {
         //     window.scrollTo(0, 0);
@@ -641,20 +679,23 @@ var XNAT = getObject(XNAT || {});
 
         this.hideMethod = (/^(0|-1)$/.test(this.speed+'') ? 'hide' : this.hideMethod || 'fadeOut');
 
-        this.dialog$[this.hideMethod](this.speed * 0.3, function(){
-            _this.dialog$.removeClass('open top');
-        });
         this.mask$[this.hideMethod](this.speed * 0.6, function(){
             _this.mask$.removeClass('open top');
         });
 
+        // TODO: figure out why the first argument would be an object?
         if (isPlainObject(arguments[0])) {
-            this.container$[this.hideMethod].apply(this.container$, arguments[0]);
+            // this.container$[this.hideMethod].apply(this.container$, arguments[0]);
+            this.dialog$[this.hideMethod].apply(this.dialog$, arguments[0]);
         }
         else {
-            this.container$[this.hideMethod](this.speed, function(){
+            // this.container$[this.hideMethod](this.speed, function(){
+            //     hideCallback();
+            //     _this.container$.removeClass('open top');
+            // });
+            this.dialog$[this.hideMethod](this.speed * 0.3, function(){
                 hideCallback();
-                _this.container$.removeClass('open top');
+                _this.dialog$.removeClass('open top');
             });
         }
 
@@ -714,10 +755,12 @@ var XNAT = getObject(XNAT || {});
             this.templateContent.detach();
             this.template$.empty().append(this.templateContent);
         }
-        this.container$.remove();
+        // this.container$.remove();
+        this.mask$.remove();
+        this.dialog$.remove();
         delete dialog.dialogs[this.uid];
         dialog.updateUIDs();
-        dialog.updateWindow();
+        dialog.updateWindow(this.isModal);
         return dialog.dialogs;
     };
 
@@ -750,6 +793,9 @@ var XNAT = getObject(XNAT || {});
     // putting back the template HTML, if used
     Dialog.fn.close = function(destroy, duration, callback){
 
+        // destroy by default when calling .close() method
+        var _destroy = firstDefined(destroy, true);
+
         if (isFunction(this.onClose)) {
             this.onCloseResult = this.onClose.call(this, this);
             if (this.onCloseResult === false) {
@@ -769,7 +815,8 @@ var XNAT = getObject(XNAT || {});
         }
 
         // TODO: to destroy or not to destroy?
-        if (this.nuke || this.destroyOnClose || destroy === true) {
+        // TODO: ANSER - ALWAYS DESTROY ON CLOSE
+        if (this.nuke || this.destroyOnClose || _destroy) {
             this.destroy();
         }
         return this;
@@ -850,7 +897,9 @@ var XNAT = getObject(XNAT || {});
             DLG[method]();
         }
         else {
-            DLG.container$[method]();
+            // DLG.container$[method]();
+            DLG.mask$[method]();
+            DLG.dialog$[method]();
         }
         return DLG;
     };
@@ -1112,7 +1161,7 @@ var XNAT = getObject(XNAT || {});
     $(function(){
         // generate the loadingBar on DOM ready
         window.body$ = $('body');
-        dialog.loadingbar = dialog.loadingBar = dialog.loading();
+        dialog.loadingbar = dialog.loadingBar = dialog.loading().hide();
     });
 
     // open a dialog from the 'top' window

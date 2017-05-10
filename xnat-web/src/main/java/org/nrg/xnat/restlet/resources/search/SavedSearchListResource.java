@@ -13,13 +13,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
-import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -63,7 +63,7 @@ public class SavedSearchListResource extends SecureResource {
                 if (includeTagged.equals("true")) {
                     query += " AND xss.tag IS NOT NULL";
                 } else {
-                    if (!XNATUtils.getAllProjectIds(XDAT.getContextService().getBean(JdbcTemplate.class)).contains(includeTagged)) {
+                    if (!Permissions.getAllProjectIds(XDAT.getContextService().getBean(JdbcTemplate.class)).contains(includeTagged)) {
                         logger.error("", new Exception("Unknown tag: " + includeTagged));
                         getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
                         return null;

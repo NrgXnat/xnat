@@ -10,8 +10,7 @@
 package org.nrg.xnat.services.archive.impl.legacy;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
+import com.google.common.collect.*;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -112,6 +111,11 @@ public class DefaultCatalogService implements CatalogService {
         final List<String> resources = resourceMap.get("resources");
         final List<String> reconstructions = resourceMap.get("reconstructions");
         final List<String> assessors = resourceMap.get("assessors");
+
+        final Map<String, Map<String, String[]>> projects = parseSessions(sessions);
+        for (final String project : projects.keySet()) {
+            Permissions.verifyAccessToSessions(_parameterized, user, projects.get(project).keySet(), project);
+        }
 
         for (final String subjectSession : sessions) {
             final String[] atoms = subjectSession.split(":");
@@ -783,6 +787,17 @@ public class DefaultCatalogService implements CatalogService {
             _log.error("An error occurred writing the catalog " + catalogId + " for user " + user.getLogin(), e);
         }
 
+    }
+
+    private Map<String, Map<String, String[]>> parseSessions(final List<String> sessions) {
+        return new HashMap<String, Map<String, String[]>>() {{
+            for (final String sessionInfo : sessions) {
+                final String[] atoms = sessionInfo.split(":");
+                put(atoms[0], new HashMap<String, String[]>() {{
+                    put(atoms[3], new String[] { atoms[1], atoms[2]});
+                }});
+            }
+        }};
     }
 
     private CatCatalogI getSessionsByScanTypesAndFormats(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {

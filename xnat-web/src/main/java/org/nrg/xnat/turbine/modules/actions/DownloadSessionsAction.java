@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.services.pull.tools.TemplateLink;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -39,7 +40,7 @@ public class DownloadSessionsAction extends ListingAction {
             return;
         }
 
-        UserI user = XDAT.getUserDetails();
+        final UserI user = XDAT.getUserDetails();
         if (user == null) {
             throw new Exception("Invalid User.");
         }
@@ -51,23 +52,26 @@ public class DownloadSessionsAction extends ListingAction {
         search.setPagingOn(true);
 
         // Acceptable display field ids for the session ID
-        String sessionIDHeader = null;
-        for (String key : HEADERS) {
-            if (table.getColumnIndex(key) != null) {
-                sessionIDHeader = key;
-                break;
-            }
-        }
+        final String sessionIdHeader = getSessionIdHeader(table);
 
-        if (sessionIDHeader == null) {
+        if (StringUtils.isBlank(sessionIdHeader)) {
             logger.error("Missing expected display field for " + search.getRootElement().getFullXMLName() + " download feature (SESSION_ID, EXPT_ID, or ID)");
             throw new Exception("Missing expected ID display field.");
         }
 
         table.resetRowCursor();
         while (table.hasMoreRows()) {
-            data.getParameters().add("sessions", (String) table.nextRowHash().get(sessionIDHeader));
+            data.getParameters().add("sessions", (String) table.nextRowHash().get(sessionIdHeader));
         }
+    }
+
+    private String getSessionIdHeader(final XFTTable table) {
+        for (String key : HEADERS) {
+            if (table.getColumnIndex(key) != null) {
+                return key;
+            }
+        }
+        return null;
     }
 
     private static final Logger       logger  = LoggerFactory.getLogger(DownloadSessionsAction.class);

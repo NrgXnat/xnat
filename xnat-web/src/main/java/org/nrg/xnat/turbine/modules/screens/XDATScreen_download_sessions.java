@@ -11,19 +11,19 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.collect.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.exceptions.InvalidSearchException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -70,159 +70,113 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     sessionIds.add(value);
                 }
             }
-
-            // Add the targeted flag so that the page can display based on the single session-targeted action.
-            context.put("targeted", true);
         } else {
-            // Add the targeted flag so that the page can display based on the multiple session-targeted action.
-            context.put("targeted", false);
             sessionIds.addAll(Arrays.asList(sessions));
         }
 
-        if (!sessionIds.isEmpty()) {
-            final String login = user.getUsername();
+        try {
+            if (!sessionIds.isEmpty()) {
+                final String login = user.getUsername();
 
-            final String submittedProjectId = (String) TurbineUtils.GetPassedParameter("project", data);
+                final String submittedProjectId = (String) TurbineUtils.GetPassedParameter("project", data);
 
-            final Multimap<String, String> projectSessionMap;
-            if (StringUtils.isNotBlank(submittedProjectId)) {
-                projectSessionMap = ArrayListMultimap.create();
-                projectSessionMap.putAll(submittedProjectId, sessionIds);
-            } else {
-                projectSessionMap = getProjectsForSessions(sessionIds);
-            }
-
-            final Set<String> projectIds = projectSessionMap.keySet();
-            final Set<String> invalidProjectIds = XNATUtils.getInvalidProjectIds(_parameterized, projectIds);
-            if (invalidProjectIds.size() > 0) {
-                error(new Exception("A number of sessions were in invalid projects: " + Joiner.on(", ").join(invalidProjectIds)), data);
-                return;
-            }
-
-            final List<String> unauthorized = Lists.newArrayList();
-            for (final String projectId : projectIds) {
-                if (!Permissions.canReadProject(user, projectId)) {
-                    unauthorized.add(projectId);
+                // Get all projects, primary and shared, that contain the specified session IDs.
+                final Multimap<String, String> projectSessionMap = StringUtils.isNotBlank(submittedProjectId)
+                                                                   ? Permissions.verifyAccessToSessions(_parameterized, user, sessionIds, submittedProjectId)
+                                                                   : Permissions.verifyAccessToSessions(_parameterized, user, sessionIds);
+                if (projectSessionMap.isEmpty()) {
+                    throw new RuntimeException("No accessible projects found for the request by user " + user.getUsername() + " to download the requested session(s): " + Joiner.on(", ").join(sessionIds));
                 }
-            }
 
-            if (unauthorized.size() > 0) {
-                data.setMessage("You are not authorized to access the projects " + Joiner.on(", ").join(unauthorized) + ".");
-                data.setScreenTemplate("Error.vm");
-                return;
-            }
+                final Set<String> projectIds = projectSessionMap.keySet();
 
-            context.put("projectIds", projectIds);
-            context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, new HashMap<String, Object>() {{
-                put("sessionIds", sessionIds);
-                put("projectIds", projectIds);
-            }}, new RowMapper<List<String>>() {
-                @Override
-                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-                    return new ArrayList<String>() {{
-                        add(result.getString("id"));
-                        add(result.getString("ids"));
-                        add(result.getString("modality"));
-                        add(result.getString("subject"));
-                        add(result.getString("project"));
-                    }};
-                }
-            }));
-            context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, new HashMap<String, Object>() {{
-                put("sessionIds", sessionIds);
-            }}, new RowMapper<List<String>>() {
-                @Override
-                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-                    return new ArrayList<String>() {{
-                        add(result.getString("type"));
-                        add(Integer.toString(result.getInt("count")));
-                    }};
-                }
-            }));
-            context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, new HashMap<String, Object>() {{
-                put("sessionIds", sessionIds);
-            }}, new RowMapper<List<String>>() {
-                @Override
-                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-                    return new ArrayList<String>() {{
-                        add(result.getString("type"));
-                        add(Integer.toString(result.getInt("count")));
-                    }};
-                }
-            }));
-            context.put("assessors", Lists.transform(_parameterized.query(QUERY_GET_SESSION_ASSESSORS, new HashMap<String, Object>() {{
-                put("sessionIds", sessionIds);
-            }}, new RowMapper<List<String>>() {
-                @Override
-                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-                    return new ArrayList<String>() {{
-                        add(result.getString("element_name"));
-                        add(Integer.toString(result.getInt("count")));
-                    }};
-                }
-            }), new Function<List<String>, List<String>>() {
-                @Nullable
-                @Override
-                public List<String> apply(@Nullable final List<String> assessor) {
-                    if (assessor == null) {
-                        return null;
+                context.put("projectIds", projectIds);
+                context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, new HashMap<String, Object>() {{
+                    put("sessionIds", sessionIds);
+                    put("projectIds", projectIds);
+                }}, new RowMapper<List<String>>() {
+                    @Override
+                    public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                        return new ArrayList<String>() {{
+                            add(result.getString("id"));
+                            add(result.getString("ids"));
+                            add(result.getString("modality"));
+                            add(result.getString("subject"));
+                            add(result.getString("project"));
+                        }};
                     }
-                    assessor.add(ElementSecurity.GetPluralDescription(assessor.get(0)));
-                    return assessor;
-                }
-            }));
-            context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, new HashMap<String, Object>() {{
-                put("sessionIds", sessionIds);
-            }}, new RowMapper<List<String>>() {
-                @Override
-                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-                    return new ArrayList<String>() {{
-                        add(result.getString("label"));
-                        add(Integer.toString(result.getInt("count")));
-                    }};
-                }
-            }));
-            context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, new HashMap<String, Object>() {{
-                put("sessionIds", sessionIds);
-            }}, new RowMapper<List<String>>() {
-                @Override
-                public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-                    return new ArrayList<String>() {{
-                        add(result.getString("label"));
-                        add(Integer.toString(result.getInt("count")));
-                    }};
-                }
-            }));
+                }));
+                context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, new HashMap<String, Object>() {{
+                    put("sessionIds", sessionIds);
+                }}, new RowMapper<List<String>>() {
+                    @Override
+                    public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                        return new ArrayList<String>() {{
+                            add(result.getString("type"));
+                            add(Integer.toString(result.getInt("count")));
+                        }};
+                    }
+                }));
+                context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, new HashMap<String, Object>() {{
+                    put("sessionIds", sessionIds);
+                }}, new RowMapper<List<String>>() {
+                    @Override
+                    public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                        return new ArrayList<String>() {{
+                            add(result.getString("type"));
+                            add(Integer.toString(result.getInt("count")));
+                        }};
+                    }
+                }));
+                context.put("assessors", Lists.transform(_parameterized.query(QUERY_GET_SESSION_ASSESSORS, new HashMap<String, Object>() {{
+                    put("sessionIds", sessionIds);
+                }}, new RowMapper<List<String>>() {
+                    @Override
+                    public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                        return new ArrayList<String>() {{
+                            add(result.getString("element_name"));
+                            add(Integer.toString(result.getInt("count")));
+                        }};
+                    }
+                }), new Function<List<String>, List<String>>() {
+                    @Nullable
+                    @Override
+                    public List<String> apply(@Nullable final List<String> assessor) {
+                        if (assessor == null) {
+                            return null;
+                        }
+                        assessor.add(ElementSecurity.GetPluralDescription(assessor.get(0)));
+                        return assessor;
+                    }
+                }));
+                context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, new HashMap<String, Object>() {{
+                    put("sessionIds", sessionIds);
+                }}, new RowMapper<List<String>>() {
+                    @Override
+                    public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                        return new ArrayList<String>() {{
+                            add(result.getString("label"));
+                            add(Integer.toString(result.getInt("count")));
+                        }};
+                    }
+                }));
+                context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, new HashMap<String, Object>() {{
+                    put("sessionIds", sessionIds);
+                }}, new RowMapper<List<String>>() {
+                    @Override
+                    public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
+                        return new ArrayList<String>() {{
+                            add(result.getString("label"));
+                            add(Integer.toString(result.getInt("count")));
+                        }};
+                    }
+                }));
+            }
+        } catch (InsufficientPrivilegesException e) {
+            data.setMessage(e.getMessage());
+            data.setScreenTemplate("Error.vm");
         }
     }
-
-    private Multimap<String, String> getProjectsForSessions(final List<String> sessions) {
-        final List<Map<String, Object>> located = _parameterized.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new HashMap<String, Object>() {{
-            put("sessionIds", sessions);
-        }});
-        if (located.size() == 0) {
-            throw new InvalidSearchException("The submitted sessions are not associated with any projects:\n * Sessions: " + Joiner.on(", ").join(sessions));
-        }
-
-        final ArrayListMultimap<String, String> projectSessionMap = ArrayListMultimap.create();
-        for (final Map<String, Object> session : located) {
-            projectSessionMap.put(session.get("project").toString(), session.get("experiment").toString());
-        }
-        return projectSessionMap;
-    }
-
-    /**
-     * Requires one parameter:
-     *
-     * <ul>
-     * <li><b>sessions</b> is a list of session IDs</li>
-     * </ul>
-     */
-    private static final String QUERY_GET_PROJECTS_FROM_EXPTS = "SELECT expt.id AS experiment, expt.project AS project " +
-                                                                "FROM xnat_experimentData expt " +
-                                                                "  LEFT JOIN xnat_imageSessionData isd ON expt.id = isd.id " +
-                                                                "WHERE expt.id IN (:sessionIds) " +
-                                                                "ORDER BY project";
 
     /**
      * Requires two parameters:

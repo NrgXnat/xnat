@@ -53,22 +53,6 @@ public class XNATUtils {
     public static String MAP_COLUMN_NAME="map";
     public static String LAB_COLUMN_NAME="lab_id";
 
-    public static Set<String> getInvalidProjectIds(final JdbcTemplate template, final Set<String> projectIds) {
-        return Sets.difference(projectIds, getAllProjectIds(template));
-    }
-
-    public static Set<String> getInvalidProjectIds(final NamedParameterJdbcTemplate template, final Set<String> projectIds) {
-        return Sets.difference(projectIds, getAllProjectIds(template));
-    }
-
-    public static Set<String> getAllProjectIds(final JdbcTemplate template) {
-        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", String.class));
-    }
-
-    public static Set<String> getAllProjectIds(final NamedParameterJdbcTemplate template) {
-        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", Collections.<String, Object>emptyMap(), String.class));
-    }
-
     public static Hashtable getInvestigatorsForRead(String elementName, RunData data)
     {
         UserI tempUser = XDAT.getUserDetails();

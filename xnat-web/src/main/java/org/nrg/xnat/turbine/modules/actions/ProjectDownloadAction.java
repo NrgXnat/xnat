@@ -17,7 +17,6 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -50,7 +49,7 @@ public class ProjectDownloadAction extends SecureAction {
             return;
         }
 
-        if (!XNATUtils.getAllProjectIds(_parameterized).contains(projectId)) {
+        if (!Permissions.getAllProjectIds(_parameterized).contains(projectId)) {
             final Exception e = new Exception("Unknown project: " + projectId);
             logger.error("", e);
             this.error(e, data);

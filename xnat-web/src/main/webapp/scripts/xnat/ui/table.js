@@ -526,14 +526,17 @@ var XNAT = getObject(XNAT);
 
         if (opts.body === false) {
             $tableWrapper.addClass('no-body');
+            $table.addClass('no-body');
         }
 
         if (opts.header === false) {
             $tableWrapper.addClass('no-header');
+            $table.addClass('no-header');
         }
 
         if (opts.footer === false) {
             $tableWrapper.addClass('no-footer');
+            $table.addClass('no-footer');
         }
 
         $tableWrapper.addClass('loading')
@@ -924,8 +927,15 @@ var XNAT = getObject(XNAT);
                                 extend(true, tdElement, cellObj.td || cellObj.element);
                             }
                             if (cellObj.value) {
-                                // explicitly override value
-                                itemVal = cellObj.value;
+                                if (isFunction(cellObj.value)) {
+                                    // transform value using a function
+                                    // value: function(VALUE, dataObject){  }
+                                    itemVal = cellObj.value.apply(item, [itemVal, item]);
+                                }
+                                else {
+                                    // or explicitly override value
+                                    itemVal = cellObj.value;
+                                }
                             }
                             if (cellObj.className) {
                                 addClassName(tdElement, cellObj.className);
@@ -934,7 +944,7 @@ var XNAT = getObject(XNAT);
                             if (cellObj['apply'] || cellObj['call']) {
                                 applyFn = cellObj['call'] || cellObj['apply'];
                                 if (isFunction(applyFn)) {
-                                    itemVal = applyFn.apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                    itemVal = applyFn.apply(item, [].concat(itemVal, item, _tr)) || itemVal;
                                 }
                                 else if (stringable(applyFn)) {
                                     applyFn = (applyFn+'').trim();
@@ -1138,6 +1148,14 @@ var XNAT = getObject(XNAT);
             get: function(){
                 normalizeTableCells.call(tableWrapper);
                 return tableWrapper;
+            },
+            done: function(callback){
+                var result = newTable;
+                // do something with the table after it's created
+                if (isFunction(callback)) {
+                    result = callback.call(opts, newTable);
+                }
+                return result;
             },
             // render: newTable.render
             render: function(container, empty, callback){

@@ -51,7 +51,11 @@ div.xnat-dialog > div > .inner {
 
 div.xnat-dialog.open { display: block; }
 
-div.xnat-dialog:focus { outline: 1px solid #808080; }
+div.xnat-dialog:focus,
+div.xnat-dialog.top {
+    outline: 1px solid #808080;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+}
 
 div.xnat-dialog.dialog { width: 600px ; height: 400px ; }
 

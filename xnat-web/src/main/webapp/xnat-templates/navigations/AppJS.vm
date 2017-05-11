@@ -21,6 +21,7 @@
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xnat/ui/dialog.css?${versionString}">
 
     <!-- XNAT JLAPI scripts -->
+    <script src="${SITE_ROOT}/scripts/xnat/util/sub64.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/validate.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/xhr.js"></script>

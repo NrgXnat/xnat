@@ -1154,6 +1154,42 @@ body input[type="reset"]:focus {
     outline: none !important;
 }
 
+/* special 'hidden' button that reveals the click target on hover */
+.btn-hover {
+    display: inline-block;
+    padding: 3px 8px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    box-shadow: none;
+}
+.btn-hover:hover {
+    background: rgba(32, 32, 32, 0.1);
+    border-color: #ccc;
+}
+
+.btn-hover > b {
+    line-height: 20px;
+    vertical-align: middle;
+}
+
+/* style for 'X' character */
+b.x {
+    font-size: 20px;
+    line-height: 20px;
+    color: #c00;
+}
+/* style for checkmark character */
+b.check,
+b.checkmark {
+    font-size: 20px;
+    line-height: 20px;
+    color: #090;
+}
+
 input.date_mask {
     font-family: Courier, monospace;
 }
@@ -2880,7 +2916,8 @@ span.spacer {
 }
 
 .xnat-table tr.highlight:hover,
-.xnat-table.highlight tr:hover {
+.xnat-table.highlight tr:hover,
+.xnat-table.striped.highlight tr:hover {
     background: #e5f2ff;
 }
 
@@ -2962,7 +2999,8 @@ span.spacer {
 }
 
 .xnat-table.striped tr:nth-of-type(2n) {
-    background: #e5f2ff;
+    /*background: #e5f2ff;*/
+    background: #f0f0f0;
 }
 
 .xnat-table.columns th,
@@ -3027,6 +3065,7 @@ th.sort:hover {
 
 .xnat-table.data-table tr.filter > td,
 .xnat-table.data-table tr.filter > th {
+    background: #f0f0f0;
     border-bottom: 1px solid #ccc;
 }
 
@@ -3066,7 +3105,7 @@ th.sort:hover {
     background: #fff;
 }
 
-.data-table-wrapper.no-header .xnat-table.data-table {
+.data-table-wrapper.no-body .xnat-table.data-table {
     border-bottom: 1px solid #ccc;
 }
 
@@ -3868,6 +3907,7 @@ textarea.xml-formatted {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    vertical-align: middle;
 }
 .truncateCell {
     display: block;

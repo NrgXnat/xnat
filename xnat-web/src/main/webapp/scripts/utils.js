@@ -283,11 +283,14 @@ function addClassName(el, newClasses){
             }
         }
     });
+    // create new className string
+    elClasses = elClasses.join(' ').trim();
     if (!hasClassList){
-        elClasses = elClasses.join(' ').trim();
         // set the new className and return the string
-        return el.className = elClasses;
+        el.className = elClasses;
     }
+    return elClasses;
+
 }
 
 
@@ -720,14 +723,14 @@ function sortTableToo($tbody, col, reverse){
     });
 
     // just append all the rows if there are less than 300
-    if (trs.length < 200) {
+    if (trs.length < 300) {
         $tbody.append(trs);
     }
     else {
 
         // only open the loading dialog if more than 600 rows
         var loader = XNAT.ui.dialog.loadingBar;
-        if (trs.length > 400) {
+        if (trs.length > 600) {
             loader.show();
         }
 
@@ -757,8 +760,14 @@ function sortTableToo($tbody, col, reverse){
 // $('table.sortable').tableSort(); // <-- makes <table> sortable
 jQuery.fn.tableSort = function(){
     var $table = this;
+    var $tbody;
     if ($table.hasClass('sort-ready')) return this;
-    var $tbody = $table.find('tbody');
+    if ($table.hasClass('table-group-member')) {
+        $tbody = $table.closest('.table-group-container').find('table.table-data > tbody');
+    }
+    else {
+        $tbody = $table.find('tbody');
+    }
     var tbody = $tbody[0];
     var trs = toArray(tbody.rows).map(function(tr, i){
         // addDataAttrs(tr, { index: zeroPad(i+1, 6) })

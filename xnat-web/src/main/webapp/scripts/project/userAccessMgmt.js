@@ -30,8 +30,10 @@ var XNAT = getObject(XNAT || {});
         siteName = XNAT.data.context.siteName,
         currAccessibility = $('#current_accessibility').val(),
         allUsers,
+        allUsernames,
         availableUsers,
         projectUsers,
+        projectUsernames,
         groups;
 
     XNAT.projectAccess = projectAccess =
@@ -86,7 +88,7 @@ var XNAT = getObject(XNAT || {});
             url: addUserRoleUrl(user,group,sendemail),
             success: function(){
                 if (!opts.hideNotification) {
-                    message = (opts.notificationMessage) ? opts.notificationMessage : 'Access level updated for <b>' + user + '</b>.';
+                    var message = (opts.notificationMessage) ? opts.notificationMessage : 'Access level updated for <b>' + user + '</b>.';
                     XNAT.ui.banner.top(2000, message, 'success');
                     XNAT.projectAccess.renderUsersTable();
                 }
@@ -119,16 +121,19 @@ var XNAT = getObject(XNAT || {});
             });
             return false;
         }
-        xmodal.confirm({
-            content: "You have updated the user role for "+user+" for this project. Do you want to send a confirmation email?",
+        XNAT.ui.dialog.confirm({
+            title: false,
+            content: "<p>You have updated the user role for <b>" + user + "</b> for this project. Do you want to send a confirmation email?</p>",
             okLabel: "Send Email",
             okAction: function(){
-                XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, notificationMessage: 'Email sent to '+user+'.' });
+                XNAT.projectAccess.setUserAccess(user, group, { sendEmail: true, notificationMessage: 'Email sent to ' + user + '.' });
+                XNAT.ui.dialog.closeAll();
                 xmodal.closeAll();
             },
             cancelLabel: "No",
             cancelAction: function(){
-                XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: false, hideNotification: true });
+                XNAT.projectAccess.setUserAccess(user, group, { sendEmail: false, hideNotification: true });
+                XNAT.ui.dialog.closeAll();
                 xmodal.closeAll();
             }
         });
@@ -140,96 +145,247 @@ var XNAT = getObject(XNAT || {});
      */
 
     // table cell formatting
-    function truncCell(val,truncClass) {
-        return '<span class="truncate '+ truncClass +'" title="'+ val +'">'+ val +'</span>';
-    }
-
-    function groupSelect(login,groupSelection){
-        // if a user already belongs to this project, a group selection will be specified. This changes the behavior of the select.
-        groupSelection = groupSelection || '';
-        var selector = (groupSelection)
-            ? '<select onchange="XNAT.projectAccess.updateProjectUser(\''+login+'\', this.value)">'
-            : '<select><option value selected></option>';
-
-        XNAT.projectAccess.groups.forEach(function(group){
-            var groupSelected = (groupSelection === group.id) ? ' selected' : '';
-            selector += '<option value="'+group.id+'" '+ groupSelected +'>'+ group.displayname + '</option>';
+    function truncCell(val, truncClass) {
+        var elClass = truncClass ? 'truncate ' + truncClass : 'truncate';
+        return spawn('span', {
+            className: elClass,
+            title: val,
+            html: val
         });
-        selector += '</select>';
-        return selector;
     }
 
-    function removeUserButton(login,group){
-        var button = '<div class="centered"><button class="btn sm" onclick="XNAT.projectAccess.removeUser(\''+login+'\',\''+group+'\')">x</button></div> ';
-        return button;
+    function selectGroup(e){
+        e.preventDefault();
+        XNAT.projectAccess.updateProjectUser(this.title, this.value);
     }
 
+    function groupsMenu(login, selected){
+        selected = selected || '';
+        return XNAT.ui.select.menu({
+            value: selected,
+            element: {
+                className: 'select-group',
+                title: login,
+                style: { width: '100%' }
+            },
+            options: XNAT.projectAccess.groups.map(function(group){
+                return {
+                    value: group.id,
+                    html: group.displayname
+                }
+            })
+        }).get();
+    }
+
+    // function groupSelect(login, groupSelection){
+    //     // if a user already belongs to this project, a group selection will be specified. This changes the behavior of the select.
+    //     groupSelection = groupSelection || '';
+    //     var selector = (groupSelection)
+    //         ? '<select class="select-group" onchange="XNAT.projectAccess.updateProjectUser(\''+login+'\', this.value)">'
+    //         : '<select><option value selected></option>';
+    //
+    //     XNAT.projectAccess.groups.forEach(function(group){
+    //         var groupSelected = (groupSelection === group.id) ? ' selected' : '';
+    //         selector += '<option value="'+group.id+'" '+ groupSelected +'>'+ group.displayname + '</option>';
+    //     });
+    //     selector += '</select>';
+    //     return selector;
+    // }
+
+    function removeUser(e){
+        e.preventDefault();
+        var userParts = (this.title.split(':')[1]||'').trim().split('|');
+        var _login = userParts[0];
+        var _group = userParts[1];
+        console.log('remove user: ' + _login);
+        projectAccess.removeUser(_login, _group);
+    }
+
+    // all users get the same menu options,
+    // so just create them once (as an HTML string)
+    // this will be injected into individual <select>
+    // elements then the value will be set
+    var groupOptions = XNAT.projectAccess.groups.map(function(group){
+        return spawn.html('option', {
+            value: group.id,
+            innerHTML: group.displayname
+        })
+    }).join('');
 
     // display list of users with access to project
-    var spawnUserTable = XNAT.projectAccess.spawnUserTable = function(showDisabled){
+    function spawnUserTable(showDisabled){
+
         var URL = (showDisabled) ? projectUsersUrl(true) : projectUsersUrl();
 
         var colWidths = {
-            narrow: '125px',
-            email: '175px',
-            group: '180px'
+            login: '20%',
+            firstname: '16%',
+            lastname: '16%',
+            email: '24%',
+            group: '16%',
+            remove: '8%'
         };
 
-        return {
-            kind: 'table.dataTable',
-            name: 'project-users',
-            id: 'project-users',
-            className: 'compact',
-            header: true,
-            sortable: false,
-            load: URL,
-            items: {
+        var projectUsersContainer = spawn('div#project-user-list.table-group-container');
+
+        var DATA_FIELDS = 'login, firstname, lastname, email';
+
+        XNAT.table.dataTable([], {
+            container: projectUsersContainer,
+            body: false,
+            sortable: DATA_FIELDS,
+            filter: DATA_FIELDS,
+            overflowY: 'scroll',
+            table: {
+                classes: 'table-group-member table-header',
+                style: { tableLayout: 'fixed' }
+            },
+            columns: {
                 login: {
                     label: 'Username',
-                    td: { style: { width: colWidths.narrow } },
+                    // sortable: true,
+                    th: { style: { width: colWidths.login } }
+                },
+                firstname: {
+                    label: 'First Name',
+                    // sortable: true,
+                    th: { style: { width: colWidths.firstname } }
+                },
+                lastname: {
+                    label: 'Last Name',
+                    // sortable: true,
+                    th: { style: { width: colWidths.lastname } }
+                },
+                email: {
+                    label: 'Email',
+                    // sortable: true,
+                    th: { style: { width: colWidths.email } }
+                },
+                GROUP_ID: {
+                    label: 'Group',
+                    // sortable: true,
+                    th: { style: { width: colWidths.group } }
+                },
+                remove: {
+                    label: 'Remove',
+                    th: { style: { width: colWidths.remove } }
+                }
+            }
+        });
+
+        XNAT.table.dataTable(projectAccess.projectUsers, {
+            // kind: 'table.dataTable',
+            container: projectUsersContainer,
+            load: URL, // this should only do a REST call if the cached data is not available
+            header: false,
+            // sortable: DATA_FIELDS,
+            height: projectAccess.projectUsers.length < 15 ? 'auto' : '592px',
+            overflowY: 'scroll',
+            table: {
+                name: 'project-users',
+                id: 'project-users',
+                classes: 'table-group-member table-data compact rows-only highlight',
+                style: { tableLayout: 'fixed' },
+                on: [
+                    ['click', '.remove-user', removeUser],
+                    ['change', '.select-group', selectGroup]
+                ]
+            },
+            columns: {
+                login: {
+                    label: 'Username',
+                    // sortable: true,
+                    td: { style: {
+                        verticalAlign: 'middle',
+                        width: colWidths.login
+                    }},
                     apply: function(login){
-                        return truncCell.call(this, login, 'truncateCellNarrow');
+                        return truncCell.call(this, login, '');
                     }
                 },
                 firstname: {
                     label: 'First Name',
-                    td: { style: { width: colWidths.narrow } },
+                    // sortable: true,
+                    td: { style: {
+                        verticalAlign: 'middle',
+                        width: colWidths.firstname
+                    }},
                     apply: function(firstname){
-                        return truncCell.call(this, firstname, 'truncateCellNarrow');
+                        return truncCell.call(this, firstname, '');
                     }
                 },
                 lastname: {
                     label: 'Last Name',
-                    td: { style: { width: colWidths.narrow } },
+                    // sortable: true,
+                    td: { style: {
+                        verticalAlign: 'middle',
+                        width: colWidths.lastname
+                    }},
                     apply: function(lastname){
-                        return truncCell.call(this, lastname, 'truncateCellNarrow');
+                        return truncCell.call(this, lastname, '');
                     }
                 },
                 email: {
                     label: 'Email',
-                    td: { style: { width: colWidths.email } },
+                    // sortable: true,
+                    td: { style: {
+                        verticalAlign: 'middle',
+                        width: colWidths.email
+                    }},
                     apply: function(email){
-                        return truncCell.call(this, email, 'truncateCell');
+                        return truncCell.call(this, email, '');
                     }
                 },
                 GROUP_ID: {
                     label: 'Group',
-                    td: { style: { width: colWidths.group } },
-                    apply: function(GROUP_ID){
-                        return groupSelect.call(this, this.login, GROUP_ID );
+                    // sortable: true,
+                    td: {
+                        classes: 'center',
+                        style: {
+                            verticalAlign: 'middle',
+                            width: colWidths.group
+                        }
+                    },
+                    apply: function(GROUP_ID, data){
+                        return [
+                            '<span class="hidden">' + GROUP_ID + '</span>',
+                            groupsMenu(data.login, GROUP_ID)
+                        ];
+                        // return groupSelect.call(this, this.login, GROUP_ID);
                     }
                 },
                 remove: {
                     label: 'Remove',
-                    td: {},
-                    apply: function(){
-                        return removeUserButton.call(this, this.login, this.GROUP_ID);
+                    td: {
+                        classes: 'center',
+                        style: {
+                            verticalAlign: 'middle',
+                            width: colWidths.remove
+                        }
+                    },
+                    apply: function(NULL, data){
+                        return spawn('div.center', [
+                                spawn('a.remove-user.nolink.btn-hover', {
+                                    href: '#!',
+                                    title: 'Remove: ' + data.login + '|' + data.GROUP_ID,
+                                    html: '<b class="x">&times;</b>'
+                                })
+                            ]
+                        )
                     }
+                    // html: '<button type="button" class="remove-user btn btn-sm">&times;</button>'//,
+                    // apply: function(){
+                    //     return removeUserButton.call(this, this.login, this.GROUP_ID);
+                    // }
                 }
 
             }
-        };
-    };
+        });
+
+        return projectUsersContainer;
+
+    }
+    XNAT.projectAccess.spawnUserTable = spawnUserTable;
 
 
     /*
@@ -270,7 +426,7 @@ var XNAT = getObject(XNAT || {});
         // determine whether user is already in project
         for (var i=0, j=projectUsers.length; i<j; i++) {
             if (projectUsers[i].login === user || projectUsers[i].email === user) {
-                xmodal.alert({
+                XNAT.ui.dialog.alert({
                     message: 'This user already exists in this project. To modify, please use the table above.'
                 });
                 return false;
@@ -296,14 +452,14 @@ var XNAT = getObject(XNAT || {});
         }
 
         if (newUser && !isEmail) {
-            xmodal.alert({
+            XNAT.ui.dialog.alert({
                 message: 'This username was not found. To invite a new user, please input that user\'s email address.'
             });
             return false;
         }
 
         if (newUser === undefined && !isEmail) {
-            xmodal.confirm({
+            XNAT.ui.dialog.confirm({
                 title: 'Confirm Invite',
                 message: 'Are you sure '+ user +' is a valid username in ' + siteName + '?',
                 okAction: function(){
@@ -317,7 +473,7 @@ var XNAT = getObject(XNAT || {});
         if (newUser === undefined && isEmail) {
             // attempt to add new user
             XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
-            xmodal.alert({
+            XNAT.ui.dialog.alert({
                 message: '<b>'+user+'</b> has been invited to join your project, and an email notification has been sent.'
             });
             $('#invite_user').val('');
@@ -327,7 +483,7 @@ var XNAT = getObject(XNAT || {});
 
         if (newUser && isEmail) {
             XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
-            xmodal.alert({
+            XNAT.ui.dialog.alert({
                 message: 'An email invitation has been sent to <b>'+user+'</b> to register an account with ' + siteName + ' and join your project.'
             });
             $('#invite_user').val('');
@@ -356,178 +512,255 @@ var XNAT = getObject(XNAT || {});
     }
 
     var getAvailableUsers = XNAT.projectAccess.getAvailableUsers = function(){
+
         if (!allUsers.length) return false;
 
-        var availableUsers = [];
+        // collect list of usernames in the project
+        projectUsernames = projectUsers.map(function(userObj){
+            return userObj.login;
+        });
+
+        // // collect list of ALL usernames (minus 'guest')
+        // allUsernames = allUsers.map(function(userObj){
+        //     return userObj.login;
+        // }).filter(function(username){
+        //     return username !== 'guest'
+        // });
+
+        // collect list of users NOT in the project
+        availableUsers = [];
 
         allUsers.forEach(function(userObj){
-            var available = (userObj.login !== 'guest'); // don't pass the guest user as an available user to be added to a project.
-            for (var i=0, j=projectUsers.length; i<j; i++) {
-                if (userObj.login === projectUsers[i].login) {
-                    // don't add users if they already exist in the project, or the "guest" user
-                    available=false;
-                    break;
-                }
+            var userLogin = userObj.login;
+            // don't pass the guest user as an available user to be added to a project.
+            if (userLogin === 'guest') return;
+            if (projectUsernames.indexOf(userLogin) === -1) {
+                availableUsers.push(userObj)
             }
-            if (available) availableUsers.push(userObj);
         });
 
         return availableUsers;
     };
 
+
     // display list of users available in XNAT
-    var showAvailableUsers = XNAT.projectAccess.showAvailableUsers = function(container){
+    function availableUsersTable(){
 
         allUsers = XNAT.projectAccess.allUsers;
         XNAT.projectAccess.availableUsers = availableUsers = getAvailableUsers();
-        $(container).empty();
 
         var colWidths = {
-            narrow: '125px',
-            email: '175px',
-            group: '180px'
+            narrow: '18%',
+            email: '30%',
+            group: '16%'
         };
 
-        var availableUserTable = XNAT.table.dataTable(availableUsers, {
-            className: 'xnat-table compact',
-            header: true,
-            sortable: false,
-            items: {
+        var shortList = availableUsers.length < 15;
+
+        var usersTableContainer = $.spawn('div#available-user-list.table-group-container');
+
+        XNAT.table.dataTable([], {
+            container: usersTableContainer,
+            body: false,
+            sortable: 'login, firstname, lastname, email',
+            // filter: 'login, firstname, lastname, email',
+            overflowY: shortList ? 'auto' : 'scroll',
+            table: {
+                classes: 'table-group-member table-header',
+                style: { tableLayout: 'fixed' }
+            },
+            columns: {
                 login: {
                     label: 'Username',
-                    td: { style: { width: colWidths.narrow } },
-                    apply: function(login){
-                        return truncCell.call(this, login, 'truncateCellNarrow');
-                    }
+                    th: { style: { width: colWidths.narrow } }
                 },
                 firstname: {
                     label: 'First Name',
-                    td: { style: { width: colWidths.narrow } },
-                    apply: function(firstname){
-                        return truncCell.call(this, firstname, 'truncateCellNarrow');
-                    }
+                    th: { style: { width: colWidths.narrow } }
                 },
                 lastname: {
                     label: 'Last Name',
-                    td: { style: { width: colWidths.narrow } },
-                    apply: function(lastname){
-                        return truncCell.call(this, lastname, 'truncateCellNarrow');
-                    }
+                    th: { style: { width: colWidths.narrow } }
                 },
                 email: {
                     label: 'Email',
-                    td: { style: { width: colWidths.email } },
-                    apply: function(email){
-                        return truncCell.call(this, email, 'truncateCell');
-                    }
+                    th: { style: { width: colWidths.email } }
                 },
                 group: {
                     label: 'Group',
+                    th: { style: { width: colWidths.group } }
+                }
+            }
+        });
+
+        XNAT.table.dataTable(availableUsers, {
+            container: usersTableContainer,
+            header: false,
+            maxHeight: '480px',
+            overflowY: shortList ? 'auto' : 'scroll',
+            table: {
+                className: 'table-group-member table-data rows-only highlight user-list',
+                style: { tableLayout: 'fixed' }
+            },
+            columns: {
+                login: {
+                    td: { style: { width: colWidths.narrow } },
+                    apply: function(login){
+                        return truncCell.call(this, login, '');
+                    }
+                },
+                firstname: {
+                    td: { style: { width: colWidths.narrow } },
+                    apply: function(firstname){
+                        return truncCell.call(this, firstname, '');
+                    }
+                },
+                lastname: {
+                    td: { style: { width: colWidths.narrow } },
+                    apply: function(lastname){
+                        return truncCell.call(this, lastname, '');
+                    }
+                },
+                email: {
+                    td: { style: { width: colWidths.email } },
+                    apply: function(email){
+                        return truncCell.call(this, email, '');
+                    }
+                },
+                group: {
                     td: { style: { width: colWidths.group } },
                     apply: function(){
-                        return groupSelect.call(this, this.login );
+                        return groupsMenu(this.login, null);
+                        // return groupSelect.call(this, this.login );
                     }
                 }
             }
         });
 
-        $(container).append(availableUserTable.spawned);
+        return usersTableContainer;
+
+    }
+    XNAT.projectAccess.availableUsersTable = availableUsersTable;
+
+    // search dialog
+    XNAT.projectAccess.searchAvailableUsers = function(input, term, table){
+        term = (term ? term+'' : '').toLowerCase();
+        $$(table).find('tr').each(function(){
+            var $tr = $(this);
+            var rowText = '';
+            $tr.find('td').not('.group').each(function(){
+                rowText += ' ' + this.textContent.toLowerCase();
+            });
+            $tr.hidden(rowText.search(term) === -1);
+        });
+    };
+    XNAT.projectAccess.clearSearch = function(input, table){
+        $$(table).find('tr').hidden(false);
+        $$(input).val('').focus();
     };
 
     // open dialog
-    XNAT.projectAccess.inviteUserFromList = function(container){
-        container = container || '#availableUserList';
+    XNAT.projectAccess.inviteUserFromList = function(){
 
-        var modalSearch = '<input type="text" class="modalSearch" placeholder="Find User" onkeyup="XNAT.projectAccess.searchAvailableUsers(this,this.value)">&nbsp;';
-        modalSearch += '<a href="#!" onclick="XNAT.projectAccess.clearSearch(this)">Clear</a>';
+        var availableUsersTable$ = availableUsersTable();
 
-        showAvailableUsers(container);
+        var userList$ = availableUsersTable$.find('table.user-list');
 
-        xmodal.open({
-            title: 'Add Users From List',
-            template: container,
-            width: 730,
-            height: 400,
-            okClose: false,
-            okLabel: 'Invite Users',
-            okAction: function(obj){
-                var listObj = obj.$modal.find('table'),
-                    usersToAdd = inviteUsersFromTable(listObj);
+        // search <input>
+        var searchInput$ = $.spawn('input', {
+            type: 'text',
+            placeholder: 'Find User'
+        }).on('keyup', function(e){
 
-                if (usersToAdd.length > 0) {
-                    xmodal.confirm({
-                        content: "<strong>Success!</strong> You have added "+usersToAdd.length+" users to this project. Do you want to send confirmation emails to each user?",
-                        okLabel: "Invite and Send Emails",
-                        okAction: function(){
-                            usersToAdd.forEach(function(user){
-                                XNAT.projectAccess.setUserAccess(user.login,user.group,{ sendEmail: true, notificationMessage: user.login + ' added to project.' });
-                            });
-                            xmodal.closeAll();
-                        },
-                        cancelLabel: "Invite Only",
-                        cancelAction: function(){
-                            usersToAdd.forEach(function(user){
-                                XNAT.projectAccess.setUserAccess(user.login,user.group,{ sendEmail: false,  notificationMessage: user.login + ' added to project.' });
-                            });
-                            xmodal.closeAll();
-                        }
-                    });
-
-                } else {
-                    xmodal.alert('You have not selected a project group for any users.');
+            XNAT.projectAccess.searchAvailableUsers(this, this.value, userList$)
+        });
+        
+        // 'Clear' link
+        var clearSearch = spawn('a', {
+            href: '#!',
+            html: '&nbsp; Clear &nbsp;',
+            on: {
+                click: function(e) {
+                    e.preventDefault();
+                    XNAT.projectAccess.clearSearch(searchInput$, userList$);
                 }
-            },
-            footer: {
-                content: modalSearch
             }
         });
-    };
 
-    // search dialog
-    XNAT.projectAccess.searchAvailableUsers = function(input,term){
-        term = term.toLowerCase();
-        var table = $(input).parents('div.xmodal').find('tbody');
-        table.find('tr').each(function(){
-            $(this).addClass('hidden');
-            var rowArray = '';
-            $(this).find('td').not('.group').each(function(){
-                rowArray += ' '+$(this).find('span').html().toLowerCase();
-            });
-            if (rowArray.search(term) >= 0) $(this).removeClass('hidden');
+        XNAT.ui.dialog.open({
+            title: 'Add Users From List',
+            content: availableUsersTable$,
+            width: 800,
+            // height: 400,
+            // nuke: true,
+            buttons: [
+                {
+                    label: 'Invite Users',
+                    close: false,
+                    isDefault: true,
+                    action: function(obj){
+                        var listObj = obj.$modal.find('table'),
+                            usersToAdd = inviteUsersFromTable(listObj);
+                        if (usersToAdd.length > 0) {
+                            XNAT.ui.dialog.confirm({
+                                title: 'Success!',
+                                content: "You have added "+usersToAdd.length+" users to this project. Do you want to send confirmation emails to each user?",
+                                okLabel: "Invite and Send Emails",
+                                okAction: function(){
+                                    usersToAdd.forEach(function(user){
+                                        XNAT.projectAccess.setUserAccess(user.login,user.group,{ sendEmail: true, notificationMessage: user.login + ' added to project.' });
+                                    });
+                                    XNAT.ui.dialog.closeAll(true);
+                                },
+                                cancelLabel: "Invite Only",
+                                cancelAction: function(){
+                                    usersToAdd.forEach(function(user){
+                                        XNAT.projectAccess.setUserAccess(user.login,user.group,{ sendEmail: false,  notificationMessage: user.login + ' added to project.' });
+                                    });
+                                    XNAT.ui.dialog.closeAll(true);
+                                }
+                            });
+
+                        } else {
+                            XNAT.ui.dialog.alert('You have not selected a project group for any users.');
+                            return false;
+                        }
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
+                }
+            ],
+            footerContent: [searchInput$[0], clearSearch]
         });
-    };
-    XNAT.projectAccess.clearSearch = function(item){
-        var table = $(item).parents('div.xmodal').find('tbody');
-        table.find('tr').removeClass('hidden');
-        var searchField = $(item).prev('input');
-        $(searchField).val('');
     };
 
     // render or update the users table
-    var renderUsersTable = XNAT.projectAccess.renderUsersTable = function(showDisabled){
-        showDisabled = showDisabled || $(showDeactivatedUsersCheck).is(':checked');
+    function renderUsersTable(showDisabled){
+        showDisabled = showDisabled || $('#showDeactivatedUsersCheck').is(':checked');
         var container = userTableContainer;
-        XNAT.xhr.getJSON({
-            url: projectUsersUrl(),
+        var URL = projectUsersUrl(showDisabled);
+        return XNAT.xhr.getJSON({
+            url: URL,
             success: function(data){
-                XNAT.projectAccess.projectUsers = projectUsers = data.ResultSet.Result;
-                var _usersTable = XNAT.spawner.spawn({
-                    usersTable: spawnUserTable(showDisabled)
-                });
-                _usersTable.done(function(){
-                    this.render($(container).empty(), 20);
-                });
+                // cache data
+                XNAT.data[URL] = data;
+                projectAccess.projectUsers = projectUsers = data.ResultSet.Result;
+                $$(container).empty().append(spawnUserTable(showDisabled));
+                // spawnUserTable(showDisabled).render(container, true);
             },
             fail: function(e){
                 errorHandler(e);
             }
         });
-    };
+    }
+    XNAT.projectAccess.renderUsersTable = renderUsersTable;
 
     /*
      * Manage Groups
      */
-    function groupCell(group,groupId){
+    function groupCell(group, groupId){
         return (group === 'Owners' || group === 'Members' || group === 'Collaborators') ?
             group :
             group + '<span class="pull-right"><a href="#!" onclick="XNAT.projectAccess.modifyGroup(\''+groupId+'\', \''+projectId+'\')">Edit</a></span>';
@@ -544,8 +777,8 @@ var XNAT = getObject(XNAT || {});
         var groups = XNAT.projectAccess.groups;
         XNAT.ui.dialog.open({
             title: 'Manage Groups',
-            width: 300,
-            nuke: false,
+            width: 400,
+            // nuke: false,
             content: '<div class="panel"></div>',
             beforeShow: function(obj){
                 var container = obj.$modal.find('.panel');
@@ -573,7 +806,7 @@ var XNAT = getObject(XNAT || {});
                 container.append(
                     spawn('p', [
                         spawn('a', {
-                        href: '/app/template/XDATScreen_edit_xdat_userGroup.vm/tag/' + projectId + '/src/project',
+                            href: '/app/template/XDATScreen_edit_xdat_userGroup.vm/tag/' + projectId + '/src/project'
                         }, [
                             spawn('button',{
                                 className: 'btn',
@@ -622,11 +855,8 @@ var XNAT = getObject(XNAT || {});
     
     $(document).on('change','input[name=accessibility]',function(){
         // only enable accessibility change if a new value has been selected
-        if ($(this).val() !== currAccessibility) {
-            $('#accessibility_save').prop('disabled',false)
-        } else {
-            $('#accessibility_save').prop('disabled','disabled')
-        }
+        var _disabled = $(this).val() === currAccessibility;
+        $('#accessibility_save').prop('disabled', _disabled);
     });
 
     /*
@@ -659,9 +889,9 @@ var XNAT = getObject(XNAT || {});
                 renderUsersTable();
 
                 // set a standard height for the user table to stop page flickering on table refresh.
-                setTimeout(function () {
+                window.setTimeout(function () {
                     userTableContainer.css('min-height', userTableContainer.height());
-                }, 1000);
+                }, 1);
 
                 // enable invite UI
                 groups.forEach(function (group) {
@@ -674,5 +904,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     XNAT.projectAccess.init();
+
+    return XNAT.projectAccess = projectAccess;
 
 }));

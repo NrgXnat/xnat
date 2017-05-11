@@ -524,13 +524,16 @@ window.xmodal = getObject(window.xmodal);
 
     // focus on the dialog with optional callback
     Dialog.fn.focus = function(callback){
+
         this.dialog$.focus();
+
         if (isFunction(this.onFocus)) {
             this.onFocusResult = this.onFocus.call(this);
         }
         if (isFunction(callback)) {
             this.focusCallbackResult = callback.call(this);
         }
+
         return this;
     };
 
@@ -545,27 +548,30 @@ window.xmodal = getObject(window.xmodal);
         if (_thisZ >= _topZ) return this;
         // make sure this dialog is on top
         // otherwise...
-        // remove 'top' class from existing dialogs
-        forOwn(dialog.dialogs, function(uid, dlg){
-            // dlg.container$.removeClass('top');
-            dlg.mask$.removeClass('top');
-            dlg.dialog$.removeClass('top');
+
+        this.focus(function(){
+
+            // remove 'top' class from existing dialogs
+            forOwn(dialog.dialogs, function(uid, dlg){
+                // dlg.container$.removeClass('top');
+                dlg.mask$.removeClass('top');
+                dlg.dialog$.removeClass('top');
+            });
+            // this.zIndex.container = dialog.zIndexTop();
+            // this.container$.addClass('top').css('z-index', this.zIndex.container);
+
+            // set topMask argument to false to prevent bringing mask with the dialog
+            if (firstDefined(topMask, true)){
+                this.zIndex.mask   = dialog.zIndexTop();
+                this.mask$.addClass('top').css('z-index', this.zIndex.mask);
+            }
+
+            this.zIndex.dialog = dialog.zIndexTop();
+            this.dialog$.addClass('top').css('z-index', this.zIndex.dialog);
+
+            dialog.topUID = this.uid;
+
         });
-        // this.zIndex.container = dialog.zIndexTop();
-        // this.container$.addClass('top').css('z-index', this.zIndex.container);
-
-        // set topMask argument to false to prevent bringing mask with the dialog
-        if (firstDefined(topMask, true)){
-            this.zIndex.mask   = dialog.zIndexTop();
-            this.mask$.addClass('top').css('z-index', this.zIndex.mask);
-        }
-
-        this.zIndex.dialog = dialog.zIndexTop();
-        this.dialog$.addClass('top').css('z-index', this.zIndex.dialog);
-
-        this.focus();
-
-        dialog.topUID = this.uid;
 
         return this;
     };

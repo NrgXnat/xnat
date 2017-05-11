@@ -14,6 +14,12 @@ $page.setTitle("$siteId - Please Login")
     $page.addAttribute("onLoad", "document.getElementById('username').focus();")
 
 <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
+
+<script>
+//    Cookies.set('SESSION_ACTIVE', 'false');
+    Cookies.set('SESSION_LOGOUT_REDIRECT', 'true');
+</script>
+
 <div id="login_area">
 
     <!--[if lte IE 8]>

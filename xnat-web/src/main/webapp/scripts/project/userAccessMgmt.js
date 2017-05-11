@@ -426,9 +426,7 @@ var XNAT = getObject(XNAT || {});
         // determine whether user is already in project
         for (var i=0, j=projectUsers.length; i<j; i++) {
             if (projectUsers[i].login === user || projectUsers[i].email === user) {
-                XNAT.ui.dialog.alert({
-                    message: 'This user already exists in this project. To modify, please use the table above.'
-                });
+                XNAT.ui.dialog.alert('This user already exists in this project. To modify, please use the table above.');
                 return false;
             }
         }
@@ -452,16 +450,14 @@ var XNAT = getObject(XNAT || {});
         }
 
         if (newUser && !isEmail) {
-            XNAT.ui.dialog.alert({
-                message: 'This username was not found. To invite a new user, please input that user\'s email address.'
-            });
+            XNAT.ui.dialog.alert("This username was not found. To invite a new user, please input that user's email address.");
             return false;
         }
 
         if (newUser === undefined && !isEmail) {
             XNAT.ui.dialog.confirm({
                 title: 'Confirm Invite',
-                message: 'Are you sure '+ user +' is a valid username in ' + siteName + '?',
+                content: 'Are you sure '+ user +' is a valid username in ' + siteName + '?',
                 okAction: function(){
                     XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true });
                     $('#invite_user').val('');
@@ -473,9 +469,7 @@ var XNAT = getObject(XNAT || {});
         if (newUser === undefined && isEmail) {
             // attempt to add new user
             XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
-            XNAT.ui.dialog.alert({
-                message: '<b>'+user+'</b> has been invited to join your project, and an email notification has been sent.'
-            });
+            XNAT.ui.dialog.alert('<b>'+user+'</b> has been invited to join your project, and an email notification has been sent.');
             $('#invite_user').val('');
             XNAT.projectAccess.initPars('project');
             return true;
@@ -484,7 +478,7 @@ var XNAT = getObject(XNAT || {});
         if (newUser && isEmail) {
             XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
             XNAT.ui.dialog.alert({
-                message: 'An email invitation has been sent to <b>'+user+'</b> to register an account with ' + siteName + ' and join your project.'
+                content: 'An email invitation has been sent to <b>'+user+'</b> to register an account with ' + siteName + ' and join your project.'
             });
             $('#invite_user').val('');
             XNAT.projectAccess.initPars('project');

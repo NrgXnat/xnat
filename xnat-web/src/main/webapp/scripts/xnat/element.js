@@ -16,7 +16,7 @@ var XNAT = getObject(XNAT||{});
 
 (function(XNAT){
 
-    var element, undefined;
+    var element, element$, undefined;
 
     // tolerate passing 'opts' and 'content'
     // arguments in reverse order
@@ -64,7 +64,8 @@ var XNAT = getObject(XNAT||{});
     };
 
     var $methods = [
-        'attr', 'prepend', 'append',
+        'attr', 'prop',
+        'prepend', 'append',
         'before', 'after',
         'addClass', 'removeClass'
     ];
@@ -162,7 +163,16 @@ var XNAT = getObject(XNAT||{});
         return new Element(tag, opts, content);
     };
     //////////////////////////////////////////////////////////////////////
-    
+
+    //////////////////////////////////////////////////////////////////////
+    // jQuery element spawner
+    // XNAT.element$('div').p()._b('Bold text. ')._i('Italic text.').get();
+    // -> <div><p><b>Bold text. </b><i>Italic text.</i></p></div>
+    element$ = function(tag, opts, content){
+        return (new Element(tag, opts, content)).get$();
+    };
+    //////////////////////////////////////////////////////////////////////
+
     // copy value from 'target' to 'source'
     element.copyValue = function(target, source){
         var sourceValue = $$(source).val();
@@ -261,6 +271,11 @@ var XNAT = getObject(XNAT||{});
             return this;
         };
 
+        // jQuery elements return their jQuery object
+        Element.p[tag+'$'] = Element.p['$'+tag] = function(opts, content){
+            var el$ = $(setupElement(tag, opts, content))
+        };
+
         // generate tag functions to call
         // without calling XNAT.element() first
         // XNAT.element.div('Foo')
@@ -293,19 +308,27 @@ var XNAT = getObject(XNAT||{});
 
     // special handling of <script> elements
     // add them to the <head>
-    element.script = function(opts){
+    element.script = function(opts, content){
         opts = cloneObject(opts);
         var el;
         if (opts.src) {
             opts.html = '';
+            content = '';
         }
-        el = spawn('script', opts);
+        el = spawn('script', opts, content);
         document.head.appendChild(el);
         return {
             element: el,
-            spawned: el
+            spawned: el,
+            get: function(callback){
+                if (isFunction(callback)) {
+                    callback.call(el)
+                }
+                return el;
+            }
         }
     };
+    element.head.appendScript = element.script;
 
 
     //////////////////////////////////////////////////////////////////////

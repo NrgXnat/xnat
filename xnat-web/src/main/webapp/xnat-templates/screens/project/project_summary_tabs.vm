@@ -1,4 +1,4 @@
-<!--BEGIN PROJECT SUMMARY TABS -->
+<!-- BEGIN xnat-templates/screens/project/project_summary_tabs.vm -->
 <div ID="project_summary_module" style="display:none">
     <DIV id="projectSummary" class="yui-navset">
         <ul class="yui-nav" style="">
@@ -13,13 +13,13 @@
             <li><a href="#tab6"><em>History</em></a></li>
         </ul>
         <div class="yui-content">
-            <div id="tab1"><p>
+            <div id="tab1" class="pad10"><p>
                 <!-- BEGIN DETAILS TAB -->
                 #parse("/screens/project/widgets/project_summary_details.vm")
                 <!-- END DETAILS TAB -->
             </p></div>
 
-            <div id="tab7"><p>
+            <div id="tab7" class="pad10"><p>
                 <!-- BEGIN PUBLICATIONS TAB -->
                 #parse("/screens/project/widgets/project_summary_publications.vm")
                 <!-- END PUBLICATIONS TAB -->
@@ -27,7 +27,7 @@
 
 
             #if($data.getSession().getAttribute("userHelper").canCreate($project))
-                <div id="tab3"><p>
+                <div id="tab3" class="pad10"><p>
                     <!-- BEGIN MANAGEMENT TAB -->
                     #parse("/screens/project/widgets/project_summary_management.vm")
                     <!-- END MANAGEMENT TAB -->
@@ -35,7 +35,7 @@
             #end
 
             #if($data.getSession().getAttribute("userHelper").canCreate($project))
-                <div id="tab4"><p>
+                <div id="tab4" class="pad10"><p>
                     <!-- BEGIN PIPELINE TAB -->
                     #parse("/screens/project/widgets/project_summary_pipeline.vm")
                     <!-- END PIPELINE TAB -->
@@ -43,13 +43,13 @@
             #end
 
 
-            <div id="tab5"><p>
+            <div id="tab5" class="pad10"><p>
                 <!-- BEGIN STATUS TAB -->
                 #parse("/screens/project/widgets/project_summary_status.vm")
                 <!-- END STATUS TAB -->
             </p></div>
 
-            <div id="tab6"><p>
+            <div id="tab6" class="pad10"><p>
                 <!-- BEGIN HISTORY TAB -->
                 #parse("/screens/project/widgets/project_summary_history.vm")
                 <!-- END HISTORY TAB -->
@@ -80,4 +80,4 @@
 
     YAHOO.util.Event.onDOMReady(SummaryTabManagerInit);
 </script>
-<!--END PROJECT SUMMARY TABS -->
+<!-- END xnat-templates/screens/project/project_summary_tabs.vm -->

@@ -1099,29 +1099,52 @@ var XNAT = getObject(XNAT || {});
     // });
 
     panel.input.upload = function panelInputUpload(opts){
-        opts = cloneObject(opts);
-        opts.id = (opts.id||randomID('upload-', false));
-        opts.element = opts.element || opts.config || {};
-        opts.element.id = opts.id;
-        var form = ['form', {
-            id: opts.id + '-form',
-            method: opts.method || 'POST',
-            action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
-            className: addClassName(opts, 'file-upload ignore')
-        }, [
-            ['input', {
-                type: 'file',
-                id: opts.id + '-input',
-                multiple: true,
-                className: addClassName(opts, 'file-upload-input ignore')
-            }],
-            ['button.btn.btn-sm', {
-                type: 'submit',
-                id: opts.id +'-submit',
-                html: 'Upload'
-            }]
-        ]];
-        return XNAT.ui.template.panelInput(opts, form).get();
+
+        var config = {};
+        // opts = cloneObject(opts);
+        config.id = (opts.id||randomID('upldx', false));
+        config.input = opts.input || opts.element || opts.config || {};
+        config.input.id = config.input.id || config.id;
+
+        config.method = opts.method || 'POST';
+        config.url = opts.url || opts.action ? XNAT.url.rootUrl(opts.action) : '#!';
+
+        config.form = extend(true, {
+            id: config.id + '-form'
+        }, config.form);
+
+        config.input = extend(true, {
+            id: config.id + '-input',
+            className: addClassName(config, 'file-upload-input ignore')
+        }, config.input);
+
+        config.button = extend(true, {
+            id: config.id + '-submit',
+            html: 'Upload'
+        }, config.button);
+
+        var uploadForm = XNAT.ui.input.upload(config).get();
+
+        // var form = ['form', {
+        //     id: opts.id + '-form',
+        //     method: opts.method || 'POST',
+        //     action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
+        //     className: addClassName(opts, 'file-upload ignore')
+        // }, [
+        //     ['input', {
+        //         type: 'file',
+        //         id: opts.id + '-input',
+        //         multiple: true,
+        //         className: addClassName(opts, 'file-upload-input ignore')
+        //     }],
+        //     ['button.btn.btn-sm', {
+        //         type: 'submit',
+        //         id: opts.id +'-submit',
+        //         html: 'Upload'
+        //     }]
+        // ]];
+
+        return XNAT.ui.template.panelInput(opts, uploadForm).get();
     };
 
     panel.input.group = function panelInputGroup(opts){

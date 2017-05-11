@@ -363,7 +363,7 @@ var XNAT = getObject(XNAT);
         }
     };
 
-    input.fileUpload = function(config){
+    input.fileUpload = input.upload = function(config){
 
         config = cloneObject(config);
 
@@ -373,20 +373,37 @@ var XNAT = getObject(XNAT);
 
         // submission method defaults to 'POST'
         config.method = config.method || 'POST';
-        config.contentType = config.contentType || 'multipart/form-data';
+        config.contentType = config.contentType || config.enctype || 'multipart/form-data';
 
         config.form = extend(true, {
             method: config.method,
-            attr: { 'content-type': config.contentType }
+            action: config.action ? XNAT.url.rootUrl(config.action) : '#!',
+            attr: {
+                'content-type': config.contentType,
+                'enctype': config.enctype || config.contentType
+            }
         }, config.form);
+
+        var fileTypes = config.fileTypes ? config.fileTypes.split(/[,\s]+/) : null;
+
+        config.input = extend(true, {
+            id: config.id || config.name || '',
+            name: config.name || config.id || '',
+            accept: config.accept || fileTypes
+        }, config.input);
+
+        config.button = extend(true, {
+            html: 'Upload'
+        }, config.button);
 
         // adding 'ignore' class to prevent submitting with parent form
         var fileInput = spawn('input.ignore|type=file|multiple', config.input);
-        var uploadBtn = spawn('button.upload.btn.btn-sm|type=submit', config.button, 'Upload');
+        var uploadBtn = spawn('button.upload.btn.btn-sm|type=button', config.button);
         var fileForm  = spawn('form.file-upload.ignore', config.form, [fileInput, uploadBtn]);
 
-        var fileTypes = config.fileTypes ? config.fileTypes.split(/[,\s]+/) : null;
         var paramName = config.name || config.param || 'fileUpload';
+
+        var URL = XNAT.url.rootUrl(config.url || config.action);
 
         // function called when 'Upload' button is clicked
         function doUpload(){
@@ -406,16 +423,16 @@ var XNAT = getObject(XNAT);
                     formData.append(paramName, file);
                 }
             });
-            XHR.open(config.method, config.url, true);
+            XHR.open(config.method, URL, true);
             XHR.setRequestHeader('Content-Type', config.contentType);
             XHR.onload = function(){
                 if (XHR.status !== 200) {
                     console.error(XHR.statusText);
                     console.error(XHR.responseText);
-                    xmodal.message({
+                    XNAT.ui.dialog.message({
                         title: 'Upload Error',
                         content: '' +
-                            'There was a problem uploading your theme package.' +
+                            'There was a problem uploading the selected file.' +
                             '<br>' +
                             'Server responded with: ' +
                             '<br>' +
@@ -442,6 +459,7 @@ var XNAT = getObject(XNAT);
         };
 
         // TODO: FINISH THIS
+
 
         // var uploaded = false;
         // for (var i = 0; i < files.length; i++) {

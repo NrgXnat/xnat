@@ -17,16 +17,16 @@
 
         </ul>
         <div class="yui-content">
-            <div id="tab1">
+            <div id="tab1" class="pad10">
                 <p>#parse($turbineUtils.getTemplateName("_summary_details","xnat:projectData",$project.getId()))</p>
             </div>
 
             #if($data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user))
-                    <div id="tab3">
+                    <div id="tab3" class="pad10">
                         <p>#parse($turbineUtils.getTemplateName(
                             "_summary_management","xnat:projectData",$project.getId()))</p>
                     </div>
-                    <div id="othermgmt">
+                    <div id="othermgmt" class="pad10">
                         <p>#parse($turbineUtils.getTemplateName(
                             "_summary_manage","xnat:projectData",$project.getId()))</p>
                     </div>

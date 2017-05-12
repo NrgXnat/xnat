@@ -625,26 +625,18 @@ public class PoolDBUtils {
                 if (itemString==null){
                     itemString =(String)PoolDBUtils.ReturnStatisticQuery(functionQuery,functionName,e.getDbName(),login);
                     if(itemString!=null){
-                    	// itemString.replaceAll("\\\\", "\\\\\\\\") is to escape backslashes in Windows paths.
-                        String query = "INSERT INTO xs_item_cache (elementName,ids,contents) VALUES ('" + rootElement + "','" + ids + "','" + itemString.replaceAll("\\\\", "\\\\\\\\") + "');";
+                    	// itemString.replaceAll("\\\\", "\\\\\\\\") is to escape backslashes in Windows paths,
+						// "'", "''" is to replace single quotes with escaped single quotes, e.g. "O'Connor" becomes
+						// "O''Connor".
+                        final String query = "INSERT INTO xs_item_cache (elementName,ids,contents) VALUES ('" + rootElement + "','" + ids + "','" + itemString.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "''") + "');";
                         PoolDBUtils.ExecuteNonSelectQuery(query, e.getDbName(), login);
                     }
                 }
-            } catch (XFTInitException e) {
-                logger.error("",e);
-            } catch (ElementNotFoundException e) {
-                logger.error("",e);
-            } catch (SQLException e) {
-                logger.error("",e);
-            } catch (DBPoolException e) {
-                logger.error("",e);
             } catch (Exception e) {
                 logger.error("",e);
-            }finally{
             }
 
-
-        return itemString;
+		return itemString;
     }
 
     /**

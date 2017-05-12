@@ -611,14 +611,28 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             _preferenceService.setPreferenceValue(getToolId(), namespacedPropertyId, scope, entityId, value);
         }
         // This caches primitive values that aren't sub-items in other preferences.
-        if (subkeys.length == 0 && _preferences.containsKey(key)){
-            final Class<?> valueType = _preferences.get(key).getValueType();
-            final String valName = valueType.getName();
-            if(valueType.equals(String.class) || valueType.equals(Date.class) || valueType.equals(Integer.class) || valueType.equals(Double.class) || valueType.equals(Float.class) || valueType.equals(Long.class) || valueType.equals(Boolean.class) ||
-                    valName.equals("boolean") || valName.equals("int") || valName.equals("long") || valName.equals("float") || valName.equals("double")) {
-                storeToCache(key, value);
+        if (subkeys.length == 0){
+            String keyPrefix = key;
+            if(key.indexOf(":")!=-1){
+                keyPrefix = key.substring(0,key.indexOf(":"));
+            }
+
+            if(_preferences.containsKey(keyPrefix)){
+                final Class<?> valueType = _preferences.get(keyPrefix).getValueType();
+                if(isPrimative(valueType)){
+                    storeToCache(key, value);
+                }
+            }
+            else{
+                if (_preferenceService.getTool(getToolId()).isStrict()) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + namespacedPropertyId);
+                }
+                else{
+                    storeToCache(key, value);
+                }
             }
         }
+
 
         return current;
     }
@@ -1379,6 +1393,17 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
     }};
+
+    private static boolean isPrimative (Class<?> valueType){
+        final String valName = valueType.getName();
+        if(valueType.equals(String.class) || valueType.equals(Integer.class) || valueType.equals(Double.class) || valueType.equals(Float.class) || valueType.equals(Long.class) || valueType.equals(Boolean.class) ||
+                valName.equals("boolean") || valName.equals("int") || valName.equals("long") || valName.equals("float") || valName.equals("double")) {
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
 
     private static final TypeFactory _typeFactory = _mapper.getTypeFactory();
 

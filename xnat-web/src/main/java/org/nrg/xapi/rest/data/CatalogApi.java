@@ -27,6 +27,7 @@ import org.nrg.xapi.rest.ProjectId;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatCatalogI;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -54,11 +55,11 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Read;
 @XapiRestController
 @RequestMapping(value = "/archive")
 public class CatalogApi extends AbstractXapiRestController {
-
     @Autowired
-    public CatalogApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final CatalogService service) {
+    public CatalogApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final CatalogService service, final SiteConfigPreferences preferences) {
         super(userManagementService, roleHolder);
         _service = service;
+        _preferences = preferences;
     }
 
     @ApiOperation(value = "Refresh the catalog entry for one or more resources.", notes = "The resource should be identified by standard archive-relative paths, such as /archive/experiments/XNAT_E0001 or /archive/projects/XNAT_01/subjects/XNAT_01_01.", response = Void.class)
@@ -142,7 +143,7 @@ public class CatalogApi extends AbstractXapiRestController {
         final UserI user = getSessionUser();
 
         _log.info("User {} requested download catalog {}", user.getUsername(), catalogId);
-        final CatCatalogI catalog = _service.getCatalogForResources(user, catalogId);
+        final CatCatalogI catalog = _service.getCachedCatalog(user, catalogId);
         if (catalog == null) {
             throw new NotFoundException("No catalog with ID " + catalogId + " was found.");
         }
@@ -162,7 +163,7 @@ public class CatalogApi extends AbstractXapiRestController {
         final UserI user = getSessionUser();
 
         _log.info("User {} requested download catalog: {}", catalogId);
-        final CatCatalogI catalog = _service.getCatalogForResources(user, catalogId);
+        final CatCatalogI catalog = _service.getCachedCatalog(user, catalogId);
         if (catalog == null) {
             throw new NotFoundException("No catalog with ID " + catalogId + " was found.");
         }
@@ -217,7 +218,37 @@ public class CatalogApi extends AbstractXapiRestController {
         return ResponseEntity.ok()
                              .header(HttpHeaders.CONTENT_TYPE, ZipStreamingResponseBody.MEDIA_TYPE)
                              .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "zip"))
-                             .body((StreamingResponseBody) new ZipStreamingResponseBody(_service.getResourcesForCatalog(user, catalogId)));
+                             .body((StreamingResponseBody) new ZipStreamingResponseBody(user, _service.getCachedCatalog(user, catalogId), _preferences.getArchivePath()));
+    }
+
+    @ApiOperation(value = "Downloads the specified catalog as a zip archive, using a small empty file for each entry.",
+                  response = StreamingResponseBody.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "The requested resources were successfully downloaded."),
+                   @ApiResponse(code = 204, message = "No resources were specified."),
+                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
+                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @XapiRequestMapping(value = "download/{catalogId}/test", produces = ZipStreamingResponseBody.MEDIA_TYPE, method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZipTest(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, IOException {
+        final UserI user = getSessionUser();
+
+        if (StringUtils.isBlank(catalogId)) {
+            throw new NoContentException("There was no catalog specified in the request.");
+        }
+        // TODO: Need to validate the catalog exists (404 if not), the user has permissions to view all resources (403 if not), if that's cool then proceed.
+        _log.info("User {} requested download of the catalog {}", user.getLogin(), catalogId);
+
+        final CatCatalogI catalog = _service.getCachedCatalog(user, catalogId);
+        if (catalog == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        return ResponseEntity.ok()
+                             .header(HttpHeaders.CONTENT_TYPE, ZipStreamingResponseBody.MEDIA_TYPE)
+                             .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "zip"))
+                             .body((StreamingResponseBody) new ZipStreamingResponseBody(user, catalog, _preferences.getArchivePath(), true));
     }
 
     private static String getAttachmentDisposition(final String name, final String extension) {
@@ -228,5 +259,6 @@ public class CatalogApi extends AbstractXapiRestController {
 
     private static final Logger _log = LoggerFactory.getLogger(CatalogApi.class);
 
-    private final CatalogService _service;
+    private final CatalogService        _service;
+    private final SiteConfigPreferences _preferences;
 }

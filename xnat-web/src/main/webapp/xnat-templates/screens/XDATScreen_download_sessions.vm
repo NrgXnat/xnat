@@ -1,3 +1,4 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="projectIds" type="java.util.List" *#
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
@@ -282,7 +283,7 @@
                 #set($counter=0)
                 #set($_FORMAT="")
                 #foreach($format in $scan_formats)
-                    #set($_FORMAT = $!turbineUtils.escapeHTML("$!format.get(0)"))
+                    #set($_FORMAT = $!turbineUtils.escapeHTML("$!format.get(0)").replaceAll("'", "\\'"))
                     <script>
                             #if($!format.get(0))
                             XNAT.app.projectDownload.items.scan_formats.list.push('$_FORMAT')
@@ -315,7 +316,7 @@
             ## gather scan types
                 #set($counter = 0)
                 #foreach($scan in $scans)
-                    #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)"))
+                    #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)").replaceAll("'", "\\'"))
                     #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
                     <script>
                             #if($!scan.get(0))
@@ -351,7 +352,7 @@
                     ## gather resources
                     #set($counter = 0)
                     #foreach($resource in $resources)
-                        #set($_RESOURCE_ID = $!turbineUtils.escapeHTML("$!resource.get(0)"))
+                        #set($_RESOURCE_ID = $!turbineUtils.escapeHTML("$!resource.get(0)").replaceAll("'", "\\'"))
                         <script>
                                 #if($!resource.get(0))
                                 XNAT.app.projectDownload.items.resources.list.push('$_RESOURCE_ID');
@@ -385,7 +386,7 @@
                     ## gather reconstructions
                     #set($counter = 0)
                     #foreach($scan in $recons)
-                        #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)"))
+                        #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)").replaceAll("'", "\\'"))
                         #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
                         <script>
                                 #if($!scan.get(0))
@@ -423,8 +424,8 @@
                     ## gather assessors
                     #set($counter = 0)
                     #foreach($scan in $assessors)
-                        #set($_NAME = $!turbineUtils.escapeHTML("$!scan.get(2)"))
-                        #set($_VALUE = $!turbineUtils.escapeHTML("$!scan.get(0)"))
+                        #set($_NAME = $!turbineUtils.escapeHTML("$!scan.get(2)").replaceAll("'", "\\'"))
+                        #set($_VALUE = $!turbineUtils.escapeHTML("$!scan.get(0)").replaceAll("'", "\\'"))
                         #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
                         <script>
                                 #if($!scan.get(2))

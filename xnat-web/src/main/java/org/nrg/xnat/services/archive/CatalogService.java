@@ -76,7 +76,7 @@ public interface CatalogService {
      *
      * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
      */
-    CatCatalogI getCatalogForResources(final UserI user, final String catalogId) throws InsufficientPrivilegesException;
+    CatCatalogI getCachedCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException;
 
     /**
      * Returns the size of the requested catalog. This is useful when making the catalog available for download.
@@ -90,19 +90,6 @@ public interface CatalogService {
      * @throws IOException                     When an error occurs accessing the catalog.
      */
     long getCatalogSize(UserI user, String catalogId) throws InsufficientPrivilegesException, IOException;
-
-    /**
-     * Retrieves the catalog with the specified ID, locates the resources specified in the catalog, and maps the
-     * resources to keys based on relative location to parent.
-     *
-     * @param user      The user retrieving the catalog.
-     * @param catalogId The catalog of resource to retrieve.
-     *
-     * @return A map of relative file locations and resources.
-     *
-     * @throws InsufficientPrivilegesException When the user doesn't have access to one or more requested resources.
-     */
-    PathResourceMap<String, Resource> getResourcesForCatalog(final UserI user, final String catalogId) throws InsufficientPrivilegesException, IOException;
 
     /**
      * Creates a catalog and resources for a specified XNAT data object. The resource folder is created in the archive

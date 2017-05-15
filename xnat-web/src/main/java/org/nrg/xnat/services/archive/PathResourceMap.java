@@ -20,6 +20,13 @@ import java.util.Iterator;
  */
 public interface PathResourceMap<P, R> extends Iterator<PathResourceMap.Mapping<P, R>> {
     /**
+     * Indicates how many resources have been processed.
+     *
+     * @return The total number of resources that have been processed.
+     */
+    long getProcessedCount();
+
+    /**
      * Provides the duple interface for the path-resource association.
      */
     interface Mapping<P, R> {

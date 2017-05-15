@@ -27,13 +27,16 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xft.utils.XMLUtils;
 import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.w3c.dom.Document;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -2075,6 +2078,7 @@ public class JavaFileGenerator {
                     buffer.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
 
                     buffer.append(header).append("</Displays>");
+
                 } else {
                     //UNKNOWN
                     ArrayList localFields = new ArrayList();
@@ -2182,10 +2186,18 @@ public class JavaFileGenerator {
                         writer.write(line);
                         lines++;
                     }
+
+                    InputStream in=new ByteArrayInputStream(buffer.toString().getBytes(StandardCharsets.UTF_8));
+                    if (in != null) {
+                        Document doc = XMLUtils.GetDOM(in);
+                        DisplayManager.GetInstance().assignDisplays(doc);
+                    }
+
                 }
                 if (XFT.VERBOSE) {
                     System.out.println("Wrote " + lines + " lines to the display file " + qualifiedElementFile.getAbsolutePath());
                 }
+
             } else {
                 if (qualifiedElementFile.exists()) {
                     System.out.println("\n\nFile already exists: " + qualifiedElementFile.getAbsolutePath());

@@ -30,8 +30,8 @@
         <security:custom-filter position="LOGOUT_FILTER" ref="logoutFilter"/>
         <security:session-management session-authentication-strategy-ref="sas"/>
         <security:headers>
-            <security:frame-options policy="DENY"/>
-            <security:header name="Content-Security-Policy" value="frame-ancestors 'none'"/>
+            <security:frame-options policy="SAMEORIGIN"/>
+            <security:header name="Content-Security-Policy" value="frame-ancestors 'self'"/>
             <security:hsts disabled="true"/>
         </security:headers>
     </security:http>

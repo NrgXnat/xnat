@@ -41,7 +41,7 @@
 
         #if($assessor.getItem().instanceOf("xnat:imageAssessorData"))
             #if ($assessor.getXSIType().equalsIgnoreCase("behavioral:tasksSummaryData"))
-                &nbsp;&nbsp;<a href="$url">Task: $assessor.getParsedType()</a>
+                &nbsp;&nbsp;<a href="$url">Task</a>
             #else
                 &nbsp;&nbsp;<a href="$url">$data.getSession().getAttribute("userHelper").getDisplayManager().getSingularDisplayNameForElement($assessor.getXSIType())</a>
             #end

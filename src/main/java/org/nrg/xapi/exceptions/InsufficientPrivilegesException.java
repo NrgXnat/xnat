@@ -14,8 +14,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @ResponseStatus(HttpStatus.FORBIDDEN)
 public class InsufficientPrivilegesException extends XapiException {
@@ -39,7 +40,21 @@ public class InsufficientPrivilegesException extends XapiException {
         _resources.addAll(resources);
     }
 
+    public InsufficientPrivilegesException(final String username, final Set<String> resources) {
+        super(HttpStatus.FORBIDDEN, username);
+        _username = username;
+        _project = null;
+        _resources.addAll(resources);
+    }
+
     public InsufficientPrivilegesException(final String username, final String project, final List<String> resources) {
+        super(HttpStatus.FORBIDDEN, username);
+        _username = username;
+        _project = project;
+        _resources.addAll(resources);
+    }
+
+    public InsufficientPrivilegesException(final String username, final String project, final Set<String> resources) {
         super(HttpStatus.FORBIDDEN, username);
         _username = username;
         _project = project;
@@ -83,14 +98,14 @@ public class InsufficientPrivilegesException extends XapiException {
                 return "";
 
             case 1:
-                return _resources.get(0);
+                return _resources.iterator().next();
 
             default:
                 return Joiner.on(", ").join(_resources);
         }
     }
 
-    public List<String> getResources() {
+    public Set<String> getResources() {
         return _resources;
     }
 
@@ -103,5 +118,5 @@ public class InsufficientPrivilegesException extends XapiException {
 
     private final String _username;
     private final String _project;
-    private final List<String> _resources = new ArrayList<>();
+    private final Set<String> _resources = new HashSet<>();
 }

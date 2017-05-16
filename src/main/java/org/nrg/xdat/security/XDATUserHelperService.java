@@ -9,23 +9,19 @@
 
 package org.nrg.xdat.security;
 
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.display.ElementDisplay;
-import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 
-import com.google.common.collect.Lists;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class XDATUserHelperService extends UserHelperServiceI {
     static Logger logger = Logger.getLogger(XDATUserHelperService.class);
@@ -89,7 +85,7 @@ public class XDATUserHelperService extends UserHelperServiceI {
 	}
 
 	@Override
-	public Date getPreviousLogin() throws SQLException, Exception {
+	public Date getPreviousLogin() throws Exception {
 		return user.getPreviousLogin();
 	}
 
@@ -135,9 +131,6 @@ public class XDATUserHelperService extends UserHelperServiceI {
 
 	@Override
 	public boolean hasEditAccessToSessionDataByTag(String tag) throws Exception {
-		return ((XDATUser)user).hasAccessTo(tag);
+		return user.hasAccessTo(tag);
 	}
-	
-	
-
 }

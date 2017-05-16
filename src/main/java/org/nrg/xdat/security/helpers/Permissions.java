@@ -785,19 +785,19 @@ public class Permissions {
         }
     }
 
-    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds) throws InsufficientPrivilegesException {
-        return verifyAccessToSessions(template, user, new ArrayList<>(sessionIds), null);
-    }
-
-    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
-        return verifyAccessToSessions(template, user, new ArrayList<>(sessionIds), scopedProjectId);
-    }
-
     public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds) throws InsufficientPrivilegesException {
+        return verifyAccessToSessions(template, user, new HashSet<>(sessionIds), null);
+    }
+
+    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds) throws InsufficientPrivilegesException {
         return verifyAccessToSessions(template, user, sessionIds, null);
     }
 
     public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
+        return verifyAccessToSessions(template, user, new HashSet<>(sessionIds), scopedProjectId);
+    }
+
+    public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
         // Get all projects, primary and shared, that contain the specified session IDs.
         final Multimap<String, String> projectSessionMap = getProjectsForSessions(template, sessionIds);
 
@@ -813,7 +813,7 @@ public class Permissions {
             // Now check that all of the requested sessions are available in the scoped project.
             final Collection<String> located = projectSessionMap.get(scopedProjectId);
             if (!located.containsAll(sessionIds)) {
-                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, new ArrayList<>(Sets.difference(new HashSet<>(sessionIds), new HashSet<>(located))));
+                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, Sets.difference(new HashSet<>(sessionIds), new HashSet<>(located)));
             }
 
             // Limit the map to just the specified project.
@@ -836,14 +836,26 @@ public class Permissions {
             }
         }
 
+        // Remove any projects to which the user doesn't have access from consideration.
         if (unauthorized.size() > 0) {
-            throw new InsufficientPrivilegesException(user.getUsername(), unauthorized);
+            for (final String unauthorizedProjectId : unauthorized) {
+                projectSessionMap.removeAll(unauthorizedProjectId);
+            }
+
+            // Now get the sessions that are available in the remaining authorized projects.
+            final Set<String> authorized = new HashSet<>(projectSessionMap.values());
+
+            // The list of sessions from accessible projects should be the same as the submitted list of sessions or
+            // else the user requested sessions that aren't accessible. In that case, freak out.
+            if (authorized.size() != sessionIds.size()) {
+                throw new InsufficientPrivilegesException(user.getUsername(), Sets.difference(sessionIds, authorized));
+            }
         }
 
         return projectSessionMap;
     }
 
-    public static Multimap<String, String> getProjectsForSessions(final NamedParameterJdbcTemplate template, final List<String> sessions) {
+    public static Multimap<String, String> getProjectsForSessions(final NamedParameterJdbcTemplate template, final Set<String> sessions) {
         final List<Map<String, Object>> located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new HashMap<String, Object>() {{
             put("sessionIds", sessions);
         }});

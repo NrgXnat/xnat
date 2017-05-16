@@ -15,13 +15,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.SecurityManager;
-import org.nrg.xdat.security.XDATUserHelperService;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -32,9 +30,11 @@ import org.nrg.xft.db.FavEntries;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"unused", "SameParameterValue"})
 public abstract class UserHelperServiceI {
-    static Logger logger = Logger.getLogger(UserHelperServiceI.class);
 	public abstract void setUser(UserI user);
 	public abstract UserI getUser();
 	
@@ -50,7 +50,7 @@ public abstract class UserHelperServiceI {
 	public abstract List<ItemI> getCachedItemsByFieldValue(String elementName, String security_permission, boolean preLoad, String field, Object value);
 	public abstract Map<Object, Object> getCachedItemValuesHash(String elementName, String security_permission, boolean preLoad, String idField, String valueField);
 	
-	public abstract Date getPreviousLogin() throws SQLException, Exception;
+	public abstract Date getPreviousLogin() throws Exception;
 	
 	public abstract List<ElementDisplay> getSearchableElementDisplays();
 	public abstract List<ElementDisplay> getSearchableElementDisplaysByDesc();
@@ -60,7 +60,6 @@ public abstract class UserHelperServiceI {
 	public abstract ElementDisplay getBrowseableElementDisplay(String elementName);
 	public abstract List<ElementDisplay> getCreateableElementDisplays();
 
-
     public ElementSecurity getElementSecurity(String name) throws Exception {
         return ElementSecurity.GetElementSecurity(name);
     }
@@ -69,39 +68,38 @@ public abstract class UserHelperServiceI {
     	return Permissions.canAny(getUser(), rootElement, SecurityManager.CREATE);
     }
 
-
 	public boolean canCreate(ItemI item) throws Exception{
 		return Permissions.canCreate(getUser(), item);
 	}
+
+    public boolean canCreate(String xmlPath, Object value) throws Exception{
+        return Permissions.canCreate(getUser(), xmlPath, value);
+    }
 
 	public boolean canRead(ItemI item) throws Exception{
 		return Permissions.canRead(getUser(), item);
 	}
 
+    public boolean canRead(String xmlPath, Object value) throws Exception{
+        return Permissions.canRead(getUser(), xmlPath, value);
+    }
+
 	public boolean canEdit(ItemI item) throws Exception{
 		return Permissions.canEdit(getUser(), item);
 	}
 
+    public boolean canEdit(String xmlPath, Object value) throws Exception{
+        return Permissions.canEdit(getUser(), xmlPath, value);
+    }
+
 	public boolean canDelete(ItemI item) throws Exception{
 		return Permissions.canDelete(getUser(), item);
-	}
-
-	public boolean canCreate(String xmlPath, Object value) throws Exception{
-		return Permissions.canCreate(getUser(), xmlPath, value);
-	}
-
-	public boolean canEdit(String xmlPath, Object value) throws Exception{
-		return Permissions.canEdit(getUser(), xmlPath, value);
 	}
 
 	public boolean canDelete(String xmlPath, Object value) throws Exception{
 		return Permissions.canDelete(getUser(), xmlPath, value);
 	}
 
-	public boolean canRead(String xmlPath, Object value) throws Exception{
-		return Permissions.canRead(getUser(), xmlPath, value);
-	}
-	
 	public List<Object> getAllowedValues(String elementName, String xmlPath, String action){
 		return Permissions.getAllowedValues(getUser(), elementName, xmlPath, action);
 	}
@@ -170,17 +168,13 @@ public abstract class UserHelperServiceI {
         FavEntries fe = null;
         try {
             fe = FavEntries.GetFavoriteEntries(elementName, id, getUser());
-        } catch (DBPoolException e) {
-            logger.error("", e);
-        } catch (SQLException e) {
+        } catch (DBPoolException | SQLException e) {
             logger.error("", e);
         }
-        if (fe == null) {
-            return false;
-        } else {
-            return true;
-        }
+        return fe != null;
     }
     
     public abstract boolean hasEditAccessToSessionDataByTag(String tag) throws Exception;
+
+    private static final Logger logger = LoggerFactory.getLogger(UserHelperServiceI.class);
 }

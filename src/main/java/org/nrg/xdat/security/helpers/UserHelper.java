@@ -9,8 +9,10 @@
 
 package org.nrg.xdat.security.helpers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.XDATUserHelperService;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xft.security.UserI;
@@ -65,10 +67,7 @@ public class UserHelper {
             final UserHelperServiceI service = clazz.newInstance();
             service.setUser(user);
             return service;
-        } catch (InstantiationException e) {
-            logger.error("", e);
-            return null;
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             logger.error("", e);
             return null;
         }
@@ -101,8 +100,12 @@ public class UserHelper {
             //default to XDATUserHelperService implementation (unless a different default is configured)
             if (_searchService == null) {
                 try {
-                    final String className = XDAT.safeSiteConfigProperty("security.userHelperService.default", "org.nrg.xdat.security.XDATUserHelperService");
-                    _userHelper = Class.forName(className).asSubclass(UserHelperServiceI.class);
+                    final String className = XDAT.safeSiteConfigProperty("security.userHelperService.default", null);
+                    if (StringUtils.isNotBlank(className)) {
+                        _userHelper = Class.forName(className).asSubclass(UserHelperServiceI.class);
+                    } else {
+                        _userHelper = XDATUserHelperService.class;
+                    }
                 } catch (ClassNotFoundException e) {
                     logger.error("", e);
                 }

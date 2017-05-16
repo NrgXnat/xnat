@@ -110,8 +110,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             }
 
             // If we've reached here, the security check has failed so let's provide some information on the context but
-            // only if the log level is INFO or below...
-            if (logger.isInfoEnabled()) {
+            // only if this isn't the guest user and the log level is INFO or below...
+            if (!user.isGuest() && logger.isInfoEnabled()) {
                 final StringBuilder buffer = new StringBuilder("User {} not able to {} the schema element {} with the security values: {}. {} permission criteria found for that user, action, and element.");
                 final String count = criteria.isEmpty() ? "No" : Integer.toString(criteria.size());
                 if (!criteria.isEmpty()) {

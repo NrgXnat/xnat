@@ -1,49 +1,69 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="dataType" type="java.lang.String" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="exptCounts" type="java.util.Hashtable" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="popup" type="java.lang.Boolean" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
 <!-- Sequence: 5 -->
+#set($userHelper = $userHelper)
 
 <!-- xnat_projectData/actionsBox/Add -->
 
-#if($data.getSession().getAttribute("userHelper").canEdit("xnat:subjectData/project",$project.getId()))
-				           <li class="yuimenuitem"> 
-            <a class="yuimenuitemlabel" href="#insertbox">Add</a>
-            <DIV ID="insertbox" class="yuimenu">
-             <DIV class="bd">
-              <ul class="first-of-type" style="width: 170px;">
-              <li class="yuimenuitem">
-                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_xnat_subjectData.vm").addPathInfo('project',$project.getId())">$displayManager.getSingularDisplayNameForSubject()</A>
-              </li>
-              #foreach($dataType in $exptCounts.keySet())
-               #set($ed=$!data.getSession().getAttribute("userHelper").getBrowseableElementDisplay($dataType))	
-          	     <li class="yuimenuitem">
-                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo('project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</A>
-               </li>
-              #end
-              #set($key="xnat:mrSessionData")
-              #if(!$exptCounts.containsKey($key))
-               #set($ed=$!data.getSession().getAttribute("userHelper").getBrowseableElementDisplay($key))	
-          	     #if($ed)
-          	     <li class="yuimenuitem">
-                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo('project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</A>
-               </li>
-               #end
-              #end
-              <li class="yuimenuitem">
-                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_add_experiment.vm").addPathInfo('project',$project.getId())">More</A>
-               </li>
-              </ul>
-             </DIV>
-            </DIV>
-           </li>
-           <li class="yuimenuitem">
-               <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
-           </li>
-           <li class="yuimenuitem">
-            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo('project',$project.getId())">View Prearchive</A>
-           </li>
-           #if($project.getUseScanTypeMapping())
-		   <li class="yuimenuitem">
-            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","scanTypeCleanup").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Scan Type Cleanup</A> 
-           </li>
-           #end
-      </ul>
-      <ul>
+#if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
+<li class="yuimenuitem">
+    <a class="yuimenuitemlabel" href="#insertbox">Add</a>
+    <DIV ID="insertbox" class="yuimenu">
+        <DIV class="bd">
+            <ul class="first-of-type" style="width: 170px;">
+                <li class="yuimenuitem">
+                    <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_xnat_subjectData.vm").addPathInfo(
+                        'project',$project.getId())">$displayManager.getSingularDisplayNameForSubject()</A>
+                </li>
+                #foreach($dataType in $exptCounts.keySet())
+                    #set($ed=$!userHelper.getBrowseableElementDisplay($dataType))
+                    <li class="yuimenuitem">
+                        <a class="yuimenuitemlabel"
+                           href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
+                               'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</A>
+                    </li>
+                #end
+                #set($key="xnat:mrSessionData")
+                #if(!$exptCounts.containsKey($key))
+                    #set($ed=$!userHelper.getBrowseableElementDisplay($key))
+                    #if($ed)
+                        <li class="yuimenuitem">
+                            <a class="yuimenuitemlabel"
+                               href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
+                                   'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</A>
+                        </li>
+                    #end
+                #end
+                <li class="yuimenuitem">
+                    <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_add_experiment.vm").addPathInfo(
+                        'project',$project.getId())">More</A>
+                </li>
+            </ul>
+        </DIV>
+    </DIV>
+</li>
+<li class="yuimenuitem">
+    <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
+</li>
+<li class="yuimenuitem">
+    <a class="yuimenuitemlabel"
+       href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo(
+           'project',$project.getId())">View Prearchive</A>
+</li>
+    #if($project.getUseScanTypeMapping())
+    <li class="yuimenuitem">
+        <a class="yuimenuitemlabel"
+           href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","scanTypeCleanup").addPathInfo(
+               "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
+               "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Scan Type Cleanup</A>
+    </li>
+    #end
+</ul>
+<ul>
 #end

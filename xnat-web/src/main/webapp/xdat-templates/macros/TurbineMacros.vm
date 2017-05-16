@@ -1538,17 +1538,21 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 #end
 
 #macro(renderTopListType $type)
- #if($data.getSession().getAttribute("userHelper").getBrowseableElementDisplay($type))
-  #set($typeObject=$data.getSession().getAttribute("userHelper").getBrowseableElementDisplay($type))
+  #* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+  #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+  #set($userHelper = $data.getSession().getAttribute("userHelper"))
+
+  #if($userHelper.getBrowseableElementDisplay($type))
+  #set($typeObject=$userHelper.getBrowseableElementDisplay($type))
   #if($project)
           #if($project.getId())
-             #if($data.getSession().getAttribute("userHelper").canCreate("$typeObject.getElementName()/project",$project.getId()))
+             #if($userHelper.canCreate("$typeObject.getElementName()/project", $project.getId()))
         <li>
             <a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element",$typeObject.getElementName())/project/$!project.getId()">$typeObject.getSchemaElement().getElementSecurity().getSingularDescription()</a>
         </li>
        #end
           #else
-             #if($data.getSession().getAttribute("userHelper").canCreate("$typeObject.getElementName()/project",$project))
+             #if($userHelper.canCreate("$typeObject.getElementName()/project", $project))
         <li>
             <a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element",$typeObject.getElementName())$!projectString">$typeObject.getSchemaElement().getElementSecurity().getSingularDescription()</a>
         </li>

@@ -10,10 +10,7 @@
 package org.nrg.xnat.services.archive.impl.legacy;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.*;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -775,7 +772,8 @@ public class DefaultCatalogService implements CatalogService {
 
     private Map<String, Map<String, Map<String, String>>> parseAndVerifySessions(final UserI user, final List<String> sessions, final List<String> scanTypes, final List<String> scanFormats) throws InsufficientPrivilegesException {
         final Multimap<String, String> matchingSessions = ArrayListMultimap.create();
-        final Map<String, Map<String, Map<String, String>>> sessionMap = new HashMap<>();
+        final Map<String, String[]> subjectLabelMap = Maps.newHashMap();
+        final Map<String, Map<String, Map<String, String>>> sessionMap = Maps.newHashMap();
         for (final String sessionInfo : sessions) {
             final String[] atoms = sessionInfo.split(":");
             final String projectId = atoms[0];
@@ -783,41 +781,59 @@ public class DefaultCatalogService implements CatalogService {
             final String label = atoms[2];
             final String sessionId = atoms[3];
 
-            if (!matchingSessions.containsKey(projectId)) {
-                try {
-                    if (!Permissions.canReadProject(user, projectId)) {
-                        throw new InsufficientPrivilegesException(user.getUsername(), projectId);
-                    }
-                } catch (InsufficientPrivilegesException e) {
-                    throw e;
-                } catch (Exception e) {
-                    _log.error("An unexpected error occurred while trying to resolve read access for user " + user.getUsername() + " on project " + projectId);
-                    throw new NrgServiceRuntimeException(NrgServiceError.Unknown, e);
+            matchingSessions.put(projectId, sessionId);
+            subjectLabelMap.put(projectId + ":" + sessionId, new String[]{subject, label});
+        }
+
+        for (final String projectId : matchingSessions.keySet()) {
+            // First, can the user access the project they specified for the session at all?
+            try {
+                if (!Permissions.canReadProject(user, projectId)) {
+                    throw new InsufficientPrivilegesException(user.getUsername(), projectId);
                 }
-                final MapSqlParameterSource parameters = new MapSqlParameterSource();
-                parameters.addValue("projectId", projectId);
-                parameters.addValue("scanTypes", scanTypes);
-                parameters.addValue("scanFormats", scanFormats);
-                final List<String> matching = _parameterized.queryForList(QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT, parameters, String.class);
-                matchingSessions.putAll(projectId, matching);
+            } catch (InsufficientPrivilegesException e) {
+                throw e;
+            } catch (Exception e) {
+                _log.error("An unexpected error occurred while trying to resolve read access for user " + user.getUsername() + " on project " + projectId);
+                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, e);
             }
 
-            if (matchingSessions.get(projectId).contains(sessionId)) {
-                final Map<String, Map<String, String>> projectMap;
-                if (sessionMap.containsKey(projectId)) {
-                    projectMap = sessionMap.get(projectId);
-                } else {
-                    projectMap = new HashMap<>();
-                    sessionMap.put(projectId, projectMap);
+            final Set<String> sessionIds = new HashSet<>(matchingSessions.get(projectId));
+
+            // Now verify that the experiment is either in or shared into the specified project.
+            final MapSqlParameterSource parameters = new MapSqlParameterSource();
+            parameters.addValue("sessionIds", sessionIds);
+            parameters.addValue("projectId", projectId);
+            parameters.addValue("scanTypes", scanTypes);
+            parameters.addValue("scanFormats", scanFormats);
+
+            final Set<String> matching = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT, parameters, String.class));
+            final Set<String> difference = Sets.difference(sessionIds, matching);
+            if (difference.size() > 0) {
+                throw new InsufficientPrivilegesException(user.getUsername(), difference);
+            }
+
+            for (final String sessionId : sessionIds) {
+                if (matchingSessions.get(projectId).contains(sessionId)) {
+                    final Map<String, Map<String, String>> projectMap;
+                    if (sessionMap.containsKey(projectId)) {
+                        projectMap = sessionMap.get(projectId);
+                    } else {
+                        projectMap = new HashMap<>();
+                        sessionMap.put(projectId, projectMap);
+                    }
+                    final String[] subjectLabel = subjectLabelMap.get(projectId + ":" + sessionId);
+                    final String subject = subjectLabel[0];
+                    final String label = subjectLabel[1];
+                    final Map<String, String> subjectMap;
+                    if (projectMap.containsKey(subject)) {
+                        subjectMap = projectMap.get(subject);
+                    } else {
+                        subjectMap = new HashMap<>();
+                        projectMap.put(subject, subjectMap);
+                    }
+                    subjectMap.put(sessionId, label);
                 }
-                final Map<String, String> subjectMap;
-                if (projectMap.containsKey(subject)) {
-                    subjectMap = projectMap.get(subject);
-                } else {
-                    subjectMap = new HashMap<>();
-                    projectMap.put(subject, subjectMap);
-                }
-                subjectMap.put(sessionId, label);
             }
         }
 
@@ -986,7 +1002,11 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
                                                                          + "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id "
                                                                          + "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id "
-                                                                         + "WHERE expt.project = :projectId AND scan.type IN (:scanTypes) AND res.label IN (:scanFormats)";
+                                                                         + "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id "
+                                                                         + "WHERE expt.id IN (:sessionIds) AND "
+                                                                         + "      (share.project = :projectId OR expt.project = :projectId) AND "
+                                                                         + "      scan.type IN (:scanTypes) "
+                                                                         + "      AND res.label IN (:scanFormats);";
     private static final String QUERY_FIND_SCANS_BY_TYPE               = "SELECT "
                                                                          + "  scan.id   AS scan_id, "
                                                                          + "  res.label AS resource "

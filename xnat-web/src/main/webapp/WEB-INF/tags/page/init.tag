@@ -41,11 +41,11 @@
         <c:set var="isGuest" value="true" scope="session"/>
     </sec:authorize>
 
-    <c:set var="themeName" value="${themeService.theme.name}" scope="session"/>
+    <c:set var="themeName" value="${themeService.theme.name}" scope="request"/>
 
     <%-- if there's a theme specified in the request, use that --%>
     <c:if test="${empty themeName && not empty param.theme}">
-        <c:set var="themeName" value="${param.theme}" scope="session"/>
+        <c:set var="themeName" value="${param.theme}" scope="request"/>
     </c:if>
 
     <%-- set 'siteRoot' to the root of your web app --%>
@@ -56,13 +56,13 @@
         <c:set var="siteRoot" value="/${pageContext.request.contextPath}" scope="session"/>
     </c:if>
 
-    <c:set var="themeRoot" value="${siteRoot}/themes/${themeName}" scope="session"/>
-    <c:set var="pageRoot" value="${themeRoot}/page" scope="session"/>
+    <c:set var="themeRoot" value="${siteRoot}/themes/${themeName}" scope="request"/>
+    <c:set var="pageRoot" value="${themeRoot}/page" scope="request"/>
 
     <%-- if no themeName is found, set vars to use root items --%>
     <c:if test="${empty themeName}">
-        <c:set var="themeRoot" value="${siteRoot}" scope="session"/>
-        <c:set var="pageRoot" value="${siteRoot}/page" scope="session"/>
+        <c:set var="themeRoot" value="${siteRoot}" scope="request"/>
+        <c:set var="pageRoot" value="${siteRoot}/page" scope="request"/>
     </c:if>
 
     <%-- get session expiration time --%>
@@ -86,3 +86,4 @@
 
 <%-- inject content on init--%>
 <jsp:doBody/>
+

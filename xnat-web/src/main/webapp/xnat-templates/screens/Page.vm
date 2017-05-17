@@ -7,28 +7,38 @@
 
 <!-- start xnat-templates/screens/Page.vm -->
 
+#set ($SITE_ROOT = $content.getURI(""))
 #set ($template = $data.getTemplateInfo())
 #set ($pg = $data.getParameters().getString('view'))
 #set ($pg_path = "/screens/pages/${pg}.vm")
+#set ($theme_pg = "")
 
-<script src="$content.getURI('/scripts/xnat/app/customPage.js')"></script>
+<script src="${SITE_ROOT}/scripts/xnat/app/customPage.js"></script>
 
 #if ($pg)
 
-    ## if there's a page at '*templates/pages/name.vm' then use that
-    #if ($turbineUtils.resourceExists($pg_path))
+    #if ($theme)
+        #set ($theme_pg = "/themes/${theme}/templates/${pg}.vm")
+    #end
+
+    ## if there's a theme set with the requested Velocity template
+    ## at '/themes/themeName/templates/page-name.vm', load that
+    #if ($theme_pg != "" && $turbineUtils.resourceExists($theme_pg))
+        <div id="view-page">
+            #parse($theme_pg)
+        </div>
+    ## or if there's a tamplate at '/templates/pages/page-name.vm', load that
+    #elseif ($turbineUtils.resourceExists($pg_path))
         <div id="view-page">
             #parse($pg_path)
         </div>
+    ## lastly try to retrieve page content via ajax using the query string value
     #else
-
-    ## try to retrieve page content using the query string value
-    <div id="view-page"></div>
-    <script>
-        console.log('$data.request.queryString');
-        XNAT.app.customPage.getPage('', '#view-page');
-    </script>
-
+        <div id="view-page"></div>
+        <script>
+            console.log('$data.request.queryString');
+            XNAT.app.customPage.getPage('', '#view-page');
+        </script>
     #end
 
 #else
@@ -36,30 +46,30 @@
     ## do stuff if there's no "view" query string param
     <div id="view-page"></div>
 
-<script>
+    <script>
 
-    (function(){
+        (function(){
 
-        var sampleUrl = '/page/#/foo/#tab=bar/#panel=baz'
+            var sampleUrl = '/page/#/foo/#tab=bar/#panel=baz'
 
-        // save the value for the initial page that's loaded
-        var page = getUrlHashValue('#/', '/#');
+            // save the value for the initial page that's loaded
+            var page = getUrlHashValue('#/', '/#');
 
-        XNAT.app.customPage.container = $('#view-page');
-        XNAT.app.customPage.getPage(['', '/#']);
+            XNAT.app.customPage.container = $('#view-page');
+            XNAT.app.customPage.getPage(['', '/#']);
 
-        $(window).on('hashchange', function(e){
-            e.preventDefault();
-            var newPage = getUrlHashValue('#/', '/#');
-            // only get a new page if the page part has changed
-            if (newPage !== page) {
-                XNAT.app.customPage.getPage([newPage, '/#']);
-            }
-        })
+            $(window).on('hashchange', function(e){
+                e.preventDefault();
+                var newPage = getUrlHashValue('#/', '/#');
+                // only get a new page if the page part has changed
+                if (newPage !== page) {
+                    XNAT.app.customPage.getPage([newPage, '/#']);
+                }
+            })
 
-    })();
+        })();
 
-</script>
+    </script>
 
 #end
 

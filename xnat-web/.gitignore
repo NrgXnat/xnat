@@ -12,6 +12,8 @@ gradle.properties
 .settings/
 InstanceSettings.xml
 src/main/resources/META-INF/xnat/auth
+src/main/webapp/themes/*
+!src/main/webapp/themes/xnat
 MANIFEST.MF
 /ide-bin/
 /lib/

@@ -406,7 +406,8 @@ var XNAT = getObject(XNAT);
         var URL = XNAT.url.rootUrl(config.url || config.action);
 
         // function called when 'Upload' button is clicked
-        function doUpload(){
+        function doUpload(e){
+            e.preventDefault();
             var formData = new FormData();
             var XHR = new XMLHttpRequest();
             forEach(fileInput.files, function(file){

@@ -835,10 +835,10 @@ themeManagement:
                         <button id="activate-theme" class="btn btn-sm" type="submit">Set Theme</button>
                         <button id="remove-theme" class="btn btn-sm">Delete</button>
         uploadTheme:
-            kind: panel.input.upload
+            kind: panel.input.file
             id: xnat-theme-upload
             className: theme-uploader
-            name: ":xnat.theme.upload"
+            name: themePackage
             label: Upload Theme
             description: Upload a zipped theme package for selection above.
         themeScript:

@@ -41,10 +41,10 @@ XNAT.app = getObject(XNAT.app||{});
     };
 
     customPage.getName = function(end){
-        var name = getQueryStringValue('view');
-        name = name || getUrlHashValue('#view=', end);
-        name = name || getUrlHashValue('#/', end);
-        name = name || getUrlHash();
+        var name = getQueryStringValue('view') ||
+            getUrlHashValue('#view=', end) ||
+            getUrlHashValue('#/', end) ||
+            getUrlHash();
         return customPage.name = name;
     };
 
@@ -83,15 +83,18 @@ XNAT.app = getObject(XNAT.app||{});
             return paths;
         }
 
-        pagePaths = setPaths(name, ['/page', '/pages']);
+        pagePaths = setPaths(name, [
+            '/page'//,
+            // '/pages'
+        ]);
 
         // if we're using a theme, check that theme's folder
         if (XNAT.themeName || (XNAT.theme && XNAT.theme.name)){
             XNAT.themeName = XNAT.themeName || XNAT.theme.name;
             themePaths = setPaths(name, [
-                '/themes/' + XNAT.themeName + '/page',
-                '/themes/' + XNAT.themeName,
-                '/themes/' + XNAT.themeName + '/pages'
+                // '/themes/' + XNAT.themeName,
+                '/themes/' + XNAT.themeName + '/page'//,
+                // '/themes/' + XNAT.themeName + '/pages'
             ]);
             pagePaths = themePaths.concat(pagePaths);
         }

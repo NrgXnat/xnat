@@ -33,6 +33,15 @@
     </script>
     ## separate script tags so not everything breaks if showReason or requireReason blows up
 
+    <!-- set theme js vars -->
+    #if ($theme)
+    <script>
+        XNAT.theme = {};
+        XNAT.theme.name = '${theme}';
+        XNAT.themeName = XNAT.theme.name;
+    </script>
+    #end
+
     <!-- required libraries -->
     <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.${js}"></script>

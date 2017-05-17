@@ -3112,7 +3112,7 @@ th.sort:hover {
 /* container for data tables in report page panels */
 .panel-table-container {
     overflow-x: auto;
-    width: 820px;
+    width: 800px;
 }
 
 /* overrides for Chosen menus (if used) */

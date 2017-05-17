@@ -17,6 +17,21 @@
     <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.js"></script>
     <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.js"></script>
 
+    #if ($theme)
+        <!-- Theme CSS -->
+        #set ($THEME_CSS = "/themes/${theme}/style/theme.css")
+        #if ($turbineUtils.resourceExists($THEME_CSS))
+            ## /themes/theme-name/style/theme.css
+            <!-- THEME_CSS: ${THEME_CSS} -->
+            <link rel="stylesheet" type="text/css" href="$content.getURI($THEME_CSS)">
+        #elseif ($!themedStyle)
+            <!-- Load active global theme style -->
+            ## /themes/theme-name/styles/theme.css
+            <!-- themedStyle: $!themedStyle -->
+            <link rel="stylesheet" type="text/css" href="$content.getURI($themedStyle)">
+        #end
+    #end
+
     <!-- XNAT JLAPI stylesheets -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xnat/ui/dialog.css?${versionString}">
 
@@ -43,6 +58,20 @@
     <!-- XNAT app scripts -->
     <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
+
+    #if ($theme)
+        <!-- Theme JS -->
+        #set ($THEME_JS = "/themes/${theme}/scripts/theme.js")
+        #if ($turbineUtils.resourceExists($THEME_JS))
+            ## /themes/theme-name/scripts/theme.js
+            <!-- THEME_JS: $!THEME_JS -->
+            <script type="text/javascript" src="$content.getURI($THEME_JS)"></script>
+        #elseif ($themedScript && $turbineUtils.resourceExists($themedScript))
+            <!-- Load active global theme script -->
+            <!-- themedScript: $!themedScript -->
+            <script type="text/javascript" src="$content.getURI($themedScript)"></script>
+        #end
+    #end
 
     #set ($appJS = true)
 

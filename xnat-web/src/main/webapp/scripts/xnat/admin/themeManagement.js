@@ -15,12 +15,12 @@ var XNAT = getObject(XNAT);
 
     console.log('themeManagement.js');
 
-    XNAT.admin = 
+    XNAT.admin =
         getObject(XNAT.admin||{});
-    
-    XNAT.admin.themeManager = themeMgr = 
+
+    XNAT.admin.themeManager = themeMgr =
         getObject(XNAT.admin.themeManager||{});
-    
+
     var themeUrl = XNAT.url.rootUrl('/xapi/theme');
     var s = '/', q = '?', a = '&';
     var csrf = 'XNAT_CSRF=' + window.csrfToken;
@@ -34,7 +34,7 @@ var XNAT = getObject(XNAT);
     var selectedTheme = null;
 
     menuInit(themeSelector, null, '230px');
-    
+
     function populateThemes(){
         getActiveTheme(getAvailableThemes);
     }
@@ -52,7 +52,7 @@ var XNAT = getObject(XNAT);
         });
     }
     themeMgr.getActiveTheme = getActiveTheme;
-    
+
     function getAvailableThemes(selected){
         return XNAT.xhr.getJSON(themeUrl, function(data){
             themeSelector.empty();
@@ -79,21 +79,23 @@ var XNAT = getObject(XNAT);
         themeSelector.html(options);
         menuUpdate(themeSelector);
     }
-    
+
     // function selectTheme(themeToSelect){
     //     if (themeToSelect && typeof themeToSelect === 'string') {
     //         themeSelector.val(themeToSelect);
     //     }
     // }
 
-    function setTheme(name, callback){
+    function setTheme(name, callback, successText){
         var URL = XNAT.url.csrfUrl('/xapi/theme/' + encodeURI(name));
         callback = callback || diddly;
-        xmodal.confirm({
+        XNAT.ui.dialog.confirm({
+            title: false,
             content: '' +
-            'Would you like to change the active theme to "' + name + '"?' +
+            (successText ? successText + '<br><br>' : '') +
+            'Would you like to set the active theme to "' + name + '"?' +
             '<br><br>' +
-            'Theme theme appearances may not fully take effect until users log out, ' +
+            'Theme appearances may not fully take effect until users log out, ' +
             'clear their browser cache and log back in.' +
             '',
             cancelLabel: 'Not Now',
@@ -114,20 +116,23 @@ var XNAT = getObject(XNAT);
         ev.stopImmediatePropagation();
         setTheme(themeSelector.val(), populateThemes);
     });
-    
+
     function removeTheme(e){
         e.preventDefault();
-        xmodal.confirm({
+        XNAT.ui.dialog.confirm({
+            title: false,
             content: 'Are you sure you wish to delete the selected theme?',
-            action: function(){
+            okLabel: 'Delete',
+            okAction: function(){
                 XNAT.xhr.delete(themeUrl + s + encodeURI(themeSelector.val()) + q + csrf, function(data){
                     console.log(data);
                     populateThemes();
                 });
-            }
+            },
+            cancelLabel: 'Cancel'
         });
     }
-    
+
     $('#remove-theme').on('click', removeTheme);
 
     /*** Theme Package Upload Functions ***/
@@ -153,7 +158,7 @@ var XNAT = getObject(XNAT);
                 if (XHR.status !== 200) {
                     console.log(XHR.statusText);
                     console.log(XHR.responseText);
-                    xmodal.message('Upload Error', 'There was a problem uploading your theme package.<br>Server responded with: ' + xhr.statusText);
+                    XNAT.ui.dialog.message(false, 'Upload Error', 'There was a problem uploading your theme package.<br>Server responded with: ' + xhr.statusText);
                 }
                 $(themeUploadSubmit).text('Upload');
                 $(themeUploadSubmit).removeAttr('disabled');
@@ -165,18 +170,18 @@ var XNAT = getObject(XNAT);
                 // selected = null; // don't change the menu?
                 addThemeOptions(newThemeOptions, selected);
                 // prompt to set the newly uploaded theme
-                setTheme(selected);
+                setTheme(selected, null, 'Theme uploaded successfully.');
             };
             XHR.send(formData);
             uploaded = true;
         }
         if (!uploaded) {
-            xmodal.message('Nothing Uploaded', 'No valid theme package files were selected for upload.<br><br>Click the "Choose Files" button below to browse for a theme package.');
+            XNAT.ui.dialog.message(false, 'Nothing Uploaded', 'No valid theme package files were selected for upload.<br><br>Click the "Choose Files" button below to browse for a theme package.');
             $(themeUploadSubmit).text('Upload');
             $(themeUploadSubmit).removeAttr('disabled');
         }
         else {
-            XNAT.ui.banner.top(2000, 'Theme uploaded.', 'success');
+            //XNAT.ui.banner.top(2000, 'Theme uploaded.', 'success');
         }
         return false;
     };
@@ -184,7 +189,7 @@ var XNAT = getObject(XNAT);
     // $('body').on('change', '#theme-selection', function(){
     //     var THEME = this.value;
     //     var URL = XNAT.url.csrfUrl('/xapi/theme/' + THEME);
-    //     xmodal.confirm({
+    //     XNAT.ui.dialog.confirm({
     //         content: 'Would you like to change the active theme to "' + THEME + '"?',
     //         okLabel: 'Set Theme',
     //         okAction: function(){
@@ -196,6 +201,6 @@ var XNAT = getObject(XNAT);
     // });
 
     $(populateThemes);  // ...called once DOM is fully loaded "ready"
-    
+
 })(window.jQuery, window.console);
 

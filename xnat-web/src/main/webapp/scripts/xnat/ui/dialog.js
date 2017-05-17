@@ -609,10 +609,10 @@ window.xmodal = getObject(window.xmodal);
 
         function showCallback(){
             if (isFunction(_this.afterShow)) {
-                _this.afterShowResult = _this.afterShow.call(_this, arguments);
+                _this.afterShowResult = _this.afterShow.call(_this, _this, arguments);
             }
             if (isFunction(callback)) {
-                _this.showCallbackResult = callback.call(_this, arguments);
+                _this.showCallbackResult = callback.call(_this, _this, arguments);
             }
         }
 

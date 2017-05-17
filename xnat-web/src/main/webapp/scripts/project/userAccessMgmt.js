@@ -56,7 +56,7 @@ var XNAT = getObject(XNAT || {});
             }]
         });
     }
-    
+
     var projectGroupsUrl = function(){
         return rootUrl('/REST/projects/'+projectId+'/groups');
     };
@@ -98,7 +98,7 @@ var XNAT = getObject(XNAT || {});
             }
         })
     };
-    
+
     XNAT.projectAccess.removeUser = function(user,group){
         if (!user || !group) return false;
         XNAT.xhr.delete({
@@ -477,9 +477,7 @@ var XNAT = getObject(XNAT || {});
 
         if (newUser && isEmail) {
             XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
-            XNAT.ui.dialog.alert({
-                content: 'An email invitation has been sent to <b>'+user+'</b> to register an account with ' + siteName + ' and join your project.'
-            });
+            XNAT.ui.dialog.alert('An email invitation has been sent to <b>'+user+'</b> to register an account with ' + siteName + ' and join your project.');
             $('#invite_user').val('');
             XNAT.projectAccess.initPars('project');
             return true;
@@ -668,7 +666,7 @@ var XNAT = getObject(XNAT || {});
 
             XNAT.projectAccess.searchAvailableUsers(this, this.value, userList$)
         });
-        
+
         // 'Clear' link
         var clearSearch = spawn('a', {
             href: '#!',
@@ -846,7 +844,7 @@ var XNAT = getObject(XNAT || {});
             }
         })
     };
-    
+
     $(document).on('change','input[name=accessibility]',function(){
         // only enable accessibility change if a new value has been selected
         var _disabled = $(this).val() === currAccessibility;

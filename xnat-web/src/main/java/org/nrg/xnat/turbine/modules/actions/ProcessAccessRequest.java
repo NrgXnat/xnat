@@ -105,8 +105,6 @@ public class ProcessAccessRequest extends SecureAction {
 		    }
 		}
 
-        //data.setScreenTemplate("XDATScreen_manage_xnat_projectData.vm");
-        //data.setScreenTemplate("/xnat_projectData/xnat_projectData_summary_management.vm");        
         TurbineUtils.SetSearchProperties(data, project);
         //data.getParameters().setString("topTab", "Access");
         this.redirectToReportScreen("XDATScreen_report_xnat_projectData.vm", project, data);
@@ -178,9 +176,8 @@ public class ProcessAccessRequest extends SecureAction {
             final ArrayList<String> ownerEmails = project.getOwnerEmails();
             String[] projectOwnerEmails = ownerEmails.toArray(new String[ownerEmails.size()]);
             SendAccessApprovalEmail(context,XDAT.getSiteConfigPreferences().getAdminEmail(),new String[]{other.getEmail()},projectOwnerEmails,new String[]{XDAT.getSiteConfigPreferences().getAdminEmail()},TurbineUtils.GetSystemName() + " Access Request for " + project.getName() + " Approved");
-        }      
-        //data.setScreenTemplate("XDATScreen_manage_xnat_projectData.vm");
-        //data.setScreenTemplate("/xnat_projectData/xnat_projectData_summary_management.vm");
+        }
+
         TurbineUtils.SetSearchProperties(data, project);
         //data.getParameters().setString("topTab", "Access");
         this.redirectToReportScreen("XDATScreen_report_xnat_projectData.vm", project, data);

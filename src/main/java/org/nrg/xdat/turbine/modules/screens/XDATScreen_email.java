@@ -25,7 +25,7 @@ import org.nrg.xft.search.ItemSearch;
  * @author Tim
  *
  */
-public class XDATScreen_email extends SecureScreen {
+public class XDATScreen_email extends AdminScreen {
 
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)

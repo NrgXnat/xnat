@@ -46,7 +46,7 @@ public class SiteWideAnonymizer extends AnonymizerA {
 	String getProjectName() {
 		String projectName = null;
 		if(s instanceof XnatImagesessiondata){
-			projectName = ((XnatImagesessiondata)this.s).getProjectName();
+			projectName = ((XnatImagesessiondata)this.s).getProject();
 		}
 
 		return (projectName != null) ? projectName : "Unknown";

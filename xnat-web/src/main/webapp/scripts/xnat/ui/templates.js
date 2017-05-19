@@ -110,6 +110,7 @@ var XNAT = getObject(XNAT);
         _html = _spawned.outerHTML;
         return {
             template: _templ, // the raw template (Spawn array)
+            element: _spawned, // pre-spawned
             spawned: _spawned, // pre-spawned
             spawn: _spawn, // call to make a fresh spawn
             html: _html, // pre-spawned HTML

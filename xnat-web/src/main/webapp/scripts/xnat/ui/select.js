@@ -84,12 +84,19 @@ var XNAT = getObject(XNAT);
         config.id = config.id || toDashed(config.name) || randomID('menu-', false);
         config.name = config.name || '';
         config.value = config.value !== undefined ? config.value : '';
+        config.data = getObject(config.data);
+
+        if (config.validation || config.validate) {
+            config.data.validate = config.validation || config.validate;
+            addClassName(config.element, config.data.validate);
+        }
 
         config.element = extend(true, {
             id: config.id,
             name: config.name,
             value: config.value,
-            title: config.title || ''
+            title: config.title || '',
+            data: config.data
         }, config.element);
 
         $menu = $.spawn('select', config.element);

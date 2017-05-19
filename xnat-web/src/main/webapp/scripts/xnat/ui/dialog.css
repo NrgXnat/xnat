@@ -99,7 +99,7 @@ div.xnat-dialog .body > .inner > iframe {
     top: 0; bottom: 0; right: 0; left: 0; }
 div.xnat-dialog .body .inner {
     display: none ; margin: 20px ;
-    font-size: 14px ;
+    font-size: 13px ;
     line-height: 17px ;
 }
 div.xnat-dialog.nopad .body .inner { margin: 0; padding: 0; }

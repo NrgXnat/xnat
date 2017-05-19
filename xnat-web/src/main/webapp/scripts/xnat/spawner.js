@@ -293,6 +293,10 @@ var XNAT = getObject(XNAT);
             return frag;
         };
 
+        spawnerInit.get$ = function(){
+            return $frag;
+        };
+
         spawnerInit.getContents = function(){
             return $frag.contents();
         };

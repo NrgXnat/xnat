@@ -207,56 +207,73 @@ var XNAT = getObject(XNAT || {});
             success: function(data){
                 var groups = data.ResultSet.Result;
                 if (groups.length > 0) {
-                    var groupSelectOptions = {};
+
+                    var groupSelectOptions = [];
+
                     groups.forEach(function(group){
                         // split the group ID name (e.g. "project_id_owners") and use just the last element.
                         var id = group.id.split('_');
-                        id = id[id.length-1];
-                        groupSelectOptions[id] = group.displayname;
+                        groupSelectOptions.push({
+                            value: id[id.length - 1],
+                            label: group.displayname
+                        })
                     });
+
+                    // generate the form first
+                    var requestForm$ = $.spawn('div.panel').spawn('form', {
+                        method: 'post',
+                        action: rootUrl('/app/action/RequestAccess')
+                    }, [
+
+                        // by putting these elements in an array inside the spawned
+                        // 'form' element, they will be automatically appended
+                        spawn('p', 'Upon submission of this form an email will be sent to the project manager. The manager will be asked to give you access to this project. Once the manager approves or denies your access, an email will be sent to you.'),
+
+                        XNAT.ui.input.hidden({
+                            name: 'XNAT_CSRF',
+                            value: window.csrfToken
+                        }).get(),
+
+                        XNAT.ui.input.hidden({
+                            name: 'project',
+                            value: reqProjectId
+                        }).get(),
+
+                        XNAT.ui.panel.select.single({
+                            name: 'access_level',
+                            className: 'required',
+                            options: groupSelectOptions,
+                            label: 'Access Level',
+                            validation: 'required not-empty'
+                        }).get(),
+
+                        XNAT.ui.panel.textarea({
+                            name: 'comments',
+                            label: 'Comments',
+                            code: 'text',
+                            description: 'Comments will be included in the <br> email to the project manager.'
+                        }).get()
+
+                    ]);
+
                     XNAT.ui.dialog.open({
                         title: 'Project Access Request Form',
-                        width: 480,
-                        content: '<div class="panel"><form method="post" action="/app/action/RequestAccess"></form></div>',
-                        beforeShow: function(obj){
-                            var form = obj.$modal.find('form');
-                            form.prepend(
-                                spawn('p',['Upon submission of this form an email will be sent to the project manager. The manager will be asked to give you access to this project. Once the manager approves or denies your access, an email will be sent to you.'])
-                            );
-                            form.append(
-                                XNAT.ui.panel.input.hidden({
-                                    name: 'project',
-                                    value: reqProjectId
-                                })
-                            );
-                            form.append(
-                                XNAT.ui.panel.select.single({
-                                    name: 'access_level',
-                                    className: 'required',
-                                    options: groupSelectOptions,
-                                    label: 'Requested Access Level'
-                                })
-                            );
-                            form.append(
-                                XNAT.ui.panel.textarea({
-                                    name: 'comments',
-                                    label: 'Comments',
-                                    code: 'text',
-                                    description: 'These will be included in the email to the project manager.'
-                                }).spawned
-                            );
-                        },
+                        width: 580,
+                        padding: 30,
+                        content: requestForm$,
                         buttons: [
                             {
                                 label: 'Submit Request',
                                 isDefault: true,
                                 close: false,
-                                onclick: function(obj){
+                                action: function(dialog){
                                     // validate role selection
-                                    if (XNAT.validate(obj.$modal.find('.required')).all('not-empty').check()) {
-                                        obj.$modal.find('form').submit();
+                                    var form$ = dialog.body$.find('form');
+                                    if (XNAT.validate(form$.find('.required')).all('required').check()) {
+                                        form$.submit();
                                         xmodal.loading.open('Submitting Request');
-                                    } else {
+                                    }
+                                    else {
                                         XNAT.ui.banner.top(2500, '<b>Error:</b> Please Select A Role.', 'alert');
                                     }
                                 }
@@ -269,7 +286,8 @@ var XNAT = getObject(XNAT || {});
                         ]
 
                     });
-                } else {
+                }
+                else {
                     errorHandler({
                         statusText: 'No groups found',
                         responseText: 'Could not request access to this project.'

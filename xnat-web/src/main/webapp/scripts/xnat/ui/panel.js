@@ -60,6 +60,13 @@ var XNAT = getObject(XNAT || {});
         return input;
     }
 
+    function pxSuffix(val){
+        if (typeof val === 'number') {
+            val = val + 'px'
+        }
+        return val;
+    }
+
     // replace url params with values from [data-param] attribute (if it exists)
     // <form data-method="put" action="/xapi/theme/{{themeName}}">
     //     <input type="text" name="themeName">
@@ -134,8 +141,25 @@ var XNAT = getObject(XNAT || {});
     panel = function panelInit(opts){
 
         opts = cloneObject(opts);
-        opts.element = opts.element || opts.config || {};
         opts.title = opts.title || opts.label || opts.header;
+
+        // attributes for the outer 'panel' element
+        opts.panel = extend(true, {
+            style: {}
+        }, opts.panel);
+
+        // attributes for the inner 'panel-body' element
+        opts.element = opts.element || opts.config || {};
+        opts.element.style = getObject(opts.element.style);
+
+        if (isDefined(opts.padding)) {
+            opts.element.style.padding = pxSuffix(opts.padding);
+        }
+
+        if (opts.borderless) {
+            opts.element.style.border = 'none';
+            opts.panel.style.border = 'none';
+        }
 
         var _target = spawn('div.panel-body', opts.element, [].concat(opts.body||[])),
 
@@ -143,7 +167,7 @@ var XNAT = getObject(XNAT || {});
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
 
-            _panel  = spawn('div.panel.panel-default', [
+            _panel  = spawn('div.panel.panel-default', extend(true, {}, opts.panel), [
 
                 (hideHeader ? ['div.hidden'] : ['div.panel-heading', [
                     ['h3.panel-title', opts.title]

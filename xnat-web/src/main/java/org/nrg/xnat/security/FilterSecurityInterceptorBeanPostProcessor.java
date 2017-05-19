@@ -70,7 +70,20 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
             if (_log.isDebugEnabled()) {
                 _log.debug("Setting permissions on the admin URL: " + adminUrl);
             }
-            map.put(new AntPathRequestMatcher(adminUrl), SecurityConfig.createList(ADMIN_EXPRESSION));
+            String tempAdminUrl = adminUrl;
+            if(tempAdminUrl.endsWith("/**")){
+
+            }
+            else if(tempAdminUrl.endsWith("/*")){
+                tempAdminUrl+="*";
+            }
+            else if(tempAdminUrl.endsWith("/")){
+                tempAdminUrl+="**";
+            }
+            else{
+                tempAdminUrl+="/**";
+            }
+            map.put(new AntPathRequestMatcher(tempAdminUrl), SecurityConfig.createList(ADMIN_EXPRESSION));
         }
 
         final String secure = requiredLogin ? DEFAULT_EXPRESSION : PERMIT_ALL;

@@ -509,16 +509,20 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Override
     public <T> List<T> getListValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
         final PreferenceInfo info = getPreferenceInfo(preferenceName);
+        if (info==null) {
+        	_log.warn("Could not retreive preference information.  Cannot determine list type.");
+        	return null;
+        }
         @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List>) info.getValueType(), info.getItemType());
         try {
             if (BeanUtils.isSimpleValueType(info.getItemType())) {
-                final String value = _preferenceService.getPreferenceValue(getToolId(), preferenceName);
+            	final String value = _preferenceService.getPreferenceValue(getToolId(), preferenceName, scope, entityId);
                 return deserialize(StringUtils.defaultIfBlank(value, "[]"), listType);
             } else {
                 final List<T> list = deserialize("[]", listType);
                 final Set<String> propertyNames = Sets.filter(_preferenceService.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
                 for (final String propertyName : propertyNames) {
-                    final String value = _preferenceService.getPreferenceValue(getToolId(), propertyName);
+                    final String value = _preferenceService.getPreferenceValue(getToolId(), propertyName, scope, entityId);
                     @SuppressWarnings("unchecked") final T item = deserialize(value, (Class<? extends T>) info.getItemType());
                     list.add(item);
                 }

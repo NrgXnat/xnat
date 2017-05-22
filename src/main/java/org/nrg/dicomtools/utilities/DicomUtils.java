@@ -9,9 +9,16 @@
 
 package org.nrg.dicomtools.utilities;
 
+import org.dcm4che2.data.DicomElement;
+import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
+import org.dcm4che2.io.DicomInputStream;
+import org.dcm4che2.io.StopTagInputHandler;
+import org.dcm4che2.iod.module.macro.Code;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +26,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DicomUtils {
+    /**
+     * The tag which contains the history of edit script application.
+     * (0012,0064) - Deidentification Method Code Sequence is a sequence tag meaning that
+     * it can contain multiple nested DICOM objects.
+     */
+    public final static int RecordTag = Tag.DeidentificationMethodCodeSequence;
+
     /**
      * This tries to convert a DICOM header ID&mdash;either a DICOM tag or attribute&mdash;into an integer value that can be
      * used with the dcm4che DicomObject classes various get methods. DICOM tags can be in the format "(xxxx,yyyy)" or
@@ -75,6 +89,39 @@ public class DicomUtils {
             throw new NrgRuntimeException("The tag for this method must be in the form \"(xxxx,yyyy)\" or \"xxxx,yyyy\". " + tag + " is an invalid value.");
         }
         return getDicomAttribute(parseDicomHeaderId(tag));
+    }
+
+    /**
+     * Retrieves codes indicating the deidentification methods from DICOM data contained in the submitted file. The
+     * codes are taken from the DICOM tag indicated by the {@link #RecordTag} value. This method reads the DICOM header
+     * values from the file into a DICOM object then calls the {@link #getCodes(DicomObject)} method to extract the
+     * appropriate values.
+     *
+     * @param file The file from which DICOM data should be retrieved.
+     *
+     * @return The codes found in the DICOM header field specified by the {@link #RecordTag} value.
+     *
+     * @throws IOException If an error occurs reading the submitted file.
+     */
+    public static Code[] getCodes(final File file) throws IOException {
+        try (DicomInputStream input = new DicomInputStream(file)) {
+            input.setHandler(new StopTagInputHandler(RecordTag + 1));
+            DicomObject dicomObject = input.readDicomObject();
+            return getCodes(dicomObject);
+        }
+    }
+
+    /**
+     * Retrieves codes indicating the deidentification methods from the submitted DICOM data. The codes are taken from
+     * the DICOM tag indicated by the {@link #RecordTag} value.
+     *
+     * @param dicomObject The DICOM object from which data should be retrieved.
+     *
+     * @return The codes found in the DICOM header field specified by the {@link #RecordTag} value.
+     */
+    public static Code[] getCodes(final DicomObject dicomObject) {
+        final DicomElement record = dicomObject.get(RecordTag);
+        return Code.toCodes(record);
     }
 
     public static final Pattern DICOM_TAG = Pattern.compile("^[(]*([\\dA-Fa-f]{4}),([\\dA-Fa-f]{4})[)]*$");

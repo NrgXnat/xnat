@@ -161,7 +161,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
             finalize(merged);
 
-            processing("Updating stored meta-data.");
+            processing("Updating stored metadata.");
             saver.save(merged);
 
             for (Callable<Boolean> followup : update.getAfter()) {
@@ -176,14 +176,14 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
             return merged;
         } catch (Throwable e) {
-            logger.error("", e);
+            logger.error("An error occurred updating existing metadata", e);
             if (backupDIR != null) {
                 rollback(backupDIR, destDIR, rootBackup);
             } else {
                 rollback(destDIR, srcDIR, rootBackup);
             }
-            failed("Error updating existing meta-data");
-            throw new ServerException(Status.SERVER_ERROR_INTERNAL, e.getMessage(), new Exception());
+            failed("Error updating existing metadata");
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
         }
     }
 

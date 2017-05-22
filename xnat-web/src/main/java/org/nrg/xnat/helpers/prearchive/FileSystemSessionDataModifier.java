@@ -16,6 +16,7 @@ import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.dicom.mizer.service.MizerException;
 import org.nrg.dicom.mizer.service.MizerService;
+import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.session.SessionBuilder;
@@ -120,10 +121,9 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
             public XnatImagesessiondataBean run() throws SyncFailedException {
                 XnatImagesessiondataBean doc = null;
                 try {
-                    Configuration c = DefaultAnonUtils.getService().getProjectScriptConfiguration(newProject);
-                    if (c != null) {
-                        final String anonScript = c.getContents();
-//                        final ScriptApplicator scriptapplicator = new ScriptApplicator(new ByteArrayInputStream(anonScript.getBytes("UTF-8")));
+                    final Configuration configuration = DefaultAnonUtils.getService().getProjectScriptConfiguration(newProject);
+                    if (configuration != null) {
+                        final String anonScript = configuration.getContents();
                         final XnatAttrDef[] params = {new XnatAttrDef.Constant("project", newProject)};
                         final DICOMSessionBuilder db = new DICOMSessionBuilder(f, params,
                                 new Function<DicomObject, DicomObject>() {
@@ -133,7 +133,13 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                                             if (service == null) {
                                                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Can't find the mizer service");
                                             }
-                                            service.anonymize( o, newProject, subject, session, anonScript);
+                                            final MizerContextWithScript context = new MizerContextWithScript();
+                                            context.setScriptId(configuration.getId());
+                                            context.setScript(anonScript);
+                                            context.setElement("project", newProject);
+                                            context.setElement("subject", subject);
+                                            context.setElement("session", session);
+                                            service.anonymize(new org.nrg.dicom.dicomedit.dicomObject.dcm4che2.DicomObject(o), context);
                                         }
                                         catch ( MizerException e) {
                                             throw new RuntimeException(e);

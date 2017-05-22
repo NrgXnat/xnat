@@ -128,11 +128,11 @@ public class PrearcImporterHelper extends PrearcImporterA{
 			
 			final Map<String,Object> additionalValues=XMLPathShortcuts.identifyUsableFields(params,XMLPathShortcuts.EXPERIMENT_DATA,false);
 			if(params.containsKey(SUBJECT)){
-				additionalValues.put("xnat:subjectAssessorData/subject_ID".intern(), params.remove(SUBJECT));
+				additionalValues.put("xnat:subjectAssessorData/subject_ID", params.remove(SUBJECT));
 			}
 
 			if(params.containsKey(SESSION)){
-				additionalValues.put("xnat:experimentData/label".intern(), params.remove(SESSION));
+				additionalValues.put("xnat:experimentData/label", params.remove(SESSION));
 			}
 			if(params.containsKey("TIMEZONE")){
 				additionalValues.put("TIMEZONE", params.get("TIMEZONE"));

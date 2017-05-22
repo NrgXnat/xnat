@@ -11,44 +11,46 @@ package org.nrg.xnat.helpers.merge;
 
 import org.dcm4che2.iod.module.macro.Code;
 import org.nrg.config.entities.Configuration;
+import org.nrg.dicomtools.utilities.DicomUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.om.XnatResource;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
+import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
+import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PrearcSessionAnonymizer extends AnonymizerA {
-    private static final Logger logger = LoggerFactory.getLogger(PrearcSessionAnonymizer.class);
-    final ProjectAnonymizer     p;
-    final String                prearcPath;
-    final XnatImagesessiondataI s;
-
     /**
-     * @param s          A session object
-     * @param projectId  The project id, eg. xnat_E*
-     * @param prearcPath The location of the root prearchive directory
+     * @param session           A session object
+     * @param projectId         The project id, eg. xnat_E*
+     * @param sessionPrearcPath The location of the root prearchive directory
      */
-    public PrearcSessionAnonymizer(XnatImagesessiondataI s, String projectId, String prearcPath) {
-        this.prearcPath = prearcPath;
-        p = new ProjectAnonymizer(s, projectId, prearcPath);
-        this.s = s;
+    public PrearcSessionAnonymizer(final XnatImagesessiondataI session, final String projectId, final String sessionPrearcPath) {
+        _prearchivePath = Paths.get(XDAT.getSiteConfigPreferences().getPrearchivePath());
+        _sessionPrearcPath = Paths.get(sessionPrearcPath);
+        _anonymizer = new ProjectAnonymizer(session, projectId, sessionPrearcPath);
+        _session = session;
     }
 
     @Override
     String getProjectName() {
-        return this.p.projectId;
+        return _anonymizer.projectId;
     }
 
     @Override
     String getLabel() {
-        return this.p.getLabel();
+        return _anonymizer.getLabel();
     }
 
     /**
@@ -57,7 +59,7 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
      */
     @Override
     String getSubject() {
-        return this.p.getSubject();
+        return _anonymizer.getSubject();
     }
 
     @SuppressWarnings("unused")
@@ -66,11 +68,11 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
     }
 
     Configuration getScript() {
-        return this.p.getScript();
+        return _anonymizer.getScript();
     }
 
     boolean isEnabled() {
-        return this.p.isEnabled();
+        return _anonymizer.isEnabled();
     }
 
     /**
@@ -86,19 +88,25 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
      *
      * @throws IOException When an error occurs accessing the file.
      */
-    boolean needsAnonymization(File file) throws IOException {
-        // TODO: MIZER: Removed reference to Anonymize.getCodes(file)
-        // Code[]  codes              = Anonymize.getCodes(file);
-        Code[]  codes              = new Code[0];
-        boolean needsAnonymization = true;
+    boolean needsAnonymization(final File file) throws IOException {
+        try {
+            final Path        relative = _prearchivePath.relativize(_sessionPrearcPath);
+            final SessionData session  = PrearcDatabase.getSession(Paths.get("/prearchive/projects", relative.toString()).toString());
+            if (session != null) {
+                return !session.getPreventAnon();
+            }
+        } catch (Exception e) {
+            logger.error("An error occurred trying to retrieve the prearchive sessions for path " + file.getAbsolutePath(), e);
+        }
+        final Code[] codes = DicomUtils.getCodes(file);
         if (codes != null && codes.length != 0) {
-            Code          last          = codes[codes.length - 1];
-            Configuration configuration = this.getScript();
+            final Code          last          = codes[codes.length - 1];
+            final Configuration configuration = getScript();
             if (configuration != null && last.getCodeValue().equals(Long.toString(configuration.getId()))) {
-                needsAnonymization = false;
+                return false;
             }
         }
-        return needsAnonymization;
+        return true;
     }
 
     /**
@@ -112,12 +120,12 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
     public List<File> getFilesToAnonymize() throws IOException {
         List<File> ret = new ArrayList<>();
         // anonymize everything in srcRootPath
-        for (final XnatImagescandataI scan : s.getScans_scan()) {
+        for (final XnatImagescandataI scan : _session.getScans_scan()) {
             for (final XnatAbstractresourceI res : scan.getFile()) {
                 if (res instanceof XnatResource) {
                     final XnatResource abs = (XnatResource) res;
                     if (abs.getFormat().equals("DICOM")) {
-                        for (final File file : abs.getCorrespondingFiles(prearcPath)) {
+                        for (final File file : abs.getCorrespondingFiles(_sessionPrearcPath.toString())) {
                             if (needsAnonymization(file)) {
                                 logger.debug("Adding file {} to the list of files requiring reanonymization.", file.getPath());
                                 ret.add(file);
@@ -132,4 +140,11 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
         }
         return ret;
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(PrearcSessionAnonymizer.class);
+
+    private final Path                  _prearchivePath;
+    private final Path                  _sessionPrearcPath;
+    private final ProjectAnonymizer     _anonymizer;
+    private final XnatImagesessiondataI _session;
 }

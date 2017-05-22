@@ -70,7 +70,7 @@ public class ImageUploadHelper extends StatusProducer implements Callable<List<F
 		pw.run();
 
 		final Collection<File> sessions=pw.getSessions();
-		final List<File> response= new ArrayList<File>();
+		final List<File> response= new ArrayList<>();
 
 		for(final File f : sessions){
 			response.add(f);

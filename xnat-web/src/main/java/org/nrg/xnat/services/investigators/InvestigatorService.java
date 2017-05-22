@@ -41,12 +41,13 @@ public class InvestigatorService {
     }
 
     public List<Investigator> getInvestigators() {
-        return _template.query(INVESTIGATOR_QUERY, ROW_MAPPER);
+        return _template.query(INVESTIGATOR_QUERY + ORDER_BY_NAME, ROW_MAPPER);
     }
 
     private static final String INVESTIGATOR_QUERY  = "SELECT investigator.xnat_investigatordata_id AS xnat_investigatordata_id, investigator.id AS id, investigator.title AS title, investigator.firstname AS firstname, investigator.lastname AS lastname, investigator.institution AS institution, investigator.department AS department, investigator.email AS email, investigator.phone AS phone, (SELECT array(SELECT project.id FROM xnat_projectdata project WHERE project.pi_xnat_investigatordata_id = investigator.xnat_investigatordata_id)) AS primary_inv, (SELECT array(SELECT project_inv.xnat_projectdata_id FROM xnat_projectdata_investigator project_inv WHERE project_inv.xnat_investigatordata_xnat_investigatordata_id = investigator.xnat_investigatordata_id)) AS inv FROM xnat_investigatordata investigator";
     private static final String BY_ID_WHERE         = " WHERE investigator.xnat_investigatordata_id = ?";
     private static final String BY_FIRST_LAST_WHERE = " WHERE investigator.firstname = ? AND investigator.lastname = ?";
+    private static final String ORDER_BY_NAME = " ORDER BY investigator.lastname, investigator.firstname";
 
     private static final RowMapper<Investigator> ROW_MAPPER = new RowMapper<Investigator>() {
         @Override

@@ -14,9 +14,9 @@ function confirmValues(_focus){
   try{
 	  var projBox=getValueById(elementName+"/project");
 	  if(projBox.value!=""){
-	     removeAppendImage(elementName+"/project");
+	     removeAppendedIcon(elementName+"/project");
 	  }else{
-	   	  appendImage(elementName+"/project","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/project","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 	  
@@ -29,9 +29,9 @@ function confirmValues(_focus){
 	  	 		document.getElementById("subj_msg").innerHTML="";
 	  	 	}
 	  	 }
-	     removeAppendImage(elementName+"/subject_id");
+	     removeAppendedIcon(elementName+"/subject_id");
 	  }else{
-	   	  appendImage(elementName+"/subject_id","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/subject_id","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 	  
@@ -40,7 +40,7 @@ function confirmValues(_focus){
 	  if(labelBox.obj.validated==undefined)labelBox.obj.value=fixSessionID(labelBox.obj.value);;
 	  if(labelBox.value!=""){
 	  	 labelBox.obj.validated=false;
-	     removeAppendImage(elementName+"/label");
+	     removeAppendedIcon(elementName+"/label");
 			try{
 				if(eval("window.verifyExptId")!=undefined){
 					if(verifyExptId() === false){ valid = false; };
@@ -52,7 +52,7 @@ function confirmValues(_focus){
 			}
 	  }else{
 	  	  labelBox.obj.validated=true;
-	   	  appendImage(elementName+"/label","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/label","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 		

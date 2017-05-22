@@ -38,6 +38,27 @@ function isAlphaNumeric(val)
   } 
 }
 
+function appendIcon(obj,icon_class,msg,styleObj){
+	if(obj.appendedIcon==undefined){
+		obj.appendedIcon = document.createElement("i");
+		obj.appendedIcon.className = "fa "+icon_class;
+		if (Object.keys(styleObj).length) {
+			for (var k in styleObj) {
+				obj.appendedIcon.style[k] = styleObj[k];
+			}
+		}
+		obj.appendedIcon.style.marginLeft="5px";
+		if(obj.nextSibling==null)
+		{
+			obj.parentNode.insertBefore(obj.appendedIcon,obj.nextSibling);
+		}else{
+			obj.parentNode.appendChild(obj.appendedIcon);
+		}
+	}
+
+	if(msg!==undefined)obj.appendedIcon.title=msg;
+}
+
 function appendImage(obj,img_name){
 	if(obj.appendedImage==undefined){
 	    obj.appendedImage = document.createElement("img");
@@ -72,10 +93,10 @@ function validateUsername(obj,button_id){
 	   }
 	   
    		if(valid){
-	   	   	   if(obj.appendedImage!=undefined)appendImage(obj,"/images/checkmarkGreen.gif");
+	   	   	   if(obj.appendedImage!=undefined)appendIcon(obj,"fa-check",null,{ color: 'green' });
    			   if(button_id!=undefined)document.getElementById(button_id).disabled=false;
    		}else{
-	   	   	   appendImage(obj,"/images/checkmarkRed.gif");
+	   	   	   appendIcon(obj,"fa-asterisk","Required",{ color: '#c66' });
    			   if(button_id!=undefined)document.getElementById(button_id).disabled=true;
    		}
 	   

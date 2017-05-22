@@ -7,7 +7,6 @@
  * Released under the Simplified BSD.
  */
 
-var closeLocation = serverRoot+"/images/close.gif";
 var DEBUG=false;
 //SearchCollection contains an array of searches
 //SearchCollection.selectedSearch is the currently active search.
@@ -562,7 +561,7 @@ function SearchManager(_bundleID,_description,_divTitle,_divContent,_divOptions)
 		              if (instance.currentPage>0){
 		                 var li = document.createElement("TD");
 		                 li.className="paging";
-		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(0);\"><IMG SRC=\"" + server +"left_end.gif\"/></A>";
+		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(0);\"><i class=\"fa fa-step-backward\"></i></A>";
 		                 li.innerHTML=liTEXT;
 		                 
 		                 tr.appendChild(li);
@@ -572,7 +571,7 @@ function SearchManager(_bundleID,_description,_divTitle,_divContent,_divOptions)
 		              if (instance.currentPage>increment && instance.numPages>pagesShown){
 		                 var li = document.createElement("TD");
 		                 li.className="paging";
-		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.currentPage-increment) +");\"><IMG SRC=\"" + server +"left2.gif\"/></A>";
+		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.currentPage-increment) +");\"><i class=\"fa fa-backward\"></i></A>";
 		                 li.innerHTML=liTEXT;
 		                 
 		                 tr.appendChild(li);
@@ -581,7 +580,7 @@ function SearchManager(_bundleID,_description,_divTitle,_divContent,_divOptions)
 		              if (instance.currentPage>0){
 		                 var li = document.createElement("TD");
 		                 li.className="paging";
-		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.currentPage-1) +");\"><IMG SRC=\"" + server +"left.gif\"/></A>";
+		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.currentPage-1) +");\"><i class=\"fa fa-caret-left\"></i></A>";
 		                 li.innerHTML=liTEXT;
 		                 
 		                 tr.appendChild(li);
@@ -620,7 +619,7 @@ function SearchManager(_bundleID,_description,_divTitle,_divContent,_divOptions)
 		              if (instance.currentPage<(instance.numPages-1)){
 		                 var li = document.createElement("TD");
 		                 li.className="paging";
-		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.currentPage+1) +");\"><IMG SRC=\"" + server +"right.gif\"/></A>";
+		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.currentPage+1) +");\"><i class=\"fa fa-caret-right\"></i></A>";
 		                 li.innerHTML=liTEXT;
 		                 
 		                 tr.appendChild(li);
@@ -629,7 +628,7 @@ function SearchManager(_bundleID,_description,_divTitle,_divContent,_divOptions)
 		              if (instance.currentPage<(instance.numPages-increment) && instance.numPages>pagesShown){
 		                 var li = document.createElement("TD");
 		                 li.className="paging";
-		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.currentPage+increment) +");\"><IMG SRC=\"" + server +"right2.gif\"/></A>";
+		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.currentPage+increment) +");\"><i class=\"fa fa-forward\"></i></A>";
 		                 li.innerHTML=liTEXT;
 		                 
 		                 tr.appendChild(li);
@@ -638,7 +637,7 @@ function SearchManager(_bundleID,_description,_divTitle,_divContent,_divOptions)
 		              if (instance.currentPage<(instance.numPages-1)){
 		                 var li = document.createElement("TD");
 		                 li.className="paging";
-		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.numPages-1) +");\"><IMG SRC=\"" + server +"right_end.gif\"/></A>";
+		                 var liTEXT = "<A class=\"paging\" ONCLICK=\"window.collectionInstance.getSearch('" + instance.id + "').loadPage(" + (instance.numPages-1) +");\"><i class=\"fa fa-step-forward\"></i></A>";
 		                 li.innerHTML=liTEXT;
 		                 
 		                 tr.appendChild(li);
@@ -911,8 +910,8 @@ function initRowTab(_search){
 			
 			td2.appendChild(rowsPerPage);
 			
-			var img = document.createElement("img");
-			img.src=closeLocation;
+			var img = document.createElement("i");
+			img.className="fa fa-close";
 			var link = document.createElement("a");
 			link.onclick=function(){
 				window.rowTab.style.display='none';

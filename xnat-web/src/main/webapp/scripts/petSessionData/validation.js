@@ -15,9 +15,9 @@ function confirmValues(_focus){
   	
 	  var projBox=getValueById(elementName+"/project");
 	  if(projBox.value!=""){
-	     removeAppendImage(elementName+"/project");
+	     removeAppendedIcon(elementName+"/project");
 	  }else{
-	   	  appendImage(elementName+"/project","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/project","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 	  
@@ -31,9 +31,9 @@ function confirmValues(_focus){
 	  	 		document.getElementById("subj_msg").innerHTML="";
 	  	 	}
 	  	 }
-	     removeAppendImage(elementName+"/subject_id");
+	     removeAppendedIcon(elementName+"/subject_id");
 	  }else{
-	   	  appendImage(elementName+"/subject_id","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/subject_id","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 	  
@@ -46,7 +46,7 @@ function confirmValues(_focus){
 	  }
 	  if(labelBox.value!=""){
 	  	 labelBox.obj.validated=false;
-	     removeAppendImage(elementName+"/label");
+	     removeAppendedIcon(elementName+"/label");
 			try{
 				if(eval("window.verifyExptId")!=undefined){
 					if(verifyExptId() === false){ valid = false; };
@@ -58,7 +58,7 @@ function confirmValues(_focus){
 			}
 	  }else{
 	  	  labelBox.obj.validated=true;
-	   	  appendImage(elementName+"/label","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/label","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 		
@@ -73,38 +73,38 @@ function confirmValues(_focus){
 	  var day=getValueById("xnat:petSessionData.date.date");
 	  	  
 	  if(month.value!="" && month.value!="bad"){
-	     removeAppendImage("xnat:petSessionData.date.month");
+	     removeAppendedIcon("xnat:petSessionData.date.month");
 	  }else{
-	   	  appendImage("xnat:petSessionData.date.month","/images/checkmarkRed.gif");
+	   	  appendIcon("xnat:petSessionData.date.month","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 	  	  
 	  if(day.value!="" && day.value!="bad"){
-	     removeAppendImage("xnat:petSessionData.date.date");
+	     removeAppendedIcon("xnat:petSessionData.date.date");
 	  }else{
-	   	  appendImage("xnat:petSessionData.date.date","/images/checkmarkRed.gif");
+	   	  appendIcon("xnat:petSessionData.date.date","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 	  	  
 	  if(year.value!="" && year.value!="bad"){
-	     removeAppendImage("xnat:petSessionData.date.year");
+	     removeAppendedIcon("xnat:petSessionData.date.year");
 	  }else{
-	   	  appendImage("xnat:petSessionData.date.year","/images/checkmarkRed.gif");
+	   	  appendIcon("xnat:petSessionData.date.year","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
   
 	  var tracer=getValueById("xnat:petSessionData.tracer.name");
 	  if(tracer.value!="" && tracer.value!="bad"){
 	    if(document.getElementById("SEL_xnat:petSessionData.tracer.name")!=undefined){
-	  		removeAppendImage("SEL_xnat:petSessionData.tracer.name");
+	  		removeAppendedIcon("SEL_xnat:petSessionData.tracer.name");
 	  	}else{
-	  		removeAppendImage("xnat:petSessionData.tracer.name");
+	  		removeAppendedIcon("xnat:petSessionData.tracer.name");
 	  	}
 	  }else{
 	  	if(document.getElementById("SEL_xnat:petSessionData.tracer.name")!=undefined){
-	  		appendImage("SEL_xnat:petSessionData.tracer.name","/images/checkmarkRed.gif");
+	  		appendIcon("SEL_xnat:petSessionData.tracer.name","fa-asterisk","Required",{ color: '#c66' });
 	  	}else{
-	  		appendImage("xnat:petSessionData.tracer.name","/images/checkmarkRed.gif");
+	  		appendIcon("xnat:petSessionData.tracer.name","fa-asterisk","Required",{ color: '#c66' });
 	  	}
 	   	  valid=false;
 	  }
@@ -119,18 +119,18 @@ function confirmValues(_focus){
 		  	var es=getValueById("xnat:petSessionData/start_time_scan.seconds");
 		  	if(ih.value!="" && ih.value!="bad"){
 		  		if(im.value!="" && im.value!="bad"){
-				    removeAppendImage("xnat:petSessionData/start_time_injection.minutes");
+				    removeAppendedIcon("xnat:petSessionData/start_time_injection.minutes");
 				}else{
-				   	appendImage("xnat:petSessionData/start_time_injection.minutes","/images/checkmarkRed.gif");
+				   	appendIcon("xnat:petSessionData/start_time_injection.minutes","fa-asterisk","Required",{ color: '#c66' });
 				   	valid=false;
 				}
 		  	}
 		  	
 		  	if(eh.value!="" && eh.value!="bad"){
 		  		if(em.value!="" && em.value!="bad"){
-				    removeAppendImage("xnat:petSessionData/start_time_scan.minutes");
+				    removeAppendedIcon("xnat:petSessionData/start_time_scan.minutes");
 				}else{
-				   	appendImage("xnat:petSessionData/start_time_scan.minutes","/images/checkmarkRed.gif");
+				   	appendIcon("xnat:petSessionData/start_time_scan.minutes","fa-asterisk","Required",{ color: '#c66' });
 				   	valid=false;
 				}
 		  	}

@@ -6,11 +6,11 @@
  *
  * Released under the Simplified BSD.
  */
-var maxLocation = serverRoot+"/images/maximize.gif";
+var maxLocation = "fa fa-window-maximize";
 
-	var minLocation = serverRoot+"/images/minimize.gif";
+	var minLocation = "fa fa-window-minimize";
 	
-	var restoreLocation = serverRoot+"/images/restore_down.gif";
+	var restoreLocation = "fa fa-window-restore";
 
 
 	function toggleBox(name){
@@ -28,13 +28,13 @@ var maxLocation = serverRoot+"/images/maximize.gif";
 	   resize_id(null);
 	}
 	
-	function setMaxLocation(img){
-	     img.src=maxLocation;
+	function setMaxLocation(icon){
+	     icon.className=maxLocation;
 	}
 
 	function hideBox(name){
 
-	   var img = document.getElementById(name + 'Image');
+	   var icon = document.getElementById(name + 'Icon');
 
 	   var box = document.getElementById(name + 'Body');
 
@@ -43,10 +43,10 @@ var maxLocation = serverRoot+"/images/maximize.gif";
 	   var menu = document.getElementById(name + 'menu');
 
 
-	     img.src=maxLocation;
+	     icon.className=maxLocation;
 	     
-	    var img2 = document.getElementById(name + 'Image2');
-	     if (img2)img2.src=restoreLocation;
+	    var icon2 = document.getElementById(name + 'Icon2');
+	     if (icon2)icon2.className=restoreLocation;
 
      if (box != null){
 
@@ -64,7 +64,7 @@ var maxLocation = serverRoot+"/images/maximize.gif";
 	   
 	function showBox(name){
 
-	   var img = document.getElementById(name + 'Image');
+	   var icon = document.getElementById(name + 'Icon');
 
 	   var box = document.getElementById(name + 'Body');
 
@@ -73,10 +73,10 @@ var maxLocation = serverRoot+"/images/maximize.gif";
 	   var menu = document.getElementById(name + 'menu');
 
 
-	     img.src=minLocation;
+	     icon.className=minLocation;
 	     
-	    var img2 = document.getElementById(name + 'Image2');
-	     if (img2)img2.src=maxLocation;
+	    var icon2 = document.getElementById(name + 'Icon2');
+	     if (icon2)icon2.className=maxLocation;
 
      if (box != null){
 
@@ -95,7 +95,7 @@ var maxLocation = serverRoot+"/images/maximize.gif";
 
 	function toggleAll(except){
    
-	   var img = document.getElementById(except+'Image');
+	   var icon = document.getElementById(except+'Icon');
    
    var allDIVS = document.getElementsByTagName("DIV");
    for (divCount=0;divCount<allDIVS.length;divCount++)
@@ -106,7 +106,7 @@ var maxLocation = serverRoot+"/images/maximize.gif";
 		        {
 		          var thisID = thisDiv.id;
 		            var name = thisID.substring(0,thisID.length-4);
-		            if ((img.src + ' ').indexOf(minLocation)!=-1 || (img.src + ' ').indexOf(restoreLocation)!=-1)
+		            if ((icon.className + ' ').indexOf(minLocation)!=-1 || (icon.className+ ' ').indexOf(restoreLocation)!=-1)
 		            	   showBox(name);
 		            	else
 		            	   hideBox(name);
@@ -115,18 +115,18 @@ var maxLocation = serverRoot+"/images/maximize.gif";
    }
    
 	     
-	    var img2 = document.getElementById(name + 'Image2');
-	     if (img2)img.src=maxLocation;
+	    var icon2 = document.getElementById(name + 'Icon2');
+	     if (icon2)icon2.className=maxLocation;
    
-   if ((img.src + ' ').indexOf(minLocation)!=-1 || (img.src + ' ').indexOf(restoreLocation)!=-1){
-      img.src=maxLocation;
+   if ((icon.className + ' ').indexOf(minLocation)!=-1 || (icon.className + ' ').indexOf(restoreLocation)!=-1){
+      icon.className=maxLocation;
 	     
-	  if (img2)img2.src=minLocation;
+	  if (icon2)icon2.className=minLocation;
    }else{
       showBox(except);
-      img.src=restoreLocation;
+      icon.className=restoreLocation;
 	     
-	  if (img2)img2.src=minLocation;
+	  if (icon2)icon2.className=minLocation;
    }
             
    resize_id(except);

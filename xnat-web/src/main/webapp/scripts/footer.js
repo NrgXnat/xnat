@@ -152,10 +152,10 @@ function _addFormValidation(_validator){
 function validateBox(box,_checkFunction){
     if(!_checkFunction.isValid(box))
     {
-        appendImage(box,"/images/checkmarkRed.gif");
+        appendIcon(box,"fa-asterisk","Required",{ color: '#c66' });
         return false;
     }else{
-        removeAppendImage(box);
+        removeAppendedIcon(box);
         return true;
     }
 }
@@ -305,10 +305,10 @@ TextboxValidator.prototype = {
 
 function validateSelect(sel){
     if(sel.options[sel.selectedIndex].value==""){
-        appendImage(sel,"/images/checkmarkRed.gif");
+        appendIcon(sel,"fa-asterisk","Required",{ color: '#c66' });
         return false;
     }else{
-        removeAppendImage(sel);
+        removeAppendedIcon(sel);
         return true;
     }
 }
@@ -413,9 +413,9 @@ YAHOO.util.Event.onDOMReady( function()
 		    	                }
 		                		
 		                		if(validators[elementId]._ok){
-		                	        removeAppendImage(validators[elementId].box);
+		                	        removeAppendedIcon(validators[elementId].box);
 		                		}else{
-		                	        appendImage(validators[elementId].box,"/images/checkmarkRed.gif",this.message);
+		                	        appendIcon(validators[elementId].box,"fa-asterisk",this.message,{ color: '#c66' });
 		                		}
 		                	}catch(e){
                                 xmodal.message('Email Validation Error', "Error performing validation.");

@@ -15,9 +15,10 @@
 	  <TR>
 	  	  <TH align=left></TH>
 	  	  <TH align=left>Scan</TH>
-          <TH align=left>Type <a
-          onclick="xmodal.message('Scan Type', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><img
-          border="0" src="$content.getURI("images/qm.gif")"/></a></TH>	  	  <TH align=left>Quality</TH>
+          <TH align=left>Type
+              <a onclick="xmodal.message('Scan Type', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');">
+                  <i class="fa fa-question-circle" style="font-size: 16px;"></i></a></TH>
+          <TH align=left>Quality</TH>
 	  	  <TH align=left>Note</TH>
 	  </TR>
 	 </thead>

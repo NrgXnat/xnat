@@ -116,11 +116,11 @@ RestSharer = function(_array,_config) {
    		,{label:"New Label",formatter:cFormatTextbox,key:"new_label"}
    		,{label:"",formatter:function(el,oRecord,oColumn,oData){
    			if(oRecord.getData("processed")==1){
-   				el.innerHTML="<img border=\"0\" src=\""+serverRoot +"/images/co.gif\"/>";
+   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: darkorange\"></i>";
    			}else if(oRecord.getData("processed")==2){
-   				el.innerHTML="<img border=\"0\" src=\""+serverRoot +"/images/checkmarkGreen.gif\"/>";
+   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: green\"></i>";
    			}else if(oRecord.getData("processed")==3){
-   				el.innerHTML="<img border=\"0\" src=\""+serverRoot +"/images/checkmarkRed.gif\"/>";
+   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: #c66\"></i>";
    			}else{
    				el.innerHTML="";
    			}

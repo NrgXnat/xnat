@@ -200,12 +200,10 @@ function PipelineManager(pipeline_mgmt_div_id, pID){
 			    ]
 		};
 
-		var imgUrl = serverRoot + "/images/delete.gif";
-
 		var projectPipelineColumnDefs=[
 
 			  {key:"delete",label:"", formatter:function(elCell) {
-						elCell.innerHTML = '<img src=' + imgUrl + ' title="Disable pipeline" />';
+						elCell.innerHTML = '<i class="fa fa-trash-o" title="Disable pipeline" style="color: #900"></i>';
 						elCell.style.cursor = 'pointer';
 					}
 			  },

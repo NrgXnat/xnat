@@ -86,14 +86,14 @@ XNAT.app.subject.shared_projects.push({id:"$pp.getProperty("project")",
    XNAT.app.subject.cfDT=new YAHOO.widget.DataTable("sharing_summary_table",[
    		{key:"button", label:"Unshare",formatter:function(el, oRecord, oColumn, oData) {
     					if(oRecord.getData("canEdit"))
-				      el.innerHTML = "<button type=\"button\" class=\"yui-dt-button\"><img border=\"0\" src=\""+serverRoot +"/images/close.gif\"/></button>";
+				      el.innerHTML = "<button type=\"button\" class=\"yui-dt-button\"><i class=\"fa fa-close\"></i></button>";
 				    else
 				   	   el.innerHTML="N/A";
    	    }},
    		{label:"$displayManager.getSingularDisplayNameForProject()",key:"name"},
    		{label:"Label",key:"label",formatter:function(elCell, oRecord, oColumn, oData){
      			elCell.innerHTML = oRecord.getData("label");
-     			if(oRecord.getData("canEdit"))elCell.innerHTML+=			"<a onclick=\"modifyLabel({'id':'" + oRecord.getData("id") +"','name':'" + oRecord.getData("name") +"','label':'" + oRecord.getData("label") +"','group':'" + oRecord.getData("group") +"','expts':'" + oRecord.getData("expts") +"','canEdit':" + oRecord.getData("canEdit") +",'record':'" + oRecord.getCount() +"'})\">		<img border='0' src='$content.getURI("images/e.gif")'/></a>";
+     			if(oRecord.getData("canEdit"))elCell.innerHTML+=			"<a onclick=\"modifyLabel({'id':'" + oRecord.getData("id") +"','name':'" + oRecord.getData("name") +"','label':'" + oRecord.getData("label") +"','group':'" + oRecord.getData("group") +"','expts':'" + oRecord.getData("expts") +"','canEdit':" + oRecord.getData("canEdit") +",'record':'" + oRecord.getCount() +"'})\"><i class=\"fa fa-edit\" title=\"Edit\"></i></a>";
     		}},
    		{label:"Group",key:"group"},
    		{label:"Note",key:"expts",formatter:function(elCell, oRecord, oColumn, oData){

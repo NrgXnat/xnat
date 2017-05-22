@@ -14,9 +14,9 @@ function confirmValues(_focus){
   try{
 	  var projBox=getValueById(elementName+"/project");
 	  if(projBox.value!=""){
-	     removeAppendImage(elementName+"/project");
+	     removeAppendedIcon(elementName+"/project");
 	  }else{
-	   	  appendImage(elementName+"/project","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/project","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 	  
@@ -29,9 +29,9 @@ function confirmValues(_focus){
 	  	 		document.getElementById("subj_msg").innerHTML="";
 	  	 	}
 	  	 }
-	     removeAppendImage(elementName+"/subject_id");
+	     removeAppendedIcon(elementName+"/subject_id");
 	  }else{
-	   	  appendImage(elementName+"/subject_id","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/subject_id","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 	  
@@ -44,7 +44,7 @@ function confirmValues(_focus){
 	  }
 	  if(labelBox.value!=""){
 	  	 labelBox.obj.validated=false;
-	     removeAppendImage(elementName+"/label");
+	     removeAppendedIcon(elementName+"/label");
 			try{
 				if(eval("window.verifyExptId")!=undefined){
 					if(verifyExptId() === false){ valid = false; };
@@ -57,7 +57,7 @@ function confirmValues(_focus){
 			}
 	  }else{
 	  	  labelBox.obj.validated=true;
-	   	  appendImage(elementName+"/label","/images/checkmarkRed.gif");
+	   	  appendIcon(elementName+"/label","fa-asterisk","Required",{ color: '#c66' });
 	   	  valid=false;
 	  }
 		
@@ -88,18 +88,18 @@ function validateDate(){
 		if(month.value != "bad" || day.value != "bad" || year.value != "bad"){
 			// To be valid, either all values must be present or all values must be absent.
 			if((month.value === "bad" && day.value === "bad" && year.value === "bad") || (month.value != "bad" && day.value != "bad" && year.value != "bad")) {
-				removeAppendImage(elementName+".date.year");
+				removeAppendedIcon(elementName+".date.year");
 				document.getElementById('dateMsg').innerHTML = "";
 				return true;
 			}else{
-				appendImage(elementName+".date.year","/images/checkmarkRed.gif");
+				appendIcon(elementName+".date.year","fa-asterisk","Required",{ color: '#c66' });
 				var dmsg = document.getElementById('dateMsg').innerHTML = "* Please enter a valid date. Month, Day and Year are all required fields. ";
 				return false;
 			}
 		}
 	}
 	document.getElementById('dateMsg').innerHTML = "";
-	removeAppendImage(elementName+".date.year");
+	removeAppendedIcon(elementName+".date.year");
 	return true;
 }
 

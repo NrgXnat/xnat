@@ -6,7 +6,7 @@
   </td>
   <td>
    <a onclick="modifyLabel()">
-    		<img border="0" src="$content.getURI("images/e.gif")"/>
+       <i class="fa fa-edit" title="Edit Label"></i>
    </a>
   </td>
  </tr>

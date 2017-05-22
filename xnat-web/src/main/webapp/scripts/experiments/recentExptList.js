@@ -137,13 +137,13 @@ function MinExptList(_div, _options){
                     td.innerHTML = "";
                 }
                 else if (expt.workflow_status == "Failed") {
-                    td.innerHTML = "<img src='" + serverRoot + "/images/icon-alert-9px.png' title='Failed'/>";
+                    td.innerHTML = "<i class='fa fa-warning' title='Failed'/>";
                 }
                 else if (expt.workflow_status == "Queued") {
-                    td.innerHTML = "<img src='" + serverRoot + "/images/icon-queued-9px.png' title='Queued'/>";
+                    td.innerHTML = "<i class='fa fa-clock-o' title='Queued'></i>";
                 }
                 else {
-                    td.innerHTML = "<img src='" + serverRoot + "/images/icon-waiting-9px.gif' title='" + expt.workflow_status + "'/>";
+                    td.innerHTML = "<i class='fa fa-cogs' title='" + expt.workflow_status + "'></i>";
                 }
             }
             else {

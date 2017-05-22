@@ -441,7 +441,7 @@ function FileViewer(_obj){
 								
 								var l = (scan.label!=undefined)?scan.label:scan.id;
 								if(parent.label == "reconstructions"){
-									l +="&nbsp;&nbsp;<a onclick=\"window.viewer.removeReconstruction({reconId:'" + scan.id + "'});\"><img style='height:14px' border='0' src='" +serverRoot+"/images/delete.gif'/></a>";
+									l +="&nbsp;&nbsp;<a onclick=\"window.viewer.removeReconstruction({reconId:'" + scan.id + "'});\" style=\"color: #900\"><i class=\"fa fa-trash-o\" title=\"Delete\"></i></a>";
 								}
 								var scanNode=new YAHOO.widget.TaskNode({label:l, expanded: true,checked:true}, parent);
 								scanNode.labelStyle = "icon-cf";
@@ -965,7 +965,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
 		   this.label +="&nbsp;("+ this.cat.tags +")";
 		}
 		if(this.cat.canDelete)
-			this.label +="&nbsp;&nbsp;<a onclick=\"window.viewer.removeCatalog({file_name:'" + cat.label +"',uri:'" + this.cat.uri + "',id:'" + cat.xnat_abstractresource_id + "'});\"><img style='height:14px' border='0' src='" +serverRoot+"/images/delete.gif'/></a>";
+			this.label +="&nbsp;&nbsp;<a onclick=\"window.viewer.removeCatalog({file_name:'" + cat.label +"',uri:'" + this.cat.uri + "',id:'" + cat.xnat_abstractresource_id + "'});\" style=\"color: #900\"><i class=\"fa fa-trash-o\" title=\"Delete\"></i></a>";
 	},
     renderFiles:function(){
 
@@ -1008,7 +1008,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
                     _html +="&nbsp; "+size_format(size) +"";
 
                     if(this.cat.canDelete)
-                        _html +="&nbsp; <a onclick=\"window.viewer.removeFile({file_name:'" + path +"',uri:'" + serverRoot + file.URI + "'});\"><img style='height:14px' border='0' src='" +serverRoot+"/images/delete.gif'/></a>";
+                        _html +="&nbsp; <a onclick=\"window.viewer.removeFile({file_name:'" + path +"',uri:'" + serverRoot + file.URI + "'});\" style=\"color: #900\"><i class=\"fa fa-trash-o\" title=\"Delete\"></i></a>";
 
                     var fileNode=new YAHOO.widget.HTMLNode({html: _html, expanded: false}, fileNode);
                     fileNode.labelStyle = "icon-f";
@@ -1043,7 +1043,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
                         }
 
                         if(this.cat.canDelete)
-                            _lbl +="&nbsp;&nbsp;<a onclick=\"window.viewer.removeFile({file_name:'" + path +"',uri:'" + serverRoot + newPath + "'});\"><img style='height:14px' border='0' src='" +serverRoot+"/images/delete.gif'/></a>";
+                            _lbl +="&nbsp;&nbsp;<a onclick=\"window.viewer.removeFile({file_name:'" + path +"',uri:'" + serverRoot + newPath + "'});\" style=\"color: #900\"><i class=\"fa fa-trash-o\" title=\"Delete\"></i></a>";
 
 
 

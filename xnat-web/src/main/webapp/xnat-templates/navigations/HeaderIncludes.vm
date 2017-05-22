@@ -51,10 +51,6 @@ $navigation.setTemplate("/BaseJS.vm")
             },
             siteId: "$!turbineUtils.GetSystemName()"
         },
-        images: {
-            grnChk: "$content.getURI("images/checkmarkGreen.gif")",
-            redChk: "$content.getURI("images/checkmarkRed.gif")"
-        },
         data: {
             context: {
                 #set($projectName = $turbineUtils.getProjectDisplayID($om, $project))

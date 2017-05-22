@@ -1,7 +1,7 @@
 <!-- Sequence: 10 -->
 	#if ($item.canDelete($user))
       <li class="yuimenuitem lockable">
-       <A href="" ONCLICK="restDelete();return false;"><div class="ic"><img border="0" src="$content.getURI("images/delete.gif")"/></div><div class="ic_spacer">&nbsp;</div>Delete</A>
+       <a href="" ONCLICK="restDelete();return false;"><div class="ic"><i class="fa fa-trash-o" style="color: #900"></i></div><div class="ic_spacer">&nbsp;</div>Delete</a>
       </li>
 	#end
 	<script type="text/javascript" src="$content.getURI("scripts/restDeleter.js")"></script>

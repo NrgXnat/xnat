@@ -216,7 +216,7 @@ function verifySecurity(){
 
 							<TR><TD>Sort By Field</TD>
 
-							<TD><A ONCLICK="return popupSortFields('SORT_FIELD','xdat:stored_search/sort_by/element_name');" href=""><IMG border=0 src="$content.getURI("images/update.gif")"/></A>
+							<TD><A ONCLICK="return popupSortFields('SORT_FIELD','xdat:stored_search/sort_by/element_name');" href=""><i class="fa fa-window-restore" style="font-size: 16px" title="Open Popup"></i></A>
 
 							#if ($item.getProperty("xdat:stored_search/sort_by/field_ID"))
 
@@ -329,7 +329,7 @@ function verifySecurity(){
 
 									</td>
 
-									<TD NOWRAP><A ONCLICK="return popupFields('SEARCH_FIELD${xdat_search_field_1_COUNTER}','SEARCH_FIELD_ELEMENT${xdat_search_field_1_COUNTER}','SEARCH_FIELD_HEADER${xdat_search_field_1_COUNTER}','SEARCH_FIELD_TYPE${xdat_search_field_1_COUNTER}');" href=""><IMG border=0 src="$content.getURI("images/update.gif")"/></A>
+									<TD NOWRAP><A ONCLICK="return popupFields('SEARCH_FIELD${xdat_search_field_1_COUNTER}','SEARCH_FIELD_ELEMENT${xdat_search_field_1_COUNTER}','SEARCH_FIELD_HEADER${xdat_search_field_1_COUNTER}','SEARCH_FIELD_TYPE${xdat_search_field_1_COUNTER}');" href=""><i class="fa fa-window-restore" style="font-size: 16px" title="Open Popup"></i></A>
 
 									#if ($item.getProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/value"))
 

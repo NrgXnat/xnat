@@ -47,7 +47,7 @@
 			</script>
 			
 			#xdatComboBox("xnat:petSessionData.scanner" $item "window.ss" $vr)
-			<a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><img border="0" src="$content.getURI("images/qm.gif")"/></a>
+			<a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
 			#if($item.getStringProperty("xnat:petSessionData/scanner/manufacturer") || $item.getStringProperty("${datatype}/scanner/model") || $!item.getStringProperty("${datatype}/scanner"))
                 &nbsp; ($!item.getStringProperty("xnat:petSessionData/scanner/manufacturer") $!item.getStringProperty("${datatype}/scanner/model") $!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner")))
                 ##<script>document.write(escapeHtml(unescapeAllHtml('$!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner"))')))</script>
@@ -101,7 +101,7 @@
 				  #end
 				 </script>
 					  #xdatComboBox("xnat:petSessionData.tracer.name" $item "window.tracer" $vr)
-					  <a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><img border="0" src="$content.getURI("images/qm.gif")"/></a>
+					  <a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
 			#end
   </td>
 					</tr>

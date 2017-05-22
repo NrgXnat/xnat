@@ -324,9 +324,9 @@ function renderRecons(recons,tbody_id,session_id,project){
 		td= document.createElement("td");
 		td.vAlign="middle";
 		var eA=document.createElement("a");
-		var eIMG=document.createElement("img");
-		eIMG.src=serverRoot+"/images/e.gif";
-		eIMG.border=0;
+		var eIMG=document.createElement("i");
+		eIMG.className="fa fa-edit";
+		eIMG.title="Edit";
 		eA.appendChild(eIMG);
 		eA.options={"recon":recon,"session_id":session_id,"project":project,"tbody_id":tbody_id};
 		eA.onclick=function(o){
@@ -343,9 +343,10 @@ function renderRecons(recons,tbody_id,session_id,project){
 		td= document.createElement("td");
 		td.vAlign="middle";
 		var dA=document.createElement("a");
-		var dIMG=document.createElement("img");
-		dIMG.src=serverRoot+"/images/delete.gif";
-		dIMG.border=0;
+		var dIMG=document.createElement("i");
+		dIMG.className="fa fa-trash-o";
+		dIMG.title="Delete";
+		dA.style.color="#900";
 		dA.appendChild(dIMG);
 		dA.options={"recon":recon,"session_id":session_id,"project":project,"tbody_id":tbody_id};
 		dA.onclick=function(o){

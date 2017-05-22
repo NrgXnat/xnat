@@ -1090,10 +1090,10 @@ xdat_criteria_set.prototype.renderFilters=function(containerDIV){
 			this.set.Criteria.splice(parseInt(this.index),1);
 			this.set.renderFilters();
 		}
-		this.CritDiv.childNodes[0].appendChild(document.createElement("img"));
-		this.CritDiv.childNodes[0].childNodes[0].src=serverRoot +"/images/delete.gif";
-		this.CritDiv.childNodes[0].childNodes[0].border="0";
-		this.CritDiv.childNodes[0].childNodes[0].style.height="12px";
+		this.CritDiv.childNodes[0].appendChild(document.createElement("i"));
+		this.CritDiv.childNodes[0].childNodes[0].className="fa fa-trash-o";
+		this.CritDiv.childNodes[0].childNodes[0].style="color: #900";
+		this.CritDiv.childNodes[0].childNodes[0].title="Remove";
 		this.CritDiv.appendChild(this.Criteria[this.xcC].getInput(this.sm));
 		td1.appendChild(this.CritDiv);
 
@@ -1482,10 +1482,10 @@ xdat_criteria_set.prototype.getInput=function(sm,cC){
 			this.set.Criteria.splice(parseInt(this.index),1);
 			if(this.sm.showCriteria==undefined || this.sm.showCriteria==true)this.sm.renderCriteria();
 		}
-		this.tempCSTD1.childNodes[0].appendChild(document.createElement("img"));
-		this.tempCSTD1.childNodes[0].childNodes[0].src=serverRoot +"/images/delete.gif";
-		this.tempCSTD1.childNodes[0].childNodes[0].border="0";
-		this.tempCSTD1.childNodes[0].childNodes[0].style.height="12px";
+		this.tempCSTD1.childNodes[0].appendChild(document.createElement("i"));
+		this.tempCSTD1.childNodes[0].childNodes[0].className="fa fa-trash-o";
+		this.tempCSTD1.childNodes[0].childNodes[0].style.color="#900";
+		this.tempCSTD1.childNodes[0].childNodes[0].title="Remove";
 		this.tempCSTD1.appendChild(this.Criteria[this.xcC].getInput(sm));
 		this.tempCSTR.appendChild(this.tempCSTD1);
 		this.tb.appendChild(this.tempCSTR);

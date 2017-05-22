@@ -54,7 +54,7 @@ passwordExpirationDate:
         datePicker:
             tag: span#datePicker
             content: >
-              &nbsp;&nbsp;<span id='openCal-passwordExpirationDate' class='icon icon-sm icon-calendar'></span>
+              &nbsp;&nbsp;<span id='openCal-passwordExpirationDate' class='fa fa-calendar'></span>
               <br>
               <p class='description'>Expire passwords that were last changed before this date and
               require those users to change them.</p>

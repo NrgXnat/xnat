@@ -59,10 +59,11 @@ div.xmodal .title .close,
 div.xmodal .title .maximize {
     width: 24px; height: 18px; margin: 0; padding: 0;
     position: absolute ; top: 8px ; right: 8px ;
-    font-size: 18px ; font-weight: normal ; text-align: center; line-height: 19px;
+    font-weight: normal ; text-align: center; line-height: 19px;
     color: #808080 ; background: #f8f8f8 ;
     border: 1px solid #a0a0a0 ; border-radius: 2px; }
-div.xmodal .title .maximize { right: 38px; line-height: 10px; }
+div.xmodal .title .maximize { right: 38px; }
+div.xmodal.maxxed .title .maximize .fa-expand:before { content: "\f066"; }
 div.xmodal .title .close:hover,
 div.xmodal .title .maximize:hover { color: #606060; background: #fafafa; border-color: #a0a0a0; cursor: pointer; }
 

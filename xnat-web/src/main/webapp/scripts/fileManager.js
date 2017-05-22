@@ -136,9 +136,10 @@ function fileManager(_resource){
 			td= document.createElement("td");
 			td.vAlign="middle";
 			var dA=document.createElement("a");
-			var dIMG=document.createElement("img");
-			dIMG.src=serverRoot+"/images/delete.gif";
-			dIMG.border=0;
+			var dIMG=document.createElement("i");
+			dIMG.className="fa fa-trash-o";
+			dIMG.title="Delete";
+			dA.style.color="#900";
 			dA.counter=fC;
 			dA.appendChild(dIMG);
 			dA.fileManager=this;

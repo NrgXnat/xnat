@@ -13,7 +13,7 @@
         <th align=left></th>
         <th align=left>Scan</th>
         <th align=left>Type
-            <a onclick="xmodal.message('Scan Type', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><img border="0" src="$content.getURI("images/qm.gif")"/></a>
+            <a onclick="xmodal.message('Scan Type', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
         </th>
         <th align=left>Quality</th>
         <th align=left>Note</th>

@@ -784,6 +784,52 @@ if(obj!=null){
 	}
 }
 
+function appendIcon(obj,icon_class,msg,styleObj){
+	if(obj!==null){
+		if(typeof obj == 'string'){
+			// Determine if the argument is a form id or a form name.
+			// Note form name usage is deprecated by supported
+			// here for legacy reasons.
+			obj = (document.getElementById(obj));
+		}
+
+		if(obj.appendedIcon==undefined){
+			obj.appendedIcon = document.createElement("i");
+			obj.appendedIcon.className = "fa "+icon_class;
+			if (Object.keys(styleObj).length) { 
+				for (var k in styleObj) {
+					obj.appendedIcon.style[k] = styleObj[k];
+				}
+			}
+			obj.appendedIcon.style.marginLeft="5px";
+			if(obj.nextSibling==null)
+			{
+				obj.parentNode.insertBefore(obj.appendedIcon,obj.nextSibling);
+			}else{
+				obj.parentNode.appendChild(obj.appendedIcon);
+			}
+		}
+
+		if(msg!==undefined)obj.appendedIcon.title=msg;
+	}
+}
+
+function removeAppendedIcon(obj){
+	if(obj!=null){
+		if(typeof obj == 'string'){
+			// Determine if the argument is a form id or a form name.
+			// Note form name usage is deprecated by supported
+			// here for legacy reasons.
+			obj = (document.getElementById(obj));
+		}
+
+		if(obj.appendedIcon!=undefined){
+			obj.appendedIcon.parentNode.removeChild(obj.appendedIcon);
+			obj.appendedIcon=null;
+		}
+	}
+}
+
 window.modals=new Object();
 
 function openModalPanel(id,msg,parentPanel,options){

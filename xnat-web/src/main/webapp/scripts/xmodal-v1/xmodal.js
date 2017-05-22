@@ -643,14 +643,14 @@ if (typeof jQuery == 'undefined') {
             if (isTrue(modal.maximize)){
                 output.title +=
                     '<b class="maximize" title="maximize/minimize this dialog">' +
-                    '&ndash;' +
+                    '<i class="fa fa-expand"></i>' +
                     '</b>' ;
             }
 
             if (isTrue(modal.closeBtn)){
                 output.title +=
                     '<b class="close" title="click to close (alt-click to close all modals)">' +
-                    '&times;' +
+                    '<i class="fa fa-close"></i>' +
                     '</b>' ;
             }
 

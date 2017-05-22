@@ -643,9 +643,9 @@ function renderScans(scans,tbody_id,session_id,project){
 		td= document.createElement("td");
 		td.vAlign="middle";
 		var eA=document.createElement("a");
-		var eIMG=document.createElement("img");
-		eIMG.src=serverRoot+"/images/e.gif";
-		eIMG.border=0;
+		var eIMG=document.createElement("i");
+		eIMG.className="fa fa-edit";
+        eIMG.title="Edit";
 		eA.appendChild(eIMG);
 		eA.options={"scan":scan,"session_id":session_id,"project":project,"tbody_id":tbody_id};
 		eA.onclick=function(o){
@@ -662,9 +662,10 @@ function renderScans(scans,tbody_id,session_id,project){
 		td= document.createElement("td");
 		td.vAlign="middle";
 		var dA=document.createElement("a");
-		var dIMG=document.createElement("img");
-		dIMG.src=serverRoot+"/images/delete.gif";
-		dIMG.border=0;
+		var dIMG=document.createElement("i");
+		dIMG.className="fa fa-trash-o";
+		dIMG.title="Delete";
+        dA.style="color: #900";
 		dA.appendChild(dIMG);
 		dA.options={"scan":scan,"session_id":session_id,"project":project,"tbody_id":tbody_id};
 		dA.onclick=function(o){
@@ -792,21 +793,21 @@ function ScanSet(_options,_scans){
 		for(var csC=0;csC<this.scans.length;csC++){
 			var scan=this.scans[csC];
 	  		if(scan.type_input.value==""){
-	  			appendImage(scan.type_input,"/images/checkmarkRed.gif");
+	  			appendIcon(scan.type_input,"fa-asterisk","Required",{ color: '#c66' });
 	  			if(_focus)scan.type_input.focus();
 	  			isValid=false;
 	  		}else{
-  				removeAppendImage(scan.type_input);
+  				removeAppendedIcon(scan.type_input);
 	  		}
 
 
 			if(XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true){
 		  		if(scan.qual_input.selectedIndex==0){
-		  			appendImage(scan.qual_input,"/images/checkmarkRed.gif");
+                    appendIcon(scan.qual_input,"fa-asterisk","Required",{ color: '#c66' });
 		  			if(_focus)scan.qual_input.focus();
 		  			isValid=false;
 		  		}else{
-	  				removeAppendImage(scan.qual_input);
+	  				removeAppendedIcon(scan.qual_input);
 		  		}
 			}
 		}
@@ -817,24 +818,24 @@ function ScanSet(_options,_scans){
 		  		if(scan.type_input.value!="" || 
 		  				((XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true) && (scan.qual_input.selectedIndex>0)) || 
 		  				!((scan.note_input.value=="")||(scan.note_input.value=="NULL"))){
-		  			removeAppendImage(scan.type_input);
-		  			if(XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true)removeAppendImage(scan.qual_input);
-		  			appendImage(scan.id_input,"/images/checkmarkRed.gif");
+		  			removeAppendedIcon(scan.type_input);
+		  			if(XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true)removeAppendedIcon(scan.qual_input);
+		  			appendIcon(scan.id_input,"fa-asterisk","Required",{ color: '#c66' });
 		  			if(_focus)scan.id_input.focus();
 		  			isValid=false;
 		  		}else{
-		  			removeAppendImage(scan.id_input);
-		  			removeAppendImage(scan.type_input);
-		  			if(XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true)removeAppendImage(scan.qual_input);
+		  			removeAppendedIcon(scan.id_input);
+		  			removeAppendedIcon(scan.type_input);
+		  			if(XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true)removeAppendedIcon(scan.qual_input);
 		  		}
 		  	}else{
-		  		removeAppendImage(scan.id_input);
+		  		removeAppendedIcon(scan.id_input);
 		  		if(scan.type_input.value==""){
-		  			appendImage(scan.type_input,"/images/checkmarkRed.gif");
+		  			appendIcon(scan.type_input,"fa-asterisk","Required",{ color: '#c66' });
 		  			if(_focus)scan.type_input.focus();
 		  			isValid=false;
 		  		}else{
-	  				removeAppendImage(scan.type_input);
+	  				removeAppendedIcon(scan.type_input);
 		  		}
 
 		  		if(XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true){
@@ -842,7 +843,7 @@ function ScanSet(_options,_scans){
 			  			scan.qual_input.selectedIndex=1;
 			  			scan.qual_input.defaultSelectedIndex=1;
 			  		}else{
-		  				removeAppendImage(scan.qual_input);
+		  				removeAppendedIcon(scan.qual_input);
 			  		}
 			  	}
 		  	}
@@ -921,9 +922,10 @@ function scanListingEditor(_tbody,_scanSet,_options){
 			}
 			if((XNAT.app.preventDataDeletion==undefined || !XNAT.app.preventDataDeletion) && (this.scanSet.options.allowDataDeletion==undefined || this.scanSet.options.allowDataDeletion=="true") && window.obj.canDelete){
 				var dA=document.createElement("a");
-				var dIMG=document.createElement("img");
-				dIMG.src=serverRoot+"/images/delete.gif";
-				dIMG.border=0;
+                var dIMG=document.createElement("i");
+                dIMG.className="fa fa-trash-o";
+                dIMG.title="Delete";
+                dA.style.color="#900";
 				dA.appendChild(dIMG);
 
 				dA.index=""+scanC;

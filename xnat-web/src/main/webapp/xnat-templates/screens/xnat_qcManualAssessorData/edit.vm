@@ -68,7 +68,7 @@ $page.setVlinkColor($ui.vlink)
                                 </td>
                                 #if($!om.getPass() && $turbineUtils.canDelete($user, $om.getItem()))
                                     <td>
-                                        <a onclick="modifyProject();"><img border="0" src="$content.getURI("images/e.gif")"/></a>
+                                        <a onclick="modifyProject();"><i class="fa fa-edit" title="Edit Project"></i></a>
                                         <input type="hidden" id="$om.getXSIType()/project" name="$om.getXSIType()/project" value="$!om.getProject()"/>
                                         <script type="text/javascript">
                                             function modifyProject(){

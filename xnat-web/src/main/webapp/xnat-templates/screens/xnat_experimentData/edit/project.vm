@@ -6,7 +6,7 @@
   <td>
 	#if($data.getSession().getAttribute("userHelper").canDelete($om.getItem()))
    <a onclick="modifyProject();">
-    		<img border="0" src="$content.getURI("images/e.gif")"/>
+       <i class="fa fa-edit" title="Edit Project"></i>
    </a>
    #end
   </td>

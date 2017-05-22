@@ -113,7 +113,7 @@
             #set($username = $!user.getUsername())
             #if($username != "" && $username != "guest")
                 ## use default timeout value from web.xml as the starting text in the "#timeLeft" element
-                <span id="user_info">Logged in as: &nbsp;<a id="username-link" href="$link.setPage("XDATScreen_UpdateUser.vm")">$username</a> <b>|</b><span class="tip_icon" style="margin-right:3px;left:2px;top:3px;">
+                <span id="user_info">Logged in as: &nbsp;<a id="username-link" href="$link.setPage("XDATScreen_UpdateUser.vm")">$username</a> <b>|</b><span class="tip_icon" style="margin-right:3px;">
                     <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">Your XNAT session will auto-logout after a certain period of inactivity. You can reset that timer without reloading the page by clicking "renew."</span>
                 </span>
                 ## some kind of default text needs to be there so stuff doesn't shift around before the timer functions kick in
@@ -128,7 +128,7 @@
 
         #if ($siteConfig.pathErrorWarning != "")
             <div id="warning_bar" style="display:none;">
-                <span class="close"><img src="$content.getURI('images/close.gif')"></span>
+                <span class="close"><i class="fa fa-close"></i></span>
                 <span>
                     XNAT System Path Verification Failure: Contact your system administrator
                     <span class="tip_text">(<i>what does this mean?</i>)
@@ -143,7 +143,7 @@
                     #if ($sessionCount > 1 || $sessionIpCount > 1 )
                     ##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
                         <div id="warning_bar" style="display:none;">
-                            <span class="close"><img src="$content.getURI('images/close.gif')"></span>
+                            <span class="close"><i class="fa fa-close"></i></span>
                 <span>
                     #if ( $sessionIpCount > 1 )
                         ATTENTION: You have $sessionCount sessions open from $sessionIpCount distinct IP addresses.
@@ -279,7 +279,7 @@
 
     #if($siteConfig.siteWideAlertStatus == "2")
         <div class="$siteConfig.siteWideAlertType headNotification hidden">
-            <span class="closeNotification"><img src="$content.getURI('images/close.gif')"></span>
+            <span class="close closeNotification"><i class="fa fa-close"></i></span>
             <span>$siteConfig.siteWideAlertMessage</span>
         </div>
 

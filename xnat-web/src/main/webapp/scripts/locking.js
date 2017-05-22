@@ -21,7 +21,7 @@ XNAT.app.locker= {
 		
 		 if(YUIDOM.get(this.icon)!=undefined){
 			YUIDOM.setStyle(this.icon,'display','block');
-			YUIDOM.get(this.icon).innerHTML="<a onclick='XNAT.app.locker.unlock()'><img id='lock_img' border='0' src='" + XNAT.images.redChk +"'/> Unlock</a>";
+			YUIDOM.get(this.icon).innerHTML="<a onclick='XNAT.app.locker.unlock()'><i id='lock_img' class='fa fa-check' style='color: #c66'></i> Unlock</a>";
    	    }
 		 
 		 YUIDOM.setStyle(YUIDOM.getElementsByClassName('lockable'), 'display', 'none');
@@ -35,7 +35,7 @@ XNAT.app.locker= {
 		
 		 if(YUIDOM.get(this.icon)!=undefined){
 			 YUIDOM.setStyle(this.icon,'display','block');
-			 YUIDOM.get(this.icon).innerHTML="<a onclick='XNAT.app.locker.lock()'><img id='lock_img' border='0' src='" + XNAT.images.grnChk +"'/> Lock</a>";
+			 YUIDOM.get(this.icon).innerHTML="<a onclick='XNAT.app.locker.lock()'><i id='lock_img' class='fa fa-check' style='color: green'></i> Lock</a>";
    	    }
 		 YUIDOM.setStyle(YUIDOM.getElementsByClassName('lockable'), 'display', 'block');
 	},

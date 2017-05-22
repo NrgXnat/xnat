@@ -45,7 +45,8 @@
                         label: 'ID',
                         apply: function(id) {
                             return spawn('a.link', {
-                                href: '/app/template/XDATScreen_bundles.vm'
+                                href: '/app/template/XDATScreen_bundles.vm',
+                                target: '_blank'
                         }, id)}
                     },
                     brief_description: {

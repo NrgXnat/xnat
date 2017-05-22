@@ -45,7 +45,7 @@
                         label: 'ID',
                         apply: function(id) {
                             return spawn('a.link', {
-                                href: '/app/template/XDATScreen_bundles.vm',
+                                href: '/app/action/DisplayItemAction/search_value/'+id+'/search_element/xdat:stored_search/search_field/xdat:stored_search.ID',
                                 target: '_blank'
                         }, id)}
                     },

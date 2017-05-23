@@ -104,7 +104,11 @@
 			</td>
 		</tr>
 	#end
+		<tr>
+			<td id="prearchiveSessionTotals" style="padding-top:10px;"></td>
+		</tr>
 	</table>
+	<br>
     <button id="dAscans" style="float:right;margin-top:20px;" onclick="XNAT.app.prearchiveActions.downloadAllFiles('$url')">Download All Files</button>
 </div>
 

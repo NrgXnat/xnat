@@ -26,19 +26,28 @@ XNAT.app.fileCounter={
 	},
 	processCatalogs:function(o){   		
     	var catalogs= eval("(" + o.responseText +")").ResultSet.Result;
-    	
+    	var prearchiveSessionFileCount = 0;
+        var prearchiveSessionFileSize = 0.0;
+
     	for(var catC=0;catC<catalogs.length;catC++){
 			
     		var scan=document.getElementById("scan"+catalogs[catC].cat_id+"Files");
     		if(scan!=null){
 				if(catalogs[catC].file_count!=undefined && catalogs[catC].file_count!=null){
 		  			scan.innerHTML=catalogs[catC].file_count + " files, "+ size_format(catalogs[catC].file_size);
+		  			if(catalogs[catC].file_count>0) {
+                        prearchiveSessionFileCount = prearchiveSessionFileCount + parseInt(catalogs[catC].file_count,10);
+                    }
+                    if(catalogs[catC].file_size>0) {
+                        prearchiveSessionFileSize = prearchiveSessionFileSize + parseFloat(catalogs[catC].file_size);
+                    }
 				}else{
 		  			scan.innerHTML=size_format(catalogs[catC].file_size);
 				}
     		}
     	}
-		
+        document.getElementById("prearchiveSessionTotals").innerHTML="<b>Total:</b> "+ prearchiveSessionFileCount +" Files, " + size_format(prearchiveSessionFileSize);
+        
 		for(var sc=0;sc<this.scans.length;sc++){
 			if(document.getElementById("scan"+this.scans[sc]+"Files").innerHTML.startsWith("Load")){
 				document.getElementById("scan"+this.scans[sc]+"Files").innerHTML="0 files";

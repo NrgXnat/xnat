@@ -398,7 +398,13 @@ var XNAT = getObject(XNAT);
         this.tableContainer = $$(container || '#investigators-list-container');
 
         function investigatorFieldValue(val){
-            return val || '<div class="center">&mdash;</div>'
+            if(val){
+                return "<span class='truncate truncateCellNarrow' title='"+ val + "'>"+ val +"</span>";
+            }
+            else{
+                return '<div class="center">&mdash;</div>';
+            }
+            //return val || '<div class="center">&mdash;</div>'
         }
 
         function investigatorProjectList(){

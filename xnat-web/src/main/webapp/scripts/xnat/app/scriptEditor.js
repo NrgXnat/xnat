@@ -99,8 +99,8 @@ var XNAT = getObject(XNAT || {});
                 $.each(scripts, function(i, script){
                     scriptEditor.scriptIds.push(script['Script ID']);
                     list +=
-                        rowTemplate.replace(/__SCRIPT_ID__/g, script['Script ID'])
-                                   .replace(/__SCRIPT_LABEL__/g, script['Script Label'])
+                        rowTemplate.replace(/__SCRIPT_ID__/g, XNAT.utils.escapeXML(script['Script ID']))
+                                   .replace(/__SCRIPT_LABEL__/g, XNAT.utils.escapeXML(script['Script Label']))
                                    .replace(/__SCRIPT_DESCRIPTION__/g, XNAT.utils.escapeXML(script['Description']));
                 });
                 scriptsTable.find('> tbody').html(list);

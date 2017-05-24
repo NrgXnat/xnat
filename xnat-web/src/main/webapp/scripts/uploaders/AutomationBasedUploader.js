@@ -1375,7 +1375,7 @@ XNAT.app.abu.validateUploaderConfiguration=function() {
 }
 
 XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEvent, scope) {
-
+    configEvent = XNAT.utils.escapeXML(configEvent);
 	var uploaderConfig = XNAT.app.abu.uploaderConfig;
 	if (typeof(uploaderConfig) === 'undefined' || uploaderConfig == null) {
 		xmodal.message("Couldn't retrieve uploader configuration");

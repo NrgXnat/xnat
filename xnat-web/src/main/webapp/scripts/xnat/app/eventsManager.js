@@ -69,7 +69,7 @@ $(function(){
                          '</dl>' +
                     '</dl>';
                     forEach(_handlers, function(eventHandler){
-                        var _event_id = eventHandler['event'];
+                        var _event_id = XNAT.utils.escapeXML(eventHandler['event']);
                         eventsManager.handlers.push(_event_id);
                         /*
                         eventRows += '<tr class="highlight">' +
@@ -90,8 +90,8 @@ $(function(){
                         */
                         eventRows += '<dl class="item">' +
                             '<dd class="col1">' + _event_id + '</dd>' +
-                            '<dd class="col2">' + eventHandler.scriptId + '</dd>' +
-                            '<dd class="col3">' + eventHandler.description + '</dd>' +
+                            '<dd class="col2">' + XNAT.utils.escapeXML(eventHandler.scriptId) + '</dd>' +
+                            '<dd class="col3">' + XNAT.utils.escapeXML(eventHandler.description) + '</dd>' +
                             ((doEdit) ?
                                 '<dd class="col4" style="text-align: center;">' +
                                 '<button href="javascript:" class="delete-handler event-handler-button" ' +
@@ -107,7 +107,7 @@ $(function(){
                                 '</dd>' 
                             : '') +
                             '<dd class="colC">' + '<b>Event Class: </b> ' + getEventClassDisplayValueFromHandlers(_handlers, eventHandler) + '</dd>' +
-                            '<dd class="colC">' + '<b>Event Filters: </b> ' + eventHandler.eventFilters + '</dd>' +
+                            '<dd class="colC">' + '<b>Event Filters: </b> ' + XNAT.utils.escapeXML(eventHandler.eventFilters) + '</dd>' +
                             '</dl>';
                     });
                     //$((doEdit) ? events_manage_table : $events_table).find('tbody').html(eventRows);
@@ -328,7 +328,7 @@ $(function(){
                 }
                 else {
                     forEach(scripts, function(script){
-                        options += '<option title="' + script['Description'] + '" value="' + script['Script ID'] + '">' + script['Script ID'] + ':' + script['Script Label'] + '</option>';
+                        options += '<option title="' + XNAT.utils.escapeXML(script['Description']) + '" value="' + XNAT.utils.escapeXML(script['Script ID']) + '">' + XNAT.utils.escapeXML(script['Script ID']) + ':' + XNAT.utils.escapeXML(script['Script Label']) + '</option>';
                         eventsManager.scripts.push(script['Script ID']);
                     });
                     $scriptsMenu.html(options);

@@ -26,11 +26,8 @@ import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
-import org.springframework.mail.MailSendException;
-import org.springframework.messaging.MessagingException;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 
 @SuppressWarnings("unused")
 public class ModifyEmail extends ModifyAction {
@@ -38,6 +35,20 @@ public class ModifyEmail extends ModifyAction {
     public static final String EMAIL_ADDRESS_CHANGED = "Email address changed.";
 
     public void doPerform(final RunData data, final Context context) throws Exception {
+        final String method = data.getRequest().getMethod();
+
+        if (!StringUtils.equalsIgnoreCase("post", method)) {
+            throw new Exception("The only valid method for this action is POST.");
+        }
+
+        final String submittedCsrf = data.getParameters().getString("XNAT_CSRF");
+        final String sessionCsrf = (String) data.getSession().getAttribute("XNAT_CSRF");
+        if (!StringUtils.equals(submittedCsrf, sessionCsrf)) {
+            final String errorMessage = SecureAction.csrfTokenErrorMessage(data.getRequest());
+            AdminUtils.sendAdminEmail("Possible phishing or intrusion Attempt", "The XNAT_CSRF token was not properly set in the session when someone tried to change a password.\n" + errorMessage);
+            throw new Exception("INVALID CSRF (" + errorMessage + ")");
+        }
+        
         setDataAndContext(data, context);
 
         final UserI found;

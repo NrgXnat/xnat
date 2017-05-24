@@ -78,7 +78,7 @@ public class AdminUtils {
         context.put("user", user);
 
         final String body = populateVmTemplate(context, "/screens/email/DisabledUserVerification.vm");
-        final String subject = "Disabled User Verified: " + user.getFirstname() + " " + user.getLastname();
+        final String subject = "Expired User Reverified: " + user.getFirstname() + " " + user.getLastname();
 
 		Map<String, Object> properties = new HashMap<>();
         properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());

@@ -187,11 +187,6 @@ function fixSpaces(val)
         return newVal;
 }
 
-function stringTrim(str)
-{
-   return str.replace(/^\s*|\s*$/g,"");
-}
-    
 		</SCRIPT>
 		<!-- END ProjectSelector.vm -->
 #xdatEditProps($item "XDATScreen_manage_entry_access.vm")

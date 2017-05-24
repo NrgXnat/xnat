@@ -20,12 +20,6 @@
  * Likewise with width & height: width=600,height=400
  */
 
-// make sure we've got a .trim() method
-if (!String.prototype.trim) {
-    String.prototype.trim = function () {
-        return this.replace(/^\s+|\s+$/g, '');
-    };
-}
 
 function popupCentered( /* url, title, w, h, y, params */ ) {
 

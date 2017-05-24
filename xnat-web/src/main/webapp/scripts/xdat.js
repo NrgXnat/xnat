@@ -382,10 +382,10 @@ function ArrayIndexByName(array,name){
 	return index;
 }
 
-function stringTrim(str)
-{
-   return str.replace(/^\s*|\s*$/g,"");
+function stringTrim(str){
+    return str.trim();
 }
+
 function stringCamelCaps(val)
 {
         var temp = val.replace(/^\s*|\s*$/g,"");
@@ -408,26 +408,14 @@ temp[c].substring(1,temp[c].length);
 
         return newVal;
 }
-String.prototype.trim = function () {
-	return this.replace(/^\s*|\s*$/g,"");
-}
-
 
 String.prototype.startsWith = function(str) {
-	if (this.indexOf(str)==0){
-		return true;
-	}else{
-		return false;
-	}
-}
+	return this.indexOf(str) === 0;
+};
 
 String.prototype.endsWith = function(str) {
-	if (this.lastIndexOf(str)==(this.length-str.length)){
-		return true;
-	}else{
-		return false;
-	}
-}
+	return this.lastIndexOf(str) === (this.length-str.length);
+};
 
 String.prototype.getExcerpt = function(desiredLength, excerptIndicator) {
 	if(this.length <= desiredLength) {

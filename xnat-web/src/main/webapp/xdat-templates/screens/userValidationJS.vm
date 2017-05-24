@@ -28,17 +28,19 @@
             validateUsername.minLength(1).failure('Please enter a username');
             validateUsername.is('username').failure('Username can only contain letters and numbers. No spaces or special characters allowed.');
 
+            console.log('validateNewPass');
+
             // password
             var validateNewPass = XNAT.validate(password).reset().chain();
             validateNewPass.minLength(1).failure('New Password: field cannot be empty');
             validateNewPass.maxLength(255).failure('New Password: field cannot be longer than 255 characters');
-            validateNewPass.pattern('$siteConfig.passwordComplexity'.trim()).failure('New Password: '+ passwordComplexityMessage);
+            validateNewPass.pattern('$siteConfig.passwordComplexity.replace("\","\\")'.trim()).failure('New Password: '+ passwordComplexityMessage);
 
             // confirm password
             var validateConfirmPass = XNAT.validate(confirm_password).reset().chain();
             validateConfirmPass.minLength(1).failure('Confirm Password: field cannot be empty');
             validateConfirmPass.maxLength(255).failure('Confirm Password: field cannot be longer than 255 characters');
-            validateConfirmPass.pattern('$siteConfig.passwordComplexity'.trim()).failure('Confirm Password: ' + passwordComplexityMessage);
+            validateConfirmPass.pattern('$siteConfig.passwordComplexity.replace("\","\\")'.trim()).failure('Confirm Password: ' + passwordComplexityMessage);
             validateConfirmPass.matches(password).failure('Password fields must match');
 
             // firstname

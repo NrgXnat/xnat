@@ -29,13 +29,6 @@ if (typeof jQuery == 'undefined') {
 
     _xmodal.topZ = 8000;
 
-    // polyfill for string.trim(); method
-    if (!String.prototype.trim) {
-        String.prototype.trim = function () {
-            return this.replace(/^[\s\xA0]+|[\s\xA0]+$/g, '');
-        };
-    }
-
 
     // force a jQuery object and allow use of
     // non-standard id names with special prefix:

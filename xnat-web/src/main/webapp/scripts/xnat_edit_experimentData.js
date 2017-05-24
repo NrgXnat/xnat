@@ -88,11 +88,6 @@ function fixSpaces(val)
         return newVal;
 }
 
-function stringTrim(str)
-{
-   return str.replace(/^\s*|\s*$/g,"");
-}
-
 function validateExperimentForm()
 {   
    if(submitHistory==true)

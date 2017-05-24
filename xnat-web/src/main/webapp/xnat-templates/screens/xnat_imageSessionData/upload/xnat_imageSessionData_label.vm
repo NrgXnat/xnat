@@ -30,11 +30,6 @@ function fixSpaces(val)
         return newVal;
 }
 
-function stringTrim(str)
-{
-   return str.replace(/^\s*|\s*$/g,"");
-}
-
 function verifyExptId(obj){
    if (elementName==null || elementName=="")
    {

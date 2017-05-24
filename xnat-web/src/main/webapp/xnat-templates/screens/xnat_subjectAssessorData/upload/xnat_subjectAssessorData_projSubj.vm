@@ -124,10 +124,6 @@
     window.psm = new ProjectSubjectSelector("$!item.getXSIType()/project", "$!item.getXSIType()/subject_id", null, "$!project", "$!part_id");
     window.psm.init();
 
-    function stringTrim(str) {
-        return str.replace(/^\s*|\s*$/g, "");
-    }
-
     var w = window;
     // ?
 </script>

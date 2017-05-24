@@ -820,6 +820,7 @@ var XNAT = getObject(XNAT);
     Validator.fn.pattern = function(regex){
         this.setMethod('pattern');
         this.regex = (typeof regex === 'string') ? new RegExp(regex) : regex;
+        console.log(this.regex);
         this.validated = this.regex.test(this.value);
         return this;
     };
@@ -871,11 +872,14 @@ var XNAT = getObject(XNAT);
         if (this.validated) {
             if (isFunction(messageOrCallback)) {
                 messageOrCallback.call(this);
+                return this;
             }
             else {
                 this.messages.push(messageOrCallback);
             }
-            this.validations[this.method].success.push(messageOrCallback);
+            if (this.method) {
+                this.validations[this.method].success.push(messageOrCallback);
+            }
         }
         return this;
     };
@@ -886,11 +890,14 @@ var XNAT = getObject(XNAT);
         if (!this.validated) {
             if (isFunction(messageOrCallback)) {
                 messageOrCallback.call(this);
+                return this;
             }
             else {
                 this.messages.push(messageOrCallback);
             }
-            this.validations[this.method].failure.push(messageOrCallback);
+            if (this.method) {
+                this.validations[this.method].failure.push(messageOrCallback);
+            }
         }
         return this;
     };

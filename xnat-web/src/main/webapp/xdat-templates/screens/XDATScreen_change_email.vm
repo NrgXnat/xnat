@@ -1,3 +1,4 @@
+#* @vtlvariable name="XNAT_CSRF" type="java.lang.String" *#
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 $page.setTitle("XDAT")
 $page.setLinkColor($ui.alink)

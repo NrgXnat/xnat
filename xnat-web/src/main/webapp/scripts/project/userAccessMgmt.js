@@ -90,11 +90,13 @@ var XNAT = getObject(XNAT || {});
                 if (!opts.hideNotification) {
                     var message = (opts.notificationMessage) ? opts.notificationMessage : 'Access level updated for <b>' + user + '</b>.';
                     XNAT.ui.banner.top(2000, message, 'success');
-                    XNAT.projectAccess.renderUsersTable();
                 }
             },
             fail: function(e){
                 errorHandler(e);
+            },
+            always: function(){
+                renderUsersTable();
             }
         })
     };
@@ -105,10 +107,12 @@ var XNAT = getObject(XNAT || {});
             url: removeUserUrl(user,group),
             success: function(){
                 XNAT.ui.banner.top(2000, '<b>' + user + '</b> removed from project.', 'success');
-                XNAT.projectAccess.renderUsersTable();
             },
             fail: function(e){
                 errorHandler(e);
+            },
+            always: function(){
+                renderUsersTable();
             }
         })
     };
@@ -736,11 +740,8 @@ var XNAT = getObject(XNAT || {});
         return XNAT.xhr.getJSON({
             url: URL,
             success: function(data){
-                // cache data
-                XNAT.data[URL] = data;
                 projectAccess.projectUsers = projectUsers = data.ResultSet.Result;
                 $$(container).empty().append(spawnUserTable(showDisabled));
-                // spawnUserTable(showDisabled).render(container, true);
             },
             fail: function(e){
                 errorHandler(e);

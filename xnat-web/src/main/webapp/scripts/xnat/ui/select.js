@@ -71,7 +71,7 @@ var XNAT = getObject(XNAT);
     
     // ========================================
     // MAIN FUNCTION
-    select.menu = function(config){
+    select.menu = function(config, multi){
 
         var frag = document.createDocumentFragment(),
             $menu, menu, label;
@@ -127,7 +127,9 @@ var XNAT = getObject(XNAT);
         }
         
         // force menu change event to select 'selected' option
-        $menu.changeVal(config.value);
+        if (!multi && !config.multiple && !config.element.multiple) {
+            $menu.changeVal(config.value);
+        }
         // $menu.find('[value="' + config.value + '"]').prop('selected', true);
 
         // if there's no label, wrap the 
@@ -174,7 +176,7 @@ var XNAT = getObject(XNAT);
         opts = cloneObject(opts);
         opts.element = opts.element || {};
         opts.element.multiple = true;
-        return select.menu(opts);
+        return select.menu(opts, true);
     };
 
 

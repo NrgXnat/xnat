@@ -302,6 +302,7 @@
 
         otherMenu.createMenu({
             id: 'others-menu',
+            name: 'otherInvestigators',
             value: '',
             className: 'other',
             multiple: true

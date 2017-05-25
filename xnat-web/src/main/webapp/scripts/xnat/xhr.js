@@ -486,7 +486,7 @@ var XNAT = getObject(XNAT||{}),
 
         // cache and check if form exists
         var $inputs = $$(inputs),
-            values = {};
+            values = getObject(dataObj);
 
         if (!$inputs.length) return;
 
@@ -552,6 +552,18 @@ var XNAT = getObject(XNAT||{}),
                 this.checked = isEqual(this.value, val);
                 if (this.checked) {
                     $this.trigger('change');
+                }
+            }
+            else if (this.multiple) {
+                if (stringable(val)) {
+                    val = (val+'').split(/\s*,\s*/);
+                }
+                if (Array.isArray(val)) {
+                    forEach(this.options, function(menuOption){
+                        if (val.indexOf(menuOption.value) > -1){
+                            menuOption.selected = true;
+                        }
+                    });
                 }
             }
             else {

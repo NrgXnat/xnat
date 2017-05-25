@@ -27,25 +27,15 @@
         #end
     #end
 
-    #if(!$subject || $!item.getProperty("project") == "")
 
-        <td>
-            <select id="$!item.getXSIType()/subject_id" name="$!item.getXSIType()/subject_id"></select>
-            #if(!$preventSubject)
-             &nbsp; <a onclick="createSubjectForm();">Add New $displayManager.getSingularDisplayNameForSubject():</a>
-            #end
-        </td>
+    <td>
+        <select id="$!item.getXSIType()/subject_id" name="$!item.getXSIType()/subject_id"></select>
+        #if(!$preventSubject)
+         &nbsp; <a onclick="createSubjectForm();">Add New $displayManager.getSingularDisplayNameForSubject():</a>
+        #end
+    </td>
 
-    #else
 
-        <td>
-            $subject.getIdentifier($project,false)
-            <div style="display:none">
-                <select id="$!item.getXSIType()/subject_id" name="$!item.getXSIType()/subject_id"></select>
-            </div>
-        </td>
-
-    #end
 </tr>
 <tr>
     <td align="left" colspan="3">

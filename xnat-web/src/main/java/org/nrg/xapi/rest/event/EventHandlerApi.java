@@ -128,14 +128,14 @@ public class EventHandlerApi extends AbstractXapiRestController {
                 try {
                     return Permissions.canEdit(sessionUser, project) ? null : HttpStatus.FORBIDDEN;
                 } catch (Exception e) {
-                    _log.error("Error checking read status for project", e);
+                    _log.error("Error checking edit status for project", e);
                     return HttpStatus.INTERNAL_SERVER_ERROR;
                 }
             } else {
                 return isPermitted() == null ? null : HttpStatus.FORBIDDEN;
             }
         }
-        _log.error("Error checking read status for project");
+        _log.error("Error checking edit status for project");
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 

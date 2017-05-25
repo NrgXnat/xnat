@@ -8,7 +8,7 @@
 #if($!item.getProperty("scanner") || $!item.getProperty("scanner.model") || $!item.getProperty("scanner.manufacturer"))
 							<tr>
 		<th align="left">Scanner:</th>
-		<td>$!item.getProperty("scanner") $!item.getProperty("scanner.manufacturer") $!item.getProperty("scanner.model")</td>
+		<td>$!turbineUtils.escapeHTML($item.getProperty("scanner")) $!turbineUtils.escapeHTML($item.getProperty("scanner.manufacturer")) $!turbineUtils.escapeHTML($item.getProperty("scanner.model"))</td>
 	</tr>
 #end
 

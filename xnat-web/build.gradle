@@ -284,6 +284,7 @@ configurations {
     all*.exclude group: 'ant', module: 'ant'
     all*.exclude group: 'avalon-logkit'
     all*.exclude group: 'berkeleydb'
+    all*.exclude group: 'com.github.jai-imageio'
     all*.exclude group: 'com.metaparadigm'
     all*.exclude group: 'com.sun.jdmk', module: 'jmxtools'
     all*.exclude group: 'com.sun.jmx', module: 'jmxri'
@@ -386,6 +387,7 @@ dependencies {
     compile "dcm4che:dcm4che-imageio-rle:2.0.25"
     compile "dcm4che:dcm4che-iod:2.0.25"
     compile "dcm4che:dcm4che-net:2.0.25"
+    compile "com.sun.media:jai_imageio:1.1"
 
     compile "org.springframework:spring-aop:${vSpring}"
     compile "org.springframework:spring-beans:${vSpring}"

@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,10 +45,11 @@ import java.util.Properties;
 @RequestMapping(value = "/siteConfig")
 public class SiteConfigApi extends AbstractXapiRestController {
     @Autowired
-    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo) {
+    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo, final NamedParameterJdbcTemplate template) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
+        _template = template;
     }
 
     @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -93,12 +95,16 @@ public class SiteConfigApi extends AbstractXapiRestController {
         }
 
         // Is this call initializing the system?
-        final boolean isInitializing = properties.containsKey("initialized") && StringUtils.equals("true", properties.get("initialized"));
+        final boolean isInitialized = _appInfo.isInitialized();
+        final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && StringUtils.equals("true", properties.get("initialized"));
         for (final String name : properties.keySet()) {
             try {
                 // If we're initializing, we're going to make sure everything else is set BEFORE we set initialized to true, so skip it here.
                 if (isInitializing && name.equals("initialized")) {
                     continue;
+                }
+                if (!isInitialized && properties.containsKey("adminEmail")) {
+                    _template.update(EMAIL_UPDATE, properties);
                 }
                 _preferences.set(properties.get(name), name);
                 if (_log.isInfoEnabled()) {
@@ -249,8 +255,11 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_appInfo.getFormattedUptime(), HttpStatus.OK);
     }
 
+    private static final String EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
+
     private static final Logger _log = LoggerFactory.getLogger(SiteConfigApi.class);
 
-    private final SiteConfigPreferences _preferences;
-    private final XnatAppInfo           _appInfo;
+    private final SiteConfigPreferences      _preferences;
+    private final XnatAppInfo                _appInfo;
+    private final NamedParameterJdbcTemplate _template;
 }

@@ -855,9 +855,9 @@ public class DefaultCatalogService implements CatalogService {
             final String query;
             if (hasFormatLimits) {
                 parameters.addValue("scanFormats", scanFormats);
-                query = QUERY_FIND_SCANS_BY_TYPE;
-            } else {
                 query = QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT;
+            } else {
+                query = QUERY_FIND_SCANS_BY_TYPE;
             }
 
             final List<Map<String, Object>> scans = _parameterized.queryForList(query, parameters);

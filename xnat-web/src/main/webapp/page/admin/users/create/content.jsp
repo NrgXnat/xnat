@@ -2,15 +2,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<%--
-  ~ web: content.jsp
-  ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
-  ~ All Rights Reserved
-  ~
-  ~ Released under the Simplified BSD.
-  --%>
-
 <c:set var="redirect">
     <div class="error">Not authorized. Redirecting...</div>
     <script> window.location.href = '<c:url value="/"/>' </script>
@@ -118,8 +109,15 @@
                 e.preventDefault();
                 var userList = JSON.parse(outputTextarea.value);
                 var randomize = $('#random-string').prop('checked');
-                xmodal.message(false, 'Creating users...', 'Close');
-                XNAT.namer.postUniqueNames(null, userList, {
+                XNAT.ui.dialog.message({
+                    title: false,
+                    content: 'Creating users...',
+                    okLabel: 'Cancel',
+                    okAction: function(){
+                        XNAT.namer.stop = true;
+                    }
+                });
+                XNAT.namer.postUniqueUsernames(userCount.value, userList, {
                     random: randomize,
                     email: (emailUser.value ? (emailUser.value + '+') : '') + 'USERNAME@gmail.com',
                     password: defaultPassword.value,
@@ -127,10 +125,11 @@
                     enabled: enableEvery.value + ''
                 }, function(){
                     xmodal.closeAll();
+                    XNAT.ui.dialog.closeAll();
                     XNAT.ui.dialog.message({
                         title: false,
                         content: '<div class="success">Users created.</div>',
-                        padding: 0,
+                        // padding: 0,
                         okLabel: 'Sweet!'
                     });
                     // xmodal.message(false, '<div class="success">Users created.</div>', 'Close');
@@ -181,6 +180,7 @@
                 generateButton$, '&nbsp;&nbsp;', uploadButton$
             ]);
             //            uploadUsers$.append(uploadButton$);
+
             usersOutput$.append(outputTextarea);
 
         }());

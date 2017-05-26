@@ -176,7 +176,9 @@
     <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">--%>
 
     <!-- Icon sets -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.min.css?${versionString}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.css?${versionString}">
 
     <!-- xdat.css and xnat.css loaded last to override YUI styles -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
@@ -199,10 +201,10 @@
     <script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.min.js"></script>
 
     <!-- XNAT JLAPI stylesheets -->
-    <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/ui/dialog.css?${versionString}">
-
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xnat/ui/dialog.css?${versionString}">
 
     <!-- XNAT JLAPI scripts -->
+    <script src="${SITE_ROOT}/scripts/xnat/util/sub64.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/validate.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/xhr.js"></script>
@@ -250,6 +252,9 @@ ${bodyTop}
                 <b>|</b>
                 <a id="logout_user" href="${SITE_ROOT}/app/action/LogoutUser">Logout</a>
             </span>
+            <script>
+                window.loggedIn = true;
+            </script>
             <%--<script src="${SITE_ROOT}/scripts/xnat/app/timeout.js"></script>--%>
             <script src="${SITE_ROOT}/scripts/xnat/app/sessionTimer.js"></script>
 

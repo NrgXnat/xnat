@@ -20,6 +20,8 @@ var XNAT = getObject(XNAT);
             firstNames, lastNames,
             usernameList, nameList;
 
+    console.log('namer.js');
+
     XNAT.misc =
             getObject(XNAT.misc || {});
 
@@ -46,7 +48,7 @@ var XNAT = getObject(XNAT);
         'Milroy', 'Andrea', 'Kenny', 'Ismael', 'Dorotha', 'Mikki', 'Linette', 'Ulysses', 'Rebbeca', 'Delma',
         'Hortensia', 'Kempner', 'Reina', 'Justin', 'Erik', 'Teressa', 'Marbury', 'Antwan', 'Wilmer', 'Swindler',
         'Thiemann', 'Branda', 'Luis', 'Daryl', 'Weathersbee', 'Robby', 'Jarrett', 'Grover', 'Will', 'Bob', 'Jim',
-        'Fred', 'George', 'Charlotte', 'Benett'
+        'Fred', 'George', 'Marion', 'Lily', 'Luna', 'Charlotte', 'Benett'
     ];
 
     namer.lastNames = lastNames = [
@@ -73,7 +75,7 @@ var XNAT = getObject(XNAT);
     function randomUser(firsts, lasts, randomizer){
         var firstName = randomFromArray(firsts || firstNames);
         var lastName = randomFromArray(lasts || lastNames);
-        var username = randomizer ? randomString(firstName) : firstName + '.' + lastName;
+        var username = randomizer ? randomString(firstName) : firstName + '_' + lastName;
         return {
             username: username.toLowerCase(),
             firstName: firstName,
@@ -95,7 +97,7 @@ var XNAT = getObject(XNAT);
 
         function createUnique(){
             var nameObj = randomUser(firsts, lasts, randomizer);
-            nameTemp = (nameObj.firstName + '.' + nameObj.lastName).toLowerCase();
+            nameTemp = (nameObj.firstName + '_' + nameObj.lastName).toLowerCase();
             if (nameList.indexOf(nameTemp) === -1) {
                 nameList.push(nameTemp);
                 usernameList.push(nameObj.username);
@@ -104,7 +106,6 @@ var XNAT = getObject(XNAT);
             // call again if not unique
             createUnique();
         }
-
         return createUnique();
     };
 
@@ -129,7 +130,7 @@ var XNAT = getObject(XNAT);
 
         while (i < count && i < 1000) {
             nameObj = randomUser(firsts, lasts, randomizer);
-            nameTemp = (nameObj.firstName + '.' + nameObj.lastName).toLowerCase();
+            nameTemp = (nameObj.firstName + '_' + nameObj.lastName).toLowerCase();
             if (!hasName()) {
                 users[i] = nameObj;
                 nameStore.push(nameTemp);
@@ -174,6 +175,7 @@ var XNAT = getObject(XNAT);
         alternator += 1;
     }
 
+
     /**
      * Submit user data to create new users (does not check for uniqueness)
      * @param userList {Array} - required array of user data objects
@@ -181,40 +183,70 @@ var XNAT = getObject(XNAT);
      * @param [callback] {Function} - optional function to call after final user is created
      */
     namer.postUsers = function(userList, opts, callback){
-        var i = 0;
-        var count = userList.length;
+
+        var userCount = userList.length;
+
         alternator = 1; // reset the alternator
+        namer.stop = false; // don't stop
+
         opts = opts || {};
+        opts.delay = opts.delay || 200;
+
         callback = callback || function(){};
-        function doPost(){
-            // UserData constructor ensures we have required fields
-            var userData = new UserData(userList[i], opts);
-            userData = JSON.stringify(userData);
-            // console.log(userData);
+
+        var userData = {};
+        var _callbackContext = this;
+
+        function doPost(i){
+
+            namer.stop = namer.stop || i >= userCount;
+
+            if (namer.stop === false) {
+                // UserData constructor ensures we have required fields
+                userData = new UserData(userList[i], opts);
+                // console.log(userData);
+            }
+            else {
+                xmodal.closeAll();
+                XNAT.ui.dialog.closeAll();
+                XNAT.ui.banner.top(3000, 'User creation done.', 'success');
+                try {
+                    callback.call(_callbackContext, userData, userList)
+                }
+                catch(e) {
+                    console.log(e);
+                }
+                return;
+            }
+
             XNAT.admin.usersGroups
                 .userData()
-                .createProfile(userData)
+                .createProfile(JSON.stringify(userData))
                 .done(function(){
-                    if (count > i++) {
-                        // throttle to 2 requests/sec
-                        setTimeout(doPost, opts.delay || 500);
-                    }
-                    else {
-                        try {
-                            callback.call(this, userData, userList)
-                        }
-                        catch(e) {
-                            console.log(e);
-                        }
-                    }
+                    _callbackContext = this;
+                })
+                .fail(function(errorThrown, textStatus, jqXHR){
+                    // keep going
+                    console.log('The username "' + userData.username + '" may already be in use.');
+                    console.error(errorThrown);
+                    console.error(textStatus);
+                    console.log(jqXHR);
+                    _callbackContext = this;
+                })
+                .always(function(){
+                    _callbackContext = this;
+                    window.setTimeout(function(){
+                        doPost(i + 1)
+                    }, opts.delay);
                 });
         }
 
-        doPost();
+        doPost(0);
+
     };
 
     /**
-     * Submit only UNIQUE names ('firstname.lastname' not 'username')
+     * Submit only UNIQUE names ('firstname_lastname' not 'username')
      * @param [count] {Number} - number of new users to create
      * @param [userList] {Array} - optional array of user objects to submit
      * @param [opts] {Object} - other parameters
@@ -231,7 +263,7 @@ var XNAT = getObject(XNAT);
                 // add existing XNAT users to nameList array
                 // so we don't create duplicates
                 profiles.forEach(function(profile){
-                    var nameTemp = (profile.firstName + '.' + profile.lastName).toLowerCase();
+                    var nameTemp = (profile.firstName + '_' + profile.lastName).toLowerCase();
                     if (nameList.indexOf(nameTemp) === -1) {
                         nameList.push(nameTemp);
                         usernameList.push(profile.username);
@@ -244,7 +276,7 @@ var XNAT = getObject(XNAT);
                 }
                 // count = userList.length;
                 userList.forEach(function(user){
-                    var nameTemp = (user.firstName + '.' + user.lastName).toLowerCase();
+                    var nameTemp = (user.firstName + '_' + user.lastName).toLowerCase();
                     if (nameList.indexOf(nameTemp) === -1) {
                         // save unique users from userList
                         uniqueUsers.push(user);
@@ -265,8 +297,41 @@ var XNAT = getObject(XNAT);
     //     delay: 500 // ms delay between requests
     // });
 
-    namer.postUniqueUsernames = function(count, userList, opts){
-
+    /**
+     * Submit only UNIQUE usernames
+     * @param [count] {Number} - number of new users to create
+     * @param [userList] {Array} - optional array of user objects to submit
+     * @param [opts] {Object} - other parameters
+     * @param [callback] {Function} - optional function to call after final user is created
+     */
+    namer.postUniqueUsernames = function(count, userList, opts, callback){
+        // retrieve list of existing users first
+        var uniqueUsers = [];
+        count = count != null ? +count : 20;
+        XNAT.admin.usersGroups
+            .userData()
+            .userList()
+            .done(function(usernames){
+                usernameList = usernames;
+                if (!Array.isArray(userList)) {
+                    // if userList is not an array,
+                    // CREATE A NEW ONE
+                    userList = namer.generate(count);
+                }
+                // count = userList.length;
+                userList.forEach(function(user){
+                    var usernameTemp = (user.username).toLowerCase();
+                    if (usernameList.indexOf(usernameTemp) === -1) {
+                        // save objects for unique usernames
+                        uniqueUsers.push(user);
+                        usernameList.push(user.username);
+                    }
+                    else {
+                        console.log('user not created: ' + usernameTemp);
+                    }
+                });
+                namer.postUsers(uniqueUsers, opts, callback);
+            });
     };
 
     // this script has loaded

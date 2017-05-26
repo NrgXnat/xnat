@@ -759,31 +759,35 @@ notifications:
         emailRecipientErrorMessages:
             kind: panel.input.email
             label: "Error Messages"
+            name: ":notifications.emailRecipientErrorMessages"
             description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             size: 50
             validation: allow-empty emails onblur
-            value: "!? XNAT.data.notifications['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
+#            value: "!? XNAT.data.notifications['notifications.emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientIssueReports:
             kind: panel.input.email
             label: "Issue Reports"
+            name: ":notifications.emailRecipientIssueReports"
             description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             size: 50
             validation: allow-empty emails onblur
-            value: "!? XNAT.data.notifications['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
+#            value: "!? XNAT.data.notifications['notifications.emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             label: "New User Alert"
+            name: ":notifications.emailRecipientNewUserAlert"
             description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             size: 50
             validation: allow-empty emails onblur
-            value: "!? XNAT.data.notifications['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
+#            value: "!? XNAT.data.notifications['notifications.emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
         emailRecipientUpdate:
             kind: panel.input.email
             label: "Updates"
+            name: ":notifications.emailRecipientNewUserAlert"
             description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
             size: 50
             validation: allow-empty emails onblur
-            value: "!? XNAT.data.notifications['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
+#            value: "!? XNAT.data.notifications['notifications.emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
         copyAdminOnNotifications:
             kind: panel.input.switchbox
             name: copyAdminOnNotifications

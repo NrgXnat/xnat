@@ -37,7 +37,8 @@ buildscript {
     }
 }
 
-def vMizer = '1.0-SNAPSHOT'
+def vDicomEdit4 = '1.0-SNAPSHOT'
+def vDicomEdit6 = '1.0-SNAPSHOT'
 def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.9.RELEASE'
 def vSpringSecurity = '4.0.4.RELEASE'
@@ -356,7 +357,8 @@ dependencies {
     compile "org.nrg:config:${vXnatDev}"
     compile "org.nrg:automation:${vXnatDev}"
     compile "org.nrg:dicomtools:${vXnatDev}"
-    compile "org.nrg.dicom:mizer:${vMizer}"
+    compile "org.nrg.dicom:dicom-edit4:${vDicomEdit4}"
+    compile "org.nrg.dicom:dicom-edit6:${vDicomEdit6}"
     compile "org.nrg:mail:${vXnatDev}"
     compile "org.nrg:notify:${vXnatDev}"
 
@@ -504,6 +506,7 @@ dependencies {
     cargo "org.codehaus.cargo:cargo-core-uberjar:${vCargo}",
             "org.codehaus.cargo:cargo-ant:${vCargo}"
 
+    testCompile "org.nrg:test:${vXnatDev}"
     testCompile "junit:junit:${vJunit}"
     testCompile "org.springframework:spring-test:${vSpring}"
 }

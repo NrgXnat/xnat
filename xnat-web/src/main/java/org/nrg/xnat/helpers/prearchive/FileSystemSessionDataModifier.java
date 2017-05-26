@@ -14,6 +14,7 @@ import org.dcm4che2.data.DicomObject;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.service.MizerException;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
@@ -139,7 +140,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                                             context.setElement("project", newProject);
                                             context.setElement("subject", subject);
                                             context.setElement("session", session);
-                                            service.anonymize(new org.nrg.dicom.dicomedit.dicomObject.dcm4che2.DicomObject(o), context);
+                                            service.anonymize(DicomObjectFactory.newInstance(o), context);
                                         }
                                         catch ( MizerException e) {
                                             throw new RuntimeException(e);

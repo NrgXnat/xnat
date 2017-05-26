@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Primary;
 import java.util.*;
 
 @Configuration
-@ComponentScan({"org.nrg.dcm.preferences", "org.nrg.dicom.mizer.service.impl"})
+@ComponentScan({"org.nrg.dcm.preferences", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl"})
 public class DicomImportConfig {
     @Bean
     @Primary

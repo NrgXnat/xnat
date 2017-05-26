@@ -222,12 +222,12 @@ var XNAT = getObject(XNAT || {});
         var URL = (showDisabled) ? projectUsersUrl(true) : projectUsersUrl();
 
         var colWidths = {
-            login: '20%',
+            login: '16%',
             firstname: '16%',
             lastname: '16%',
-            email: '24%',
+            email: '26%',
             group: '16%',
-            remove: '8%'
+            remove: '10%'
         };
 
         var projectUsersContainer = spawn('div#project-user-list.table-group-container');

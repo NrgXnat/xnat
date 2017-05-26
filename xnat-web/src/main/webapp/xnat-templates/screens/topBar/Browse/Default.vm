@@ -1,10 +1,13 @@
+<!-- Sequence: 10 -->
+<!-- allowGuest: true -->
+
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
-<!-- Sequence: 10 -->
+
 #set($userHelper = $data.getSession().getAttribute("userHelper"))
 
 <!-- Browse/Default -->

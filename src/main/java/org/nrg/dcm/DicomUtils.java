@@ -26,13 +26,10 @@ import java.util.zip.GZIPInputStream;
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  */
 public final class DicomUtils {
-    private final static String GZIP_SUFFIX = ".gz";
-
     private DicomUtils() {
     }   // prevent instantiation
 
-    public static String getStringRequired(final DicomObject o, final int tag)
-            throws RequiredAttributeUnsetException {
+    public static String getStringRequired(final DicomObject o, final int tag) throws RequiredAttributeUnsetException {
         final String v = o.getString(tag);
         if (null == v || "".equals(v)) {
             throw new RequiredAttributeUnsetException(o, tag);
@@ -46,12 +43,45 @@ public final class DicomUtils {
         return o.getString(Tag.TransferSyntaxUID, UID.ImplicitVRLittleEndian);
     }
 
-    private static StopTagInputHandler getStopTagInputHandler(final int maxTag) {
-        if (maxTag > 0) {
-            return new StopTagInputHandler(maxTag + 1);
-        } else {
+    /**
+     * Returns a stop-tag input handler with the stop tag set to the value for the submitted parameter plus one. In
+     * comparison to the {@link #getStopTagInputHandler(int)} version, this method truncates any part of the long value
+     * <i>above</i> the value of 2 bytes (0xFFFFFFFF).
+     *
+     * @param stopTag The last tag to be processed.
+     *
+     * @return A stop-tag input handler that indicates that the DICOM tags should processed up to the submitted tag.
+     */
+    public static StopTagInputHandler getStopTagInputHandler(final long stopTag) {
+        // Scanning Sequence is the largest internally required tag:
+        // > SOP Class UID and all of File metainformation Header
+        final long truncated = 0xffffffffL & stopTag;
+        if (0xffffffffL == truncated) {
             return null;
         }
+        return getStopTagInputHandler((int) truncated);
+    }
+
+    /**
+     * Returns a stop-tag input handler with the stop tag set to the value for the submitted parameter plus one. The
+     * maximum stop-tag value is {@link Tag#ScanningSequence}. If you need to anonymize tag values above this, you
+     * should call {@link #getMaxStopTagInputHandler()} or create the {@link StopTagInputHandler} directly.
+     *
+     * @param stopTag The last tag to be processed.
+     *
+     * @return A stop-tag input handler that indicates that the DICOM tags should processed up to the submitted tag.
+     */
+    public static StopTagInputHandler getStopTagInputHandler(final int stopTag) {
+        return (stopTag > Tag.PixelData) ? MAX_STOP_TAG_INPUT_HANDLER : stopTag > 0 ? new StopTagInputHandler(stopTag + 1) : null;
+    }
+
+    /**
+     * Returns the maximum useful stop-tag input handler, which processes all DICOM tags up to the pixel data.
+     *
+     * @return The maximum useful stop-tag input handler.
+     */
+    public static StopTagInputHandler getMaxStopTagInputHandler() {
+        return MAX_STOP_TAG_INPUT_HANDLER;
     }
 
     /**
@@ -59,13 +89,14 @@ public final class DicomUtils {
      *
      * @param in      InputStream from which the object will be read
      * @param handler determines whether next DICOM element should be read
+     *
      * @return new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final InputStream in, final DicomInputHandler handler)
-            throws IOException {
-        IOException               ioexception = null;
-        final BufferedInputStream bin         = new BufferedInputStream(in);
+    public static DicomObject read(final InputStream in, final DicomInputHandler handler) throws IOException {
+        IOException ioexception = null;
+        final BufferedInputStream bin = new BufferedInputStream(in);
         try {
             final DicomInputStream din = new DicomInputStream(bin);
             try {
@@ -103,11 +134,12 @@ public final class DicomUtils {
      *
      * @param in     InputStream from which the object will be read
      * @param maxTag last DICOM attribute to be included in the object
+     *
      * @return new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final InputStream in, final int maxTag)
-            throws IOException {
+    public static DicomObject read(final InputStream in, final int maxTag) throws IOException {
         return read(in, getStopTagInputHandler(maxTag));
     }
 
@@ -115,26 +147,27 @@ public final class DicomUtils {
      * Reads a complete new DicomObject from the given InputStream
      *
      * @param in InputStream from which the object will be read
+     *
      * @return new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final InputStream in)
-            throws IOException {
+    public static DicomObject read(final InputStream in) throws IOException {
         return read(in, null);
     }
-
 
     /**
      * Reads the named file into a new DicomObject
      *
      * @param file    File to be read
      * @param handler determines whether next DICOM element should be read
+     *
      * @return new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final File file, final DicomInputHandler handler)
-            throws IOException {
-        InputStream fin         = new FileInputStream(file);
+    public static DicomObject read(final File file, final DicomInputHandler handler) throws IOException {
+        InputStream fin = new FileInputStream(file);
         IOException ioexception = null;
         try {
             if (file.getName().endsWith(GZIP_SUFFIX)) {
@@ -157,11 +190,12 @@ public final class DicomUtils {
      *
      * @param file   File to be read
      * @param maxTag last tag to be included in the object
+     *
      * @return new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final File file, final int maxTag)
-            throws IOException {
+    public static DicomObject read(final File file, final int maxTag) throws IOException {
         return read(file, getStopTagInputHandler(maxTag));
     }
 
@@ -169,7 +203,9 @@ public final class DicomUtils {
      * Reads the complete named file into a new DicomObject
      *
      * @param file File to be read
+     *
      * @return new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
     public static DicomObject read(final File file) throws IOException {
@@ -181,16 +217,18 @@ public final class DicomUtils {
      *
      * @param uri     URI of the resource to be read
      * @param handler The handler for DICOM.
+     *
      * @return The new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
     public static DicomObject read(final URI uri, final DicomInputHandler handler) throws IOException {
         if ("file".equals(uri.getScheme())) {
             return org.nrg.dcm.DicomUtils.read(new File(uri), handler);
         } else if (uri.isAbsolute()) {
-            final URL         url         = uri.toURL();
-            final InputStream in          = url.openStream();
-            IOException       ioexception = null;
+            final URL url = uri.toURL();
+            final InputStream in = url.openStream();
+            IOException ioexception = null;
             try {
                 return org.nrg.dcm.DicomUtils.read(in, handler);
             } catch (IOException e) {
@@ -212,7 +250,9 @@ public final class DicomUtils {
      *
      * @param uri    URI of the resource to be read
      * @param maxTag last tag to be included in the object
+     *
      * @return new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
     public static DicomObject read(final URI uri, final int maxTag) throws IOException {
@@ -223,7 +263,9 @@ public final class DicomUtils {
      * Reads a complete DicomObject from the named resource.
      *
      * @param uri URI of the resource to be read
+     *
      * @return new DicomObject
+     *
      * @throws IOException When an error occurs reading or writing data.
      */
     public static DicomObject read(final URI uri) throws IOException {
@@ -244,4 +286,7 @@ public final class DicomUtils {
     public static String stripTrailingChars(final String s, final char toStrip) {
         return stripTrailingChars(new StringBuilder(s), toStrip).toString();
     }
+
+    private static final String              GZIP_SUFFIX                = ".gz";
+    private static final StopTagInputHandler MAX_STOP_TAG_INPUT_HANDLER = new StopTagInputHandler(Tag.PixelData);
 }

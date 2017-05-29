@@ -7,8 +7,9 @@
  * Released under the Simplified BSD.
  */
 
-package org.nrg.dicom.mizer.service.impl;
+package org.nrg.xnat.dicom.mizer.service;
 
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.test.utils.TestFileUtils;
@@ -22,7 +23,7 @@ public class BaseMizerTest {
     public static final int TAG_SUBJECT = 0x00100010;
     public static final int TAG_SESSION = 0x00100020;
 
-    protected DicomObjectI getTestDicomObject() throws IOException {
+    protected DicomObjectI getTestDicomObject() throws IOException, MizerException {
         final File anonTestFile = TestFileUtils.copyTestFileToTemp(TEST_FILE);
         return DicomObjectFactory.newInstance(anonTestFile);
     }

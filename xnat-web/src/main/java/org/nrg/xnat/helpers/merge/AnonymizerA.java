@@ -10,7 +10,8 @@
 package org.nrg.xnat.helpers.merge;
 
 import org.nrg.config.entities.Configuration;
-import org.nrg.dicom.mizer.service.MizerException;
+import org.nrg.dcm.edit.AttributeException;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
@@ -62,7 +63,7 @@ public abstract class AnonymizerA implements Callable<Boolean> {
         _next = anonymizer;
     }
 
-    public void anonymize(final File file) throws IOException, MizerException {
+    public void anonymize(final File file) throws AttributeException, IOException, MizerException {
         final Configuration script = getScript();
         if (script != null) {
             if (isEnabled()) {

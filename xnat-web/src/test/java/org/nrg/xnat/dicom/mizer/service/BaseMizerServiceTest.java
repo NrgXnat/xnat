@@ -1,4 +1,4 @@
-package org.nrg.dicom.mizer.service.impl;
+package org.nrg.xnat.dicom.mizer.service;
 
 import org.apache.commons.io.FileUtils;
 import org.dcm4che2.data.DicomElement;
@@ -7,11 +7,15 @@ import org.dcm4che2.data.Tag;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.*;
+import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.test.utils.TestFileUtils;
+import org.nrg.xnat.dicom.mizer.config.MizerServiceTestConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -30,7 +34,7 @@ import static org.junit.Assert.*;
  */
 @SuppressWarnings("Duplicates")
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MizerServiceConfig.class)
+@ContextConfiguration(classes = MizerServiceTestConfig.class)
 public class BaseMizerServiceTest extends BaseMizerTest {
     @Test
     public void createService() {
@@ -192,8 +196,6 @@ public class BaseMizerServiceTest extends BaseMizerTest {
 
             context.setElement("project", "project");
             context.setScript("version \"6.1\"\nstudyDescription := project\n(0008,103e) := studyDescription\n");
-        } catch (IOException e) {
-            fail("Test setup failed: " + e);
         } catch (MizerException ae) {
             fail("Unexpected exception: " + ae);
         }
@@ -251,7 +253,7 @@ public class BaseMizerServiceTest extends BaseMizerTest {
                 post_dobj = DicomObjectFactory.newInstance(anonTestFile);
                 assertTrue("19751231".equals(post_dobj.getString(0x00100030)));
                 assertTrue("F".equals(post_dobj.getString(0x00100040)));
-            } catch (IOException ioe) {
+            } catch (Exception ioe) {
                 fail("Unexpected excpetion: " + ioe);
             }
         }

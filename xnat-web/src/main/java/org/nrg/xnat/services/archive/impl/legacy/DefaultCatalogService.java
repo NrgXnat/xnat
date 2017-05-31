@@ -134,7 +134,7 @@ public class DefaultCatalogService implements CatalogService {
                         addSafeEntrySet(sessionCatalog, reconstructionsCatalog);
                     }
 
-                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options);
+                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options, user);
                     if (assessorsCatalog != null) {
                         addSafeEntrySet(sessionCatalog, assessorsCatalog);
                     }
@@ -810,7 +810,14 @@ public class DefaultCatalogService implements CatalogService {
             final Set<String> matching = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT, parameters, String.class));
             final Set<String> difference = Sets.difference(sessionIds, matching);
             if (difference.size() > 0) {
-                throw new InsufficientPrivilegesException(user.getUsername(), difference);
+                //Check whether the mismatch was merely due to the lack of scans for those sessions.
+                final MapSqlParameterSource scanParameters = new MapSqlParameterSource();
+                scanParameters.addValue("sessionIds", difference);
+                final Set<String> matchingScans = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SCANS_BY_SESSION, scanParameters, String.class));
+                if(matchingScans.size()>0) {
+                    //The mismatch was not entirely due to sessions not having scans.
+                    throw new InsufficientPrivilegesException(user.getUsername(), difference);
+                }
             }
 
             for (final String sessionId : sessionIds) {
@@ -916,7 +923,7 @@ public class DefaultCatalogService implements CatalogService {
         return catalog.getEntries_entry().size() > 0 ? catalog : null;
     }
 
-    private CatCatalogI getSessionAssessors(final String project, final String subject, final String sessionId, final List<String> assessorTypes, final DownloadArchiveOptions options) {
+    private CatCatalogI getSessionAssessors(final String project, final String subject, final String sessionId, final List<String> assessorTypes, final DownloadArchiveOptions options, final UserI user) {
         if (assessorTypes == null || assessorTypes.size() == 0) {
             return null;
         }
@@ -936,10 +943,18 @@ public class DefaultCatalogService implements CatalogService {
                 final String resourceLabel = URLEncoder.encode(resource.get("resource_label").toString(), "UTF-8");
                 final String assessorLabel = URLEncoder.encode(resource.get("assessor_label").toString(), "UTF-8");
                 final String sessionLabel = URLEncoder.encode(resource.get("session_label").toString(), "UTF-8");
-                entry.setName(getPath(options, project, subject, sessionLabel, "assessors", assessorLabel, "resources", resourceLabel));
-                entry.setUri(StrSubstitutor.replace("/archive/experiments/${session_id}/assessors/${assessor_id}/out/resources/${resource_label}/files", resource));
-                _log.debug("Created session assessor entry for project {} session {} assessor {} resource {} with name {}: {}", project, sessionId, assessorLabel, resourceLabel, entry.getName(), entry.getUri());
-                catalog.addEntries_entry(entry);
+                final String proj = URLEncoder.encode(resource.get("project").toString(), "UTF-8");
+                try{
+                    if(Permissions.canReadProject(user,proj)) {
+                        entry.setName(getPath(options, project, subject, sessionLabel, "assessors", assessorLabel, "resources", resourceLabel));
+                        entry.setUri(StrSubstitutor.replace("/archive/experiments/${session_id}/assessors/${assessor_id}/out/resources/${resource_label}/files", resource));
+                        _log.debug("Created session assessor entry for project {} session {} assessor {} resource {} with name {}: {}", project, sessionId, assessorLabel, resourceLabel, entry.getName(), entry.getUri());
+                        catalog.addEntries_entry(entry);
+                    }
+                }
+                catch(Exception e){
+                    _log.warn("An error occurred trying to get session assessors for a project.", e);
+                }
             }
         } catch (UnsupportedEncodingException ignored) {
             //
@@ -997,6 +1012,7 @@ public class DefaultCatalogService implements CatalogService {
     private static final String CATALOG_FORMAT                         = "%s-%s";
     private static final String CATALOG_SERVICE_CACHE                  = DefaultCatalogService.class.getSimpleName() + "Cache";
     private static final String CATALOG_CACHE_KEY_FORMAT               = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
+    private static final String QUERY_FIND_SCANS_BY_SESSION           = "SELECT DISTINCT image_session_id FROM xnat_imagescandata WHERE image_session_id IN (:sessionIds);";
     private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT = "SELECT DISTINCT scan.image_session_id AS session_id "
                                                                          + "FROM xnat_imagescandata scan "
                                                                          + "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
@@ -1033,7 +1049,8 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "  assessor.id AS assessor_id, "
                                                                          + "  assessor.label AS assessor_label, "
                                                                          + "  session.id AS session_id, "
-                                                                         + "  session.label AS session_label "
+                                                                         + "  session.label AS session_label, "
+                                                                         + "  assessor.project AS project "
                                                                          + "FROM xnat_abstractresource abstract "
                                                                          + "  LEFT JOIN img_assessor_out_resource imgOut "
                                                                          + "    ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id "

@@ -1184,7 +1184,12 @@ public class JavaFileGenerator {
             sb.append("\nimport org.apache.turbine.util.RunData;");
             sb.append("\nimport org.apache.velocity.context.Context;");
             sb.append("\nimport org.nrg.xdat.turbine.modules.screens.SecureReport;");
-            
+            if (e.instanceOf("xnat:subjectAssessorData")) {
+                sb.append("\nimport org.nrg.xdat.XDAT;");
+                sb.append("\nimport org.nrg.xdat.model.XnatExperimentdataShareI;");
+                sb.append("\nimport org.nrg.xdat.security.helpers.Permissions;");
+                sb.append("\nimport java.util.List;");
+            }
             //CLASS COMMENTS
             sb.append("\n\n/**\n * @author XDAT\n *\n */");
             
@@ -1220,6 +1225,21 @@ public class JavaFileGenerator {
                 sb.append("\n\t\t\tSystem.out.println(\"Loaded om object (org.nrg.xdat.om." + getSQLClassName(e) +") as context parameter 'om'.\");");
                 sb.append("\n\t\t\tcontext.put(\"subject\",om.getSubjectData());");
                 sb.append("\n\t\t\tSystem.out.println(\"Loaded subject object (org.nrg.xdat.om.XnatSubjectdata) as context parameter 'subject'.\");");
+                sb.append("\n\t\t\tif(context.get(\"project\")==null) {");
+                sb.append("\n\t\t\t\tString proj = om.getProject();");
+                sb.append("\n\t\t\t\tif (!Permissions.canReadProject(XDAT.getUserDetails(), proj)) {");
+                sb.append("\n\t\t\t\t\t// If user cannot read that project, look through the projects that session is shared into. If user");
+                sb.append("\n\t\t\t\t\t// can view the data in one of those projects they should view this session from that project's context.");
+                sb.append("\n\t\t\t\t\tList<XnatExperimentdataShareI> list = om.getSharing_share();");
+                sb.append("\n\t\t\t\t\tfor (XnatExperimentdataShareI exptShare : list) {");
+                sb.append("\n\t\t\t\t\t\tif (Permissions.canReadProject(XDAT.getUserDetails(), exptShare.getProject())) {");
+                sb.append("\n\t\t\t\t\t\t\tproj = exptShare.getProject();");
+                sb.append("\n\t\t\t\t\t\t\tbreak;");
+                sb.append("\n\t\t\t\t\t\t}");
+                sb.append("\n\t\t\t\t\t}");
+                sb.append("\n\t\t\t\t}");
+                sb.append("\n\t\t\t\tcontext.put(\"project\", proj);");
+                sb.append("\n\t\t\t}");
                 sb.append("\n\t\t} catch(Exception e){}");
             }else{
                 //UNKNOWN

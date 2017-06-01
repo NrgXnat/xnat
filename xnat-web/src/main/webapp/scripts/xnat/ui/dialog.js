@@ -711,7 +711,7 @@ window.xmodal = getObject(window.xmodal);
         dialog.updateUIDs();
 
         // update classes on <html> and <body> elements
-        dialog.updateWindow();
+        dialog.updateWindow(this.isModal);
 
         return this;
     };

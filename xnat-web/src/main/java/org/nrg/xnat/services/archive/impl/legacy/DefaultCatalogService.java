@@ -17,6 +17,7 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.PersistenceConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.nrg.action.ClientException;
@@ -804,8 +805,23 @@ public class DefaultCatalogService implements CatalogService {
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionIds", sessionIds);
             parameters.addValue("projectId", projectId);
-            parameters.addValue("scanTypes", scanTypes);
-            parameters.addValue("scanFormats", scanFormats);
+
+            //Unescape scan types and formats so that special characters will not lead to 403s (for example if there is a degree sign in a scan type)
+            ArrayList<String> unescapedScanTypes = new ArrayList<>();
+            ArrayList<String> unescapedScanFormats = new ArrayList<>();
+            for(String type: scanTypes){
+                if(type!=null){
+                    unescapedScanTypes.add(StringEscapeUtils.unescapeHtml4(type));
+                }
+            }
+            for(String format: scanFormats){
+                if(format!=null){
+                    unescapedScanFormats.add(StringEscapeUtils.unescapeHtml4(format));
+                }
+            }
+
+            parameters.addValue("scanTypes", unescapedScanTypes);
+            parameters.addValue("scanFormats", unescapedScanFormats);
 
             final Set<String> matching = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT, parameters, String.class));
             final Set<String> difference = Sets.difference(sessionIds, matching);

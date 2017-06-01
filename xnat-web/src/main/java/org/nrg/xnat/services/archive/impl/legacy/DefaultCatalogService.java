@@ -809,14 +809,25 @@ public class DefaultCatalogService implements CatalogService {
             //Unescape scan types and formats so that special characters will not lead to 403s (for example if there is a degree sign in a scan type)
             ArrayList<String> unescapedScanTypes = new ArrayList<>();
             ArrayList<String> unescapedScanFormats = new ArrayList<>();
-            for(String type: scanTypes){
-                if(type!=null){
-                    unescapedScanTypes.add(StringEscapeUtils.unescapeHtml4(type));
+
+            if(scanTypes==null) {
+                unescapedScanTypes.add("");
+            }
+            else{
+                for(String type: scanTypes){
+                    if(type!=null){
+                        unescapedScanTypes.add(StringEscapeUtils.unescapeHtml4(type));
+                    }
                 }
             }
-            for(String format: scanFormats){
-                if(format!=null){
-                    unescapedScanFormats.add(StringEscapeUtils.unescapeHtml4(format));
+            if(scanFormats==null) {
+                unescapedScanFormats.add("");
+            }
+            else{
+                for(String format: scanFormats){
+                    if(format!=null){
+                        unescapedScanFormats.add(StringEscapeUtils.unescapeHtml4(format));
+                    }
                 }
             }
 
@@ -829,9 +840,11 @@ public class DefaultCatalogService implements CatalogService {
                 //Check whether the mismatch was merely due to the lack of scans for those sessions.
                 final MapSqlParameterSource scanParameters = new MapSqlParameterSource();
                 scanParameters.addValue("sessionIds", difference);
+                scanParameters.addValue("scanTypes", unescapedScanTypes);
+                scanParameters.addValue("scanFormats", unescapedScanFormats);
                 final Set<String> matchingScans = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SCANS_BY_SESSION, scanParameters, String.class));
                 if(matchingScans.size()>0) {
-                    //The mismatch was not entirely due to sessions not having scans.
+                    //The mismatch was not entirely due to sessions not having scans of those types/formats.
                     throw new InsufficientPrivilegesException(user.getUsername(), difference);
                 }
             }
@@ -870,18 +883,15 @@ public class DefaultCatalogService implements CatalogService {
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId("RAW");
         try {
-            final boolean hasFormatLimits = scanFormats != null && scanFormats.size() > 0;
+            if((scanFormats == null || scanFormats.size() <= 0)||(scanTypes == null || scanTypes.size() <= 0)){
+                return null;
+            }
+
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionId", session);
             parameters.addValue("scanTypes", scanTypes);
-
-            final String query;
-            if (hasFormatLimits) {
-                parameters.addValue("scanFormats", scanFormats);
-                query = QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT;
-            } else {
-                query = QUERY_FIND_SCANS_BY_TYPE;
-            }
+            parameters.addValue("scanFormats", scanFormats);
+            final String query = QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT;
 
             final List<Map<String, Object>> scans = _parameterized.queryForList(query, parameters);
             if (scans.isEmpty()) {
@@ -1028,7 +1038,9 @@ public class DefaultCatalogService implements CatalogService {
     private static final String CATALOG_FORMAT                         = "%s-%s";
     private static final String CATALOG_SERVICE_CACHE                  = DefaultCatalogService.class.getSimpleName() + "Cache";
     private static final String CATALOG_CACHE_KEY_FORMAT               = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
-    private static final String QUERY_FIND_SCANS_BY_SESSION           = "SELECT DISTINCT image_session_id FROM xnat_imagescandata WHERE image_session_id IN (:sessionIds);";
+    private static final String QUERY_FIND_SCANS_BY_SESSION           = "SELECT DISTINCT image_session_id FROM xnat_imagescandata scan " +
+                                                                            "LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                            "WHERE image_session_id IN (:sessionIds) AND scan.type IN (:scanTypes) AND res.label IN (:scanFormats);";
     private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT = "SELECT DISTINCT scan.image_session_id AS session_id "
                                                                          + "FROM xnat_imagescandata scan "
                                                                          + "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "

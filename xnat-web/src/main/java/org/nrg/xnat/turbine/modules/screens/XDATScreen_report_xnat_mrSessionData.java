@@ -12,10 +12,15 @@ package org.nrg.xnat.turbine.modules.screens;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatMrsessiondata;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.screens.SecureReport;
+
+import java.util.List;
 
 /**
  * @author Tim
@@ -34,9 +39,21 @@ public class XDATScreen_report_xnat_mrSessionData extends SecureReport {
             
             
             context.put("workflows",mr.getWorkflows());
-            
+
             if(context.get("project")==null){
-            	context.put("project", mr.getProject());
+                String proj = mr.getProject();
+                if(!Permissions.canReadProject(XDAT.getUserDetails(),proj)){
+                    // If user cannot read that project, look through the projects that session is shared into. If user
+                    // can view the data in one of those projects they should view this session from that project's context.
+                    List<XnatExperimentdataShareI> list = mr.getSharing_share();
+                    for(XnatExperimentdataShareI exptShare: list){
+                        if(Permissions.canReadProject(XDAT.getUserDetails(),exptShare.getProject())){
+                            proj=exptShare.getProject();
+                            break;
+                        }
+                    }
+                }
+            	context.put("project", proj);
             }
             
             for(XnatImagescandataI scan:mr.getSortedScans()){

@@ -106,7 +106,32 @@ public class DefaultCatalogService implements CatalogService {
         final List<String> reconstructions = resourceMap.get("reconstructions");
         final List<String> assessors = resourceMap.get("assessors");
 
-        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(user, sessions, scanTypes, scanFormats);
+        //Unescape scan types and formats so that special characters will not lead to 403s (for example if there is a degree sign in a scan type)
+        ArrayList<String> unescapedScanTypes = new ArrayList<>();
+        ArrayList<String> unescapedScanFormats = new ArrayList<>();
+
+        if(scanTypes==null) {
+            unescapedScanTypes.add("");
+        }
+        else{
+            for(String type: scanTypes){
+                if(type!=null){
+                    unescapedScanTypes.add(StringEscapeUtils.unescapeHtml4(type));
+                }
+            }
+        }
+        if(scanFormats==null) {
+            unescapedScanFormats.add("");
+        }
+        else{
+            for(String format: scanFormats){
+                if(format!=null){
+                    unescapedScanFormats.add(StringEscapeUtils.unescapeHtml4(format));
+                }
+            }
+        }
+
+        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(user, sessions, unescapedScanTypes, unescapedScanFormats);
 
         for (final String project : projects.keySet()) {
             final Map<String, Map<String, String>> subjects = projects.get(project);
@@ -120,7 +145,7 @@ public class DefaultCatalogService implements CatalogService {
                     sessionCatalog.setId(sessionId);
                     sessionCatalog.setDescription(subject + " " + label);
 
-                    final CatCatalogI sessionsByScanTypesAndFormats = getSessionScans(project, subject, label, sessionId, scanTypes, scanFormats, options);
+                    final CatCatalogI sessionsByScanTypesAndFormats = getSessionScans(project, subject, label, sessionId, unescapedScanTypes, unescapedScanFormats, options);
                     if (sessionsByScanTypesAndFormats != null) {
                         addSafeEntrySet(sessionCatalog, sessionsByScanTypesAndFormats);
                     }
@@ -806,33 +831,10 @@ public class DefaultCatalogService implements CatalogService {
             parameters.addValue("sessionIds", sessionIds);
             parameters.addValue("projectId", projectId);
 
-            //Unescape scan types and formats so that special characters will not lead to 403s (for example if there is a degree sign in a scan type)
-            ArrayList<String> unescapedScanTypes = new ArrayList<>();
-            ArrayList<String> unescapedScanFormats = new ArrayList<>();
 
-            if(scanTypes==null) {
-                unescapedScanTypes.add("");
-            }
-            else{
-                for(String type: scanTypes){
-                    if(type!=null){
-                        unescapedScanTypes.add(StringEscapeUtils.unescapeHtml4(type));
-                    }
-                }
-            }
-            if(scanFormats==null) {
-                unescapedScanFormats.add("");
-            }
-            else{
-                for(String format: scanFormats){
-                    if(format!=null){
-                        unescapedScanFormats.add(StringEscapeUtils.unescapeHtml4(format));
-                    }
-                }
-            }
 
-            parameters.addValue("scanTypes", unescapedScanTypes);
-            parameters.addValue("scanFormats", unescapedScanFormats);
+            parameters.addValue("scanTypes", scanTypes);
+            parameters.addValue("scanFormats", scanFormats);
 
             final Set<String> matching = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT, parameters, String.class));
             final Set<String> difference = Sets.difference(sessionIds, matching);
@@ -840,8 +842,8 @@ public class DefaultCatalogService implements CatalogService {
                 //Check whether the mismatch was merely due to the lack of scans for those sessions.
                 final MapSqlParameterSource scanParameters = new MapSqlParameterSource();
                 scanParameters.addValue("sessionIds", difference);
-                scanParameters.addValue("scanTypes", unescapedScanTypes);
-                scanParameters.addValue("scanFormats", unescapedScanFormats);
+                scanParameters.addValue("scanTypes", scanTypes);
+                scanParameters.addValue("scanFormats", scanFormats);
                 final Set<String> matchingScans = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SCANS_BY_SESSION, scanParameters, String.class));
                 if(matchingScans.size()>0) {
                     //The mismatch was not entirely due to sessions not having scans of those types/formats.

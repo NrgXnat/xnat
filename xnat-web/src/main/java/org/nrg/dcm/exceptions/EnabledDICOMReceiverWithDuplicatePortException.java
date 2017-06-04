@@ -12,7 +12,10 @@ package org.nrg.dcm.exceptions;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+@ResponseStatus(HttpStatus.BAD_REQUEST)
 public class EnabledDICOMReceiverWithDuplicatePortException extends NrgServiceException {
     public EnabledDICOMReceiverWithDuplicatePortException(final DicomSCPInstance existing, final DicomSCPInstance inserted) {
         super(NrgServiceError.AlreadyInitialized);

@@ -10,8 +10,6 @@
 package org.nrg.xnat.helpers.merge;
 
 import org.nrg.config.entities.Configuration;
-import org.nrg.dcm.edit.AttributeException;
-import org.nrg.dcm.edit.ScriptEvaluationException;
 import org.nrg.dicom.mizer.service.MizerException;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.xdat.XDAT;
@@ -64,7 +62,7 @@ public abstract class AnonymizerA implements Callable<Boolean> {
         _next = anonymizer;
     }
 
-    public void anonymize(final File file) throws AttributeException, ScriptEvaluationException, IOException, MizerException {
+    public void anonymize(final File file) throws IOException, MizerException {
         final Configuration script = getScript();
         if (script != null) {
             if (isEnabled()) {

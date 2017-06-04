@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+
 @Api(description = "Preferences Service API")
 @XapiRestController
 @RequestMapping(value = "/prefs")
@@ -56,15 +58,7 @@ public class PreferencesApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<Map<String, Properties>> getAllPreferenceSettings() {
-        if (_log.isDebugEnabled()) {
-            _log.info("User " + getSessionUser().getUsername() + " requested the system preference settings.");
-        }
-
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
+        _log.info("User {} requested the system preference settings.", getSessionUser().getUsername());
         final Map<String, Properties> beanProperties = Maps.transformEntries(_preferences, new Maps.EntryTransformer<String, AbstractPreferenceBean, Properties>() {
             @Override
             public Properties transformEntry(@Nullable final String key, @Nullable final AbstractPreferenceBean value) {
@@ -79,17 +73,9 @@ public class PreferencesApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "ini", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "ini", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public ResponseEntity<String> getPreferenceSettingsIni() {
-        if (_log.isDebugEnabled()) {
-            _log.info("User " + getSessionUser().getUsername() + " requested the system preference settings in ini format.");
-        }
-
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
+        _log.info("User {} requested the system preference settings in ini format.", getSessionUser().getUsername());
         final Map<String, Properties> beanProperties = Maps.transformEntries(_preferences, new Maps.EntryTransformer<String, AbstractPreferenceBean, Properties>() {
             @Override
             public Properties transformEntry(@Nullable final String key, @Nullable final AbstractPreferenceBean value) {

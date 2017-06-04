@@ -27,14 +27,10 @@ import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.model.event.EventClassInfo;
 import org.nrg.xapi.model.event.EventHandlerFilterInfo;
 import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.ProjectId;
 import org.nrg.xapi.rest.XapiRequestMapping;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +49,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
+
 /**
  * The Class EventHandlerApi.
  */
@@ -69,21 +68,17 @@ public class EventHandlerApi extends AbstractXapiRestController {
     /**
      * Automation event classes get.
      *
-     * @param project_id the project_id
+     * @param projectId The project ID
      *
      * @return the response entity
      */
     @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = EventClassInfo.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/projects/{project_id}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @XapiRequestMapping(value = {"/projects/{projectId}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Edit)
     @ResponseBody
-    public ResponseEntity<List<EventClassInfo>> automationEventClassesGetByProject(@PathVariable("project_id") String project_id) {
-        final HttpStatus status = canEditProject(project_id);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    public ResponseEntity<List<EventClassInfo>> automationEventClassesGetByProject(@PathVariable("projectId") @ProjectId final String projectId) {
         try {
-            return new ResponseEntity<>(getEventInfoList(project_id), HttpStatus.OK);
+            return new ResponseEntity<>(getEventInfoList(projectId), HttpStatus.OK);
         } catch (Throwable t) {
             _log.error("EventHandlerApi exception:  " + t.toString());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -97,13 +92,9 @@ public class EventHandlerApi extends AbstractXapiRestController {
      */
     @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = EventClassInfo.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @XapiRequestMapping(value = {"/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<List<EventClassInfo>> automationEventClassesGet() {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         try {
             return new ResponseEntity<>(getEventInfoList(null), HttpStatus.OK);
         } catch (Throwable t) {
@@ -113,43 +104,16 @@ public class EventHandlerApi extends AbstractXapiRestController {
     }
 
     /**
-     * Checks if is permitted.
-     *
-     * @param projectId the project ID
-     *
-     * @return the http status
-     */
-    // TODO: Migrate this to the abstract superclass. Can't right now because XDAT doesn't know about XnatProjectdata, etc.
-    protected HttpStatus canEditProject(String projectId) {
-        final UserI sessionUser = getSessionUser();
-        if ((sessionUser instanceof XDATUser)) {
-            if (projectId != null) {
-                final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, sessionUser, false);
-                try {
-                    return Permissions.canEdit(sessionUser, project) ? null : HttpStatus.FORBIDDEN;
-                } catch (Exception e) {
-                    _log.error("Error checking edit status for project", e);
-                    return HttpStatus.INTERNAL_SERVER_ERROR;
-                }
-            } else {
-                return isPermitted() == null ? null : HttpStatus.FORBIDDEN;
-            }
-        }
-        _log.error("Error checking edit status for project");
-        return HttpStatus.INTERNAL_SERVER_ERROR;
-    }
-
-    /**
      * Gets the event info list.
      *
-     * @param project_id the project_id
+     * @param projectId The project ID
      *
      * @return the event info list
      */
-    private List<EventClassInfo> getEventInfoList(String project_id) {
+    private List<EventClassInfo> getEventInfoList(String projectId) {
         final List<EventClassInfo> eventInfoList = Lists.newArrayList();
-        final List<AutomationEventIdsIds> eventIdsList = _eventIdsService.getEventIds(project_id, false, MAX_EVENT_IDS_LIST);
-        final List<AutomationFilters> filtersList = _filtersService.getAutomationFilters(project_id, false);
+        final List<AutomationEventIdsIds> eventIdsList = _eventIdsService.getEventIds(projectId, false, MAX_EVENT_IDS_LIST);
+        final List<AutomationFilters> filtersList = _filtersService.getAutomationFilters(projectId, false);
         for (final String className : getEventClassList(eventIdsList)) {
             final EventClassInfo eci = new EventClassInfo(className);
             final List<String> eventIds = eci.getEventIds();

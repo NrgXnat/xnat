@@ -9,136 +9,171 @@
 
 package org.nrg.xapi.rest;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dcm.exceptions.DICOMReceiverWithDuplicateAeTitleException;
 import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
-import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.xapi.exceptions.DataFormatException;
-import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
-import org.nrg.xapi.exceptions.NotFoundException;
-import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
+import org.nrg.xapi.exceptions.*;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-@ControllerAdvice
+@ControllerAdvice(annotations = XapiRestController.class)
 public class XapiRestControllerAdvice {
+    @Autowired
+    public XapiRestControllerAdvice(final SiteConfigPreferences preferences) {
+        _preferences = preferences;
+        _headers.put(NotAuthenticatedException.class, new HttpHeaders() {{ add("WWW-Authenticate", "Basic realm=\"" + _preferences.getSiteId() + "\""); }});
+    }
+
     @ExceptionHandler(EnabledDICOMReceiverWithDuplicatePortException.class)
-    public ModelAndView handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final EnabledDICOMReceiverWithDuplicatePortException exception) {
-        return handleException(request, exception.getMessage());
+    public ResponseEntity<?> handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final HttpServletResponse response, final EnabledDICOMReceiverWithDuplicatePortException exception) {
+        return getExceptionResponseEntity(request, exception);
     }
 
     @ExceptionHandler(DICOMReceiverWithDuplicateAeTitleException.class)
-    public ModelAndView handleDICOMReceiverWithDuplicateAeTitle(final HttpServletRequest request, final DICOMReceiverWithDuplicateAeTitleException exception) {
-        return handleException(request, exception.getMessage());
+    public ResponseEntity<?> handleDICOMReceiverWithDuplicateAeTitle(final HttpServletRequest request, final HttpServletResponse response, final DICOMReceiverWithDuplicateAeTitleException exception) {
+        return getExceptionResponseEntity(request, exception);
     }
 
     @ExceptionHandler(DataFormatException.class)
-    public ModelAndView handleDataFormatException(final HttpServletRequest request, final DataFormatException exception) {
-        return handleException(request, exception.getMessage(), exception);
+    public ResponseEntity<?> handleDataFormatException(final HttpServletRequest request, final HttpServletResponse response, final DataFormatException exception) {
+        return getExceptionResponseEntity(request, exception);
     }
 
     @ExceptionHandler(InsufficientPrivilegesException.class)
-    public ModelAndView handleInsufficientPrivilegesException(final HttpServletRequest request, final DataFormatException exception) {
-        return handleException(request, exception.getMessage(), exception);
+    public ResponseEntity<?> handleInsufficientPrivilegesException(final HttpServletRequest request, final HttpServletResponse response, final InsufficientPrivilegesException exception) {
+        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(NotAuthenticatedException.class)
+    public ResponseEntity<?> handleNotAuthenticatedException(final HttpServletRequest request, final HttpServletResponse response, final NotAuthenticatedException exception) {
+        return getExceptionResponseEntity(request, HttpStatus.UNAUTHORIZED, _headers.get(NotAuthenticatedException.class));
     }
 
     @ExceptionHandler(ResourceAlreadyExistsException.class)
-    public ModelAndView handleDataFormatException(final HttpServletRequest request, final ResourceAlreadyExistsException exception) {
-        return handleException(request, exception.getMessage(), exception);
+    public ResponseEntity<?> handleDataFormatException(final HttpServletRequest request, final HttpServletResponse response, final ResourceAlreadyExistsException exception) {
+        return getExceptionResponseEntity(request, exception);
     }
 
     @ExceptionHandler(NrgServiceException.class)
-    public ModelAndView handleNrgServiceException(final HttpServletRequest request, final NrgServiceException exception) {
-        return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, "An NRG service error occurred.", exception);
+    public ResponseEntity<?> handleNrgServiceException(final HttpServletRequest request, final HttpServletResponse response, final NrgServiceException exception) {
+        return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "An NRG service error occurred.");
     }
 
     @ExceptionHandler(URISyntaxException.class)
-    public ModelAndView handleUriSyntaxException(final HttpServletRequest request, final URISyntaxException exception) {
+    public ResponseEntity<?> handleUriSyntaxException(final HttpServletRequest request, final HttpServletResponse response, final URISyntaxException exception) {
         final String message = "An error occurred at index " + exception.getIndex() + " when processing the URI " + exception.getInput() + ": " + exception.getMessage();
-        return handleException(HttpStatus.BAD_REQUEST, request, message);
+        return getExceptionResponseEntity(HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler(FileNotFoundException.class)
-    public ModelAndView handleFileNotFoundException(final HttpServletRequest request, final FileNotFoundException exception) {
-        return handleException(HttpStatus.BAD_REQUEST, request, "Unable to find requested file or resource: " + exception.getMessage(), exception);
+    public ResponseEntity<?> handleFileNotFoundException(final HttpServletRequest request, final HttpServletResponse response, final FileNotFoundException exception) {
+        return getExceptionResponseEntity(request, HttpStatus.NOT_FOUND, exception, "Unable to find requested file");
     }
 
     @ExceptionHandler(NotFoundException.class)
-    public ModelAndView handleNotFoundException(final HttpServletRequest request, final NotFoundException exception) {
-        return handleException(HttpStatus.BAD_REQUEST, request, exception.getMessage(), exception);
+    public ResponseEntity<?> handleNotFoundException(final HttpServletRequest request, final HttpServletResponse response, final NotFoundException exception) {
+        return getExceptionResponseEntity(request, HttpStatus.NOT_FOUND, exception, "Unable to find requested file or resource");
     }
 
     @ExceptionHandler(ConfigServiceException.class)
-    public ModelAndView handleConfigServiceException(final HttpServletRequest request, final ConfigServiceException exception) {
-        return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, "An error occurred when accessing the configuration service: " + exception.getMessage(), exception);
+    public ResponseEntity<?> handleConfigServiceException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
+        return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred when accessing the configuration service: " + exception.getMessage());
     }
 
     @ExceptionHandler(ServerException.class)
-    public ModelAndView handleServerException(final HttpServletRequest request, final ConfigServiceException exception) {
-        return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, "An error occurred on the server during the request: " + exception.getMessage(), exception);
+    public ResponseEntity<?> handleServerException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
+        return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred on the server during the request: " + exception.getMessage());
     }
 
     @ExceptionHandler(ClientException.class)
-    public ModelAndView handleClientException(final HttpServletRequest request, final ConfigServiceException exception) {
-        return handleException(HttpStatus.BAD_REQUEST, request, "There was an error in the request: " + exception.getMessage(), exception);
+    public ResponseEntity<?> handleClientException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
+        return getExceptionResponseEntity(HttpStatus.BAD_REQUEST, "There was an error in the request: " + exception.getMessage());
     }
 
-    private ModelAndView handleException(final HttpServletRequest request, final String message) {
-        return handleException(request, message, null);
+    @NotNull
+    private ResponseEntity<?> getExceptionResponseEntity(final HttpServletRequest request, final Exception exception) {
+        return getExceptionResponseEntity(request, null, exception, null, null);
     }
 
-    private ModelAndView handleException(final HttpServletRequest request, final String message, final Exception exception) {
-        final ResponseStatus status = AnnotationUtils.findAnnotation(exception.getClass(), ResponseStatus.class);
-        if (status == null) {
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Only exceptions with @ResponseStatus annotation can be handled through this method.", exception);
+    @NotNull
+    private ResponseEntity<?> getExceptionResponseEntity(final HttpStatus status, final String message) {
+        return getExceptionResponseEntity(null, status, null, message, null);
+    }
+
+    @NotNull
+    private ResponseEntity<?> getExceptionResponseEntity(final HttpServletRequest request, final HttpStatus status, final HttpHeaders headers) {
+        return getExceptionResponseEntity(request, status, null, null, headers);
+    }
+
+    @NotNull
+    private ResponseEntity<?> getExceptionResponseEntity(final HttpServletRequest request, final HttpStatus status, final Exception exception, final String message) {
+        return getExceptionResponseEntity(request, status, exception, message, null);
+    }
+
+    @NotNull
+    private ResponseEntity<?> getExceptionResponseEntity(final HttpServletRequest request, final HttpStatus status, final Exception exception, final String message, final HttpHeaders headers) {
+        final String resolvedMessage;
+        if (message == null && exception == null) {
+            resolvedMessage = null;
+        } else if (message == null) {
+            resolvedMessage = exception.getMessage();
+        } else if (exception == null) {
+            resolvedMessage = message;
+        } else {
+            resolvedMessage = message + ": " + exception.getMessage();
         }
-        return handleException(status.value(), request, message, exception);
-    }
 
-    private ModelAndView handleException(final HttpStatus status, final HttpServletRequest request, final String message) {
-        return handleException(status, request, message, null);
-    }
+        // If there's an explicit status, use that. Otherwise try to get it off of the exception and default to 500 if not available.
+        final HttpStatus resolvedStatus = status != null ? status : getExceptionResponseStatus(exception, HttpStatus.INTERNAL_SERVER_ERROR);
 
-    private ModelAndView handleException(final HttpStatus status, final HttpServletRequest request, final String message, final Exception exception) {
-        @SuppressWarnings("SpringMVCViewInspection")
-        final ModelAndView modelAndView = new ModelAndView("error");
-        modelAndView.addObject("status", status);
-        modelAndView.addObject("url", request.getRequestURL().toString());
-        modelAndView.addObject("message", message);
-        if (exception != null) {
-            modelAndView.addObject("exception", exception);
-            final StackTraceElement[] stackTrace = exception.getStackTrace();
-            if (stackTrace != null && stackTrace.length > 1) {
-                final List<String> elements = new ArrayList<>();
-                for (final StackTraceElement element : stackTrace) {
-                    elements.add(element.toString());
-                    if (element.toString().startsWith("javax.servlet.http.HttpServlet.service")) {
-                        elements.add("(stack trace truncated for readability, see server logs for full ");
-                        break;
-                    }
-                }
-                modelAndView.addObject("stacktrace", elements);
-            }
+        if (_log.isInfoEnabled() && request != null && exception != null) {
+            _log.info("HTTP status {}: Request by user {} to URL {} caused an exception of type {}{}",
+                      resolvedStatus,
+                      XDAT.getUserDetails().getUsername(),
+                      request.getServletPath() + request.getPathInfo(),
+                      exception.getClass().getName(),
+                      StringUtils.defaultIfBlank(resolvedMessage, ""));
         }
-        _log.error("An exception was encountered", exception);
-        return modelAndView;
+
+        if (headers == null && resolvedMessage == null) {
+            return new ResponseEntity<>(resolvedStatus);
+        } else if (headers == null) {
+            return new ResponseEntity<>(resolvedMessage, resolvedStatus);
+        } else {
+            return new ResponseEntity<>(resolvedMessage, headers, resolvedStatus);
+        }
+    }
+
+    private HttpStatus getExceptionResponseStatus(final Exception exception, final HttpStatus defaultStatus) {
+        final ResponseStatus annotation = AnnotationUtils.findAnnotation(exception.getClass(), ResponseStatus.class);
+        return annotation != null ? annotation.value() : defaultStatus;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(XapiRestControllerAdvice.class);
+
+    private final Map<Class<? extends Exception>, HttpHeaders> _headers = new HashMap<>();
+    private final SiteConfigPreferences _preferences;
 }

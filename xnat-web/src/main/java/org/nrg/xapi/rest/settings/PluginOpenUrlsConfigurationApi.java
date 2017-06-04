@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+
 
 /**
  * The Class PluginOpenUrlsConfigurationApi.
@@ -62,13 +64,9 @@ public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
      */
     @ApiOperation(value = "Gets the plugin open URL configuration.", notes = "Returns plugin open URL configuration for this installation.", response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/pluginOpenUrls/settings"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @XapiRequestMapping(value = {"/pluginOpenUrls/settings"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<Properties> getPluginOpenUrlsConfiguration() {
-    	final HttpStatus status = isPermitted();
-    	if (status != null) {
-    		return new ResponseEntity<>(status);
-    	}
     	final List<String> pluginOpenUrls = _openUrlsPreference.getPluginOpenUrls();
     	final List<String> pluginOpenUrlsAllowed = _openUrlsPreference.getAllowedPluginOpenUrls();
     	final Properties prop = new Properties();

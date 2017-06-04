@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+
 @Api(description = "Site Configuration Management API")
 @XapiRestController
 @RequestMapping(value = "/siteConfig")
@@ -57,26 +59,17 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    // TODO: This can be accessed by users if it's set to an open URL. This should be changed so that you can specify access levels for each property on a preference bean.
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public ResponseEntity<Map<String, Object>> getSiteConfigProperties(final HttpServletRequest request) {
-        if (!_appInfo.isOpenUrlRequest(request)) {
-            final HttpStatus status = isPermitted();
-            if (status != null) {
-                return new ResponseEntity<>(status);
-            }
-        }
         final String username = getSessionUser().getUsername();
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + username + " requested the site configuration.");
-        }
-
         if (!_appInfo.isInitialized()) {
-            if (_log.isInfoEnabled()) {
-                _log.info("The site is being initialized by user {}. Setting default values from context.", username);
-            }
+            _log.info("The site is being initialized by user {}. Setting default values from context.", username);
             if (!_preferences.containsKey("siteUrl") || StringUtils.isBlank(_preferences.getSiteUrl())) {
                 _preferences.setSiteUrl(XnatHttpUtils.getServerRoot(request));
             }
+        } else {
+            _log.debug("User {} requested the site configuration.", username);
         }
 
         return new ResponseEntity<>((Map<String, Object>) _preferences, HttpStatus.OK);
@@ -87,15 +80,10 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST)
+    @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST, restrictTo = Admin)
     public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) throws InitializationException {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         // Is this call initializing the system?
-        final boolean isInitialized = _appInfo.isInitialized();
+        final boolean isInitialized  = _appInfo.isInitialized();
         final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && StringUtils.equals("true", properties.get("initialized"));
         for (final String name : properties.keySet()) {
             try {
@@ -107,9 +95,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                     _template.update(EMAIL_UPDATE, properties);
                 }
                 _preferences.set(properties.get(name), name);
-                if (_log.isInfoEnabled()) {
-                    _log.info("Set property {} to value: {}", name, properties.get(name));
-                }
+                _log.info("Set property {} to value: {}", name, properties.get(name));
             } catch (InvalidPreferenceName invalidPreferenceName) {
                 _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
             }
@@ -129,13 +115,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "values/{preferences}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "values/{preferences}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public ResponseEntity<Map<String, Object>> getSpecifiedSiteConfigProperties(@PathVariable final List<String> preferences) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         if (_log.isDebugEnabled()) {
             _log.debug("User " + getSessionUser().getUsername() + " requested the site configuration preferences " + Joiner.on(", ").join(preferences));
         }
@@ -154,14 +135,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public ResponseEntity<Object> getSpecifiedSiteConfigProperty(final HttpServletRequest request, @ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) {
-        if (!_appInfo.isOpenUrlRequest(request)) {
-            final HttpStatus status = isPermitted();
-            if (status != null) {
-                return new ResponseEntity<>(status);
-            }
-        }
         if (!_preferences.containsKey(property)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -177,17 +152,10 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{property}", consumes = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    @XapiRequestMapping(value = "{property}", consumes = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
     public ResponseEntity<Void> setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property,
                                                       @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
-        if (_log.isInfoEnabled()) {
             _log.info("User {} is setting the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
-        }
 
         if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
             _preferences.setInitialized(true);

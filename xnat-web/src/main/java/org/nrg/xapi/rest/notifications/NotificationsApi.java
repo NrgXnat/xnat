@@ -35,6 +35,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+
 @Api(description = "XNAT Notifications management API")
 @XapiRestController
 @RequestMapping(value = "/notifications")
@@ -68,12 +70,8 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
     public ResponseEntity<Properties> getNotificationsProperties(@ApiParam(hidden = true) final HttpServletRequest request) throws IOException {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         final String username = getSessionUser().getUsername();
         if (_log.isDebugEnabled()) {
             _log.debug("User " + username + " requested the site configuration.");
@@ -101,13 +99,8 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set notifications properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
     public ResponseEntity<Void> setNotificationsProperties(@ApiParam(value = "The map of notifications properties to be set.", required = true) @RequestBody final Properties properties) throws InitializationException {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         logSetProperties(properties);
 
         for (final String name : properties.stringPropertyNames()) {
@@ -138,43 +131,32 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns the full SMTP server configuration.",
-            notes = "Returns the configuration as a map of the standard Java mail sender properties&ndash;host, port, protocol, username, and password&ndash;along with any extended properties required for the configuration, e.g. configuring SSL- or TLS-secured SMTP services.",
-            response = Properties.class)
+                  notes = "Returns the configuration as a map of the standard Java mail sender properties&ndash;host, port, protocol, username, and password&ndash;along with any extended properties required for the configuration, e.g. configuring SSL- or TLS-secured SMTP services.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "SMTP service configuration properties successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "smtp", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = "smtp", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
     public ResponseEntity<Properties> getSmtpServerProperties() {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the site SMTP service configuration.");
-        }
+        _log.debug("User {} requested the site SMTP service configuration.", getSessionUser().getUsername());
         return new ResponseEntity<>(_notificationsPrefs.getSmtpServer().asProperties(), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Sets the mail service properties. This return the SMTP server configuration as it exists after being set.",
-            notes = POST_PROPERTIES_NOTES,
-            response = Properties.class)
+                  notes = POST_PROPERTIES_NOTES,
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service properties successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @XapiRequestMapping(value = {"smtp"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
     public ResponseEntity<Properties> setAllMailProperties(@ApiParam("The value to set for the email host.") @RequestParam(value = "hostname", required = false, defaultValue = NOT_SET) final String hostname,
                                                            @ApiParam("The value to set for the email port.") @RequestParam(value = "port", required = false, defaultValue = "-1") final int port,
                                                            @ApiParam("The value to set for the email username.") @RequestParam(value = "username", required = false, defaultValue = NOT_SET) final String username,
                                                            @ApiParam("The value to set for the email password.") @RequestParam(value = "password", required = false, defaultValue = NOT_SET) final String password,
                                                            @ApiParam("The value to set for the email protocol.") @RequestParam(value = "protocol", required = false, defaultValue = NOT_SET) final String protocol,
                                                            @ApiParam("Values to set for extra mail properties. An empty value indicates that an existing property should be removed.") @RequestParam final Properties properties) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         cleanProperties(properties);
         logConfigurationSubmit(hostname, port, username, password, protocol, properties);
 
@@ -184,24 +166,19 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the submitted mail service properties. This returns the SMTP server configuration as it exists after being set.",
-            notes = PUT_PROPERTIES_NOTES,
-            response = Properties.class)
+                  notes = PUT_PROPERTIES_NOTES,
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service properties successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setSubmittedMailProperties(@ApiParam("The value to set for the email host.") @RequestParam(value = "hostname", required = false, defaultValue = NOT_SET) final String host,
                                                                  @ApiParam("The value to set for the email port.") @RequestParam(value = "port", required = false, defaultValue = "-1") final int port,
                                                                  @ApiParam("The value to set for the email username.") @RequestParam(value = "username", required = false, defaultValue = NOT_SET) final String username,
                                                                  @ApiParam("The value to set for the email password.") @RequestParam(value = "password", required = false, defaultValue = NOT_SET) final String password,
                                                                  @ApiParam("The value to set for the email protocol.") @RequestParam(value = "protocol", required = false, defaultValue = NOT_SET) final String protocol,
                                                                  @ApiParam("Values to set for extra mail properties. An empty value indicates that an existing property should be removed.") @RequestParam final Properties properties) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         logConfigurationSubmit(host, port, username, password, protocol, properties);
 
         _notificationsPrefs.setSmtpServer(new SmtpServer(host, port, username, password, protocol, properties));
@@ -210,18 +187,14 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the mail service host.",
-            notes = "Sets the mail service host.",
-            response = Properties.class)
+                  notes = "Sets the mail service host.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service host successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service host."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp/host/{host}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/host/{host}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setHostProperty(@ApiParam(value = "The value to set for the email host.", required = true) @PathVariable final String host) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         if (_log.isInfoEnabled()) {
             _log.info("User " + getSessionUser().getLogin() + " setting mail host to: " + host);
         }
@@ -230,18 +203,14 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the mail service port.",
-            notes = "Sets the mail service port.",
-            response = Properties.class)
+                  notes = "Sets the mail service port.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service port successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service port."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp/port/{port}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/port/{port}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setPortProperty(@ApiParam(value = "The value to set for the email port.", required = true) @PathVariable final int port) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         if (_log.isInfoEnabled()) {
             _log.info("User " + getSessionUser().getLogin() + " setting mail port to: " + port);
         }
@@ -250,18 +219,14 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the mail service protocol.",
-            notes = "Sets the mail service protocol.",
-            response = Properties.class)
+                  notes = "Sets the mail service protocol.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service protocol successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service protocol."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp/protocol/{protocol}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/protocol/{protocol}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setProtocolProperty(@ApiParam(value = "The value to set for the email protocol.", required = true) @PathVariable final String protocol) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         if (_log.isInfoEnabled()) {
             _log.info("User " + getSessionUser().getLogin() + " setting mail protocol to: " + protocol);
         }
@@ -270,59 +235,43 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the mail service username.",
-            notes = "Sets the mail service username.",
-            response = Properties.class)
+                  notes = "Sets the mail service username.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service username successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service username."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp/username/{username}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/username/{username}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setUsernameProperty(@ApiParam(value = "The value to set for the email username.", required = true) @PathVariable final String username) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        if (_log.isInfoEnabled()) {
-            _log.info("User " + getSessionUser().getLogin() + " setting mail username to: " + username);
-        }
+        _log.info("User {} setting mail username to: {}", getSessionUser().getUsername(), username);
         _notificationsPrefs.setSmtpUsername(username);
         return getSmtpServerProperties();
     }
 
     @ApiOperation(value = "Sets the mail service password.",
-            notes = "Sets the mail service password.",
-            response = Properties.class)
+                  notes = "Sets the mail service password.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service password successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service password."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp/password/{password}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/password/{password}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<Properties> setPasswordProperty(@ApiParam(value = "The value to set for the email password.", required = true) @PathVariable final String password) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        if (_log.isInfoEnabled()) {
-            _log.info("User " + getSessionUser().getLogin() + " setting mail password to: ********");
-        }
+        _log.info("User {} setting mail password", getSessionUser().getUsername());
         _notificationsPrefs.setSmtpPassword(password);
         return getSmtpServerProperties();
     }
 
     @ApiOperation(value = "Gets the value for a specified Java mail property.",
-            notes = "The value is always returned as a string.",
-            response = String.class)
+                  notes = "The value is always returned as a string.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Property found and returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 404, message = "Specified key not found in the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp/property/{property}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    @XapiRequestMapping(value = {"smtp/property/{property}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
     public ResponseEntity<String> getExtendedProperty(@ApiParam(value = "The mail property to be retrieved.", required = true) @PathVariable final String property) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         if (!_notificationsPrefs.getSmtpServer().getMailProperties().containsKey(property)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -331,8 +280,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets a Java mail property with the submitted name and value.",
-            notes = "Setting a property to an existing value will overwrite the existing value. The value returned by this function contains the previous value (if any).",
-            response = String.class)
+                  notes = "Setting a property to an existing value will overwrite the existing value. The value returned by this function contains the previous value (if any).",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Property found and returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
@@ -345,40 +294,30 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets a Java mail property with the submitted name and value.",
-            notes = "Setting a property to an existing value will overwrite the existing value. The value returned by this function contains the previous value (if any).",
-            response = String.class)
+                  notes = "Setting a property to an existing value will overwrite the existing value. The value returned by this function contains the previous value (if any).",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service password successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service password."),
                    @ApiResponse(code = 404, message = "Specified key not found in the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"smtp/property/{property}/{value}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
+    @XapiRequestMapping(value = {"smtp/property/{property}/{value}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT}, restrictTo = Admin)
     public ResponseEntity<String> setExtendedPropertyFromPath(@ApiParam(value = "The name of the extended mail property to set.", required = true) @PathVariable final String property,
                                                               @ApiParam(value = "The value to set for the extended mail property.", required = true) @PathVariable final String value) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        if (_log.isInfoEnabled()) {
-            _log.info("User " + getSessionUser().getLogin() + " setting mail password to: ********");
-        }
+        _log.info("User {} setting mail password", getSessionUser().getUsername());
         return new ResponseEntity<>(_notificationsPrefs.setSmtpMailProperty(property, value), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Removes the value for a specified Java mail property.",
-            notes = "This completely removes the specified mail property. The value returned by this function contains the previous value (if any).",
-            response = String.class)
+                  notes = "This completely removes the specified mail property. The value returned by this function contains the previous value (if any).",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Property found and returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."),
                    @ApiResponse(code = 404, message = "Specified key not found in the mail service properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "smtp/property/{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
+    @XapiRequestMapping(value = "smtp/property/{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = Admin)
     public ResponseEntity<String> removeExtendedProperty(@ApiParam(value = "The mail property to be removed.", required = true) @PathVariable final String property) {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         if (!_notificationsPrefs.getSmtpServer().getMailProperties().containsKey(property)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -387,8 +326,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email message for contacting help.",
-            notes = "Sets the email message that people should receive when contacting help.",
-            response = Void.class)
+                  notes = "Sets the email message that people should receive when contacting help.",
+                  response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Help email message successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the help email message."),
@@ -400,8 +339,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email message for user registration.",
-            notes = "Sets the email message that people should receive when they register. Link for email validation is auto-populated.",
-            response = Properties.class)
+                  notes = "Sets the email message that people should receive when they register. Link for email validation is auto-populated.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User registration email message successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the user registration email message."),
@@ -413,8 +352,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email message for forgot username.",
-            notes = "Sets the email message that people should receive when they click that they forgot their username.",
-            response = Properties.class)
+                  notes = "Sets the email message that people should receive when they click that they forgot their username.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Forgot username email message successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the forgot username email message."),
@@ -426,8 +365,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email message for password reset.",
-            notes = "Sets the email message that people should receive when they click to reset their password.  Link for password reset is auto-populated.",
-            response = Properties.class)
+                  notes = "Sets the email message that people should receive when they click to reset their password.  Link for password reset is auto-populated.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Password reset message successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the password reset message."),
@@ -439,8 +378,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns the email message for contacting help.",
-            notes = "This returns the email message that people should receive when contacting help.",
-            response = String.class)
+                  notes = "This returns the email message that people should receive when contacting help.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Email message for contacting help successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for contacting help."),
@@ -451,8 +390,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns the email message for user registration.",
-            notes = "This returns the email message that people should receive when they register. Link for email validation is auto-populated.",
-            response = String.class)
+                  notes = "This returns the email message that people should receive when they register. Link for email validation is auto-populated.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Email message for user registration successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for user registration."),
@@ -463,8 +402,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns the email message for forgot username.",
-            notes = "This returns the email message that people should receive when they click that they forgot their username.",
-            response = String.class)
+                  notes = "This returns the email message that people should receive when they click that they forgot their username.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Email message for forgot username successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for forgot username."),
@@ -475,8 +414,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns the email message for password reset.",
-            notes = "This returns the email message that people should receive when they click to reset their password.  Link for password reset is auto-populated.",
-            response = String.class)
+                  notes = "This returns the email message that people should receive when they click to reset their password.  Link for password reset is auto-populated.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Email message for password reset successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for password reset."),
@@ -487,8 +426,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets whether admins should be notified of user registration.",
-            notes = "Sets whether admins should be notified of user registration.",
-            response = Void.class)
+                  notes = "Sets whether admins should be notified of user registration.",
+                  response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of user registration successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of user registration."),
@@ -500,8 +439,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets whether admins should be notified of pipeline processing submit.",
-            notes = "Sets whether admins should be notified of pipeline processing submit.",
-            response = Properties.class)
+                  notes = "Sets whether admins should be notified of pipeline processing submit.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of pipeline processing submit successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of pipeline processing submit."),
@@ -513,8 +452,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets whether admins should be notified of project access requests.",
-            notes = "Sets whether admins should be notified of project access requests.",
-            response = Properties.class)
+                  notes = "Sets whether admins should be notified of project access requests.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of project access requests successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of project access requests."),
@@ -526,8 +465,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets whether admins should be notified of session transfer.",
-            notes = "Sets whether admins should be notified of session transfer by user.",
-            response = Properties.class)
+                  notes = "Sets whether admins should be notified of session transfer by user.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Whether admins should be notified of session transfer successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether admins should be notified of session transfer."),
@@ -539,8 +478,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns whether admins should be notified of user registration.",
-            notes = "This returns whether admins should be notified of user registration.",
-            response = Boolean.class)
+                  notes = "This returns whether admins should be notified of user registration.",
+                  response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Email message for contacting help successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for contacting help."),
@@ -551,8 +490,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns whether admins should be notified of pipeline processing submit.",
-            notes = "This returns whether admins should be notified of pipeline processing submit.",
-            response = Boolean.class)
+                  notes = "This returns whether admins should be notified of pipeline processing submit.",
+                  response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Email message for user registration successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for user registration."),
@@ -563,8 +502,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns whether admins should be notified of project access requests.",
-            notes = "This returns whether admins should be notified of project access requests.",
-            response = Boolean.class)
+                  notes = "This returns whether admins should be notified of project access requests.",
+                  response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Email message for forgot username successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for forgot username."),
@@ -575,8 +514,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns whether admins should be notified of session transfer.",
-            notes = "This returns whether admins should be notified of session transfer.",
-            response = Boolean.class)
+                  notes = "This returns whether admins should be notified of session transfer.",
+                  response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Email message for password reset successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get email message for password reset."),
@@ -587,8 +526,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets whether non-users should be able to subscribe to notifications.",
-            notes = "Sets whether non-users should be able to subscribe to notifications.",
-            response = Properties.class)
+                  notes = "Sets whether non-users should be able to subscribe to notifications.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Whether non-users should be able to subscribe to notifications."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set whether non-users should be able to subscribe to notifications."),
@@ -600,8 +539,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns whether non-users should be able to subscribe to notifications.",
-            notes = "This returns whether non-users should be able to subscribe to notifications.",
-            response = Boolean.class)
+                  notes = "This returns whether non-users should be able to subscribe to notifications.",
+                  response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Whether non-users should be able to subscribe to notifications successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get whether non-users should be able to subscribe to notifications."),
@@ -612,8 +551,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email addresses for error notifications.",
-            notes = "Sets the email addresses that should be subscribed to error notifications.",
-            response = Void.class)
+                  notes = "Sets the email addresses that should be subscribed to error notifications.",
+                  response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Error subscribers successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the error subscribers."),
@@ -625,8 +564,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email addresses for issue notifications.",
-            notes = "Sets the email addresses that should be subscribed to issue notifications.",
-            response = Properties.class)
+                  notes = "Sets the email addresses that should be subscribed to issue notifications.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Issue subscribers successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the issue subscribers."),
@@ -638,8 +577,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email addresses for new user notifications.",
-            notes = "Sets the email addresses that should be subscribed to new user notifications.",
-            response = Properties.class)
+                  notes = "Sets the email addresses that should be subscribed to new user notifications.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "New user subscribers successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the new user subscribers."),
@@ -651,8 +590,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Sets the email addresses for update notifications.",
-            notes = "Sets the email addresses that should be subscribed to update notifications.",
-            response = Properties.class)
+                  notes = "Sets the email addresses that should be subscribed to update notifications.",
+                  response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Update subscribers successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set the update subscribers."),
@@ -664,8 +603,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns list of email addresses subscribed to error notifications.",
-            notes = "This returns a list of all the email addresses that are subscribed to receive error notifications.",
-            response = String.class)
+                  notes = "This returns a list of all the email addresses that are subscribed to receive error notifications.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Error notification subscribers successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."),
@@ -676,8 +615,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns list of email addresses subscribed to issue notifications.",
-            notes = "This returns a list of all the email addresses that are subscribed to receive issue notifications.",
-            response = String.class)
+                  notes = "This returns a list of all the email addresses that are subscribed to receive issue notifications.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Issue notification subscribers successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."),
@@ -688,8 +627,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns list of email addresses subscribed to new user notifications.",
-            notes = "This returns a list of all the email addresses that are subscribed to receive new user notifications.",
-            response = String.class)
+                  notes = "This returns a list of all the email addresses that are subscribed to receive new user notifications.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "New user notification subscribers successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."),
@@ -700,8 +639,8 @@ public class NotificationsApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns list of email addresses subscribed to update notifications.",
-            notes = "This returns a list of all the email addresses that are subscribed to receive update notifications.",
-            response = String.class)
+                  notes = "This returns a list of all the email addresses that are subscribed to receive update notifications.",
+                  response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Update notification subscribers successfully returned."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to get subscribers for email notifications."),

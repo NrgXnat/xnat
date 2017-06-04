@@ -9,12 +9,9 @@
 
 package org.nrg.xnat.configuration;
 
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.web.converters.XftBeanHttpMessageConverter;
 import org.nrg.xnat.web.converters.XftObjectHttpMessageConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +19,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
-import org.springframework.core.io.Resource;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -40,16 +36,14 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
 import javax.xml.bind.Marshaller;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 @Configuration
 @EnableWebMvc
 @EnableAspectJAutoProxy
-@ComponentScan("org.nrg.xapi.rest.aspects")
+@ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization"})
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Autowired
     public void setJackson2ObjectMapperBuilder(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
@@ -140,20 +134,8 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         }};
     }
 
-
-    private static final Logger _log = LoggerFactory.getLogger(WebConfig.class);
-
     private static final Map<String, Object> MARSHALLER_PROPERTIES = new HashMap<String, Object>() {{
         put(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-    }};
-
-    private static final Properties CONFIGURATION = new Properties() {{
-        try {
-            final Resource resource = BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/configuration.properties");
-            load(resource.getInputStream());
-        } catch (IOException e) {
-            _log.error("An error occurred initializing the internal configuration options from the resource properties classpath*:META-INF/xnat/configuration.properties.", e);
-        }
     }};
 
     private Jackson2ObjectMapperBuilder _objectMapperBuilder;

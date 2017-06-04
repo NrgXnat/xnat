@@ -17,14 +17,16 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.Patterns;
+import org.nrg.xapi.authorization.UserResourceXapiAuthorization;
 import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AuthDelegate;
+import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
@@ -44,8 +46,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -57,15 +59,43 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.*;
+
 @Api(description = "User Management API")
 @XapiRestController
 @RequestMapping(value = "/users")
 public class UsersApi extends AbstractXapiRestController {
+
+    public static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<User>() {
+        @Override
+        public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
+            Timestamp lastSuccessfulLogin     = resultSet.getTimestamp("lastSuccessfulLogin");
+            Date      lastSuccessfulLoginDate = null;
+            if (lastSuccessfulLogin != null) {
+                lastSuccessfulLoginDate = new Date(lastSuccessfulLogin.getTime());
+            }
+            Timestamp lastModified     = resultSet.getTimestamp("last_modified");
+            Date      lastModifiedDate = null;
+            if (lastModified != null) {
+                lastModifiedDate = new Date(lastModified.getTime());
+            }
+
+            return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, lastModifiedDate, null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, lastSuccessfulLoginDate);
+        }
+    };
+
+    public static final String QUERY_USER_PROFILES = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username ORDER BY xdat_user.xdat_user_id";
+    public static final String QUERY_CURRENT_USERS = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - INTERVAL '1 year') OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - INTERVAL '1 year') ) ) )) ORDER BY xdat_user.xdat_user_id";
+    public static final String QUERY_USER_PROFILE  = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login=:username";
+
     @Autowired
-    public UsersApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final UserFactory factory,
-                    final RoleHolder roleHolder, final SessionRegistry sessionRegistry, final AliasTokenService aliasTokenService, final JdbcTemplate jdbcTemplate) {
+    public UsersApi(final UserManagementServiceI userManagementService,
+                    final UserFactory factory,
+                    final RoleHolder roleHolder,
+                    final SessionRegistry sessionRegistry,
+                    final AliasTokenService aliasTokenService,
+                    final NamedParameterJdbcTemplate jdbcTemplate) {
         super(userManagementService, roleHolder);
-        _preferences = preferences;
         _sessionRegistry = sessionRegistry;
         _aliasTokenService = aliasTokenService;
         _factory = factory;
@@ -77,15 +107,10 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<List<String>> usersGet() {
-        if (_preferences.getRestrictUserListAccessToAdmins()) {
-            final HttpStatus status = isPermitted();
-            if (status != null) {
-                return new ResponseEntity<>(status);
-            }
-        }
         return new ResponseEntity<List<String>>(new ArrayList<>(Users.getAllLogins()), HttpStatus.OK);
     }
 
@@ -94,115 +119,46 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "profiles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "profiles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<List<User>> usersProfilesGet() {
-        if (_preferences.getRestrictUserListAccessToAdmins()) {
-            final HttpStatus status = isPermitted();
-            if (status != null) {
-                return new ResponseEntity<>(status);
-            }
-        }
-
-        final List<User> usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username ORDER BY xdat_user.xdat_user_id", new RowMapper<User>() {
-            @Override
-            public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
-                Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");
-                Date lastSuccessfulLoginDate = null;
-                if(lastSuccessfulLogin!=null){
-                    lastSuccessfulLoginDate = new Date(lastSuccessfulLogin.getTime());
-                }
-                Timestamp lastModified = resultSet.getTimestamp("last_modified");
-                Date lastModifiedDate = null;
-                if(lastModified!=null){
-                    lastModifiedDate = new Date(lastModified.getTime());
-                }
-
-                return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, lastModifiedDate, null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, lastSuccessfulLoginDate);
-            }
-        });
-
-        return new ResponseEntity<>(usersList, HttpStatus.OK);
+        return new ResponseEntity<>(_jdbcTemplate.query(QUERY_USER_PROFILES, USER_ROW_MAPPER), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get user profile.", notes = "The user profile function returns a user of the XNAT system with brief information.", response = User.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "A user profile."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "profile/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "profile/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<User> usersProfileGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username) {
-        if (_preferences.getRestrictUserListAccessToAdmins()) {
-            final HttpStatus status = isPermitted();
-            if (status != null) {
-                return new ResponseEntity<>(status);
-            }
-        }
-
+    public ResponseEntity<User> usersProfileGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") @Username final String username) {
         List<User> usersList = null;
-        String regex = "^[a-zA-Z0-9]+[a-zA-Z0-9._-]*$";
-        if(username.matches(regex)){
-            usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login='"+username+"'", new RowMapper<User>() {
-                @Override
-                public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
-                    Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");
-                    Date lastSuccessfulLoginDate = null;
-                    if(lastSuccessfulLogin!=null){
-                        lastSuccessfulLoginDate = new Date(lastSuccessfulLogin.getTime());
-                    }
-                    Timestamp lastModified = resultSet.getTimestamp("last_modified");
-                    Date lastModifiedDate = null;
-                    if(lastModified!=null){
-                        lastModifiedDate = new Date(lastModified.getTime());
-                    }
-
-                    return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, lastModifiedDate, null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, lastSuccessfulLoginDate);
-                }
-            });
+        String     regex     = "^[a-zA-Z0-9]+[a-zA-Z0-9._-]*$";
+        if (username.matches(regex)) {
+            usersList = _jdbcTemplate.query(QUERY_USER_PROFILE, new HashMap<String, Object>() {{
+                put("username", username);
+            }}, USER_ROW_MAPPER);
         }
-        if(usersList!=null && usersList.size()>0) {
+        if (usersList != null && usersList.size() > 0) {
             return new ResponseEntity<>(usersList.get(0), HttpStatus.OK);
-        }
-        else{
+        } else {
             return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
     @ApiOperation(value = "Get list of users who are enabled or who have interacted with the site somewhat recently.", notes = "The users' profiles function returns a list of all users of the XNAT system with brief information about each.", response = User.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "A list of user profiles."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "current", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "current", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
     public ResponseEntity<List<User>> currentUsersProfilesGet() {
-        if (_preferences.getRestrictUserListAccessToAdmins()) {
-            final HttpStatus status = isPermitted();
-            if (status != null) {
-                return new ResponseEntity<>(status);
-            }
-        }
-
-        final List<User> usersList = _jdbcTemplate.query("SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - INTERVAL '1 year') OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - INTERVAL '1 year') ) ) )) ORDER BY xdat_user.xdat_user_id", new RowMapper<User>() {
-            @Override
-            public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
-                Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");
-                Date lastSuccessfulLoginDate = null;
-                if(lastSuccessfulLogin!=null){
-                    lastSuccessfulLoginDate = new Date(lastSuccessfulLogin.getTime());
-                }
-                Timestamp lastModified = resultSet.getTimestamp("last_modified");
-                Date lastModifiedDate = null;
-                if(lastModified!=null){
-                    lastModifiedDate = new Date(lastModified.getTime());
-                }
-
-                return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, lastModifiedDate, null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, lastSuccessfulLoginDate);
-            }
-        });
-
-        return new ResponseEntity<>(usersList, HttpStatus.OK);
+        return new ResponseEntity<>(_jdbcTemplate.query(QUERY_CURRENT_USERS, USER_ROW_MAPPER), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get list of active users.", notes = "Returns a map of usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. The number of active sessions and a list of the session IDs is associated with each user.", response = Map.class, responseContainer = "Map")
@@ -210,14 +166,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "active", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "active", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<Map<String, Map<String, Object>>> getActiveUsers() {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         final Map<String, Map<String, Object>> activeUsers = new HashMap<>();
         for (final Object principal : _sessionRegistry.getAllPrincipals()) {
             final String username;
@@ -257,21 +208,16 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
                    @ApiResponse(code = 404, message = "The indicated user has no active sessions or is not a valid user."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = User)
     @ResponseBody
-    public ResponseEntity<List<String>> getUserActiveSessions(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username) {
-        final HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
+    public ResponseEntity<List<String>> getUserActiveSessions(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") @Username final String username) {
         for (final Object principal : _sessionRegistry.getAllPrincipals()) {
             final Object located = locatePrincipalByUsername(username);
             if (located == null) {
                 continue;
             }
-            final List<SessionInformation> sessions = _sessionRegistry.getAllSessions(principal, false);
-            final List<String> sessionIds = new ArrayList<>();
+            final List<SessionInformation> sessions   = _sessionRegistry.getAllSessions(principal, false);
+            final List<String>             sessionIds = new ArrayList<>();
             for (final SessionInformation session : sessions) {
                 sessionIds.add(session.getSessionId());
             }
@@ -287,17 +233,11 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<User> getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable("username") final String username) {
-        if (_preferences.getRestrictUserListAccessToAdmins()) {
-            final HttpStatus status = isPermitted(username);
-            if (status != null) {
-                return new ResponseEntity<>(status);
-            }
-        }
-        final UserI user;
+    @XapiRequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @AuthDelegate(UserResourceXapiAuthorization.class)
+    public ResponseEntity<User> getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable("username") @Username final String username) {
         try {
-            user = getUserManagementService().getUser(username);
+            final UserI user = getUserManagementService().getUser(username);
             return user == null ? new ResponseEntity<User>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(_factory.getUser(user), HttpStatus.OK);
         } catch (UserInitException e) {
             _log.error("An error occurred initializing the user " + username, e);
@@ -313,16 +253,11 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
     public ResponseEntity<User> createUser(@RequestBody final User model) throws NotFoundException, PasswordComplexityException, DataFormatException, UserInitException, ResourceAlreadyExistsException {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         try {
             validateUser(model);
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         final UserI user = getUserManagementService().createUser();
@@ -370,13 +305,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") final String username, @RequestBody final User model) throws NotFoundException, PasswordComplexityException, UserInitException {
-        final HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
+    @XapiRequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = User)
+    public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") @Username final String username, @RequestBody final User model) throws NotFoundException, PasswordComplexityException, UserInitException {
         final UserI user;
         try {
             user = getUserManagementService().getUser(username);
@@ -387,7 +317,7 @@ public class UsersApi extends AbstractXapiRestController {
         if (user == null) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Failed to retrieve user object for user " + username);
         }
-        boolean oldEnabledFlag = user.isEnabled();
+        boolean oldEnabledFlag  = user.isEnabled();
         boolean oldVerifiedFlag = user.isVerified();
 
         boolean isDirty = false;
@@ -463,13 +393,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to create or update this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
-    public ResponseEntity<List<String>> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable("username") final String username) throws NotFoundException {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        final UserI user;
+    @XapiRequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = User)
+    public ResponseEntity<List<String>> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable("username") @Username final String username) throws NotFoundException {
+        final UserI  user;
         final String currentSessionId;
         if (StringUtils.equals(getSessionUser().getUsername(), username)) {
             user = getSessionUser();
@@ -513,12 +439,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<Boolean> usersIdEnabledGet(@ApiParam(value = "The ID of the user to retrieve the enabled status for.", required = true) @PathVariable("username") final String username) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    @XapiRequestMapping(value = "{username}/enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = User)
+    public ResponseEntity<Boolean> usersIdEnabledGet(@ApiParam(value = "The ID of the user to retrieve the enabled status for.", required = true) @PathVariable("username") @Username final String username) {
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -539,15 +461,11 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/enabled/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Boolean> usersIdEnabledFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username, @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable("flag") Boolean flag) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    @XapiRequestMapping(value = "{username}/enabled/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = User)
+    public ResponseEntity<Boolean> usersIdEnabledFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") @Username final String username, @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable("flag") Boolean flag) {
         try {
-            final UserI user = getUserManagementService().getUser(username);
-            boolean oldEnabledFlag = user.isEnabled();
+            final UserI user           = getUserManagementService().getUser(username);
+            boolean     oldEnabledFlag = user.isEnabled();
             user.setEnabled(flag);
             try {
                 getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, flag ? Event.Enabled : Event.Disabled, "", ""));
@@ -578,12 +496,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/verified", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<Boolean> usersIdVerifiedGet(@ApiParam(value = "The ID of the user to retrieve the verified status for.", required = true) @PathVariable("username") final String username) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    @XapiRequestMapping(value = "{username}/verified", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = User)
+    public ResponseEntity<Boolean> usersIdVerifiedGet(@ApiParam(value = "The ID of the user to retrieve the verified status for.", required = true) @PathVariable("username") @Username final String username) {
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -604,12 +518,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to verify or un-verify this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/verified/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Boolean> usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") final String username, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable("flag") Boolean flag) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    @XapiRequestMapping(value = "{username}/verified/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = User)
+    public ResponseEntity<Boolean> usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") @Username final String username, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable("flag") Boolean flag) {
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -646,12 +556,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<Collection<String>> usersIdRolesGet(@ApiParam(value = "The ID of the user to retrieve the roles for.", required = true) @PathVariable("username") final String username) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = User)
+    public ResponseEntity<Collection<String>> usersIdRolesGet(@ApiParam(value = "The ID of the user to retrieve the roles for.", required = true) @PathVariable("username") @Username final String username) {
         final Collection<String> roles = getUserRoles(username);
         return roles != null ? new ResponseEntity<>(roles, HttpStatus.OK) : new ResponseEntity<Collection<String>>(HttpStatus.FORBIDDEN);
     }
@@ -663,14 +569,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Collection<String>> usersIdAddRoles(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable("username") final String username,
+    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = User)
+    public ResponseEntity<Collection<String>> usersIdAddRoles(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable("username") @Username final String username,
                                                               @ApiParam(value = "The user's new roles.", required = true) @RequestBody final List<String> roles) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         final Collection<String> failed = Lists.newArrayList();
 
         try {
@@ -707,14 +608,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
-    public ResponseEntity<Collection<String>> usersIdRemoveRoles(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable("username") final String username,
+    @XapiRequestMapping(value = "{username}/roles", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = User)
+    public ResponseEntity<Collection<String>> usersIdRemoveRoles(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable("username") @Username final String username,
                                                                  @ApiParam(value = "The roles to be removed.", required = true) @RequestBody final List<String> roles) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         final Collection<String> failed = Lists.newArrayList();
 
         try {
@@ -750,13 +646,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Boolean> usersIdAddRole(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable("username") final String username,
+    @XapiRequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = User)
+    public ResponseEntity<Boolean> usersIdAddRole(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable("username") @Username final String username,
                                                   @ApiParam(value = "The user's new role.", required = true) @PathVariable("role") final String role) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -783,13 +675,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
-    public ResponseEntity<Boolean> usersIdRemoveRole(@ApiParam(value = "ID of the user to delete a role from", required = true) @PathVariable("username") final String username,
+    @XapiRequestMapping(value = "{username}/roles/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = User)
+    public ResponseEntity<Boolean> usersIdRemoveRole(@ApiParam(value = "ID of the user to delete a role from", required = true) @PathVariable("username") @Username final String username,
                                                      @ApiParam(value = "The user role to delete.", required = true) @PathVariable("role") String role) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -816,12 +704,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to view this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<Set<String>> usersIdGroupsGet(@ApiParam(value = "The ID of the user to retrieve the groups for.", required = true) @PathVariable("username") final String username) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = User)
+    public ResponseEntity<Set<String>> usersIdGroupsGet(@ApiParam(value = "The ID of the user to retrieve the groups for.", required = true) @PathVariable("username") @Username final String username) {
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -844,14 +728,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Collection<String>> usersIdAddGroups(@ApiParam(value = "ID of the user to add to the specified groups", required = true) @PathVariable("username") final String username,
+    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = User)
+    public ResponseEntity<Collection<String>> usersIdAddGroups(@ApiParam(value = "ID of the user to add to the specified groups", required = true) @PathVariable("username") @Username final String username,
                                                                @ApiParam(value = "The groups to which the user should be added.", required = true) @RequestBody final List<String> groups) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         final Collection<String> failed = Lists.newArrayList();
 
         try {
@@ -888,14 +767,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
-    public ResponseEntity<Collection<String>> usersIdRemoveGroups(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable("username") final String username,
+    @XapiRequestMapping(value = "{username}/groups", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = User)
+    public ResponseEntity<Collection<String>> usersIdRemoveGroups(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable("username") @Username final String username,
                                                                   @ApiParam(value = "The groups from which the user should be removed.", required = true) @RequestBody final List<String> groups) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-
         final Collection<String> failed = Lists.newArrayList();
 
         try {
@@ -931,12 +805,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/groups/{group}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<Boolean> usersIdAddGroup(@ApiParam(value = "ID of the user to add to a group", required = true) @PathVariable("username") final String username, @ApiParam(value = "The user's new group.", required = true) @PathVariable("group") final String group) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    @XapiRequestMapping(value = "{username}/groups/{group}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = User)
+    public ResponseEntity<Boolean> usersIdAddGroup(@ApiParam(value = "ID of the user to add to a group", required = true) @PathVariable("username") @Username final String username, @ApiParam(value = "The user's new group.", required = true) @PathVariable("group") final String group) {
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -966,12 +836,8 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}/groups/{group}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE)
-    public ResponseEntity<Boolean> usersIdRemoveGroup(@ApiParam(value = "ID of the user to remove from group", required = true) @PathVariable("username") final String username, @ApiParam(value = "The group to remove the user from.", required = true) @PathVariable("group") final String group) {
-        HttpStatus status = isPermitted(username);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
+    @XapiRequestMapping(value = "{username}/groups/{group}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = User)
+    public ResponseEntity<Boolean> usersIdRemoveGroup(@ApiParam(value = "ID of the user to remove from group", required = true) @PathVariable("username") @Username final String username, @ApiParam(value = "The group to remove the user from.", required = true) @PathVariable("group") final String group) {
         try {
             final UserI user = getUserManagementService().getUser(username);
             if (user == null) {
@@ -1055,9 +921,8 @@ public class UsersApi extends AbstractXapiRestController {
 
     private static final Logger _log = LoggerFactory.getLogger(UsersApi.class);
 
-    private final SiteConfigPreferences _preferences;
-    private final SessionRegistry       _sessionRegistry;
-    private final AliasTokenService     _aliasTokenService;
-    private final UserFactory           _factory;
-    private final JdbcTemplate          _jdbcTemplate;
+    private final SessionRegistry            _sessionRegistry;
+    private final AliasTokenService          _aliasTokenService;
+    private final UserFactory                _factory;
+    private final NamedParameterJdbcTemplate _jdbcTemplate;
 }

@@ -41,6 +41,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+
 /**
  * The Class XnatTaskApi.
  */
@@ -70,13 +72,9 @@ public class XnatTaskApi extends AbstractXapiRestController {
      */
     @ApiOperation(value = "Get node configuration status.", notes = "Returns node configuration status for this installation.", response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/xnatTask/checkNodeConfigurationStatus"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @XapiRequestMapping(value = {"/xnatTask/checkNodeConfigurationStatus"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<Properties> getNodeConfigurationStatus() {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
        	final Properties prop = new Properties();
        	// We'll display configuration if we have any configured nodes for this installation.
        	for (final XnatNodeInfo nodeInfo : _xnatNodeInfoService.getAll()) {
@@ -97,13 +95,9 @@ public class XnatTaskApi extends AbstractXapiRestController {
      */
     @ApiOperation(value = "Get list of XnatTask classes.", notes = "Returns a list of XnatTask properties", response = String.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/xnatTask/taskList"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
+    @XapiRequestMapping(value = {"/xnatTask/taskList"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<List<Properties>> getTaskList() {
-        final HttpStatus status = isPermitted();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
         try {
             return new ResponseEntity<>(getTaskPropertiesList(), HttpStatus.OK);
         } catch (Throwable t) {

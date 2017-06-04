@@ -11,6 +11,7 @@ package org.nrg.xnat.security;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.xapi.rest.aspects.XapiRequestMappingAspect;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.BeansException;
@@ -42,7 +43,7 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
         }
 
         if (bean instanceof FilterSecurityInterceptor) {
-            final FilterSecurityInterceptor interceptor = (FilterSecurityInterceptor) bean;
+            final FilterSecurityInterceptor                             interceptor    = (FilterSecurityInterceptor) bean;
             final ExpressionBasedFilterInvocationSecurityMetadataSource metadataSource = getMetadataSource(_preferences.getRequireLogin());
             if (_log.isDebugEnabled()) {
                 _log.debug("Found a FilterSecurityInterceptor bean with the following metadata configuration:");
@@ -51,6 +52,10 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
                 displayMetadataSource(metadataSource);
             }
             interceptor.setSecurityMetadataSource(metadataSource);
+        } else if (bean instanceof XapiRequestMappingAspect) {
+            final XapiRequestMappingAspect aspect = (XapiRequestMappingAspect) bean;
+            aspect.setOpenUrls(_appInfo.getOpenUrls());
+            aspect.setAdminUrls(_appInfo.getAdminUrls());
         }
 
         return bean;
@@ -66,22 +71,17 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
             map.put(new AntPathRequestMatcher(url), SecurityConfig.createList(PERMIT_ALL));
         }
 
-        for (final String adminUrl: _appInfo.getAdminUrls()) {
+        for (final String adminUrl : _appInfo.getAdminUrls()) {
             if (_log.isDebugEnabled()) {
                 _log.debug("Setting permissions on the admin URL: " + adminUrl);
             }
             String tempAdminUrl = adminUrl;
-            if(tempAdminUrl.endsWith("/**")){
-
-            }
-            else if(tempAdminUrl.endsWith("/*")){
-                tempAdminUrl+="*";
-            }
-            else if(tempAdminUrl.endsWith("/")){
-                tempAdminUrl+="**";
-            }
-            else{
-                tempAdminUrl+="/**";
+            if (tempAdminUrl.endsWith("/*")) {
+                tempAdminUrl += "*";
+            } else if (tempAdminUrl.endsWith("/")) {
+                tempAdminUrl += "**";
+            } else if (!tempAdminUrl.endsWith("/**")) {
+                tempAdminUrl += "/**";
             }
             map.put(new AntPathRequestMatcher(tempAdminUrl), SecurityConfig.createList(ADMIN_EXPRESSION));
         }
@@ -108,10 +108,10 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
         }
     }
 
-    private static final Log _log = LogFactory.getLog(FilterSecurityInterceptorBeanPostProcessor.class);
-    private static final String PERMIT_ALL = "permitAll";
-    private static final String DEFAULT_PATTERN = "/**";
-    private static final String ADMIN_EXPRESSION = "hasRole('ROLE_ADMIN')";
+    private static final Log    _log               = LogFactory.getLog(FilterSecurityInterceptorBeanPostProcessor.class);
+    private static final String PERMIT_ALL         = "permitAll";
+    private static final String DEFAULT_PATTERN    = "/**";
+    private static final String ADMIN_EXPRESSION   = "hasRole('ROLE_ADMIN')";
     private static final String DEFAULT_EXPRESSION = "hasRole('ROLE_USER')";
 
     private final SiteConfigPreferences _preferences;

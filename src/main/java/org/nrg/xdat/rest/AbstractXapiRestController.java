@@ -13,6 +13,7 @@ import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -120,7 +121,10 @@ public abstract class AbstractXapiRestController {
      * @param ids         One or more IDs that can be tested against the username.
      *
      * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
+     *
+     * @deprecated All uses of this and similar methods should be replaced by {@link XapiRequestMapping#restrictTo()}.
      */
+    @Deprecated
     protected HttpStatus isPermitted(final HttpServletRequest request, final Collection<AntPathRequestMatcher> openUrls, final String... ids) {
         for (final AntPathRequestMatcher matcher : openUrls) {
             if (matcher.matches(request)) {
@@ -139,7 +143,10 @@ public abstract class AbstractXapiRestController {
      * @param ids One or more IDs that can be tested against the username.
      *
      * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
+     *
+     * @deprecated All uses of this and similar methods should be replaced by {@link XapiRequestMapping#restrictTo()}.
      */
+    @Deprecated
     protected HttpStatus isPermitted(final String... ids) {
         final UserI user = getSessionUser();
         if (user == null) {
@@ -166,7 +173,10 @@ public abstract class AbstractXapiRestController {
      * @param roles One or more roles that can be tested against the user.
      *
      * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
+     *
+     * @deprecated All uses of this and similar methods should be replaced by {@link XapiRequestMapping#restrictTo()}.
      */
+    @Deprecated
     protected HttpStatus hasPermittedRole(final String... roles) {
         final UserI user = getSessionUser();
         if (user == null) {

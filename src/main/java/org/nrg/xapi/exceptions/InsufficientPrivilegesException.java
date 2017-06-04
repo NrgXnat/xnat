@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@SuppressWarnings({"Duplicates", "unused"})
 @ResponseStatus(HttpStatus.FORBIDDEN)
 public class InsufficientPrivilegesException extends XapiException {
     public InsufficientPrivilegesException(final String username) {
@@ -31,6 +32,13 @@ public class InsufficientPrivilegesException extends XapiException {
         _username = username;
         _project = null;
         _resources.add(resource);
+    }
+
+    public InsufficientPrivilegesException(final String username, final String resource, final String message) {
+        super(HttpStatus.FORBIDDEN, message);
+        _username = username;
+        _resources.add(resource);
+        _project = null;
     }
 
     public InsufficientPrivilegesException(final String username, final List<String> resources) {

@@ -33,7 +33,7 @@ import java.util.*;
  * This replaces the {@link org.nrg.xdat.rest.AbstractXapiRestController} implementation.
  */
 // TODO: This is because IntelliJ refuses to make module associations between Gradle and Maven projects, so these show as unused.
-@SuppressWarnings({"unused", "deprecation"})
+@SuppressWarnings({"unused", "deprecation", "Duplicates"})
 public abstract class AbstractXapiRestController {
     protected AbstractXapiRestController(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
         _userManagementService = userManagementService;
@@ -119,7 +119,10 @@ public abstract class AbstractXapiRestController {
      * @param ids      One or more IDs that can be tested against the username.
      *
      * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
+     *
+     * @deprecated All uses of this and similar methods should be replaced by {@link XapiRequestMapping#restrictTo()}.
      */
+    @Deprecated
     protected HttpStatus isPermitted(final HttpServletRequest request, final Collection<AntPathRequestMatcher> openUrls, final String... ids) {
         for (final AntPathRequestMatcher matcher : openUrls) {
             if (matcher.matches(request)) {
@@ -145,7 +148,10 @@ public abstract class AbstractXapiRestController {
      * @param idsAndRoles One or more IDs or roles that can be tested against the user's login name and authorities.
      *
      * @return Returns null if the user is permitted to access the API, otherwise it returns an error status code.
+     *
+     * @deprecated All uses of this and similar methods should be replaced by {@link XapiRequestMapping#restrictTo()}.
      */
+    @Deprecated
     protected HttpStatus isPermitted(final String... idsAndRoles) {
         final UserI user = getSessionUser();
         if (user == null) {

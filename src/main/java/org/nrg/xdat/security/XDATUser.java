@@ -62,6 +62,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private static final long serialVersionUID = -8144623503683531831L;
     private static final Logger logger = LoggerFactory.getLogger(XDATUser.class);
 
+    private static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
+    private static final SimpleGrantedAuthority AUTHORITY_ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final SimpleGrantedAuthority AUTHORITY_USER = new SimpleGrantedAuthority("ROLE_USER");
+
     private Hashtable<String, ElementAccessManager> accessManagers = null;
     private final Map<String, UserGroupI> groups = Maps.newHashMap();
     private final Map<String, String> groupsByTag = Maps.newHashMap();
@@ -280,7 +284,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return <b>true</b> if the user is a guest, <b>false</b> otherwise.
      */
     public boolean isGuest() {
-        return getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
+        return getAuthorities().contains(AUTHORITY_ANONYMOUS);
     }
 
     /**
@@ -1106,12 +1110,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         if (_authorities.size() == 0) {
             final String username = getUsername();
             if (StringUtils.isBlank(username) || StringUtils.equalsIgnoreCase("guest", username)) {
-                _authorities.add(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
+                _authorities.add(AUTHORITY_ANONYMOUS);
             } else {
                 if (isSiteAdmin()) {
-                    _authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                    _authorities.add(AUTHORITY_ADMIN);
                 }
-                _authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+                _authorities.add(AUTHORITY_USER);
             }
             List<String> groups = Groups.getGroupIdsForUser(this);
             if (groups != null && groups.size() > 0) {

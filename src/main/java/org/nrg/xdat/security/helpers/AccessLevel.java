@@ -10,8 +10,10 @@
 package org.nrg.xdat.security.helpers;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.xapi.authorization.*;
 import org.nrg.xapi.rest.XapiRequestMapping;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -22,24 +24,39 @@ import java.util.Set;
  */
 public enum AccessLevel {
     Null(null),
-    Admin("admin"),
-    Authenticated("authenticated"),
-    Read("read"),
-    Edit("edit"),
-    Collaborator("collaborator"),
-    Member("member"),
-    Owner("owner");
+    Authenticated("authenticated", AuthenticatedXapiAuthorization.class),
+    User("user", UserXapiAuthorization.class),
+    Role("role", RoleXapiAuthorization.class),
+    Admin("admin", AdminXapiAuthorization.class),
+    Read("read", ProjectAccessXapiAuthorization.class),
+    Edit("edit", ProjectAccessXapiAuthorization.class),
+    Collaborator("collaborator", ProjectAccessXapiAuthorization.class),
+    Member("member", ProjectAccessXapiAuthorization.class),
+    Owner("owner", ProjectAccessXapiAuthorization.class),
+    Authorizer("authorizer");
 
     AccessLevel(final String code) {
+        this(code, null);
+    }
+    AccessLevel(final String code, final Class<? extends XapiAuthorization> authClass) {
         _code = code;
+        _authClass = authClass;
     }
 
     public String code() {
         return _code;
     }
 
+    public Class<? extends XapiAuthorization> getAuthClass() {
+        return _authClass;
+    }
+
     public boolean equals(final String value) {
         return StringUtils.equals(value, code());
+    }
+
+    public boolean equalsAny(final AccessLevel... levels) {
+        return Arrays.asList(levels).contains(this);
     }
     
     public static AccessLevel getAccessLevel(final String code) {
@@ -56,5 +73,6 @@ public enum AccessLevel {
         }
     }};
 
-    private final String _code;
+    private final String                             _code;
+    private final Class<? extends XapiAuthorization> _authClass;
 }

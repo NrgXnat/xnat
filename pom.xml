@@ -1359,6 +1359,12 @@
 
             <!-- Optional dependencies. These are usually for IDE tools or annotation processors -->
             <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>3.0.2</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
                 <version>1.0</version>

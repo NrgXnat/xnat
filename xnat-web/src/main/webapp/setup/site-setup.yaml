@@ -84,22 +84,6 @@ siteSetup:
                     kind: input.hidden
                     name: helpContactInfo
                     value: @?=window.siteAdminEmailInput.value
-                errorMessages:
-                    kind: input.hidden
-                    name: emailRecipientErrorMessages
-                    value: @?=window.siteAdminEmailInput.value
-                issueReports:
-                    kind: input.hidden
-                    name: emailRecipientIssueReports
-                    value: @?=window.siteAdminEmailInput.value
-                newUserAlert:
-                    kind: input.hidden
-                    name: emailRecipientNewUserAlert
-                    value: @?=window.siteAdminEmailInput.value
-                update:
-                    kind: input.hidden
-                    name: emailRecipientUpdate
-                    value: @?=window.siteAdminEmailInput.value
 
         # =========================
         # DATA STORAGE

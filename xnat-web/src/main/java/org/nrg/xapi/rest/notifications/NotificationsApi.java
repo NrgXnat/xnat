@@ -86,10 +86,10 @@ public class NotificationsApi extends AbstractXapiRestController {
             preferences.put("siteUrl", XnatHttpUtils.getServerRoot(request));
         }
 
-        preferences.put("notifications.emailRecipientErrorMessages", _notificationsPrefs.getEmailRecipientErrorMessages());
-        preferences.put("notifications.emailRecipientIssueReports", _notificationsPrefs.getEmailRecipientIssueReports());
-        preferences.put("notifications.emailRecipientNewUserAlert", _notificationsPrefs.getEmailRecipientNewUserAlert());
-        preferences.put("notifications.emailRecipientUpdate", _notificationsPrefs.getEmailRecipientUpdate());
+        preferences.put("emailRecipientErrorMessages", _notificationsPrefs.getEmailRecipientErrorMessages());
+        preferences.put("emailRecipientIssueReports", _notificationsPrefs.getEmailRecipientIssueReports());
+        preferences.put("emailRecipientNewUserAlert", _notificationsPrefs.getEmailRecipientNewUserAlert());
+        preferences.put("emailRecipientUpdate", _notificationsPrefs.getEmailRecipientUpdate());
 
         return new ResponseEntity<>(preferences, HttpStatus.OK);
     }

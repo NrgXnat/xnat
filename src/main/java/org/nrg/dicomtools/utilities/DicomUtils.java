@@ -20,8 +20,6 @@ import org.dcm4che2.iod.module.macro.Code;
 import org.nrg.dcm.RequiredAttributeUnsetException;
 import org.nrg.dicomtools.exceptions.AttributeVRMismatchException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -42,6 +40,12 @@ public class DicomUtils {
     public final static int RecordTag = Tag.DeidentificationMethodCodeSequence;
 
     /**
+     * Tests that a string contains only characters that might be in a DICOM header tag (XXXX,YYYY) or ID as defined in
+     * the dcm4che2 Tag class. This means only the characters A-Z, a-z, 0-9, '(', ')', and ',' are allowed.
+     */
+    public final static Pattern VALID_DICOM_HEADER_OR_TAG_CHARS = Pattern.compile("^[\\p{Alnum}(),]+$");
+
+    /**
      * A pattern that matches DICOM tags in the standard hex numeric format, e.g. "XXXX,YYYY". The header may have
      * parentheses or not, that is, it can be "XXXX,YYYY" or "(XXXX,YYYY)". One thing this doesn't check for is
      * unmatched parentheses, since this is nearly impossible to do with Java's lack of support for recursive
@@ -52,26 +56,34 @@ public class DicomUtils {
 
     /**
      * This tries to convert a DICOM header ID&mdash;either a DICOM tag or attribute&mdash;into an integer value that
-     * can be
-     * used with the dcm4che DicomObject classes various get methods. DICOM tags can be in the format "(xxxx,yyyy)" or
-     * "xxxx,yyyy" (i.e. with or without bounding parentheses). DICOM attributes must be in the same form as they are
-     * represented as field names in the dcm4che Tag class.
+     * can be used with the dcm4che DicomObject classes various get methods. DICOM tags can be in the format "(xxxx,yyyy)" or
+     * "xxxx,yyyy" (i.e. with or without bounding parentheses) or as a constant defined in the dcm4che2 Tag class. DICOM
+     * attributes must be in the same form as they are represented as field names in the dcm4che Tag class.
      *
      * @param headerId The header ID in the form of a DICOM tag or attribute.
      *
      * @return The integer value representing the submitted DICOM tag or attribute.
      */
     public static int parseDicomHeaderId(final String headerId) {
-        final Matcher matcher = DICOM_TAG.matcher(headerId);
-        if (!matcher.find() || StringUtils.isBlank(matcher.group("open")) != StringUtils.isBlank(matcher.group("close"))) {
-            _log.warn("Invalid: ", headerId);
-            return -1;
+        if (StringUtils.isBlank(headerId) || !VALID_DICOM_HEADER_OR_TAG_CHARS.matcher(headerId).matches()) {
+            throw new IllegalArgumentException("Invalid DICOM tag: blank or invalid characters submitted. Submitted tag: " + headerId);
         }
+        final Matcher matcher = DICOM_TAG.matcher(headerId);
         if (matcher.find()) {
-            final String tag = matcher.group(1) + matcher.group(2);
-            return Integer.parseInt(tag, 16);
-        } else {
+            if (StringUtils.isBlank(matcher.group("open")) != StringUtils.isBlank(matcher.group("close"))) {
+                throw new IllegalArgumentException("Invalid DICOM tag: must either have no or matching parentheses. Submitted tag: " + headerId);
+            }
+            final String tag = matcher.group("prefix") + matcher.group("suffix");
+            try {
+                return Integer.parseInt(tag, 16);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid DICOM tag: the specified header doesn't parse to an integer. Submitted tag: " + headerId);
+            }
+        }
+        try {
             return Tag.forName(headerId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid DICOM tag: unknown tag name. Submitted tag: " + headerId);
         }
     }
 
@@ -220,37 +232,18 @@ public class DicomUtils {
      * @throws IOException When an error occurs reading or writing data.
      */
     public static DicomObject read(final InputStream in, final DicomInputHandler handler) throws IOException {
-        IOException               ioexception = null;
-        final BufferedInputStream bin         = new BufferedInputStream(in);
-        try {
-            final DicomInputStream din = new DicomInputStream(bin);
-            try {
-                if (null != handler) {
-                    din.setHandler(handler);
-                }
-                final DicomObject o = din.readDicomObject();
-                if (o.contains(Tag.SOPClassUID)) {
-                    return o;
-                } else {
-                    throw new IOException("no SOP class UID in prospective DICOM object");
-                }
-            } catch (IOException e) {
-                throw ioexception = e;
-            } catch (Throwable t) {
-                throw new IOException("unable to read as DICOM", t);
-            } finally {
-                try {
-                    din.close();
-                } catch (IOException e) {
-                    throw ioexception = (null == ioexception) ? e : ioexception;
-                }
+        try (final DicomInputStream din = new DicomInputStream(new BufferedInputStream(in))) {
+            if (null != handler) {
+                din.setHandler(handler);
             }
-        } finally {
-            try {
-                bin.close();
-            } catch (IOException e) {
-                throw ioexception = (null == ioexception) ? e : ioexception;
+            final DicomObject o = din.readDicomObject();
+            if (o.contains(Tag.SOPClassUID)) {
+                return o;
+            } else {
+                throw new IOException("no SOP class UID in prospective DICOM object");
             }
+        } catch (Throwable t) {
+            throw new IOException("unable to read as DICOM", t);
         }
     }
 
@@ -292,21 +285,8 @@ public class DicomUtils {
      * @throws IOException When an error occurs reading or writing data.
      */
     public static DicomObject read(final File file, final DicomInputHandler handler) throws IOException {
-        InputStream fin         = new FileInputStream(file);
-        IOException ioexception = null;
-        try {
-            if (file.getName().endsWith(GZIP_SUFFIX)) {
-                fin = new GZIPInputStream(fin);
-            }
+        try (final InputStream fin = file.getName().endsWith(GZIP_SUFFIX) ? new GZIPInputStream(new FileInputStream(file)) : new FileInputStream(file)) {
             return read(fin, handler);
-        } catch (IOException e) {
-            throw ioexception = e;
-        } finally {
-            try {
-                fin.close();
-            } catch (IOException e) {
-                throw null == ioexception ? e : ioexception;
-            }
         }
     }
 
@@ -515,6 +495,4 @@ public class DicomUtils {
     private static final String               GZIP_SUFFIX                = ".gz";
     private static final StopTagInputHandler  MAX_STOP_TAG_INPUT_HANDLER = new StopTagInputHandler(Tag.PixelData);
     private static final Map<Integer, String> DICOM_TAGS                 = new HashMap<>();
-
-    private static Logger _log = LoggerFactory.getLogger(DicomUtils.class);
 }

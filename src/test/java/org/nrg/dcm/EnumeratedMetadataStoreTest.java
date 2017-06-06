@@ -24,6 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.nrg.attr.ConversionFailureException;
+import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.util.FileURIOpener;
 
 import java.io.File;
@@ -337,10 +338,7 @@ public class EnumeratedMetadataStoreTest {
         assertEquals(0, store.getSize());
         store.add(Collections.singletonList(toURI(tempDir)));
         assertEquals(fileNames.length, store.getSize());
-        final Map<DicomAttributeIndex, ConversionFailureException> failures = Maps.newLinkedHashMap();
-        final Map<URI, Map<DicomAttributeIndex, String>> values = store.getValuesForResourcesMatching(
-                Arrays.asList(SERIES_INSTANCE_UID, INSTANCE_NUMBER), Collections.singletonMap(SERIES_NUMBER, "5"));
-        assertTrue(failures.isEmpty());
+        final Map<URI, Map<DicomAttributeIndex, String>> values = store.getValuesForResourcesMatching(Arrays.asList(SERIES_INSTANCE_UID, INSTANCE_NUMBER), Collections.singletonMap(SERIES_NUMBER, "5"));
         assertEquals(fileNamesSeries5.length, values.size());
         for (final String name : fileNamesSeries5) {
             assertTrue(values.containsKey(toURI(tempDir, name)));

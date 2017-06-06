@@ -19,7 +19,7 @@ import java.util.NoSuchElementException;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.io.DicomInputHandler;
 import org.dcm4che2.io.StopTagInputHandler;
-import org.nrg.dcm.DicomUtils;
+import org.nrg.dicomtools.utilities.DicomUtils;
 
 
 /**

@@ -19,6 +19,7 @@ import org.dcm4che2.net.TransferCapability;
 import org.dcm4che2.util.StringUtils;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.nrg.attr.ConversionFailureException;
+import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.progress.NullProgressUpdater;
 import org.nrg.progress.ProgressMonitorI;
 import org.nrg.progress.ProgressUpdater;
@@ -96,35 +97,19 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
          * @throws SQLException When an error occurs performing the SQL statement.
          * @throws IOException  When an error occurs accessing the resource URI.
          */
-        void call(final Statement statement, final URI resource, final Map<String, String> addCols)
-                throws SQLException, IOException {
+        void call(final Statement statement, final URI resource, final Map<String, String> addCols) throws SQLException, IOException {
             if (this.dicomOp == null) {
                 add(statement, resource, addCols);
             } else {
-                IOException       ioexception = null;
-                final InputStream in          = uriOpener.open(resource);
-                try {
+                try (final InputStream in = uriOpener.open(resource)) {
                     final DicomObject o = this.dicomOp.apply(DicomUtils.read(in));
                     add(resource, o, addCols);
-                } catch (IOException e) {
-                    throw ioexception = e;
                 } catch (RuntimeException e) {
                     final Throwable cause = e.getCause();
                     if (null != cause && cause instanceof SQLException) {
                         throw (SQLException) cause;
                     } else {
                         throw e;
-                    }
-                } finally {
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        if (null == ioexception) {
-                            throw e;
-                        } else {
-                            logger.error("unable to close DICOM resource", e);
-                            throw ioexception;
-                        }
                     }
                 }
             }

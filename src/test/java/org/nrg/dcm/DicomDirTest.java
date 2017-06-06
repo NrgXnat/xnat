@@ -9,18 +9,16 @@
 
 package org.nrg.dcm;
 
-import com.google.common.io.Files;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomOutputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.nrg.dicomtools.utilities.DicomUtils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.zip.GZIPInputStream;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;

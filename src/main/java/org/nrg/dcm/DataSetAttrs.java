@@ -17,6 +17,7 @@ import java.util.SortedSet;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.nrg.attr.ConversionFailureException;
+import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.util.Opener;
 
 import com.google.common.base.Function;

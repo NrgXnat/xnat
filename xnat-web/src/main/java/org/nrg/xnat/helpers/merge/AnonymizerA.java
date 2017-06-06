@@ -10,9 +10,9 @@
 package org.nrg.xnat.helpers.merge;
 
 import org.nrg.config.entities.Configuration;
-import org.nrg.dcm.edit.AttributeException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.service.MizerService;
+import org.nrg.dicomtools.exceptions.AttributeException;
 import org.nrg.xdat.XDAT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

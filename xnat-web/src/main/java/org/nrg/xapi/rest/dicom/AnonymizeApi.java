@@ -106,7 +106,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to access the project-specific anonymization script."),
                    @ApiResponse(code = 404, message = "The specified project wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "projects/{projectId}", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Collaborator)
+    @XapiRequestMapping(value = "projects/{projectId}", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Read)
     @ResponseBody
     public ResponseEntity<String> getProjectAnonScript(@PathVariable("projectId") @ProjectId final String projectId) throws NrgServiceException, NoContentException {
         final String script = _anonUtils.getProjectScript(projectId);

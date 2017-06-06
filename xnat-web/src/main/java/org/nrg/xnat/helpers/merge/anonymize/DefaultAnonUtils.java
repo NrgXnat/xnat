@@ -173,7 +173,7 @@ public class DefaultAnonUtils implements AnonUtils {
             logger.debug("Getting {} script for project: {}", DicomEdit.ToolName, projectId);
         }
         final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
-        return _configService.getConfigContents(DicomEdit.ToolName, path);
+        return _configService.getConfigContents(DicomEdit.ToolName, path, Scope.Project, projectId);
     }
 
     @Override

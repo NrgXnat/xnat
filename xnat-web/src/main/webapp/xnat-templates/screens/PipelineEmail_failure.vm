@@ -10,7 +10,7 @@
 <p>
 The $system technical team is aware of the issue and will notify you when it has been resolved.
 <br/>
-We appreciate your patience. Please contact <a href="$contactEmail">$contactEmail</a> with questions or concerns.
+We appreciate your patience. Please contact <a href="mailto:$contactEmail">$contactEmail</a> with questions or concerns.
 </p>
 
 #if (!$attachments.isEmpty())

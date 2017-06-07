@@ -100,6 +100,7 @@ public class NotifyProjectPipelineListeners extends NotifyProjectListeners {
                 context.put("siteLogoPath", XDAT.getSiteLogoPath());
                 context.put("system", TurbineUtils.GetSystemName());
                 context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
+                context.put("contactEmail", XDAT.getNotificationsPreferences().getHelpContactInfo());
                 context.put("workflow",_workflow);
                 context.put("params", _params);
                 for(Map.Entry<String,Object> entry : _params.entrySet()) {

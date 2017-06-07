@@ -9,12 +9,8 @@
 
 package org.nrg.xnat.notifications;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -32,8 +28,11 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 public class NotifyProjectListeners implements Callable<Boolean> {
 	private static final String NOTIFICATIONS = "notifications";
@@ -90,6 +89,7 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 				context.put("siteLogoPath", XDAT.getSiteLogoPath());
 				context.put("system", TurbineUtils.GetSystemName());
 				context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
+				context.put("contactEmail", XDAT.getNotificationsPreferences().getHelpContactInfo());
 				context.put("params", _params);
 				if(_params.get("justification")!=null){
 					context.put("justification",_params.get("justification"));

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
 import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +44,11 @@ public class UserResourceXapiAuthorization extends AbstractXapiAuthorization imp
     protected boolean checkImpl() {
         // Otherwise, verify that user list access is not restricted to admins OR this user is an admin OR this
         // user appears in any usernames specified in the method parameters.
-        return !_restrictUserListAccessToAdmins
+        //return !_restrictUserListAccessToAdmins
+        //Switched to using XDAT.getSiteConfigPreferences to get the preference so that it will correctly update without Tomcat restart.
+        //This should probably be refactored so that either this class no longer stores this preference, or it does, but there is a method
+        //which handles updates to the preference and updates the value in this class. For now, I made the least invasive change.
+        return !XDAT.getSiteConfigPreferences().getRestrictUserListAccessToAdmins()
                || Roles.isSiteAdmin(getUser())
                || getUsernames(getJoinPoint()).contains(getUsername());
     }

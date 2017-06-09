@@ -581,7 +581,7 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 };
 
                 ListenerUtils.addListeners(this, new MergePrearcToArchiveSession(src.getPrearchivePath(),
-                        this.prearcSession.getSessionDir(),
+                        prearcSession,
                         src,
                         src.getPrearchivepath(),
                         arcSessionDir,

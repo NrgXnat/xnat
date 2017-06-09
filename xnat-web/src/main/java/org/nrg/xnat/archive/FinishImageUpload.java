@@ -9,6 +9,30 @@
 
 package org.nrg.xnat.archive;
 
+import com.google.common.collect.Lists;
+import org.apache.log4j.Logger;
+import org.nrg.action.ActionException;
+import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
+import org.nrg.framework.constants.PrearchiveCode;
+import org.nrg.framework.status.StatusProducer;
+import org.nrg.framework.status.StatusProducerI;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
+import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xnat.helpers.prearchive.SessionException;
+import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
+import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
+import org.nrg.xnat.restlet.util.RequestUtil;
+import org.nrg.xnat.status.ListenerUtils;
+import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.xml.sax.SAXException;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,31 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.apache.log4j.Logger;
-import org.nrg.action.ActionException;
-import org.nrg.action.ClientException;
-import org.nrg.action.ServerException;
-import org.nrg.framework.constants.PrearchiveCode;
-import org.nrg.framework.status.StatusProducer;
-import org.nrg.framework.status.StatusProducerI;
-import org.nrg.xnat.status.ListenerUtils;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
-import org.nrg.xft.security.UserI;
-import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
-import org.nrg.xnat.helpers.prearchive.PrearcDatabase.SyncFailedException;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.helpers.prearchive.SessionData;
-import org.nrg.xnat.helpers.prearchive.SessionException;
-import org.nrg.xnat.helpers.uri.URIManager;
-import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
-import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
-import org.nrg.xnat.restlet.util.RequestUtil;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.xml.sax.SAXException;
-
-import com.google.common.collect.Lists;
+import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariables;
 
 /**
  * @author Timothy R Olsen
@@ -54,8 +54,6 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
 	private final boolean overrideExceptions, allowSessionMerge,inline;
 	private final UserI user;
 	
-	static List<String> prearc_variables=Lists.newArrayList(RequestUtil.AA,RequestUtil.AUTO_ARCHIVE,PrearcUtils.PREARC_SESSION_FOLDER,PrearcUtils.PREARC_TIMESTAMP);
-
 	public FinishImageUpload(Object control, UserI user,final PrearcSession session,final URIManager.DataURIA destination, final boolean overrideExceptions, final boolean allowSessionMerge, final boolean inline) {
 		super(control);
 		this.session=session;
@@ -120,26 +118,7 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
 		} catch (ActionException e) {
 			logger.error("",e);
 			throw e;
-		} catch (SQLException e) {
-			logger.error("",e);
-			throw new ServerException(e);
-		} catch (SessionException e) {
-			logger.error("",e);
-			throw new ServerException(e);
-		} catch (SyncFailedException e) {
-			if(e.getCause()!=null && e.getCause() instanceof ActionException){
-				throw (ActionException)e.getCause();
-			}else{
-				logger.error("",e);
-				throw new ServerException(e);
-			}
-		} catch (IOException e) {
-			logger.error("",e);
-			throw new ServerException(e);
-		} catch (SAXException e) {
-			logger.error("",e);
-			throw new ServerException(e);
-		}  catch (Exception e){
+		} catch (Exception e){
 			logger.error("",e);
 			throw new ServerException(e);
 		}
@@ -170,18 +149,12 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
 				try {
 					fw = new FileWriter(xml);
 					item.toXML(fw, false);
-				} catch (IllegalArgumentException e) {
+				} catch (IllegalArgumentException | IOException | SAXException e) {
 					throw new ServerException(e);
-				} catch (IOException e) {
-					throw new ServerException(e);
-				} catch (SAXException e) {
-					throw new ServerException(e);
-				}finally{
-					try {if(fw!=null)fw.close();} catch (IOException e) {}
+				} finally{
+					try {if(fw!=null)fw.close();} catch (IOException ignored) {}
 				}
-			} catch (IOException e1) {
-				throw new ServerException(e1);
-			} catch (SAXException e1) {
+			} catch (IOException | SAXException e1) {
 				throw new ServerException(e1);
 			}
 		}
@@ -250,17 +223,13 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
             aa = (String)params.get(RequestUtil.AUTO_ARCHIVE);
         }
         
-        return (aa==null) ? null : Boolean.valueOf(aa.toString().equalsIgnoreCase(RequestUtil.TRUE));
+        return (aa==null) ? null : aa.equalsIgnoreCase(RequestUtil.TRUE);
     }
 
 	private static boolean isOverwriteFiles(final Map<String,Object> params){
 		String of = (String)params.get(RequestUtil.OVERWRITE_FILES);
-						
-		if(of!=null && of.toString().equalsIgnoreCase(RequestUtil.TRUE)){
-			return true;
-		}else{
-			return false;
-		}
+
+		return of != null && of.equalsIgnoreCase(RequestUtil.TRUE);
 	}
 	
 	private static boolean isOverwriteFiles(final PrearcSession session, final URIManager.DataURIA destination) throws SQLException, SessionException, Exception{
@@ -287,12 +256,5 @@ public class FinishImageUpload extends StatusProducer implements Callable<String
 		}
 		
 		return false;
-	}
-	
-	public static Map<String,Object> removePrearcVariables(final Map<String,Object> params){
-		for(String param: prearc_variables){
-			params.remove(param);
-		}
-		return params;
 	}
 }

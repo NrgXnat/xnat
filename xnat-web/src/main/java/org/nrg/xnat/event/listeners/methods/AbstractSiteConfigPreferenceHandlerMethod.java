@@ -14,7 +14,6 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.XnatUserProvider;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,7 +28,7 @@ public abstract class AbstractSiteConfigPreferenceHandlerMethod extends Abstract
 
     @Override
     public List<String> getToolIds() {
-        return new ArrayList<>(Collections.singletonList(SiteConfigPreferences.SITE_CONFIG_TOOL_ID));
+        return Collections.singletonList(SiteConfigPreferences.SITE_CONFIG_TOOL_ID);
     }
 
     protected UserI getAdminUser() {

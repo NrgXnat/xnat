@@ -33,7 +33,8 @@ import com.google.common.collect.Lists;
 
 public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 	
-	protected PrearcSessionValidator(final XnatImagesessiondata src, final PrearcSession prearcSession, final UserI user, final String project,final Map<String,Object> params) {
+	@SuppressWarnings("unused")
+	protected PrearcSessionValidator(final XnatImagesessiondata src, final PrearcSession prearcSession, final UserI user, final String project, final Map<String,Object> params) {
 		super(src,prearcSession,user,project,params,false,true,false,false);
 	}
 
@@ -45,7 +46,6 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 
 	/**
 	 * This method overwrites the one in archiver so that multiple exceptions can be recorded, rather than just the first one.
-	 * @return
 	 */
 	public void checkForConflicts(final XnatImagesessiondata src, final File srcDIR, final XnatImagesessiondata existing, final File destDIR) throws ClientException{
 		if(existing!=null){
@@ -107,7 +107,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 
 	/**
 	 * Mimics the behavior of PrearcSessionArchiver.call(), but tracks the exceptions, rather then failing on them.
-	 * @return
+	 * @return A list of validator notices.
 	 */
 	public List<PrearcSessionValidator.Notice> validate() throws ClientException   {
 		if(StringUtils.isEmpty(project)){
@@ -174,7 +174,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 		};
 
 		MergePrearcToArchiveSession merger=new MergePrearcToArchiveSession(src.getPrearchivePath(),
-																		 this.prearcSession.getSessionDir(),
+																		 prearcSession,
 																		 src,
 																		 src.getPrearchivepath(),
 																		 arcSessionDir,

@@ -21,6 +21,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.archive.XNATSessionBuilder;
+import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
@@ -34,11 +35,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariables;
 
 public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesessiondata> {
-    public MergePrearcToArchiveSession(Object control, final File srcDIR, final XnatImagesessiondata src, final String srcRootPath, final File destDIR, final XnatImagesessiondata existing, final String destRootPath, boolean addFilesToExisting, boolean overwrite_files, SaveHandlerI<XnatImagesessiondata> saver, final UserI u, final EventMetaI now) {
-        super(control, srcDIR, src, srcRootPath, destDIR, existing, destRootPath, addFilesToExisting, overwrite_files, saver, u, now);
-        super.setAnonymizer(new PrearcSessionAnonymizer(src, src.getProject(), srcDIR.getAbsolutePath()));
+    public MergePrearcToArchiveSession(Object control, final PrearcSession prearcSession, final XnatImagesessiondata src, final String srcRootPath, final File destDIR, final XnatImagesessiondata existing, final String destRootPath, boolean addFilesToExisting, boolean overwrite_files, SaveHandlerI<XnatImagesessiondata> saver, final UserI u, final EventMetaI now) {
+        super(control, prearcSession.getSessionDir(), src, srcRootPath, destDIR, existing, destRootPath, addFilesToExisting, overwrite_files, saver, u, now);
+        setAnonymizer(new PrearcSessionAnonymizer(src, src.getProject(), srcDIR.getAbsolutePath()));
+        _prearcSession = prearcSession;
     }
 
     public String getCacheBKDirName() {
@@ -59,9 +62,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
                 if (file instanceof XnatResourcecatalog) {
                     ((XnatResourcecatalog) file).clearFiles();
                 }
-                if (file instanceof XnatAbstractresource) {
-                    CatalogUtils.populateStats((XnatAbstractresource)file, root);
-                }
+                CatalogUtils.populateStats((XnatAbstractresource)file, root);
             }
         }
     }
@@ -201,7 +202,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     @Override
     protected XnatImagesessiondata getPostAnonSession() throws Exception {
         // Now that we're at the project level, let's re-anonymize.
-        final boolean wasAnonymized = anonymizer.call();
+        final boolean wasAnonymized = !_prearcSession.getSessionData().getPreventAnon() && anonymizer.call();
 
         final File sessionXml = new File(srcDIR.getPath() + ".xml");
 
@@ -216,6 +217,15 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         params.put("project", StringUtils.defaultString(src.getProject(), ""));
         params.put("label", StringUtils.defaultString(src.getLabel(), ""));
         params.put("subject_ID", getSubjectId(src));
+
+        final Map<String, Object> sessionValues = removePrearcVariables(_prearcSession.getAdditionalValues());
+        for (final String key : sessionValues.keySet()) {
+            final Object value = sessionValues.get(key);
+            if (value == null) {
+                continue;
+            }
+            params.put(key, value instanceof String ? (String) value : value.toString());
+        }
 
         final Boolean sessionRebuildSuccess = new XNATSessionBuilder(srcDIR, sessionXml, true, params).call();
         if (!sessionRebuildSuccess || !sessionXml.exists() || sessionXml.length() == 0) {
@@ -233,4 +243,6 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     }
 
     private static final Logger logger = LoggerFactory.getLogger(MergePrearcToArchiveSession.class);
+
+    private final PrearcSession _prearcSession;
 }

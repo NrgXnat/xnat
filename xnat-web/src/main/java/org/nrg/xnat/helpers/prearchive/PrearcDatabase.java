@@ -10,6 +10,8 @@
 package org.nrg.xnat.helpers.prearchive;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +26,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
@@ -2455,6 +2458,12 @@ public final class PrearcDatabase {
         return b;
     }
 
+    public static Map<String, Object> removePrearcVariables(final Map<String, Object> variables) {
+        for (final String param : PREARC_VARIABLES) {
+            variables.remove(param);
+        }
+        return variables;
+    }
 
     /**
      * Check session parameters and run the operation
@@ -2509,4 +2518,6 @@ public final class PrearcDatabase {
         }
 
     }
+
+    private static final List<String> PREARC_VARIABLES = ImmutableList.of(RequestUtil.AA, RequestUtil.AUTO_ARCHIVE, PrearcUtils.PREARC_SESSION_FOLDER, PrearcUtils.PREARC_TIMESTAMP);
 }

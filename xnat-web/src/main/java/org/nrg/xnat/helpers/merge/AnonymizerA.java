@@ -98,6 +98,10 @@ public abstract class AnonymizerA implements Callable<Boolean> {
             return false;
         }
         final List<File> files = getFilesToAnonymize();
+        if (files.size() == 0) {
+            _log.debug("Found no files to be anonymized.");
+            return false;
+        }
         _log.debug("Found {} files to be anonymized.", files.size());
         for (final File file : files) {
             _log.debug("Anonymizing file {}.", file.getPath());

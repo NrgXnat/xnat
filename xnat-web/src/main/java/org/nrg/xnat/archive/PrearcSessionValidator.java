@@ -195,8 +195,10 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 			conflict(14,e.getMessage());
 		} catch (ServerException e) {
 			fail(15,e.getMessage());
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		
+
 
 		//validate files to confirm DICOM contents
 		validateDicomFiles();

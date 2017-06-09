@@ -1,0 +1,16 @@
+
+{
+  "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
+  "active": true,
+  "attributes": {},
+  "event-filter": {
+    "name": "string",
+    "project-ids": [
+      "ABC123"
+    ],
+    "json-path-filter": "$[?(@.modality == \"MR\")]"
+  },
+  "event-id": "org.nrg.xnat.eventservice.events.SessionArchiveEvent",
+  "name": "string",
+  "registration-key": "string"
+}

@@ -74,7 +74,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         void save(A session) throws Exception;
     }
 
-    public void checkForConflict() throws ClientException, ServerException {
+    public void checkForConflict() throws ClientException, ServerException, IOException {
         ClientException t = null;
         if (destDIR.exists() || dest != null) {
             if (!allowSessionMerge) {
@@ -106,7 +106,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         }
     }
 
-    public A call() throws ClientException, ServerException {
+    public A call() throws ClientException, ServerException, IOException {
         processing("Preparing to move uploaded resources into destination directory.");
         File backupDIR  = null;
         this.checkForConflict();

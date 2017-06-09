@@ -15,7 +15,8 @@ import io.swagger.models.License
 
 buildscript {
     ext {
-        vXnat = "1.7.6-SNAPSHOT"
+        vXnat = "1.7.6-eventservice-SNAPSHOT"
+        vXnatDev = "1.7.6-eventservice-SNAPSHOT"
     }
     repositories {
         mavenLocal()
@@ -89,8 +90,8 @@ repositories {
     }
 }
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 def javaVersion = JavaVersion.current()
 if (javaVersion.java8Compatible || javaVersion.java9Compatible || javaVersion.java10Compatible) {
@@ -297,6 +298,7 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
+    implementation "com.jayway.jsonpath:json-path:2.2.0"
     implementation "org.json:json"
     implementation "com.thoughtworks.xstream:xstream"
     implementation "xerces:xercesImpl"
@@ -344,6 +346,7 @@ dependencies {
     implementation "javax.servlet:jstl"
     implementation "com.google.code.gson:gson"
     implementation "com.google.guava:guava"
+    implementation "com.google.auto.value:auto-value:1.5.1"
 
     compileOnly "com.google.code.findbugs:jsr305"
 
@@ -369,10 +372,15 @@ dependencies {
     cargo "org.codehaus.cargo:cargo-core-uberjar",
             "org.codehaus.cargo:cargo-ant"
 
+    def vSpringSecurity = dependencyManagement.importedProperties['spring-security.version']
     testCompile "org.nrg:test"
     testCompile "junit:junit"
     testCompile "org.springframework:spring-test"
     testCompile "org.assertj:assertj-core"
+    testCompile "org.springframework.security:spring-security-test:${vSpringSecurity}"
+    testCompile "org.springframework.security:spring-security-config"
+    testCompile "org.mockito:mockito-core:1.+"
+    testCompile "org.hamcrest:hamcrest-library:1.3"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

@@ -66,7 +66,8 @@ import java.util.*;
                 "org.nrg.xnat.configuration", "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners",
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.initialization.tasks",
                 "org.nrg.xnat.node", "org.nrg.xnat.task", "org.nrg.xnat.preferences", "org.nrg.xnat.processors",
-                "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processor.dao", "org.nrg.xnat.processor.importer"})
+                "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processor.dao", "org.nrg.xnat.processor.importer",
+                "org.nrg.xnat.eventservice.daos", "org.nrg.xnat.eventservice.listeners", "org.nrg.xnat.eventservice.events", "org.nrg.xnat.eventservice.actions"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
 @EnableCaching

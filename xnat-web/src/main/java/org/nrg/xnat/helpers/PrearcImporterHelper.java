@@ -11,6 +11,7 @@ package org.nrg.xnat.helpers;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -265,8 +266,12 @@ public class PrearcImporterHelper extends PrearcImporterA{
 		};
 		
 		//pass in populated beans and root paths
-		ListenerUtils.addListeners(this,new MergePrearchiveSessions(uID,srcDIR,src,src.getPrearchivepath(),destDIR,dest,destDIR.getAbsolutePath(),allowSessionMerge,overwriteFiles,saveImpl,user))
-			.call();
+		try {
+			ListenerUtils.addListeners(this,new MergePrearchiveSessions(uID,srcDIR,src,src.getPrearchivepath(),destDIR,dest,destDIR.getAbsolutePath(),allowSessionMerge,overwriteFiles,saveImpl,user))
+                .call();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		org.nrg.xft.utils.FileUtils.DeleteFile(srcXML);
 		org.nrg.xft.utils.FileUtils.deleteDirQuietly(srcDIR);

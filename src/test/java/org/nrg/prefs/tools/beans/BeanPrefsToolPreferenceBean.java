@@ -151,4 +151,13 @@ public class BeanPrefsToolPreferenceBean extends AbstractPreferenceBean {
             setPrefEs(prefEs);
         }
     }
+
+    @NrgPreference(defaultValue = "[]")
+    public List<String> getPrefFs() {
+        return getListValue("prefFs");
+    }
+
+    public void setPrefFs(final List<String> preferences) throws IOException, InvalidPreferenceName {
+        setListValue("prefFs", preferences);
+    }
 }

@@ -15,19 +15,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class IntegerTransformer extends AbstractPreferenceTransformer<Integer> {
+public class BooleanTransformer extends AbstractPreferenceTransformer<Boolean> {
     @Autowired
-    public IntegerTransformer(final SerializerService serializer) {
+    public BooleanTransformer(final SerializerService serializer) {
         super(serializer);
     }
 
     @Override
     public boolean handles(final Class<?> valueType) {
-        return super.handles(valueType) || StringUtils.equals("int", valueType.getName());
+        return super.handles(valueType) || StringUtils.equals("boolean", valueType.getName());
     }
 
     @Override
-    public Integer transform(final String serialized) {
-        return Integer.parseInt(serialized);
+    public Boolean transform(final String serialized) {
+        return Boolean.parseBoolean(serialized);
     }
 }

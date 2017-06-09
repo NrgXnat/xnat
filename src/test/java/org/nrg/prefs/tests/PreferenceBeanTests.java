@@ -130,6 +130,9 @@ public class PreferenceBeanTests {
     public void testBeanPrefsTool() throws InvalidPreferenceName, IOException {
         assertNotNull(_beanPrefsTool);
 
+        final PreferenceBean bean = _beanPrefsTool.getPreferenceBean();
+        assertNotNull(bean);
+
         // {'scpId':'CCIR','aeTitle':'CCIR','port':8104,'enabled':true}
         final BeanPrefsToolPreference prefA = _beanPrefsTool.getPrefA();
         assertNotNull(prefA);
@@ -156,6 +159,13 @@ public class PreferenceBeanTests {
         assertEquals(2, modifiedBs.size());
         assertFalse(modifiedBs.contains("XNAT"));
         assertTrue(modifiedBs.contains("CCF"));
+        bean.set("[]", "prefBs");
+        final List<String> overriddenBs = _beanPrefsTool.getPrefBs();
+        assertNotNull(overriddenBs);
+        assertEquals(0, overriddenBs.size());
+        bean.set("['XNAT','CCIR','CCF']", "prefBs");
+        overriddenBs.addAll(_beanPrefsTool.getPrefBs());
+        assertEquals(3, overriddenBs.size());
 
         // [{'scpId':'XNAT','aeTitle':'XNAT','port':8104,'enabled':true},
         //  {'scpId':'CCIR','aeTitle':'CCIR','port':8104,'enabled':true}]
@@ -219,8 +229,16 @@ public class PreferenceBeanTests {
         assertEquals("XNAT", prefEs.get("XNAT").getAeTitle());
         assertEquals("CCIR", prefEs.get("CCIR").getAeTitle());
 
+        // []
+        final List<String> prefFs = _beanPrefsTool.getPrefFs();
+        assertNotNull(prefFs);
+        assertEquals(0, prefFs.size());
+        bean.set("['one','two','three']", "prefFs");
+        prefFs.addAll(_beanPrefsTool.getPrefFs());
+        assertEquals(3, prefFs.size());
+
         final Map<String, Object> preferences = _beanPrefsTool.getPreferences();
-        assertEquals(5, preferences.size());
+        assertEquals(6, preferences.size());
 
         validateBeanCache(_beanPrefsTool.getPreferenceBean(), preferences);
     }

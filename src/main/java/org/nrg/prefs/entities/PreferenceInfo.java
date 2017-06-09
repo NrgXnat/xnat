@@ -14,6 +14,8 @@ import org.nrg.prefs.annotations.NrgPreference;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
 
 public class PreferenceInfo {
     public PreferenceInfo(final String name, final String property, final String defaultValue, final String key, final Class<?> valueType, final Method getter, final Method setter, final String[] aliases) {
@@ -198,6 +200,33 @@ public class PreferenceInfo {
      */
     public void setAliases(final String[] aliases) {
         _aliases = aliases == null ? NO_ALIASES : aliases;
+    }
+
+    /**
+     * Indicates whether this preference is an array based on the {@link #getValueType() value type} of the preference.
+     *
+     * @return Returns true if this preference is an array of objects.
+     */
+    public boolean isArray() {
+        return _valueType.isArray();
+    }
+
+    /**
+     * Indicates whether this preference is a list based on the {@link #getValueType() value type} of the preference.
+     *
+     * @return Returns true if this preference is a list of {@link #getItemType()} objects.
+     */
+    public boolean isList() {
+        return _itemType != null && List.class.isAssignableFrom(_valueType);
+    }
+
+    /**
+     * Indicates whether this preference is a map based on the {@link #getValueType() value type} of the preference.
+     *
+     * @return Returns true if this preference is a map of {@link #getItemType()} objects.
+     */
+    public boolean isMap() {
+        return _itemType != null && Map.class.isAssignableFrom(_valueType);
     }
 
     @Override

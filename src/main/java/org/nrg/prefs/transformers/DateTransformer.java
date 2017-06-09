@@ -9,25 +9,21 @@
 
 package org.nrg.prefs.transformers;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.SerializerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
+
 @Component
-public class IntegerTransformer extends AbstractPreferenceTransformer<Integer> {
+public class DateTransformer extends AbstractPreferenceTransformer<Date> {
     @Autowired
-    public IntegerTransformer(final SerializerService serializer) {
+    public DateTransformer(final SerializerService serializer) {
         super(serializer);
     }
 
     @Override
-    public boolean handles(final Class<?> valueType) {
-        return super.handles(valueType) || StringUtils.equals("int", valueType.getName());
-    }
-
-    @Override
-    public Integer transform(final String serialized) {
-        return Integer.parseInt(serialized);
+    public Date transform(final String serialized) {
+        return new Date(Long.parseLong(serialized));
     }
 }

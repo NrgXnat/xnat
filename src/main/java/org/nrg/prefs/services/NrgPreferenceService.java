@@ -15,9 +15,13 @@ import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
+import org.nrg.prefs.entities.PreferenceInfo;
 import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
+import org.nrg.prefs.resolvers.PreferenceEntityResolver;
+import org.nrg.prefs.transformers.CheckItemTypeException;
+import org.nrg.prefs.transformers.PreferenceTransformer;
 
 import java.util.List;
 import java.util.Properties;
@@ -295,4 +299,20 @@ public interface NrgPreferenceService extends NrgService {
      */
     Properties getToolProperties(final String toolId, final List<String> preferenceNames);
 
+    /**
+     * Registers a {@link PreferenceEntityResolver preference entity resolver} by tool ID.
+     *
+     * @param toolId   The ID of the tool with which the resolver is associated.
+     * @param resolver The preference entity resolver to be registered.
+     */
+    void registerResolver(final String toolId, final PreferenceEntityResolver resolver);
+
+    /**
+     * Gets a {@link PreferenceTransformer transformer} for the specified {@link PreferenceInfo preference definition}.
+     *
+     * @param preferenceInfo The value type for the transformer.
+     *
+     * @return The valid transformer if found, null otherwise.
+     */
+    PreferenceTransformer getTransformer(final PreferenceInfo preferenceInfo);
 }

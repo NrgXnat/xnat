@@ -97,6 +97,14 @@ public class BeanPrefsTool {
         _bean.deletePrefE(prefE);
     }
 
+    public List<String> getPrefFs() {
+        return _bean.getPrefFs();
+    }
+
+    public void setPrefFs(final List<String> preferences) throws IOException, InvalidPreferenceName {
+        _bean.setPrefFs(preferences);
+    }
+
     public Map<String, Object> getPreferences() {
         return _bean;
     }

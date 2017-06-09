@@ -45,6 +45,7 @@ import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.services.PreferenceBeanHelper;
+import org.nrg.prefs.transformers.PreferenceTransformer;
 import org.reflections.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -274,38 +275,11 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @JsonIgnore
     @Override
     public Object getProperty(final String preference, final Object defaultValue) throws UnknownToolId {
-        if (containsKey(preference)) {
-            final Object value = getFromCache(preference);
-            if (value != null) {
-                _log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
-                return value;
-            }
-            _log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
+        final Object value = getPreferenceMethod(preference, defaultValue);
+        if (!(value instanceof Method)) {
+            return value;
         }
-        final Method method;
-        if (_methods.containsKey(preference)) {
-            method = _methods.get(preference);
-        } else {
-            method = getGetter(getClass(), AbstractPreferenceBean.class, preference, ReflectionUtils.withAnnotation(NrgPreference.class));
-            if (method == null) {
-                final Tool tool = _preferenceService.getTool(getToolId());
-                if (tool.isStrict()) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
-                }
-                final String returnValue = getValue(preference);
-                if (StringUtils.isNotBlank(returnValue)) {
-                    storeToCache(preference, returnValue);
-                    return returnValue;
-                }
-                if (defaultValue == null) {
-                    return null;
-                }
-
-                storeToCache(preference, defaultValue);
-                return defaultValue;
-            }
-            _methods.put(preference, method);
-        }
+        final Method method = (Method) value;
         try {
             final Object returnValue = method.invoke(this);
             if (returnValue != null) {
@@ -313,51 +287,6 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 return returnValue;
             }
             storeToCache(preference, defaultValue);
-            return defaultValue;
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
-        }
-    }
-
-    protected Object getPropertyNoCache(final String preference, final Object defaultValue) throws UnknownToolId {
-        if (containsKey(preference)) {
-            final Object value = getFromCache(preference);
-            if (value != null) {
-                _log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
-                return value;
-            }
-            _log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
-        }
-        final Method method;
-        if (_methods.containsKey(preference)) {
-            method = _methods.get(preference);
-        } else {
-            method = getGetter(getClass(), AbstractPreferenceBean.class, preference, ReflectionUtils.withAnnotation(NrgPreference.class));
-            if (method == null) {
-                final Tool tool = _preferenceService.getTool(getToolId());
-                if (tool.isStrict()) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
-                }
-                final String returnValue = getValue(preference);
-                if (StringUtils.isNotBlank(returnValue)) {
-                    storeToCache(preference, returnValue);
-                    return returnValue;
-                }
-                if (defaultValue == null) {
-                    return null;
-                }
-
-                storeToCache(preference, defaultValue);
-                return defaultValue;
-            }
-            _methods.put(preference, method);
-        }
-        try {
-            final Object returnValue = method.invoke(this);
-            if (returnValue != null) {
-//                storeToCache(preference, returnValue);
-                return returnValue;
-            }
             return defaultValue;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
@@ -509,14 +438,14 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @Override
     public <T> List<T> getListValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
         final PreferenceInfo info = getPreferenceInfo(preferenceName);
-        if (info==null) {
-        	_log.warn("Could not retreive preference information.  Cannot determine list type.");
-        	return null;
+        if (info == null) {
+            _log.warn("Could not retrieve preference information.  Cannot determine list type.");
+            return null;
         }
         @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List>) info.getValueType(), info.getItemType());
         try {
             if (BeanUtils.isSimpleValueType(info.getItemType())) {
-            	final String value = _preferenceService.getPreferenceValue(getToolId(), preferenceName, scope, entityId);
+                final String value = _preferenceService.getPreferenceValue(getToolId(), preferenceName, scope, entityId);
                 return deserialize(StringUtils.defaultIfBlank(value, "[]"), listType);
             } else {
                 final List<T> list = deserialize("[]", listType);
@@ -598,10 +527,11 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     public String set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         final String namespacedPropertyId = getNamespacedPropertyId(key, subkeys);
         final String current = getValue(namespacedPropertyId);
+        final String trimmed = value.trim();
         if (_preferences.containsKey(namespacedPropertyId)) {
             try {
                 final Properties existing = _preferenceService.getToolProperties(getToolId(), Collections.singletonList(namespacedPropertyId));
-                final Properties properties = convertValueForPreference(getPreferenceInfo(namespacedPropertyId), value);
+                final Properties properties = convertValueForPreference(getPreferenceInfo(namespacedPropertyId), trimmed);
                 for (final String property : properties.stringPropertyNames()) {
                     _preferenceService.setPreferenceValue(getToolId(), property, scope, entityId, properties.getProperty(property));
                     if (existing.containsKey(property)) {
@@ -612,31 +542,22 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to set the " + namespacedPropertyId + " preference setting.", e);
             }
         } else {
-            _preferenceService.setPreferenceValue(getToolId(), namespacedPropertyId, scope, entityId, value);
+            _preferenceService.setPreferenceValue(getToolId(), namespacedPropertyId, scope, entityId, trimmed);
         }
         // This caches primitive values that aren't sub-items in other preferences.
-        if (subkeys.length == 0){
-            String keyPrefix = key;
-            if(key.indexOf(":")!=-1){
-                keyPrefix = key.substring(0,key.indexOf(":"));
-            }
+        if (subkeys.length == 0) {
+            final String keyPrefix = key.contains(":") ? key.split(":", 2)[0] : key;
 
-            if(_preferences.containsKey(keyPrefix)){
-                final Class<?> valueType = _preferences.get(keyPrefix).getValueType();
-                if(isPrimative(valueType)){
-                    storeToCache(key, value);
-                }
-            }
-            else{
+            if (_preferences.containsKey(keyPrefix)) {
+                storeToCacheAsType(key, trimmed, _preferences.get(keyPrefix));
+            } else {
                 if (_preferenceService.getTool(getToolId()).isStrict()) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + namespacedPropertyId);
-                }
-                else{
-                    storeToCache(key, value);
+                } else {
+                    storeToCache(key, trimmed);
                 }
             }
         }
-
 
         return current;
     }
@@ -784,7 +705,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     @JsonIgnore
     @Override
-    public <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
+    public <T> void setListValue(final String preferenceName, final List<T> list) throws UnknownToolId, InvalidPreferenceName {
         // Cheap map caching here is only for site-level settings.
         storeToCache(preferenceName, list);
         setListValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, list);
@@ -1018,6 +939,24 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return _preferences.get(resolveAlias(preference));
     }
 
+    @SuppressWarnings("SameParameterValue")
+    protected Object getPropertyNoCache(final String preference, final Object defaultValue) throws UnknownToolId {
+        final Object value = getPreferenceMethod(preference, defaultValue);
+        if (!(value instanceof Method)) {
+            return value;
+        }
+        final Method method = (Method) value;
+        try {
+            final Object returnValue = method.invoke(this);
+            if (returnValue != null) {
+                return returnValue;
+            }
+            return defaultValue;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
+        }
+    }
+
     protected <T> String serialize(final T instance) throws IOException {
         return getObjectMapper().writeValueAsString(instance);
     }
@@ -1047,6 +986,35 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     private void storeToCache(final String key, final Object value) {
         super.put(key, value);
+    }
+
+    private void storeToCacheAsType(final String key, final String value, final PreferenceInfo info) {
+        final PreferenceTransformer transformer = _preferenceService.getTransformer(info);
+        if (transformer != null) {
+            final Object cacheValue;
+            if (info.getItemType() == null) {
+                cacheValue = transformer.transform(value);
+            } else if (info.isArray()) {
+                cacheValue = transformer.arrayOf(value);
+            } else if (info.isList()) {
+                cacheValue = transformer.listOf(value);
+            } else if (info.isMap()) {
+                cacheValue = getMapOrNull(value, transformer);
+            } else {
+                cacheValue = null;
+            }
+            if (cacheValue != null) {
+                storeToCache(key, cacheValue);
+            }
+        }
+    }
+
+    private Map getMapOrNull(final String value, final PreferenceTransformer transformer) {
+        try {
+            return transformer.mapOf(value);
+        } catch (UnsupportedOperationException ignored) {
+            return null;
+        }
     }
 
     private void removeFromCache(final String key) {
@@ -1105,10 +1073,9 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                         preferenceIds.add(info.getName());
 
                         Object tempO = null;
-                        try{
-                            tempO = this.getPropertyNoCache(preference,null);
-                        }
-                        catch(Throwable e){
+                        try {
+                            tempO = getPropertyNoCache(preference, null);
+                        } catch (Throwable ignored) {
                         }
 
                         for (final String property : properties.stringPropertyNames()) {
@@ -1120,7 +1087,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                                     migrateAliasedPreference(alias, overrideValue);
                                 } else {
                                     try {
-                                        if(!property.contains(":") || !(tempO!=null && HashMap.class.isAssignableFrom(tempO.getClass()) && ((HashMap)tempO).size()>0)){
+                                        if (!property.contains(":") || !(tempO != null && HashMap.class.isAssignableFrom(tempO.getClass()) && ((HashMap) tempO).size() > 0)) {
                                             //Don't add the default version of this property is there is already a non-empty map of properties for it
                                             create(properties.getProperty(property), property);
                                         }
@@ -1368,6 +1335,42 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return properties;
     }
 
+    private Object getPreferenceMethod(final String preference, final Object defaultValue) {
+        if (containsKey(preference)) {
+            final Object value = getFromCache(preference);
+            if (value != null) {
+                _log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
+                return value;
+            }
+            _log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
+        }
+        final Method method;
+        if (_methods.containsKey(preference)) {
+            method = _methods.get(preference);
+        } else {
+            method = getGetter(getClass(), AbstractPreferenceBean.class, preference, ReflectionUtils.withAnnotation(NrgPreference.class));
+            if (method == null) {
+                final Tool tool = _preferenceService.getTool(getToolId());
+                if (tool.isStrict()) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
+                }
+                final String returnValue = getValue(preference);
+                if (StringUtils.isNotBlank(returnValue)) {
+                    storeToCache(preference, returnValue);
+                    return returnValue;
+                }
+                if (defaultValue == null) {
+                    return null;
+                }
+
+                storeToCache(preference, defaultValue);
+                return defaultValue;
+            }
+            _methods.put(preference, method);
+        }
+        return method;
+    }
+
     private static ObjectMapper getObjectMapper() {
         return _mapper;
     }
@@ -1397,17 +1400,6 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
     }};
-
-    private static boolean isPrimative (Class<?> valueType){
-        final String valName = valueType.getName();
-        if(valueType.equals(String.class) || valueType.equals(Integer.class) || valueType.equals(Double.class) || valueType.equals(Float.class) || valueType.equals(Long.class) || valueType.equals(Boolean.class) ||
-                valName.equals("boolean") || valName.equals("int") || valName.equals("long") || valName.equals("float") || valName.equals("double")) {
-            return true;
-        }
-        else{
-            return false;
-        }
-    }
 
     private static final TypeFactory _typeFactory = _mapper.getTypeFactory();
 

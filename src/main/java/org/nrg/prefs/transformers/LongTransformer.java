@@ -15,19 +15,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class IntegerTransformer extends AbstractPreferenceTransformer<Integer> {
+public class LongTransformer extends AbstractPreferenceTransformer<Long> {
     @Autowired
-    public IntegerTransformer(final SerializerService serializer) {
+    public LongTransformer(final SerializerService serializer) {
         super(serializer);
     }
 
     @Override
     public boolean handles(final Class<?> valueType) {
-        return super.handles(valueType) || StringUtils.equals("int", valueType.getName());
+        return super.handles(valueType) || StringUtils.equals("long", valueType.getName());
     }
 
     @Override
-    public Integer transform(final String serialized) {
-        return Integer.parseInt(serialized);
+    public Long transform(final String serialized) {
+        return Long.parseLong(serialized);
     }
 }

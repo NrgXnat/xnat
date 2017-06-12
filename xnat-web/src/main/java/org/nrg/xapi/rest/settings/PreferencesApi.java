@@ -58,7 +58,7 @@ public class PreferencesApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public ResponseEntity<Map<String, Properties>> getAllPreferenceSettings() {
         _log.info("User {} requested the system preference settings.", getSessionUser().getUsername());
         final Map<String, Properties> beanProperties = Maps.transformEntries(_preferences, new Maps.EntryTransformer<String, AbstractPreferenceBean, Properties>() {

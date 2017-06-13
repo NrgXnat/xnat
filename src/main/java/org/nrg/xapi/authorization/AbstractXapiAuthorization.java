@@ -6,6 +6,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotAuthenticatedException;
 import org.nrg.xapi.rest.ProjectId;
+import org.nrg.xapi.rest.RestUserGroup;
 import org.nrg.xapi.rest.Username;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xft.security.UserI;
@@ -77,6 +78,10 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
 
     protected List<String> getProjectIds(final JoinPoint joinPoint) {
         return getAnnotatedParameters(joinPoint, ProjectId.class);
+    }
+
+    protected List<String> getGroups(final JoinPoint joinPoint) {
+        return getAnnotatedParameters(joinPoint, RestUserGroup.class);
     }
 
     protected List<String> getAnnotatedParameters(final JoinPoint joinPoint, final Class<? extends Annotation> annotation) {

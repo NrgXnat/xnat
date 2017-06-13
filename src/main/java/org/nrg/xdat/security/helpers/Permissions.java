@@ -712,10 +712,10 @@ public class Permissions {
                 return Permissions.isProjectOwner(user, projectId);
 
             case Member:
-                return Permissions.isProjectMember(user, projectId);
+                return Permissions.isProjectMember(user, projectId) || Permissions.isProjectOwner(user, projectId);
 
             case Collaborator:
-                return Permissions.isProjectCollaborator(user, projectId);
+                return Permissions.isProjectCollaborator(user, projectId) || Permissions.isProjectMember(user, projectId) || Permissions.isProjectOwner(user, projectId);
 
             default:
                 return false;
@@ -894,17 +894,17 @@ public class Permissions {
      * </ul>
      */
     private static final String QUERY_GET_PROJECTS_FROM_EXPTS = "SELECT "
-                                                                + "  expt.project AS project, "
-                                                                + "  expt.id      AS experiment "
-                                                                + "FROM xnat_experimentdata expt "
-                                                                + "WHERE expt.id IN (:sessionIds) "
-                                                                + "UNION DISTINCT "
-                                                                + "SELECT "
-                                                                + "  share.project                            AS project, "
-                                                                + "  share.sharing_share_xnat_experimentda_id AS experiment "
-                                                                + "FROM xnat_experimentdata_share share "
-                                                                + "WHERE share.sharing_share_xnat_experimentda_id IN (:sessionIds) "
-                                                                + "ORDER BY project";
+            + "  expt.project AS project, "
+            + "  expt.id      AS experiment "
+            + "FROM xnat_experimentdata expt "
+            + "WHERE expt.id IN (:sessionIds) "
+            + "UNION DISTINCT "
+            + "SELECT "
+            + "  share.project                            AS project, "
+            + "  share.sharing_share_xnat_experimentda_id AS experiment "
+            + "FROM xnat_experimentdata_share share "
+            + "WHERE share.sharing_share_xnat_experimentda_id IN (:sessionIds) "
+            + "ORDER BY project";
 
     private static final List<String> PROJECT_GROUPS        = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();

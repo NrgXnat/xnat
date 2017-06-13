@@ -45,7 +45,7 @@ public class XnatEventServiceListenerAnnotationProcessor extends NrgAbstractAnno
     @Override
     protected String getPropertiesName(final TypeElement element, final XnatEventServiceListener plugin) {
     	final String eventName = plugin.name();
-        return String.format("META-INF/xnat/event/%s-xnateventserviclistener.properties", eventName.length() > 0 ? eventName : "ESAC" + Long.toString(new Date().getTime()));
+        return String.format("META-INF/xnat/event/%s-xnateventservicelistener.properties", eventName.length() > 0 ? eventName : "ESAC" + Long.toString(new Date().getTime()));
     }
     
 }

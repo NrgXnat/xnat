@@ -22,6 +22,7 @@ public class ProjectAccessXapiAuthorization extends AbstractXapiAuthorization {
                 }
             } catch (Exception e) {
                 _log.error("An error occurred while testing " + getAccessLevel().code() + " access to the project " + projectId + " for the user " + getUsername() + ". Failing permissions check to be safe, but this may not be correct.", e);
+                return false;
             }
         }
         return true;

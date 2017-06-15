@@ -3,13 +3,16 @@
 	$!template.setLayoutTemplate("ScreenOnly.vm")
 #end
 
-<table class="file-details padding-sm" cellspacing="0">
+<table class="file-details padding-sm" style="border-collapse:collapse;">
+    <thead style="border-bottom:1px solid #a0a0a0;">
     <tr class="file-details-header">
         <th align="left" width="">File</th>
         <th align="center" width="100px">Size</th>
         <th width="240px">&nbsp;</th>
     </tr>
+    </thead>
     #set($lastURL="0")
+    <tbody>
     #foreach($row in $table.toArrayListOfLists())
         #set($lastURL=$content.getURI("$!row.get(2)"))
         <tr class="file-details-row highlight-row">
@@ -26,6 +29,7 @@
             </td>
         </tr>
     #end
+    </tbody>
 </table>
 #if($lastURL!="0")
 <!-- <img id="viewer" src="$lastURL" border="0"/> -->

@@ -17,25 +17,28 @@ XNAT.app.headerDialog.load = function( url, title ){
     //var csvURL = url.split('format=html')[0] + 'format=csv';
 
     var modalOpts={};
-    modalOpts.width = 700;
-    modalOpts.height = 500;
-    modalOpts.maximize = true;
-    modalOpts.buttons = {
-        close: {
+    modalOpts.width = '75%';
+    modalOpts.height = '75%';
+    modalOpts.padding = '0px';
+    modalOpts.maxBtn = true;
+    modalOpts.nuke = true;
+    modalOpts.buttons = [
+        {
             label: 'Close',
             close: true,
             isDefault: true
-        }//,
+        }
+        // ,
         // letting this linger in case it can be used in the future
-//        csv: {
-//            label: 'Download CSV',
-//            close: false,
-//            //link: true, // this would make it look like a regular link
-//            action: function(){
-//                window.location.href = csvURL;
-//            }
-//        }
-    };
+        // {
+        //     label: 'Download CSV',
+        //     close: false,
+        //     // link: true, // this would make it look like a regular link
+        //     action: function(){
+        //         window.location.href = csvURL;
+        //     }
+        // }
+    ];
     modalOpts.beforeShow = function(){
         xmodal.loading.close();
     };
@@ -50,13 +53,13 @@ XNAT.app.headerDialog.load = function( url, title ){
     getData.done(function(data){
         modalOpts.title = title;
         modalOpts.content = data;
-        xmodal.open(modalOpts);
+        XNAT.ui.dialog.open(modalOpts);
     });
 
     getData.fail(function(jqXHR, textStatus, errorThrown){
         modalOpts.title = 'Error - ' + title;
         modalOpts.content = 'Error: ' + textStatus;
-        xmodal.open(modalOpts);
+        XNAT.ui.dialog.open(modalOpts);
     });
 
 };

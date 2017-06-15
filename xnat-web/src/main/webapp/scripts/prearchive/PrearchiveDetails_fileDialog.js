@@ -16,16 +16,17 @@ XNAT.app.fileDialog.loadScan = function( url, title ){
     xmodal.loading.open();
 
     var modalOpts={};
-    modalOpts.width = 900;
-    modalOpts.height = 600;
-    modalOpts.maximize = true;
-    modalOpts.buttons = {
-        close: {
+    modalOpts.width = '80%';
+    modalOpts.height = '80%';
+    modalOpts.maxBtn = true;
+    modalOpts.nuke = true;
+    modalOpts.buttons = [
+        {
             label: 'Close',
-            //close: true, // naming this button 'close' adds the 'close' class
+            close: true,
             isDefault: true
         }
-    };
+    ];
     modalOpts.beforeShow = function(){
         xmodal.loading.close();
     };
@@ -40,13 +41,13 @@ XNAT.app.fileDialog.loadScan = function( url, title ){
     getData.done(function(data){
         modalOpts.title = title;
         modalOpts.content = data;
-        xmodal.open(modalOpts);
+        XNAT.ui.dialog.open(modalOpts);
     });
 
     getData.fail(function(jqXHR, textStatus, errorThrown){
         modalOpts.title = 'Error - ' + title;
         modalOpts.content = 'Error: ' + textStatus;
-        xmodal.open(modalOpts);
+        XNAT.ui.dialog.open(modalOpts);
     });
 
 };

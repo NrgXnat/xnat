@@ -60,6 +60,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.springframework.cache.CacheManager;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationProvider;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -90,14 +91,15 @@ public class XDAT implements Initializable, Configurable{
 	private static final Logger logger                    = Logger.getLogger(XDAT.class);
 	private static final String ELEMENT_NOT_FOUND_MESSAGE = "Element not found: %s. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
 
-	private static ContextService _contextService;
-    private static DataSource _dataSource;
-	private static MailService _mailService;
-	private static ThemeService _themeService;
-    private static NotificationService _notificationService;
-	private static XdatUserAuthService _xdatUserAuthService;
-    private static ConfigService _configurationService;
-	private static SiteConfigPreferences _siteConfigPreferences;
+	private static ContextService           _contextService;
+    private static DataSource               _dataSource;
+	private static MailService              _mailService;
+	private static ThemeService             _themeService;
+    private static NotificationService      _notificationService;
+	private static XdatUserAuthService      _xdatUserAuthService;
+    private static ConfigService            _configurationService;
+	private static SiteConfigPreferences    _siteConfigPreferences;
+	private static CacheManager             _cacheManager;
 	private static NotificationsPreferences _notificationsPreferences;
 	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
 	private static String _configFilesLocation = null;
@@ -435,6 +437,17 @@ public class XDAT implements Initializable, Configurable{
 		    _contextService = ContextService.getInstance();
 		}
     	return _contextService;
+	}
+
+	/**
+	 * Returns an instance of the cache manager.
+	 * @return An instance of the {@link CacheManager} service.
+	 */
+	public static CacheManager getCacheManager() {
+	    if (_cacheManager == null) {
+	        _cacheManager = getContextService().getBean(CacheManager.class);
+	    }
+	    return _cacheManager;
 	}
 
 	/**

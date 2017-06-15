@@ -539,17 +539,20 @@ public  class FileUtils
 	 */
 	public static List<File> CompareDirectories(File src, File dest, FileFilter filter) throws FileNotFoundException,IOException{
 	    final List<File> match=new ArrayList<File>();
-		for (final File f: src.listFiles()){
-			final File dF=(new File(dest,f.getName()));
-	        if (f.isDirectory())
-	        {
-	        	match.addAll(CompareDirectories(f,dF,filter));
-	        }else if(filter==null || filter.accept(src)){
-	            if(dF.exists()){
-	            	match.add(dF);
-	            }
-	        }
-	    }
+		final File[] files = src.listFiles();
+		if (files != null) {
+			for (final File f: files){
+                final File dF=(new File(dest,f.getName()));
+                if (f.isDirectory())
+                {
+                    match.addAll(CompareDirectories(f,dF,filter));
+                }else if(filter==null || filter.accept(src)){
+                    if(dF.exists()){
+                        match.add(dF);
+                    }
+                }
+            }
+		}
 		return match;
 	}
 
@@ -557,28 +560,35 @@ public  class FileUtils
 	/**
 	 * Return the first duplicate File found
 	 * 
-	 * @param src
-	 * @param dest
-	 * @param filter
+	 * @param source      The source to check for files.
+	 * @param destination The destination to check for files.
+	 * @param filter      The filter to apply when checking for files (may be null).
+	 *
 	 * @return Returns the first file that matches in the specified files/directories
-	 * @throws FileNotFoundException
-	 * @throws IOException
 	 */
-	public static File FindFirstMatch(File src, File dest, FileFilter filter) throws FileNotFoundException,IOException{
-	    for (final File f: src.listFiles()){
-	    	final File dF=(new File(dest,f.getName()));
-	        if (f.isDirectory())
-	        {
-	        	final File match=FindFirstMatch(f,dF,filter);
-	        	if(match!=null)return match;
-	        }else if(filter==null || filter.accept(f)){
-	            if(dF.exists()){
-	            	return dF;
-	            }
-	        }
-	    }
-	    
-	    return null;
+	public static File FindFirstMatch(final File source, final File destination, final FileFilter filter) {
+		if (source == null) {
+			return null;
+		}
+		final File[] files = source.listFiles();
+		if (files == null) {
+			return null;
+		}
+		for (final File file : files) {
+			final File target = (new File(destination, file.getName()));
+			if (file.isDirectory()) {
+				final File match = FindFirstMatch(file, target, filter);
+				if (match != null) {
+					return match;
+				}
+			} else if (filter == null || filter.accept(file)) {
+				if (target.exists()) {
+					return target;
+				}
+			}
+		}
+
+		return null;
 	}
 	
 	public static void CopyDir(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
@@ -602,17 +612,20 @@ public  class FileUtils
 		    dest.mkdirs();
 	    }
 
-	    for (final File f: src.listFiles()){
-	    	final File dChild=new File(dest,f.getName());
-	    	if(filter==null || filter.accept(dChild)){
-	        if (f.isDirectory())
-	        {
-		        	CopyDirImpl(f,dChild,overwrite,filter);
-	        }else{
-		            CopyFile(f,dChild,overwrite);
-		        }
-	        }
-	    }
+		final File[] files = src.listFiles();
+		if (files != null) {
+			for (final File file: files){
+                final File dChild=new File(dest,file.getName());
+                if(filter==null || filter.accept(dChild)){
+                if (file.isDirectory())
+                {
+                        CopyDirImpl(file,dChild,overwrite,filter);
+                }else{
+                        CopyFile(file,dChild,overwrite);
+                    }
+                }
+            }
+		}
 	}
 
 	public static void CopyFile(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
@@ -651,49 +664,48 @@ public  class FileUtils
 			return f.delete();
 		}
 	}
-	
-	private static void MoveDirImpl(File src, File dest,boolean overwrite, FileFilter filter,OldFileHandlerI handler) throws FileNotFoundException,IOException{
-        boolean moved = false;
 
-        if (!dest.exists()){
-            try {
-                moved = src.renameTo(dest);
-            } catch (Throwable e) {
-                logger.error("",e);
-            }
-        }
+	private static void MoveDirImpl(File src, File dest, boolean overwrite, FileFilter filter, OldFileHandlerI handler) throws FileNotFoundException, IOException {
+		boolean moved = false;
 
-        if (!moved)
-        {
-            if (!dest.exists())
-            {
-                dest.mkdirs();
-            }
-            if (src!=null && src.exists()){
-                for (final File f: src.listFiles()){
-                	final File dChild=new File(dest,f.getName());
-        	    	if(filter==null || filter.accept(dChild)){
-                    if (f.isDirectory())
-                    {
-	                    	MoveDirImpl(f,dChild,overwrite,filter,handler);
-                    }else{
-                    	try{
-	                          MoveFile(f,dChild,overwrite,handler);
-                    	}catch(FileNotFoundException e){
-                    		logger.warn("", e);
-                    	}
+		if (!dest.exists()) {
+			try {
+				moved = src.renameTo(dest);
+			} catch (Throwable e) {
+				logger.error("", e);
+			}
+		}
+
+		if (!moved) {
+			if (!dest.exists()) {
+				dest.mkdirs();
+			}
+			if (src != null && src.exists()) {
+				final File[] files = src.listFiles();
+				if (files != null) {
+					for (final File file : files) {
+                        final File dChild = new File(dest, file.getName());
+                        if (filter == null || filter.accept(dChild)) {
+                            if (file.isDirectory()) {
+                                MoveDirImpl(file, dChild, overwrite, filter, handler);
+                            } else {
+                                try {
+                                    MoveFile(file, dChild, overwrite, handler);
+                                } catch (FileNotFoundException e) {
+                                    logger.warn("", e);
+                                }
+                            }
+                        }
                     }
-                }
-                }
+				}
 
-                if(src.listFiles()==null || src.listFiles().length==0){
-                src.delete();
-            }
-            }
-        }
+				final File[] recheck = src.listFiles();
+				if (recheck == null || recheck.length == 0) {
+					src.delete();
+				}
+			}
+		}
 	}
-	
-	
 	
 	public static void MoveFile(File src, File dest,boolean overwrite,boolean deleteDIR,OldFileHandlerI handler)throws FileNotFoundException,IOException{
 		boolean moved = false;
@@ -808,17 +820,18 @@ public  class FileUtils
         if (src.exists() && dest.exists()){
 
             if (src.isDirectory() && dest.isDirectory()){
-                File[] files = src.listFiles();
-                for (int i=0;i<files.length;i++){
-                    File f = files[i];
-                    String file_name = f.getName();
-                    String destPath = dest.getAbsolutePath();
-                    if (!destPath.endsWith(File.separator)){
-                        destPath += File.separator;
-                    }
-                    CompareFile(f,new File(destPath + file_name),al);
-                }
-            }else if (src.isDirectory()){
+                final File[] files = src.listFiles();
+				if (files != null) {
+					for (final File file : files) {
+						String file_name = file.getName();
+						String destPath = dest.getAbsolutePath();
+						if (!destPath.endsWith(File.separator)) {
+							destPath += File.separator;
+						}
+						CompareFile(file, new File(destPath + file_name), al);
+					}
+				}
+			}else if (src.isDirectory()){
                 al.add(dest.getCanonicalPath() + ": Is a file");
             }else if (dest.isDirectory()){
                 al.add(dest.getCanonicalPath() + ": Is a directory");
@@ -843,15 +856,16 @@ public  class FileUtils
         return al;
     }
 
-    public static void GUnzipFiles(File f) throws java.io.FileNotFoundException, java.io.IOException{
+    public static void GUnzipFiles(File f) throws FileNotFoundException, IOException{
         if (f.exists()){
             if (f.isDirectory()){
                 File[] files = f.listFiles();
-                for (int i=0;i<files.length;i++){
-                    File child = files[i];
-                    GUnzipFiles(child);
-                }
-            }else{
+				if (files != null) {
+					for (File child : files) {
+						GUnzipFiles(child);
+					}
+				}
+			}else{
                 if (f.getName().endsWith(".gz")){
                     java.io.InputStream in = new java.io.FileInputStream(f);
                     in =new GZIPInputStream(in);
@@ -884,12 +898,13 @@ public  class FileUtils
     public static void GZIPFiles(File f) throws java.io.FileNotFoundException, java.io.IOException{
         if (f.exists()){
             if (f.isDirectory()){
-                File[] files = f.listFiles();
-                for (int i=0;i<files.length;i++){
-                    File child = files[i];
-                    GZIPFiles(child);
-                }
-            }else{
+                final File[] files = f.listFiles();
+				if (files != null) {
+					for (final File child : files) {
+						GZIPFiles(child);
+					}
+				}
+			}else{
                 if (!f.getName().endsWith(".gz")){
                     java.io.FileInputStream in = new java.io.FileInputStream(f);
                     File outFile = new File(f.getParent() + File.separator + f.getName() + ".gz");

@@ -11,18 +11,16 @@ package org.nrg.xdat.velocity.loaders;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.PersistenceConfiguration;
 import org.apache.commons.collections.ExtendedProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -77,25 +75,15 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             name = name.replace("//", "/");
         }
 
-        // See if the resource is already in the cache. First check isKeyInCache(), which is cheap first check.
-        if (getCache().isKeyInCache(name)) {
-            // Get the element, but isKeyInCache() triggers expiration check, so can return true but cached object is
-            // evicted as a result, so...
-            final Element element = getCache().get(name);
+        // See if the resource is already in the cache.
+        final Resource resource = getResource(name);
 
-            // Make sure element is actually returned to us.
-            if (element != null) {
-                // At this point, we're always stashing Resource objects in this cache so no need to check for cast.
-                final Resource resource = (Resource) element.getObjectValue();
-
-                // Just to be safe, check for null again.
-                if (resource != null) {
-                    try {
-                        return resource.getInputStream();
-                    } catch (IOException e) {
-                        throw new ResourceNotFoundException(e);
-                    }
-                }
+        // Just to be safe, check for null again.
+        if (resource != null) {
+            try {
+                return resource.getInputStream();
+            } catch (IOException e) {
+                throw new ResourceNotFoundException(e);
             }
         }
 
@@ -129,21 +117,6 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
         throw new ResourceNotFoundException(String.format("CustomClasspathResourceLoader: cannot find resource %s", name));
     }
 
-    private Cache getCache() {
-        synchronized (cacheManager) {
-            if (!cacheManager.cacheExists(RESOURCE_CACHE_NAME)) {
-                final CacheConfiguration config = new CacheConfiguration(RESOURCE_CACHE_NAME, 0)
-                        .copyOnRead(false).copyOnWrite(false).clearOnFlush(true)
-                        .eternal(false)
-                        .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
-                        .timeToLiveSeconds(3600);
-                final Cache cache = new Cache(config);
-                cacheManager.addCache(cache);
-            }
-        }
-        return cacheManager.getCache(RESOURCE_CACHE_NAME);
-    }
-
     /**
      * Looks for matching resource at the give possible path.  If its found, it caches the path and returns an InputStream.
      *
@@ -159,7 +132,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
         if (file.exists()) {
             try {
                 final FileSystemResource resource = new FileSystemResource(file);
-                getCache().put(new Element(name, resource));
+                putResource(name, resource);
                 return resource.getInputStream();
             } catch (FileNotFoundException e) {
                 // This shouldn't happen because we check if it exists first, but just in case...
@@ -175,7 +148,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             try {
                 final InputStream stream = found.openStream();
                 if (stream != null) {
-                    getCache().put(new Element(name, new UrlResource(found)));
+                    putResource(name, new UrlResource(found));
                     return stream;
                 }
             } catch (IOException e) {
@@ -317,9 +290,35 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
         return resource.getLastModified();
     }
 
-    private static final String       RESOURCE_CACHE_NAME = "CustomClasspathResourceLoaderResourceCache";
+    private synchronized Cache getCache() {
+        if (cacheManager == null) {
+            cacheManager = XDAT.getCacheManager();
+        }
+        return cacheManager != null ? cacheManager.getCache(RESOURCE_CACHE_NAME) : null;
+    }
+
+    private void putResource(final String name, final Resource resource) {
+        final Cache cache = getCache();
+        if (cache != null) {
+            cache.put(name, resource);
+        }
+    }
+
+    private Resource getResource(final String name) {
+        final Cache cache = getCache();
+        if (cache != null) {
+            final Cache.ValueWrapper item = cache.get(name);
+            if (item != null) {
+                return (Resource) item.get();
+            }
+        }
+        return null;
+    }
+
     private static final Logger       logger              = LoggerFactory.getLogger(CustomClasspathResourceLoader.class);
-    private static final CacheManager cacheManager        = CacheManager.getInstance();
+    private static final String       RESOURCE_CACHE_NAME = "CustomClasspathResourceLoaderResourceCache";
 
     private static CustomClasspathResourceLoader INSTANCE;
+
+    private CacheManager cacheManager;
 }

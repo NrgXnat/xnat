@@ -24,7 +24,9 @@ public @interface XnatEventServiceListener {
 
     String LISTENER_CLASS = "class";
     String LISTENER_NAME = "name";
+    String LISTENER_DISPLAY_NAME = "displayName";
     String LISTENER_DESC = "description";
+    String LISTENER_EVENT = "event";
 
     /**
      * Event name (a one-word ID-like name/description).
@@ -33,11 +35,10 @@ public @interface XnatEventServiceListener {
      */
     String name() default "";
 
-    /**
-     * Event description
-     *
-     * @return the string
-     */
+    String displayName() default "";
+
     String description() default "";
+
+    String event() default "";
 
 }

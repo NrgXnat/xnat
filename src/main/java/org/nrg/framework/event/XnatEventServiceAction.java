@@ -24,7 +24,9 @@ public @interface XnatEventServiceAction {
 	
 	String ACTION_CLASS = "class";
 	String ACTION_NAME = "name";
+	String ACTION_DISPLAY_NAME = "displayName";
 	String ACTION_DESC = "description";
+	String ACTION_EVENT_LIST = "eventList";
 
 	/**
 	 * Event name (a one-word ID-like name/description).
@@ -32,12 +34,10 @@ public @interface XnatEventServiceAction {
 	 * @return the string
 	 */
 	String name() default "";
-	
-	/**
-	 * Event description
-	 *
-	 * @return the string
-	 */
+
+	String displayName() default "";
+
 	String description() default "";
-	
+
+	String eventList() default "";
 }

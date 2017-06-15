@@ -37,7 +37,9 @@ public class XnatEventServiceActionAnnotationProcessor extends NrgAbstractAnnota
         final Map<String, String> properties = new LinkedHashMap<>();
         properties.put(XnatEventServiceAction.ACTION_CLASS, element.getQualifiedName().toString());
         properties.put(XnatEventServiceAction.ACTION_NAME, annotation.name());
+        properties.put(XnatEventServiceAction.ACTION_DISPLAY_NAME, annotation.displayName());
         properties.put(XnatEventServiceAction.ACTION_DESC, annotation.description());
+        properties.put(XnatEventServiceAction.ACTION_EVENT_LIST, annotation.eventList());
         return properties;
     }
 

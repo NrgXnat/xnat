@@ -24,7 +24,10 @@ public @interface XnatEventServiceEvent {
 	
 	String EVENT_CLASS = "class";
 	String EVENT_NAME = "name";
+	String EVENT_DISPLAY_NAME = "displayName";
 	String EVENT_DESC = "description";
+	String EVENT_OBJECT = "object";
+	String EVENT_OPERATION = "operation";
 
 	/**
 	 * Event name (a one-word ID-like name/description).
@@ -32,12 +35,13 @@ public @interface XnatEventServiceEvent {
 	 * @return the string
 	 */
 	String name() default "";
-	
-	/**
-	 * Event description
-	 *
-	 * @return the string
-	 */
+
+	String displayName() default "";
+
 	String description() default "";
+
+	String object() default "";
+
+	String operation() default "";
 	
 }

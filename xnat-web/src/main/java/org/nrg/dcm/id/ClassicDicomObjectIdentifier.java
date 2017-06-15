@@ -14,6 +14,7 @@ import org.dcm4che2.data.Tag;
 import org.nrg.dcm.ContainedAssignmentExtractor;
 import org.nrg.dcm.Extractor;
 import org.nrg.dcm.TextExtractor;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.utils.XnatUserProvider;
 
 import java.util.List;
@@ -32,12 +33,8 @@ public class ClassicDicomObjectIdentifier extends CompositeDicomObjectIdentifier
                                                                                                               .add(new TextExtractor(Tag.PatientName))
                                                                                                               .build();
 
-    public ClassicDicomObjectIdentifier(final XnatUserProvider userProvider) {
-        this(null, userProvider);
-    }
-
-    public ClassicDicomObjectIdentifier(final String name, final XnatUserProvider userProvider) {
-        super(name, new Xnat15DicomProjectIdentifier(), subjectExtractors, sessionExtractors, attributeExtractors);
+    public ClassicDicomObjectIdentifier(final String name, final XnatUserProvider userProvider, final UserProjectCache userProjectCache) {
+        super(name, new Xnat15DicomProjectIdentifier(userProjectCache), subjectExtractors, sessionExtractors, attributeExtractors);
         setUserProvider(userProvider);
     }
 

@@ -9,20 +9,20 @@
 
 package org.nrg.xnat.restlet.actions;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.dcm4che2.data.Tag;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.status.StatusProducer;
+import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -51,22 +51,22 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 	static Logger logger = Logger.getLogger(SessionImporter.class);
 
 	public static final String RESPONSE_URL = "URL";
-	
+
 	private final Boolean overrideExceptions;
-	
+
 	private final Boolean allowSessionMerge;
-	
+
 	private final FileWriterWrapperI fw;
-	
+
 	private final Object uID;
-	
+
 	private final UserI user;
-	
+
 	final Map<String,Object> params;
-	
-	
+
+
 	/**
-	 * 
+	 *
 	 * @param listenerControl
 	 * @param u
      * @param fw
@@ -78,9 +78,9 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 		this.user=u;
 		this.fw=fw;
 		this.params=params;
-		
+
 		String overwriteV=(String)params.remove("overwrite");
-		
+
 		if(overwriteV==null){
 			this.overrideExceptions=false;
 			this.allowSessionMerge=false;
@@ -100,13 +100,31 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			}
 		}
 	}
-		
+
 	public static List<PrearcSession> importToPrearc(StatusProducer parent, String format, Object listener, UserI user, FileWriterWrapperI fw, Map<String,Object> params, boolean allowSessionMerge, boolean overwriteFiles) throws ActionException{
 		//write file
 		try {
 			final PrearcImporterA destination = PrearcImporterA.buildImporter(format, listener, user, fw, params, allowSessionMerge, overwriteFiles);
 			final PrearcImporterA listeners = ListenerUtils.addListeners(parent, destination);
-			return listeners.call();
+			final List<PrearcSession> prearcSessions = listeners.call();
+			for (final PrearcSession session : prearcSessions) {
+                final SessionData sessionData = new SessionData();
+                sessionData.setFolderName(session.getFolderName());
+                sessionData.setName(session.getFolderName());
+                sessionData.setProject(session.getProject());
+                // sessionData.setTag(studyInstanceUID);
+                sessionData.setTimestamp(session.getTimestamp());
+                sessionData.setStatus(PrearcUtils.PrearcStatus.BUILDING);
+                sessionData.setLastBuiltDate(Calendar.getInstance().getTime());
+                sessionData.setSubject(session.getAdditionalValues().get("subject_ID"));
+                sessionData.setUrl(new File(session.getUrl()).getAbsolutePath());
+                sessionData.setSource(SessionImporter.class.getSimpleName());
+                sessionData.setPreventAnon(true);
+                sessionData.setPreventAutoCommit(true);
+
+                PrearcDatabase.addSession(sessionData);
+            }
+			return prearcSessions;
 		} catch (SecurityException e) {
 			throw new ServerException(e.getMessage(),e);
 		} catch (IllegalArgumentException e) {
@@ -121,8 +139,10 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			throw new ServerException(e.getMessage(),e);
 		} catch (PrearcImporterA.UnknownPrearcImporterException e) {
 			throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND,e.getMessage(),e);
-		}
-	}
+		} catch (Exception e) {
+            throw new ServerException("An error occurred adding the session to the prearchive database", e);
+        }
+    }
 
 	public static XnatImagesessiondata getExperimentByIdorLabel(final String project, final String expt_id, final UserI user){
 		XnatImagesessiondata expt=null;

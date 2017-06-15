@@ -10,11 +10,6 @@
 package org.nrg.xnat.helpers.merge.anonymize;
 
 import com.google.common.base.Joiner;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.PersistenceConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
@@ -30,6 +25,8 @@ import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -46,18 +43,7 @@ public class DefaultAnonUtils implements AnonUtils {
         }
         _instance = this;
         _configService = configService;
-        if (!cacheManager.cacheExists(ANON_SCRIPT_CACHE)) {
-            final CacheConfiguration config = new CacheConfiguration(ANON_SCRIPT_CACHE, 0)
-                    .copyOnRead(false).copyOnWrite(false)
-                    .eternal(false)
-                    .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
-                    .timeToLiveSeconds(ANON_CACHE_EXPIRY_SECONDS)
-                    .maxEntriesLocalHeap(MAX_ENTRIES_LOCAL_HEAP);
-            _cache = new Cache(config);
-            cacheManager.addCache(_cache);
-        } else {
-            _cache = cacheManager.getCache(ANON_SCRIPT_CACHE);
-        }
+        _cache = cacheManager.getCache(ANON_SCRIPT_CACHE);
     }
 
     public static AnonUtils getService() {
@@ -90,16 +76,16 @@ public class DefaultAnonUtils implements AnonUtils {
     }
 
     public static void invalidateSitewideAnonCache() {
-        _instance._cache.removeAndReturnElement(SITE_WIDE);
+        _instance._cache.evict(SITE_WIDE);
     }
 
     public static Configuration getCachedSitewideAnon() throws Exception {
-        final Element cached = _instance._cache.get(SITE_WIDE);
+        final Cache.ValueWrapper cached = _instance._cache.get(SITE_WIDE);
         if (null != cached) {
-            return (Configuration) cached.getObjectValue();
+            return (Configuration) cached.get();
         } else {
             final Configuration configuration = getService().getSiteWideScriptConfiguration();
-            _instance._cache.put(new Element(SITE_WIDE, configuration));
+            _instance._cache.put(SITE_WIDE, configuration);
             return configuration;
         }
     }
@@ -244,11 +230,9 @@ public class DefaultAnonUtils implements AnonUtils {
     private static final String SITE_WIDE_PATH            = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null);
     private static final String SITE_WIDE                 = "site-wide";
     private static final String ANON_SCRIPT_CACHE         = DefaultAnonUtils.class.getSimpleName() + "ScriptsCache";
-    private static final long   ANON_CACHE_EXPIRY_SECONDS = 120;
-    private static final int    MAX_ENTRIES_LOCAL_HEAP    = 5000;
 
     private static DefaultAnonUtils _instance;
 
-    private final Cache _cache;
+    private final Cache         _cache;
     private final ConfigService _configService;
 }

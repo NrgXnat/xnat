@@ -11,6 +11,7 @@ package org.nrg.xnat.helpers.merge;
 
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -38,7 +39,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
     protected final File srcDIR, destDIR;
     protected final A src, dest;
     protected final String destRootPath, srcRootPath;
-    protected final boolean allowSessionMerge, overwiteFiles;
+    protected final boolean allowSessionMerge, overwriteFiles;
     protected final SaveHandlerI<A> saver;
     @SuppressWarnings("unused")
     protected ArrayList<Callable<A>> befores    = new ArrayList<>();
@@ -54,7 +55,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         this.control = control;
         this.srcDIR = srcDIR;
         this.allowSessionMerge = allowSessionMerge;
-        this.overwiteFiles = overwriteFiles;
+        this.overwriteFiles = overwriteFiles;
         this.dest = existing;
         this.src = src;
         this.destDIR = destDIR;
@@ -81,7 +82,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                 throw new ClientException(Status.CLIENT_ERROR_CONFLICT, HAS_FILES, new Exception());
             }
 
-            if (!overwiteFiles) {
+            if (!overwriteFiles) {
                 if ((new SessionOverwriteCheck(src, dest, src.getPrearchivepath(), dest.getPrearchivepath(), user, c)).call()) {
                     failed(CAT_ENTRY_MATCH);
                     t = new ClientException(Status.CLIENT_ERROR_CONFLICT, CAT_ENTRY_MATCH, new IOException());
@@ -89,19 +90,14 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             }
         }
 
-        if (destDIR.exists() && !overwiteFiles) {
-            try {
-                if (FileUtils.FindFirstMatch(srcDIR, destDIR, new FileFilter() {
-                    public boolean accept(File pathname) {
-                        return !(pathname.getName().endsWith(".xml") || pathname.getName().endsWith(".log"));
-                    }
-                }) != null) {
-                    failed(HAS_FILES);
-                    t = new ClientException(Status.CLIENT_ERROR_CONFLICT, HAS_FILES, new Exception());
+        if (destDIR.exists() && !overwriteFiles) {
+            if (FileUtils.FindFirstMatch(srcDIR, destDIR, new FileFilter() {
+                public boolean accept(File pathname) {
+                    return !(pathname.getName().endsWith(".xml") || pathname.getName().endsWith(".log"));
                 }
-            } catch (IOException e) {
-                failed("Error accessing file system.");
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, e.getMessage(), new Exception());
+            }) != null) {
+                failed(HAS_FILES);
+                t = new ClientException(Status.CLIENT_ERROR_CONFLICT, HAS_FILES, new Exception());
             }
         }
 
@@ -157,7 +153,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                 }
             }
 
-            mergeDirectories(srcDIR, destDIR, overwiteFiles);
+            mergeDirectories(srcDIR, destDIR, overwriteFiles);
 
             finalize(merged);
 
@@ -175,6 +171,10 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             postSave(merged);
 
             return merged;
+        } catch (MizerException e) {
+            logger.error("An error occurred when anonymizing the data. This occurred prior to moving files, so no rollback is performed.", e);
+            failed("An error occurred when anonymizing the data: " + e.getMessage());
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
         } catch (Throwable e) {
             logger.error("An error occurred updating existing metadata", e);
             if (backupDIR != null) {

@@ -15,6 +15,7 @@ import org.dcm4che2.data.Tag;
 import org.nrg.config.entities.Configuration;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +26,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
-    private static final String DICOM_PROJECT_RULES = "dicom-project.rules";
-
-    private static final Logger _log = LoggerFactory.getLogger(Xnat15DicomProjectIdentifier.class);
+    protected Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache) {
+        super(userProjectCache);
+    }
 
     protected List<DicomDerivedString> getIdentifiers() {
         final List<DicomDerivedString> identifiers = Lists.newArrayList();
@@ -38,6 +39,10 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
         loadFrom15Config(identifiers);
         return identifiers;
     }
+
+    private static final String DICOM_PROJECT_RULES = "dicom-project.rules";
+
+    private static final Logger _log = LoggerFactory.getLogger(Xnat15DicomProjectIdentifier.class);
 
     private static void loadFrom15Config(final Collection<DicomDerivedString> identifiers) {
         try {

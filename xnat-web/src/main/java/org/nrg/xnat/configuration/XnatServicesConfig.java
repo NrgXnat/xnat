@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ComponentScan({"org.nrg.xnat.services.archive.impl",
+                "org.nrg.xnat.services.cache",
                 "org.nrg.xnat.services.investigators",
                 "org.nrg.xnat.services.system.impl.hibernate",
                 "org.nrg.xnat.services.validation"})

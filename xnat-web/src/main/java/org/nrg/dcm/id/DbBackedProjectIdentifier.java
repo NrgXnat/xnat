@@ -9,16 +9,13 @@
 
 package org.nrg.dcm.id;
 
-
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSortedSet;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.Element;
 import org.dcm4che2.data.DicomObject;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,34 +25,37 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifier {
-    public DbBackedProjectIdentifier() {
+    public DbBackedProjectIdentifier(final UserProjectCache userProjectCache) {
         _log.debug("Creating DbBackedProjectIdentifier object with default constructor.");
+        _userProjectCache = userProjectCache;
     }
 
     public final XnatProjectdata apply(final UserI user, final DicomObject o) {
         if (!_initialized) {
             initialize();
         }
-        final Cache cache = GradualDicomImporter.getUserProjectCache(user);
+        final String userId = user.getUsername();
         for (final DicomDerivedString extractor : _extractors) {
             final String alias = extractor.apply(o);
             if (!Strings.isNullOrEmpty(alias)) {
                 // added caching here to prevent duplicate project queries in every file transaction
                 // the cache is shared with the one in gradual dicom importer, which does a similar query.
-                final Element pe = cache.get(alias);
-                if (null == pe) {
+                if (_userProjectCache.has(userId, alias)) {
+                    if (_userProjectCache.isCachedNonWriteableProject(userId, alias)) {
+                        return null;
+                    }
+                    return _userProjectCache.get(userId, alias);
+                } else {
                     // no cached value, look in the db
-                    final XnatProjectdata p = XnatProjectdata.getProjectByIDorAlias(alias, user, false);
-                    if (null != p && canCreateIn(user, p)) {
-                        cache.put(new Element(alias, p));
-                        return p;
+                    final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(alias, user, false);
+                    if (project != null && canCreateIn(user, project)) {
+                        _userProjectCache.put(userId, alias, project);
+                        return project;
                     } else {
                         // this alias is either not a project or not one we can write to
-                        GradualDicomImporter.cacheNonWriteableProject(cache, alias);
+                        _userProjectCache.cacheNonWriteableProject(userId, alias);
                     }
-                } else if (!GradualDicomImporter.isCachedNotWriteableProject(pe)) {
-                    return (XnatProjectdata) pe.getObjectValue();
-                } // else cache returned no-such-writable-project, so continue
+                }
             }
         }
         return null;
@@ -89,7 +89,10 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
         }
     }
 
-    private final Logger                   _log         = LoggerFactory.getLogger(DbBackedProjectIdentifier.class);
+    private static final Logger _log = LoggerFactory.getLogger(DbBackedProjectIdentifier.class);
+
+    private final UserProjectCache _userProjectCache;
+
     private final List<DicomDerivedString> _extractors  = new ArrayList<>();
     private final SortedSet<Integer>       _tags        = new TreeSet<>();
     private       boolean                  _initialized = false;

@@ -12,11 +12,6 @@ package org.nrg.xnat.archive;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.PersistenceConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.dcm4che2.data.*;
@@ -32,8 +27,6 @@ import org.nrg.dicom.mizer.service.*;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
-import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.db.PoolDBUtils;
@@ -52,6 +45,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
@@ -78,59 +72,13 @@ public class GradualDicomImporter extends ImporterHandlerA {
             throws IOException, ClientException {
         super(listenerControl, user, fileWriter, parameters);
         _user = user;
+        _userId = user.getUsername();
         _fileWriter = fileWriter;
         _parameters = parameters;
         if (_parameters.containsKey(TSUID_PARAM)) {
             _transferSyntax = TransferSyntax.valueOf((String) _parameters.get(TSUID_PARAM));
         }
-    }
-
-    /**
-     * Does e contain the sentinel value indicating that its alias
-     * does not map to a project where user has create perms?
-     *
-     * @param e cache element (not null)
-     *
-     * @return true if this element indicates no writable project
-     */
-    public static boolean isCachedNotWriteableProject(final Element e) {
-        assert null != e;
-        return NOT_A_WRITABLE_PROJECT == e.getObjectValue();
-    }
-
-    /**
-     * Indicate in the provided cache that the provided name does not describe
-     * a writable project.
-     *
-     * @param cache The cache to use
-     * @param name  The name of the project to cache as non-writable.
-     */
-    public static void cacheNonWriteableProject(final Cache cache, final String name) {
-        cache.put(new Element(name, NOT_A_WRITABLE_PROJECT));
-    }
-
-    /**
-     * Adds a cache of project objects on a per-user basis.  This is currently used by GradualDicomImporter and DbBackedProjectIdentifier
-     *
-     * @param user The user for whom to retrieve the cache.
-     *
-     * @return The user's cache.
-     */
-    public static Cache getUserProjectCache(final UserI user) {
-        final String cacheName = user.getLogin() + "-projects";
-        final CacheManager cacheManager = getCacheManager();
-        if (!cacheManager.cacheExists(cacheName)) {
-            final CacheConfiguration config = new CacheConfiguration(cacheName, 0)
-                    .copyOnRead(false).copyOnWrite(false)
-                    .eternal(false)
-                    .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
-                    .timeToLiveSeconds(PROJECT_CACHE_EXPIRY_SECONDS);
-            final Cache cache = new Cache(config);
-            cacheManager.addCache(cache);
-            return cache;
-        } else {
-            return cacheManager.getCache(cacheName);
-        }
+        _cache = XDAT.getContextService().getBean(UserProjectCache.class);
     }
 
     @Override
@@ -200,7 +148,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             logger.trace("Looking for study {} in project {}", studyInstanceUID, null == project ? null : project.getId());
 
             // Fill a SessionData object in case it is the first upload
-            SessionData session;
             final File root;
             if (null == project) {
                 root = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath());
@@ -209,24 +156,20 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 root = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath() + "/" + project.getId());
             }
 
-            String sessionLabel;
+            final String sessionLabel;
             if (_parameters.containsKey(URIManager.EXPT_LABEL)) {
                 sessionLabel = (String) _parameters.get(URIManager.EXPT_LABEL);
                 logger.trace("using provided experiment label {}", _parameters.get(URIManager.EXPT_LABEL));
             } else {
-                sessionLabel = dicomObjectIdentifier.getSessionLabel(dicom);
+                sessionLabel = StringUtils.defaultIfBlank(dicomObjectIdentifier.getSessionLabel(dicom), "dicom_upload");
             }
 
-            String visit;
+            final String visit;
             if (_parameters.containsKey(URIManager.VISIT_LABEL)) {
                 visit = (String) _parameters.get(URIManager.VISIT_LABEL);
                 logger.trace("using provided visit label {}", _parameters.get(URIManager.VISIT_LABEL));
             } else {
                 visit = null;
-            }
-
-            if (Strings.isNullOrEmpty(sessionLabel)) {
-                sessionLabel = "dicom_upload";
             }
 
             final String subject;
@@ -242,22 +185,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 logger.trace("subject is null for session {}/{}", timestamp, sessionLabel);
             }
 
-            session = new SessionData();
-            session.setFolderName(sessionLabel);
-            session.setName(sessionLabel);
-            session.setProject(project == null ? null : project.getId());
-            session.setVisit(visit);
-            session.setScan_date(dicom.getDate(Tag.StudyDate));
-            session.setTag(studyInstanceUID);
-            session.setTimestamp(timestamp.getName());
-            session.setStatus(PrearcUtils.PrearcStatus.RECEIVING);
-            session.setLastBuiltDate(Calendar.getInstance().getTime());
-            session.setSubject(subject);
-            session.setUrl((new File(timestamp, sessionLabel)).getAbsolutePath());
-            session.setSource(_parameters.get(URIManager.SOURCE));
-            session.setPreventAnon(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_ANON)));
-            session.setPreventAutoCommit(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_AUTO_COMMIT)));
-
             // Query the cache for an existing session that has this Study Instance UID, project name, and optional modality.
             // If found the SessionData object we just created is over-ridden with the values from the cache.
             // Additionally a record of which operation was performed is contained in the Either<SessionData,SessionData>
@@ -265,9 +192,27 @@ public class GradualDicomImporter extends ImporterHandlerA {
             //
             // This record is necessary so that, if this row was created by this call, it can be deleted if anonymization
             // goes wrong. In case of any other error the file is left on the filesystem.
-            Either<SessionData, SessionData> getOrCreate;
+            final Either<SessionData, SessionData> getOrCreate;
+            final SessionData session;
             try {
-                getOrCreate = PrearcDatabase.eitherGetOrCreateSession(session, timestamp, shouldAutoArchive(project, dicom));
+                final SessionData initialize = new SessionData();
+                initialize.setFolderName(sessionLabel);
+                initialize.setName(sessionLabel);
+                initialize.setProject(project == null ? null : project.getId());
+                initialize.setVisit(visit);
+                initialize.setScan_date(dicom.getDate(Tag.StudyDate));
+                initialize.setTag(studyInstanceUID);
+                initialize.setTimestamp(timestamp.getName());
+                initialize.setStatus(PrearcUtils.PrearcStatus.RECEIVING);
+                initialize.setLastBuiltDate(Calendar.getInstance().getTime());
+                initialize.setSubject(subject);
+                initialize.setUrl((new File(timestamp, sessionLabel)).getAbsolutePath());
+                initialize.setSource(_parameters.get(URIManager.SOURCE));
+                initialize.setPreventAnon(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_ANON)));
+                initialize.setPreventAutoCommit(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_AUTO_COMMIT)));
+
+                getOrCreate = PrearcDatabase.eitherGetOrCreateSession(initialize, timestamp, shouldAutoArchive(project, dicom));
+
                 if (getOrCreate.isLeft()) {
                     session = getOrCreate.getLeft();
                 } else {
@@ -344,7 +289,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                         //noinspection deprecation
 
                         final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
-                        service.anonymize( outputFile, session.getProject(), session.getSubject(), session.getFolderName(), true, c.getId(), c.getContents());
+                        service.anonymize(outputFile, session.getProject(), session.getSubject(), session.getFolderName(), true, c.getId(), c.getContents());
 
                     } else {
                         logger.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without anonymization.", session.getProject(), session.getSubject(), session.getName());
@@ -391,35 +336,30 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private XnatProjectdata getProject(final Object alias, final Callable<XnatProjectdata> lookupProject) {
-        if (null == _projectCache) {
-            _projectCache = getUserProjectCache(_user);
-        }
+    private XnatProjectdata getProject(final String alias, final Callable<XnatProjectdata> lookupProject) {
         if (null != alias) {
             logger.debug("looking for project matching alias {} from query parameters", alias);
-            final Element pe = _projectCache.get(alias);
-            if (null != pe) {
-                if (isCachedNotWriteableProject(pe)) {
+            if (_cache.has(_userId, alias)) {
+                if (_cache.isCachedNonWriteableProject(_userId, alias)) {
                     // this alias is cached as a non-writable project name, but user is specifying it.
                     // maybe they know something we don't; clear cache entry so we can try again.
-                    _projectCache.remove(alias);
+                    _cache.remove(_userId, alias);
                     return getProject(alias, lookupProject);
                 } else {
-                    return (XnatProjectdata) pe.getObjectValue();
+                    return _cache.get(_userId, alias);
                 }
             } else {
                 logger.trace("cache miss for project alias {}, trying database", alias);
-                final XnatProjectdata p = XnatProjectdata.getXnatProjectdatasById(alias, _user, false);
-                if (null != p && canCreateIn(p)) {
-                    _projectCache.put(new Element(alias, p));
-                    return p;
+                final XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(alias, _user, false);
+                if (null != project && canCreateIn(project)) {
+                    _cache.put(_userId, alias, project);
+                    return project;
                 } else {
-                    for (final XnatProjectdata pa :
-                            XnatProjectdata.getXnatProjectdatasByField("xnat:projectData/aliases/alias/alias",
-                                                                       alias, _user, false)) {
-                        if (canCreateIn(pa)) {
-                            _projectCache.put(new Element(alias, pa));
-                            return pa;
+                    final List<XnatProjectdata> projectsByAlias = XnatProjectdata.getXnatProjectdatasByField("xnat:projectData/aliases/alias/alias", alias, _user, false);
+                    for (final XnatProjectdata projectAlias : projectsByAlias) {
+                        if (canCreateIn(projectAlias)) {
+                            _cache.put(_userId, alias, projectAlias);
+                            return projectAlias;
                         }
                     }
                 }
@@ -500,21 +440,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             return fromDicomObject ? PrearchiveCode.AutoArchive : PrearchiveCode.Manual;
         }
         return PrearchiveCode.code(project.getArcSpecification().getPrearchiveCode());
-    }
-
-    private static CacheManager getCacheManager() {
-        if (_cacheManager == null) {
-            initializeCacheManager();
-        }
-        return _cacheManager;
-    }
-
-    private static void initializeCacheManager() {
-        synchronized (logger) {
-            if (_cacheManager == null) {
-                _cacheManager = CacheManager.getCacheManager("xnatCacheManager");
-            }
-        }
     }
 
     private static boolean initializeCanDecompress() {
@@ -639,20 +564,17 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private static final Logger  logger                       = LoggerFactory.getLogger(GradualDicomImporter.class);
-    private static final Object  NOT_A_WRITABLE_PROJECT       = new Object();
-    private static final String  DEFAULT_TRANSFER_SYNTAX      = TransferSyntax.ImplicitVRLittleEndian.uid();
-    private static final String  RENAME_PARAM                 = "rename";
-    private static final long    PROJECT_CACHE_EXPIRY_SECONDS = 120;
-    private static final boolean canDecompress                = initializeCanDecompress();
+    private static final Logger  logger                  = LoggerFactory.getLogger(GradualDicomImporter.class);
+    private static final String  DEFAULT_TRANSFER_SYNTAX = TransferSyntax.ImplicitVRLittleEndian.uid();
+    private static final String  RENAME_PARAM            = "rename";
+    private static final boolean canDecompress           = initializeCanDecompress();
 
-    private static CacheManager _cacheManager = CacheManager.getCacheManager("xnatCacheManager");
-
+    private final UserProjectCache    _cache;
     private final FileWriterWrapperI  _fileWriter;
     private final UserI               _user;
+    private final String              _userId;
     private final Map<String, Object> _parameters;
 
     private TransferSyntax     _transferSyntax;
-    private Cache              _projectCache;
     private DicomFilterService _filterService;
 }

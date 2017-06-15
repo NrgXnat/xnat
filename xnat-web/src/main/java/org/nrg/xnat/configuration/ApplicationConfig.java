@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.configuration;
 
-import net.sf.ehcache.CacheManager;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
@@ -31,7 +30,8 @@ import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.utils.XnatUserProvider;
-import org.springframework.beans.factory.FactoryBean;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
 import org.springframework.context.annotation.*;
 import org.springframework.core.io.ClassPathResource;
@@ -60,9 +60,16 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public FactoryBean<CacheManager> cacheManager() {
+    public CacheManager cacheManager() {
+        return new EhCacheCacheManager(ehCacheManagerFactory().getObject());
+    }
+
+    @Bean
+    public EhCacheManagerFactoryBean ehCacheManagerFactory() {
         return new EhCacheManagerFactoryBean() {{
-            setConfigLocation(new ClassPathResource("META-INF/xnat/ehcache.xml"));
+            setConfigLocation(new ClassPathResource("ehcache.xml"));
+            setAcceptExisting(true);
+            setShared(true);
         }};
     }
 

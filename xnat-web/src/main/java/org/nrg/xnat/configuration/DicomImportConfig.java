@@ -17,6 +17,7 @@ import org.nrg.dcm.preferences.DicomSCPPreference;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.DicomObjectIdentifier;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -31,9 +32,9 @@ import java.util.*;
 public class DicomImportConfig {
     @Bean
     @Primary
-    public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final MessageSource messageSource, final XnatUserProvider receivedFileUserProvider) {
+    public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final MessageSource messageSource, final XnatUserProvider receivedFileUserProvider, final UserProjectCache userProjectCache) {
         final String name = messageSource.getMessage("dicomConfig.defaultObjectIdentifier", new Object[]{ClassicDicomObjectIdentifier.class.getSimpleName()}, "Default DICOM object identifier ({0})", Locale.getDefault());
-        return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider);
+        return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider, userProjectCache);
     }
 
     @Bean

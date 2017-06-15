@@ -11,11 +11,6 @@ package org.nrg.xnat.services.archive.impl.legacy;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.*;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.PersistenceConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -53,6 +48,8 @@ import org.restlet.data.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -77,18 +74,7 @@ public class DefaultCatalogService implements CatalogService {
     @Autowired
     public DefaultCatalogService(final NamedParameterJdbcTemplate parameterized, final CacheManager cacheManager) {
         _parameterized = parameterized;
-        if (!cacheManager.cacheExists(CATALOG_SERVICE_CACHE)) {
-            final CacheConfiguration config = new CacheConfiguration(CATALOG_SERVICE_CACHE, 0)
-                    .copyOnRead(false).copyOnWrite(false)
-                    .eternal(false)
-                    .persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE))
-                    .timeToLiveSeconds(3600)
-                    .maxEntriesLocalHeap(5000);
-            _cache = new Cache(config);
-            cacheManager.addCache(_cache);
-        } else {
-            _cache = cacheManager.getCache(CATALOG_SERVICE_CACHE);
-        }
+        _cache = cacheManager.getCache(CATALOG_SERVICE_CACHE);
     }
 
     @Override
@@ -763,7 +749,7 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {
-        final Element cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
+        final Cache.ValueWrapper cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
         if (cached == null) {
             final File cacheFile = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
             if (cacheFile.exists()) {
@@ -772,7 +758,7 @@ public class DefaultCatalogService implements CatalogService {
                 return catalog;
             }
         } else {
-            final File file = (File) cached.getObjectValue();
+            final File file = (File) cached.get();
             if (file.exists()) {
                 return CatalogUtils.getCatalog(file);
             }
@@ -789,7 +775,7 @@ public class DefaultCatalogService implements CatalogService {
             try (final FileWriter writer = new FileWriter(file)) {
                 catalog.toXML(writer, true);
             }
-            _cache.put(new Element(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId), file));
+            _cache.put(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId), file);
         } catch (IOException e) {
             _log.error("An error occurred writing the catalog " + catalogId + " for user " + user.getLogin(), e);
         }

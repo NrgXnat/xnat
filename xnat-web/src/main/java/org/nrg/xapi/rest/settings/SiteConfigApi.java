@@ -136,7 +136,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
-    public ResponseEntity<Object> getSpecifiedSiteConfigProperty(final HttpServletRequest request, @ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) {
+    public ResponseEntity<Object> getSpecifiedSiteConfigProperty(@ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) {
         if (!_preferences.containsKey(property)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

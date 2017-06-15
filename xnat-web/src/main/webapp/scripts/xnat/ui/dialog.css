@@ -84,14 +84,16 @@ div.xnat-dialog .title .close,
 div.xnat-dialog .title .maximize {
     width: 24px; height: 18px; margin: 0; padding: 0;
     position: absolute ; top: 8px ; right: 8px ;
-    font-size: 18px ; font-weight: normal ; text-align: center; line-height: 19px;
+    /*font-size: 18px ;*/
+    font-weight: normal ; text-align: center; line-height: 19px;
     color: #808080 ; background: #f8f8f8 ;
     border: 1px solid #a0a0a0 ; border-radius: 2px; }
-div.xnat-dialog .title .maximize { right: 38px; line-height: 10px; }
+div.xnat-dialog .title .maximize { right: 38px; }
 div.xnat-dialog .title .close:hover,
 div.xnat-dialog .title .maximize:hover { color: #606060; background: #fafafa; border-color: #a0a0a0; cursor: pointer; }
+div.xnat-dialog.maxxed .title .maximize .fa-expand:before { content: "\f066"; }
 
-div.xnat-dialog .body { max-height: 100%; overflow-x: hidden ; overflow-y: auto; }
+div.xnat-dialog .body { max-height: 100%; overflow-x: auto ; overflow-y: auto; }
 div.xnat-dialog .body.scroll,
 div.xnat-dialog .body.scroll > .inner { overflow: auto ; }
 div.xnat-dialog .body > .inner > iframe {
@@ -144,9 +146,13 @@ div.xnat-dialog .footer .button.disabled:hover { cursor: not-allowed !important 
 div.xnat-dialog.loading .title .close { display: none ; }
 div.xnat-dialog.loading .body .inner { text-align: center ; }
 
+div.xnat-dialog-shell {
+    position: absolute;
+    top: 0; bottom: 0; left: 0; right: 0;
+    background: transparent;
+}
 div.xnat-dialog-shell.loading {
     width: 240px;
-    position: absolute;
     top: 60px;
     bottom: auto;
     right: 0;
@@ -169,3 +175,5 @@ div.xnat-dialog-shell.loading {
 .ie9 body div.xnat-dialog .footer .button { /* margin: 12px ; */ padding: 4px 6px 3px ; }
 
 div.xnat-dialog.embedded { top: 0; left: 0; border: none; box-shadow: none; display: block; z-index: auto;  }
+
+div.xnat-dialog #layout_content { margin: 0; padding: 0; }

@@ -288,7 +288,7 @@ window.xmodal = getObject(window.xmodal);
 
                     this.headerButtons.close$ = (this.closeBtn) ? $.spawn('b.close', {
                             title: 'click to close (alt-click to close all modals)'
-                        }, '&times;').on('click', function(e){
+                        }, '<i class="fa fa-close"></i>').on('click', function(e){
                             _this.close();
                             // option-click to close all open dialogs
                             if (e.altKey) {
@@ -299,7 +299,7 @@ window.xmodal = getObject(window.xmodal);
                     this.headerButtons.max$ = (this.maxBtn) ?
                         $.spawn('b.maximize', {
                             title: 'maximize/minimize this dialog'
-                        }, '&ndash;').click(function(){
+                        }, '<i class="fa fa-expand"></i>').click(function(){
                             _this.toggleMaximize();
                         }) : frag();
 

@@ -906,11 +906,21 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      */
     @Override
     public int hashCode() {
-        final HashCodeBuilder builder = new HashCodeBuilder();
-        for (final String preference : keySet()) {
-            builder.append(getProperty(preference));
+        try {
+            final HashCodeBuilder builder = new HashCodeBuilder();
+            for (final String preference : keySet()) {
+                builder.append(getProperty(preference));
+            }
+            return _cachedHashCode = builder.hashCode();
+        } catch (IllegalStateException e) {
+            // This method gets called during destroy(), which causes an exception if the cache is already shut down.
+            // That's OK, we'll pass the cached hashcode if available or a dummy value if not.
+            final String message = e.getMessage();
+            if (StringUtils.contains(message, "not alive") && StringUtils.contains(message, "STATUS_SHUTDOWN")) {
+                return _cachedHashCode != 0 ? _cachedHashCode : _annotation.hashCode();
+            }
+            throw e;
         }
-        return builder.hashCode();
     }
 
     /**
@@ -1418,4 +1428,5 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     private NrgPreferenceBean                         _annotation;
     private String                                    _toolId;
     private Class<? extends PreferenceEntityResolver> _resolver;
+    private int                                       _cachedHashCode;
 }

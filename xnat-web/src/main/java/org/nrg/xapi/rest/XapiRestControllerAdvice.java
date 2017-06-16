@@ -113,6 +113,11 @@ public class XapiRestControllerAdvice {
         return getExceptionResponseEntity(HttpStatus.BAD_REQUEST, "There was an error in the request: " + exception.getMessage());
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handlexception(final HttpServletRequest request, final HttpServletResponse response, final Exception exception) {
+        return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "There was an error in the request: " + exception.getMessage());
+    }
+
     @NotNull
     private ResponseEntity<?> getExceptionResponseEntity(final HttpServletRequest request, final Exception exception) {
         return getExceptionResponseEntity(request, null, exception, null, null);

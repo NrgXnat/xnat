@@ -28,6 +28,8 @@ var XNAT = getObject(XNAT);
     var timeout, timer, undefined;
     var $timeLeftDisplay = $('#timeLeft');
 
+    var resetCookies = getQueryStringValue('cookies') === 'reset';
+
     XNAT.app = getObject(XNAT.app || {});
 
     XNAT.app.timeout = timeout = timer =
@@ -36,16 +38,21 @@ var XNAT = getObject(XNAT);
     function dateString(ms, strip){
         var str = (new Date(ms)).toString();
         if (strip !== false) {
-            str = str.replace(/\s+/g,'-');
+            str = str.replace(/\s+/g, '-');
         }
         return str;
     }
 
     // timeout polling interval
-    timeout.interval = 1000;
+    timeout.interval = timeout.interval || 1000;
 
     // when do we show the dialog?
-    timeout.showTime = 60;
+    // (how many seconds until the session ends)
+    timeout.showTime = timeout.showTime || 60;
+
+    // how long will the screen be grayed out
+    // before redirecting?
+    timeout.delayTime = timeout.delayTime || 20;
 
     timeout.cancelled = false;
 
@@ -57,14 +64,17 @@ var XNAT = getObject(XNAT);
             this.cookieExists = false;
             this.name = name !== undefined ? name : this.name;
             this.value = '';
-            this.opts = { path: '/' };
+            this.opts = {
+                path: XNAT.url.context,
+                domain: XNAT.url.getDomain()
+            };
         }
 
         var fn = CookieFn.prototype;
 
         fn.exists = function(name){
             this.name = name !== undefined ? name : this.name;
-            this.cookieExists = Cookies.get()[this.name] !== undefined;
+            this.cookieExists = XNAT.cookie.get(this.name) !== undefined;
             return this.cookieExists;
         };
         // go ahead and check if this cookie exists
@@ -75,18 +85,22 @@ var XNAT = getObject(XNAT);
             //this.cookieExists = false;
             this.name = name !== undefined ? name : this.name;
             this.value = '';
-            this.opts = { path: '/' };
+            this.opts = {
+                path: XNAT.url.context,
+                domain: XNAT.url.getDomain()
+            };
             return this;
         };
 
-        fn.set = function(name, value){
+        fn.set = function(name, value, opts){
             if (value === undefined) {
                 value = name;
                 name = undefined;
             }
             this.name = name !== undefined ? name : this.name;
             this.value = value !== undefined ? value : this.value;
-            Cookies.set(this.name, this.value, this.opts);
+            this.opts = opts !== undefined ? opts : this.opts;
+            XNAT.cookie.set(this.name, this.value, this.opts);
             //this.reset(); // reset to prevent passing of values to chained methods
             return this;
         };
@@ -94,15 +108,20 @@ var XNAT = getObject(XNAT);
         // 'value' is a default value to set if the cookie doesn't exist
         fn.get = function(value){
             value = value !== undefined ? value : '';
-            this.value = this.exists() ? Cookies.get()[this.name] : value;
+            this.value = this.exists() ? XNAT.cookie.get(this.name) : value;
             return this;
         };
 
-        fn.is = function(value) {
-            return (this.get().value||'').toString() === value.toString();
+        fn.is = function(value){
+            return (this.get().value || '').toString() === value.toString();
         };
 
-        fn.cookie = function(name) {
+        fn.remove = function(){
+            XNAT.cookie.remove(this.name);
+            return !this.exists();
+        };
+
+        fn.cookie = function(name){
             this.name = name;
             this.exists();
             return this;
@@ -136,16 +155,22 @@ var XNAT = getObject(XNAT);
     // cookie.SESSION_TIMEOUT_STRING = timeoutCookie('SESSION_TIMEOUT_STRING');
 
     // has the user been redirected after timout?
-    cookie.SESSION_LOGOUT_REDIRECT = timeoutCookie('SESSION_LOGOUT_REDIRECT').get();
+    // cookie.SESSION_LOGOUT_REDIRECT = timeoutCookie('SESSION_LOGOUT_REDIRECT').get();
 
     // the time, in ms, that the session started
     cookie.SESSION_LAST_LOGIN = timeoutCookie('SESSION_LAST_LOGIN');
 
     // the last logged-in user - used for redirect check
-    cookie.SESSION_LAST_USER = timeoutCookie('SESSION_LAST_USER').get();
+    // cookie.SESSION_LAST_USER = timeoutCookie('SESSION_LAST_USER').get();
 
     // what was the last page visited?
-    cookie.SESSION_LAST_PAGE = timeoutCookie('SESSION_LAST_PAGE').get();
+    // cookie.SESSION_LAST_PAGE = timeoutCookie('SESSION_LAST_PAGE').get();
+
+    // remove potentially problematic cookies
+    XNAT.cookie.remove('SESSION_LAST_USER', { path: '/' });
+    XNAT.cookie.remove('SESSION_LAST_USER');
+    XNAT.cookie.remove('SESSION_LAST_PAGE', { path: '/' });
+    XNAT.cookie.remove('SESSION_LAST_PAGE');
 
     timeout.expCookie = '';
 
@@ -156,10 +181,10 @@ var XNAT = getObject(XNAT);
         var expCookie = cookie.SESSION_EXPIRATION_TIME.get().value;
         if (timeout.expCookie && timeout.expCookie === expCookie) return;
         timeout.expCookie = expCookie; // save it for next time
-        expCookie = (expCookie||'').replace(/"/g, '').split(',');
+        expCookie = (expCookie || '').replace(/"/g, '').split(',');
         //timeout.startTime = +expCookie[0].trim() + 100;
         timeout.startTime = Date.now();
-        timeout.duration = +(expCookie[1]||'').trim();
+        timeout.duration = +((expCookie[1] || '').trim());
         timeout.endTime = timeout.startTime + timeout.duration;
         return {
             startTime: timeout.startTime,
@@ -174,7 +199,7 @@ var XNAT = getObject(XNAT);
     // cookie.SESSION_TIMEOUT_STRING.set(dateString(timeout.endTime));
 
 
-    function parseTimestamp(time) {
+    function parseTimestamp(time){
         time = time || timeout.endTime;
         var timeLeft = time - Date.now();
         var secondsLeft = Math.floor(timeLeft / 1000);
@@ -203,45 +228,86 @@ var XNAT = getObject(XNAT);
         opacity: '0.95'
     });
 
+    window.shade = shade;
+
     // these things need to wait for the DOM to load
     // ...or do they?
-    // $(function(){
+    (function(){
+
+        var USERNAME = window.username;
+        var LOC_HREF = window.location.href;
+
+        function encodePageInfo(usr, pg){
+            var _usr = XNAT.sub64.dlxEnc(usr).encoded;
+            var _pg = XNAT.sub64.encode(pg).encoded;
+            // var _parts = XNAT.url.splitUrl(_pg);
+            return {
+                user: _usr,
+                page: _pg,
+                encoded: _usr + '@' + _pg
+            }
+        }
+
+        function decodePageInfo(str){
+            var parts = str.split('@');
+            var _usr = XNAT.sub64.dlxDec(parts[0]).decoded;
+            var _pg = XNAT.sub64.decode(parts[1]).decoded;
+            return {
+                user: _usr,
+                page: _pg,
+                decoded: _usr + '@' + _pg
+            }
+        }
+
 
         var resumeCounter = 0;
 
         // if the last visited page is different than the current page,
         // try to want to go to there
-        function resumeSession(page, user){
-            // prevent infinite callback loop
-            if ((resumeCounter += 1) > 10) return;
-            var logoutRedirected = cookie.SESSION_LOGOUT_REDIRECT.is('true');
-            var lastSessionUser = cookie.SESSION_LAST_USER.get().value;
-            var userEnc = XNAT.sub64.dlxEnc(user).get();
-            var lastSessionPage = cookie.SESSION_LAST_PAGE.get().value;
-            var pageEnc = XNAT.sub64.dlxEnc(page).get();
-            if (logoutRedirected && lastSessionPage !== pageEnc) {
-                cookie.SESSION_LOGOUT_REDIRECT.set('');
-                // only do a js redirect if it's the same user
-                if (lastSessionUser === userEnc) {
-                    cookie.SESSION_LAST_PAGE.set(lastSessionPage);
-                    cookie.SESSION_LAST_USER.set(lastSessionUser);
-                    // calling this again should let
-                    // the session resume properly
-                    resumeSession(lastSessionPage, lastSessionUser)
-                }
-                else {
-                    cookie.SESSION_LAST_USER.set('');
-                }
-            }
-            else {
-                if (window.location.href !== page) {
-                    window.location.href = page;
-                }
-                console.log('???');
-                //window.location.href = XNAT.url.rootUrl('/');
-            }
-        }
-        resumeSession(window.location.href, window.username);
+        // function resumeSession(user, page){
+        //
+        //     // prevent infinite callback loop
+        //     if ((resumeCounter += 1) > 10) return;
+        //
+        //     // this makes my brain hurt [*L*]
+        //
+        //     var pageEnc = encodePageInfo(user, page).encoded;
+        //
+        //     var logoutRedirected = cookie.SESSION_LOGOUT_REDIRECT.is('true');
+        //     var lastPageCookie = cookie.SESSION_LAST_PAGE.get().value;
+        //
+        //     var lastSessionParts = decodePageInfo(lastPageCookie);
+        //     var lastSessionUser = lastSessionParts.user;
+        //     var lastSessionPage = lastSessionParts.page;
+        //
+        //     // only attempt a redirect if user@page is different
+        //     if (logoutRedirected && lastPageCookie !== pageEnc) {
+        //
+        //         cookie.SESSION_LOGOUT_REDIRECT.set('');
+        //
+        //         if (lastSessionUser === USERNAME) {
+        //
+        //             cookie.SESSION_LAST_PAGE.set(pageEnc);
+        //             // cookie.SESSION_LAST_USER.set(lastSessionUser);
+        //
+        //             // calling this again should let
+        //             // the session resume properly
+        //             resumeSession(lastSessionUser, lastSessionPage);
+        //         }
+        //         // else {
+        //         //     cookie.SESSION_LAST_USER.set('');
+        //         // }
+        //     }
+        //     else {
+        //         if (LOC_HREF !== page) {
+        //             window.location.href = page;
+        //         }
+        //         console.log('???');
+        //         //window.location.href = XNAT.url.rootUrl('/');
+        //     }
+        // }
+        //
+        // resumeSession(USERNAME, LOC_HREF);
 
 
         // create the dialog but don't render until DOM load
@@ -326,7 +392,7 @@ var XNAT = getObject(XNAT);
 
             }).hide();
 
-            warning.hours   = warning.$modal.find('b.timeout-hours');
+            warning.hours = warning.$modal.find('b.timeout-hours');
             warning.minutes = warning.$modal.find('b.timeout-minutes');
             warning.seconds = warning.$modal.find('b.timeout-seconds');
 
@@ -360,11 +426,16 @@ var XNAT = getObject(XNAT);
         timeout.warningDialog = warningDialog();
 
 
-        function redirectToLogin() {
+        function redirectToLogin(){
             var NOW = Date.now();
+            // var USR = USERNAME;
+            // var LOC = LOC_HREF;
+            // var lastPageEnc = encodePageInfo(USR, LOC).encoded;
             timeout.redirecting = true;
             timeout.warningDialog.hide(0);
-            shade.open();
+            if (!shade.isOpen) {
+                shade.open();
+            }
             XNAT.ui.dialog.message({
                 title: false,
                 content: '' +
@@ -382,8 +453,8 @@ var XNAT = getObject(XNAT);
             cookie.SESSION_TIMED_OUT.set('true');
             cookie.SESSION_TIMEOUT_TIME.set(NOW);
             // cookie.SESSION_TIMEOUT_STRING.set(dateString(NOW));
-            cookie.SESSION_LOGOUT_REDIRECT.set('true');
-            cookie.SESSION_LAST_PAGE.set(window.location.href);
+            // cookie.SESSION_LOGOUT_REDIRECT.set('true');
+            // cookie.SESSION_LAST_PAGE.set(lastPageEnc);
             timeoutCookie('WARNING_BAR').set('OPEN');
             timeoutCookie('guest').set('true');
             // need to wait a little longer before reloading
@@ -419,7 +490,7 @@ var XNAT = getObject(XNAT);
             if (console && console.log) {
                 console.log('Session ends: ' + dateString(timeout.endTime, false));
             }
-            cookie.SESSION_LOGOUT_REDIRECT.set('false');
+            // cookie.SESSION_LOGOUT_REDIRECT.set('false');
             timeout.cancelled = false;
         }
 
@@ -427,7 +498,7 @@ var XNAT = getObject(XNAT);
         timeout.touch = function(opts){
             return XNAT.xhr.get(extend(true, {
                 url: XNAT.url.restUrl('/xapi/siteConfig/buildInfo')
-            }, opts || {} ));
+            }, opts || {}));
         };
 
 
@@ -492,7 +563,7 @@ var XNAT = getObject(XNAT);
             }
 
             // if endTime minus showTime is less than now
-            if (timeout.endTime - (timeout.showTime*1000) <= NOW) {
+            if (timeout.endTime - (timeout.showTime * 1000) <= NOW) {
                 //don't do anything if the dialog has already been cancelled
                 if (cookie.SESSION_DIALOG_CANCELLED.is('true')) {
                     //timeout.handleCancel();
@@ -508,13 +579,13 @@ var XNAT = getObject(XNAT);
         };
 
 
-        timeout.sessionCountdown = function() {
+        timeout.sessionCountdown = function(){
 
             var timeLeft = parseTimestamp();
 
             var hours = timeLeft.hours;
-            var mins  = zeroPad(timeLeft.minutes);
-            var secs  = zeroPad(timeLeft.seconds);
+            var mins = zeroPad(timeLeft.minutes);
+            var secs = zeroPad(timeLeft.seconds);
 
             $timeLeftDisplay.text(hours + ":" + mins + ":" + secs);
 
@@ -548,7 +619,7 @@ var XNAT = getObject(XNAT);
         };
 
         // only run the timer if *not* a guest user (if an authenticated user)
-        if ((!!Cookies.get('guest')) && (Cookies.get('guest') === 'false')) {
+        if ((!!XNAT.cookie.get('guest')) && (XNAT.cookie.get('guest') === 'false')) {
             timeout.init();
         }
 
@@ -558,18 +629,18 @@ var XNAT = getObject(XNAT);
         });
 
         $(window).on('beforeunload', function(){
-            var lastUserEnc = XNAT.sub64.dlxEnc(window.username).get();
-            cookie.SESSION_LAST_USER.set(lastUserEnc);
-            // check for 'resume=false' query string to prevent loading certain pages
-            if (getQueryStringValue('resume').toString() !== 'false') {
-                cookie.SESSION_LAST_PAGE.set(window.location.href);
-            }
-            else {
-                cookie.SESSION_LAST_PAGE.set('');
-            }
+            // var lastPageEnc = encodePageInfo(USERNAME, LOC_HREF).encoded;
+            // // cookie.SESSION_LAST_USER.set(lastUserEnc);
+            // // check for 'resume=false' query string to prevent loading certain pages
+            // if (getQueryStringValue('resume').toString() !== 'false') {
+            //     cookie.SESSION_LAST_PAGE.set(lastPageEnc);
+            // }
+            // else {
+            //     cookie.SESSION_LAST_PAGE.set('');
+            // }
         });
 
-    // });
+    })();
 
 
     // this script has loaded

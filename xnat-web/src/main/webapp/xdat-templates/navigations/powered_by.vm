@@ -12,7 +12,7 @@
 
         // add version to title attribute of XNAT logos
         if (typeof window.top.loggedIn != 'undefined' && window.top.loggedIn == true){
-            Cookies.set('SESSION_ACTIVE', 'true');
+            XNAT.cookie.set('SESSION_ACTIVE', 'true');
             $.get(serverRoot+'/xapi/siteConfig/buildInfo',function(data){
                 var version = XNAT.version = data.version;
                 var version_string = version + " build: " + data.buildNumber;
@@ -27,7 +27,7 @@
             });
         }
         else {
-            Cookies.set('SESSION_ACTIVE', 'false');
+            XNAT.cookie.set('SESSION_ACTIVE', 'false');
         }
 
         var clicker = XNAT.event.click('#header_logo, #xnat_power > a');
@@ -35,12 +35,12 @@
         // shift-click the header or footer XNAT logo to TOGGLE debug mode on/off
         clicker.shiftKey(function(e){
             e.preventDefault();
-            if (Cookies.get('debug') === 'on'){
-                Cookies.set('debug', 'off');
+            if (XNAT.cookie.get('debug') === 'on'){
+                XNAT.cookie.set('debug', 'off');
                 window.location.hash = 'debug=off';
             }
             else {
-                Cookies.set('debug', 'on');
+                XNAT.cookie.set('debug', 'on');
                 window.location.hash = 'debug=on';
             }
             window.location.reload();

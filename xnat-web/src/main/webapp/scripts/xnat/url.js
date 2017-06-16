@@ -35,6 +35,9 @@ var XNAT = getObject(XNAT||{});
     // urlencode query string params by default
     url.encode = xhr.encode = firstDefined(url.encode||undefined, xhr.encode||undefined, true);
 
+    // site context without trailing a slash
+    url.context = url.siteContext = (window.serverRoot + '/').replace(/\/*$/, '') || '/';
+
     // don't cache AJAX requests
     xhr.cache = firstDefined(xhr.cache||undefined, false);
 
@@ -68,9 +71,9 @@ var XNAT = getObject(XNAT||{});
     }
     url.rootUrl = rootUrl;
 
-    url.getProtocol = function(){
-        var docUrl = document.URL;
-        if (window.location.protocol) {
+    url.getProtocol = function(URL){
+        var docUrl = URL || document.URL;
+        if (!URL && window.location.protocol) {
             return window.location.protocol;
         }
         return /^(https:)/.test(docUrl) ? 'https:' : 'http:'
@@ -258,8 +261,8 @@ var XNAT = getObject(XNAT||{});
 
 
     // return url parts as an object
-    url.splitUrl = function(url){
-        var _hash = url.split('#');
+    url.splitUrl = function(URL){
+        var _hash = URL.split('#');
         // account for multiple '#'
         // by shifting the first
         // array item, which should
@@ -267,11 +270,20 @@ var XNAT = getObject(XNAT||{});
         var _base = _hash.shift();
         var parts = {
             hash: _hash.join('#'),
-            query: _base.split('?')[1],
+            query: _base.split('?')[1] || '',
             base: _base.split('?')[0]
         };
         // alias 'base' to 'url'
-        parts.url = parts.base;
+        parts.url = parts.path = parts.base;
+        if (/^http/i.test(URL)){
+            parts.protocol = parts.base.split(/(http[s]*)/)[1] || '';
+            parts.urlParts = parts.base.split(parts.protocol + '://')[1].split('/');
+            parts.siteParts = parts.urlParts.shift().split(':');
+            parts.domain = parts.siteParts[0];
+            parts.port = parts.siteParts[1] || '';
+            parts.site = parts.protocol + '://' + parts.domain + (parts.port ? (':' + parts.port) : '');
+            parts.path = '/' + parts.urlParts.join('/');
+        }
         parts.paramsArray = [];
         parts.params = {};
         if (parts.query){

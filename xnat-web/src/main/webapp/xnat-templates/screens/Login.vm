@@ -16,8 +16,8 @@ $page.setTitle("$siteId - Please Login")
 <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
 
 <script>
-//    Cookies.set('SESSION_ACTIVE', 'false');
-    Cookies.set('SESSION_LOGOUT_REDIRECT', 'true');
+//    XNAT.cookie.set('SESSION_ACTIVE', 'false');
+//    XNAT.cookie.set('SESSION_LOGOUT_REDIRECT', 'true');
 </script>
 
 <div id="login_area">
@@ -55,7 +55,7 @@ $page.setTitle("$siteId - Please Login")
 
     #if($data.getMessage())
     <div class="warning">
-        <strong>Note: </strong><br>$data.getMessage()
+        <strong>Note: </strong> $data.getMessage()
     </div>
     #end
 
@@ -71,9 +71,9 @@ $page.setTitle("$siteId - Please Login")
         <h3><span>Existing User Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
         <div class="clear"></div>
         <div class="message">
-            <p><strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account. </p>
-            <p>&nbsp;</p>
-            <p>Not what you want? <a href="$content.getURI('/app/template/Login.vm')"><strong>Default Log In Page</strong></a></p>
+            <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.
+            <br><br>
+            Not what you want? <a href="$content.getURI('/app/template/Login.vm')"><strong>Default Log In Page</strong></a>
         </div>
         <div class="clear" style="margin:2em 0;"></div>
         <div id="login_box">
@@ -158,7 +158,7 @@ $page.setTitle("$siteId - Please Login")
 
         #if($data.getMessage())
         <div class="message" style="border-bottom: 0">
-            <p><strong>Note: </strong><br />$data.getMessage()</p>
+            <strong>Note: </strong> $data.getMessage()
         </div>
 
         #end
@@ -219,7 +219,7 @@ $page.setTitle("$siteId - Please Login")
         $('#siteDescription').html(markedText);
 
         $('#login_form').on('submit', function(e){
-            
+
             var errorCount = 0;
 
 //            var messages = [];

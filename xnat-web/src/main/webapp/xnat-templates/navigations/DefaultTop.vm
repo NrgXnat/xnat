@@ -107,7 +107,7 @@
             <span id="user_info">Logged in as: <span style="color:red;">Guest</span> <b>|</b> <a href="$link.setPage("Login.vm")">Login</a> <b>|</b> <a href="$link.setPage("Register.vm")">Register</a></span>
             <script type="text/javascript">
                 window.username = '';
-                Cookies.set('guest','true',{path:'/'});
+                XNAT.cookie.set('guest', 'true');
             </script>
         #else
             #set($username = $!user.getUsername())
@@ -120,7 +120,7 @@
                 Auto-logout in: <b id="timeLeft">-:--:--</b> - <a id="timeLeftRenew" href="javascript:" onClick="XNAT.app.timeout.handleOk()">renew</a> <b>|</b> <a id="logout_user" href="$link.setAction("LogoutUser")">Logout</a></span>
                 <script type="text/javascript">
                     window.username = '$!username';
-                    Cookies.set('guest','false',{path:'/'});
+                    XNAT.cookie.set('guest', 'false');
                 </script>
             #end
         #end
@@ -170,7 +170,7 @@
 
 <script type="text/javascript">
     jq(function(){
-        if (Cookies.get('WARNING_BAR') == 'CLOSED'){
+        if (XNAT.cookie.get('WARNING_BAR') == 'CLOSED'){
             jq('#attention_icon').show();
         }
         else {
@@ -180,7 +180,7 @@
             jq('#warning_bar').slideToggle(200);
         });
         jq('#warning_bar .close').click(function(){
-            Cookies.set('WARNING_BAR','CLOSED',{path:'/'});
+            XNAT.cookie.set('WARNING_BAR', 'CLOSED');
             jq('#warning_bar').slideUp(200);
         });
     })
@@ -264,8 +264,8 @@
 
         // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
         jq('#logout_user').click(function(){
-            Cookies.set('WARNING_BAR', 'OPEN', { path: '/' });
-            Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', { path: '/' });
+            XNAT.cookie.set('WARNING_BAR', 'OPEN');
+            XNAT.cookie.set('NOTIFICATION_MESSAGE', 'OPEN');
         });
 
     });
@@ -284,13 +284,13 @@
         </div>
 
         <script>
-            if (Cookies.get('NOTIFICATION_MESSAGE') !== 'CLOSED') {
+            if (XNAT.cookie.get('NOTIFICATION_MESSAGE') !== 'CLOSED') {
                 jq('.headNotification').removeClass('hidden');
             }
 
             jq('.closeNotification').on('click',function(){
                 jq(this).parent('.headNotification').slideUp().addClass('hidden');
-                Cookies.set('NOTIFICATION_MESSAGE','CLOSED',{path: '/'});
+                XNAT.cookie.set('NOTIFICATION_MESSAGE', 'CLOSED');
             })
         </script>
     #end

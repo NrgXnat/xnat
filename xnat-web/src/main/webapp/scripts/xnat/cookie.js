@@ -33,12 +33,8 @@ var XNAT = getObject(XNAT);
         }
     }
 
-    function getContext(){
-        return (window.serverRoot + '/').replace(/\/*$/, '') || '/';
-    }
-
     var DOMAIN = getDomain();
-    var SITE_ROOT = getContext();
+    var SITE_ROOT = XNAT.url.rootUrl();
 
     function CookieObject(name, value, opts){
         this.name = name;
@@ -65,9 +61,9 @@ var XNAT = getObject(XNAT);
 
     function getCookie(name){
         if (!name) {
-            // get all cookies as JSON
+            // get all cookies as an object
             // if no name is specified
-            return Cookies.getJSON();
+            return Cookies.get();
         }
         else {
             // return value of requested cookie

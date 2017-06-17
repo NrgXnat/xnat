@@ -65,7 +65,7 @@ var XNAT = getObject(XNAT);
             this.name = name !== undefined ? name : this.name;
             this.value = '';
             this.opts = {
-                path: XNAT.url.context,
+                path: XNAT.url.rootUrl(),
                 domain: XNAT.url.getDomain()
             };
         }
@@ -86,7 +86,7 @@ var XNAT = getObject(XNAT);
             this.name = name !== undefined ? name : this.name;
             this.value = '';
             this.opts = {
-                path: XNAT.url.context,
+                path: XNAT.url.rootUrl(),
                 domain: XNAT.url.getDomain()
             };
             return this;

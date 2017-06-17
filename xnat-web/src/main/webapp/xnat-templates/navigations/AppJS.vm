@@ -39,9 +39,9 @@
     <!-- XNAT JLAPI scripts -->
     <script src="${SITE_ROOT}/scripts/xnat/util/sub64.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/validate.js"></script>
-    <script src="${SITE_ROOT}/scripts/xnat/cookie.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/xhr.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/cookie.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/event.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/element.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/templates.js"></script>

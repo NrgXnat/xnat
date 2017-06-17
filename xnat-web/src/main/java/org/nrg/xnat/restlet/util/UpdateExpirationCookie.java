@@ -31,7 +31,7 @@ public class UpdateExpirationCookie extends GenericFilterBean {
         final int                 sessionIdleTime = hq.getSession().getMaxInactiveInterval();
 
         final Cookie c = new Cookie(name, "" + (new Date()).getTime() + "," + ((sessionIdleTime * 1000)));
-        c.setPath(hq.getContextPath());
+        c.setPath(hq.getContextPath() + "/");
         hr.addCookie(c);
 
         chain.doFilter(req, resp);

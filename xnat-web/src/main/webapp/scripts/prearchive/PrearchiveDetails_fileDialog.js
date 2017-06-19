@@ -17,7 +17,7 @@ XNAT.app.fileDialog.loadScan = function( url, title ){
 
     var modalOpts={};
     modalOpts.width = '80%';
-    modalOpts.height = '80%';
+    // modalOpts.height = '80%';
     modalOpts.maxBtn = true;
     modalOpts.nuke = true;
     modalOpts.buttons = [

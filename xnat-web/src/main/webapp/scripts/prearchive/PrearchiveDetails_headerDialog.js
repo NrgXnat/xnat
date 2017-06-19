@@ -18,7 +18,7 @@ XNAT.app.headerDialog.load = function( url, title ){
 
     var modalOpts={};
     modalOpts.width = '75%';
-    modalOpts.height = '75%';
+    // modalOpts.height = '75%';
     modalOpts.padding = '0px';
     modalOpts.maxBtn = true;
     modalOpts.nuke = true;

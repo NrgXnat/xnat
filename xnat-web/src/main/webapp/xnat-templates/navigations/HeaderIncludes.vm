@@ -20,7 +20,7 @@
 ## pull in the base JavaScript files
 $navigation.setTemplate("/BaseJS.vm")
 
-#set($versionString = "v=1.7.3b")
+#set($versionString = "v=1.7.3c")
 #set($SITE_ROOT = $content.getURI(""))
 
 <script>

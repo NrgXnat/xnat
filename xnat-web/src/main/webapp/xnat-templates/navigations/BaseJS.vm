@@ -1,6 +1,6 @@
 ## Base JavaScript files
 
-#set($versionString = "v=1.7.3b")
+#set($versionString = "v=1.7.3c")
 #set($SITE_ROOT = $content.getURI(""))
 #set ($debugParam = $data.getParameters().getString('debug'))
 #set ($jsDebugParam = $data.getParameters().getString('jsdebug'))

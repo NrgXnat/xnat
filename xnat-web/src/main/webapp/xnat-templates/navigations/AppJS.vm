@@ -1,6 +1,6 @@
 ## Main JavaScript and CSS files for XNAT
 
-#set($versionString = "v=1.7.3b")
+#set($versionString = "v=1.7.3c")
 #set($SITE_ROOT = $content.getURI(""))
 
 ## only load once

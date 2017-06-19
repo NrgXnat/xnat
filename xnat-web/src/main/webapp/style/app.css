@@ -9,15 +9,30 @@
 
 /* xdat.css */
 /***********************************************/
-/* Default styles                                 */
+/* Default styles                              */
 /***********************************************/
-body {
+
+html,
+html body {
+    min-height: 100%;
     margin: 0;
     padding: 0;
+}
+
+html {
+    position: relative;
+}
+
+html body {
+    padding-bottom: 120px;
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif !important;
     font-size: 12px;
     line-height: 15px;
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: white;
+    /* letter-spacing: 0.02em ; */
+    /*position: relative;*/
+    overflow-y: scroll;
+    overflow-x: auto;
 }
 
 th {
@@ -977,21 +992,6 @@ table.dark td {
     padding: 4px 8px;
 }
 
-/* new header and body styles */
-body,
-html body,
-* body {
-    margin: 0;
-    background: #fff;
-    font-family: Arial, Helvetica, sans-serif !important;
-    font-size: 12px;
-    line-height: 15px;
-    /* letter-spacing: 0.02em ; */
-    position: relative;
-    overflow-y: scroll;
-    overflow-x: auto;
-}
-
 a {
     color: /* #2a70c6 */ #084fab;
 }
@@ -1610,12 +1610,17 @@ span.sep {
 
 /* footer graphic */
 #xnat_power {
+    height: 90px;
     width: 1160px;
     border-top: 1px solid #ccc;
     margin: 0 auto;
+    margin-left: -580px;
     padding: 10px 0;
-    position: relative;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
     text-align: right;
+    background: #fff;
 }
 
 #xnat_power a {
@@ -2150,7 +2155,7 @@ input.valid {
 */
 #min_projects_list,
 #min_expt_list {
-    min-height: 350px;
+    min-height: 320px;
     max-height: 700px;
     overflow-y: scroll;
 }

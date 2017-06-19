@@ -1418,7 +1418,7 @@ var XNAT = getObject(XNAT);
                         // th: { style: { width: styles.active }},
                         td: {
                             // style: { width: styles.active },
-                            className: 'active center'
+                            className: 'active center mono'
                         },
                         filter: function(table){
                             var $table = $(table);

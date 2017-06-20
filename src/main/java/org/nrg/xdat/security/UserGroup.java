@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.security;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
@@ -155,7 +156,7 @@ public class UserGroup implements UserGroupI{
                 logger.error("",e);
             }
         }
-        return stored_searches;
+        return ImmutableList.copyOf(stored_searches);
     }
 
 
@@ -387,10 +388,10 @@ public class UserGroup implements UserGroupI{
     }
     
     public List<String> getFeatures(){
-    	return features;
+    	return ImmutableList.copyOf(features);
     }
     
     public List<String> getBlockedFeatures(){
-    	return blocked;
+    	return ImmutableList.copyOf(blocked);
     }
 }

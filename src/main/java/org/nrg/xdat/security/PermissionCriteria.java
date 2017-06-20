@@ -16,6 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Tim
  *
@@ -72,7 +74,18 @@ public class PermissionCriteria implements PermissionCriteriaI{
 	}
 	
 	public static final String SCHEMA_ELEMENT_NAME="xdat:field_mapping";
-	
+
+	public static String dumpCriteriaList(final List<PermissionCriteriaI> criteria) {
+		final StringBuilder dump = new StringBuilder("{} permission criteria found:");
+		if (!criteria.isEmpty()) {
+			for (PermissionCriteriaI criterion : criteria) {
+				dump.append("\n * ").append(criterion.toString());
+			}
+		}
+		return dump.toString();
+	}
+
+
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.security.PermissionCriteriaI#getSchemaElementName()
 	 */

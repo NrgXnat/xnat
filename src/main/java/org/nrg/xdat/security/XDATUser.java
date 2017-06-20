@@ -10,10 +10,7 @@
 package org.nrg.xdat.security;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -53,6 +50,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
+
+import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 
 /**
  * @author Tim
@@ -729,7 +728,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
         }
 
-        return groups;
+        return ImmutableMap.copyOf(groups);
     }
 
     protected Date getPreviousLogin() throws SQLException, Exception {
@@ -737,13 +736,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", this.getDBName(), this.getUsername());
     }
 
-    protected void refreshGroup(String id) {
-        Map<String, UserGroupI> groups = getGroups();
+    protected void refreshGroup(final String id) {
+        // getGroups() returns immutable list, so just call this to make sure groups field is initialized, then
+        // reference that. This is OK to do internally.
+        getGroups();
         if (groups.containsKey(id)) {
-            UserGroupI g = Groups.getGroup(id);
-            if (g != null) {
-                groups.remove(groups.get(id));
-                groups.put(id, g);
+            final UserGroupI group = Groups.getGroup(id);
+            if (group != null) {
+                groups.put(id, group);
             }
         }
     }
@@ -812,12 +812,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 results.add(newRow);
             }
 
-        } catch (ElementNotFoundException e) {
-            logger.error("", e);
-        } catch (SQLException e) {
-            logger.error("", e);
-        } catch (DBPoolException e) {
-            logger.error("", e);
         } catch (Exception e) {
             logger.error("", e);
         }
@@ -1048,7 +1042,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 final ElementAccessManager elementAccessManager = getAccessManager(type);
 
                 if (elementAccessManager != null) {
-                    criteria.get(type).addAll(elementAccessManager.getCriteria());
+                    final List<PermissionCriteriaI> criteria = elementAccessManager.getCriteria();
+                    this.criteria.get(type).addAll(criteria);
+                    logger.debug("Found {} criteria from the element access manager for data type {}", criteria.size(), type);
+                } else {
+                    logger.debug("Couldn't find an element access manager for data type {}", type);
                 }
 
                 try {
@@ -1056,17 +1054,23 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 } catch (Exception e) {
                     return null;
                 }
-
             } catch (Exception e) {
                 logger.error("", e);
             }
 
             final Map<String, UserGroupI> userGroups = Groups.getGroupsForUser(this);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Found {} user groups for the user {}: {}", userGroups.size(), getUsername(), Joiner.on(", ").join(userGroups.keySet()));
+            }
+
             for (final String groupId : userGroups.keySet()) {
                 final UserGroupI group = userGroups.get(groupId);
                 if (group != null) {
                     final List<PermissionCriteriaI> permissions = ((UserGroup) group).getPermissionsByDataType(type);
                     if (permissions != null) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Found {} permission criteria for user {} on type {} in group {}: {}", permissions.size(), getUsername(), type, groupId, dumpCriteriaList(permissions));
+                        }
                         criteria.get(type).addAll(permissions);
                     } else {
                         logger.warn("Tried to retrieve permissions for data type {} for user {} in group {}, but this returned null.", type, getUsername(), groupId);
@@ -1081,6 +1085,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     final UserI guest = Users.getGuest();
                     final List<PermissionCriteriaI> permissions = ((XDATUser) guest).getPermissionsByDataType(type);
                     if (permissions != null) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Found {} permission criteria for user {} on type {} in non-group scope: {}", permissions.size(), getUsername(), type, dumpCriteriaList(permissions));
+                        }
                         criteria.get(type).addAll(permissions);
                     } else {
                         logger.warn("Tried to retrieve permissions for data type {} for the guest user, but this returned null.", type);
@@ -1089,9 +1096,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     logger.error("An error occurred trying to retrieve the guest user", e);
                 }
             }
-    	}
+    	} else {
+    	    logger.debug("Found {} cached criteria for the type {} in user {}", criteria.get(type).size(), type, getUsername());
+        }
 
-        return criteria.get(type);
+        return ImmutableList.copyOf(criteria.get(type));
     }
 
 
@@ -1127,7 +1136,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 logger.debug("Created granted authorities list for user " + getLogin() + ": " + Joiner.on(", ").join(_authorities));
             }
         }
-        return new HashSet<>(_authorities);
+        return ImmutableSet.copyOf(_authorities);
     }
 
     public boolean isAccountNonExpired() {

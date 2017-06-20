@@ -9,6 +9,8 @@
 
 package org.nrg.xdat.security;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -16,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import org.aspectj.util.Reflection;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
@@ -46,11 +51,13 @@ import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
+
 @SuppressWarnings({"unused", "DuplicateThrows"})
 public class PermissionsServiceImpl implements PermissionsServiceI {
 	@Override
     public List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType){
-        return ((XDATUser)user).getPermissionsByDataType(dataType);
+        return ImmutableList.copyOf(((XDATUser)user).getPermissionsByDataType(dataType));
     }
 
 	@Override
@@ -103,7 +110,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             return true;
         } else {
             final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
-            for (PermissionCriteriaI criterion : criteria) {
+            for (final PermissionCriteriaI criterion : criteria) {
                 if (criterion.canAccess(action, values)) {
                     return true;
                 }
@@ -112,25 +119,16 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             // If we've reached here, the security check has failed so let's provide some information on the context but
             // only if this isn't the guest user and the log level is INFO or below...
             if (!user.isGuest() && logger.isInfoEnabled()) {
-                final StringBuilder buffer = new StringBuilder("User {} not able to {} the schema element {} with the security values: {}. {} permission criteria found for that user, action, and element.");
-                final String count = criteria.isEmpty() ? "No" : Integer.toString(criteria.size());
-                if (!criteria.isEmpty()) {
-                    for (PermissionCriteriaI criterion : criteria) {
-                        buffer.append("\n * ").append(criterion.toString());
-                    }
-                }
-
-                final String username = user.getUsername();
-                final String formattedName = root.getFormattedName();
-                logger.info(buffer.toString(), username, action, formattedName, Joiner.on(", ").withKeyValueSeparator(": ").join(values.getHash()), count);
+                logger.info("User {} not able to {} the schema element {} with the security values: {}. " + dumpCriteriaList(criteria),
+                            user.getUsername(),
+                            action,
+                            root.getFormattedName(),
+                            Joiner.on(", ").withKeyValueSeparator(": ").join(values.getHash()),
+                            criteria.isEmpty() ? "No" : Integer.toString(criteria.size()));
             }
         }
 
         return false;
-    }
-
-    private boolean securityCheckByXMLPath(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user,action, root, values);
     }
 
 	@Override
@@ -198,61 +196,47 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     }
 
     @Override
-    public ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, org.nrg.xft.exception.MetaDataException {
+    public ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, MetaDataException {
         try {
-            //check readability
-            boolean isOK = canRead(user, item);
-
-            //check quarantine
-            if (isOK) {
-                // If this item has a metadata element (which stores active status) and the user can't activate this...
-                if (item.getProperty("meta") != null && !canActivate(user, item)) {
-                    // Then check to see if it's not active. You can't access inactive things.
-                    if (!item.isActive()) {
-                        isOK = false;
-                        throw new IllegalAccessException("Access Denied: This data is in quarantine.");
-                    }
-                }
-            }
-
-            if (isOK) {
-                ArrayList invalidItems = new ArrayList();
-
-                Iterator iter = item.getChildItems().iterator();
-                while (iter.hasNext()) {
-                    ItemI child = (ItemI) iter.next();
-                    boolean b = canRead(user, child);
-                    if (b) {
-                        secureChild(user, child);
-                    } else {
-                        invalidItems.add(child);
-                    }
-                }
-
-                if (invalidItems.size() > 0) {
-                    Iterator invalids = invalidItems.iterator();
-                    while (invalids.hasNext()) {
-                        XFTItem invalid = (XFTItem) invalids.next();
-                        XFTItem parent = (XFTItem) item;
-                        parent.removeItem(invalid);
-                        item = parent;
-                    }
-                }
-            } else {
+            // Check readability
+            if (!canRead(user, item)) {
+                final String itemId = getItemIId(item);
+                logger.error("User {} does not have read access to a {} instance: {}", user.getUsername(), item.getXSIType(), itemId);
                 throw new IllegalAccessException("Access Denied: Current user does not have permission to read this data.");
             }
-        } catch (InvalidItemException e) {
-            logger.error("", e);
-        } catch (MetaDataException e) {
+
+            // Check quarantine: if this item has a metadata element (which stores active status) and the user can't
+            // activate this...
+            if (item.getProperty("meta") != null && !canActivate(user, item)) {
+                // Then check to see if it's not active. You can't access inactive things.
+                if (!item.isActive()) {
+                    final String itemId = getItemIId(item);
+                    logger.error("The requested item is in quarantine and the user {} does not have permission to activate the type {}: {}", user.getUsername(), item.getXSIType(), itemId);
+                    throw new IllegalAccessException("Access Denied: The requested data is in quarantine.");
+                }
+            }
+
+            final List<ItemI> invalidItems = new ArrayList<>();
+            for (final Object object : item.getChildItems()) {
+                final ItemI   child   = (ItemI) object;
+                final boolean canRead = canRead(user, child);
+                if (canRead) {
+                    secureChild(user, child);
+                } else {
+                    invalidItems.add(child);
+                }
+            }
+
+            if (invalidItems.size() > 0) {
+                for (final Object invalidItem : invalidItems) {
+                    XFTItem invalid = (XFTItem) invalidItem;
+                    XFTItem parent  = (XFTItem) item;
+                    parent.removeItem(invalid);
+                    item = parent;
+                }
+            }
+        } catch (MetaDataException | IllegalAccessException e) {
             throw e;
-        } catch (IllegalAccessException e) {
-            throw e;
-        } catch (XFTInitException e) {
-            logger.error("", e);
-        } catch (ElementNotFoundException e) {
-            logger.error("", e);
-        } catch (FieldNotFoundException e) {
-            logger.error("", e);
         } catch (Exception e) {
             logger.error("", e);
         }
@@ -260,8 +244,34 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         return item;
     }
 
-    private ItemI secureChild(UserI user, ItemI item) throws Exception {
-        List<ItemI> invalidItems = new ArrayList<ItemI>();
+    private boolean securityCheckByXMLPath(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
+        return securityCheck(user,action, root, values);
+    }
+
+    private String getItemIId(final ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, IllegalAccessException, InvocationTargetException {
+        final String itemId;
+        if (item instanceof XFTItem) {
+            itemId = ((XFTItem) item).getIDValue();
+        } else if (item instanceof org.nrg.xdat.base.BaseElement) {
+            itemId = ((org.nrg.xdat.base.BaseElement) item).getStringProperty("ID");
+        } else {
+            final Method getId = Reflection.getMatchingMethod(item.getClass(), "getId", new Object[0]);
+            if (getId != null) {
+                itemId = (String) getId.invoke(item);
+            } else {
+                final Method getID = Reflection.getMatchingMethod(item.getClass(), "getID", new Object[0]);
+                if (getID != null) {
+                    itemId = (String) getID.invoke(item);
+                } else {
+                    itemId = "Couldn't determine item's ID, attaching full XML\n" + item.toString();
+                }
+            }
+        }
+        return itemId;
+    }
+
+    private void secureChild(UserI user, ItemI item) throws Exception {
+        List<ItemI> invalidItems = new ArrayList<>();
 
         for (final Object o : item.getChildItems()) {
             ItemI child = (ItemI) o;
@@ -287,9 +297,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 ((XFTItem) item).removeItem(invalid);
             }
         }
-        return item;
     }
-
 
     @Override
     public boolean can(UserI user, ItemI item, String action) throws InvalidItemException, Exception {
@@ -306,19 +314,17 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             if (elementSecurity.isSecure(action)) {
                 final SchemaElement schemaElement = SchemaElement.GetElement(xsiType);
                 final SecurityValues securityValues = item.getItem().getSecurityValues();
-                final boolean isOK = securityCheckByXMLPath(user, action, schemaElement, securityValues);
-                if (!isOK) {
+                if (!securityCheckByXMLPath(user, action, schemaElement, securityValues)) {
                     logger.info("User {} doesn't have permission to {} the schema element {} for XSI type {}. The security values are: {}.",
                                 user.getUsername(),
                                 action,
                                 schemaElement.getFormattedName(),
                                 xsiType,
                                 Joiner.on(", ").withKeyValueSeparator(" : ").join(securityValues.getHash()));
+                    return false;
                 }
-                return isOK;
-            } else {
-                return true;
             }
+            return true;
         }
     }
 
@@ -409,35 +415,35 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<Object> getAllowedValues(UserI user, String elementName, String xmlPath, String action) {
-    	List allowedValues = Lists.newArrayList();
+        final List allowedValues = Lists.newArrayList();
 
-    	try {
-			SchemaElement root=SchemaElement.GetElement(elementName);
+        try {
+            final String rootXmlName = SchemaElement.GetElement(elementName).getFullXMLName();
+            if (ElementSecurity.IsSecureElement(rootXmlName, action)) {
 
-			if (ElementSecurity.IsSecureElement(root.getFullXMLName(), action)) {
-	        	List<PermissionCriteriaI> criteria =getPermissionsForUser(user, root.getFullXMLName());
+                final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, rootXmlName);
 
-			    CriteriaCollection cc = new CriteriaCollection("OR");
-			    for(PermissionCriteriaI crit: criteria){
-			    	if(crit.getAction(action) && !allowedValues.contains(crit.getFieldValue())){
-			    		allowedValues.add(crit.getFieldValue());
-			    	}
-			    }
-			} else {
-			    allowedValues = GenericWrapperElement.GetUniqueValuesForField(xmlPath);
-			}
+                CriteriaCollection cc = new CriteriaCollection("OR");
+                for (PermissionCriteriaI crit : criteria) {
+                    if (crit.getAction(action) && !allowedValues.contains(crit.getFieldValue())) {
+                        allowedValues.add(crit.getFieldValue());
+                    }
+                }
+            } else {
+                allowedValues.addAll(GenericWrapperElement.GetUniqueValuesForField(xmlPath));
+            }
 
-	        Collections.sort(allowedValues);
-		} catch (Exception e) {
-			logger.error("",e);
-		}
+            Collections.sort(allowedValues);
+        } catch (Exception e) {
+            logger.error("", e);
+        }
 
-        return allowedValues;
+        return ImmutableList.copyOf(allowedValues);
     }
 
     @Override
     public Map<String,Object> getAllowedValues(UserI user, String elementName, String action) {
-    	Map<String,Object> allowedValues = Maps.newHashMap();
+    	final Map<String,Object> allowedValues = Maps.newHashMap();
 
     	try {
 			SchemaElement root=SchemaElement.GetElement(elementName);
@@ -456,7 +462,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 			logger.error("",e);
 		}
 
-        return allowedValues;
+        return ImmutableMap.copyOf(allowedValues);
     }
 
 	@Override
@@ -622,12 +628,12 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
 	@Override
 	public List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType) {
-		return ((UserGroup)group).getPermissionsByDataType(dataType);
+		return ImmutableList.copyOf(((UserGroup)group).getPermissionsByDataType(dataType));
 	}
 
 	@Override
 	public Map<String, List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group) {
-		return ((UserGroup)group).getAllPermissions();
+		return ImmutableMap.copyOf(((UserGroup)group).getAllPermissions());
 	}
 
 	@Override

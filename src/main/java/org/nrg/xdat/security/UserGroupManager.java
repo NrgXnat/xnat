@@ -102,7 +102,6 @@ public class UserGroupManager implements UserGroupServiceI{
 
 	@Override
 	public void updateUserForGroup(UserI user, String groupId, UserGroupI group) {
-	    ((XDATUser)user).getGroups().put(groupId,group);
 		try {
 			((XDATUser)user).init();
 		} catch (Exception e) {
@@ -333,16 +332,23 @@ public class UserGroupManager implements UserGroupServiceI{
     	
     	if(gp.getTag()!=null){
 	    	//remove from existing groups
+			final List<String> groupIdsToRemove = new ArrayList<>();
 			for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(newUser).entrySet()) {
 				if (entry.getValue().getTag()!=null && entry.getValue().getTag().equals(gp.getTag())) {
-					if(entry.getValue().getId().equals(group_id)){
+					final String userGroupId = entry.getValue().getId();
+					if(userGroupId.equals(group_id)){
 						return gp;
 					}
 	
 					//find mapping object to delete
-					if(Groups.isMember(newUser, entry.getValue().getId())){
-						Groups.removeUserFromGroup(newUser, currentUser, entry.getValue().getId(),ci);
+					if(Groups.isMember(newUser, userGroupId)) {
+						groupIdsToRemove.add(userGroupId);
 					}
+				}
+			}
+			if (groupIdsToRemove.size() > 0) {
+				for (final String groupId : groupIdsToRemove) {
+					Groups.removeUserFromGroup(newUser, currentUser, groupId, ci);
 				}
 			}
     	}

@@ -9,20 +9,19 @@
 
 package org.nrg.xdat.security.services;
 
-import java.util.List;
-import java.util.Map;
-
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.security.SecurityValues;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.InvalidItemException;
 import org.nrg.xft.exception.MetaDataException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
+
+import java.util.List;
+import java.util.Map;
 
 public interface PermissionsServiceI {
     /**

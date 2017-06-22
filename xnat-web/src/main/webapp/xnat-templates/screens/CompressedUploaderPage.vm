@@ -347,171 +347,160 @@
     }
 </script>
 
-<table border="0" cellpadding="5" cellspacing="0">
-    <tr>
-        <td>
-            <h4>
-                Compressed upload</h4></td>
-    </tr>
-    <tr>
-        <td valign="top" align="left">
-            <div style="width:500px">Raw image files can be zipped (.zip or .tar.gz) and uploaded using the form. This
-                tool currently supports DICOM and ECAT files. Selecting 'Prearchive' will place your images into a
-                temporary holding space. You will then have the ability to review the details and match the data to the
-                proper $displayManager.getSingularDisplayNameForSubject().toLowerCase() & $displayManager.getSingularDisplayNameForImageSession().toLowerCase() ID. If you are confident the data will be mapped properly, you can directly
-                'Archive' the files and specify whether the resulting $displayManager.getSingularDisplayNameForImageSession().toLowerCase() should go into a quarantine state.
-            </div>
-            <div class="alert" style="margin:15px 0;max-width:696px;min-width:400px;">
-                The compressed uploader does not yet support splitting PET/MR sessions based on the site-wide or
-                project-specific settings for handling PET/MR data. If you are uploading PET/MR data and need to have
-                the data split into separate PET and MR sessions or created as a PET session rather than a PET/MR
-                session, you should use either the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT Upload
-                Assistant</a> or the DICOM C-STORE receiver as described below.
-            </div>
-        </td>
-    </tr>
-    <tr>
-        <td>&nbsp;</td>
-    </tr>
-    <tr id="option1">
-        <td>
-            <input type="hidden" name="popup" value="true"/>
-            <form id="uploadFORM" class="noHide" target="iframe" enctype="multipart/form-data" method="POST"
-                  action="$content.getURI("/REST/services/import?http-session-listener=$uploadID&format=html&XNAT_CSRF=$!XNAT_CSRF")">
-                <input type="hidden" name="threshhold" value="51516279"/>
+#if(!$sectionTitle)
+    #set($sectionTitle = "<h2>XNAT Compressed Uploader</h2>")
+#end
 
-                #if($session)
-                    <input type="hidden" name="EXPT_LABEL" value="$!session.getLabel()"/>
-                    <input type="hidden" name="SUBJECT_ID" value="$!session.getSubjectData().getLabel()"/>
-                #end
+<div style="width: 500px">
+    $sectionTitle
 
-                <table border=0 cellpadding="5" cellspacing="0">
-                    <tr>
-                        <th align="left">$displayManager.getSingularDisplayNameForProject()</th>
-                        <td>
-                            #if(!$session)
-                                <select id="project" name="project" disabled=true></select>
-                            #else
-                                <input type="hidden" name="project" id="project"
-                                       value="$session.getProject()"/>$session.getProject()
-                            #end
-                        </td>
-                    </tr>
+    <p>Raw image files can be zipped (.zip or .tar.gz) and uploaded using the form. This
+        tool currently supports DICOM and ECAT files. Selecting 'Prearchive' will place your images into a
+        temporary holding space. You will then have the ability to review the details and match the data to the
+        proper $displayManager.getSingularDisplayNameForSubject().toLowerCase() & $displayManager.getSingularDisplayNameForImageSession().toLowerCase() ID. If you are confident the data will be mapped properly, you can directly
+        'Archive' the files and specify whether the resulting $displayManager.getSingularDisplayNameForImageSession().toLowerCase() should go into a quarantine state.
+    </p>
+    <div class="alert" style="margin:15px 0;max-width:696px;min-width:400px;">
+        The compressed uploader does not yet support splitting PET/MR sessions based on the site-wide or
+        project-specific settings for handling PET/MR data. If you are uploading PET/MR data and need to have
+        the data split into separate PET and MR sessions or created as a PET session rather than a PET/MR
+        session, you should use either the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT Upload
+        Assistant</a> or the DICOM C-STORE receiver as described below.
+    </div>
+    <br>
+    <form id="uploadFORM" class="noHide" target="iframe" enctype="multipart/form-data" method="POST"
+          action="$content.getURI("/REST/services/import?http-session-listener=$uploadID&format=html&XNAT_CSRF=$!XNAT_CSRF")">
+        <input type="hidden" name="threshhold" value="51516279"/>
 
-                    #if($session)
-                        <tr>
-                            <th align="left">$displayManager.getSingularDisplayNameForImageSession()</th>
-                            <td>$!session.getLabel()</td>
-                        </tr>
+        #if($session)
+            <input type="hidden" name="EXPT_LABEL" value="$!session.getLabel()"/>
+            <input type="hidden" name="SUBJECT_ID" value="$!session.getSubjectData().getLabel()"/>
+        #end
+
+        <table border=0 cellpadding="5" cellspacing="0">
+            <tr>
+                <th align="left">$displayManager.getSingularDisplayNameForProject()</th>
+                <td>
+                    #if(!$session)
+                        <select id="project" name="project" disabled=true></select>
+                    #else
+                        <input type="hidden" name="project" id="project"
+                               value="$session.getProject()"/>$session.getProject()
                     #end
-                    <tr>
-                        <th align="left">Destination</th>
-                        <td>
-                            <label><input id="pc_0" type='radio' name='prearchive_code' value='0'
-                                          #if(!$session)CHECKED#end onchange="evaluateDestination(this)"/>
-                                Prearchive</label>&nbsp;&nbsp;&nbsp;
-                            <label><input id="pc_2" type='radio' name='prearchive_code' value='1'
-                                          #if($session)CHECKED#end onchange="evaluateDestination(this)"/>
-                                Archive</label>
-                            #if($session)
-                                <input type="hidden" name="overwrite" value="append"/>
-                                <input type="hidden" id="auto-archive" name='auto-archive' value='TRUE'/>
-                            #else
-                                <input type="hidden" id="auto-archive" name='auto-archive' value='FALSE'/>
-                            #end
-                            <input type="hidden" id="quarantine" name='quarantine' value='FALSE'/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th align="left">File</th>
-                        <td><input type="file" id="image_archive" name="image_archive" size="60"
-                                   accept="application/zip, application/x-gzip, application/x-tgz"/></td>
-                    </tr>
-                    #auditBoxes("3" "" "Standard Upload" "Upload Images")
-                    #hideFormJustification()
-                    <tr>
-                        <td>&nbsp;</td>
-                        <td><input id="directButton" type="button" name="eventSubmit_doPerform" value="Begin Upload" onclick="makeTheFormGo();"/>
-                        </td>
-                    </tr>
-                </table>
-            </form>
+                </td>
+            </tr>
 
-<span id="progressBar" style="position:relative; display:none;">
-<div id="ex" style="position:relative;width:468px;background:#eeeeee;border:3px double #000000;">
-    <table width="100%">
-        <tr>
-            <td colspan=2 align="left">
-                <div id="preparing">Loading File...&nbsp;</div>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <div id="uploadLabel">Upload:&nbsp;</div>
-            </td>
-            <td align="center">
-                <div id="emptyUpload"
-                     style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0;"
-                     align="left">
-                    <div id="uploadBar"
-                         style="position:relative;top:0;left:0;background-color:#333333;height:22px;width:0;padding-top:5px;padding:0;">
-                        <div id="uploadPercent"
-                             style="position:relative;top:0;left:0;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0;padding-top:5px;">
+            #if($session)
+                <tr>
+                    <th align="left">$displayManager.getSingularDisplayNameForImageSession()</th>
+                    <td>$!session.getLabel()</td>
+                </tr>
+            #end
+            <tr>
+                <th align="left">Destination</th>
+                <td>
+                    <label><input id="pc_0" type='radio' name='prearchive_code' value='0'
+                                  #if(!$session)CHECKED#end onchange="evaluateDestination(this)"/>
+                        Prearchive</label>&nbsp;&nbsp;&nbsp;
+                    <label><input id="pc_2" type='radio' name='prearchive_code' value='1'
+                                  #if($session)CHECKED#end onchange="evaluateDestination(this)"/>
+                        Archive</label>
+                    #if($session)
+                        <input type="hidden" name="overwrite" value="append"/>
+                        <input type="hidden" id="auto-archive" name='auto-archive' value='TRUE'/>
+                    #else
+                        <input type="hidden" id="auto-archive" name='auto-archive' value='FALSE'/>
+                    #end
+                    <input type="hidden" id="quarantine" name='quarantine' value='FALSE'/>
+                </td>
+            </tr>
+            <tr>
+                <th align="left">File</th>
+                <td><input type="file" id="image_archive" name="image_archive" size="60"
+                           accept="application/zip, application/x-gzip, application/x-tgz"/></td>
+            </tr>
+            #auditBoxes("3" "" "Standard Upload" "Upload Images")
+            #hideFormJustification()
+            <tr>
+                <td>&nbsp;</td>
+                <td><input id="directButton" type="button" name="eventSubmit_doPerform" value="Begin Upload" onclick="makeTheFormGo();"/>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <span id="progressBar" style="position:relative; display:none;">
+        <div id="ex" style="position:relative;width:468px;background:#eeeeee;border:3px double #000000;">
+            <table width="100%">
+                <tr>
+                    <td colspan=2 align="left">
+                        <div id="preparing">Loading File...&nbsp;</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div id="uploadLabel">Upload:&nbsp;</div>
+                    </td>
+                    <td align="center">
+                        <div id="emptyUpload"
+                             style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0;"
+                             align="left">
+                            <div id="uploadBar"
+                                 style="position:relative;top:0;left:0;background-color:#333333;height:22px;width:0;padding-top:5px;padding:0;">
+                                <div id="uploadPercent"
+                                     style="position:relative;top:0;left:0;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0;padding-top:5px;">
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td>&nbsp;</td>
-        </tr>
-        <tr>
-            <td>
-                <div id="extractLabel">Extract/Review:&nbsp;</div>
-            </td>
-            <td align="center">
-                <div id="emptyExtract"
-                     style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0;"
-                     align="left">
-                    <div id="extractBar"
-                         style="position:relative;top:0;left:0;background-color:#333333;height:22px;width:0;padding-top:5px;padding:0;">
-                        <div id="extractPercent"
-                             style="position:relative;top:0;left:0;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0;padding-top:5px;">
+                    </td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div id="extractLabel">Extract/Review:&nbsp;</div>
+                    </td>
+                    <td align="center">
+                        <div id="emptyExtract"
+                             style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0;"
+                             align="left">
+                            <div id="extractBar"
+                                 style="position:relative;top:0;left:0;background-color:#333333;height:22px;width:0;padding-top:5px;padding:0;">
+                                <div id="extractPercent"
+                                     style="position:relative;top:0;left:0;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0;padding-top:5px;">
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td colspan=2 align="center">
-                <div id="current_step"></div>
-            </td>
-        </tr>
-    </table>
-</div>
-<br>
-<table id="extractSummaryTable" border=0 style="border-collapse: collapse;">
-    <tr>
-        <td>
-            <span id="extractSummary"
-                  style="position:relative;width:468px;height:100px;display:none;overflow:auto;	"></span>
-        </td>
-    </tr>
-</table>
-<br>
-<iframe id="iframe" name="iframe" src="" width="468" height="80" frameborder="0">
-    PROGRESS BAR DISABLED. <br>Try using a more recent web browser.
-</iframe>
-</span>
-            <script type="text/javascript">
-                progressBar = document.getElementById("uploadBar");
-                progressPercent = document.getElementById("uploadPercent");
-            </script>
-        </td>
-    </tr>
-    <tr>
-        <td>&nbsp;</td>
-    </tr>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan=2 align="center">
+                        <div id="current_step"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <br>
+        <table id="extractSummaryTable" border=0 style="border-collapse: collapse;">
+            <tr>
+                <td>
+                    <span id="extractSummary"
+                          style="position:relative;width:468px;height:100px;display:none;overflow:auto;	"></span>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <iframe id="iframe" name="iframe" src="" width="468" height="" frameborder="0">
+            PROGRESS BAR DISABLED. <br>Try using a more recent web browser.
+        </iframe>
+    </span>
+
+    <script type="text/javascript">
+        progressBar = document.getElementById("uploadBar");
+        progressPercent = document.getElementById("uploadPercent");
+    </script>
+
     <script type="text/javascript">
         // Adapted from Sun Java Web Start Auto-Install Demo
         // http://java.sun.com/developer/technicalArticles/JavaLP/javawebstart/AutoInstallDemo.html
@@ -524,7 +513,7 @@
             return place;
         }
     </script>
-</table>
+</div>
 
 #if(!$session)
 <script type="text/javascript" src="$content.getURI('scripts/subjectAssessorData/proj_tools.js')"></script>

@@ -20,7 +20,10 @@ import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.status.StatusProducer;
-import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xdat.XDAT;
+import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xnat.helpers.prearchive.*;
+import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -29,9 +32,6 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
 import org.nrg.xnat.helpers.merge.SiteWideAnonymizer;
-import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.helpers.prearchive.SessionException;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
@@ -114,7 +114,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 sessionData.setStatus(PrearcUtils.PrearcStatus.BUILDING);
                 sessionData.setLastBuiltDate(Calendar.getInstance().getTime());
                 sessionData.setSubject(session.getAdditionalValues().get("subject_ID"));
-                sessionData.setUrl(new File(session.getUrl()).getAbsolutePath());
+                sessionData.setUrl(session.getSessionDir().getAbsolutePath());
                 sessionData.setSource(SessionImporter.class.getSimpleName());
                 sessionData.setPreventAnon(false);
                 sessionData.setPreventAutoCommit(true);
@@ -156,7 +156,6 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			String project=null;
 			
 			Map<String,Object> prearc_parameters= new HashMap<>(params);
-			
 			
 			//check for existing session by URI
 			if(destination!=null){
@@ -273,8 +272,16 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 				SiteWideAnonymizer site_wide = new SiteWideAnonymizer(s, true);
 				site_wide.call();
 				if(finisher.isAutoArchive()){
-					return new ArrayList<String>(){{add(finisher.call());}};
-				}else{
+                    final ArrayList<String> urls = new ArrayList<String>() {{
+                        add(finisher.call());
+                    }};
+                    if (PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.QUEUED_DELETING)) {
+                        final SessionData sessionData = PrearcDatabase.getSession(session.getFolderName(), session.getTimestamp(), session.getProject());
+                        final File sessionDir = session.getSessionDir();
+                        XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, sessionData, sessionDir, "Delete"));
+                    }
+                    return urls;
+                }else{
 					this.completed("Successfully uploaded " + sessions.size() +" sessions to the prearchive.");
 					resetStatus(sessions);
 					return returnURLs(sessions);

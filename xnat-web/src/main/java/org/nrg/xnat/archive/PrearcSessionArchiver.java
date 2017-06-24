@@ -635,7 +635,6 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
 
         completed("archiving operation complete");
         return url;
-
     }
 
     /**

@@ -1307,6 +1307,19 @@ public final class PrearcDatabase {
     /**
      * Delete a session from the prearchive database. if the session is locked.
      *
+     * @param sessionData The session data object indicating the session to be deleted.
+     *
+     * @return Return true if successful, false
+     *
+     * @throws Exception If an error occurs while deleting the cache row.
+     */
+    public static boolean deleteCacheRow(final SessionData sessionData) throws Exception {
+        return deleteCacheRow(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+    }
+
+    /**
+     * Delete a session from the prearchive database. if the session is locked.
+     *
      * @param sess         Session label.
      * @param timestamp    The session timestamp.
      * @param proj         Project name.
@@ -1320,12 +1333,12 @@ public final class PrearcDatabase {
      */
     public static boolean deleteCacheRow(final String sess, final String timestamp, final String proj) throws Exception, SyncFailedException {
         final SessionData sd = PrearcDatabase.getSession(sess, timestamp, proj);
-        new LockAndSync<java.lang.Void>(sess, timestamp, proj, sd.getStatus()) {
+        return new LockAndSync<Void>(sess, timestamp, proj, sd.getStatus()) {
             protected boolean checkStatus() {
                 return PrearcStatus._DELETING.equals(this.status);
             }
 
-            java.lang.Void extSync() throws SyncFailedException {
+            Void extSync() throws SyncFailedException {
                 return null;
             }
 
@@ -1338,7 +1351,6 @@ public final class PrearcDatabase {
                 });
             }
         }.run();
-        return true;
     }
 
 

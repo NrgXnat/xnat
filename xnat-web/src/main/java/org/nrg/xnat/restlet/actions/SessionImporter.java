@@ -16,8 +16,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.dcm4che2.data.Tag;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -43,14 +41,14 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.restlet.data.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 @ImporterHandler(handler = ImporterHandlerA.SESSION_IMPORTER)
 public class SessionImporter extends ImporterHandlerA implements Callable<List<String>> {
 
-	static Logger logger = Logger.getLogger(SessionImporter.class);
-
-	public static final String RESPONSE_URL = "URL";
+	private static final Logger logger = LoggerFactory.getLogger(SessionImporter.class);
 
 	private final Boolean overrideExceptions;
 
@@ -66,17 +64,17 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 
 
 	/**
-	 *
-	 * @param listenerControl
-	 * @param u
-     * @param fw
-     * @param params
+	 * Creates a new session importer instance.
+	 * @param listenerControl The listener for the import operation.
+	 * @param user            The user doing the import.
+     * @param fileWriter      A file writer.
+     * @param params          Import parameters.
 	 */
-	public SessionImporter(final Object listenerControl, final UserI u, final FileWriterWrapperI fw, final Map<String,Object> params){
-		super(listenerControl, u, fw, params);
+	public SessionImporter(final Object listenerControl, final UserI user, final FileWriterWrapperI fileWriter, final Map<String,Object> params){
+		super(listenerControl, user, fileWriter, params);
 		this.uID=listenerControl;
-		this.user=u;
-		this.fw=fw;
+		this.user=user;
+		this.fw=fileWriter;
 		this.params=params;
 
 		String overwriteV=(String)params.remove("overwrite");
@@ -112,31 +110,21 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 sessionData.setFolderName(session.getFolderName());
                 sessionData.setName(session.getFolderName());
                 sessionData.setProject(session.getProject());
-                // sessionData.setTag(studyInstanceUID);
                 sessionData.setTimestamp(session.getTimestamp());
                 sessionData.setStatus(PrearcUtils.PrearcStatus.BUILDING);
                 sessionData.setLastBuiltDate(Calendar.getInstance().getTime());
                 sessionData.setSubject(session.getAdditionalValues().get("subject_ID"));
                 sessionData.setUrl(new File(session.getUrl()).getAbsolutePath());
                 sessionData.setSource(SessionImporter.class.getSimpleName());
-                sessionData.setPreventAnon(true);
+                sessionData.setPreventAnon(false);
                 sessionData.setPreventAutoCommit(true);
-
                 PrearcDatabase.addSession(sessionData);
             }
 			return prearcSessions;
-		} catch (SecurityException e) {
+		} catch (SecurityException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
 			throw new ServerException(e.getMessage(),e);
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException | NoSuchMethodException e) {
 			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,e.getMessage(),e);
-		} catch (NoSuchMethodException e) {
-			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,e.getMessage(),e);
-		} catch (InstantiationException e) {
-			throw new ServerException(e.getMessage(),e);
-		} catch (IllegalAccessException e) {
-			throw new ServerException(e.getMessage(),e);
-		} catch (InvocationTargetException e) {
-			throw new ServerException(e.getMessage(),e);
 		} catch (PrearcImporterA.UnknownPrearcImporterException e) {
 			throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND,e.getMessage(),e);
 		} catch (Exception e) {
@@ -167,7 +155,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			
 			String project=null;
 			
-			Map<String,Object> prearc_parameters=new HashMap<String,Object>(params);
+			Map<String,Object> prearc_parameters= new HashMap<>(params);
 			
 			
 			//check for existing session by URI
@@ -302,10 +290,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 				throw e;
 			}
 			
-		} catch (ClientException e) {
-			this.failed(e.getMessage());
-			throw e;
-		} catch (ServerException e) {
+		} catch (ClientException | ServerException e) {
 			this.failed(e.getMessage());
 			throw e;
 		} catch (IOException e) {
@@ -323,11 +308,11 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 	}
 	
 	public List<String> returnURLs(final List<PrearcSession> sessions)throws ActionException{
-		List<String> _return= new ArrayList<String>();
+		final List<String> urls= new ArrayList<>();
 		for(final PrearcSession ps: sessions){
-			_return.add(ps.getUrl());
+			urls.add(ps.getUrl());
 		}
-		return _return;
+		return urls;
 	}
 	
 	public void resetStatus(final List<PrearcSession> sessions)throws ActionException{

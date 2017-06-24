@@ -20,6 +20,7 @@ import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.framework.status.StatusProducerI;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -37,7 +38,6 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.JustificationAbsent;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
@@ -591,18 +591,18 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                         overrideExceptions || overwriteFiles,
                         saveImpl, user, workflow.buildEvent())).call();
 
-                org.nrg.xft.utils.FileUtils.DeleteFile(new File(this.prearcSession.getSessionDir().getAbsolutePath() + ".xml"));
-                org.nrg.xft.utils.FileUtils.DeleteFile(this.prearcSession.getSessionDir());
+                FileUtils.DeleteFile(new File(this.prearcSession.getSessionDir().getAbsolutePath() + ".xml"));
+                FileUtils.DeleteFile(this.prearcSession.getSessionDir());
                 File timestampedDir = new File(this.prearcSession.getSessionDir().getParent());
                 File projectDir = timestampedDir.getParentFile();
                 final File[] timestampedDirFiles = timestampedDir.listFiles();
                 if (timestampedDirFiles == null || timestampedDirFiles.length == 0) {
-                    org.nrg.xft.utils.FileUtils.DeleteFile(timestampedDir);
+                    FileUtils.DeleteFile(timestampedDir);
                 }
                 final File[] projectDirFiles = projectDir.listFiles();
                 if (projectDirFiles == null || projectDirFiles.length == 0) {
                     // to keep things tidy, also direct the project-level dir if it's empty
-                    org.nrg.xft.utils.FileUtils.DeleteFile(projectDir);
+                    FileUtils.DeleteFile(projectDir);
                 }
 
                 try {

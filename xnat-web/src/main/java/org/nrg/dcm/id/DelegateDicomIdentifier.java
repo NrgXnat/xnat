@@ -13,20 +13,43 @@ import org.dcm4che2.data.DicomObject;
 
 import java.util.SortedSet;
 
+/**
+ * Wraps a {@link DicomDerivedString object}.
+ */
 public class DelegateDicomIdentifier implements DicomDerivedString {
-    private final DicomDerivedString identifier;
-    
-    public DelegateDicomIdentifier(DicomDerivedString identifier) {
-        this.identifier = identifier;
+    /**
+     * Creates a delegate identifier from the submitted identifier.
+     *
+     * @param identifier The identifier for this delegate.
+     */
+    public DelegateDicomIdentifier(final DicomDerivedString identifier) {
+        _identifier = identifier;
     }
-    
-    /* (non-Javadoc)
-     * @see org.nrg.dcm.id.DicomObjectFunction#getTags()
-     */
-    public final SortedSet<Integer> getTags() { return identifier.getTags(); }
 
-    /* (non-Javadoc)
-     * @see com.google.common.base.Function#apply(java.lang.Object)
+    /**
+     * {@inheritDoc}
      */
-    public final String apply(DicomObject o) { return identifier.apply(o); }
+    @Override
+    public final SortedSet<Integer> getTags() {
+        return _identifier.getTags();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final String apply(final DicomObject dicomObject) {
+        return _identifier.apply(dicomObject);
+    }
+
+    /**
+     * Gets the delegated identifier.
+     *
+     * @return The delegated identifier.
+     */
+    protected DicomDerivedString getIdentifier() {
+        return _identifier;
+    }
+
+    private final DicomDerivedString _identifier;
 }

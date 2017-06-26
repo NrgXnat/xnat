@@ -18,6 +18,7 @@ import org.nrg.xft.security.UserI;
 import com.google.common.collect.ImmutableSortedSet;
 
 public final class FixedDicomProjectIdentifier implements DicomProjectIdentifier {
+    @SuppressWarnings("unused")
     public FixedDicomProjectIdentifier(final XnatProjectdata project) {
         _project = project;
         _name = project.getName();
@@ -45,6 +46,11 @@ public final class FixedDicomProjectIdentifier implements DicomProjectIdentifier
             _project = XnatProjectdata.getProjectByIDorAlias(_name, user, false);
         }
         return _project;
+    }
+
+    @Override
+    public void reset() {
+        // Nothing to do here since this is just set at initialization.
     }
 
     private static final ImmutableSortedSet<Integer> TAGS = ImmutableSortedSet.of();

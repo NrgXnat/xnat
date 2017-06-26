@@ -123,9 +123,12 @@ public class DicomSCPManager {
         }
     }
 
-    public List<DicomSCP> startOrStopDicomSCPAsDictatedByConfiguration() {
-        final boolean enableDicomReceiver = _siteConfigPreferences.isEnableDicomReceiver();
-        return enableDicomReceiver ? startDicomSCPs() : stopDicomSCPs();
+    public void startOrStopDicomSCPAsDictatedByConfiguration() {
+        if (_siteConfigPreferences.isEnableDicomReceiver()) {
+            startDicomSCPs();
+        } else {
+            stopDicomSCPs();
+        }
     }
 
     public List<DicomSCP> startDicomSCPs() {
@@ -141,12 +144,12 @@ public class DicomSCPManager {
         return started;
     }
 
-    public DicomSCP startDicomSCP(final int id) {
+    public void startDicomSCP(final int id) {
         final DicomSCPInstance instance = _dicomScpPreferences.getDicomSCPInstance(id);
         if (instance == null) {
             throw new NrgServiceRuntimeException(NrgServiceError.UnknownEntity, "Couldn't find the DICOM SCP instance identified by " + id);
         }
-        return startDicomSCP(instance);
+        startDicomSCP(instance);
     }
 
     public DicomSCP startDicomSCP(final DicomSCPInstance instance) {
@@ -229,8 +232,8 @@ public class DicomSCPManager {
                     // We can ignore this: the exception comes when an enabled instance is inserted with the same port as
                     // another enabled instance. Since we're explicitly disabling this instance, we won't actually get this
                     // error.
-        }  catch (DICOMReceiverWithDuplicateAeTitleException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to disable DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
+        } catch (DICOMReceiverWithDuplicateAeTitleException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to disable DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort() + ". AE title " + instance.getAeTitle() + " already exists.", e);
         }
     }
 
@@ -260,6 +263,28 @@ public class DicomSCPManager {
             values.add(Integer.parseInt(key));
         }
         return Collections.max(values) + 1;
+    }
+
+    public void resetDicomObjectIdentifier() {
+        final DicomObjectIdentifier<XnatProjectdata> objectIdentifier = getDefaultDicomObjectIdentifier();
+        if (objectIdentifier instanceof CompositeDicomObjectIdentifier) {
+            ((CompositeDicomObjectIdentifier) objectIdentifier).getProjectIdentifier().reset();
+        }
+    }
+
+    public void resetDicomObjectIdentifier(final String beanId) {
+        final DicomObjectIdentifier<XnatProjectdata> identifier = getDicomObjectIdentifier(beanId);
+        if (identifier instanceof CompositeDicomObjectIdentifier) {
+            ((CompositeDicomObjectIdentifier) identifier).getProjectIdentifier().reset();
+        }
+    }
+
+    public void resetDicomObjectIdentifierBeans() {
+        for (final DicomObjectIdentifier identifier : getDicomObjectIdentifiers().values()) {
+            if (identifier instanceof CompositeDicomObjectIdentifier) {
+                ((CompositeDicomObjectIdentifier) identifier).getProjectIdentifier().reset();
+            }
+        }
     }
 
     private static class IdentifiersToMapFunction implements Function<String, String> {

@@ -131,6 +131,10 @@ public class CompositeDicomObjectIdentifier implements DicomObjectIdentifier<Xna
         this.userProvider = userProvider;
     }
 
+    public DicomProjectIdentifier getProjectIdentifier() {
+        return _identifier;
+    }
+
     private void initialize() {
         ImmutableSortedSet.Builder<Integer> builder = ImmutableSortedSet.naturalOrder();
         builder.addAll(_identifier.getTags());

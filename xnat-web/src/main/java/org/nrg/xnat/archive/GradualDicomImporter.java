@@ -339,35 +339,14 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private XnatProjectdata getProject(final String alias, final Callable<XnatProjectdata> lookupProject) {
         if (null != alias) {
             logger.debug("looking for project matching alias {} from query parameters", alias);
-            if (_cache.has(_userId, alias)) {
-                if (_cache.isCachedNonWriteableProject(_userId, alias)) {
-                    // this alias is cached as a non-writable project name, but user is specifying it.
-                    // maybe they know something we don't; clear cache entry so we can try again.
-                    _cache.remove(_userId, alias);
-                    return getProject(alias, lookupProject);
-                } else {
-                    return _cache.get(_userId, alias);
-                }
-            } else {
-                logger.trace("cache miss for project alias {}, trying database", alias);
-                final XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(alias, _user, false);
-                if (null != project && canCreateIn(project)) {
-                    _cache.put(_userId, alias, project);
-                    return project;
-                } else {
-                    final List<XnatProjectdata> projectsByAlias = XnatProjectdata.getXnatProjectdatasByField("xnat:projectData/aliases/alias/alias", alias, _user, false);
-                    for (final XnatProjectdata projectAlias : projectsByAlias) {
-                        if (canCreateIn(projectAlias)) {
-                            _cache.put(_userId, alias, projectAlias);
-                            return projectAlias;
-                        }
-                    }
-                }
+            final XnatProjectdata project = _cache.get(_user, alias);
+            if (project == null) {
+                logger.info("storage request specified project {}, which does not exist or user does not have create perms", alias);
             }
-            logger.info("storage request specified project {}, which does not exist or user does not have create perms", alias);
         } else {
             logger.trace("no project alias found in query parameters");
         }
+
         // No alias, or we couldn't match it to a project. Run the identifier to see if that can get a project name/alias.
         // (Don't cache alias->identifier-derived-project because we didn't use the alias to derive the project.)
         try {

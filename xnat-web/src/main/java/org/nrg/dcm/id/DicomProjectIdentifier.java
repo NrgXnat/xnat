@@ -15,4 +15,6 @@ import org.nrg.xft.security.UserI;
 
 public interface DicomProjectIdentifier extends DicomObjectFunction {
     XnatProjectdata apply(UserI user, DicomObject o);
+
+    void reset();
 }

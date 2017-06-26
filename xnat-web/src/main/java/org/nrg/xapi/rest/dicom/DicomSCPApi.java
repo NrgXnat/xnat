@@ -58,6 +58,16 @@ public class DicomSCPApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_manager.getDicomObjectIdentifierBeans(), HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Resets all configured DICOM object identifiers.", notes = "This function resets all of the DICOM object identifiers defined for the current system. This causes each identifier to reload its configuration on next access.")
+    @ApiResponses({@ApiResponse(code = 200, message = "The DICOM object identifiers were successfully reset."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "identifiers", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
+    @ResponseBody
+    public ResponseEntity<Void> resetDicomObjectIdentifiers() {
+        _manager.resetDicomObjectIdentifierBeans();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @ApiOperation(value = "Get implementation name of the specified DICOM object identifier.", notes = "This function returns the fully-qualified class name of the specified DICOM object identifier. You can use the value 'default' to retrieve the default identifier even if you don't know the specific name.", response = String.class)
     @ApiResponses({@ApiResponse(code = 200, message = "The implementation class of the specified DICOM object identifier."),
                    @ApiResponse(code = 404, message = "No DICOM object identifier with the specified ID was found."),
@@ -74,6 +84,26 @@ public class DicomSCPApi extends AbstractXapiRestController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(identifier.getClass().getName(), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Resets the specified DICOM object identifier.", notes = "This function resets the specified DICOM object identifier. This causes the identifier to reload its configuration on next access.")
+    @ApiResponses({@ApiResponse(code = 200, message = "The DICOM object identifiers were successfully reset."),
+                   @ApiResponse(code = 404, message = "No DICOM object identifier with the specified ID was found."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "identifiers/{beanId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
+    @ResponseBody
+    public ResponseEntity<Void> resetDicomObjectIdentifier(@PathVariable("beanId") String beanId) {
+        // If they specified "default", then get the first bean in the list: they're sorted so that the default is first.
+        if (StringUtils.equals("default", beanId)) {
+            _manager.resetDicomObjectIdentifier();
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+        final DicomObjectIdentifier<XnatProjectdata> identifier = _manager.getDicomObjectIdentifier(beanId);
+        if (identifier == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        _manager.resetDicomObjectIdentifier(beanId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get list of all configured DICOM SCP receiver definitions.", notes = "The primary DICOM SCP retrieval function returns a list of all DICOM SCP receivers defined for the current system.", response = DicomSCPInstance.class, responseContainer = "List")

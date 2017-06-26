@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.Tag;
 import org.nrg.config.entities.Configuration;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xnat.services.cache.UserProjectCache;
@@ -20,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -48,11 +51,16 @@ class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
         try {
             final Reader        source;
             final Configuration configuration = XDAT.getConfigService().getConfig("dicom", "projectRules");
-            final File          config        = new File(XFT.GetConfDir(), DICOM_PROJECT_RULES);
+            final ConfigPaths   paths         = XDAT.getContextService().getBeanSafely(ConfigPaths.class);
+            final Path          confDir       = Paths.get(XFT.GetConfDir());
+            if (!paths.contains(confDir)) {
+                paths.add(confDir);
+            }
+            final List<File> configs = paths.findFiles(DICOM_PROJECT_RULES);
             if (configuration != null && configuration.isEnabled() && StringUtils.isNotBlank(configuration.getContents())) {
                 source = new StringReader(configuration.getContents());
-            } else if (config.exists() && config.isFile()) {
-                source = new FileReader(config);
+            } else if (configs.size() > 0) {
+                source = new FileReader(configs.get(0));
             } else {
                 source = null;
             }

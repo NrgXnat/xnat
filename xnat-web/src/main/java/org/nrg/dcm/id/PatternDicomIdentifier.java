@@ -34,17 +34,18 @@ public final class PatternDicomIdentifier implements DicomDerivedString {
             logger.trace("initialized {}", getDescription());
         }
     }
-    
+
+    @SuppressWarnings("unused")
     public PatternDicomIdentifier(final int tag, final Pattern pattern) {
         this(tag, pattern, 0);
     }
-    
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.Extractor#extract(org.dcm4che2.data.DicomObject)
+
+    /**
+     * {@inheritDoc}
      */
-    public String apply(final DicomObject o) {
-        final String v = o.getString(tag);
+    @Override
+    public String apply(final DicomObject dicomObject) {
+        final String v = dicomObject.getString(tag);
         if (Strings.isNullOrEmpty(v)) {
             logger.trace("no match to {}: null or empty tag", this);
             return null;
@@ -60,29 +61,23 @@ public final class PatternDicomIdentifier implements DicomDerivedString {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public SortedSet<Integer> getTags() {
         return SortedSets.singleton(tag);
     }
 
-    private StringBuilder appendDescription(final StringBuilder sb) {
-        sb.append(TagUtils.toString(tag)).append("~");
-        sb.append(pattern).append("[").append(group).append("]");
-        return sb;
-    }
-    
-    private String getDescription() {
-        return appendDescription(new StringBuilder()).toString();
-    }
-    
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#toString()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder(super.toString());
-        sb.append(":");
-        appendDescription(sb);
-        return sb.toString();
+        return super.toString() + ":" + getDescription();
+    }
+
+    private String getDescription() {
+        return TagUtils.toString(tag) + "~" + pattern + "["+ group + "]";
     }
 }

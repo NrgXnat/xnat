@@ -9,12 +9,13 @@
 
 package org.nrg.dcm.id;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSortedSet;
+import org.apache.commons.lang3.StringUtils;
+import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
+import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,47 +26,64 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifier {
-    public DbBackedProjectIdentifier(final UserProjectCache userProjectCache) {
+    /**
+     * Creates a new project identifier instance that uses the submitted cache to store and retrieve project objects.
+     *
+     * @param cache The cache used to store retrieved project instances for
+     */
+    public DbBackedProjectIdentifier(final UserProjectCache cache) {
         _log.debug("Creating DbBackedProjectIdentifier object with default constructor.");
-        _userProjectCache = userProjectCache;
+        _cache = cache;
     }
 
-    public final XnatProjectdata apply(final UserI user, final DicomObject o) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final XnatProjectdata apply(final UserI user, final DicomObject dicomObject) {
         if (!_initialized) {
             initialize();
         }
         final String userId = user.getUsername();
         for (final DicomDerivedString extractor : _extractors) {
-            final String alias = extractor.apply(o);
-            if (!Strings.isNullOrEmpty(alias)) {
-                // added caching here to prevent duplicate project queries in every file transaction
-                // the cache is shared with the one in gradual dicom importer, which does a similar query.
-                if (_userProjectCache.has(userId, alias)) {
-                    if (_userProjectCache.isCachedNonWriteableProject(userId, alias)) {
-                        return null;
-                    }
-                    return _userProjectCache.get(userId, alias);
-                } else {
-                    // no cached value, look in the db
-                    final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(alias, user, false);
-                    if (project != null && canCreateIn(user, project)) {
-                        _userProjectCache.put(userId, alias, project);
-                        return project;
-                    } else {
-                        // this alias is either not a project or not one we can write to
-                        _userProjectCache.cacheNonWriteableProject(userId, alias);
-                    }
+            final String alias = extractor.apply(dicomObject);
+            if (_log.isDebugEnabled()) {
+                dumpExtractor(extractor, dicomObject, alias);
+            }
+
+            if (StringUtils.isNotBlank(alias)) {
+                _log.debug("Looking for alias {} for user {}", alias, userId);
+                final XnatProjectdata project = _cache.get(user, alias);
+                if (project != null) {
+                    _log.debug("Found project {} by ID or alias {} for user {}", project.getId(), alias, userId);
+                    return project;
                 }
+                _log.debug("No project found for ID or alias {} for user {}", alias, userId);
+            } else {
+                _log.debug("The extractor didn't find any useful value for alias.");
             }
         }
+        _log.debug("None of the extractors found an identifiable project, returning null, probably unassigned.");
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public SortedSet<Integer> getTags() {
         if (!_initialized) {
             initialize();
         }
         return ImmutableSortedSet.copyOf(_tags);
+    }
+
+    /**
+     * Resets the identifier, causing it to reload its configuration on the next access.
+     */
+    @Override
+    public void reset() {
+        _initialized = false;
     }
 
     abstract protected List<DicomDerivedString> getIdentifiers();
@@ -80,18 +98,22 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
         _initialized = true;
     }
 
-    private boolean canCreateIn(final UserI user, final XnatProjectdata p) {
-        try {
-            return PrearcUtils.canModify(user, p.getId());
-        } catch (Exception e) {
-            _log.error("Unable to check permissions for " + user + " in " + p, e);
-            return false;
+    private void dumpExtractor(final DicomDerivedString extractor, final DicomObject dicomObject, final String alias) {
+        final Class<? extends DicomDerivedString> extractorClass = extractor.getClass();
+        _log.debug("Extractor:   {}", extractorClass.getSimpleName());
+        _log.debug(" toString(): {}", extractor.toString());
+        _log.debug(" found():    {}", StringUtils.defaultIfBlank(alias, "(blank)"));
+
+        for (final int tag : extractor.getTags()) {
+            final DicomElement tagValue = dicomObject.get(tag);
+            final String       display  = tagValue == null ? "(null)" : tagValue.getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+            _log.debug(" tag {}:     {}", DicomUtils.getDicomAttribute(tag), display);
         }
     }
 
     private static final Logger _log = LoggerFactory.getLogger(DbBackedProjectIdentifier.class);
 
-    private final UserProjectCache _userProjectCache;
+    private final UserProjectCache _cache;
 
     private final List<DicomDerivedString> _extractors  = new ArrayList<>();
     private final SortedSet<Integer>       _tags        = new TreeSet<>();

@@ -12,6 +12,7 @@ package org.nrg.xnat.security;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.session.HttpSessionCreatedEvent;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
+import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletContext;
@@ -38,6 +40,7 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
 
+@Component
 public class XnatSessionEventPublisher implements HttpSessionListener, ServletContextListener {
     /**
      * Handles the HttpSessionEvent by publishing a {@link HttpSessionCreatedEvent} to the application
@@ -87,6 +90,7 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
                         //sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
                         //noinspection SqlDialectInspection,SqlNoDataSourceInspection,SqlResolve
                         _template.execute("UPDATE xdat_user_login SET logout_date='" + stamp + "' WHERE logout_date is null and session_id='" + sessionId + "' and user_xdat_user_id='" + userId + "';");
+                        _cache.clearUserCache(userId);
                     }
                 }
             }
@@ -117,6 +121,11 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
     }
 
     @Autowired
+    public void setUserProjectCache(final UserProjectCache cache) {
+        _cache = cache;
+    }
+
+    @Autowired
     public void setJdbcTemplate(final JdbcTemplate template) {
         _template = template;
     }
@@ -128,4 +137,5 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
     private static final Logger _log = LoggerFactory.getLogger(XnatSessionEventPublisher.class);
 
     private JdbcTemplate _template;
+    private UserProjectCache _cache;
 }

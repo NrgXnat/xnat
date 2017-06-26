@@ -9,11 +9,7 @@
 
 package org.nrg.dcm.id;
 
-import java.util.Map;
-import java.util.SortedSet;
-
-import javax.inject.Inject;
-
+import com.google.common.collect.ImmutableSortedSet;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
@@ -22,20 +18,27 @@ import org.nrg.xdat.services.StudyRoutingService;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import com.google.common.collect.ImmutableSortedSet;
+import java.util.Map;
+import java.util.SortedSet;
 
+@Service
 public final class RoutedStudyDicomProjectIdentifier implements DicomProjectIdentifier {
-    private static final ImmutableSortedSet<Integer> tags = ImmutableSortedSet.of();
+    @Autowired
+    public RoutedStudyDicomProjectIdentifier(final StudyRoutingService service) {
+        _service = service;
+    }
 
-    /* (non-Javadoc)
-     * @see org.nrg.dcm.id.DicomObjectFunction#getTags()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public SortedSet<Integer> getTags() { return tags; }
 
-    /* (non-Javadoc)
-     * @see org.nrg.dcm.id.DicomProjectIdentifier#apply(org.nrg.xdat.security.UserI, org.dcm4che2.data.DicomObject)
+    /**
+     * {@inheritDoc}
      */
     @Override
     public XnatProjectdata apply(final UserI user, final DicomObject dicom) {
@@ -62,8 +65,14 @@ public final class RoutedStudyDicomProjectIdentifier implements DicomProjectIden
         return null;
     }
 
+    @Override
+    public void reset() {
+        _service.closeAll();
+    }
+
     private static final Logger _log = LoggerFactory.getLogger(RoutedStudyDicomProjectIdentifier.class);
 
-    @Inject
-    private StudyRoutingService _service;
+    private static final ImmutableSortedSet<Integer> tags = ImmutableSortedSet.of();
+
+    private final StudyRoutingService _service;
 }

@@ -9,11 +9,7 @@
 
 package org.nrg.xnat.archive;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -29,7 +25,10 @@ import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.xml.sax.SAXException;
 
-import com.google.common.collect.Lists;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 	
@@ -141,16 +140,22 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 				conflict(10,e.getMessage());//this means there is an open workflow entry
 			}
 		}
-		
 
 		try {
 			fixSubject(EventUtils.TEST_EVENT(user),false);
-		} catch (ClientException e1) {
-			fail(11,e1.getMessage());//this means the action couldn't identify the subject
-		} catch (ServerException e1) {
-			warn(12,e1.getMessage());//this just means the action was going to create a new subject
+		} catch(Throwable e){
+			try {
+				try {
+					Thread.sleep(10000);
+				}catch(InterruptedException e2){
+				}
+				fixSubject(EventUtils.TEST_EVENT(user),false);
+			} catch (ClientException e1) {
+				fail(11,e1.getMessage());//this means the action couldn't identify the subject
+			} catch (ServerException e1) {
+				warn(12,e1.getMessage());//this just means the action was going to create a new subject
+			}
 		}
-
 		
 		try {
 			validateSession();

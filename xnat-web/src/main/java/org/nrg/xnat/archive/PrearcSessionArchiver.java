@@ -519,8 +519,16 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                 throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, e2);
             }
 
-            fixSubject(c, true);
-
+            try{
+                fixSubject(c, true);
+            }
+            catch(Exception e){
+                try {
+                    Thread.sleep(10000);
+                }catch(InterruptedException e2){
+                }
+                fixSubject(c, true);
+            }
 
             try {
                 processing("validating loaded data");

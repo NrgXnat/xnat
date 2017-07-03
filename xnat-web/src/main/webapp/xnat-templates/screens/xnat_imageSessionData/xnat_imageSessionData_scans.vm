@@ -21,7 +21,7 @@
     <tr style="border:none;">
         <th class="underscore" align=left>Scan</th>
         <th class="underscore" align=left>Type</th>
-        #if($siteConfig.uiDebugExtensionPoints)
+        #if($siteConfig.uiDisplaySeriesDescription)
             <th class="underscore" align=left>Series Desc</th>
             #set($fileIndex="4")
         #else
@@ -45,7 +45,7 @@
                 </a>
             </td>
             <td border=0 align=left NOWRAP>$!scan.getProperty("type")</td>
-            #if($siteConfig.uiDebugExtensionPoints)
+            #if($siteConfig.uiDisplaySeriesDescription)
                 <td border=0 align=left NOWRAP>$!scan.getProperty("series_description")</td>
             #end
             <td border=0 class="quality-$!scan.getProperty("quality")" style="font-weight:bold; text-align:left;"  NOWRAP>

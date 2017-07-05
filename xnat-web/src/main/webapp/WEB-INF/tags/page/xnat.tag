@@ -826,75 +826,17 @@ ${bodyTop}
 
 <script type="text/javascript">
 
-    (function(){
+    <c:import url="/xapi/siteConfig/buildInfo" var="buildInfo" scope="session"/>
 
-        <c:import url="/xapi/siteConfig/buildInfo" var="buildInfo" scope="session"/>
-
-        extend(true, XNAT, {
-            data: {
-                siteConfig: {
-                    buildInfo: ${buildInfo}
-                }
+    extend(true, XNAT, {
+        data: {
+            siteConfig: {
+                buildInfo: ${buildInfo}
             }
-        });
-
-        var buildInfo = XNAT.data.siteConfig.buildInfo;
-
-        var buildInfoSample = {
-            "Application-Name": "XNAT",
-            "Manifest-Version": "1.0",
-            buildDate: "Sun Jun 05 12:41:24 CDT 2016",
-            buildNumber: "Manual",
-            commit: "v275-gd2220fd",
-            version: "1.7.0"
-        };
-
-        XNAT.version = buildInfo.version;
-
-        // add version to title attribute of XNAT logos
-        var version = buildInfo.version + " build: " + buildInfo.buildNumber;
-
-        var isNonRelease = /.*(SNAPSHOT|BETA|RC).*/i.test(buildInfo.version);
-
-        if (isNonRelease) {
-            version += " (" + buildInfo.commit + ")";
         }
+    });
 
-        $('#xnat_power')
-                .spawn('a.xnat-version', {
-                    href: 'http://www.xnat.org',
-                    target: '_blank',
-                    title: 'XNAT version ' + version
-                }, [['img|src=${SITE_ROOT}/images/xnat_power_small.png']])
-                .spawn('small', 'version ' + version + (isNonRelease ? '<br>' + buildInfo.buildDate : ''));
-
-        $('#header_logo').attr('title', 'XNAT version ' + version);
-
-        XNAT.app.version = version;
-
-        var clicker = XNAT.event.click('#header_logo, #xnat_power > a');
-
-        // shift-click the header or footer XNAT logo to TOGGLE debug mode on/off
-        clicker.shiftKey(function(e){
-            e.preventDefault();
-            if (XNAT.cookie.get('debug') === 'on') {
-                Cookies.set('debug', 'off');
-                window.location.hash = 'debug=off';
-            }
-            else {
-                Cookies.set('debug', 'on');
-                window.location.hash = 'debug=on';
-            }
-            window.location.reload();
-        });
-
-        // alt-shift-click to open the Swagger page in a new window
-        clicker.altShift(function(e){
-            e.preventDefault();
-            XNAT.ui.popup(XNAT.url.rootUrl('/xapi/swagger-ui.html'));
-        });
-
-    })();
+    XNAT.version = XNAT.app.version = XNAT.data.siteConfig.buildInfo.version;
 
 </script>
 

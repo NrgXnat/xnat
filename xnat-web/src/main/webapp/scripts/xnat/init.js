@@ -46,18 +46,24 @@ var XNAT = getObject(XNAT);
     })();
 
 
-    // add build info to page elements
+    // add build info to page elements *AFTER* DOM load
     $(function(){
-
-        console.log('buildInfo');
 
         // add version to title attribute of XNAT logos
         if (window.top.loggedIn !== undef && window.top.loggedIn === true) {
 
             XNAT.cookie.set('SESSION_ACTIVE', 'true');
 
-            XNAT.xhr.get(serverRoot + '/xapi/siteConfig/buildInfo', function(data){
+            var buildInfoSample = {
+                "Application-Name": "XNAT",
+                "Manifest-Version": "1.0",
+                buildDate: "Sun Jun 05 12:41:24 CDT 2016",
+                buildNumber: "Manual",
+                commit: "v275-gd2220fd",
+                version: "1.7.0"
+            };
 
+            function displayBuildInfo(data){
                 var version = XNAT.version = XNAT.data.version = data.version;
                 var version_string = version + ', build: ' + data.buildNumber;
                 var version_title = 'XNAT version ' + version_string;
@@ -69,15 +75,44 @@ var XNAT = getObject(XNAT);
                     build_string += '<br>' + data.buildDate;
                 }
 
-                $('#xnat_power').find('a')
-                                .attr('title', version_title)
-                                .after('<small>version ' + version_string + build_string + '</small>');
+                $('#xnat_power')
+                    .empty()
+                    .spawn('a.xnat-version', {
+                        href: 'http://www.xnat.org',
+                        target: '_blank',
+                        title: version_title
+                    }, [['img', { src: serverRoot + '/images/xnat_power_small.png' }]])
+                    .spawn('small', 'version ' + version_string + build_string);
+
+                // $('#xnat_power').find('a')
+                //                 .attr('title', version_title)
+                //                 .after('<small>version ' + version_string + build_string + '</small>');
 
                 $('#header_logo').attr('title', version_title);
 
+                // save the complete string
                 XNAT.app.version = version_string;
 
-            });
+                console.log('version ' + XNAT.version);
+
+            }
+
+            // use existing data if available
+            if (XNAT.data && XNAT.data.siteConfig && XNAT.data.siteConfig.buildInfo) {
+                displayBuildInfo(XNAT.data.siteConfig.buildInfo);
+            }
+            else {
+                XNAT.xhr.get(serverRoot + '/xapi/siteConfig/buildInfo', function(data){
+                    extend(true, XNAT, {
+                        data: {
+                            siteConfig: {
+                                buildInfo: data
+                            }
+                        }
+                    });
+                    displayBuildInfo(data);
+                });
+            }
         }
         else {
             XNAT.cookie.set('SESSION_ACTIVE', 'false');

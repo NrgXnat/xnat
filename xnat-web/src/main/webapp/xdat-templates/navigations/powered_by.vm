@@ -1,9 +1,7 @@
 
 <div class="clear"></div>
 <div id="xnat_power">
-    <a target="_blank" href="http://www.xnat.org/" style="">
-        <img src="$content.getURI('images/xnat_power_small.png')">
-    </a>
+    ## this content is rendered with javascript
 </div>
 
 ## js moved to /scripts/xnat/init.js

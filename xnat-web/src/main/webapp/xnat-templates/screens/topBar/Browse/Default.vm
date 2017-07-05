@@ -19,10 +19,8 @@
 <li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">All Projects</a>
     <ul id="browse-projects" class="shadowed dark-shadow">
         <!-- Sequence: 11 -->
-        #if($siteConfig.uiAllowNonAdminProjectCreation || $userHelper.canCreate("xnat:projectData"))
-            <li class="create-project hidden"><a href="$link.setPage(
-                "XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a>
-            </li>
+        #if($siteConfig.uiAllowNonAdminProjectCreation || $userHelper.canCreate("xnat:subjectData/project"))
+            <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
         #end
     </ul>
 </li>

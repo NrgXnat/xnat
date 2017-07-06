@@ -53,11 +53,25 @@ $navigation.setTemplate("/BaseJS.vm")
         },
         data: {
             context: {
-                #set($projectName = $turbineUtils.getProjectDisplayID($om, $project))
+                #set($projectName = $turbineUtils.getProjectName($om, $project))
+                #if (!$projectName)
+                    #set ($projectName = $project.getName())
+                #end
+                #set($projectID = $turbineUtils.getProjectDisplayID($om, $project))
                 siteName: "$!systemName",
                 projectName: "$!projectName",
-                projectID: "$!om.getProject()",
-                project: "$!om.getProject()",
+                #if ($!projectID)
+                    projectID: "$!projectID",
+                    project: "$!projectID",
+                    ## if the user is viewing a shared data object, display the ID of the project that owns that object
+                    #if ($!projectID == $!om.getProject())
+                    #else
+                        parentProjectID: "$!om.getProject()",
+                    #end
+                #else
+                    projectID: "$!om.getProject()",
+                    project: "$!om.getProject()",
+                #end
                 xsiType: "$!om.getXSIType()",
                 #if($om)
                     isSubject: $!om.getItem().instanceOf("xnat:subjectData"),

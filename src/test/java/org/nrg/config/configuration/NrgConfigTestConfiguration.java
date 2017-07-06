@@ -10,6 +10,8 @@
 package org.nrg.config.configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.nrg.framework.configuration.FrameworkConfig;
+import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.framework.test.OrmTestConfiguration;
 import org.nrg.prefs.configuration.NrgPrefsConfiguration;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
@@ -26,7 +28,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Configuration
-@Import({NrgConfigConfiguration.class, OrmTestConfiguration.class, NrgPrefsConfiguration.class})
+@Import({NrgConfigConfiguration.class, OrmTestConfiguration.class, FrameworkConfig.class, NrgPrefsConfiguration.class})
 @ComponentScan("org.nrg.config.util")
 public class NrgConfigTestConfiguration {
     @Bean
@@ -41,6 +43,11 @@ public class NrgConfigTestConfiguration {
 
     @Bean
     public List<String> configFilesLocations() {
-	    return Collections.singletonList("src/test/resources/org/nrg/config");
+        return Collections.singletonList("src/test/resources/org/nrg/config");
+    }
+
+    @Bean
+    public HibernateEntityPackageList configHibernateEntityPackageList() {
+        return new HibernateEntityPackageList("org.nrg.config.entities");
     }
 }

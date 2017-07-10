@@ -11,6 +11,7 @@ package org.nrg.xdat.security;
 
 import java.util.Map;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 
 /**
@@ -35,5 +36,10 @@ public class SecurityValues {
 
     public Map<String, String> getHash() {
         return hash;
+    }
+
+    @Override
+    public String toString() {
+        return Joiner.on(", ").withKeyValueSeparator(": ").join(getHash());
     }
 }

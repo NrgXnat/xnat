@@ -106,13 +106,21 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 	}
 
     private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
-        if (ElementSecurity.IsInSecureElement(root.getFullXMLName())) {
+        final String rootXmlName = root.getFullXMLName();
+        if (ElementSecurity.IsInSecureElement(rootXmlName)) {
             return true;
         } else {
-            final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
+            final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, rootXmlName);
             for (final PermissionCriteriaI criterion : criteria) {
                 if (criterion.canAccess(action, values)) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("User {} has {} access on element {} with criterion {} and security values: {}", user.getUsername(), action, rootXmlName, criterion.toString(), values.toString());
+                    }
                     return true;
+                } else {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", user.getUsername(), action, rootXmlName, criterion.toString(), values.toString());
+                    }
                 }
             }
 
@@ -123,7 +131,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                             user.getUsername(),
                             action,
                             root.getFormattedName(),
-                            Joiner.on(", ").withKeyValueSeparator(": ").join(values.getHash()),
+                            values.toString(),
                             criteria.isEmpty() ? "No" : Integer.toString(criteria.size()));
             }
         }
@@ -320,7 +328,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                                 action,
                                 schemaElement.getFormattedName(),
                                 xsiType,
-                                Joiner.on(", ").withKeyValueSeparator(" : ").join(securityValues.getHash()));
+                                securityValues.toString());
                     return false;
                 }
             }

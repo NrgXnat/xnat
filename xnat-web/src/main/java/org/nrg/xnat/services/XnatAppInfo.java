@@ -53,6 +53,8 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
+import static org.nrg.xnat.utils.FileUtils.nodeToList;
+
 @Component
 public class XnatAppInfo {
     public static final String NON_RELEASE_VERSION_REGEX  = "(?i:^.*(SNAPSHOT|BETA|RC).*$)";
@@ -533,21 +535,6 @@ public class XnatAppInfo {
 
     private String asAntPattern(final String url) {
         return url + (url.endsWith("/") ? "**" : "*");
-    }
-
-    private List<String> nodeToList(final JsonNode node) {
-        final List<String> list = new ArrayList<>();
-        if (node.isArray()) {
-            final ArrayNode arrayNode = (ArrayNode) node;
-            for (final JsonNode item : arrayNode) {
-                list.add(item.asText());
-            }
-        } else if (node.isTextual()) {
-            list.add(node.asText());
-        } else {
-            list.add(node.toString());
-        }
-        return list;
     }
 
     private boolean checkUrls(final HttpServletRequest request, final Collection<String> urls) {

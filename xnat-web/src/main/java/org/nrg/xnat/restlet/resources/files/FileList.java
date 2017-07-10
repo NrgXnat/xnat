@@ -72,6 +72,7 @@ public class FileList extends XNATCatalogTemplate {
     private static final Logger logger = LoggerFactory.getLogger(FileList.class);
     private String filepath = null;
     private String reference = null;
+    private final boolean acceptNotFound;
     private boolean delete;
     private boolean async;
     private String[] notifyList = new String[0];
@@ -81,6 +82,7 @@ public class FileList extends XNATCatalogTemplate {
     public FileList(Context context, Request request, Response response) {
         super(context, request, response, isQueryVariableTrue("all", request));
         reference = getQueryVariable("reference");
+        acceptNotFound = isQueryVariableTrueHelper(getQueryVariable("accept-not-found"));
         delete = isQueryVariableTrue("delete", request);
         async = isQueryVariableTrue("async", request);
         notifyList = isQueryVariableTrue("notify", request) ? getQueryVariable("notify").split(",") : new String[0];
@@ -215,8 +217,12 @@ public class FileList extends XNATCatalogTemplate {
                 return handleMultipleCatalogs(mt);
             }
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
-            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+            if (acceptNotFound) {
+                getResponse().setStatus(Status.SUCCESS_NO_CONTENT, "Unable to find file.");
+            } else {
+                logger.error("", e);
+                getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+            }
             return new StringRepresentation("");
         }
     }
@@ -396,7 +402,7 @@ public class FileList extends XNATCatalogTemplate {
             						return entry.getUri().startsWith(filepath);
             					}
             				};
-            				
+
                             entries.addAll(CatalogUtils.getEntriesByFilter(cat, folderFilter));
                         }
 
@@ -435,7 +441,7 @@ public class FileList extends XNATCatalogTemplate {
 
                                 WorkflowUtils.complete(work, ci);
                             } else {
-                                getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "File missing");
+                                getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "File missing");
                             }
                         }
                     } else {
@@ -564,7 +570,7 @@ public class FileList extends XNATCatalogTemplate {
             }
 
             if (rep.getEntryCount() == 0) {
-                getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+                getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND);
                 return null;
             }
 
@@ -731,7 +737,7 @@ public class FileList extends XNATCatalogTemplate {
                             final CatalogUtils.CatEntryFilterI folderFilter=new CatalogUtils.CatEntryFilterI() {
             					@Override
             					public boolean accept(CatEntryI entry) {
-            						if(entry.getUri().startsWith(dir)){ 
+            						if(entry.getUri().startsWith(dir)){
             							if(recursive || StringUtils.contains(entry.getUri().substring(dir.length()+1),"/"))
             							{
                 							return (entryFilter == null || entryFilter.accept(entry));
@@ -847,7 +853,7 @@ public class FileList extends XNATCatalogTemplate {
             }
 
             if (f == null || !f.exists()) {
-                getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+                getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
                 return null;
             }
 
@@ -979,7 +985,7 @@ public class FileList extends XNATCatalogTemplate {
                     final CatalogUtils.CatEntryFilterI folderFilter=new CatalogUtils.CatEntryFilterI() {
     					@Override
     					public boolean accept(CatEntryI entry) {
-    						if(entry.getUri().startsWith(dir)){ 
+    						if(entry.getUri().startsWith(dir)){
     							if(recursive || StringUtils.contains(entry.getUri().substring(dir.length()+1),"/"))
     							{
         							return (entryFilter == null || entryFilter.accept(entry));
@@ -988,17 +994,17 @@ public class FileList extends XNATCatalogTemplate {
 							return false;
     					}
     				};
-    				
-    				
-    				//If there are no matching entries, I'm not sure if this should throw a 404, or return an empty list. 
+
+
+    				//If there are no matching entries, I'm not sure if this should throw a 404, or return an empty list.
     				if(filepath.endsWith("/")){
     					table.rows().addAll(CatalogUtils.getEntryDetails(cat, parentPath, baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, false, folderFilter, proj, locator));
     				}else{
-                        getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
+                        getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                         return new StringRepresentation("");
     				}
                 }else if (entry == null) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
+                    getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find catalog entry for given uri.");
                     return new StringRepresentation("");
                 } else {
                     if (FileUtils.IsAbsolutePath(entry.getUri())) {
@@ -1031,7 +1037,7 @@ public class FileList extends XNATCatalogTemplate {
                                 ZipFile zF = new ZipFile(f);
                                 ZipEntry zE = zF.getEntry(URLDecoder.decode(zipEntry, "UTF-8"));
                                 if (zE == null) {
-                                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+                                    getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
                                     return new StringRepresentation("");
                                 } else { // Return the requested zip entry
                                     return new InputRepresentation(zF.getInputStream(zE), buildMediaType(mt, fName));
@@ -1065,12 +1071,12 @@ public class FileList extends XNATCatalogTemplate {
                             getResponse().setStatus(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, e.getMessage());
                             return new StringRepresentation("");
                         } catch (IOException e) {
-                            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, e.getMessage());
+                            getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, e.getMessage());
                             return new StringRepresentation("");
                         }
 
                     } else { // If file does not exist
-                        getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+                        getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
                         return new StringRepresentation("");
                     }
                 }
@@ -1111,7 +1117,7 @@ public class FileList extends XNATCatalogTemplate {
                 if (f != null && f.exists()) {
                     return getFileRepresentation(f, mt);
                 } else {
-                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
+                    getResponse().setStatus(acceptNotFound ? Status.SUCCESS_NO_CONTENT : Status.CLIENT_ERROR_NOT_FOUND, "Unable to find file.");
                     return new StringRepresentation("");
                 }
             }

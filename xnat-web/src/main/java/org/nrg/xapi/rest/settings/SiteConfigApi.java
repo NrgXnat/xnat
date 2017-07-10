@@ -14,8 +14,10 @@ import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xapi.authorization.SiteConfigPreferenceXapiAuthorization;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AuthDelegate;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -41,6 +43,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 
 @Api(description = "Site Configuration Management API")
 @XapiRestController
@@ -115,7 +118,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "values/{preferences}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
+    @XapiRequestMapping(value = "values/{preferences}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @AuthDelegate(SiteConfigPreferenceXapiAuthorization.class)
     public ResponseEntity<Map<String, Object>> getSpecifiedSiteConfigProperties(@PathVariable final List<String> preferences) {
         if (_log.isDebugEnabled()) {
             _log.debug("User " + getSessionUser().getUsername() + " requested the site configuration preferences " + Joiner.on(", ").join(preferences));
@@ -135,7 +139,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
+    @XapiRequestMapping(value = "{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @AuthDelegate(SiteConfigPreferenceXapiAuthorization.class)
     public ResponseEntity<Object> getSpecifiedSiteConfigProperty(@ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) {
         if (!_preferences.containsKey(property)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

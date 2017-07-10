@@ -3905,6 +3905,10 @@ textarea.xml-formatted {
     display: block; padding: 10px; margin: 10px; width: 95%; height: 95%;
     overflow-x: scroll; overflow-y: scroll; border: 1px solid #ccc;
 }
+.xnat-dialog-content pre.json,
+.xmodal .content pre.json {
+    overflow-x: auto;
+}
 
 /* utility classes */
 .pad1 { padding: 1px; }

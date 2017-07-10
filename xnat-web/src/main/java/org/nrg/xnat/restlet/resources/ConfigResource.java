@@ -94,6 +94,7 @@ public class ConfigResource extends SecureResource {
             Integer version = null;
             final boolean meta = isQueryVariableTrueHelper(getQueryVariable("meta"));
             final boolean contents = isQueryVariableTrueHelper(getQueryVariable("contents"));
+            final boolean acceptNotFound = isQueryVariableTrueHelper(getQueryVariable("accept-not-found"));
 
             try {
                 version = Integer.parseInt(getQueryVariable("version"));
@@ -194,8 +195,12 @@ public class ConfigResource extends SecureResource {
                         if (c == null || "disabled".equals(c.getStatus())) {
                             final String message = String.format("Config not found for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
                             _log.debug(message);
-                            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
-                            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
+                            if (acceptNotFound) {
+                                getResponse().setStatus(Status.SUCCESS_NO_CONTENT);
+                            } else {
+                                getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
+                                throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
+                            }
                         } else {
                             return new StringRepresentation(c.getContents());
                         }
@@ -260,8 +265,13 @@ public class ConfigResource extends SecureResource {
                 //if we fell through to here, nothing existed at the supplied URI
                 final String message = String.format("Couldn't find config for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
                 _log.debug(message);
-                getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
-                throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
+                if (acceptNotFound) {
+                    getResponse().setStatus(Status.SUCCESS_NO_CONTENT, message);
+                    return representTable(table, mt, new Hashtable<String, Object>());
+                } else {
+                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
+                    throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
+                }
             }
         } catch (Exception e) {
             if (e instanceof ResourceException) {

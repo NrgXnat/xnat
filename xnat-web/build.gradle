@@ -420,7 +420,7 @@ dependencies {
     compile "org.hibernate:hibernate-validator:4.3.2.Final"
     compile "org.hibernate:hibernate-envers:4.3.11.Final"
     compile "net.sf.ehcache:ehcache-core:${vEhcache}"
-    compile "com.marvinformatics.hibernate:hibernate-native-json:0.3"
+    compile "com.marvinformatics.hibernate:hibernate-native-json:0.4"
 
     compile "org.aspectj:aspectjweaver:${vAspectJ}"
     compile "org.aspectj:aspectjrt:${vAspectJ}"

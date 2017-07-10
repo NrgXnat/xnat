@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.utils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,9 +22,26 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 public class FileUtils {
+
+    public static List<String> nodeToList(final JsonNode node) {
+        final List<String> list = new ArrayList<>();
+        if (node.isArray()) {
+            final ArrayNode arrayNode = (ArrayNode) node;
+            for (final JsonNode item : arrayNode) {
+                list.add(item.asText());
+            }
+        } else if (node.isTextual()) {
+            list.add(node.asText());
+        } else {
+            list.add(node.toString());
+        }
+        return list;
+    }
 
     public static void moveToCache(final String project, final String subdir, final File src) throws IOException {
         // should include a timestamp in folder name

@@ -1,0 +1,27 @@
+public:
+  - siteHome
+  - siteId
+  - siteLogoPath
+  - siteUrl
+
+authenticated:
+  - checksums
+  - failMergeOn
+  - scanTypeMapping
+  - sessionXmlRebuilderInterval
+  - sessionXmlRebuilderRepeat
+  - siteDescriptionPage
+  - siteDescriptionText
+  - siteDescriptionType
+  - siteHomeLayout
+  - siteLandingLayout
+  - siteLoginLanding
+  - siteWideAlertMessage
+  - siteWideAlertStatus
+  - siteWideAlertType
+  - sitewideAnonymizationScript
+  - sitewidePetMr
+  - sitewidePetTracers
+  - sitewideSeriesImportFilter
+  - sitewideSeriesImportFilterMode
+  - zipExtensions

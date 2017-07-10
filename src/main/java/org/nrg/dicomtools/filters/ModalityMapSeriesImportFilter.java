@@ -107,6 +107,10 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public boolean shouldIncludeDicomObject(final Map<String, String> headers, final String targetModality) {
+        // If this filter isn't enabled, then it should always return true because it's not filtering anything out.
+        if (!isEnabled()) {
+            return true;
+        }
         if (isExcluded(headers)) {
             return false;
         }

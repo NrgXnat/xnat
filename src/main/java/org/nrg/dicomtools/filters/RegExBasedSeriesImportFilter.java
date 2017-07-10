@@ -56,6 +56,10 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public boolean shouldIncludeDicomObject(final DicomObject dicomObject) {
+        // If this filter isn't enabled, then it should always return true because it's not filtering anything out.
+        if (!isEnabled()) {
+            return true;
+        }
         final Map<Integer, String> values = new LinkedHashMap<>();
         final SpecificCharacterSet characterSet = dicomObject.getSpecificCharacterSet();
         for (final int header : getFilters().keySet()) {
@@ -82,6 +86,10 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public boolean shouldIncludeDicomObject(final Map<String, String> headers) {
+        // If this filter isn't enabled, then it should always return true because it's not filtering anything out.
+        if (!isEnabled()) {
+            return true;
+        }
         final Map<Integer, String> converted = new LinkedHashMap<>(headers.size());
         for (final String header : headers.keySet()) {
             final int tag = DicomUtils.parseDicomHeaderId(header);
@@ -129,6 +137,10 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
     }
 
     private boolean shouldIncludeDicomObjectImpl(final Map<Integer, String> headers) {
+        // If this filter isn't enabled, then it should always return true because it's not filtering anything out.
+        if (!isEnabled()) {
+            return true;
+        }
         for (final int header : getFilters().keySet()) {
             final String value = headers.get(header);
             final List<Pattern> patterns = getFilters().get(header);

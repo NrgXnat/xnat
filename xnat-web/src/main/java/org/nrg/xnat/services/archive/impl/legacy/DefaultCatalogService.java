@@ -297,6 +297,17 @@ public class DefaultCatalogService implements CatalogService {
         }
 
         final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
+        final ArchivableItem item = resourceURI.getSecurityItem();
+
+        try {
+            if (!Permissions.canEdit(user, item)) {
+                throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() + " does not have permission to edit the resource " + parentUri + ".");
+            }
+        } catch (ClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " + user.getLogin() + " permissions for resource " + parentUri + ".");
+        }
 
         final Class<? extends URIManager.ArchiveItemURI> parentClass = resourceURI.getClass();
         final BaseElement parent;
@@ -444,8 +455,10 @@ public class DefaultCatalogService implements CatalogService {
 
             try {
                 if (!Permissions.canEdit(user, item)) {
-                    throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() + " does not have permission to access the resource " + resource);
+                    throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() + " does not have permission to edit the resource " + resource);
                 }
+            } catch (ClientException e) {
+                throw e;
             } catch (Exception e) {
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " + user.getLogin() + " permissions for resource " + resource);
             }
@@ -486,6 +499,8 @@ public class DefaultCatalogService implements CatalogService {
                     }
 
                     WorkflowUtils.complete(wrk, wrk.buildEvent());
+                } catch (ClientException e) {
+                    throw e;
                 } catch (PersistentWorkflowUtils.JustificationAbsent justificationAbsent) {
                     throw new ClientException("No justification was provided for the refresh action, but is required by the system configuration.");
                 } catch (PersistentWorkflowUtils.ActionNameAbsent actionNameAbsent) {

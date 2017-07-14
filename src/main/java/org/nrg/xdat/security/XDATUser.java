@@ -172,7 +172,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     private ElementAccessManager getAccessManager(String s) throws Exception {
-        return this.getAccessManagers().get(s);
+        return getAccessManagers().get(s);
     }
 
     public synchronized void init() throws Exception {
@@ -317,7 +317,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * List of {@link ElementDisplay element displays} that this user can create.
      *
      * @return A list of all {@link ElementDisplay element displays} that this user can create.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
 	protected List<ElementDisplay> getCreateableElementDisplays() throws Exception {
         return getActionElementDisplays(SecurityManager.CREATE);
@@ -327,7 +327,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * List of {@link ElementDisplay element displays} that this user can edit.
      *
      * @return A list of all {@link ElementDisplay element displays} that this user can edit.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getEditableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
         return getActionElementDisplays(SecurityManager.EDIT);
@@ -337,7 +337,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * List of {@link ElementDisplay element displays} that this user can read.
      *
      * @return A list of all {@link ElementDisplay element displays} that this user can read.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getReadableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
         return getActionElementDisplays(SecurityManager.READ);
@@ -347,9 +347,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * List of available {@link ElementAccessManager access managers} for this system.
      *
      * @return List of available {@link ElementAccessManager access managers} for this system.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
-    protected Hashtable<String, ElementAccessManager> getAccessManagers() throws Exception {
+    protected Map<String, ElementAccessManager> getAccessManagers() throws Exception {
         if (this.accessManagers == null) {
             this.init();
         }
@@ -361,7 +361,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @param elementName    The element name to be searched on.
      * @param display        The display.
      * @return The indicated {@link DisplaySearch display search} if it exists.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     protected DisplaySearch getSearch(String elementName, String display) throws Exception {
         DisplaySearch search = new DisplaySearch();
@@ -375,7 +375,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * Gets a list of unsecured {@link ElementDisplay display elements} for this system.
      *
      * @return A list of unsecured {@link ElementDisplay display elements} for this system.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getUnSecuredElements() throws XFTInitException, ElementNotFoundException, Exception {
         final List<ElementDisplay> al = new ArrayList<>();
@@ -409,7 +409,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * the role from the old XFT structure and the new Hibernate structure.
      * @param authenticatedUser    The user requesting the role deletion.
      * @param dRole                The role to be deleted.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     public void deleteRole(UserI authenticatedUser, String dRole) throws Exception{
 		if(!((XDATUser)authenticatedUser).isSiteAdmin()){
@@ -442,7 +442,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * to the old XFT structure and the new Hibernate structure.
      * @param authenticatedUser    The user requesting the role addition.
      * @param dRole                The role to be added.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     public void addRole(UserI authenticatedUser, String dRole) throws Exception{
     	if(StringUtils.isNotBlank(dRole)){
@@ -517,7 +517,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * Checks whether the user has the indicated role.
      * @param role    The role to check.
      * @return <b>true</b> if the user has the indicated role, <b>false</b> otherwise.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     public boolean checkRole(String role) throws Exception {
         return getRoleNames().contains(role);
@@ -872,7 +872,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         userSessionCache = new Hashtable<>();
         total_counts = null;
         readable_counts.clear();
-        criteria=null;
+        _permissionCriteria.clear();
         _editableProjects = null;
     }
 
@@ -1028,25 +1028,17 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return ug != null;
     }
 
-    private Map<String,List<PermissionCriteriaI>> criteria;
-
     public List<PermissionCriteriaI> getPermissionsByDataType(final String type){
-    	if(criteria==null){
-    		criteria=Maps.newHashMap();
-    	}
-
-        if (criteria.get(type) == null) {
-            criteria.put(type, new ArrayList<PermissionCriteriaI>());
-
+        if (!_permissionCriteria.containsKey(type)) {
             try {
                 final ElementAccessManager elementAccessManager = getAccessManager(type);
 
                 if (elementAccessManager != null) {
                     final List<PermissionCriteriaI> criteria = elementAccessManager.getCriteria();
-                    this.criteria.get(type).addAll(criteria);
-                    logger.debug("Found {} criteria from the element access manager for data type {}", criteria.size(), type);
+                    _permissionCriteria.get(type).addAll(criteria);
+                    logger.info("Found {} criteria from the element access manager for data type {}", criteria.size(), type);
                 } else {
-                    logger.debug("Couldn't find an element access manager for data type {}", type);
+                    logger.info("Couldn't find an element access manager for data type {}", type);
                 }
 
                 try {
@@ -1059,19 +1051,20 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
 
             final Map<String, UserGroupI> userGroups = Groups.getGroupsForUser(this);
-            if (logger.isDebugEnabled()) {
-                logger.debug("Found {} user groups for the user {}: {}", userGroups.size(), getUsername(), Joiner.on(", ").join(userGroups.keySet()));
+            final Set<String>             groupIds      = userGroups.keySet();
+            if (logger.isInfoEnabled()) {
+                logger.info("Found {} user groups for the user {}: {}", groupIds.size(), getUsername(), Joiner.on(", ").join(groupIds));
             }
 
-            for (final String groupId : userGroups.keySet()) {
+            for (final String groupId : groupIds) {
                 final UserGroupI group = userGroups.get(groupId);
                 if (group != null) {
                     final List<PermissionCriteriaI> permissions = ((UserGroup) group).getPermissionsByDataType(type);
                     if (permissions != null) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Found {} permission criteria for user {} on type {} in group {}: {}", permissions.size(), getUsername(), type, groupId, dumpCriteriaList(permissions));
+                        if (logger.isInfoEnabled()) {
+                            logger.info("Searched for permission criteria for user {} on type {} in group {}: {}", getUsername(), type, groupId, dumpCriteriaList(permissions));
                         }
-                        criteria.get(type).addAll(permissions);
+                        _permissionCriteria.get(type).addAll(permissions);
                     } else {
                         logger.warn("Tried to retrieve permissions for data type {} for user {} in group {}, but this returned null.", type, getUsername(), groupId);
                     }
@@ -1085,10 +1078,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     final UserI guest = Users.getGuest();
                     final List<PermissionCriteriaI> permissions = ((XDATUser) guest).getPermissionsByDataType(type);
                     if (permissions != null) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Found {} permission criteria for user {} on type {} in non-group scope: {}", permissions.size(), getUsername(), type, dumpCriteriaList(permissions));
+                        if (logger.isInfoEnabled()) {
+                            logger.info("Searched for permission criteria from guest for user {} on type {}: {}", getUsername(), type, dumpCriteriaList(permissions));
                         }
-                        criteria.get(type).addAll(permissions);
+                        _permissionCriteria.get(type).addAll(permissions);
                     } else {
                         logger.warn("Tried to retrieve permissions for data type {} for the guest user, but this returned null.", type);
                     }
@@ -1096,11 +1089,18 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     logger.error("An error occurred trying to retrieve the guest user", e);
                 }
             }
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Retrieved permission criteria for user {} on the data type {}: {}", getUsername(), type, dumpCriteriaList(_permissionCriteria.get(type)));
+            }
     	} else {
-    	    logger.debug("Found {} cached criteria for the type {} in user {}", criteria.get(type).size(), type, getUsername());
+    	    if (logger.isDebugEnabled()) {
+                final Collection<PermissionCriteriaI> permissionCriteria = _permissionCriteria.get(type);
+                logger.debug("Found {} cached criteria for the type {} in user {}", permissionCriteria.size(), type, getUsername(), dumpCriteriaList(permissionCriteria));
+            }
         }
 
-        return ImmutableList.copyOf(criteria.get(type));
+        return ImmutableList.copyOf(_permissionCriteria.get(type));
     }
 
 
@@ -1172,7 +1172,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
 	public void resetCriteria() {
-		criteria=null;
+        _permissionCriteria.clear();
 	}
 
 	public Collection<String> getFeaturesForUserByTag(String tag) {
@@ -1257,7 +1257,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     /**
      * Code copied here from
      * @return All the projects where this user has edit permissions.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     protected List<String> getAccessibleProjects() throws Exception {
         if (_editableProjects == null) {
@@ -1286,7 +1286,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * List of {@link ElementDisplay element displays} that this user can invoke.
      *
      * @return A list of all {@link ElementDisplay element displays} that this user can invoke.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     private List<ElementDisplay> getActionElementDisplays(final String action) throws ElementNotFoundException, XFTInitException, Exception {
         final Map<String, ElementDisplay> hash = new Hashtable<>();
@@ -1383,6 +1383,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
         }
     };
+
+    private final Multimap<String, PermissionCriteriaI> _permissionCriteria = ArrayListMultimap.create();
 }
-
-

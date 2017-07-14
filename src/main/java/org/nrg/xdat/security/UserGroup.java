@@ -9,11 +9,8 @@
 
 package org.nrg.xdat.security;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import com.google.common.base.Function;
+import com.google.common.collect.*;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.om.XdatElementAccess;
@@ -26,16 +23,12 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class UserGroup implements UserGroupI{
-    private Logger logger = Logger.getLogger(UserGroup.class);
-	private String id=null;
-	private Integer pk=null;
-	private String tag=null;
-	private String displayName=null;
-	
 	public UserGroup(XdatUsergroup gp) throws Exception{
 		id=gp.getId();
 		pk=gp.getXdatUsergroupId();
@@ -65,14 +58,8 @@ public class UserGroup implements UserGroupI{
 		return displayName;
 	}
 
-	private Hashtable<String,ElementAccessManager> accessManagers = null;
-	private List<String> features=null;
-	private List<String> blocked=null;
-
-    
-
-    protected synchronized Hashtable<String,ElementAccessManager> getAccessManagers(){
-        if (accessManagers==null){
+	protected synchronized Map<String,ElementAccessManager> getAccessManagers() {
+        if (accessManagers.isEmpty()){
             try {
                 init(getUserGroupImpl());
             } catch (Exception e) {
@@ -82,6 +69,10 @@ public class UserGroup implements UserGroupI{
         return accessManagers;
     }
     
+    public void clearUserGroup(){
+		xdatGroup = null;
+	}
+
     public XdatUsergroup getUserGroupImpl(){
     	if(xdatGroup==null){
     		return XdatUsergroup.getXdatUsergroupsById(id, null, true);
@@ -95,11 +86,10 @@ public class UserGroup implements UserGroupI{
     		xdatGroup=XdatUsergroup.getXdatUsergroupsById(id, user, true);
     		
     		if(xdatGroup==null){
-    			xdatGroup= new XdatUsergroup((UserI)user);
+    			xdatGroup= new XdatUsergroup(user);
     			xdatGroup.setId(this.getId());
     			xdatGroup.setTag(this.getTag());
     			xdatGroup.setDisplayname(this.getDisplayname());
-    			
     		}
     	}
     	return xdatGroup;
@@ -107,19 +97,13 @@ public class UserGroup implements UserGroupI{
 
     public void init(ItemI item) throws Exception
     {
-    	this.tag=item.getStringProperty("tag");
-    	tag= XftStringUtils.intern(tag);
+    	tag = XftStringUtils.intern(item.getStringProperty("tag"));
     	
-        accessManagers = new Hashtable<String,ElementAccessManager>();
-
-        for (ItemI sub :item.getChildItems("xdat:userGroup.element_access"))
-        {
-            ElementAccessManager eam = new ElementAccessManager(sub);
-            accessManagers.put(eam.getElement(),eam);
+        for (final ItemI sub :item.getChildItems("xdat:userGroup.element_access")) {
+            final ElementAccessManager eam = new ElementAccessManager(sub);
+            accessManagers.put(eam.getElement(), eam);
         }
 
-        features=Lists.newArrayList();
-        blocked=Lists.newArrayList();
         for(GroupFeature feature:(XDAT.getContextService().getBean(GroupFeatureService.class).findFeaturesForGroup(this.getId()))){
         	if(feature.isBlocked()){
             	blocked.add(feature.getFeature());
@@ -131,9 +115,9 @@ public class UserGroup implements UserGroupI{
 
 
     public String toString(){
-    	StringBuffer sb = new StringBuffer();
-    	sb.append(this.getId()).append("\n");
-    	sb.append(this.getTag()).append("\n");
+    	StringBuilder sb = new StringBuilder();
+    	sb.append(getId()).append("\n");
+    	sb.append(getTag()).append("\n");
     	
     	for(ElementAccessManager eam:this.getAccessManagers().values()){
     		sb.append(eam.toString()).append("\n");
@@ -142,174 +126,138 @@ public class UserGroup implements UserGroupI{
     	return sb.toString();
     }
 
-    private List<XdatStoredSearch> stored_searches = null;
     /**
      * @return Returns a list of stored search objects
      */
-    protected List<XdatStoredSearch> getStoredSearches()
-    {
-        if (this.stored_searches==null)
-        {
+    protected List<XdatStoredSearch> getStoredSearches() {
+        if (_storedSearches.isEmpty()) {
             try {
-                stored_searches= XdatStoredSearch.GetPreLoadedSearchesByAllowedGroup(id);
+				for (final XdatStoredSearch search : XdatStoredSearch.GetPreLoadedSearchesByAllowedGroup(id)) {
+					_storedSearches.put(search.getId(), search);
+				}
             } catch (Exception e) {
                 logger.error("",e);
             }
         }
-        return ImmutableList.copyOf(stored_searches);
+        return ImmutableList.copyOf(_storedSearches.values());
     }
 
 
     /**
-     * @param id
+	 * Retrieves the stored search associated with the submitted ID.
+     * @param id The ID of the stored search to retrieve.
      * @return Returns the stored search for the given ID
      */
-    protected XdatStoredSearch getStoredSearch(String id)
-    {
-        List<XdatStoredSearch> temp = getStoredSearches();
-        XdatStoredSearch xss = null;
-        try {
-            for (XdatStoredSearch search:temp)
-            {
-                if (id.equalsIgnoreCase(search.getId()))
-                {
-                    xss= search;
-                }
-            }
-        } catch (Exception e) {
-            logger.error("",e);
-        }
-        return xss;
+    protected XdatStoredSearch getStoredSearch(String id) {
+    	if (_storedSearches.isEmpty()) {
+    		getStoredSearches();
+		}
+        return _storedSearches.get(id);
     }
 
-    protected void replacePreLoadedSearch(XdatStoredSearch i){
-        try {
-            ItemI old = getStoredSearch(i.getStringProperty("ID"));
-            if (old!=null){
-                stored_searches.remove(old);
-            }
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
-            logger.error("",e);
-        }
-        stored_searches.add(i);
-    }
+    protected void replacePreLoadedSearch(final XdatStoredSearch search){
+		try {
+			final String id  = search.getStringProperty("ID");
+			_storedSearches.put(id, search);
+		} catch (ElementNotFoundException | FieldNotFoundException e) {
+			logger.error("",e);
+		}
+	}
 
     /**
      * ArrayList: 0:elementName 1:ArrayList of PermissionItems
      * @return Returns a list of the lists of PermissionItems for each element
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     @SuppressWarnings("unchecked")
-	public List<List<Object>> getPermissionItems(String login) throws Exception
-    {
-        final ArrayList<List<Object>> allElements = new ArrayList<List<Object>>();
-        final List<ElementSecurity> elements = ElementSecurity.GetSecureElements();
-        
-        Collections.sort(elements,((ElementSecurity)elements.get(0)).getComparator());
-        
-        
-        for (ElementSecurity es:elements)
-        {
-            final List<PermissionItem> permissionItems = (this.getTag()==null)?es.getPermissionItems(login):es.getPermissionItemsForTag(this.getTag());
-            boolean isAuthenticated = true;
-            boolean wasSet = false;
-            for (PermissionItem pi:permissionItems)
-            {
-                final ElementAccessManager eam = this.getAccessManagers().get(es.getElementName());
-                if (eam != null)
-                {
-                    final PermissionCriteriaI pc = eam.getMatchingPermissions(pi.getFullFieldName(),pi.getValue());
-                    if (pc != null)
-                    {
-                        pi.set(pc);
-                    }
-                }
-                if (!pi.isAuthenticated())
-                {
-                    isAuthenticated = false;
-                }
-                if (pi.wasSet())
-                {
-                    wasSet = true;
-                }
-            }
-            
-            final List<Object> elementManager = new ArrayList<Object>();
-            elementManager.add(es.getElementName());
-            elementManager.add(permissionItems);
-            elementManager.add(es.getSchemaElement().getSQLName());
-            elementManager.add((isAuthenticated)?Boolean.TRUE:Boolean.FALSE);
-            elementManager.add((wasSet)?Boolean.TRUE:Boolean.FALSE);
-            elementManager.add(es);
-            
-            if (permissionItems.size() > 0)
-                allElements.add(elementManager);
+	public List<List<Object>> getPermissionItems(String login) throws Exception {
+		if (!_permissionItemsByLogin.containsKey(login)) {
+			final List<ElementSecurity> elements = ElementSecurity.GetSecureElements();
 
-        }
-        return allElements;
-    }
+			Collections.sort(elements, elements.get(0).getComparator());
+
+			for (ElementSecurity es : elements) {
+				final List<PermissionItem> permissionItems = (this.getTag() == null) ? es.getPermissionItems(login) : es.getPermissionItemsForTag(this.getTag());
+				boolean                    isAuthenticated = true;
+				boolean                    wasSet          = false;
+				for (PermissionItem pi : permissionItems) {
+					final ElementAccessManager eam = this.getAccessManagers().get(es.getElementName());
+					if (eam != null) {
+						final PermissionCriteriaI pc = eam.getMatchingPermissions(pi.getFullFieldName(), pi.getValue());
+						if (pc != null) {
+							pi.set(pc);
+						}
+					}
+					if (!pi.isAuthenticated()) {
+						isAuthenticated = false;
+					}
+					if (pi.wasSet()) {
+						wasSet = true;
+					}
+				}
+
+				final List<Object> elementManager = new ArrayList<>();
+				elementManager.add(es.getElementName());
+				elementManager.add(permissionItems);
+				elementManager.add(es.getSchemaElement().getSQLName());
+				elementManager.add((isAuthenticated) ? Boolean.TRUE : Boolean.FALSE);
+				elementManager.add((wasSet) ? Boolean.TRUE : Boolean.FALSE);
+				elementManager.add(es);
+
+				if (permissionItems.size() > 0) {
+					_permissionItemsByLogin.put(login, elementManager);
+				}
+			}
+		}
+
+		return ImmutableList.copyOf(_permissionItemsByLogin.get(login));
+	}
 
 	@Override
 	public Integer getPK() {
 		return pk;
 	}
 
-    public Map<String,List<PermissionCriteriaI>> getAllPermissions(){
-    	Map<String,List<PermissionCriteriaI>> perms=Maps.newHashMap();
-    	
-    	for(ElementAccessManager eam3:this.getAccessManagers().values()){
-        	List<PermissionCriteriaI> criteria=Lists.newArrayList();
-
-	        for (PermissionSetI ps:eam3.getPermissionSets()) {
-	        	if(ps.isActive()){
-	        		criteria.addAll(ps.getAllCriteria());
-	        	}
-	        }
-	        
-	        perms.put(eam3.getSchemaElementName(), criteria);
-    	}
-        
-        return perms;
-    }
-
-    
-    public List<PermissionCriteriaI> getPermissionsByDataType(String type){
-    	List<PermissionCriteriaI> criteria=Lists.newArrayList();
-    	
-    	ElementAccessManager eam3;
-		try {
-			eam3 = this.getAccessManagers().get(type);
-			
-			if (eam3 == null) {
-	            return criteria;
-	        }
-
-		} catch (Exception e) {
-			logger.error(e);
-			return criteria;
+    public Map<String,List<PermissionCriteriaI>> getAllPermissions() {
+		if (_permissionCriteriaByDataType.isEmpty()) {
+			for(final ElementAccessManager manager : getAccessManagers().values()) {
+                final String type = manager.getSchemaElementName();
+                for (final PermissionSetI permissions : manager.getPermissionSets()) {
+                    if (permissions.isActive()) {
+                        final List<PermissionCriteriaI> criteria = permissions.getAllCriteria();
+                        _permissionCriteriaByDataType.putAll(type, criteria);
+                        for (final PermissionCriteriaI criterion : criteria) {
+                            _permissionCriteriaByDataTypeAndField.put(formatTypeAndField(type, criterion.getField()), criterion);
+                        }
+                    }
+                }
+            }
 		}
 
-        for (PermissionSetI ps:eam3.getPermissionSets()) {
-        	if(ps.isActive()){
-        		criteria.addAll(ps.getAllCriteria());
-        	}
-        }
-        
-        return criteria;
+		return Maps.transformValues(Multimaps.asMap(_permissionCriteriaByDataType), new Function<Collection<PermissionCriteriaI>, List<PermissionCriteriaI>>() {
+			@Override
+			public List<PermissionCriteriaI> apply(final Collection<PermissionCriteriaI> input) {
+				return new ArrayList<>(input);
+			}
+		});
     }
+
     
-    public List<PermissionCriteriaI> getPermissionsByDataTypeAndField(String dataType, String field){
-    	List<PermissionCriteriaI> criteria=Lists.newArrayList();
-    	
-    	for(PermissionCriteriaI crit: getPermissionsByDataType(dataType)){
-    		if(StringUtils.equals(crit.getField(), field)){
-    			criteria.add(crit);
-    		}
-    	}
-    	
-    	return criteria;
+    public List<PermissionCriteriaI> getPermissionsByDataType(final String type) {
+    	if (!_permissionCriteriaByDataType.containsKey(type)) {
+    		getAllPermissions();
+		}
+
+        return ImmutableList.copyOf(_permissionCriteriaByDataType.get(type));
+    }
+
+	public List<PermissionCriteriaI> getPermissionsByDataTypeAndField(String dataType, String field){
+		final String compositeKey = formatTypeAndField(dataType, field);
+		if (!_permissionCriteriaByDataTypeAndField.containsKey(compositeKey)) {
+			getPermissionsByDataType(dataType);
+		}
+
+		return _permissionCriteriaByDataTypeAndField.containsKey(compositeKey) ? ImmutableList.copyOf(_permissionCriteriaByDataTypeAndField.get(compositeKey)) : Collections.<PermissionCriteriaI>emptyList();
     }
 
 	@Override
@@ -332,8 +280,6 @@ public class UserGroup implements UserGroupI{
 		this.pk=pk;
 	}
 	
-	public  XdatUsergroup xdatGroup=null;
-	
     public void addPermission(String elementName,PermissionCriteriaI pc, UserI authenticatedUser) throws Exception
     {
     	XdatUsergroup xdatGroup=getSavedUserGroupImpl(authenticatedUser);
@@ -352,7 +298,7 @@ public class UserGroup implements UserGroupI{
 			xdatGroup.setElementAccess(xea);
 		}
 		
-		XdatFieldMappingSet xfms=null;
+		final XdatFieldMappingSet xfms;
 		final List<XdatFieldMappingSet> set=xea.getPermissions_allowSet();
 		if(set.size()==0){
 			xfms = new XdatFieldMappingSet(authenticatedUser);
@@ -394,4 +340,24 @@ public class UserGroup implements UserGroupI{
     public List<String> getBlockedFeatures(){
     	return ImmutableList.copyOf(blocked);
     }
+
+	private static String formatTypeAndField(final String type, final String field) {
+		return type + "/" + field;
+	}
+
+	private static final Logger logger = LoggerFactory.getLogger(UserGroup.class);
+
+	private String        id          = null;
+	private Integer       pk          = null;
+	private String        tag         = null;
+	private String        displayName = null;
+	private XdatUsergroup xdatGroup   = null;
+
+	private final Map<String, ElementAccessManager>     accessManagers                        = new HashMap<>();
+	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataType         = ArrayListMultimap.create();
+	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataTypeAndField = ArrayListMultimap.create();
+	private final Multimap<String, List<Object>>        _permissionItemsByLogin               = ArrayListMultimap.create();
+	private final Map<String, XdatStoredSearch>         _storedSearches                       = new HashMap<>();
+	private final List<String>                          features                              = new ArrayList<>();
+	private final List<String>                          blocked                               = new ArrayList<>();
 }

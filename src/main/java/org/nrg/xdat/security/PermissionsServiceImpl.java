@@ -111,15 +111,35 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             return true;
         } else {
             final List<PermissionCriteriaI> criteria = getPermissionsForUser(user, rootXmlName);
+            final String                    username = user.getUsername();
+            if (criteria.size() == 0) {
+                if (!user.isGuest()) {
+                    logger.error("{}: No permission criteria found for user {} with action {} on the schema element {} and the following security values: {}.",
+                                 (new Exception()).getStackTrace()[0].toString(),
+                                 username,
+                                 action,
+                                 root.getFormattedName(),
+                                 values.toString());
+                }
+                return false;
+            }
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Checking user {} access to action {} with security values {}", username, action, values.toString());
+            }
+
             for (final PermissionCriteriaI criterion : criteria) {
+                if (logger.isInfoEnabled()) {
+                    logger.info(" * Testing against criterion {}", criterion.toString());
+                }
                 if (criterion.canAccess(action, values)) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("User {} has {} access on element {} with criterion {} and security values: {}", user.getUsername(), action, rootXmlName, criterion.toString(), values.toString());
+                        logger.debug("User {} has {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
                     }
                     return true;
                 } else {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", user.getUsername(), action, rootXmlName, criterion.toString(), values.toString());
+                        logger.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
                     }
                 }
             }
@@ -127,12 +147,12 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             // If we've reached here, the security check has failed so let's provide some information on the context but
             // only if this isn't the guest user and the log level is INFO or below...
             if (!user.isGuest() && logger.isInfoEnabled()) {
-                logger.info("User {} not able to {} the schema element {} with the security values: {}. " + dumpCriteriaList(criteria),
-                            user.getUsername(),
+                logger.info("User {} not able to {} the schema element {} with the security values: {}. {}",
+                            username,
                             action,
                             root.getFormattedName(),
                             values.toString(),
-                            criteria.isEmpty() ? "No" : Integer.toString(criteria.size()));
+                            dumpCriteriaList(criteria));
             }
         }
 
@@ -209,8 +229,9 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             // Check readability
             if (!canRead(user, item)) {
                 final String itemId = getItemIId(item);
-                logger.error("User {} does not have read access to a {} instance: {}", user.getUsername(), item.getXSIType(), itemId);
-                throw new IllegalAccessException("Access Denied: Current user does not have permission to read this data.");
+                final String message = String.format("User '%s' does not have read access to the %s instance with ID %s", user.getUsername(), item.getXSIType(), itemId);
+                logger.error(message);
+                throw new IllegalAccessException("Access Denied: " + message);
             }
 
             // Check quarantine: if this item has a metadata element (which stores active status) and the user can't
@@ -219,8 +240,9 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 // Then check to see if it's not active. You can't access inactive things.
                 if (!item.isActive()) {
                     final String itemId = getItemIId(item);
-                    logger.error("The requested item is in quarantine and the user {} does not have permission to activate the type {}: {}", user.getUsername(), item.getXSIType(), itemId);
-                    throw new IllegalAccessException("Access Denied: The requested data is in quarantine.");
+                    final String message = String.format("The %s item with ID %s is in quarantine and the user %s does not have permission to activate this data type.", item.getXSIType(), itemId, user.getUsername());
+                    logger.error(message);
+                    throw new IllegalAccessException("Access Denied: " + message);
                 }
             }
 

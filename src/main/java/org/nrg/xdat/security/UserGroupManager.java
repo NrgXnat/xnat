@@ -612,11 +612,11 @@ public class UserGroupManager implements UserGroupServiceI{
 
 	@Override
 	public void save(UserGroupI group, UserI user, EventMetaI meta) throws Exception{
-		if(((UserGroup)group).xdatGroup==null){
+		if(((UserGroup)group).getUserGroupImpl()==null){
 			return;
 		}
 		
-		XdatUsergroup xdatGroup=((UserGroup)group).xdatGroup;
+		XdatUsergroup xdatGroup=((UserGroup)group).getUserGroupImpl();
 		
 		if(!Roles.isSiteAdmin(user)){
 			String firstValue=null;
@@ -639,7 +639,7 @@ public class UserGroupManager implements UserGroupServiceI{
 		SaveItemHelper.authorizedSave(xdatGroup, user, false,true, meta);
 		
 		((UserGroup)group).init(xdatGroup.getItem());
-		((UserGroup)group).xdatGroup=null;
+		((UserGroup)group).clearUserGroup();
 		
 		try {
  	       	final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);

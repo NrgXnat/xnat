@@ -18,6 +18,7 @@ import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
 
 import static org.nrg.xdat.security.SecurityManager.*;
@@ -74,9 +75,11 @@ public class PermissionCriteria implements PermissionCriteriaI {
 
     public static final String SCHEMA_ELEMENT_NAME = "xdat:field_mapping";
 
-    public static String dumpCriteriaList(final List<PermissionCriteriaI> criteria) {
-        final StringBuilder dump = new StringBuilder("{} permission criteria found:");
+    public static String dumpCriteriaList(final Collection<PermissionCriteriaI> criteria) {
+        final StringBuilder dump = new StringBuilder(criteria.isEmpty() ? "No" : Integer.toString(criteria.size()));
+        dump.append(" permission criteria found");
         if (!criteria.isEmpty()) {
+            dump.append(":");
             for (PermissionCriteriaI criterion : criteria) {
                 dump.append("\n * ").append(criterion.toString());
             }
@@ -178,18 +181,18 @@ public class PermissionCriteria implements PermissionCriteriaI {
     @Override
     public boolean canAccess(final String access, final SecurityValues values) throws Exception {
         if (!getAction(access)) {
-            logger.debug("Action {} does not appear to be valid", access);
+            logger.info("Action {} does not appear to be valid", access);
             return false;
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Checking access to action {} with security values {}", access, values.toString());
+        if (logger.isInfoEnabled()) {
+            logger.info("Checking access to action {} with security values {}", access, values.toString());
         }
 
         // dot syntax
         final Object value = values.getHash().get(getField());
 
         if (value == null) {
-            logger.debug("Tried to check access to action {} with field {}, but that field doesn't exist in the security values", access, getField());
+            logger.info("Tried to check access to action {} with field {}, but that field doesn't exist in the security values", access, getField());
             return false;
         }
 
@@ -197,23 +200,23 @@ public class PermissionCriteria implements PermissionCriteriaI {
         final Object compareTo = getFieldValue();
 
         if (compareTo == null) {
-            logger.debug("Tried to test field {} value {}, but the compare to from getFieldValue() was null, access denied", getField(), fieldValue);
+            logger.info("Tried to test field {} value {}, but the compare to from getFieldValue() was null, access denied", getField(), fieldValue);
             return false;
         }
 
         final String compareToString = compareTo.toString();
         if (StringUtils.equals(ALL, compareToString)) {
-            logger.debug("Test field {} value {}, the compare to from getFieldValue() was \"{}\", access granted", getField(), fieldValue, ALL);
+            logger.info("Test field {} value {}, the compare to from getFieldValue() was \"{}\", access granted", getField(), fieldValue, ALL);
             return true;
         }
 
         final String[] parsedValues = StringUtils.split(fieldValue, "\\s*,\\s*");
-        if (logger.isDebugEnabled()) {
-            logger.debug("Testing {} parsed values against compare-to string {}: {}", parsedValues.length, compareToString, Joiner.on(", ").join(parsedValues));
+        if (logger.isInfoEnabled()) {
+            logger.info("Testing {} parsed values against compare-to string {}: {}", parsedValues.length, compareToString, Joiner.on(", ").join(parsedValues));
         }
 
         for (final String single : parsedValues) {
-            logger.debug("Testing field value {} against compare-to value {}", single, compareToString);
+            logger.info("Testing field value {} against compare-to value {}", single, compareToString);
             if (StringUtils.equalsIgnoreCase(single, compareToString)) {
                 logger.info("Access granted based on field value {} and compare-to value {}", single, compareToString);
                 return true;

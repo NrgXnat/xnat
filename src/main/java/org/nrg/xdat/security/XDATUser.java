@@ -64,6 +64,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
     private static final SimpleGrantedAuthority AUTHORITY_ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
     private static final SimpleGrantedAuthority AUTHORITY_USER = new SimpleGrantedAuthority("ROLE_USER");
+    private static final String[] REPLACEMENT_LIST = {"id", "xnat_experimentData", "xnat_experimentData_share", "sharing_share_xnat_experimentda_id"};
 
     private Hashtable<String, ElementAccessManager> accessManagers = null;
     private final Map<String, UserGroupI> groups = Maps.newHashMap();
@@ -594,7 +595,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 } catch (Exception ignored) {
                     // Just ignore it.
                 }
-                return sequence1 == sequence2 ? 0 : (sequence1 < sequence2 ? -1 : 1);
+                return Integer.compare(sequence1, sequence2);
             }
         });
 
@@ -884,19 +885,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     org.nrg.xft.search.QueryOrganizer qo = new org.nrg.xft.search.QueryOrganizer("xnat:projectData", this, ViewManager.ALL);
                     qo.addField("xnat:projectData/ID");
 
-                    String query = qo.buildQuery();
-
-                    String idField = qo.translateXMLPath("xnat:projectData/ID");
-
                     Long proj_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
                     readable_counts.put("xnat:projectData", proj_count);
 
                     //subjects
                     qo = new org.nrg.xft.search.QueryOrganizer("xnat:subjectData", this, ViewManager.ALL);
                     qo.addField("xnat:subjectData/ID");
-
-                    query = qo.buildQuery();
-                    idField = qo.translateXMLPath("xnat:subjectData/ID");
 
                     Long sub_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
                     readable_counts.put("xnat:subjectData", sub_count);
@@ -915,20 +909,19 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     // idField = qo.translateXMLPath("wrk:workflowData/ID");
                     //
 
-                    Long wrk_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
+                    final Long wrk_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
                     readable_counts.put("wrk:workflowData", wrk_count);
 
                     //experiments
-                    query = StringUtils.replace(query, idField, "id");
-                    query = StringUtils.replace(query, "xnat_subjectData", "xnat_experimentData");
-                    query = StringUtils.replace(query, "xnat_projectParticipant", "xnat_experimentData_share");
-                    query = StringUtils.replace(query, "subject_id", "sharing_share_xnat_experimentda_id");
+                    final String query = StringUtils.replaceEach(qo.buildQuery(),
+                                                                 new String[]{qo.translateXMLPath("xnat:subjectData/ID"), "xnat_subjectData", "xnat_projectParticipant", "subject_id"},
+                                                                 REPLACEMENT_LIST);
 
-                    XFTTable t = XFTTable.Execute("SELECT element_name, COUNT(*) FROM (" + query + ") SEARCH  LEFT JOIN xnat_experimentData expt ON search.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", this.getDBName(), this.getUsername());
-                    readable_counts.putAll(t.convertToHashtable("element_name", "count"));
+                    final XFTTable table = XFTTable.Execute("SELECT element_name, COUNT(*) FROM (" + query + ") SEARCH  LEFT JOIN xnat_experimentData expt ON search.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", this.getDBName(), this.getUsername());
+                    readable_counts.putAll(table.convertToHashtable("element_name", "count"));
                 } catch (org.nrg.xdat.exceptions.IllegalAccessException e) {
                     //not a member of anything
-                    System.out.println("USER:" + this.getUsername() + " doesn't have access to any project data.");
+                    logger.info("USER:" + this.getUsername() + " doesn't have access to any project data.");
                 }
             } catch (SQLException e) {
                 logger.error("", e);
@@ -1384,5 +1377,5 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     };
 
-    private final Multimap<String, PermissionCriteriaI> _permissionCriteria = ArrayListMultimap.create();
+    private final Multimap<String, PermissionCriteriaI> _permissionCriteria = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
 }

@@ -37,7 +37,7 @@ public class UserGroup implements UserGroupI{
 	}
 	
 	public UserGroup(){
-		
+
 	}
 	
 	/* (non-Javadoc)
@@ -95,14 +95,14 @@ public class UserGroup implements UserGroupI{
     	return xdatGroup;
     }
 
-    public void init(ItemI item) throws Exception
+    public synchronized void init(ItemI item) throws Exception
     {
     	tag = XftStringUtils.intern(item.getStringProperty("tag"));
-    	
-        for (final ItemI sub :item.getChildItems("xdat:userGroup.element_access")) {
-            final ElementAccessManager eam = new ElementAccessManager(sub);
-            accessManagers.put(eam.getElement(), eam);
-        }
+
+		for (final ItemI sub : item.getChildItems("xdat:userGroup.element_access")) {
+			final ElementAccessManager eam = new ElementAccessManager(sub);
+			accessManagers.put(eam.getElement(), eam);
+		}
 
         for(GroupFeature feature:(XDAT.getContextService().getBean(GroupFeatureService.class).findFeaturesForGroup(this.getId()))){
         	if(feature.isBlocked()){
@@ -131,14 +131,16 @@ public class UserGroup implements UserGroupI{
      */
     protected List<XdatStoredSearch> getStoredSearches() {
         if (_storedSearches.isEmpty()) {
-            try {
-				for (final XdatStoredSearch search : XdatStoredSearch.GetPreLoadedSearchesByAllowedGroup(id)) {
-					_storedSearches.put(search.getId(), search);
-				}
-            } catch (Exception e) {
-                logger.error("",e);
-            }
-        }
+			synchronized (_storedSearches) {
+				try {
+                    for (final XdatStoredSearch search : XdatStoredSearch.GetPreLoadedSearchesByAllowedGroup(id)) {
+                        _storedSearches.put(search.getId(), search);
+                    }
+                } catch (Exception e) {
+                    logger.error("",e);
+                }
+			}
+		}
         return ImmutableList.copyOf(_storedSearches.values());
     }
 
@@ -221,13 +223,13 @@ public class UserGroup implements UserGroupI{
     public Map<String,List<PermissionCriteriaI>> getAllPermissions() {
 		if (_permissionCriteriaByDataType.isEmpty()) {
 			for(final ElementAccessManager manager : getAccessManagers().values()) {
-                final String type = manager.getSchemaElementName();
+                final String element = manager.getElement();
                 for (final PermissionSetI permissions : manager.getPermissionSets()) {
                     if (permissions.isActive()) {
                         final List<PermissionCriteriaI> criteria = permissions.getAllCriteria();
-                        _permissionCriteriaByDataType.putAll(type, criteria);
+                        _permissionCriteriaByDataType.putAll(element, criteria);
                         for (final PermissionCriteriaI criterion : criteria) {
-                            _permissionCriteriaByDataTypeAndField.put(formatTypeAndField(type, criterion.getField()), criterion);
+                            _permissionCriteriaByDataTypeAndField.put(formatTypeAndField(element, criterion.getField()), criterion);
                         }
                     }
                 }
@@ -242,7 +244,7 @@ public class UserGroup implements UserGroupI{
 		});
     }
 
-    
+
     public List<PermissionCriteriaI> getPermissionsByDataType(final String type) {
     	if (!_permissionCriteriaByDataType.containsKey(type)) {
     		getAllPermissions();
@@ -251,6 +253,7 @@ public class UserGroup implements UserGroupI{
         return ImmutableList.copyOf(_permissionCriteriaByDataType.get(type));
     }
 
+	@SuppressWarnings("unused")
 	public List<PermissionCriteriaI> getPermissionsByDataTypeAndField(String dataType, String field){
 		final String compositeKey = formatTypeAndField(dataType, field);
 		if (!_permissionCriteriaByDataTypeAndField.containsKey(compositeKey)) {
@@ -354,9 +357,9 @@ public class UserGroup implements UserGroupI{
 	private XdatUsergroup xdatGroup   = null;
 
 	private final Map<String, ElementAccessManager>     accessManagers                        = new HashMap<>();
-	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataType         = ArrayListMultimap.create();
-	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataTypeAndField = ArrayListMultimap.create();
-	private final Multimap<String, List<Object>>        _permissionItemsByLogin               = ArrayListMultimap.create();
+	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataType         = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
+	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataTypeAndField = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
+	private final Multimap<String, List<Object>>        _permissionItemsByLogin               = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, List<Object>>create());
 	private final Map<String, XdatStoredSearch>         _storedSearches                       = new HashMap<>();
 	private final List<String>                          features                              = new ArrayList<>();
 	private final List<String>                          blocked                               = new ArrayList<>();

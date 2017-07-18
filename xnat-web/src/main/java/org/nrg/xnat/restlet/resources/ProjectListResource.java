@@ -589,6 +589,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                     }
                 }
 
+
                 final String query = qo.buildQuery();
 
                 table = XFTTable.Execute(query, user.getDBName(), resource.userName);

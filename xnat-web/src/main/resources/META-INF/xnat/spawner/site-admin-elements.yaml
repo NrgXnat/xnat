@@ -382,18 +382,6 @@ generalSecuritySettings:
                 Should this site allow non-administrator users to create new projects?
                 If enabled, the site is more secure, but this can make it more difficult for
                 regular users to create new projects for their research efforts.
-        allowNonAdminsToClaimUnassignedSessions:
-            kind: panel.input.switchbox
-            name: allowNonAdminsToClaimUnassignedSessions
-            label: "Allow non-administrators <br>to find and claim <br>unassigned sessions?"
-            onText: Allow
-            offText: Do Not Allow
-            description: >
-                Should this site allow non-administrator users to search the prearchive for unassigned
-                sessions and claim any sessions matching the patient name, patient ID, or study date they
-                provide? Disabling this removes the "Find my study" feature and can help prevent users
-                from stealing another user's data. But it can also make it harder for users to get their
-                data into XNAT and increase the burden on site administrators.
 
 userLoginsSessionControls:
     kind: panel.form

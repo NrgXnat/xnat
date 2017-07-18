@@ -29,7 +29,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 <div id="prearchive_table"></div>
 <div id="progress-bar"></div>
 <div id="col_table"></div>
-#if($turbineUtils.isSiteAdmin($user) || $siteConfig.allowNonAdminsToClaimUnassignedSessions)
+
 <br>
 <h3>Find my study</h3><br>
 <div>If you do not see your data in the prearchive, you may have uploaded it without associating it with a project. If you want to find your data and move it to the appropriate project, please enter the Patient Name, Patient ID, or Study Date in the fields below and click the "Find" button:</div>
@@ -48,7 +48,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
     <tr><td><input type="submit" value="Find"></td></tr>
     </table>
 </form>
-#end
+
 <div id="prearcs" class="prearcs"></div>
 <div id="serverRoot" title="$content.getURI('')"></div>
 <div id="project" title="$!project"></div>

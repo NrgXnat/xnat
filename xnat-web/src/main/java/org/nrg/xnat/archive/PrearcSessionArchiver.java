@@ -575,10 +575,25 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
                                 if (shouldForceQuarantine) {
                                     src.quarantine(user);
                                 } else {
-                                    final XnatProjectdata proj = src.getPrimaryProject(false);
-                                    if (null != proj.getArcSpecification().getQuarantineCode() &&
-                                            proj.getArcSpecification().getQuarantineCode().equals(1)) {
-                                        src.quarantine(user);
+                                    // A bunch of null checks here because, under certain race or heavy load conditions,
+                                    // one or more of these values can come back null.
+                                    final XnatProjectdata project = src.getPrimaryProject(false);
+                                    if (project != null) {
+                                        final ArcProject arcProject = project.getArcSpecification();
+                                        if (arcProject != null) {
+                                            final Integer quarantineCode = arcProject.getQuarantineCode();
+                                            if (quarantineCode != null) {
+                                                if (quarantineCode.equals(1)) {
+                                                    src.quarantine(user);
+                                                }
+                                            } else {
+                                                logger.debug("Got arcProject {} for project {} associated with session {}, but the quarantine code was null", arcProject.getArcProjectId(), project.getId(), src.getLabel());
+                                            }
+                                        } else {
+                                            logger.debug("Didn't find arcProject for project {}", project.getId());
+                                        }
+                                    } else {
+                                        logger.debug("Couldn't get primary project for session {}.", src.getLabel());
                                     }
                                 }
                             } catch (Exception e) {

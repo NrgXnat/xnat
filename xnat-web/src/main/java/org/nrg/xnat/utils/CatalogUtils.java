@@ -59,11 +59,11 @@ public class CatalogUtils {
     public final static String[] FILE_HEADERS_W_FILE = {"Name", "Size", "URI", "collection", "file_tags", "file_format", "file_content", "cat_ID", "file", "digest"};
 
     public static boolean getChecksumConfiguration(final XnatProjectdata project) throws ConfigServiceException {
-        final String projectId = (String) project.getItem().getProps().get("id");
-        Configuration configuration = XDAT.getConfigService().getConfig("checksums", "checksums", StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
+        final String projectId = project.getId();
+        final Configuration configuration = XDAT.getConfigService().getConfig("checksums", "checksums", StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
 
         if (configuration != null) {
-            String checksumProperty = XDAT.getSiteConfigurationProperty("checksums");
+            final String checksumProperty = XDAT.getSiteConfigurationProperty("checksums");
             if (!StringUtils.isBlank(checksumProperty)) {
                 return Boolean.parseBoolean(checksumProperty);
             }

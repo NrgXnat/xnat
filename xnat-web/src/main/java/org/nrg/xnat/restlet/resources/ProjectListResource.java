@@ -561,14 +561,30 @@ public class ProjectListResource extends QueryOrganizerResource {
 
                 projResource.populateQuery(qo);
 
-                if (resource.containsQueryVariable("restrict") && !Groups.isMember(user, "ALL_DATA_ADMIN")) {
-                    final String restriction = resource.getQueryVariable("restrict");
-                    if (restriction.equals(SecurityManager.EDIT) || restriction.equals(SecurityManager.DELETE)) {
-                        final List<Object> ps = Permissions.getAllowedValues(user, "xnat:projectData", "xnat:projectData/ID", restriction);
+                if (!Groups.isMember(user, "ALL_DATA_ADMIN")) {
+                    String restriction = SecurityManager.READ;
+
+                    if (resource.containsQueryVariable("restrict")){
+                        String queryRestriction = resource.getQueryVariable("restrict");
+                        if(queryRestriction.equals(SecurityManager.EDIT) || queryRestriction.equals(SecurityManager.DELETE)) {
+                            restriction = queryRestriction;
+                        }
+                    }
+
+                    final List<Object> ps = Permissions.getAllowedValues(user, "xnat:projectData", "xnat:projectData/ID", restriction);
+                    if(ps!=null && ps.size()>0) {
                         final CriteriaCollection cc = new CriteriaCollection("OR");
                         for (Object p : ps) {
                             cc.addClause("xnat:projectData/ID", p);
                         }
+                        qo.setWhere(cc);
+                    }
+                    else{
+                        final CriteriaCollection cc = new CriteriaCollection("AND");
+                        //If user does not have permissions on any projects, add a where clause saying that projectid
+                        // must equal both 'this' and 'that'. This causes the table that returns to be empty.
+                        cc.addClause("xnat:projectData/ID", "this");
+                        cc.addClause("xnat:projectData/ID", "that");
                         qo.setWhere(cc);
                     }
                 }

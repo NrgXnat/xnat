@@ -74,8 +74,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private boolean rolesNotUpdatedFromService = true;
     private ArrayList<XdatStoredSearch> stored_searches = null;
 
-    private final List<ElementDisplay> browseable = Lists.newArrayList();
-    private final Map<Object, Object> readable_counts = Maps.newHashMap();
+    private final List<ElementDisplay> browseable      = new ArrayList<>();
+    private final Map<Object, Object>  _readableCounts = new HashMap<>();
 
     private long startTime = Calendar.getInstance().getTimeInMillis();
 
@@ -526,7 +526,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public void clearBrowseableElementDisplays() {
         browseable.clear();
-        readable_counts.clear();
+        _readableCounts.clear();
     }
 
     protected List<ElementDisplay> getBrowseableElementDisplays() {
@@ -872,67 +872,57 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     protected void clearLocalCache() {
         userSessionCache = new Hashtable<>();
         total_counts = null;
-        readable_counts.clear();
+        _readableCounts.clear();
         _permissionCriteria.clear();
         _editableProjects = null;
     }
 
-    protected Map getReadableCounts() {
-        if (readable_counts.size() == 0) {
+    protected Map<Object, Object> getReadableCounts() {
+        if (_readableCounts.size() == 0) {
             try {
                 try {
                     //projects
-                    org.nrg.xft.search.QueryOrganizer qo = new org.nrg.xft.search.QueryOrganizer("xnat:projectData", this, ViewManager.ALL);
-                    qo.addField("xnat:projectData/ID");
+                    final org.nrg.xft.search.QueryOrganizer projects = new org.nrg.xft.search.QueryOrganizer("xnat:projectData", this, ViewManager.ALL);
+                    projects.addField("xnat:projectData/ID");
 
-                    Long proj_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
-                    readable_counts.put("xnat:projectData", proj_count);
-
-                    //subjects
-                    qo = new org.nrg.xft.search.QueryOrganizer("xnat:subjectData", this, ViewManager.ALL);
-                    qo.addField("xnat:subjectData/ID");
-
-                    Long sub_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
-                    readable_counts.put("xnat:subjectData", sub_count);
+                    final Long projectCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + projects.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
+                    _readableCounts.put("xnat:projectData", projectCount);
 
                     //workflows
-                    qo = new org.nrg.xft.search.QueryOrganizer("wrk:workflowData", this, ViewManager.ALL);
-                    qo.addField("wrk:workflowData/ID");
+                    final org.nrg.xft.search.QueryOrganizer workflows = new org.nrg.xft.search.QueryOrganizer("wrk:workflowData", this, ViewManager.ALL);
+                    workflows.addField("wrk:workflowData/ID");
 
-                    //
-                    // These two lines were causing an issue where the file viewer was not opening. (See XNAT-2511)
-                    // Since we are reusing the query and idField variables below, if we overwrite them here it causes
-                    // any experiment dataType that was added before XNAT 1.6 (when we started using the wrk:workflowData
-                    // table heavily) to not be returned from this method.
-                    //
-                    // query = qo.buildQuery();
-                    // idField = qo.translateXMLPath("wrk:workflowData/ID");
-                    //
+                    final Long workflowCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + workflows.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
+                    _readableCounts.put("wrk:workflowData", workflowCount);
 
-                    final Long wrk_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
-                    readable_counts.put("wrk:workflowData", wrk_count);
+                    //subjects
+                    final org.nrg.xft.search.QueryOrganizer subjects = new org.nrg.xft.search.QueryOrganizer("xnat:subjectData", this, ViewManager.ALL);
+                    subjects.addField("xnat:subjectData/ID");
+
+                    final Long subjectCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + subjects.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
+                    _readableCounts.put("xnat:subjectData", subjectCount);
 
                     //experiments
-                    final String query = StringUtils.replaceEach(qo.buildQuery(),
-                                                                 new String[]{qo.translateXMLPath("xnat:subjectData/ID"), "xnat_subjectData", "xnat_projectParticipant", "subject_id"},
+                    final String query = StringUtils.replaceEach(subjects.buildQuery(),
+                                                                 new String[]{subjects.translateXMLPath("xnat:subjectData/ID"), "xnat_subjectData", "xnat_projectParticipant", "subject_id"},
                                                                  REPLACEMENT_LIST);
 
                     final XFTTable table = XFTTable.Execute("SELECT element_name, COUNT(*) FROM (" + query + ") SEARCH  LEFT JOIN xnat_experimentData expt ON search.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", this.getDBName(), this.getUsername());
-                    readable_counts.putAll(table.convertToHashtable("element_name", "count"));
+                    _readableCounts.putAll(table.convertToHashtable("element_name", "count"));
                 } catch (org.nrg.xdat.exceptions.IllegalAccessException e) {
                     //not a member of anything
                     logger.info("USER:" + this.getUsername() + " doesn't have access to any project data.");
                 }
             } catch (SQLException e) {
-                logger.error("", e);
+                logger.error("An error occurred in the SQL for retrieving readable counts for the user " + getUsername(), e);
             } catch (DBPoolException e) {
-                logger.error("", e);
+                logger.error("A database error occurred when trying to retrieve readable counts for the user " + getUsername(), e);
             } catch (Exception e) {
-                logger.error("", e);
+                logger.error("An unknown error occurred when trying to retrieve readable counts for the user " + getUsername(), e);
             }
         }
 
-        return readable_counts;
+        return _readableCounts;
     }
 
     Map total_counts = null;

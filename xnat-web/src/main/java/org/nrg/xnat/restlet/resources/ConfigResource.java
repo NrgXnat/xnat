@@ -304,9 +304,9 @@ public class ConfigResource extends SecureResource {
         final UserI user = getUser();
         try {
             //check access, almost copy-paste code in the GET method.
-            if (!((StringUtils.isNotBlank(projectId) && Permissions.canEdit(user, "xnat:subjectData/project", projectId)) || Roles.isSiteAdmin(user))) {
-                _log.warn("User {} can not access project {}", user.getUsername(), projectId);
-                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User does not have privileges to access this project");
+            if (!((StringUtils.isNotBlank(projectId) && Permissions.canDelete(user, "xnat:subjectData/project", projectId)) || Roles.isSiteAdmin(user))) {
+                _log.warn("User {} can not modify config for project {}", user.getUsername(), projectId);
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User does not have privileges to modify config for this project");
                 return;
             }
 
@@ -405,7 +405,7 @@ public class ConfigResource extends SecureResource {
                 }
                 configService.disable(user.getLogin(), "Disabling this setting", toolName, path);
             } else {
-                if (!(Permissions.canEdit(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if have project edit permissions or are site admins. Otherwise they are forbidden.
+                if (!(Permissions.canDelete(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if have project edit permissions or are site admins. Otherwise they are forbidden.
                     final String message = String.format("User %s can not access project %s to modify configuration setting %s for the tool %s", user.getUsername(), projectId, path, toolName);
                     _log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);

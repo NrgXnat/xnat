@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.List;
 
 import static org.nrg.xdat.security.SecurityManager.*;
 
@@ -210,7 +209,7 @@ public class PermissionCriteria implements PermissionCriteriaI {
             return true;
         }
 
-        final String[] parsedValues = StringUtils.split(fieldValue, "\\s*,\\s*");
+        final String[] parsedValues = fieldValue.split("\\s*,\\s*");
         if (logger.isInfoEnabled()) {
             logger.info("Testing {} parsed values against compare-to string {}: {}", parsedValues.length, compareToString, Joiner.on(", ").join(parsedValues));
         }

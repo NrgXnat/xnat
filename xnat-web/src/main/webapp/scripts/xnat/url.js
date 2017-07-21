@@ -256,7 +256,7 @@ var XNAT = getObject(XNAT||{});
     url.toQueryString = function(query, arr, encode){
         XNAT.url.encode = encode || XNAT.url.encode;
         var output = XNAT.url.toQueryArray(query, arr).join('&');
-        return (output) ? ('?' + output) : '';
+        return (output) ? output.replace(/^[?]*/, '?') : '';
     };
 
 

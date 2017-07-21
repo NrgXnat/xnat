@@ -1,4 +1,4 @@
-<%@ tag description="Initialize Variables" pageEncoding="UTF-8" %>
+<%@ tag description="Initialize Variables" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
@@ -57,7 +57,7 @@
     </c:if>
 
     <c:set var="themeRoot" value="${siteRoot}/themes/${themeName}" scope="request"/>
-    <c:set var="pageRoot" value="${themeRoot}/page" scope="request"/>
+    <c:set var="pageRoot" value="${themeRoot}/pages" scope="request"/>
 
     <%-- if no themeName is found, set vars to use root items --%>
     <c:if test="${empty themeName}">

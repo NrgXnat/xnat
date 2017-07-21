@@ -830,8 +830,8 @@ themeManagement:
                     name: themeSelection
                     label: Select Theme
                     description: Select a new global theme from those available on the system.
-                    options:
-                        None: None
+#                    options:
+#                        None: None
                     element:
                         style: "width:230px;margin-right:10px;"
                     afterElement: >

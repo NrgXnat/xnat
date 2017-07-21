@@ -26,32 +26,38 @@
 </div>
 
 <script>
+
+
     (function(){
 
-        var customPage = XNAT.app.customPage;
+        var sampleUrl = '/page/#/foo/#tab=bar/#panel=baz';
+
+        // save the value for the initial page that's loaded
+        var page = getUrlHashValue('#/');
+
         var $pageContent = $('#page-content').html('loading...');
 
-        var pageName = customPage.getPageName();
-//            console.log('pageName: "' + pageName + '"');
+//        var pageName = XNAT.app.customPage.getPageName();
+//        console.log('pageName: "' + pageName + '"');
 
-        customPage.getPage(null, $pageContent);
+        XNAT.app.customPage.container = $pageContent;
+        XNAT.app.customPage.getPage(page);
 
         $(window).on('hashchange', function(e){
             e.preventDefault();
-            if (window.location.hash.indexOf('#!') === 0) {
-                return false;
-            }
-            var newPageName = customPage.getPageName();
-            if (newPageName !== pageName) {
-                customPage.getPage('', $pageContent);
+            var newPage = getUrlHashValue('#/');
+            // only get a new page if the page part has changed
+            if (newPage !== page) {
+                XNAT.app.customPage.getPage(newPage, $pageContent);
             }
         });
 
     })();
 
     $(function(){
-        $(document.body).on('click', '[href^="#"], [href^="@!"]', function(e){
+        $(document).on('click', '[href^="#"], [href^="@!"]', function(e){
             e.preventDefault();
         });
     });
+
 </script>

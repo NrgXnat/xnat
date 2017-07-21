@@ -21,6 +21,11 @@ var XNAT = getObject(XNAT);
     XNAT.admin.themeManager = themeMgr =
         getObject(XNAT.admin.themeManager||{});
 
+    XNAT.theme =
+        getObject(XNAT.theme||{});
+
+    var themeName = XNAT.themeName || XNAT.theme.name || '';
+
     var themeUrl = XNAT.url.rootUrl('/xapi/theme');
     var s = '/', q = '?', a = '&';
     var csrf = 'XNAT_CSRF=' + window.csrfToken;
@@ -35,15 +40,53 @@ var XNAT = getObject(XNAT);
 
     menuInit(themeSelector, null, '230px');
 
-    function populateThemes(){
-        getActiveTheme(getAvailableThemes);
+    function isDefaultTheme(name){
+        var _theme = name || themeName;
+        return /^(xnat-default|xnat-sample|none)$/i.test(_theme);
     }
+
+    function addThemeOptions(themeList, selected){
+        var options = '';
+        var hasNone = false;
+        themeSelector.empty();
+        if (Array.isArray(themeList)) {
+            forEach(themeList, function(opt){
+                // skip bogus options
+                if (/^(\.|__MACOSX)/.test(opt.label)) return;
+                if (opt.value === 'none' && hasNone) return;
+                if (/^None$/i.test(opt.label)) {
+                    // add 'none' value to 'None' option
+                    opt.value = 'none';
+                    hasNone = true;
+                }
+                options += '<option';
+                options += ' value="' + opt.value + '"';
+                if ((selected+'').toLowerCase() === (opt.value+'').toLowerCase()) {
+                    options += ' selected';
+                }
+                options += '>';
+                options += opt.label;
+                options += '</option>';
+            });
+        }
+        // add all <option> elements at once
+        themeSelector.append(options);
+        menuUpdate(themeSelector);
+    }
+
+    function getAvailableThemes(selected){
+        return XNAT.xhr.getJSON(themeUrl, function(data){
+            // themeSelector.empty();
+            addThemeOptions(data, selected);
+        });
+    }
+    themeMgr.getAvailableThemes = getAvailableThemes;
 
     // returns object for active theme
     function getActiveTheme(callback){
         var role = 'global';
         return XNAT.xhr.get(themeUrl + s + role, function(data){
-            themeSelector.empty();
+            // themeSelector.empty();
             selectedTheme = data.name ? data.name : 'None';
             currentTheme.text(selectedTheme);
             if (typeof callback === 'function') {
@@ -53,31 +96,10 @@ var XNAT = getObject(XNAT);
     }
     themeMgr.getActiveTheme = getActiveTheme;
 
-    function getAvailableThemes(selected){
-        return XNAT.xhr.getJSON(themeUrl, function(data){
-            themeSelector.empty();
-            addThemeOptions(data, selected);
+    function populateThemesMenu(){
+        getActiveTheme().done(function(data){
+            getAvailableThemes(data.name)
         });
-    }
-    themeMgr.getAvailableThemes = getAvailableThemes;
-
-    function addThemeOptions(themeList, selected){
-        var options = '';
-        if (Array.isArray(themeList)) {
-            forEach(themeList, function(opt){
-                options += '<option';
-                options += ' value="' + opt.value + '"';
-                if (selected == opt.value) {
-                    options += ' selected';
-                }
-                options += '>';
-                options += opt.label;
-                options += '</option>';
-            });
-        }
-        // add all <option> elements at once
-        themeSelector.html(options);
-        menuUpdate(themeSelector);
     }
 
     // function selectTheme(themeToSelect){
@@ -88,23 +110,40 @@ var XNAT = getObject(XNAT);
 
     function setTheme(name, callback, successText){
         var URL = XNAT.url.csrfUrl('/xapi/theme/' + encodeURI(name));
+        // don't try to set 'None' or an empty theme name
+        if (!name) {
+            return false;
+        }
+        if (/^none$/i.test(name)){
+            XNAT.xhr.put(URL).done(function(){
+                XNAT.ui.banner.top(2000, 'Themes are now disabled.');
+                populateThemesMenu();
+            });
+            return true;
+        }
         callback = callback || diddly;
         XNAT.ui.dialog.confirm({
+            width: 450,
             title: false,
             content: '' +
             (successText ? successText + '<br><br>' : '') +
-            'Would you like to set the active theme to "' + name + '"?' +
+            'Would you like to set the active theme to <b>"' + name + '"</b>?' +
             '<br><br>' +
-            'Theme appearances may not fully take effect until users log out, ' +
+            'Theme appearances should take effect immediately, but in some cases ' +
+            'the change may not fully take effect until users log out, ' +
             'clear their browser cache and log back in.' +
             '',
             cancelLabel: 'Not Now',
             okLabel: 'Set Theme',
-            okAction: function(){
+            okClose: false,
+            okAction: function(dlg){
                 XNAT.xhr.put(URL).done(function(){
-                    callback.call(this);
+                    dlg.close(true);
                     XNAT.ui.banner.top(2000, 'Theme set to "' + name + '".', 'success');
                 })
+            },
+            onClose: function(){
+                callback.call(this)
             }
         })
     }
@@ -114,19 +153,33 @@ var XNAT = getObject(XNAT);
     themeSelectionForm.off('submit').on('submit', function(ev){
         ev.preventDefault();
         ev.stopImmediatePropagation();
-        setTheme(themeSelector.val(), populateThemes);
+        setTheme(themeSelector.val(), populateThemesMenu);
     });
 
     function removeTheme(e){
         e.preventDefault();
+        var _themeName = themeSelector.val();
+        // don't allow deletion of the default theme
+        if (isDefaultTheme(_themeName)) {
+            XNAT.ui.dialog.message(false, 'The <b>' + _themeName + '</b> theme may not be deleted.');
+            return false;
+        }
         XNAT.ui.dialog.confirm({
+            width: 450,
             title: false,
-            content: 'Are you sure you wish to delete the selected theme?',
-            okLabel: 'Delete',
-            okAction: function(){
-                XNAT.xhr.delete(themeUrl + s + encodeURI(themeSelector.val()) + q + csrf, function(data){
+            content: '' +
+                'Are you sure you wish to permanently delete the ' +
+                '<b>' + _themeName + '</b> theme? ' +
+                'This cannot be undone. If the theme is currently active, it will be disabled immediately.',
+            okLabel: 'Delete Theme',
+            okClose: false,
+            okAction: function(dlg){
+                XNAT.xhr.delete(themeUrl + s + encodeURI(_themeName) + q + csrf, function(data){
                     console.log(data);
-                    populateThemes();
+                    // setTheme('none', populateThemesMenu);
+                }).always(function(){
+                    populateThemesMenu();
+                    dlg.close(true);
                 });
             },
             cancelLabel: 'Cancel'
@@ -148,6 +201,10 @@ var XNAT = getObject(XNAT);
         var uploaded = false;
         for (var i = 0; i < files.length; i++) {
             var file = files[i];
+            if (isDefaultTheme(file.name)) {
+                XNAT.ui.dialog.message(false, 'The <b>' + file.name + '</b> theme may not be overwritten.');
+                return false;
+            }
             if (!file.type.match('zip.*')) {
                 continue;
             }
@@ -200,7 +257,7 @@ var XNAT = getObject(XNAT);
     //     })
     // });
 
-    $(populateThemes);  // ...called once DOM is fully loaded "ready"
+    $(populateThemesMenu);  // ...called once DOM is fully loaded "ready"
 
 })(window.jQuery, window.console);
 

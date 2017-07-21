@@ -1,10 +1,26 @@
 ## Main JavaScript and CSS files for XNAT
 
+<!-- START AppJS.vm -->
+
 #set($versionString = "v=1.7.3c")
 #set($SITE_ROOT = $content.getURI(""))
 
 ## only load once
-#if (!$appJS)
+#if ($!appJS != true)
+
+##    ## (allowing the 'app.css' file to be completely overridden seems risky, so it is disabled for now)
+##    ## If a theme has an 'app.css' stylesheet, it will be loaded *instead* of the main 'app.css' file.
+##    ## This makes it easier to start with a blank slate for styling.
+##    #if ($theme)
+##        #set ($APP_CSS = "/themes/${theme}/css/app.css")
+##        #if ($theme != "none" && $turbineUtils.resourceExists($APP_CSS))
+##            <link rel="stylesheet" type="text/css" href="$content.getURI($APP_CSS)">
+##        #else
+##            <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
+##        #end
+##    #else
+##        <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
+##    #end
 
     <!-- app.css loaded first -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
@@ -18,16 +34,16 @@
     <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.js"></script>
     <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.js"></script>
 
-    #if ($theme)
+    #if ($theme && $theme != "none")
         <!-- Theme CSS -->
-        #set ($THEME_CSS = "/themes/${theme}/style/theme.css")
+        #set ($THEME_CSS = "/themes/${theme}/css/theme.css")
         #if ($turbineUtils.resourceExists($THEME_CSS))
             ## /themes/theme-name/style/theme.css
             <!-- THEME_CSS: ${THEME_CSS} -->
             <link rel="stylesheet" type="text/css" href="$content.getURI($THEME_CSS)">
         #elseif ($!themedStyle)
             <!-- Load active global theme style -->
-            ## /themes/theme-name/styles/theme.css
+            ## /themes/theme-name/styles/theme.css -- why is this 'styles' instead of 'style'
             <!-- themedStyle: $!themedStyle -->
             <link rel="stylesheet" type="text/css" href="$content.getURI($themedStyle)">
         #end
@@ -61,11 +77,11 @@
     <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
 
-    #if ($theme)
+    #if ($theme && $theme != "none")
         <!-- Theme JS -->
-        #set ($THEME_JS = "/themes/${theme}/scripts/theme.js")
+        #set ($THEME_JS = "/themes/${theme}/js/theme.js")
         #if ($turbineUtils.resourceExists($THEME_JS))
-            ## /themes/theme-name/scripts/theme.js
+            ## /themes/theme-name/js/theme.js
             <!-- THEME_JS: $!THEME_JS -->
             <script type="text/javascript" src="$content.getURI($THEME_JS)"></script>
         #elseif ($themedScript && $turbineUtils.resourceExists($themedScript))
@@ -85,3 +101,6 @@
     <!-- AppJS is loaded -->
 
 #end
+
+<!-- END AppJS.vm -->
+

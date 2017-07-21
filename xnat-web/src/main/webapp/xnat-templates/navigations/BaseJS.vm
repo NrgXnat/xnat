@@ -1,7 +1,9 @@
 ## Base JavaScript files
 
-#set($versionString = "v=1.7.3c")
-#set($SITE_ROOT = $content.getURI(""))
+<!-- START BaseJS.vm -->
+
+#set ($versionString = "v=1.7.3c")
+#set ($SITE_ROOT = $content.getURI(""))
 #set ($debugParam = $data.getParameters().getString('debug'))
 #set ($jsDebugParam = $data.getParameters().getString('jsdebug'))
 #set ($DEBUG = ($debugParam == 'true' || $jsDebugParam == 'true'))
@@ -13,7 +15,7 @@
 #end
 
 ## only load once
-#if (!$baseJS)
+#if ($!baseJS != true)
 
     <!-- load polyfills before ANY other JavaScript -->
     <script src="${SITE_ROOT}/scripts/polyfills.js"></script>
@@ -76,3 +78,5 @@
     <!-- BaseJS is loaded -->
 
 #end
+
+<!-- END BaseJS.vm -->

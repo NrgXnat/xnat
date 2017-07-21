@@ -49,6 +49,11 @@ var XNAT = getObject(XNAT);
     // add build info to page elements *AFTER* DOM load
     $(function(){
 
+        // prevent default click triggers on '#' links
+        $(document).on('click', '[href^="#"], [href^="@!"]', function(e){
+            e.preventDefault();
+        });
+
         // add version to title attribute of XNAT logos
         if (window.top.loggedIn !== undef && window.top.loggedIn === true) {
 

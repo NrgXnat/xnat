@@ -10,6 +10,18 @@
 /*!
  * Retrieve custom pages via AJAX
  * Used in: /xnat-templates/screens/Page.vm
+ *
+ * Page search order:
+ *
+ * (if a theme is active)
+ * /themes/theme-name/pages/page-name.jsp
+ * /themes/theme-name/pages/page-name/content.jsp
+ * /themes/theme-name/pages/page-name/content.html
+ *
+ * (if no theme is set or if a page is not found in the theme)
+ * /page/page-name/content.jsp
+ * /page/page-name/content.html
+ *
  */
 
 var XNAT = getObject(XNAT);
@@ -27,7 +39,23 @@ XNAT.app = getObject(XNAT.app||{});
     }
 }(function(){
 
-    var customPage = getObject(XNAT.app.customPage||{});
+    var customPage = XNAT.app.customPage =
+        getObject(XNAT.app.customPage||{});
+
+    XNAT.theme =
+        getObject(XNAT.theme||{});
+
+    var noneRegex = /^none$/i;
+
+    var themeName = XNAT.themeName || XNAT.theme.name || '';
+
+    // add resolved theme name to XNAT.* namespace
+    XNAT.themeName = XNAT.theme.name = themeName;
+
+    function isNoneTheme(name){
+        var _theme = name || themeName;
+        return noneRegex.test(_theme);
+    }
 
     // get page name for CURRENT page /page/#/page-name
     customPage.getPageName = function(url, end){
@@ -35,7 +63,7 @@ XNAT.app = getObject(XNAT.app||{});
         var urlParts = loc.split('/page/#/');
         var pageName = '';
         if (urlParts.length > 1) {
-            pageName = urlParts[1].split(end||'/#')[0];
+            pageName = urlParts[1].split(end||/\/#|#/)[0];
         }
         return pageName.replace(/^\/|\/$/g, '');
     };
@@ -52,9 +80,12 @@ XNAT.app = getObject(XNAT.app||{});
 
     customPage.getPage = function(name, container){
 
-        var pagePaths = [],
-            themePaths = [],
-            end = '/#';
+        var pagePaths = [];
+        var themePaths = [];
+        var end = /\/#|#/;
+
+        // special handling if using the 'none' theme
+        var noneTheme = isNoneTheme(themeName);
 
         // use an array for the name param
         // to specify a start AND end for the page string
@@ -70,38 +101,39 @@ XNAT.app = getObject(XNAT.app||{});
 
         var $container = customPage.container || $$(container);
 
-        function setPaths(pg, prefixes){
+        function setPaths(pg){
+
+            // remove leading and trailing slashes
+            var _pg = pg.replace(/^\/+|\/+$/g, '');
             var paths = [];
-            pg = pg.replace(/^\/+|\/+$/g, ''); // remove leading and trailing slashes
-            [].concat(prefixes).forEach(function(prefix){
-                paths.push(prefix + '/' + pg + '/content.jsp');
-                paths.push(prefix + '/' + pg + '/content.html');
-                paths.push(prefix + '/' + pg + '.jsp');
-                paths.push(prefix + '/' + pg + '.html');
-                // paths.push(prefix + '/' + pg + '/'); // that could be dangerous
-            });
+
+            // if we're using a theme (that's not the default),
+            // check that theme's folder
+            if (themeName && !noneTheme) {
+                // jsp theme files first
+                paths.push('/themes/' + themeName + '/pages/' + _pg + '.jsp');
+                paths.push('/themes/' + themeName + '/pages/' + _pg + '/content.jsp');
+                // paths.push('/themes/' + themeName + '/pages/' + _pg + '.jsp');
+                // html theme files next
+                paths.push('/themes/' + themeName + '/pages/' + _pg + '/content.html');
+                // paths.push('/themes/' + themeName + '/pages/' + _pg + '.html');
+            }
+
+            // then core jsp and html files
+            paths.push('/page/' + _pg + '/content.jsp');
+            paths.push('/page/' + _pg + '/content.html');
+
             return paths;
+
         }
 
-        pagePaths = setPaths(name, [
-            '/page'//,
-            // '/pages'
-        ]);
+        pagePaths = setPaths(name);
 
-        // if we're using a theme, check that theme's folder
-        if (XNAT.themeName || (XNAT.theme && XNAT.theme.name)){
-            XNAT.themeName = XNAT.themeName || XNAT.theme.name;
-            themePaths = setPaths(name, [
-                // '/themes/' + XNAT.themeName,
-                '/themes/' + XNAT.themeName + '/page'//,
-                // '/themes/' + XNAT.themeName + '/pages'
-            ]);
-            pagePaths = themePaths.concat(pagePaths);
-        }
+        console.log(pagePaths);
 
         function getPage(path){
             return XNAT.xhr.get({
-                url: XNAT.url.rootUrl(path),
+                url: XNAT.url.rootUrl(path + window.location.search),
                 dataType: 'html',
                 success: function(content){
                     $container.html(content)

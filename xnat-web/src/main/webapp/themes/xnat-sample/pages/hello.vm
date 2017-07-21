@@ -1,0 +1,18 @@
+## The content of this file will override the default
+## 'hello.vm' file when the 'xnat-sample' theme is active.
+##
+## This file, which is in the root of the '/pages' folder in this
+## theme will be accessible at /app/template/Page.vm?view=hello,
+## where the 'hello' value for the 'view' query string parameter
+## is the name of this file without the .vm extension. Pages loaded
+## in this manner are intended to rely on REST and JavaScript
+## for content rendering, rather than logic in the template itself.
+
+<h1>Hello.</h1>
+
+<small>Hello from the 'xnat-sample' theme.</small>
+
+<script>
+    console.log('/app/template/Page.vm?view=hello')
+    console.log('/themes/xnat-sample/pages/hello.vm')
+</script>

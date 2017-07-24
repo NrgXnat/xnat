@@ -360,14 +360,6 @@
         proper $displayManager.getSingularDisplayNameForSubject().toLowerCase() & $displayManager.getSingularDisplayNameForImageSession().toLowerCase() ID. If you are confident the data will be mapped properly, you can directly
         'Archive' the files and specify whether the resulting $displayManager.getSingularDisplayNameForImageSession().toLowerCase() should go into a quarantine state.
     </p>
-    <div class="alert" style="margin:15px 0;max-width:696px;min-width:400px;">
-        The compressed uploader does not yet support splitting PET/MR sessions based on the site-wide or
-        project-specific settings for handling PET/MR data. If you are uploading PET/MR data and need to have
-        the data split into separate PET and MR sessions or created as a PET session rather than a PET/MR
-        session, you should use either the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT Upload
-        Assistant</a> or the DICOM C-STORE receiver as described below.
-    </div>
-    <br>
     <form id="uploadFORM" class="noHide" target="iframe" enctype="multipart/form-data" method="POST"
           action="$content.getURI("/REST/services/import?http-session-listener=$uploadID&format=html&XNAT_CSRF=$!XNAT_CSRF")">
         <input type="hidden" name="threshhold" value="51516279"/>

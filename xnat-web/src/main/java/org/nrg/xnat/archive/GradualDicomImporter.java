@@ -28,6 +28,7 @@ import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
@@ -340,9 +341,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
         if (null != alias) {
             logger.debug("looking for project matching alias {} from query parameters", alias);
             final XnatProjectdata project = _cache.get(_user, alias);
-            if (project == null) {
-                logger.info("storage request specified project {}, which does not exist or user does not have create perms", alias);
+            if (project != null) {
+                logger.info("Storage request specified project or alias {}, found accessible project {}", alias, project.getId());
+                return project;
             }
+            logger.info("storage request specified project {}, which does not exist or user does not have create perms", alias);
         } else {
             logger.trace("no project alias found in query parameters");
         }
@@ -418,7 +421,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
         if (fromDicomObject != null) {
             return fromDicomObject ? PrearchiveCode.AutoArchive : PrearchiveCode.Manual;
         }
-        return PrearchiveCode.code(project.getArcSpecification().getPrearchiveCode());
+        ArcProject arcProject = project.getArcSpecification();
+        if (arcProject == null) {
+            logger.warn("Tried to get the arc project from project {}, but got null in return. Returning null for the prearchive code, but it's probably not good that the arc project wasn't found.", project.getId());
+            return null;
+        }
+        return PrearchiveCode.code(arcProject.getPrearchiveCode());
     }
 
     private static boolean initializeCanDecompress() {

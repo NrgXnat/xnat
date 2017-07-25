@@ -15,7 +15,7 @@ buildscript {
         vXnat = '1.7.2'
     }
     repositories {
-        mavenLocal()
+        // mavenLocal()
         jcenter()
         mavenCentral()
         maven {
@@ -75,7 +75,7 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 repositories {
-    mavenLocal()
+    // mavenLocal()
     maven {
         url 'http://dcm4che.org/maven2'
         name 'dcm4che Maven Repository'

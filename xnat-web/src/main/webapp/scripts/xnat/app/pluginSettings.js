@@ -193,6 +193,9 @@ var XNAT = getObject(XNAT);
                     // --- CALLBACK --- //
                     var pluginsWithElements = [];
                     // 'plugins' will be an object map of ALL plugins
+                    // we're adding 'xnat' as a default plugin namespace
+                    // without actually installing an 'xnat' plugin
+                    extend(plugins, { xnat: { id: 'xnat', name: 'XNAT Default'} });
                     forOwn(plugins, function(name, obj){
                         // plugins with namespaced elements
                         // will have plugin name first

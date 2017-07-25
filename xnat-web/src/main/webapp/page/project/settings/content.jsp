@@ -2,7 +2,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-
+<pg:init/>
+<pg:jsvars/>
 <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
 
 <c:if test="${not empty param.id}">

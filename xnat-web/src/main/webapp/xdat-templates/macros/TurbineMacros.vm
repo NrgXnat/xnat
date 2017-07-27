@@ -1295,6 +1295,16 @@
   </td>
 #end
 
+#macro (scanSnapshotImage $content $om $scan)
+  #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+  #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
+  #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
+  #set ($scanSnapshotId = "scan${scan.id}snapshot")
+  <a target="_blank" HREF="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")">
+    <img id="$scanSnapshotId" class="scan-snapshot" height=250 width=250 data-xnat-src="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=THUMBNAIL&index=0")">
+  </a>
+#end
+
 #macro (elementActions $element $search_field $search_value $user $item $actions)
 ##<style>
 ##div.ic{

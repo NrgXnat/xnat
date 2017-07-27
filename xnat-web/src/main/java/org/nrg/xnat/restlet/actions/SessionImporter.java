@@ -106,19 +106,21 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 			final PrearcImporterA listeners = ListenerUtils.addListeners(parent, destination);
 			final List<PrearcSession> prearcSessions = listeners.call();
 			for (final PrearcSession session : prearcSessions) {
-                final SessionData sessionData = new SessionData();
-                sessionData.setFolderName(session.getFolderName());
-                sessionData.setName(session.getFolderName());
-                sessionData.setProject(session.getProject());
-                sessionData.setTimestamp(session.getTimestamp());
-                sessionData.setStatus(PrearcUtils.PrearcStatus.BUILDING);
-                sessionData.setLastBuiltDate(Calendar.getInstance().getTime());
-                sessionData.setSubject(session.getAdditionalValues().get("subject_ID"));
-                sessionData.setUrl(session.getSessionDir().getAbsolutePath());
-                sessionData.setSource(SessionImporter.class.getSimpleName());
-                sessionData.setPreventAnon(false);
-                sessionData.setPreventAutoCommit(true);
-                PrearcDatabase.addSession(sessionData);
+				if (PrearcDatabase.getSessionIfExists(session.getFolderName(), session.getTimestamp(), session.getProject()) == null) {
+					final SessionData sessionData = new SessionData();
+					sessionData.setFolderName(session.getFolderName());
+					sessionData.setName(session.getFolderName());
+					sessionData.setProject(session.getProject());
+					sessionData.setTimestamp(session.getTimestamp());
+					sessionData.setStatus(PrearcUtils.PrearcStatus.BUILDING);
+					sessionData.setLastBuiltDate(Calendar.getInstance().getTime());
+					sessionData.setSubject(session.getAdditionalValues().get("subject_ID"));
+					sessionData.setUrl(session.getSessionDir().getAbsolutePath());
+					sessionData.setSource(SessionImporter.class.getSimpleName());
+					sessionData.setPreventAnon(false);
+					sessionData.setPreventAutoCommit(true);
+					PrearcDatabase.addSession(sessionData);
+				}
             }
 			return prearcSessions;
 		} catch (SecurityException | IllegalAccessException | InstantiationException | InvocationTargetException e) {

@@ -1362,3 +1362,9 @@ function scanTypeCreator(_options){
 		this.panel.show();
 	}
 }
+
+function loadSnapshotImage(scanID, scanCounter) {
+    var element = $("#" + "scan" + scanID + "snapshot");
+    element[0].src = element.data("xnat-src");
+    return blocking(scanCounter);
+}

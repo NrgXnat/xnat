@@ -136,6 +136,12 @@ function blocking(i)
 	return false;
 }
 
+function loadSnapshotImage(scanID, scanCounter) {
+    var element = $("#" + "scan" + scanID + "snapshot");
+    element[0].src = element.data("xnat-src");
+    return blocking(scanCounter);
+}
+
 //REDIRECTION SCRIPTS
 //SHOW ITEM REPORT
 function rpt(exptId, displayElement, searchField, modal){

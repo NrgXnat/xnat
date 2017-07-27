@@ -1,12 +1,13 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
+#* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
 <!-- START /xnat-templates/screens/xnat_mrScanData/xnat_mrScanData_details.vm -->
 <table>
     <tr>
         <td></td>
         <td>Image</td>
         <td align="left">
-            <a target="_blank" HREF="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")">
-                <img SRC="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=THUMBNAIL&index=0")" height=250 width=250>
-            </a>
+            #scanSnapshotImage($content $om $scan)
         </td>
     </tr>
     #if($scan.getProperty("quality"))

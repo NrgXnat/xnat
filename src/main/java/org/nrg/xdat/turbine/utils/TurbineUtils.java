@@ -66,6 +66,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJoin;
 
@@ -932,19 +933,22 @@ public class TurbineUtils {
     }
     
     public String validateTemplate(String screen, String project) {
-        if (screen.endsWith(".vm")) {
-            screen = screen.substring(0, screen.length() - 3);
+        final String key;
+        if (StringUtils.isBlank(project)) {
+            key = screen.endsWith(".vm") ? screen : screen + ".vm";
+        } else {
+            key = (screen.endsWith(".vm") ? screen.substring(0, screen.length() - 3) : screen) + "_" + project + ".vm";
         }
 
-        if (project != null && resourceExists(screen + "_" + project + ".vm")) {
-            return screen + "_" + project + ".vm";
-        } else {
-            if (resourceExists(screen + ".vm")) {
-                return screen + ".vm";
-            } else {
-                return null;
-            }
+        final boolean isDebugMode = Boolean.parseBoolean(XDAT.safeSiteConfigProperty("debugMode", "false"));
+
+        if (isDebugMode) {
+            return resourceExists(key) ? key : null;
         }
+        if (!_templates.containsKey(key)) {
+            _templates.put(key, resourceExists(key));
+        }
+        return _templates.get(key) ? key : null;
     }
 
     /**
@@ -1393,4 +1397,6 @@ public class TurbineUtils {
             }
         }
     };
+
+    private static final Map<String, Boolean> _templates = new ConcurrentHashMap<>();
 }

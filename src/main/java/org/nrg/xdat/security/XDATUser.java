@@ -750,11 +750,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean isSiteAdmin(){
-    	try {
-			return this.checkRole("Administrator");
-		} catch (Exception e) {
-			return false;
-		}
+        if (_isSiteAdmin == null) {
+            try {
+                _isSiteAdmin = checkRole("Administrator");
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return _isSiteAdmin;
     }
 
     private UserGroupI getGroup(String id) {
@@ -875,6 +878,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         _readableCounts.clear();
         _permissionCriteria.clear();
         _editableProjects = null;
+        _isSiteAdmin = null;
     }
 
     protected Map<Object, Object> getReadableCounts() {
@@ -1368,4 +1372,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     };
 
     private final Multimap<String, PermissionCriteriaI> _permissionCriteria = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
+
+    private Boolean _isSiteAdmin = null;
 }

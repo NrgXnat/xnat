@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.3-SNAPSHOT</version>
+    <version>1.7.3</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -56,27 +56,27 @@
         <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
         <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 
-        <xnatdev.version>1.7.3-SNAPSHOT</xnatdev.version>
-        <xnat.version>1.7.2</xnat.version>
-        <xdat.version>${xnatdev.version}</xdat.version>
+        <xnat.version>1.7.3</xnat.version>
+        <xnatdev.version>1.7.4-SNAPSHOT</xnatdev.version>
+        <xdat.version>${xnat.version}</xdat.version>
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
-        <nrg.config.version>${xnatdev.version}</nrg.config.version>
-        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
-        <nrg.mail.version>${xnatdev.version}</nrg.mail.version>
-        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
-        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
-        <nrg.test.version>${xnatdev.version}</nrg.test.version>
-        <nrg.transaction.version>${xnatdev.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.0-SNAPSHOT</nrg.mizer.version>
-        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
+        <nrg.config.version>${xnat.version}</nrg.config.version>
+        <nrg.framework.version>${xnat.version}</nrg.framework.version>
+        <nrg.mail.version>${xnat.version}</nrg.mail.version>
+        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
+        <nrg.test.version>${xnat.version}</nrg.test.version>
+        <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
+        <nrg.mizer.version>1.0</nrg.mizer.version>
+        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.0-SNAPSHOT</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.0-SNAPSHOT</nrg.dicom-edit6.version>
+        <nrg.dicom-edit4.version>1.0</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>1.0</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.0.2-SNAPSHOT</nrg.ecat.version>
-        <nrg.extattr.version>4.2.1</nrg.extattr.version>
+        <nrg.ecat.version>1.0.2</nrg.ecat.version>
+        <nrg.extattr.version>4.2.2</nrg.extattr.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
 
@@ -169,7 +169,7 @@
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <org.postgresql.version>9.4.1209.jre7</org.postgresql.version>
-        <log4jdbc.version>0.2.1-SNAPSHOT</log4jdbc.version>
+        <log4jdbc.version>0.2.0</log4jdbc.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.10</reflections.version>
         <restlet.version>1.1.10</restlet.version>
@@ -334,18 +334,13 @@
 
             <!-- XNAT/XDAT dependency definitions -->
             <dependency>
-                <groupId>org.nrg.xnat</groupId>
-                <artifactId>xnat-data-publisher</artifactId>
+                <groupId>org.nrg.xnat.build</groupId>
+                <artifactId>xnat-data-builder</artifactId>
                 <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>web</artifactId>
-                <version>${xnat.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.nrg.xnat</groupId>
-                <artifactId>xnat-builder</artifactId>
                 <version>${xnat.version}</version>
             </dependency>
             <dependency>
@@ -359,8 +354,8 @@
                 <version>${xnat.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.nrg.xnat</groupId>
-                <artifactId>xdat-data-publisher</artifactId>
+                <groupId>org.nrg.xdat.build</groupId>
+                <artifactId>xdat-data-builder</artifactId>
                 <version>${xnat.version}</version>
             </dependency>
             <dependency>

@@ -11,11 +11,10 @@ import org.gradle.internal.jvm.Jvm
 
 buildscript {
     ext {
-        vXnatDev = '1.7.3-SNAPSHOT'
-        vXnat = '1.7.2'
+        vXnat = '1.7.3'
     }
     repositories {
-        // mavenLocal()
+        mavenLocal()
         jcenter()
         mavenCentral()
         maven {
@@ -37,8 +36,9 @@ buildscript {
     }
 }
 
-def vDicomEdit4 = '1.0-SNAPSHOT'
-def vDicomEdit6 = '1.0-SNAPSHOT'
+def vDicomEdit4 = '1.0'
+def vDicomEdit6 = '1.0'
+def vExtAttr = '4.2.2'
 def vXImgView = '1.0.0-SNAPSHOT'
 def vSpring = '4.2.9.RELEASE'
 def vSpringSecurity = '4.0.4.RELEASE'
@@ -60,7 +60,7 @@ def vGroovy = '2.4.7'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
-version = "${vXnatDev}"
+version = "${vXnat}"
 
 apply plugin: 'groovy'
 apply plugin: 'java'
@@ -75,7 +75,7 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 repositories {
-    // mavenLocal()
+    mavenLocal()
     maven {
         url 'http://dcm4che.org/maven2'
         name 'dcm4che Maven Repository'
@@ -346,29 +346,29 @@ configurations {
 
 dependencies {
     // NRG dependencies first.
-    compile "org.nrg.xnat:spawner:${vXnatDev}"
-    compile("org.nrg.xnat:xnat-data-models:${vXnatDev}") {
+    compile "org.nrg.xnat:spawner:${vXnat}"
+    compile("org.nrg.xnat:xnat-data-models:${vXnat}") {
         transitive = false
     }
-    compile "org.nrg.xdat:core:${vXnatDev}"
-    compile "org.nrg:framework:${vXnatDev}"
+    compile "org.nrg.xdat:core:${vXnat}"
+    compile "org.nrg:framework:${vXnat}"
     compile "org.nrg:transaction:${vXnat}"
-    compile "org.nrg:prefs:${vXnatDev}"
-    compile "org.nrg:config:${vXnatDev}"
-    compile "org.nrg:automation:${vXnatDev}"
-    compile "org.nrg:dicomtools:${vXnatDev}"
+    compile "org.nrg:prefs:${vXnat}"
+    compile "org.nrg:config:${vXnat}"
+    compile "org.nrg:automation:${vXnat}"
+    compile "org.nrg:dicomtools:${vXnat}"
     compile "org.nrg.dicom:dicom-edit4:${vDicomEdit4}"
     compile "org.nrg.dicom:dicom-edit6:${vDicomEdit6}"
-    compile "org.nrg:mail:${vXnatDev}"
-    compile "org.nrg:notify:${vXnatDev}"
+    compile "org.nrg:mail:${vXnat}"
+    compile "org.nrg:notify:${vXnat}"
 
-    compile "org.nrg:dicom-xnat-mx:${vXnatDev}"
-    compile "org.nrg:dicom-xnat-sop:${vXnatDev}"
-    compile "org.nrg:dicom-xnat-util:${vXnatDev}"
+    compile "org.nrg:dicom-xnat-mx:${vXnat}"
+    compile "org.nrg:dicom-xnat-sop:${vXnat}"
+    compile "org.nrg:dicom-xnat-util:${vXnat}"
     compile "org.nrg:ecat4xnat:${vXnat}"
-    compile "org.nrg:ExtAttr:4.2.1"
+    compile "org.nrg:ExtAttr:${vExtAttr}"
     compile "org.nrg:DicomImageUtils:${vXnat}"
-    compile "org.nrg:PrearcImporter:${vXnatDev}"
+    compile "org.nrg:PrearcImporter:${vXnat}"
     compile "org.nrg:SessionBuilders:${vXnat}"
 
     compile "org.nrg:pipelineBase:1.0"
@@ -506,7 +506,7 @@ dependencies {
     cargo "org.codehaus.cargo:cargo-core-uberjar:${vCargo}",
             "org.codehaus.cargo:cargo-ant:${vCargo}"
 
-    testCompile "org.nrg:test:${vXnatDev}"
+    testCompile "org.nrg:test:${vXnat}"
     testCompile "junit:junit:${vJunit}"
     testCompile "org.springframework:spring-test:${vSpring}"
 }

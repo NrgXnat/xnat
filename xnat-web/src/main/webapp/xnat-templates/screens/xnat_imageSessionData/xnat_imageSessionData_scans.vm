@@ -39,7 +39,7 @@
 
         <tr valign=top border=0>
             <td border=0 align=left NOWRAP>
-                <a name="LINK${scanCounter}" href="#LINK${scanCounter}" onClick="return loadSnapshotImage($scanID, $scanCounter);">
+                <a name="LINK${scanCounter}" href="#LINK${scanCounter}" onClick="return loadSnapshotImage('$scanID', $scanCounter);">
                     <img id="IMG$scanCounter" src="$content.getURI('images/plus.jpg')" border=0/>
                     $scanID
                 </a>

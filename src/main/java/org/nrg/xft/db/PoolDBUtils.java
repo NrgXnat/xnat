@@ -721,6 +721,13 @@ public class PoolDBUtils {
                 String exists =(String)PoolDBUtils.ReturnStatisticQuery(query, "relname", dbName, login);
 
                 if (exists!=null){
+					String columnQuery ="SELECT TRUE AS exists FROM pg_attribute WHERE attrelid = 'xs_custom_searches'::regclass AND attname = 'random_id_string' AND NOT attisdropped;";
+					Boolean columnExists =(Boolean)PoolDBUtils.ReturnStatisticQuery(columnQuery, "exists", dbName, login);
+
+					if (columnExists==null || !columnExists){
+						String addColumnQuery ="ALTER TABLE xs_custom_searches ADD COLUMN random_id_string VARCHAR(255);";
+						PoolDBUtils.ExecuteNonSelectQuery(addColumnQuery, dbName, login);
+					}
                     CUSTOM_SEARCH_LOG_EXISTS=true;
                 }else{
                     query = "CREATE TABLE xs_custom_searches"+
@@ -729,6 +736,7 @@ public class PoolDBUtils {
                     "\n  create_date timestamp DEFAULT now(),"+
                     "\n  username VARCHAR(255),"+
                     "\n  search_xml text"+
+					"\n  random_id_string VARCHAR(255),"+
                     "\n) "+
                     "\nWITH OIDS;";
 
@@ -753,10 +761,20 @@ public class PoolDBUtils {
     public static Object LogCustomSearch(String login,String search_xml, String dbname)throws SQLException,DBPoolException,Exception{
         CreateCustomSearchLog(dbname, login);
         Object o = PoolDBUtils.ReturnStatisticQuery("SELECT nextval('xs_custom_searches_id_seq');", "nextval", dbname, login);
-        String query = "INSERT INTO xs_custom_searches (id,username,search_xml) VALUES (" + XftStringUtils.CleanForSQLValue(o.toString()) + ",'" + login + "','" + XftStringUtils.CleanForSQLValue(search_xml) + "');";
+		Object uuid = UUID.randomUUID().toString();
+
+		String columnQuery ="SELECT TRUE AS exists FROM pg_attribute WHERE attrelid = 'xs_custom_searches'::regclass AND attname = 'random_id_string' AND NOT attisdropped;";
+		Boolean columnExists =(Boolean)PoolDBUtils.ReturnStatisticQuery(columnQuery, "exists", dbname, login);
+
+		if (columnExists==null || !columnExists){
+			String addColumnQuery ="ALTER TABLE xs_custom_searches ADD COLUMN random_id_string VARCHAR(255);";
+			PoolDBUtils.ExecuteNonSelectQuery(addColumnQuery, dbname, login);
+		}
+
+		String query = "INSERT INTO xs_custom_searches (id,username,search_xml, random_id_string) VALUES (" + XftStringUtils.CleanForSQLValue(o.toString()) + ",'" + login + "','" + XftStringUtils.CleanForSQLValue(search_xml) + "','"+uuid+"');";
         PoolDBUtils.ExecuteNonSelectQuery(query, dbname, login);
 
-        return o;
+        return uuid;
     }
 
     /**
@@ -767,7 +785,7 @@ public class PoolDBUtils {
      */
     public static String RetrieveLoggedCustomSearch(String login,String dbname,Object search_id)throws SQLException,DBPoolException,Exception{
         CreateCustomSearchLog(dbname, login);
-        return (String)PoolDBUtils.ReturnStatisticQuery("SELECT search_xml FROM xs_custom_searches WHERE id=" + XftStringUtils.CleanForSQLValue(search_id.toString()) + ";", "search_xml", dbname, login);
+        return (String)PoolDBUtils.ReturnStatisticQuery("SELECT search_xml FROM xs_custom_searches WHERE random_id_string='" + XftStringUtils.CleanForSQLValue(search_id.toString()) + "';", "search_xml", dbname, login);
     }
 
     public static final String search_schema_name="xdat_search";

@@ -84,7 +84,7 @@ public class DisplayFieldCollection extends XFTCollection {
 	public class DisplayFieldNotFoundException extends Exception{
 		public DisplayFieldNotFoundException(ItemNotFoundException e)
 		{
-			super("Display Field not found: '" + e.ELEMENT + "'");
+			super("Display Field not found: '" + e.ELEMENT + "'", e);
 		}
 	}
 

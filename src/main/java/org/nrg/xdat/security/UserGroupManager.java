@@ -25,6 +25,7 @@ import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
@@ -62,7 +63,7 @@ public class UserGroupManager implements UserGroupServiceI{
     	UserGroup g =(UserGroup) CacheManager.GetInstance().retrieve(XdatUsergroup.SCHEMA_ELEMENT_NAME, id);
     	if(g==null){
     		try {
-                XdatUsergroup temp = XdatUsergroup.getXdatUsergroupsById(id, null, true);
+                XdatUsergroup temp = XdatUsergroup.getXdatUsergroupsById(id, AdminUtils.getAdminUser(), true);
                 if(temp!=null){
                     g = new UserGroup(temp);
                     CacheManager.GetInstance().put(XdatUsergroup.SCHEMA_ELEMENT_NAME, id, g);

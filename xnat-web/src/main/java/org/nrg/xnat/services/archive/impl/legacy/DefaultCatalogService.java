@@ -80,7 +80,15 @@ public class DefaultCatalogService implements CatalogService {
     @Override
     public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
         final CatCatalogBean catalog = new CatCatalogBean();
-        catalog.setId(String.format(CATALOG_FORMAT, user.getLogin(), getPrearchiveTimestamp()));
+        UserI tempUser = user;
+        if(tempUser==null){
+            try{
+                tempUser=Users.getGuest();
+            }catch(Exception e){
+                _log.error("Cannot build catalog for null user.",e);
+            }
+        }
+        catalog.setId(String.format(CATALOG_FORMAT, tempUser.getLogin(), getPrearchiveTimestamp()));
 
         final DownloadArchiveOptions options = DownloadArchiveOptions.getOptions(resourceMap.get("options"));
         catalog.setDescription(options.getDescription());
@@ -117,7 +125,7 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
 
-        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(user, sessions, unescapedScanTypes, unescapedScanFormats);
+        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(tempUser, sessions, unescapedScanTypes, unescapedScanFormats);
 
         for (final String project : projects.keySet()) {
             final Map<String, Map<String, String>> subjects = projects.get(project);
@@ -146,7 +154,7 @@ public class DefaultCatalogService implements CatalogService {
                         addSafeEntrySet(sessionCatalog, reconstructionsCatalog);
                     }
 
-                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options, user);
+                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options, tempUser);
                     if (assessorsCatalog != null) {
                         addSafeEntrySet(sessionCatalog, assessorsCatalog);
                     }
@@ -156,7 +164,7 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
 
-        storeToCache(user, catalog);
+        storeToCache(tempUser, catalog);
 
         return catalog.getId();
     }

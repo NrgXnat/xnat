@@ -1447,7 +1447,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "true")
+    @NrgPreference(defaultValue = "false")
     public boolean getEnableInternalScripts() {
         return getBooleanValue("enableInternalScripts");
     }

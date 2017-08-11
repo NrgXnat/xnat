@@ -210,15 +210,46 @@
         <div id="automation-events-scripts" class="yui-module">
             <div class="yui-navset yui-navset-top bogus-tabs">
                 <ul class="yui-nav">
-                    <li class="first selected"><a href="#automationEventHandlers"><em>Site Event Handlers</em></a></li>
+                    <li class="first selected"><a href="#automationSecurity"><em>Security</em></a></li>
+                    <li><a href="#automationEventHandlers"><em>Site Event Handlers</em></a></li>
                     ##<li><a href="#automationEvents"><em>Events</em></a></li>
                     <li><a href="#automationScripts"><em>Scripts</em></a></li>
                 </ul>
                 <div class="yui-content">
 
+                    <!-- Security -->
+                    <div id="automationSecurity">
+
+                        <div id="automation-toggle-container"></div>
+                        <script>
+                            XNAT.spawner.spawn({
+                                togglerForm: {
+                                    kind: 'panel.form',
+                                    label: 'Enable Internal Scripts',
+                                    header: false,
+                                    method: 'POST',
+                                    contentType: 'json',
+                                    url: '/xapi/siteConfig',
+                                    contents: {
+                                        enableInternalScripts: {
+                                            kind: 'panel.input.switchbox',
+                                            name: 'enableInternalScripts',
+                                            label: 'Enable Internal Scripting',
+                                            onText: 'Enabled',
+                                            offText: 'Disabled',
+                                            description: "Enable and disable XNAT's internal script execution."
+                                        }
+                                    }
+                                }
+                            }).render('#automation-toggle-container')
+                        </script>
+
+
+                    </div>
+
 
                     <!-- Site Event Handlers -->
-                    <div id="automationEventHandlers">
+                    <div id="automationEventHandlers" class="yui-hidden">
 
 ##                        <h3>Event Handlers</h3>
                         <div id="events_list">

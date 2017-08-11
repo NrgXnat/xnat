@@ -18,6 +18,7 @@ import org.nrg.dcm.ChainExtractor;
 import org.nrg.dcm.Extractor;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,23 +104,30 @@ public class ScriptedSessionAssignmentExtractor extends ChainExtractor implement
         parameters.put("projectId", projectId == null ? "" : projectId);
 
         try {
-            final Object results = _service.runScript(script, parameters);
-            if (_log.isDebugEnabled()) {
-                if (results == null) {
-                    if (StringUtils.isBlank(projectId)) {
-                        _log.debug("Ran the script {} for the site and event {}, got null results, returning default value.", script.getScriptId(), _event);
+            if(_siteConfigPreferences.getEnableInternalScripts())
+            {
+                final Object results = _service.runScript(script, parameters);
+                if (_log.isDebugEnabled()) {
+                    if (results == null) {
+                        if (StringUtils.isBlank(projectId)) {
+                            _log.debug("Ran the script {} for the site and event {}, got null results, returning default value.", script.getScriptId(), _event);
+                        } else {
+                            _log.debug("Ran the script {} for the project {} and event {}, got null results, returning default value.", script.getScriptId(), projectId, _event);
+                        }
                     } else {
-                        _log.debug("Ran the script {} for the project {} and event {}, got null results, returning default value.", script.getScriptId(), projectId, _event);
-                    }
-                } else {
-                    if (StringUtils.isBlank(projectId)) {
-                        _log.debug("Ran the script {} for the site and event {}, got results of type {}, returning value {}.", script.getScriptId(), _event, results.getClass().getName(), results.toString());
-                    } else {
-                        _log.debug("Ran the script {} for the project {} and event {}, got results of type {}, returning value {}.", script.getScriptId(), projectId, _event, results.getClass().getName(), results.toString());
+                        if (StringUtils.isBlank(projectId)) {
+                            _log.debug("Ran the script {} for the site and event {}, got results of type {}, returning value {}.", script.getScriptId(), _event, results.getClass().getName(), results.toString());
+                        } else {
+                            _log.debug("Ran the script {} for the project {} and event {}, got results of type {}, returning value {}.", script.getScriptId(), projectId, _event, results.getClass().getName(), results.toString());
+                        }
                     }
                 }
+                return results == null ? defaultValue : results.toString();
             }
-            return results == null ? defaultValue : results.toString();
+            else{
+                _log.debug("Internal scripting is currently disabled.", _event);
+                return null;
+            }
         } catch (RuntimeException | Error e) {
             _log.error("Got an exception running the " + script.getScriptId() + "script for event " + _event + ". " + (_continueOnScriptFailure ? "Continue on failure is true, returning default value " + defaultValue : "Continue on failure is false, re-throwing exception"), e);
             if (_continueOnScriptFailure) {
@@ -153,6 +161,9 @@ public class ScriptedSessionAssignmentExtractor extends ChainExtractor implement
 
     @Inject
     private ScriptRunnerService _service;
+
+    @Inject
+    private SiteConfigPreferences _siteConfigPreferences;
 
     private DicomObjectIdentifier<XnatProjectdata> _identifier;
     private final String _event;

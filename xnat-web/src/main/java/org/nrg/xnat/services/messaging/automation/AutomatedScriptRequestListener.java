@@ -16,6 +16,7 @@ import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
@@ -49,82 +50,87 @@ public class AutomatedScriptRequestListener {
      * @throws Exception the exception
      */
     public void onRequest(final AutomatedScriptRequest request) throws Exception {
-        final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(request.getUser(), request.getScriptWorkflowId());
-        workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
-        WorkflowUtils.save(workflow, workflow.buildEvent());
-        final AutomationCompletionEventI automationCompletionEvent = request.getAutomationCompletionEvent();
-        final AutomationEventImplementerI automationEvent = request.getAutomationEvent();
+        if(_siteConfigPreferences.getEnableInternalScripts()) {
+            final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(request.getUser(), request.getScriptWorkflowId());
+            workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
+            WorkflowUtils.save(workflow, workflow.buildEvent());
+            final AutomationCompletionEventI automationCompletionEvent = request.getAutomationCompletionEvent();
+            final AutomationEventImplementerI automationEvent = request.getAutomationEvent();
 
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("user", request.getUser());
-        parameters.put("scriptId", request.getScriptId());
-        parameters.put("event", request.getEvent());
-        parameters.put("srcEventId", request.getSrcEventId());
-        final String srcEventClass = request.getSrcEventClass();
-        parameters.put("srcEventClass", srcEventClass);
-        // For backwards compatibility
-        if (srcEventClass.contains("WorkflowStatusEvent") && automationEvent instanceof WorkflowStatusEvent) {
-        	final WorkflowStatusEvent wfse = (WorkflowStatusEvent) automationEvent;
-        	if (wfse!=null && wfse.getWorkflow()!=null) {
-        		parameters.put("srcWorkflowId", wfse.getWorkflow().getWorkflowId());
-        	} 
-        } else if (srcEventClass.contains("WrkWorkflowdata")) {
-        	parameters.put("srcWorkflowId", request.getArgumentMap().get("wrkWorkflowId"));
-        }
-        if (parameters.get("srcWorkflowId")==null) {
-        	parameters.put("srcWorkflowId", null);
-        }
-        parameters.put("scriptWorkflowId", request.getScriptWorkflowId());
-        parameters.put("dataType", request.getDataType());
-        parameters.put("dataId", request.getDataId());
-        parameters.put("externalId", request.getExternalId());
-        parameters.put("workflow", workflow);
-        parameters.put("arguments", request.getArgumentJson());
-        if (request.getArgumentMap() != null && !request.getArgumentMap().isEmpty()) {
-            parameters.putAll(request.getArgumentMap());
-        }
-        ScriptOutput scriptOut = null;
-        try {
-            scriptOut = _service.runScript(_service.getScript(request.getScriptId()), parameters);
-            if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
-                WorkflowUtils.complete(workflow, workflow.buildEvent());
+            final Map<String, Object> parameters = new HashMap<>();
+            parameters.put("user", request.getUser());
+            parameters.put("scriptId", request.getScriptId());
+            parameters.put("event", request.getEvent());
+            parameters.put("srcEventId", request.getSrcEventId());
+            final String srcEventClass = request.getSrcEventClass();
+            parameters.put("srcEventClass", srcEventClass);
+            // For backwards compatibility
+            if (srcEventClass.contains("WorkflowStatusEvent") && automationEvent instanceof WorkflowStatusEvent) {
+                final WorkflowStatusEvent wfse = (WorkflowStatusEvent) automationEvent;
+                if (wfse != null && wfse.getWorkflow() != null) {
+                    parameters.put("srcWorkflowId", wfse.getWorkflow().getWorkflowId());
+                }
+            } else if (srcEventClass.contains("WrkWorkflowdata")) {
+                parameters.put("srcWorkflowId", request.getArgumentMap().get("wrkWorkflowId"));
             }
-            if (automationCompletionEvent != null && scriptOut != null) {
-                automationCompletionEvent.getScriptOutputs().add(scriptOut);
+            if (parameters.get("srcWorkflowId") == null) {
+                parameters.put("srcWorkflowId", null);
             }
-        } catch (NrgServiceException e) {
-            final String message = String.format("Failed running the script %s by user %s for event %s on data type %s instance %s from project %s",
-                    request.getScriptId(),
-                    request.getUser().getLogin(),
-                    request.getEvent(),
-                    request.getDataType(),
-                    request.getDataId(),
-                    request.getExternalId());
-            if (scriptOut==null) {
-            	scriptOut = new ScriptOutput();
-            	scriptOut.setStatus(Status.ERROR);
-            	scriptOut.setOutput(message);
+            parameters.put("scriptWorkflowId", request.getScriptWorkflowId());
+            parameters.put("dataType", request.getDataType());
+            parameters.put("dataId", request.getDataId());
+            parameters.put("externalId", request.getExternalId());
+            parameters.put("workflow", workflow);
+            parameters.put("arguments", request.getArgumentJson());
+            if (request.getArgumentMap() != null && !request.getArgumentMap().isEmpty()) {
+                parameters.putAll(request.getArgumentMap());
             }
-            AdminUtils.sendAdminEmail("Script execution failure", message);
-            logger.error(message, e);
-            if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
-                WorkflowUtils.fail(workflow, workflow.buildEvent());
-            }
-        }
-        if (automationCompletionEvent != null) {
-            if (_eventService != null) {
-                automationCompletionEvent.setEventCompletionTime(System.currentTimeMillis());
-                _eventService.triggerEvent(automationCompletionEvent);
-                final List<String> notifyList = automationCompletionEvent.getNotificationList();
-                if (notifyList != null && !notifyList.isEmpty()) {
-                	final String scriptOutStr = 
-                 	(automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
-                   			scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
-                   				"<h3>No output was returned from the script run</h3>";	
-                    final String EMAIL_SUBJECT = "Automation Results (" + request.getScriptId() + ")";
-                    AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOutStr, false, notifyList.toArray(new String[0]));
+            ScriptOutput scriptOut = null;
+            try {
+                scriptOut = _service.runScript(_service.getScript(request.getScriptId()), parameters);
+                if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
+                    WorkflowUtils.complete(workflow, workflow.buildEvent());
+                }
+                if (automationCompletionEvent != null && scriptOut != null) {
+                    automationCompletionEvent.getScriptOutputs().add(scriptOut);
+                }
+            } catch (NrgServiceException e) {
+                final String message = String.format("Failed running the script %s by user %s for event %s on data type %s instance %s from project %s",
+                        request.getScriptId(),
+                        request.getUser().getLogin(),
+                        request.getEvent(),
+                        request.getDataType(),
+                        request.getDataId(),
+                        request.getExternalId());
+                if (scriptOut == null) {
+                    scriptOut = new ScriptOutput();
+                    scriptOut.setStatus(Status.ERROR);
+                    scriptOut.setOutput(message);
+                }
+                AdminUtils.sendAdminEmail("Script execution failure", message);
+                logger.error(message, e);
+                if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
+                    WorkflowUtils.fail(workflow, workflow.buildEvent());
                 }
             }
+            if (automationCompletionEvent != null) {
+                if (_eventService != null) {
+                    automationCompletionEvent.setEventCompletionTime(System.currentTimeMillis());
+                    _eventService.triggerEvent(automationCompletionEvent);
+                    final List<String> notifyList = automationCompletionEvent.getNotificationList();
+                    if (notifyList != null && !notifyList.isEmpty()) {
+                        final String scriptOutStr =
+                                (automationCompletionEvent.getScriptOutputs() != null && automationCompletionEvent.getScriptOutputs().size() > 0) ?
+                                        scriptOutputToHtmlString(automationCompletionEvent.getScriptOutputs()) :
+                                        "<h3>No output was returned from the script run</h3>";
+                        final String EMAIL_SUBJECT = "Automation Results (" + request.getScriptId() + ")";
+                        AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, scriptOutStr, false, notifyList.toArray(new String[0]));
+                    }
+                }
+            }
+        }
+        else{
+            logger.debug("Internal scripting is currently disabled.", request.getAutomationEvent());
         }
     }
     
@@ -172,4 +178,8 @@ public class AutomatedScriptRequestListener {
     /** The _event service. */
     @Inject
 	private NrgEventService _eventService;
+
+    /** The site configuration preferences. */
+    @Inject
+    private SiteConfigPreferences _siteConfigPreferences;
 }

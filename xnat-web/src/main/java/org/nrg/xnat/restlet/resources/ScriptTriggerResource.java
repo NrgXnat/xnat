@@ -20,6 +20,7 @@ import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
@@ -32,6 +33,7 @@ import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
 
@@ -97,7 +99,11 @@ public class ScriptTriggerResource extends AutomationResource {
 
         final Method method = request.getMethod();
         final UserI  user   = getUser();
-
+        if (!XDAT.getSiteConfigPreferences().getEnableInternalScripts() && !Roles.isSiteAdmin(user)) {
+            final String message = "User " + user.getLogin() + " attempted to access script trigger despite internal scripting being disabled.";
+            _log.warn(message);
+            throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);
+        }
         if (StringUtils.isNotBlank(projectId)) {
             validateProjectAccess(projectId);
             setProjectId(projectId);
@@ -594,4 +600,5 @@ public class ScriptTriggerResource extends AutomationResource {
     
     /** The _trigger. */
     private final ScriptTrigger _trigger;
+
 }

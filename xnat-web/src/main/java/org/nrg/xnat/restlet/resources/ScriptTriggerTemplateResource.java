@@ -19,6 +19,7 @@ import org.nrg.automation.services.ScriptTriggerTemplateService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
@@ -35,6 +36,7 @@ import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
 
@@ -72,9 +74,16 @@ public class ScriptTriggerTemplateResource extends AutomationResource {
                 _log.error("An error occurred trying to retrieve the user helper service. Can't proceed with permissions check.");
                 throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to process your request. Please try again or, if the problem persists, contact your system administrator.");
             }
-            if (!Roles.isSiteAdmin(user) || userHelperService.isOwner(getProjectId())) {
-                _log.warn(getRequestContext("User " + user.getLogin() + " attempted to access forbidden script trigger template resources"));
-                throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins and project owners can view or update script trigger templates for the project " + getProjectId() + ".");
+            if (!Roles.isSiteAdmin(user)) {
+                if (!XDAT.getSiteConfigPreferences().getEnableInternalScripts()){
+                    final String message = "User " + user.getLogin() + " attempted to access script trigger despite internal scripting being disabled.";
+                    _log.warn(message);
+                    throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);
+                }
+                else if(!userHelperService.isOwner(getProjectId())) {
+                    _log.warn(getRequestContext("User " + user.getLogin() + " attempted to access forbidden script trigger template resources"));
+                    throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins and project owners can view or update script trigger templates for the project " + getProjectId() + ".");
+                }
             }
         }
 

@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.3</version>
+    <version>1.7.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -56,19 +56,27 @@
         <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
         <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 
+        <!-- These are default property values to be overridden for specific applications and signing requirements. -->
+        <signing.skip>true</signing.skip>
+        <signing.keystore>${basedir}/keystore</signing.keystore>
+        <signing.alias>nrg</signing.alias>
+        <signing.storepass>keypass</signing.storepass>
+        <signing.keypass>keypass</signing.keypass>
+        <signing.tsa>http://timestamp.digicert.com</signing.tsa>
+
         <xnat.version>1.7.3</xnat.version>
         <xnatdev.version>1.7.4-SNAPSHOT</xnatdev.version>
-        <xdat.version>${xnat.version}</xdat.version>
-        <nrg.automation.version>${xnat.version}</nrg.automation.version>
-        <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.framework.version>${xnat.version}</nrg.framework.version>
-        <nrg.mail.version>${xnat.version}</nrg.mail.version>
-        <nrg.notify.version>${xnat.version}</nrg.notify.version>
-        <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
-        <nrg.test.version>${xnat.version}</nrg.test.version>
-        <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
+        <xdat.version>${xnatdev.version}</xdat.version>
+        <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
+        <nrg.config.version>${xnatdev.version}</nrg.config.version>
+        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
+        <nrg.mail.version>${xnatdev.version}</nrg.mail.version>
+        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
+        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
+        <nrg.test.version>${xnatdev.version}</nrg.test.version>
+        <nrg.transaction.version>${xnatdev.version}</nrg.transaction.version>
         <nrg.mizer.version>1.0</nrg.mizer.version>
-        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
+        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>1.0</nrg.dicom-edit6.version>
@@ -80,13 +88,11 @@
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
 
-        <!-- These are default property values to be overridden for specific applications and signing requirements. -->
-        <signing.skip>true</signing.skip>
-        <signing.keystore>${basedir}/keystore</signing.keystore>
-        <signing.alias>nrg</signing.alias>
-        <signing.storepass>keypass</signing.storepass>
-        <signing.keypass>keypass</signing.keypass>
-        <signing.tsa>http://timestamp.digicert.com</signing.tsa>
+        <spring-framework.version>4.3.10.RELEASE</spring-framework.version>
+        <spring-security.version>4.2.3.RELEASE</spring-security.version>
+        <spring-ldap.version>2.3.1.RELEASE</spring-ldap.version>
+        <swagger.version>2.4.0</swagger.version>
+        <native-json.version>0.4</native-json.version>
 
         <activemq.version>5.7.0</activemq.version>
         <ant.version>1.9.8</ant.version>
@@ -97,6 +103,7 @@
         <aspectj.version>1.8.10</aspectj.version>
         <avalon.version>4.3</avalon.version>
         <axis.version>1.4</axis.version>
+        <msv.version>2013.6.1</msv.version>
         <cglib.version>2.2.2</cglib.version>
         <commons-beanutils.version>1.9.2</commons-beanutils.version>
         <commons-codec.version>1.10</commons-codec.version>
@@ -114,6 +121,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.5</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
+        <commons-math.version>2.2</commons-math.version>
         <commons-net.version>3.3</commons-net.version>
         <dcm4che.version>2.0.29</dcm4che.version>
         <dom4j.version>1.6.1</dom4j.version>
@@ -123,8 +131,10 @@
         <fest-swing.version>1.2.1</fest-swing.version>
         <fop.version>0.20.5</fop.version>
         <groovy.version>2.4.6</groovy.version>
+        <http-builder.version>0.7.1</http-builder.version>
         <guava.version>20.0</guava.version>
         <h2.version>1.4.191</h2.version>
+        <eclipse-jgit.version>4.8.0.201706111038-r</eclipse-jgit.version>
 
         <!-- Eventually upgrade to these versions. Staying with more moderate version in xnat_builder_1_7dev -->
         <!-- hibernate.version>5.0.3.Final</hibernate.version>
@@ -135,6 +145,7 @@
         <hibernate-validator.version>4.3.2.Final</hibernate-validator.version>
         <hibernate.version>4.3.11.Final</hibernate.version>
         <httpcomponents-client.version>4.5.1</httpcomponents-client.version>
+        <httpcomponents-core.version>4.4.6</httpcomponents-core.version>
         <imagej.version>1.50e</imagej.version>
         <jai_imageio.version>1.1</jai_imageio.version>
         <itext.version>1.1.4</itext.version>
@@ -160,6 +171,7 @@
         <jstl.version>1.2</jstl.version>
         <hamcrest.version>1.3</hamcrest.version>
         <junit.version>4.12</junit.version>
+        <jacoco.version>0.7.9</jacoco.version>
         <jython.version>2.7.0</jython.version>
         <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
@@ -176,9 +188,8 @@
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <spring-framework.version>4.2.9.RELEASE</spring-framework.version>
-        <spring-ldap.version>2.0.4.RELEASE</spring-ldap.version>
-        <spring-security.version>4.0.4.RELEASE</spring-security.version>
+        <javamelody.version>1.68.1</javamelody.version>
+
         <springockito.version>1.0.5</springockito.version>
         <stratum.version>1.0</stratum.version>
         <torque.version>3.3</torque.version>
@@ -192,10 +203,17 @@
         <xbean.version>3.17</xbean.version>
         <xerces-impl.version>2.11.0</xerces-impl.version>
         <xmlbeans.version>2.6.0</xmlbeans.version>
+        <xstream.version>1.4.9</xstream.version>
 
-        <!-- Plugin versions -->
+        <!-- Gradle plugin versions -->
+        <gradle-git-version>0.8.0</gradle-git-version>
+        <gradle-tomcat-plugin.version>2.3</gradle-tomcat-plugin.version>
+        <gradle-cargo-plugin.version>2.2.3</gradle-cargo-plugin.version>
+        <gradle-dependency-management.version>1.0.3.RELEASE</gradle-dependency-management.version>
+
+        <!-- Maven plugin versions -->
         <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
-        <jacoco-maven-plugin.version>0.7.9</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>${jacoco.version}</jacoco-maven-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
         <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
@@ -293,6 +311,11 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
+                <artifactId>PrearcImporter</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
                 <artifactId>SessionBuilders</artifactId>
                 <version>${nrg.sessionbuilders.version}</version>
             </dependency>
@@ -336,27 +359,33 @@
             <dependency>
                 <groupId>org.nrg.xnat.build</groupId>
                 <artifactId>xnat-data-builder</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnatdev.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>web</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnatdev.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>spawner</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnatdev.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>xnat-data-models</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnatdev.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xdat.build</groupId>
                 <artifactId>xdat-data-builder</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnatdev.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xdat</groupId>
@@ -379,9 +408,47 @@
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>plexiviewer</artifactId>
                 <version>${xnat.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!-- XImgView dependency definitions -->
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>ximgview-plugin</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
             </dependency>
 
             <!-- Pipeline dependency definitions -->
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>pipelineBase</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>pipelineBuild</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>pipelineWorkflow</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat.pipeline</groupId>
+                <artifactId>xnat_pipeline</artifactId>
+                <version>1.7.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat.pipeline</groupId>
+                <artifactId>xnat_tools</artifactId>
+                <version>1.7.0</version>
+            </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>catalog</artifactId>
@@ -390,12 +457,7 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>client</artifactId>
-                <version>${pipeline.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.nrg.xnat.pipeline</groupId>
-                <artifactId>tools</artifactId>
-                <version>${pipeline.version}</version>
+                <version>1.7.0</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
@@ -464,6 +526,11 @@
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-jms</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-messaging</artifactId>
                 <version>${spring-framework.version}</version>
             </dependency>
             <dependency>
@@ -552,6 +619,16 @@
                 <version>${spring-ldap.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-swagger2</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-swagger-ui</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
                 <version>${hibernate.version}</version>
@@ -588,6 +665,11 @@
                 <version>${hibernate.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.marvinformatics.hibernate</groupId>
+                <artifactId>hibernate-native-json</artifactId>
+                <version>${native-json.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>net.sf.ehcache</groupId>
                 <artifactId>ehcache-core</artifactId>
                 <version>${ehcache.version}</version>
@@ -613,9 +695,39 @@
                 <version>${restlet.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.noelios.restlet</groupId>
+                <artifactId>com.noelios.restlet</artifactId>
+                <version>${restlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.noelios.restlet</groupId>
+                <artifactId>com.noelios.restlet.ext.servlet</artifactId>
+                <version>${restlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.restlet</groupId>
+                <artifactId>org.restlet.ext.fileupload</artifactId>
+                <version>${restlet.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${httpcomponents-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore-nio</artifactId>
+                <version>${httpcomponents-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>${httpcomponents-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jgit</groupId>
+                <artifactId>org.eclipse.jgit</artifactId>
+                <version>${eclipse-jgit.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.bitwalker</groupId>
@@ -697,6 +809,11 @@
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>${commons-logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math</artifactId>
+                <version>${commons-math.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-net</groupId>
@@ -810,6 +927,11 @@
                 <version>${xmlbeans.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.thoughtworks.xstream</groupId>
+                <artifactId>xstream</artifactId>
+                <version>${xstream.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
                 <version>${xerces-impl.version}</version>
@@ -896,9 +1018,24 @@
                 <type>pom</type>
             </dependency>
             <dependency>
+                <groupId>net.bull.javamelody</groupId>
+                <artifactId>javamelody-core</artifactId>
+                <version>${javamelody.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>axis</groupId>
                 <artifactId>axis</artifactId>
                 <version>${axis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>axis</groupId>
+                <artifactId>axis-ant</artifactId>
+                <version>${axis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>axis</groupId>
+                <artifactId>axis-schema</artifactId>
+                <version>1.3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.axis</groupId>
@@ -914,6 +1051,16 @@
                 <groupId>org.apache.axis</groupId>
                 <artifactId>axis-saaj</artifactId>
                 <version>${axis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.msv</groupId>
+                <artifactId>msv-core</artifactId>
+                <version>${msv.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.msv</groupId>
+                <artifactId>xsdlib</artifactId>
+                <version>${msv.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -938,6 +1085,11 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-hibernate4</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-guava</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -1379,6 +1531,11 @@
                 <version>${groovy.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.codehaus.groovy.modules.http-builder</groupId>
+                <artifactId>http-builder</artifactId>
+                <version>${http-builder.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.python</groupId>
                 <artifactId>jython</artifactId>
                 <version>${jython.version}</version>
@@ -1392,6 +1549,28 @@
                 <groupId>org.jruby</groupId>
                 <artifactId>jruby</artifactId>
                 <version>${jruby.version}</version>
+            </dependency>
+
+            <!-- Gradle plugin dependencies -->
+            <dependency>
+                <groupId>io.spring.gradle</groupId>
+                <artifactId>dependency-management-plugin</artifactId>
+                <version>${gradle-dependency-management.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bmuschko</groupId>
+                <artifactId>gradle-cargo-plugin</artifactId>
+                <version>${gradle-cargo-plugin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bmuschko</groupId>
+                <artifactId>gradle-tomcat-plugin</artifactId>
+                <version>${gradle-tomcat-plugin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gradle.plugin.com.palantir.gradle.gitversion</groupId>
+                <artifactId>gradle-git-version</artifactId>
+                <version>${gradle-git-version}</version>
             </dependency>
 
             <!-- Test dependencies -->

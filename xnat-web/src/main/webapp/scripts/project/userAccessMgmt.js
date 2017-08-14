@@ -795,19 +795,10 @@ var XNAT = getObject(XNAT || {});
                         }
                     }).element
                 );
-                container.append(spawn('p',''));
-                container.append(
-                    spawn('p', [
-                        spawn('a', {
-                            href: '/app/template/XDATScreen_edit_xdat_userGroup.vm/tag/' + projectId + '/src/project'
-                        }, [
-                            spawn('button',{
-                                className: 'btn',
-                                html: 'Create Custom Group'
-                            })
-                        ])
-                    ])
-                );
+                container.spawn('p');
+                container.spawn('a', {
+                    href: rootUrl('/app/template/XDATScreen_edit_xdat_userGroup.vm/tag/' + projectId + '/src/project')
+                }, '<button class="btn" type="button">Create Custom Group</button>');
             },
             buttons: [
                 {

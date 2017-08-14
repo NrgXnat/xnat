@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.4-SNAPSHOT</version>
+    <version>1.7.4-security-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -66,7 +66,8 @@
 
         <xnat.version>1.7.3</xnat.version>
         <xnatdev.version>1.7.4-SNAPSHOT</xnatdev.version>
-        <xdat.version>${xnatdev.version}</xdat.version>
+        <securitybranch.version>1.7.4-security-SNAPSHOT</securitybranch.version>
+        <xdat.version>${securitybranch.version}</xdat.version>
         <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
         <nrg.config.version>${xnatdev.version}</nrg.config.version>
         <nrg.framework.version>${xnatdev.version}</nrg.framework.version>

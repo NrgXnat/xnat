@@ -1131,7 +1131,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean isAccountNonLocked() {
-        return true;
+        return _authorization!=null && _authorization.getLockoutTime()==null;
     }
 
     public boolean isCredentialsNonExpired() {

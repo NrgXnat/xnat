@@ -371,6 +371,7 @@ public class XnatProviderManager extends ProviderManager {
                 XdatUserAuth ua = _manager.getUserByAuth(auth);
                 if (ua != null) {
                     ua.setFailedLoginAttempts(0);
+                    ua.setLockoutTime(null);
                     XDAT.getXdatUserAuthService().update(ua);
                 }
             }

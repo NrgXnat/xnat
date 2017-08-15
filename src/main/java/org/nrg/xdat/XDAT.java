@@ -295,25 +295,58 @@ public class XDAT implements Initializable, Configurable{
 		}
 	}
 
-	public static void init(String location) throws Exception
-	{
-		XDAT.init(location, true);
-	}
-
 	public static void RefreshDisplay()
 	{
 		DisplayManager.clean();
 		DisplayManager.GetInstance();
 	}
 
-	public static void init(String location,boolean allowDBAccess) throws Exception
+	/**
+	 * Initializes XDAT from the specified location. This calls the {@link #init(String, boolean, boolean)} version of
+	 * this method, passing <b>true</b> for the <b>allowDBAccess</b> parameter and <b>false</b> for the
+	 * <b>overrideConfigFilesLocation</b> parameter.
+	 *
+	 * @param location                    The location to search for XDAT configuration files.
+	 *
+	 * @throws Exception When an error occurs initializing XDAT.
+	 */
+	public static void init(String location) throws Exception
 	{
+		XDAT.init(location, true, false);
+	}
+
+	/**
+	 * Initializes XDAT from the specified location. This calls the {@link #init(String, boolean, boolean)} version of
+	 * this method, passing <b>false</b> for the <b>overrideConfigFilesLocation</b> parameter.
+	 *
+	 * @param location                    The location to search for XDAT configuration files.
+	 * @param allowDBAccess               Indicates whether XDAT should try to check for cached configurations in the
+	 *                                    database.
+	 *
+	 * @throws Exception When an error occurs initializing XDAT.
+	 */
+	public static void init(String location,boolean allowDBAccess) throws Exception {
+		init(location, allowDBAccess, false);
+	}
+
+	/**
+	 * Initializes XDAT from the specified location.
+	 *
+	 * @param location                    The location to search for XDAT configuration files.
+	 * @param allowDBAccess               Indicates whether XDAT should try to check for cached configurations in the
+	 *                                    database.
+	 * @param overrideConfigFilesLocation Indicates whether XDAT should used the cached configuration file location if
+	 *                                    available.
+	 *
+	 * @throws Exception When an error occurs initializing XDAT.
+	 */
+	public static void init(String location, boolean allowDBAccess, boolean overrideConfigFilesLocation) throws Exception {
 		DisplayManager.clean();
         if (StringUtils.isBlank(_configFilesLocation)) {
             _configFilesLocation = FileUtils.AppendSlash(location);
         }
 
-		XFT.init(_configFilesLocation);
+		XFT.init(overrideConfigFilesLocation ? FileUtils.AppendSlash(location) : _configFilesLocation);
 
 		if (allowDBAccess && hasUsers()) {
 			try {

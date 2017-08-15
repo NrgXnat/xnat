@@ -394,6 +394,19 @@ generalSecuritySettings:
                 provide? Disabling this removes the "Find my study" feature and can help prevent users
                 from stealing another user's data. But it can also make it harder for users to get their
                 data into XNAT and increase the burden on site administrators.
+        urlsThatCanSendEmailsThroughRest:
+            kind: panel.input.text
+            name: urlsThatCanSendEmailsThroughRest
+            label: URLs that can send emails via REST
+            description: >
+              This must be a regular expression (do not include bounding '/' characters) which matches
+              trusted URLs from which users or pipelines should be able to send emails via an XNAT REST
+              call. By default this is set to allow all URLs but should be changed so that malicious
+              users do not use this to send phishing emails.
+            validation: "!pattern:^/"
+            element:
+                data:
+                    message: Please do not include bounding "/" characters in your regex pattern.
 
 userLoginsSessionControls:
     kind: panel.form

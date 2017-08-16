@@ -486,6 +486,16 @@ userLoginsSessionControls:
             description: >
               How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        canResetFailedLoginsWithForgotPassword:
+            kind: panel.input.switchbox
+            name: canResetFailedLoginsWithForgotPassword
+            label: Reset failed login count on forgot password?
+            onText: Enabled
+            offText: Disabled
+            description: >
+                Indicates whether a user should be able to click the link from a forgot password email to reset their
+                count of failed logins. If enabled, a locked out user will be able to request a forgot password email
+                and click the link from that email to change their password and unlock their account.
         userInactivityLockout:
             kind: panel.input.text
             name: inactivityBeforeLockout

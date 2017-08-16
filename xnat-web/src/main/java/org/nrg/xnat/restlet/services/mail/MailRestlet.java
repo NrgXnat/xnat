@@ -73,8 +73,8 @@ public class MailRestlet extends SecureResource {
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
                 return;
             }
-            if(!isFromValidUrl()){
-                _log.error("URL blocked from sending email, check the logs for more information, returning: " + Status.CLIENT_ERROR_FORBIDDEN);
+            if(!isFromValidIp()){
+                _log.error("IP blocked from sending email, check the logs for more information, returning: " + Status.CLIENT_ERROR_FORBIDDEN);
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
                 return;
             }
@@ -283,18 +283,18 @@ public class MailRestlet extends SecureResource {
         return message.toString();
     }
 
-    private boolean isFromValidUrl(){
+    private boolean isFromValidIp(){
         try {
-            String urlRegExp = XDAT.getSiteConfigPreferences().getUrlsThatCanSendEmailsThroughRest();
-            if (StringUtils.isNotBlank(urlRegExp) && !StringUtils.equals(urlRegExp, "^.*$")) {
-                return Pattern.matches(urlRegExp, this.getRequest().getClientInfo().getAddress());
+            String ipRegExp = XDAT.getSiteConfigPreferences().getIpsThatCanSendEmailsThroughRest();
+            if (StringUtils.isNotBlank(ipRegExp) && !StringUtils.equals(ipRegExp, "^.*$")) {
+                return Pattern.matches(ipRegExp, this.getRequest().getClientInfo().getAddress());
             }
             else{
                 return true;
             }
         }
         catch(Exception e){
-            _log.error("Exception checking URL user is trying to send email from.", e);
+            _log.error("Exception checking IP user is trying to send email from.", e);
             return false;
         }
     }

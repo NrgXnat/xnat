@@ -122,6 +122,10 @@ public class ModifyPassword extends ModifyAction {
                 //need to update password expiration
                 final XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(existing.getUsername(), XdatUserAuthService.LOCALDB, "");
                 auth.setPasswordUpdated(new java.util.Date());
+                if(XDAT.getSiteConfigPreferences().getCanResetFailedLoginsWithForgotPassword()) {
+                    auth.setFailedLoginAttempts(0);
+                    auth.setLockoutTime(null);
+                }
                 XDAT.getXdatUserAuthService().update(auth);
 
                 final SchemaElementI se = SchemaElement.GetElement(Users.getUserDataType());

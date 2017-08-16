@@ -30,9 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.mail.MessagingException;
 import java.io.StringWriter;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Tim
@@ -241,8 +239,51 @@ public class AdminUtils {
 	}
 	}
 
+	public static void emailAllAdmins(UserI user, String subject, String message) {
+
+		ArrayList<String> alreadyEmailed = new ArrayList<>();
+		if(XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+			//first send an email to the sit admin email
+			sendAdminEmail(user, subject, message);
+			alreadyEmailed.add(XDAT.getSiteConfigPreferences().getAdminEmail());
+
+			//then email all administrators
+			List<? extends UserI> allUsers = Users.getUsers();
+			if (allUsers != null && allUsers.size() > 0) {
+				for (UserI u : allUsers) {
+					if (u!=null && Roles.isSiteAdmin(u)) {
+						String currEmail = u.getEmail();
+						if(!alreadyEmailed.contains(currEmail)){
+							String qualifiedSubject = TurbineUtils.GetSystemName() + ": " + subject;
+
+							StringBuilder formattedMessage = new StringBuilder();
+							formattedMessage.append("HOST: ").append(TurbineUtils.GetFullServerPath()).append("<BR>");
+							if (u != null)
+								formattedMessage.append("USER: ").append(u.getUsername()).append("(").append(u.getFirstname()).append(" ").append(u.getLastname()).append(")").append("<BR>");
+							formattedMessage.append("TIME: ").append(java.util.Calendar.getInstance().getTime()).append("<BR>");
+							formattedMessage.append("MESSAGE: ").append(message).append("<BR>");
+
+							try {
+								XDAT.getMailService().sendHtmlMessage(currEmail, currEmail, qualifiedSubject, formattedMessage.toString());
+							} catch (Exception exception) {
+								logger.error("Unable to send mail", exception);
+							}
+
+							alreadyEmailed.add(currEmail);
+						}
+					}
+
+				}
+			}
+		}
+	}
+
 	public static void sendAdminEmail(String subject, String message) {
 		sendAdminEmail(null, subject, message);
+	}
+
+	public static void emailAllAdmins(String subject, String message) {
+		emailAllAdmins(null, subject, message);
 	}
 
 	public static String populateVmTemplate(Context context, String templatePath) throws Exception {

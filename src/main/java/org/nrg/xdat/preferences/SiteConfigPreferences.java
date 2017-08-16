@@ -1316,6 +1316,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "true")
+    public boolean getCanResetFailedLoginsWithForgotPassword() {
+        return getBooleanValue("canResetFailedLoginsWithForgotPassword");
+    }
+
+    public void setCanResetFailedLoginsWithForgotPassword(final String canResetFailedLoginsWithForgotPassword) {
+        try {
+            set(canResetFailedLoginsWithForgotPassword, "canResetFailedLoginsWithForgotPassword");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'canResetFailedLoginsWithForgotPassword': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "1 year")
     public String getInactivityBeforeLockout() {
         return getValue("inactivityBeforeLockout");

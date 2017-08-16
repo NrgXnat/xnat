@@ -1173,15 +1173,15 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "^.*$")
-    public String getUrlsThatCanSendEmailsThroughRest() {
-        return getValue("urlsThatCanSendEmailsThroughRest");
+    public String getIpsThatCanSendEmailsThroughRest() {
+        return getValue("ipsThatCanSendEmailsThroughRest");
     }
 
-    public void setUrlsThatCanSendEmailsThroughRest(final String urlsThatCanSendEmailsThroughRest) {
+    public void setIpsThatCanSendEmailsThroughRest(final String ipsThatCanSendEmailsThroughRest) {
         try {
-            set(urlsThatCanSendEmailsThroughRest, "urlsThatCanSendEmailsThroughRest");
+            set(ipsThatCanSendEmailsThroughRest, "ipsThatCanSendEmailsThroughRest");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'urlsThatCanSendEmailsThroughRest': something is very wrong here.", e);
+            _log.error("Invalid preference name 'ipsThatCanSendEmailsThroughRest': something is very wrong here.", e);
         }
     }
 
@@ -1277,7 +1277,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "5")
+    @NrgPreference(defaultValue = "20")
     public int getMaxFailedLogins() {
         return getIntegerValue("maxFailedLogins");
     }

@@ -1494,6 +1494,12 @@
                 <groupId>com.sun.media</groupId>
                 <artifactId>jai_imageio</artifactId>
                 <version>${jai_imageio.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.media</groupId>
+                        <artifactId>jai_core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.jcraft</groupId>

@@ -66,6 +66,7 @@
 
         <xnat.version>1.7.3</xnat.version>
         <xnatdev.version>1.7.4-SNAPSHOT</xnatdev.version>
+        <xams.version>1.0-SNAPSHOT</xams.version>
         <xdat.version>${xnatdev.version}</xdat.version>
         <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
         <nrg.config.version>${xnatdev.version}</nrg.config.version>

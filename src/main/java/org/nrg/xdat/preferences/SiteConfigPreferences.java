@@ -374,6 +374,32 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "['/xapi/**', '/data/**', '/REST/**', '/fs/**']")
+    public List<String> getDataPaths() {
+        return getListValue("dataPaths");
+    }
+
+    public void setDataPaths(final List<String> dataPaths) {
+        try {
+            setListValue("dataPaths", dataPaths);
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'dataPaths': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "['.*MSIE.*', '.*Mozilla.*', '.*AppleWebKit.*', '.*Opera.*']")
+    public List<String> getInteractiveAgentIds() {
+        return getListValue("interactiveAgentIds");
+    }
+
+    public void setInteractiveAgentIds(final List<String> interactiveAgentIds) {
+        try {
+            setListValue("interactiveAgentIds", interactiveAgentIds);
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'interactiveAgentIds': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true")
     public boolean getEnableCsrfToken() {
         return getBooleanValue("enableCsrfToken");

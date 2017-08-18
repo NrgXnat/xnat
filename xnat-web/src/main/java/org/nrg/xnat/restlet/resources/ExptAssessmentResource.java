@@ -61,7 +61,7 @@ public class ExptAssessmentResource extends ItemResource {
 			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 			
 			if(proj==null){
-				this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+				setGuestDataResponse();
 				return;
 			}
 		}
@@ -205,7 +205,7 @@ public class ExptAssessmentResource extends ItemResource {
 
 							this.returnDefaultRepresentation();
 						}else{
-							this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to identify project: " + newProjectS);
+							setGuestDataResponse("Unable to identify project: " + newProjectS);
 						}
 					}else{
 						this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
@@ -383,7 +383,7 @@ public class ExptAssessmentResource extends ItemResource {
 		}
 
 		if(assessor==null){
-			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find the specified experiment.");
+			setGuestDataResponse("Unable to find the specified experiment.");
 			return;
 		}
 
@@ -499,7 +499,7 @@ public class ExptAssessmentResource extends ItemResource {
 				return this.representItem(assessor.getItem(), mt);
 			}
 		}else{
-			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find the specified experiment.");
+			setGuestDataResponse("Unable to find the specified experiment.");
 			return null;
 		}
 	}

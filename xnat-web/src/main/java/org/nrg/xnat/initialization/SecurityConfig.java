@@ -23,6 +23,8 @@ import org.nrg.xnat.security.config.LdapAuthenticationProviderConfigurator;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.validation.DateValidation;
+import org.nrg.xnat.utils.DefaultInteractiveAgentDetector;
+import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -47,6 +49,7 @@ import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.*;
 import org.springframework.security.web.session.ConcurrentSessionFilter;
+import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -77,11 +80,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatAuthenticationEntryPoint loginUrlAuthenticationEntryPoint(final SiteConfigPreferences preferences) {
-        final XnatAuthenticationEntryPoint entryPoint = new XnatAuthenticationEntryPoint("/app/template/Login.vm", preferences);
-        entryPoint.setDataPaths(Arrays.asList("/xapi/**", "/data/**", "/REST/**", "/fs/**"));
-        entryPoint.setInteractiveAgents(Arrays.asList(".*MSIE.*", ".*Mozilla.*", ".*AppleWebKit.*", ".*Opera.*"));
-        return entryPoint;
+    public InteractiveAgentDetector interactiveAgentDetector(final SiteConfigPreferences preferences) {
+        return new DefaultInteractiveAgentDetector(preferences);
+    }
+
+    @Bean
+    public XnatAuthenticationEntryPoint loginUrlAuthenticationEntryPoint(final SiteConfigPreferences preferences, final InteractiveAgentDetector detector) {
+        return new XnatAuthenticationEntryPoint("/app/template/Login.vm", preferences, detector);
     }
 
     @Bean
@@ -91,7 +96,7 @@ public class SecurityConfig {
 
     @Bean
     public ConcurrentSessionFilter concurrencyFilter(final SessionRegistry sessionRegistry) {
-        return new ConcurrentSessionFilter(sessionRegistry, "/app/template/Login.vm");
+        return new ConcurrentSessionFilter(sessionRegistry, new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm"));
     }
 
     @Bean

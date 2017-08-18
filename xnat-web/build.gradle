@@ -89,13 +89,13 @@ if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
     if (hasProperty("rt.17.jar")) {
         // Solution for bootstrap classpath warning and possible issues with compatibility with 1.7 libraries
         // was taken from this post on discuss.gradle.org: http://bit.ly/24xD9j0
-        def rt17jar = getProperty("rt.17.jar")
+        def rt17jar = property "rt.17.jar"
         logger.info "Using ${rt17jar} as the bootstrap class path jar."
         gradle.projectsEvaluated {
             tasks.withType(JavaCompile) {
                 options.fork = true
                 options.compilerArgs << "-XDignore.symbol.file"
-                options.bootClasspath = rt17jar
+                options.bootClasspath = rt17jar as String
             }
         }
     } else {
@@ -231,7 +231,6 @@ dependencies {
     implementation "dcm4che:dcm4che-imageio-rle"
     implementation "dcm4che:dcm4che-iod"
     implementation "dcm4che:dcm4che-net"
-    implementation "com.sun.media:jai_imageio"
 
     implementation "org.springframework:spring-aop"
     implementation "org.springframework:spring-beans"
@@ -335,6 +334,7 @@ dependencies {
     runtimeOnly "org.hsqldb:hsqldb"
     runtimeOnly "org.codehaus.groovy.modules.http-builder:http-builder"
     runtimeOnly "net.imagej:ij"
+    runtimeOnly "com.sun.media:jai_imageio"
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"
 
@@ -345,7 +345,7 @@ dependencies {
             "org.apache.tomcat.embed:tomcat-embed-jasper"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar",
-          "org.codehaus.cargo:cargo-ant"
+            "org.codehaus.cargo:cargo-ant"
 
     testCompile "org.nrg:test"
     testCompile "junit:junit"
@@ -420,77 +420,68 @@ jacoco {
 jacocoTestReport {
     dependsOn test
     reports {
-        xml.enabled false
-        csv.enabled false
+        xml.enabled = false
+        csv.enabled = false
         html.destination file("${buildDir}/jacocoHtml")
     }
 }
 
 task sourceJar(type: Jar, dependsOn: classes) {
+    classifier "sources"
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier "javadoc"
     from javadoc.destinationDir
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
+publishing.publications {
+    mavenJava(MavenPublication) {
+        from components.java
 
-            artifact sourceJar {
-                classifier "sources"
-            }
-
-            artifact javadocJar {
-                classifier "javadoc"
-            }
-
-            pom.withXml {
-                def root = asNode()
-                root.appendNode('name', 'XNAT Server')
-                root.appendNode('description', 'XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.')
-                root.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
-                root.appendNode('inceptionYear', '2016')
-
-                def scm = root.appendNode('scm')
-                scm.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
-                scm.appendNode('connection', 'scm:https://bitbucket.org/xnatdev/xnat-web.git')
-                scm.appendNode('developerConnection', 'scm:git://bitbucket.org/xnatdev/xnat-web.git')
-
-                def license = root.appendNode('licenses').appendNode('license')
-                license.appendNode('name', 'Simplified BSD 2-Clause License')
-                license.appendNode('url', 'http://xnat.org/about/license.php')
-                license.appendNode('distribution', 'repo')
-
-                def developers = root.appendNode('developers')
-                def rherrick = developers.appendNode('developer')
-                rherrick.appendNode('id', 'rherrick')
-                rherrick.appendNode('name', 'Rick Herrick')
-                rherrick.appendNode('email', 'jrherrick@wustl.edu')
-            }
+        artifacts {
+            artifact sourceJar
+            artifact javadocJar
         }
-    }
-    repositories {
-        maven {
-            credentials {
-                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
-                // line in the form -PrepoUsername=foo -PrepoPassword=bar.
-                username propertyWithDefault('repoUsername', 'username')
-                password propertyWithDefault('repoPassword', 'password')
-            }
-            if (project.version.endsWith('-SNAPSHOT')) {
-                url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local"
-            } else {
-                url "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
-            }
+
+        pom.withXml {
+            def root = asNode()
+            root.appendNode('name', 'XNAT Server')
+            root.appendNode('description', 'XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.')
+            root.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
+            root.appendNode('inceptionYear', '2016')
+
+            def scm = root.appendNode('scm')
+            scm.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
+            scm.appendNode('connection', 'scm:https://bitbucket.org/xnatdev/xnat-web.git')
+            scm.appendNode('developerConnection', 'scm:git://bitbucket.org/xnatdev/xnat-web.git')
+
+            def license = root.appendNode('licenses').appendNode('license')
+            license.appendNode('name', 'Simplified BSD 2-Clause License')
+            license.appendNode('url', 'http://xnat.org/about/license.php')
+            license.appendNode('distribution', 'repo')
+
+            def developers = root.appendNode('developers')
+            def rherrick = developers.appendNode('developer')
+            rherrick.appendNode('id', 'rherrick')
+            rherrick.appendNode('name', 'Rick Herrick')
+            rherrick.appendNode('email', 'jrherrick@wustl.edu')
         }
     }
 }
-
-def propertyWithDefault(String property, Object value) {
-    hasProperty(property) ? getProperty(property) : value
+publishing.repositories {
+    maven {
+        credentials {
+            // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+            // line in the form -PrepoUsername=foo -PrepoPassword=bar.
+            username propertyWithDefault('repoUsername', 'username')
+            password propertyWithDefault('repoPassword', 'password')
+        }
+        url project.version.endsWith('-SNAPSHOT') ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
+    }
 }
 
-
+def propertyWithDefault(String name, Object value) {
+    hasProperty(name) ? property(name) : value
+}

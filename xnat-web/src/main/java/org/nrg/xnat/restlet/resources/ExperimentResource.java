@@ -209,7 +209,7 @@ public class ExperimentResource extends ItemResource {
                         }
 
                         if (!Permissions.canRead(user, _experiment)) {
-                            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Specified user account has insufficient privileges for experiments in this project.");
+                            setGuestDataResponse("Specified user account has insufficient privileges for experiments in this project.");
                             return;
                         }
 
@@ -283,7 +283,7 @@ public class ExperimentResource extends ItemResource {
 
                         returnDefaultRepresentation();
                     } else {
-                        getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to identify project: " + newProjectS);
+                        setGuestDataResponse("Unable to identify project: " + newProjectS);
                         return;
                     }
                 } else {
@@ -529,7 +529,7 @@ public class ExperimentResource extends ItemResource {
         }
 
         if (_experiment == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified experiment.");
+            setGuestDataResponse("Unable to find the specified experiment.");
             return;
         }
 
@@ -540,7 +540,7 @@ public class ExperimentResource extends ItemResource {
                 String newProjectS = filepath.substring(9);
                 newProject = XnatProjectdata.getXnatProjectdatasById(newProjectS, user, false);
                 if (newProject == null) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to identify project: " + newProjectS);
+                    setGuestDataResponse("Unable to identify project: " + newProjectS);
                     return;
                 }
             } else {

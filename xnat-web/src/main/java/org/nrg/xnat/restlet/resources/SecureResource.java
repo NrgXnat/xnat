@@ -68,12 +68,15 @@ import org.nrg.xnat.restlet.representations.*;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.ext.fileupload.RestletFileUpload;
 import org.restlet.resource.*;
 import org.restlet.util.Series;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -977,6 +980,43 @@ public abstract class SecureResource extends Resource {
 
     protected HttpServletRequest getHttpServletRequest() {
         return new RequestUtil().getHttpServletRequest(getRequest());
+    }
+
+    /**
+     * This method tests whether the current user is a guest. If so, it then tests whether the request came from an
+     * interactive agent such as a browser. If neither of these is true, the response status is set to 404 Not Found.
+     * If so, the HTTP request is stored in the session request cache and a redirect to the login page is added to the
+     * response. On successful authentication, the client is redirected to the page requested in the original request.
+     */
+    protected void setGuestDataResponse() {
+        setGuestDataResponse(null);
+    }
+
+    /**
+     * This method tests whether the current user is a guest. If so, it then tests whether the request came from an
+     * interactive agent such as a browser. If neither of these is true, the response status is set to 404 Not Found.
+     * If so, the HTTP request is stored in the session request cache and a redirect to the login page is added to the
+     * response. On successful authentication, the client is redirected to the page requested in the original request.
+     *
+     * @param message The message to add to the response status. Can be null or empty.
+     */
+    protected void setGuestDataResponse(final String message) {
+        final UserI user = getUser();
+        final Response response = getResponse();
+        if (user.isGuest()) {
+            final HttpServletRequest httpServletRequest = getHttpServletRequest();
+            if (XDAT.getContextService().getBean(InteractiveAgentDetector.class).isInteractiveAgent(httpServletRequest)) {
+                final RequestCache cache = new HttpSessionRequestCache();
+                cache.saveRequest(httpServletRequest, null);
+                response.redirectTemporary("/app/template/Login.vm");
+            }
+        } else {
+            if (StringUtils.isBlank(message)) {
+                response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+            } else {
+                response.setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
+            }
+        }
     }
 
     /**

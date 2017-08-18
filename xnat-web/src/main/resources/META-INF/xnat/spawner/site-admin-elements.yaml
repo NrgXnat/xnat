@@ -477,6 +477,26 @@ userLoginsSessionControls:
             description: >
               How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        interactiveAgentIds:
+            kind: panel.input.text
+            name: interactiveAgentIds
+            label: Interactive Agent IDs
+            placeholder: .*MSIE.*, .*Mozilla.*, .*AppleWebKit.*, .*Opera.*
+            description: >
+              Regular-expression patterns that define user-agent header values that indicate whether a particular
+              request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
+              scriptable or automatable client. Separate multiple agent IDs with commas.
+        dataPaths:
+            kind: panel.input.text
+            name: dataPaths
+            label: Data Paths
+            placeholder: /xapi/**, /data/**, /REST/**, /fs/**
+            description: >
+              Ant patterns that define URL patterns that represent data paths (e.g. REST API calls). XNAT uses these
+              paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
+              example, instead of simply returning a "404 Not Found" error when an inaccessible resource is indicated,
+              a call to a data path by a browser may be redirected to the login page. Separate multiple data paths with
+              commas.
 
 passwords:
     kind: panel.form

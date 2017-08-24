@@ -57,6 +57,15 @@ $page.setVlinkColor($ui.vlink)
 				<label>Current Email</label>
 				<span>$!item.getProperty("email")</span>
 			</p>
+
+#if($newEmail)
+    <input type="hidden" name="cancelRequest" value="true"/>
+    <div class="message">
+        An email address change request has been sent to '$newEmail'. Click the link in the change request email to verify the change, or <a onclick="form1.submit();">click here</a> to cancel the request.
+    </div>
+
+#else
+
 			<p>
 				<label for="xdat:user.email">Enter New Email</label>
 				<input id="new_email" type="text" name="xdat:user.email" value=""/>
@@ -73,6 +82,10 @@ $page.setVlinkColor($ui.vlink)
 			<p>
 				<input type="submit" name="eventSubmit_doSetup" value="Submit"/>
 			</p>
+#end
+
+
+
 		</fieldset>
 	</form>
 </div>

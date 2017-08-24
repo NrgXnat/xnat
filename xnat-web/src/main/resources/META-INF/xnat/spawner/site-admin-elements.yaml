@@ -1080,7 +1080,7 @@ registrationOptions:
         requireEmailVerificationToRegister:
             kind: panel.input.switchbox
             name: emailVerification
-            label: "Require Email Verification <br>to Register?"
+            label: "Require Email Verification?"
             onText: Required
             offText: Not Required
             description: >
@@ -1088,6 +1088,7 @@ registrationOptions:
                 link in the email to verify their email address before they are able to use their account.
                 If false, no verification emails will be sent and users will not be required to verify their email
                 before using their account. Either way the administrator receives an email notification when a user registers.
+                If true, users who wish to change their email will also be required to verify their new email address.
         emailVerificationMessage:
             kind: panel.textarea
             name: emailVerificationMessage

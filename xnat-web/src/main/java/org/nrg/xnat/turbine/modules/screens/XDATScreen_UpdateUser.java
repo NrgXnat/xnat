@@ -19,13 +19,23 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.generic.EscapeTool;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
+import org.nrg.xdat.entities.UserChangeRequest;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.services.UserChangeRequestService;
+import org.nrg.xdat.services.impl.hibernate.HibernateUserChangeRequestService;
+import org.nrg.xdat.turbine.modules.actions.ModifyEmail;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
+import org.springframework.mail.MailException;
 
 import java.sql.SQLException;
 
@@ -49,6 +59,71 @@ public class XDATScreen_UpdateUser extends SecureScreen {
 
     protected void doBuildTemplate(RunData data, Context context) throws Exception {
         try {
+            if(TurbineUtils.HasPassedParameter("confirmationToken", data)){
+                String confirmationToken = (String) TurbineUtils.GetPassedParameter("confirmationToken", data);
+                UserChangeRequest userChangeRequest = XDAT.getContextService().getBean(UserChangeRequestService.class).findChangeRequestByGuid(confirmationToken);
+                if(userChangeRequest!=null && StringUtils.equals(userChangeRequest.getFieldToChange(),"email")){
+                    UserI existing = null;
+                    String username = userChangeRequest.getUsername();
+                    if (username != null) {
+                        existing = Users.getUser(username);
+                    }
+                    if (existing == null) {
+                        data.setMessage("Unable to identify user for email modification.");
+                    }
+                    else{
+                        final String oldEmail = existing.getEmail();
+                        final String newEmail = userChangeRequest.getNewValue();
+
+                        if (StringUtils.isBlank(newEmail) || StringUtils.equals(oldEmail, newEmail)) {
+                            context.put("message", "Email address unchanged.");
+                        }
+
+                        if (!newEmail.contains("@")) {
+                            context.put("message", "Please enter a valid email address.");
+                        }
+
+                        // Only admins can set an email address that's already being used.
+                        if (!Roles.isSiteAdmin(XDAT.getUserDetails()) && Users.getUsersByEmail(newEmail).size() > 0) {
+                            context.put("message", "The email address you've specified is already in use.");
+                        }
+
+                        final UserI user = XDAT.getUserDetails();
+                        assert user != null;
+                        SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
+
+                        existing.setEmail(newEmail);
+
+                        try {
+                            Users.save(existing, user, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
+                            ElementSecurity.refresh();
+
+                            // Update the email address for the user principal in the application session.
+                            user.setEmail(newEmail);
+                            XDAT.getContextService().getBean(UserChangeRequestService.class).cancelRequest(XDAT.getUserDetails().getUsername(), "email");
+
+                            final String message = "Your email address was successfully changed to " + newEmail + ".";
+                            try {
+                                AdminUtils.sendUserHTMLEmail(ModifyEmail.EMAIL_ADDRESS_CHANGED, message, true, new String[]{oldEmail, newEmail});
+                            } catch (MailException e) {
+                                logger.error("An error occurred trying to send an email to the administrator and the following addresses: " + oldEmail + ", " + newEmail + ".\nSubject: \"" + ModifyEmail.EMAIL_ADDRESS_CHANGED + "\"\nMessage:\n" + message, e);
+                            }
+                            context.put("success", true);
+                            context.put("message", "Email address changed.");
+                        } catch (InvalidPermissionException e) {
+                            AdminUtils.sendAdminEmail(user, "Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+                            data.getResponse().sendError(403);
+                        } catch (Exception e) {
+                            logger.error("Error Storing User", e);
+                        }
+
+                    }
+                }
+                else{
+                    context.put("success", false);
+                    context.put("message", "Invalid or expired change request.");
+                }
+            }
             UserI user = XDAT.getUserDetails();
             if (user != null && !user.getUsername().equalsIgnoreCase("guest")) {
                 if (!StringUtils.isBlank(user.getUsername()) &&
@@ -63,6 +138,12 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                 if(XDAT.getSiteConfigPreferences().getRequireSaltedPasswords()
                         && user.getSalt()==null){
                     context.put("missingSalt", true);
+                }
+                if(XDAT.getSiteConfigPreferences().getEmailVerification()){
+                    UserChangeRequest changeRequest = XDAT.getContextService().getBean(UserChangeRequestService.class).findChangeRequestForUserAndField(user.getUsername(), "email");
+                    if(changeRequest!=null){
+                        context.put("newEmail", changeRequest.getNewValue());
+                    }
                 }
             } else {
                 // If the user isn't already logged in...

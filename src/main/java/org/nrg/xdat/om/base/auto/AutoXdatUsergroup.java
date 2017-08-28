@@ -333,6 +333,19 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
         return null;
     }
 
+    public static ArrayList<XdatUsergroup> getXdatUsergroupsByTag(Object value, org.nrg.xft.security.UserI user, boolean preLoad) {
+        ArrayList<XdatUsergroup> al = new ArrayList<>();
+        try {
+            org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems("xdat:userGroup/tag", value, user, preLoad);
+            al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+
+        al.trimToSize();
+        return al;
+    }
+
     public static ArrayList wrapItems(ArrayList items) {
         return BaseElement.WrapItems(items);
     }

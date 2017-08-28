@@ -317,10 +317,8 @@ public class UserGroupManager implements UserGroupServiceI{
 	@Override
 	public List<UserGroupI> getGroupsByTag(String tag) throws Exception {
 		List<UserGroupI> ug=Lists.newArrayList();
-		
-		final CriteriaCollection col = new CriteriaCollection("AND");
-        col.addClause(XdatUsergroup.SCHEMA_ELEMENT_NAME +".tag","=", "'" + tag + "'");
-        for(XdatUsergroup gp:XdatUsergroup.getXdatUsergroupsByField(col, null, false)){
+
+        for(XdatUsergroup gp:XdatUsergroup.getXdatUsergroupsByTag(tag, null, false)){
         	ug.add(new UserGroup(gp));
         }
 

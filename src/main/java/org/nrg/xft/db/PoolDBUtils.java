@@ -735,8 +735,8 @@ public class PoolDBUtils {
                     "\n  id serial,"+
                     "\n  create_date timestamp DEFAULT now(),"+
                     "\n  username VARCHAR(255),"+
-                    "\n  search_xml text"+
-					"\n  random_id_string VARCHAR(255),"+
+                    "\n  search_xml text,"+
+					"\n  random_id_string VARCHAR(255)"+
                     "\n) "+
                     "\nWITH OIDS;";
 

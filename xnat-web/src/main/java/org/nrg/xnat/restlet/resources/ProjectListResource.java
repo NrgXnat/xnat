@@ -274,43 +274,42 @@ public class ProjectListResource extends QueryOrganizerResource {
 
                 String access = resource.getQueryVariable(ACCESSIBLE);
                 if (access != null) {
-                    if (access.equalsIgnoreCase("true")) {
-                        if (!Groups.isMember(user, "ALL_DATA_ACCESS") && !Groups.isMember(user, "ALL_DATA_ADMIN")) {
-                            CriteriaCollection cc = new CriteriaCollection("OR");
-                            DisplayCriteria dc = new DisplayCriteria();
-                            dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
-                            dc.setComparisonType(" LIKE ");
-                            dc.setValue("% " + user.getLogin() + " %", false);
-                            cc.add(dc);
-
-                            dc = new DisplayCriteria();
-                            dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_ACCESS");
-                            dc.setValue("public", false);
-                            cc.add(dc);
-
-                            dc = new DisplayCriteria();
-                            dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_ACCESS");
-                            dc.setValue("protected", false);
-                            cc.add(dc);
-
-                            allCC.addCriteria(cc);
-                        }
-                    } else {
+                    if (!Groups.isMember(user, "ALL_DATA_ACCESS") && !Groups.isMember(user, "ALL_DATA_ADMIN")) {
                         CriteriaCollection cc = new CriteriaCollection("OR");
+                        DisplayCriteria dc = new DisplayCriteria();
+                        dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
+                        dc.setComparisonType(" LIKE ");
+                        dc.setValue("% " + user.getLogin() + " %", false);
+                        cc.add(dc);
+
+                        dc = new DisplayCriteria();
+                        dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_ACCESS");
+                        dc.setValue("public", false);
+                        cc.add(dc);
+
+                        dc = new DisplayCriteria();
+                        dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_ACCESS");
+                        dc.setValue("protected", false);
+                        cc.add(dc);
+
+                        allCC.addCriteria(cc);
+                    }
+                    if (access.equalsIgnoreCase("false")) {
+                        CriteriaCollection cc2 = new CriteriaCollection("OR");
                         DisplayCriteria dc = new DisplayCriteria();
                         dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
                         dc.setComparisonType(" NOT LIKE ");
                         dc.setValue("% " + user.getLogin() + " %", false);
-                        cc.add(dc);
+                        cc2.add(dc);
 
                         dc = new DisplayCriteria();
                         dc.setSearchFieldByDisplayField("xnat:projectData", "PROJECT_USERS");
                         dc.setComparisonType(" IS ");
                         dc.setValue(" NULL ", false);
                         dc.setOverrideDataFormatting(true);
-                        cc.add(dc);
+                        cc2.add(dc);
 
-                        allCC.addCriteria(cc);
+                        allCC.addCriteria(cc2);
                     }
                 }
                 String users = resource.getQueryVariable("users");

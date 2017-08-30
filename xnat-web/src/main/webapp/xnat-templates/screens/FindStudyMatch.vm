@@ -30,7 +30,12 @@ $page.setVlinkColor($ui.vlink)
                 <tr><th align="left">Patient ID:</th><td>$!result[8]</td></tr>
                 <tr><th align="left">Study Date:</th><td>$!result[4]</td></tr>
                 <tr><th align="left">Upload Date:</th><td>$!result[3]</td></tr>
+            #set($receivingStatus="RECEIVING")
+            #if($result[10]==$receivingStatus)
+                <tr><th align="left"></th><td>Session still in receiving state. Please check back later to move this session.</td></tr>
+            #else
                 <tr><th align="left"></th><td><button onclick='XNAT.app.prearchiveActions.requestMoveDialog("$result[0]", "$result[3]", "$result[7]")'>Change Project</button></td></tr>
+            #end
         </table>
     <br>
     #end

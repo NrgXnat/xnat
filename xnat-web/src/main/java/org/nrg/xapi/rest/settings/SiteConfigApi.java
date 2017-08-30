@@ -97,8 +97,17 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 if (!isInitialized && properties.containsKey("adminEmail")) {
                     _template.update(EMAIL_UPDATE, properties);
                 }
-                _preferences.set(properties.get(name).toString(), name);
-                _log.info("Set property {} to value: {}", name, properties.get(name));
+                final Object value = properties.get(name);
+                if (value instanceof List) {
+                    _preferences.setListValue(name, (List) value);
+                } else if (value instanceof Map) {
+                    _preferences.setMapValue(name, (Map) value);
+                } else if (value.getClass().isArray()) {
+                    _preferences.setArrayValue(name, (Object[]) value);
+                } else {
+                    _preferences.set(value.toString(), name);
+                }
+                _log.info("Set property {} to value: {}", name, value);
             } catch (InvalidPreferenceName invalidPreferenceName) {
                 _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
             }

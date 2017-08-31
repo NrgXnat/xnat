@@ -259,9 +259,11 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
             // This means the password was actually updated, so reset the password updated date and failed login attempts.
             if (!StringUtils.equals(existing.getPassword(), user.getPassword())) {
                 final XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
-                auth.setPasswordUpdated(new Date());
-                auth.setFailedLoginAttempts(0);
-                XDAT.getXdatUserAuthService().update(auth);
+                if(auth!=null) {
+                    auth.setPasswordUpdated(new Date());
+                    auth.setFailedLoginAttempts(0);
+                    XDAT.getXdatUserAuthService().update(auth);
+                }
             }
         }
     }

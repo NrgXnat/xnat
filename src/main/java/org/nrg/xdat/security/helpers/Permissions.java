@@ -809,7 +809,7 @@ public class Permissions {
         HashSet<String> sessionsUserCanRead = new HashSet<>();
         for (final Map<String, Object> session : locatedTypes) {
             try{
-                if(canRead(user, session.get("xsi").toString(), session.get("id").toString())){
+                if(canRead(user, session.get("xsi").toString()+"/project", scopedProjectId)){
                     sessionsUserCanRead.add(session.get("id").toString());
                 }
             }

@@ -81,7 +81,7 @@
                 #if($denied)
                     <span style="margin-right: 2em;" class="expt-legend">
                         <b style="background-color:#F99;margin-right: 2px; width: 1em; height: 1em; display: inline-block;" class="withThinBorder"></b>
-                        You do not have access to this project
+                        You do not have access to this data
                     </span>
                 #end
             </p>

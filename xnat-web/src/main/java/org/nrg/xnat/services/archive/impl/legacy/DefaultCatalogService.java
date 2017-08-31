@@ -816,8 +816,29 @@ public class DefaultCatalogService implements CatalogService {
             final String label = atoms[2];
             final String sessionId = atoms[3];
 
-            matchingSessions.put(projectId, sessionId);
-            subjectLabelMap.put(projectId + ":" + sessionId, new String[]{subject, label});
+            ArrayList<String> sessionList = new ArrayList<>();
+            sessionList.add(sessionId);
+
+            try {
+                Multimap<String, String> accessMap = Permissions.verifyAccessToSessions(_parameterized, user, sessionList, projectId);
+                if(accessMap==null || !accessMap.containsKey(projectId)){
+                    throw new InsufficientPrivilegesException(user.getUsername(), sessionId);
+                }
+                else if(accessMap.get(projectId).contains(sessionId)){
+                    //user has access to the session
+                    matchingSessions.put(projectId, sessionId);
+                    subjectLabelMap.put(projectId + ":" + sessionId, new String[]{subject, label});
+                }
+                else{
+                    throw new InsufficientPrivilegesException(user.getUsername(), sessionId);
+                }
+            } catch (InsufficientPrivilegesException e) {
+                throw e;
+            } catch (Exception e) {
+                _log.error("An unexpected error occurred while trying to resolve read access for user " + user.getUsername() + " on project " + projectId);
+                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, e);
+            }
+
         }
 
         for (final String projectId : matchingSessions.keySet()) {

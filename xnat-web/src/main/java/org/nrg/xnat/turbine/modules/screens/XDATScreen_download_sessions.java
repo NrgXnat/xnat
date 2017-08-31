@@ -84,6 +84,11 @@ public class XDATScreen_download_sessions extends SecureScreen {
                 final Multimap<String, String> projectSessionMap = StringUtils.isNotBlank(submittedProjectId)
                                                                    ? Permissions.verifyAccessToSessions(_parameterized, user, sessionIds, submittedProjectId)
                                                                    : Permissions.verifyAccessToSessions(_parameterized, user, sessionIds);
+                final List<String> sessionsUserCanAccess = projectSessionMap!=null
+                        ? (List<String>)projectSessionMap.get(submittedProjectId)
+                        : new ArrayList<String>();
+
+
                 if (projectSessionMap.isEmpty()) {
                     throw new RuntimeException("No accessible projects found for the request by user " + user.getUsername() + " to download the requested session(s): " + Joiner.on(", ").join(sessionIds));
                 }
@@ -92,7 +97,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
 
                 context.put("projectIds", projectIds);
                 context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, new HashMap<String, Object>() {{
-                    put("sessionIds", sessionIds);
+                    put("sessionIds", sessionsUserCanAccess);
                     put("projectIds", projectIds);
                 }}, new RowMapper<List<String>>() {
                     @Override
@@ -107,7 +112,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                 }));
                 context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, new HashMap<String, Object>() {{
-                    put("sessionIds", sessionIds);
+                    put("sessionIds", sessionsUserCanAccess);
                 }}, new RowMapper<List<String>>() {
                     @Override
                     public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
@@ -118,7 +123,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                 }));
                 context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, new HashMap<String, Object>() {{
-                    put("sessionIds", sessionIds);
+                    put("sessionIds", sessionsUserCanAccess);
                 }}, new RowMapper<List<String>>() {
                     @Override
                     public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
@@ -129,7 +134,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                 }));
                 context.put("assessors", Lists.transform(_parameterized.query(QUERY_GET_SESSION_ASSESSORS, new HashMap<String, Object>() {{
-                    put("sessionIds", sessionIds);
+                    put("sessionIds", sessionsUserCanAccess);
                 }}, new RowMapper<List<String>>() {
                     @Override
                     public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
@@ -150,7 +155,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                 }));
                 context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, new HashMap<String, Object>() {{
-                    put("sessionIds", sessionIds);
+                    put("sessionIds", sessionsUserCanAccess);
                 }}, new RowMapper<List<String>>() {
                     @Override
                     public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
@@ -161,7 +166,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                 }));
                 context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, new HashMap<String, Object>() {{
-                    put("sessionIds", sessionIds);
+                    put("sessionIds", sessionsUserCanAccess);
                 }}, new RowMapper<List<String>>() {
                     @Override
                     public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {

@@ -47,7 +47,7 @@ public class UserGroupSecurityCheck extends AbstractInitializingTask {
     protected void callImpl() throws InitializingTaskException {
         final List<String> groupsWithUnderscores;
         try {
-            groupsWithUnderscores = _template.query("SELECT tag, displayname FROM xdat_usergroup WHERE tag IS NOT NULL AND substr(id, length(tag)+2) LIKE '%\\_%'", new RowMapper<String>() {
+            groupsWithUnderscores = _template.query("SELECT tag, displayname FROM xdat_usergroup WHERE tag IS NOT NULL AND substr(id, length(tag)+2) LIKE E'%\\\\_%'", new RowMapper<String>() {
                 @Override
                 public String mapRow(final ResultSet resultSet, final int i) throws SQLException {
                     final String project = resultSet.getString("tag");

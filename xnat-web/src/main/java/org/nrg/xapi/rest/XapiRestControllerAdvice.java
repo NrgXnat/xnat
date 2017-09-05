@@ -14,8 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.dcm.exceptions.DICOMReceiverWithDuplicateAeTitleException;
-import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
+import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicateTitleAndPortException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.exceptions.*;
@@ -50,13 +49,8 @@ public class XapiRestControllerAdvice {
         }});
     }
 
-    @ExceptionHandler(EnabledDICOMReceiverWithDuplicatePortException.class)
-    public ResponseEntity<?> handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final HttpServletResponse response, final EnabledDICOMReceiverWithDuplicatePortException exception) {
-        return getExceptionResponseEntity(request, exception);
-    }
-
-    @ExceptionHandler(DICOMReceiverWithDuplicateAeTitleException.class)
-    public ResponseEntity<?> handleDICOMReceiverWithDuplicateAeTitle(final HttpServletRequest request, final HttpServletResponse response, final DICOMReceiverWithDuplicateAeTitleException exception) {
+    @ExceptionHandler(DICOMReceiverWithDuplicateTitleAndPortException.class)
+    public ResponseEntity<?> handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final HttpServletResponse response, final DICOMReceiverWithDuplicateTitleAndPortException exception) {
         return getExceptionResponseEntity(request, exception);
     }
 

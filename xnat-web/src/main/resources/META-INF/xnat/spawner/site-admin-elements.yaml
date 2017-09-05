@@ -1293,9 +1293,12 @@ dicomScpReceivers:
         message:
             tag: div.message.bold
             content: >
-                Caution: Changes to this setting will take effect immediately.
-                Before disabling the receiver, verify that there are no
-                transmissions currently in progress.
+                Caution: Changes to these settings take effect immediately.
+                Note that any changes, including defining a new receiver and
+                editing or deleting an existing receiver, require restarting
+                <i>all other receivers</i> on the same port. Before performing
+                any operations like this, verify that there are no transmissions
+                currently in progress to any of the receivers on that port.
         dicomScpEditorTemplate:
             tag: "div#dicom-scp-editor-template.html-template"
             contents:

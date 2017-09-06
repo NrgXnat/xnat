@@ -1003,7 +1003,7 @@ public class DefaultCatalogService implements CatalogService {
                 final String sessionLabel = URLEncoder.encode(resource.get("session_label").toString(), "UTF-8");
                 final String proj = URLEncoder.encode(resource.get("project").toString(), "UTF-8");
                 try{
-                    if(Permissions.canReadProject(user,proj)) {
+                    if(Permissions.canReadProject(user,proj) && Permissions.canRead(user, resource.get("xsi").toString()+"/project", resource.get("assessor_id"))) {
                         entry.setName(getPath(options, project, subject, sessionLabel, "assessors", assessorLabel, "resources", resourceLabel));
                         entry.setUri(StrSubstitutor.replace("/archive/experiments/${session_id}/assessors/${assessor_id}/out/resources/${resource_label}/files", resource));
                         _log.debug("Created session assessor entry for project {} session {} assessor {} resource {} with name {}: {}", project, sessionId, assessorLabel, resourceLabel, entry.getName(), entry.getUri());
@@ -1110,7 +1110,8 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "  assessor.label AS assessor_label, "
                                                                          + "  session.id AS session_id, "
                                                                          + "  session.label AS session_label, "
-                                                                         + "  assessor.project AS project "
+                                                                         + "  assessor.project AS project, "
+                                                                         + "  xme.element_name AS xsi "
                                                                          + "FROM xnat_abstractresource abstract "
                                                                          + "  LEFT JOIN img_assessor_out_resource imgOut "
                                                                          + "    ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id "

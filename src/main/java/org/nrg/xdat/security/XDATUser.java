@@ -530,6 +530,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected List<ElementDisplay> getBrowseableElementDisplays() {
+        if(isGuest()){
+            clearBrowseableElementDisplays();
+        }
         if (browseable.size() == 0) {
             final Map counts = getReadableCounts();
 

@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class UserGroupManager implements UserGroupServiceI{
 
@@ -114,7 +115,7 @@ public class UserGroupManager implements UserGroupServiceI{
 	@Override
 	public void removeUserFromGroup(UserI user, UserI currentUser, String groupId, EventMetaI ci) throws Exception {
 		for (XdatUserGroupid map : ((XDATUser)user).getGroups_groupid()) {
-			if (map.getGroupid().equals(groupId)) {
+			if (StringUtils.equals(map.getGroupid(),groupId)) {
 				SaveItemHelper.authorizedDelete(map.getItem(), currentUser, ci);
 			}
 		}

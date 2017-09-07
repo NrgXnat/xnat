@@ -431,7 +431,7 @@
             filtersGet.get();
         </script>
     </div>
-#if($user.isSiteAdmin() || $siteConfig.enableInternalScripts)
+
     <h3>Event Handlers</h3>
     <div id="events_list" style="min-height:120px;">
         ##<p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>
@@ -453,7 +453,7 @@
         <br>
         <button type="button" id="manage_event_handlers" class="btn1" style="font-size:12px;">Manage Event Handlers</button>
     </div>
-#end
+
     #addCustomScreens($project.getXSIType() "report/manage_tab")
 
 </div><!-- /#accordion -->

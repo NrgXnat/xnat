@@ -1473,19 +1473,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "true")
-    public boolean getEnableInternalScripts() {
-        return getBooleanValue("enableInternalScripts");
-    }
-
-    public void setEnableInternalScripts(final boolean enableInternalScripts) {
-        try {
-            setBooleanValue(enableInternalScripts, "enableInternalScripts");
-        } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'enableInternalScripts': something is very wrong here.", e);
-        }
-    }
-
     @JsonIgnore
     public static long convertPGIntervalToSeconds(final String expression) throws SQLException {
         final PGInterval interval = new PGInterval(expression);

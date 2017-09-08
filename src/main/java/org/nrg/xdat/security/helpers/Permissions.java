@@ -708,6 +708,9 @@ public class Permissions {
             case Edit:
                 return Permissions.canEditProject(user, projectId);
 
+            case Delete:
+                return Permissions.canDeleteProject(user, projectId);
+
             case Owner:
                 return Permissions.isProjectOwner(user, projectId);
 
@@ -732,6 +735,14 @@ public class Permissions {
         }
         final String access = getUserProjectAccess(user, projectId);
         return StringUtils.isNotBlank(access) && PROJECT_GROUPS.subList(1, PROJECT_GROUP_COUNT).contains(access);
+    }
+
+    public static boolean canDeleteProject(final UserI user, final String projectId) {
+        if (Roles.isSiteAdmin(user)) {
+            return true;
+        }
+        final String access = getUserProjectAccess(user, projectId);
+        return StringUtils.isNotBlank(access) && PROJECT_GROUPS.subList(2, PROJECT_GROUP_COUNT).contains(access);
     }
 
     public static boolean isProjectOwner(final UserI user, final String projectId) {

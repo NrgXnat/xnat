@@ -294,6 +294,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "5 minutes")
+    public String getRefreshGuestFrequency() {
+        return getValue("refreshGuestFrequency");
+    }
+
+    public void setRefreshGuestFrequency(final String refreshGuestFrequency) {
+        try {
+            set(refreshGuestFrequency, "refreshGuestFrequency");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'refreshGuestFrequency': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true")
     public boolean getEmailVerification() {
         return getBooleanValue("emailVerification");

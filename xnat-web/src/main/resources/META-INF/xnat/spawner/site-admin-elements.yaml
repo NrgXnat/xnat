@@ -363,6 +363,16 @@ generalSecuritySettings:
             description: >
                 If required, then only registered users will be able to access your site. If not required, anyone
                 visiting your site will automatically be logged in as 'guest' with access to public data.
+        refreshGuestFrequency:
+            kind: panel.input.text
+            name: refreshGuestFrequency
+            label: Refresh Guest Frequency
+            validation: interval onblur
+            description: >
+                How often to update the guest user object that is shared by users who are not logged in. If the
+                guest didn't have access to any sessions of a given type and one is added, the guest user will
+                not see this session in Browse->Data until the guest user object is refreshed. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         restrictUserListAccessToAdmins:
             kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins

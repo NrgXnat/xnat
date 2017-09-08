@@ -753,8 +753,9 @@ public class Permissions {
             List<String> usersGroups = Groups.getGroupIdsForUser(user);
             if(usersGroups!=null && groups!=null){
                 for(UserGroupI group: groups){
-                    if(usersGroups.contains(group.getId())){
-                        return AccessLevel.Read.code();
+                    String groupId = group.getId();
+                    if(groupId!= null && usersGroups.contains(groupId)){
+                        return groupId.substring(projectId.length()+1);
                     }
                 }
             }

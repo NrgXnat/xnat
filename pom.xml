@@ -478,6 +478,16 @@
                 <version>${pipeline.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.nrg.xnat.pipeline</groupId>
+                <artifactId>imagingtools</artifactId>
+                <version>${pipeline.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat.pipeline</groupId>
+                <artifactId>pipeline-client</artifactId>
+                <version>${pipeline.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>pipelineXNAT</artifactId>
                 <version>1.0</version>

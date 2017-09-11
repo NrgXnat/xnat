@@ -88,6 +88,7 @@
         <nrg.extattr.version>4.2.2</nrg.extattr.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
+        <pipelinedev.version>${xnatdev.version}</pipelinedev.version>
 
         <spring-framework.version>4.3.10.RELEASE</spring-framework.version>
         <spring-security.version>4.2.3.RELEASE</spring-security.version>
@@ -470,7 +471,7 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-pipeline</artifactId>
-                <version>${pipeline.version}</version>
+                <version>${pipelinedev.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>

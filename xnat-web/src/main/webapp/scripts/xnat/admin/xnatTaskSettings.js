@@ -119,11 +119,11 @@ var XNAT = getObject(XNAT);
 				   }
 				};
 				if ($.isArray(taskConfig)) {
-					for (var i=0; i<taskConfig.length; i++) {
+					for (var j=0; j<taskConfig.length; j++) {
 						try {
-							var parsedConfig = YAML.parse(taskConfig[i]);
+							var parsedConfig = YAML.parse(taskConfig[j]);
 							if (typeof parsedConfig.kind !== 'undefined' && typeof parsedConfig.name !== 'undefined') {
-								taskPanel.taskPanel.contents["task-input" + i] = parsedConfig;
+								taskPanel.taskPanel.contents["task-input" + j] = parsedConfig;
 							} else {
 								for (var prop in parsedConfig) {
 									if (parsedConfig.hasOwnProperty(prop)) {
@@ -134,7 +134,7 @@ var XNAT = getObject(XNAT);
 								}
 							}
 						} catch(e) {
-							console.log("ERROR:  unable to parse configuration", taskConfig[i]);
+							console.log("ERROR:  unable to parse configuration", taskConfig[j]);
 						}
 					}
 				}

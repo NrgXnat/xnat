@@ -9,15 +9,24 @@
 
 package org.nrg.xapi.rest.event;
 
-import com.google.common.collect.Lists;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import javassist.Modifier;
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
+
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.automation.event.entities.AutomationEventIdsIds;
 import org.nrg.automation.event.entities.AutomationFilters;
+import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.automation.services.impl.hibernate.HibernateAutomationEventIdsIdsService;
 import org.nrg.automation.services.impl.hibernate.HibernateAutomationFiltersService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -29,6 +38,7 @@ import org.nrg.xapi.model.event.EventHandlerFilterInfo;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.ProjectId;
 import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.slf4j.Logger;
@@ -44,13 +54,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.*;
+import com.google.common.collect.Lists;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
-import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import javassist.Modifier;
 
 /**
  * The Class EventHandlerApi.
@@ -102,6 +112,25 @@ public class EventHandlerApi extends AbstractXapiRestController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+	
+	/**
+	 * Gets the event handler.
+	 *
+	 * @param triggerId the trigger id
+	 * @return the event handler
+	 */
+	@XapiRequestMapping(value = { "/eventHandlers/{triggerId}" }, produces = {
+			MediaType.APPLICATION_JSON_VALUE }, method = RequestMethod.GET)
+	public ResponseEntity<ScriptTrigger> getEventHandler(@PathVariable("triggerId") final String triggerId) {
+		try {
+			ScriptTriggerService _scriptTriggerService = XDAT.getContextService().getBean(ScriptTriggerService.class);
+			ScriptTrigger scriptTrigger = _scriptTriggerService.getByTriggerId(triggerId);
+			return new ResponseEntity<>(scriptTrigger, HttpStatus.OK);
+		} catch (Throwable t) {
+			_log.error("EventHandlerApi exception:  " + t.toString());
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
     /**
      * Gets the event info list.

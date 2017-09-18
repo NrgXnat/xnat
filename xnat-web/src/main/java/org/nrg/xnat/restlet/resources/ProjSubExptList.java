@@ -382,17 +382,41 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 				
 				table=formatHeaders(table,qo,rootElementName+"/ID","/data/experiments/");
 
-				final Integer labelI=table.getColumnIndex("label");
-				final Integer idI=table.getColumnIndex(rootElementName+"/ID");
-				if(labelI!=null && idI!=null){
-					final XFTTable t= XFTTable.Execute("SELECT sharing_share_xnat_experimentda_id as id,label FROM xnat_experimentData_share WHERE project='"+ proj.getId() + "'", user.getDBName(), user.getUsername());
-					final Hashtable lbls=t.toHashtable("id", "label");
-					for(Object[] row:table.rows()){
-						final String id=(String)row[idI];
-						if(lbls.containsKey(id)){
-							final String lbl=(String)lbls.get(id);
-							if(null!=lbl && !lbl.equals("")){
-								row[labelI]=lbl;
+				final Integer labelI   = table.getColumnIndex("label");
+				final Integer idI      = table.getColumnIndex(rootElementName + "/ID");
+				final Integer subjectI = table.getColumnIndex("subject_label");
+				final Integer projectI = table.getColumnIndex("project");
+				if (labelI != null && idI != null) {
+					final XFTTable  sharedExperiments = XFTTable.Execute("SELECT\n"
+																		 + "  expt.sharing_share_xnat_experimentda_id AS id,\n"
+																		 + "  expt.label                              AS experiment,\n"
+																		 + "  part.label                              AS subject,\n"
+																		 + "  expt.project                            AS project\n"
+																		 + "FROM xnat_experimentdata_share expt\n"
+																		 + "  LEFT JOIN xnat_subjectassessordata assessor ON assessor.id = expt.sharing_share_xnat_experimentda_id\n"
+																		 + "  LEFT JOIN xnat_projectparticipant part ON part.subject_id = assessor.subject_id AND part.project = expt.project\n"
+																		 + "WHERE expt.project = '" + proj.getId() + "'", user.getDBName(), user.getUsername());
+					final Hashtable sharedLabels      = sharedExperiments.toHashtable("id", "experiment");
+					final Hashtable sharedSubjects    = subjectI != null ? sharedExperiments.toHashtable("id", "subject") : null;
+					final Hashtable sharedProjects    = projectI != null ? sharedExperiments.toHashtable("id", "project") : null;
+					for (final Object[] row : table.rows()) {
+						final String id = (String) row[idI];
+						if (sharedLabels.containsKey(id)) {
+							final String sharedLabel = (String) sharedLabels.get(id);
+							if (null != sharedLabel && !sharedLabel.equals("")) {
+								row[labelI] = sharedLabel;
+							}
+							if (subjectI != null) {
+								final String sharedSubject = (String) sharedSubjects.get(id);
+								if (null != sharedSubject && !sharedSubject.equals("")) {
+                                    row[subjectI] = sharedSubject;
+                                }
+							}
+							if (projectI != null) {
+								final String sharedProject = (String) sharedProjects.get(id);
+								if (null != sharedProject && !sharedProject.equals("")) {
+                                    row[projectI] = sharedProject;
+                                }
 							}
 						}
 					}

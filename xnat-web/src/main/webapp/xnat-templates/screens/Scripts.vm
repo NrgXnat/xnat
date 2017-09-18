@@ -57,7 +57,7 @@
             }
 
             #events_table dd.col2, #events_manage_table dd.col2 {
-                width: 115px;
+                width: 155px;
             }
 
             #events_table dd.col3, #events_manage_table dd.col3 {

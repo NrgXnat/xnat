@@ -44,12 +44,12 @@ public final class DicomHeaderDump {
     /**
      * @param file Path to the DICOM file
      */
-    DicomHeaderDump(final String file, final Map<Integer,Set<String>> fields) {
+    public DicomHeaderDump(final String file, final Map<Integer,Set<String>> fields) {
         this.file = file;
         this.fields = ImmutableMap.copyOf(fields);
     }
     
-    DicomHeaderDump(final String file) {
+    public DicomHeaderDump(final String file) {
         this(file, Collections.<Integer,Set<String>>emptyMap());
     }
 

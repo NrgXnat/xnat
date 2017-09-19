@@ -9,14 +9,23 @@
 
 package org.nrg.xnat.security;
 
+import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.utils.WorkflowUtils;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class RefreshGuestUser implements Runnable {
 
@@ -29,7 +38,24 @@ public class RefreshGuestUser implements Runnable {
     @Override
     public void run() {
         try {
-            Users.getGuest(true);
+            UserI guest = Users.getGuest(true);
+            ArrayList<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
+
+            final List<Object> ps = Permissions.getAllowedValues(guest, "xnat:projectData", "xnat:projectData/ID", org.nrg.xdat.security.SecurityManager.READ);
+            for(Object proj : ps) {
+                String projectId = "";
+                if(proj!=null){
+                    projectId = proj.toString();
+                }
+                final EventMetaI c = EventUtils.ADMIN_EVENT(guest);
+
+                for (ElementSecurity es : securedElements) {
+                    if (es!=null && es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
+                        Permissions.setPermissions(guest, AdminUtils.getAdminUser(), es.getElementName(), es.getElementName() + "/project", projectId, false, true, false, false, true, true, c);
+                        Permissions.setPermissions(guest, AdminUtils.getAdminUser(), es.getElementName(), es.getElementName() + "/sharing/share/project", projectId, false, false, false, false, false, true, c);
+                    }
+                }
+            }
         } catch (final Exception e) {
             logger.error("An error occurred trying to refresh guest user.", e);
         }

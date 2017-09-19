@@ -12,6 +12,7 @@ package org.nrg.xnat.security;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -56,6 +57,10 @@ public class RefreshGuestUser implements Runnable {
                     }
                 }
             }
+        } catch (final UserInitException e) {
+            // If this occurs, don't make a big fuss: it probably means that the system's starting up. If that's NOT
+            // what it means, plenty more parts of the system will be complaining so we don't need to add to it.
+            logger.debug("Got a UserInitException while refreshing guest user. This probably just means that the system is still initializing: {}", e.getMessage());
         } catch (final Exception e) {
             logger.error("An error occurred trying to refresh guest user.", e);
         }

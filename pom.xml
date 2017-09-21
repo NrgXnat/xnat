@@ -76,7 +76,7 @@
         <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
         <nrg.test.version>${xnatdev.version}</nrg.test.version>
         <nrg.transaction.version>${xnatdev.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.0</nrg.mizer.version>
+        <nrg.mizer.version>1.0.1-SNAPSHOT</nrg.mizer.version>
         <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0</nrg.dicom-edit4.version>

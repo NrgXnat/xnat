@@ -821,8 +821,25 @@ public class Permissions {
         HashSet<String> sessionsUserCanRead = new HashSet<>();
         for (final Map<String, Object> session : locatedTypes) {
             try{
-                if(canRead(user, session.get("xsi").toString()+"/project", scopedProjectId)){
-                    sessionsUserCanRead.add(session.get("id").toString());
+                if(StringUtils.isBlank(scopedProjectId)){
+                    Set<String> sessionSet = new HashSet<>();
+                    sessionSet.add(session.get("id").toString());
+                    Multimap<String, String> projMap = getProjectsForSessions(template, sessionSet);
+                    Set<String> projectsSessionIsIn = projMap.keySet();
+                    boolean canReadOne = false;
+                    for(String pr : projectsSessionIsIn){
+                        if(canRead(user, session.get("xsi").toString()+"/project", pr)){
+                            canReadOne = true;
+                        }
+                    }
+                    if(canReadOne){
+                        sessionsUserCanRead.add(session.get("id").toString());
+                    }
+                }
+                else {
+                    if (canRead(user, session.get("xsi").toString() + "/project", scopedProjectId)) {
+                        sessionsUserCanRead.add(session.get("id").toString());
+                    }
                 }
             }
             catch(Exception e){

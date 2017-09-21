@@ -85,7 +85,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                                                                    ? Permissions.verifyAccessToSessions(_parameterized, user, sessionIds, submittedProjectId)
                                                                    : Permissions.verifyAccessToSessions(_parameterized, user, sessionIds);
                 final List<String> sessionsUserCanAccess = projectSessionMap!=null
-                        ? (List<String>)projectSessionMap.get(submittedProjectId)
+                        ? (StringUtils.isNotBlank(submittedProjectId)? (List<String>)projectSessionMap.get(submittedProjectId): new ArrayList<>(projectSessionMap.values()))
                         : new ArrayList<String>();
 
 

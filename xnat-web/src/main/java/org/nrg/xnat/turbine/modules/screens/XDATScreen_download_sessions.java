@@ -285,7 +285,41 @@ public class XDATScreen_download_sessions extends SecureScreen {
                                                               " AND read_element = 1 " +
                                                               " AND field_value != '' " +
                                                               " AND field != '' " +
-                                                              " WHERE  map.groups_groupid_xdat_user_xdat_user_id = ( :userId )) perms " +
+                                                              " WHERE  map.groups_groupid_xdat_user_xdat_user_id = ( :userId ) " +
+                                                              " OR xfm.field_value IN (SELECT proj.id " +
+                                                              "         FROM   xnat_projectdata proj " +
+                                                              "         JOIN (SELECT field_value, " +
+                                                              "                        read_element AS " +
+                                                              "                                                        project_read " +
+                                                              "                                FROM   xdat_element_access " +
+                                                              "                                ea " +
+                                                              "                                LEFT JOIN xdat_field_mapping_set fms " +
+                                                              "                                ON ea.xdat_element_access_id = " +
+                                                              "                                fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                              "                                LEFT JOIN xdat_user u " +
+                                                              "                                ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                              "                                LEFT JOIN xdat_field_mapping fm " +
+                                                              "                                ON fms.xdat_field_mapping_set_id = " +
+                                                              "                                fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                              "                                WHERE  login = 'guest' " +
+                                                              "                                AND read_element = 1 " +
+                                                              "                                AND element_name = 'xnat:projectData')project_read " +
+                                                              " ON proj.id = project_read.field_value " +
+                                                              " JOIN (SELECT field_value, " +
+                                                              "       read_element AS subject_read " +
+                                                              "               FROM   xdat_element_access ea " +
+                                                              "               LEFT JOIN xdat_field_mapping_set fms " +
+                                                              "               ON ea.xdat_element_access_id = " +
+                                                              "               fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                              "               LEFT JOIN xdat_user u " +
+                                                              "               ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
+                                                              "               LEFT JOIN xdat_field_mapping fm " +
+                                                              "               ON fms.xdat_field_mapping_set_id = " +
+                                                              "               fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                              "               WHERE  login = 'guest' " +
+                                                              "               AND read_element = 1 " +
+                                                              "               AND field = 'xnat:subjectData/project')subject_read " +
+                                                              " ON proj.id = subject_read.field_value)) perms             " +
                                                               " INNER JOIN (SELECT iad.id, " +
                                                               "                    element_name " +
                                                               "                    || '/project' AS field, " +

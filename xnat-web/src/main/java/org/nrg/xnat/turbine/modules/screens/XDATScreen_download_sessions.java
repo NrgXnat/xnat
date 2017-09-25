@@ -331,17 +331,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                                                               "                    LEFT JOIN xdat_meta_element xme " +
                                                               "                           ON expt.extension = xme.xdat_meta_element_id " +
                                                               "             WHERE  iad.imagesession_id IN ( :sessionIds ) " +
-                                                              "             UNION " +
-                                                              "             SELECT expt.id, " +
-                                                              "                    xme.element_name " +
-                                                              "                    || '/sharing/share/project', " +
-                                                              "                    shr.project, " +
-                                                              "                    shr.label " +
-                                                              "             FROM   xnat_experimentdata_share shr " +
-                                                              "                    LEFT JOIN xnat_experimentdata expt " +
-                                                              "                           ON expt.id = shr.sharing_share_xnat_experimentda_id " +
-                                                              "                    LEFT JOIN xdat_meta_element xme " +
-                                                              "                           ON expt.extension = xme.xdat_meta_element_id) expts " +
+                                                              "             ) expts " +
                                                               "         ON perms.field = expts.field " +
                                                               "            AND perms.field_value = expts.project " +
                                                               " GROUP  BY element_name " +

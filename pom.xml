@@ -79,8 +79,8 @@
         <nrg.mizer.version>1.0.1-SNAPSHOT</nrg.mizer.version>
         <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.0</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.0</nrg.dicom-edit6.version>
+        <nrg.dicom-edit4.version>1.0.1-SNAPSHOT</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>1.0.1-SNAPSHOT</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>

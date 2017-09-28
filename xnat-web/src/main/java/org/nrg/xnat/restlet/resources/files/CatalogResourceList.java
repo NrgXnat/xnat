@@ -147,63 +147,67 @@ public class    CatalogResourceList extends XNATTemplate {
     public Representation represent(Variant variant) {
         final UserI user = getUser();
 
-        boolean fileStats = isQueryVariableTrue("file_stats");
-        boolean cacheFileStats = isQueryVariableTrue("cache_file_stats");
-        if(fileStats) {
+        XFTTable table = null;
+
+        if (recons.size() > 0 || scans.size() > 0 || expts.size() > 0 || sub != null || proj != null) {
             try {
-                if(proj==null){
-                    if(parent.getItem().instanceOf("xnat:experimentData")){
-                        proj = ((XnatExperimentdata)parent).getPrimaryProject(false);
+                table = loadCatalogs(null, false, isQueryVariableTrue("all"));
+            } catch (Exception e) {
+                logger.error("", e);
+            }
+        }
+
+        final boolean fileStats      = isQueryVariableTrue("file_stats");
+        final boolean cacheFileStats = isQueryVariableTrue("cache_file_stats");
+        if (fileStats) {
+            try {
+                if (proj == null) {
+                    if (parent.getItem().instanceOf("xnat:experimentData")) {
+                        proj = ((XnatExperimentdata) parent).getPrimaryProject(false);
                         // Per FogBugz 4746, prevent NPE when user doesn't have access to resource (MRH)
                         // Check access through shared project when user doesn't have access to primary project
                         if (proj == null) {
-                            proj = (XnatProjectdata)((XnatExperimentdata)parent).getFirstProject();
+                            proj = (XnatProjectdata) ((XnatExperimentdata) parent).getFirstProject();
                         }
-                    }else if(security.getItem().instanceOf("xnat:experimentData")){
-                        proj = ((XnatExperimentdata)security).getPrimaryProject(false);
+                    } else if (security.getItem().instanceOf("xnat:experimentData")) {
+                        proj = ((XnatExperimentdata) security).getPrimaryProject(false);
                         // Per FogBugz 4746, ....
                         if (proj == null) {
-                            proj = (XnatProjectdata)((XnatExperimentdata)security).getFirstProject();
+                            proj = (XnatProjectdata) ((XnatExperimentdata) security).getFirstProject();
                         }
-                    }else if(security.getItem().instanceOf("xnat:subjectData")){
-                        proj = ((XnatSubjectdata)security).getPrimaryProject(false);
+                    } else if (security.getItem().instanceOf("xnat:subjectData")) {
+                        proj = ((XnatSubjectdata) security).getPrimaryProject(false);
                         // Per FogBugz 4746, ....
                         if (proj == null) {
-                            proj = (XnatProjectdata)((XnatSubjectdata)security).getFirstProject();
+                            proj = (XnatProjectdata) ((XnatSubjectdata) security).getFirstProject();
                         }
-                    }else if(security.getItem().instanceOf("xnat:projectData")){
-                        proj = (XnatProjectdata)security;
+                    } else if (security.getItem().instanceOf("xnat:projectData")) {
+                        proj = (XnatProjectdata) security;
                     }
                 }
 
             } catch (ElementNotFoundException e) {
-                logger.error("",e);
+                logger.error("", e);
             }
         }
 
-        if(recons.size()>0 || scans.size()>0 || expts.size()>0 || sub!=null || proj!=null){
-            try {
-                final XFTTable table = CatalogUtils.populateTable(loadCatalogs(null, false, isQueryVariableTrue("all")), user, proj, cacheFileStats);
 
-                final Hashtable<String,Object> params= new Hashtable<>();
-                params.put("title", "Resources");
+        final Hashtable<String, Object> params = new Hashtable<>();
+        params.put("title", "Resources");
 
-                if(table!=null) {
-                    // If table.rows() is null, set recordCount to 0
-                    ArrayList<Object[]> r = table.rows();
-                    int recordCount = (r != null) ? r.size() : 0;
+        if (table != null) {
+            table = CatalogUtils.populateTable(table, user, proj, cacheFileStats);
 
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Found a total of " + recordCount + " records");
-                    }
-                    params.put("totalRecords", recordCount);
-                }
+            // If table.rows() is null, set recordCount to 0
+            final ArrayList<Object[]> records     = table.rows();
+            final int                 recordCount = (records != null) ? records.size() : 0;
 
-                return representTable(table, overrideVariant(variant), params);
-            } catch (Exception e) {
-                logger.error("",e);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Found a total of " + recordCount + " records");
             }
+            params.put("totalRecords", recordCount);
         }
-        return null;
+
+        return representTable(table, overrideVariant(variant), params);
     }
 }

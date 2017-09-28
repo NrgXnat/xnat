@@ -229,6 +229,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "/data/xnat/inbox")
+    public String getInboxPath() {
+        return getValue("inboxPath");
+    }
+
+    public void setInboxPath(final String inboxPath) {
+        try {
+            set(inboxPath, "inboxPath");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'inboxPath': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "false")
     public boolean isReloadPrearcDatabaseOnStartup() {
         return getBooleanValue("reloadPrearcDatabaseOnStartup");

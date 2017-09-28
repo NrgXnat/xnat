@@ -14,7 +14,6 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
@@ -61,7 +60,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
      *                            pre-existing content. Should include project, subject_ID and label if session is null.
 	 */
 	public XarImporter(final Object listenerControl, final UserI u, final FileWriterWrapperI fw, final Map<String,Object> params) {
-		super(listenerControl, u, fw, params);
+		super(listenerControl, u);
 		this.user=u;
 		this.fw=fw;
 		this.params=params;

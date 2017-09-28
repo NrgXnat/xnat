@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.actions.importer;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.action.ClientException;
@@ -34,7 +35,7 @@ import java.util.concurrent.Callable;
 
 @SuppressWarnings({"rawtypes", "unchecked", "deprecation"})
 public abstract class ImporterHandlerA extends StatusProducer implements Callable<List<String>> {
-    public ImporterHandlerA(final Object listenerControl, final UserI u, final FileWriterWrapperI fw, final Map<String, Object> params) {
+    public ImporterHandlerA(final Object listenerControl, final UserI u) {
         super((listenerControl == null) ? u : listenerControl);
     }
 
@@ -50,10 +51,7 @@ public abstract class ImporterHandlerA extends StatusProducer implements Callabl
     }
 
     public DicomFileNamer getNamer() {
-        if (_namer == null) {
-            return DEFAULT_NAMER;
-        }
-        return _namer;
+        return ObjectUtils.defaultIfNull(_namer, DEFAULT_NAMER);
     }
 
     public ImporterHandlerA setNamer(final DicomFileNamer namer) {
@@ -68,11 +66,10 @@ public abstract class ImporterHandlerA extends StatusProducer implements Callabl
     public static final String SESSION_IMPORTER       = "SI";
     public static final String XAR_IMPORTER           = "XAR";
     public static final String GRADUAL_DICOM_IMPORTER = "gradual-DICOM";
+    public static final String DICOM_INBOX_IMPORTER   = "DICOM-inbox";
     public static final String DICOM_ZIP_IMPORTER     = "DICOM-zip";
-    public static final String BLANK_PREARCHIVE_ENTRY = "blank";
 
-    static       String                                         DEFAULT_HANDLER = SESSION_IMPORTER;
-    final static Map<String, Class<? extends ImporterHandlerA>> IMPORTERS       = new HashMap<>();
+    private final static Map<String, Class<? extends ImporterHandlerA>> IMPORTERS       = new HashMap<>();
 
     private static final String   PROP_OBJECT_IDENTIFIER = "org.nrg.import.handler.impl";
     private static final String   IMPORTER_PROPERTIES    = "importer.properties";
@@ -117,7 +114,7 @@ public abstract class ImporterHandlerA extends StatusProducer implements Callabl
 
     public static ImporterHandlerA buildImporter(String format, final Object uID, final UserI u, final FileWriterWrapperI fi, Map<String, Object> params) throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException, SecurityException, NoSuchMethodException, ImporterNotFoundException {
         if (StringUtils.isEmpty(format)) {
-            format = DEFAULT_HANDLER;
+            format = SESSION_IMPORTER;
         }
 
         Class<? extends ImporterHandlerA> importerImpl = IMPORTERS.get(format);
@@ -126,8 +123,8 @@ public abstract class ImporterHandlerA extends StatusProducer implements Callabl
             throw new ImporterNotFoundException("Unknown importer implementation specified: " + format, new IllegalArgumentException());
         }
 
-        final Constructor con = importerImpl.getConstructor(Object.class, UserI.class, FileWriterWrapperI.class, Map.class);
-        final ImporterHandlerA handler = (ImporterHandlerA) con.newInstance(uID, u, fi, params);
+        final Constructor constructor = importerImpl.getConstructor(Object.class, UserI.class, FileWriterWrapperI.class, Map.class);
+        final ImporterHandlerA handler = (ImporterHandlerA) constructor.newInstance(uID, u, fi, params);
         final ContextService context = XDAT.getContextService();
 
         final DicomFileNamer namer = context.getBeanSafely("dicomFileNamer", DicomFileNamer.class);

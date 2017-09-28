@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 
-public class CatalogResourceList extends XNATTemplate {
+public class    CatalogResourceList extends XNATTemplate {
     private final static Logger logger = LoggerFactory.getLogger(ScanList.class);
 
     public CatalogResourceList(Context context, Request request, Response response) {
@@ -146,15 +146,6 @@ public class CatalogResourceList extends XNATTemplate {
     @Override
     public Representation represent(Variant variant) {
         final UserI user = getUser();
-        XFTTable table = null;
-
-        if(recons.size()>0 || scans.size()>0 || expts.size()>0 || sub!=null || proj!=null){
-            try {
-                table=loadCatalogs(null, false, isQueryVariableTrue("all"));
-            } catch (Exception e) {
-                logger.error("",e);
-            }
-        }
 
         boolean fileStats = isQueryVariableTrue("file_stats");
         boolean cacheFileStats = isQueryVariableTrue("cache_file_stats");
@@ -190,22 +181,29 @@ public class CatalogResourceList extends XNATTemplate {
             }
         }
 
-        table = CatalogUtils.populateTable(table, user, proj, cacheFileStats);
+        if(recons.size()>0 || scans.size()>0 || expts.size()>0 || sub!=null || proj!=null){
+            try {
+                final XFTTable table = CatalogUtils.populateTable(loadCatalogs(null, false, isQueryVariableTrue("all")), user, proj, cacheFileStats);
 
-        Hashtable<String,Object> params= new Hashtable<>();
-        params.put("title", "Resources");
+                final Hashtable<String,Object> params= new Hashtable<>();
+                params.put("title", "Resources");
 
-        if(table!=null) {
-            // If table.rows() is null, set recordCount to 0
-            ArrayList<Object[]> r = table.rows();
-            int recordCount = (r != null) ? r.size() : 0;
-            
-            if (logger.isDebugEnabled()) {
-                logger.debug("Found a total of " + recordCount + " records");
+                if(table!=null) {
+                    // If table.rows() is null, set recordCount to 0
+                    ArrayList<Object[]> r = table.rows();
+                    int recordCount = (r != null) ? r.size() : 0;
+
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Found a total of " + recordCount + " records");
+                    }
+                    params.put("totalRecords", recordCount);
+                }
+
+                return representTable(table, overrideVariant(variant), params);
+            } catch (Exception e) {
+                logger.error("",e);
             }
-            params.put("totalRecords", recordCount);
         }
-
-        return representTable(table, overrideVariant(variant), params);
+        return null;
     }
 }

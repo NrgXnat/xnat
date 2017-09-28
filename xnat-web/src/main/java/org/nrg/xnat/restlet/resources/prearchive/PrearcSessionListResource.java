@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.restlet.resources.prearchive;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
@@ -35,7 +34,6 @@ public final class PrearcSessionListResource extends SecureResource {
 	private final Logger logger = LoggerFactory.getLogger(PrearcSessionListResource.class);
 
 	private final String requestedProject;
-	private final Reference prearcRef;
 
 	/**
 	 * @param context
@@ -48,8 +46,6 @@ public final class PrearcSessionListResource extends SecureResource {
 		// Project is explicit in the request
 		requestedProject = (String)getParameter(request,PROJECT_ATTR);
 
-		prearcRef = request.getResourceRef();
-		
 		getVariants().add(new Variant(MediaType.APPLICATION_JSON));
 		getVariants().add(new Variant(MediaType.TEXT_HTML));
 		getVariants().add(new Variant(MediaType.TEXT_XML));
@@ -79,8 +75,7 @@ public final class PrearcSessionListResource extends SecureResource {
 	/**
 		 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.restlet.resource.Resource#represent(org.restlet.resource.Variant)
+	 * @see org.restlet.resource.Resource#represent(org.restlet.resource.Variant)
 	 */
 	@Override
 	public Representation represent(final Variant variant) throws ResourceException {
@@ -104,7 +99,7 @@ public final class PrearcSessionListResource extends SecureResource {
 				return null;
 			}
 		}else{		
-			ArrayList<String> projects = null;
+			final ArrayList<String> projects;
 			
 			try {
 				projects = PrearcUtils.getProjects(user, requestedProject);
@@ -113,24 +108,9 @@ public final class PrearcSessionListResource extends SecureResource {
 				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
 				return null;
 			}
-			
-			String path=prearcRef.getBaseRef().toString();
-		
-			if(requestedProject!=null){
-				path = StringUtils.join(new String[]{path,"/",requestedProject});
-			}
-						
+
 			try {
-				table = this.retrieveTable(projects);
-			}
-			catch (SQLException e) {
-				logger.error("Unable to query prearchive table : ", e);
-				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-				return null;
-			} catch (SessionException e) {
-				logger.error("Unable to query prearchive table : ", e);
-				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-				return null;
+				table = retrieveTable(projects);
 			} catch (Exception e) {
 				logger.error("Unable to query prearchive table : ", e);
 				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
@@ -156,10 +136,8 @@ public final class PrearcSessionListResource extends SecureResource {
 		for(final SessionData s:matches){
 			ss.add(s.getSessionDataTriple());
 		}
-		
-		final XFTTable table=PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(ss));
-		
-		return table;
+
+		return PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(ss));
 	}
 	
 	public PrearcTableBuilderI getPrearcBuider(){

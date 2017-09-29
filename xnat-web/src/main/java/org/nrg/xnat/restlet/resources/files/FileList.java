@@ -102,8 +102,10 @@ public class FileList extends XNATCatalogTemplate {
                             if (!alreadyAdded.contains(id) && (id.toString().equals(resourceID) || (label != null && label.equals(resourceID)))) {
                                 XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(id, user, false);
                                 if (row.length == 7) res.setBaseURI((String) row[6]);
-                                resources.add(res);
-                                alreadyAdded.add(id);
+                                if(Permissions.canReadProject(user,proj.getId())) {
+                                    resources.add(res);
+                                    alreadyAdded.add(id);
+                                }
                             }
                         }
                     }
@@ -141,7 +143,7 @@ public class FileList extends XNATCatalogTemplate {
                             }catch(Exception e){
                                 logger.error("Error getting assessor object to check permissions.", e);
                             }
-                            if(assessorObject==null || Permissions.canRead(user,assessorObject)) {
+                            if(Permissions.canReadProject(user,proj.getId()) && (assessorObject==null || Permissions.canRead(user,assessorObject))) {
                                 resources.add(res);
                             }
                         }
@@ -239,7 +241,13 @@ public class FileList extends XNATCatalogTemplate {
                     Object o = rowHash.get("xnat_abstractresource_id");
                     XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(o, getUser(), false);
                     if (rowHash.containsKey("resource_path")) res.setBaseURI((String) rowHash.get("resource_path"));
-                    resources.add(res);
+                    try{
+                        if(Permissions.canReadProject(getUser(),proj.getId())){
+                            resources.add(res);
+                        }
+                    }catch(Exception e){
+                        logger.error("Exception checking whether user has project access.",e);
+                    }
                 }
 
                 return handleMultipleCatalogs(mt);

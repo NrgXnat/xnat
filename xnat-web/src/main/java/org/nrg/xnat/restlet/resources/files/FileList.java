@@ -102,7 +102,7 @@ public class FileList extends XNATCatalogTemplate {
                             if (!alreadyAdded.contains(id) && (id.toString().equals(resourceID) || (label != null && label.equals(resourceID)))) {
                                 XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(id, user, false);
                                 if (row.length == 7) res.setBaseURI((String) row[6]);
-                                if(Permissions.canReadProject(user,proj.getId())) {
+                                if(proj==null || Permissions.canReadProject(user,proj.getId())) {
                                     resources.add(res);
                                     alreadyAdded.add(id);
                                 }
@@ -143,7 +143,7 @@ public class FileList extends XNATCatalogTemplate {
                             }catch(Exception e){
                                 logger.error("Error getting assessor object to check permissions.", e);
                             }
-                            if(Permissions.canReadProject(user,proj.getId()) && (assessorObject==null || Permissions.canRead(user,assessorObject))) {
+                            if((proj==null || Permissions.canReadProject(user,proj.getId())) && (assessorObject==null || Permissions.canRead(user,assessorObject))) {
                                 resources.add(res);
                             }
                         }
@@ -242,7 +242,7 @@ public class FileList extends XNATCatalogTemplate {
                     XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(o, getUser(), false);
                     if (rowHash.containsKey("resource_path")) res.setBaseURI((String) rowHash.get("resource_path"));
                     try{
-                        if(Permissions.canReadProject(getUser(),proj.getId())){
+                        if(proj==null || Permissions.canReadProject(getUser(),proj.getId())){
                             resources.add(res);
                         }
                     }catch(Exception e){

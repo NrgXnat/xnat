@@ -48,12 +48,14 @@ public class RefreshGuestUser implements Runnable {
                 if(proj!=null){
                     projectId = proj.toString();
                 }
-                final EventMetaI c = EventUtils.ADMIN_EVENT(guest);
+                if(Permissions.canReadProject(guest, projectId)) {
+                    final EventMetaI c = EventUtils.ADMIN_EVENT(guest);
 
-                for (ElementSecurity es : securedElements) {
-                    if (es!=null && es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
-                        Permissions.setPermissions(guest, AdminUtils.getAdminUser(), es.getElementName(), es.getElementName() + "/project", projectId, false, true, false, false, true, true, c);
-                        Permissions.setPermissions(guest, AdminUtils.getAdminUser(), es.getElementName(), es.getElementName() + "/sharing/share/project", projectId, false, false, false, false, false, true, c);
+                    for (ElementSecurity es : securedElements) {
+                        if (es != null && es.hasField(es.getElementName() + "/project") && es.hasField(es.getElementName() + "/sharing/share/project")) {
+                            Permissions.setPermissions(guest, AdminUtils.getAdminUser(), es.getElementName(), es.getElementName() + "/project", projectId, false, true, false, false, true, true, c);
+                            Permissions.setPermissions(guest, AdminUtils.getAdminUser(), es.getElementName(), es.getElementName() + "/sharing/share/project", projectId, false, false, false, false, false, true, c);
+                        }
                     }
                 }
             }

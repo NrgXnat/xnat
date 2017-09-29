@@ -360,6 +360,8 @@ dependencies {
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"
 
+    compileOnly "org.projectlombok:lombok"
+
     providedCompile "javax.servlet:javax.servlet-api"
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",

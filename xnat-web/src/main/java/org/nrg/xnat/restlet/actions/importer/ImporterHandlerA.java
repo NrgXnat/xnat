@@ -66,10 +66,10 @@ public abstract class ImporterHandlerA extends StatusProducer implements Callabl
     public static final String SESSION_IMPORTER       = "SI";
     public static final String XAR_IMPORTER           = "XAR";
     public static final String GRADUAL_DICOM_IMPORTER = "gradual-DICOM";
-    public static final String DICOM_INBOX_IMPORTER   = "DICOM-inbox";
+    public static final String DICOM_INBOX_IMPORTER   = "inbox";
     public static final String DICOM_ZIP_IMPORTER     = "DICOM-zip";
 
-    private final static Map<String, Class<? extends ImporterHandlerA>> IMPORTERS       = new HashMap<>();
+    private final static Map<String, Class<? extends ImporterHandlerA>> IMPORTERS = new HashMap<>();
 
     private static final String   PROP_OBJECT_IDENTIFIER = "org.nrg.import.handler.impl";
     private static final String   IMPORTER_PROPERTIES    = "importer.properties";
@@ -123,9 +123,9 @@ public abstract class ImporterHandlerA extends StatusProducer implements Callabl
             throw new ImporterNotFoundException("Unknown importer implementation specified: " + format, new IllegalArgumentException());
         }
 
-        final Constructor constructor = importerImpl.getConstructor(Object.class, UserI.class, FileWriterWrapperI.class, Map.class);
-        final ImporterHandlerA handler = (ImporterHandlerA) constructor.newInstance(uID, u, fi, params);
-        final ContextService context = XDAT.getContextService();
+        final Constructor      constructor = importerImpl.getConstructor(Object.class, UserI.class, FileWriterWrapperI.class, Map.class);
+        final ImporterHandlerA handler     = (ImporterHandlerA) constructor.newInstance(uID, u, fi, params);
+        final ContextService   context     = XDAT.getContextService();
 
         final DicomFileNamer namer = context.getBeanSafely("dicomFileNamer", DicomFileNamer.class);
         if (namer == null) {

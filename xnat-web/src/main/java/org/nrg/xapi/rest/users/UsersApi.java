@@ -910,55 +910,26 @@ public class UsersApi extends AbstractXapiRestController {
     @ApiOperation(value = "Returns list of projects that user has edit access.", notes = "Returns list of projects that user has edit access.", response = String.class, responseContainer = "List")
     @XapiRequestMapping(value = "projects", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = User)
     public ResponseEntity<Collection<String>> getProjectsByUser() {
-    	UserI user = null;
-    	try {
-        	user = getUserManagementService().getUser(getSessionUser().getUsername());
-        	final Collection<String> prj = Lists.newArrayList();
-            if (user == null) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-            if (user.getID().equals(Users.getGuest().getID())) {
-                return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
-            }
+        final String username = getSessionUser().getUsername();
+        try {
+            final UserI user = getUserManagementService().getUser(username);
+            final Collection<String> projects = new ArrayList<>();
             try {
-                ArrayList<XnatProjectdata> projects=XnatProjectdata.getAllXnatProjectdatas(user, false);
-                Iterator<XnatProjectdata> iter=projects.iterator();
-                XnatProjectdata x=null;
-                while(iter.hasNext())
-                {
-                	x=iter.next();
-                	if(canEditProject(x.getId()))
-                		prj.add(x.getProject());
+                for (final XnatProjectdata project : XnatProjectdata.getAllXnatProjectdatas(user, false)) {
+                    if(project.canEdit(user)) {
+                        projects.add(project.getProject());
+                    }
                 }
             } catch (Exception e) {
-                _log.error("Error occurred while getting projects for  user " + user.getLogin() + ".");
+                _log.error("Error occurred while getting projects for  user {}.", username);
             }
-            return new ResponseEntity<>(prj,HttpStatus.OK);
+            return new ResponseEntity<>(projects,HttpStatus.OK);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + user.getUsername(), e);
+            _log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-    }
-    
-    /**
-     * Can edit project.
-     *
-     * @param projectId the project id
-     * @return the boolean
-     * @throws Exception the exception
-     */
-    protected Boolean canEditProject(final String projectId) throws Exception {
-        final UserI user = getSessionUser();
-        final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
-        if (project == null) {
-           return false;
-        }
-        if (!project.canEdit(user)) {
-            return false;
-        }
-        return true;
     }
 
     @SuppressWarnings("unused")

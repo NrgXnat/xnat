@@ -405,10 +405,9 @@ public class ScriptTriggerResource extends AutomationResource {
 					"This function currently only supports " + MediaType.APPLICATION_JSON);
 		}
 
-		// final Properties properties;
 		ImportEventHandlerResults results = new ImportEventHandlerResults();
 		try {
-			results = results.getObjectFromJSON(entity.getText());
+			results=getSerializer().deserializeJson(entity.getText(), ImportEventHandlerResults.class);
 		} catch (IOException e) {
 			throw new ServerException(Status.SERVER_ERROR_INTERNAL,
 					"An error occurred processing the script properties", e);
@@ -417,8 +416,8 @@ public class ScriptTriggerResource extends AutomationResource {
 		/**
 		 * Add all the selected event handlers from source project to target project.
 		 */
-		for (int i = 0; i < results.getJsonResults().length; i++) {
-			addEventHandler(results.getJsonResults()[i], triggerIdMap);
+		for (int i = 0; i < results.getEventHandlers().length; i++) {
+			addEventHandler(results.getEventHandlers()[i], triggerIdMap);
 		}
 		/**
 		 * This block of code will check if the selected events have custom

@@ -1,8 +1,5 @@
 package org.nrg.xnat.event.util;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 /**
  * The Class ImportEventHandlerResults.
  */
@@ -50,7 +47,7 @@ public class ImportEventHandlerResults {
 	/**
 	 * @return the arr
 	 */
-	public JsonResults[] getJsonResults() {
+	public JsonResults[] getEventHandlers() {
 		return eventHandlers;
 	}
 
@@ -58,19 +55,7 @@ public class ImportEventHandlerResults {
 	 * @param arr
 	 *            the arr to set
 	 */
-	public void setArr(JsonResults[] eventHandlers) {
+	public void setEventHandlers(JsonResults[] eventHandlers) {
 		this.eventHandlers = eventHandlers;
-	}
-
-	/**
-	 * Gets the object from JSON.
-	 *
-	 * @param jsonString the json string
-	 * @return the object from JSON
-	 */
-	public ImportEventHandlerResults getObjectFromJSON(String jsonString) {
-		final GsonBuilder builder = new GsonBuilder().serializeNulls();
-		final Gson gson = builder.create();
-		return gson.fromJson(jsonString, ImportEventHandlerResults.class);
 	}
 }

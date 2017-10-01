@@ -9,21 +9,18 @@
 
 package org.nrg.xnat.archive;
 
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.action.ClientException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.entities.DicomInboxImportRequest;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xnat.services.system.DicomInboxImportRequestService;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
+import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.restlet.data.Status;
-import org.springframework.jms.core.JmsTemplate;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -59,7 +56,6 @@ public final class DicomInboxImporter extends ImporterHandlerA {
         }
 
         _service = XDAT.getContextService().getBean(DicomInboxImportRequestService.class);
-        _jmsTemplate = XDAT.getContextService().getBean(JmsTemplate.class);
         _user = user;
         _parameters = parameters;
     }
@@ -72,20 +68,12 @@ public final class DicomInboxImporter extends ImporterHandlerA {
      */
     @Override
     public List<String> call() {
-        /*
         final DicomInboxImportRequest request = DicomInboxImportRequest.builder()
                                                                        .username(_user.getUsername())
                                                                        .sessionPath(_sessionPath.getAbsolutePath())
-                                                                       .parameters(Maps.transformEntries(_parameters, TRANSFORMER))
                                                                        .build();
-        */
-        final DicomInboxImportRequest request = new DicomInboxImportRequest();
-        request.setUsername(_user.getUsername());
-        request.setSessionPath(_sessionPath.getAbsolutePath());
-        request.setParameters(Maps.transformEntries(_parameters, TRANSFORMER));
-        _service.create(request);
-
-        XDAT.sendJmsRequest(_jmsTemplate, request);
+        request.setParametersFromObjectMap(_parameters);
+        XDAT.sendJmsRequest(_service.create(request));
 
         log.info("Created and queued import request {} for the inbox session located at {}.", request.getId(), _sessionPath.getAbsolutePath());
         try {
@@ -96,15 +84,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
         }
     }
 
-    private static final Maps.EntryTransformer<String, Object, String> TRANSFORMER = new Maps.EntryTransformer<String, Object, String>() {
-        @Override
-        public String transformEntry(@Nullable final String key, @Nullable final Object value) {
-            return value == null ? "" : value.toString();
-        }
-    };
-
     private final DicomInboxImportRequestService _service;
-    private final JmsTemplate                    _jmsTemplate;
     private final UserI                          _user;
     private final Map<String, Object>            _parameters;
     private final File                           _sessionPath;

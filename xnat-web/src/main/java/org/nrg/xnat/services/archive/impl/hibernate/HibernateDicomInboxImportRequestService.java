@@ -10,27 +10,26 @@
 /*
  * 
  */
-package org.nrg.xnat.services.system.impl.hibernate;
+package org.nrg.xnat.services.archive.impl.hibernate;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.xnat.daos.DicomInboxImportRequestDAO;
-import org.nrg.xnat.entities.DicomInboxImportRequest;
-import org.nrg.xnat.entities.DicomInboxImportRequest.Status;
-import org.nrg.xnat.services.system.DicomInboxImportRequestService;
+import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
+import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static org.nrg.xnat.entities.DicomInboxImportRequest.Status.*;
+import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.*;
 
 /**
  * {@inheritDoc}
  */
 @Slf4j
 @Transactional
-@Service
+@Service("dicomInboxImportRequestService")
 public class HibernateDicomInboxImportRequestService extends AbstractHibernateEntityService<DicomInboxImportRequest, DicomInboxImportRequestDAO> implements DicomInboxImportRequestService {
     @Override
     public List<DicomInboxImportRequest> getOutstandingDicomInboxImportRequests() {

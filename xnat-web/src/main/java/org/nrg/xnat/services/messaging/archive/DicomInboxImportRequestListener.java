@@ -7,10 +7,9 @@
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xnat.archive;
+package org.nrg.xnat.services.messaging.archive;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -20,12 +19,13 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.entities.DicomInboxImportRequest;
+import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
-import org.nrg.xnat.services.system.DicomInboxImportRequestService;
+import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -42,15 +42,35 @@ public final class DicomInboxImportRequestListener {
         _service = service;
     }
 
+    /**
+     * On request.
+     *
+     * @param request the request
+     */
+    @JmsListener(destination = "dicom-inbox-import-requests")
+    public void onRequest(final DicomInboxImportRequest request) throws UserNotFoundException, UserInitException, ClientException, ConfigServiceException, ServerException {
+        final UserI user = Users.getUser(request.getUsername());
+        _service.setToAccepted(request);
+        final List<String> uris = new DicomInboxImportRequestImporter(user, _service, request).call();
+        if (log.isDebugEnabled()) {
+            final StringBuilder message = new StringBuilder("Processed ").append(uris.size()).append(" URIs:\n");
+            for (final String uri : uris) {
+                message.append(" * ").append(uri).append("\n");
+            }
+            log.debug(message.toString());
+        }
+        _service.setToCompleted(request);
+    }
+
     @Slf4j
     private static class DicomInboxImportRequestImporter extends ImporterHandlerA implements FileVisitor<Path> {
-        public DicomInboxImportRequestImporter(final UserI user, final DicomInboxImportRequestService service, final DicomInboxImportRequest request) throws ClientException, ConfigServiceException {
+        DicomInboxImportRequestImporter(final UserI user, final DicomInboxImportRequestService service, final DicomInboxImportRequest request) throws ClientException, ConfigServiceException {
             super(null, user);
 
             _service = service;
             _request = request;
             _user = user;
-            _parameters = Maps.transformEntries(request.getParameters(), TRANSFORMER);
+            _parameters = request.getObjectParametersMap();
 
             final boolean hasSessionParameter = _parameters.containsKey("session");
             final boolean hasPathParameter    = _parameters.containsKey("path");
@@ -129,14 +149,6 @@ public final class DicomInboxImportRequestListener {
             return FileVisitResult.CONTINUE;
         }
 
-        private static final Maps.EntryTransformer<String, String, Object> TRANSFORMER = new Maps.EntryTransformer<String, String, Object>() {
-            @Override
-            public Object transformEntry(final String key, final String value) {
-                return value == null ? "" : value;
-            }
-        };
-
-
         private static final Set<FileVisitOption> WALKER_OPTIONS = ImmutableSet.of(FileVisitOption.FOLLOW_LINKS);
 
         private final Set<String> _folderUris = new LinkedHashSet<>();
@@ -147,19 +159,6 @@ public final class DicomInboxImportRequestListener {
         private final UserI                          _user;
         private final Map<String, Object>            _parameters;
         private final File                           _sessionPath;
-    }
-
-    /**
-     * On request.
-     *
-     * @param request the request
-     */
-    @SuppressWarnings("unused")
-    public void onRequest(final DicomInboxImportRequest request) throws UserNotFoundException, UserInitException, ClientException, ConfigServiceException, ServerException {
-        final UserI user = Users.getUser(request.getUsername());
-        _service.setToAccepted(request);
-        final List<String> uris = new DicomInboxImportRequestImporter(user, _service, request).call();
-        _service.setToCompleted(request);
     }
 
     private final DicomInboxImportRequestService _service;

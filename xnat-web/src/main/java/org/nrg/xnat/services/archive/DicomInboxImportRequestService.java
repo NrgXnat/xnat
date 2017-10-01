@@ -1,7 +1,7 @@
-package org.nrg.xnat.services.system;
+package org.nrg.xnat.services.archive;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
-import org.nrg.xnat.entities.DicomInboxImportRequest;
+import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 
 import java.util.List;
 

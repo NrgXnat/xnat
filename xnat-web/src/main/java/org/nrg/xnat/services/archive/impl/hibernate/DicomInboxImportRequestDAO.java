@@ -7,19 +7,19 @@
  * Released under the Simplified BSD.
  */
 
-package org.nrg.xnat.daos;
+package org.nrg.xnat.services.archive.impl.hibernate;
 
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
-import org.nrg.xnat.entities.DicomInboxImportRequest;
+import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.springframework.stereotype.Repository;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.nrg.xnat.entities.DicomInboxImportRequest.Status.Completed;
-import static org.nrg.xnat.entities.DicomInboxImportRequest.Status.Failed;
+import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.Completed;
+import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.Failed;
 
 @Repository
 public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxImportRequest> {

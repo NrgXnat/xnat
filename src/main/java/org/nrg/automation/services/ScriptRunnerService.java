@@ -90,7 +90,7 @@ public interface ScriptRunnerService extends NrgService {
      * @param filterMap the filter map
      * @return the script
      */
-    Script getScript(final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,String> filterMap);
+    List<Script> getScript(final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,String> filterMap);
 
     /**
      * Gets all scripts registered on the system

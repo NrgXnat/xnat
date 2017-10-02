@@ -226,7 +226,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * otherwise.
      */
     @Override
-    public Script getScript(final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,String> filterMap) {
+    public List<Script> getScript(final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,String> filterMap) {
+    	List<Script> scripts=new ArrayList<Script>();
         final List<ScriptTrigger> triggers = _triggerService.getByScopeEntityAndEvent(scope, entityId, eventClass, event);
         ScriptTrigger trigger = null;
         if (triggers != null) {
@@ -244,23 +245,22 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         			}
   				}
         		trigger = currTrigger;
+    	        final Script script = _scriptService.getByScriptId(trigger.getScriptId());
+    	        if(script!=null)
+    	        {
+    	        	 scripts.add(script);
+    	        }
+    	        if (_log.isDebugEnabled()) {
+    	            if (script == null) {
+    	                _log.debug("Found no script associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", scope, entityId, eventClass, event, filterMap);
+    	            } else {
+    	                _log.debug("Found script {} associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", script.getScriptId(), scope, entityId, eventClass, event, filterMap);
+    	               
+    	            }
+    	        }
         	}
         }
-        if (trigger == null) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Found no script triggers associated with scope {}, entity ID {}, event class {}, event {} and filters {}.", scope, entityId, eventClass, event, filterMap);
-            }
-            return null;
-        }
-        final Script script = _scriptService.getByScriptId(trigger.getScriptId());
-        if (_log.isDebugEnabled()) {
-            if (script == null) {
-                _log.debug("Found no script associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", scope, entityId, eventClass, event, filterMap);
-            } else {
-                _log.debug("Found script {} associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", script.getScriptId(), scope, entityId, eventClass, event, filterMap);
-            }
-        }
-        return script;
+        return scripts;
     }
 
     /**

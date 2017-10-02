@@ -4,10 +4,7 @@ import lombok.*;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,6 +48,9 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
     @NonNull
     @Builder.Default
     private Status status = Queued;
+
+    @Column(length = 4096)
+    private String resolution;
 
     // Must provide the public getParameters() method explicitly (i.e. without Lombok) in order for Hibernate
     // to properly determine the type of the parameters map.

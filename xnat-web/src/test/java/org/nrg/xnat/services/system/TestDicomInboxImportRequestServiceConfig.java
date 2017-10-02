@@ -28,7 +28,7 @@ import java.util.Map;
 
 @Configuration
 @Import({OrmTestConfiguration.class, FrameworkConfig.class})
-@TestPropertySource(properties = "xnat.home=${java.io.tmpdir}")
+@TestPropertySource(locations= "classpath:/test.properties")
 public class TestDicomInboxImportRequestServiceConfig {
     @Bean
     public DicomInboxImportRequestDAO dicomInboxImportRequestDAO() {

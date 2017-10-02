@@ -13,6 +13,8 @@
 package org.nrg.xnat.services.archive.impl.hibernate;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status;
@@ -65,7 +67,24 @@ public class HibernateDicomInboxImportRequestService extends AbstractHibernateEn
     }
 
     @Override
-    public void setToCompleted(final DicomInboxImportRequest request) {
-        setStatus(request, Completed);
+    public void complete(final DicomInboxImportRequest request) {
+        complete(request, null);
+    }
+
+    @Override
+    public void complete(final DicomInboxImportRequest request, final String message) {
+        request.setStatus(Completed);
+        request.setResolution(StringUtils.defaultIfBlank(message, ""));
+        update(request);
+    }
+
+    @Override
+    public void fail(final DicomInboxImportRequest request, final String message) {
+        if (StringUtils.isBlank(message)) {
+            throw new NrgServiceRuntimeException("No message set for failure of request, you must provide a reason for failures!");
+        }
+        request.setStatus(Failed);
+        request.setResolution(message);
+        update(request);
     }
 }

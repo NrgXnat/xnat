@@ -62,7 +62,7 @@ public class TestDicomInboxImportRequestService {
         assertThat(processed.getStatus()).isEqualTo(Processed);
         assertThat(processed).isEqualToIgnoringGivenFields(request, "_created", "_timestamp", "_disabled");
 
-        _service.setToCompleted(request);
+        _service.complete(request);
 
         final DicomInboxImportRequest completed = _service.get(request.getId());
 

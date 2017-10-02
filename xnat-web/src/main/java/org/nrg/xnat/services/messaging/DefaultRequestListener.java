@@ -9,15 +9,15 @@
 
 package org.nrg.xnat.services.messaging;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
 
+@Slf4j
+@Component
 public class DefaultRequestListener {
-    public void onRequest(final Object request) throws Exception {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Just received a request of type: " + request.getClass().getName());
-        }
+    @JmsListener(destination = "default")
+    public void onRequest(final Object request) {
+        log.warn("The default request listener received a request of type: {}. I don't know what to do with this. Please check your JMS/queuing configuration.", request.getClass().getName());
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(DefaultRequestListener.class);
 }

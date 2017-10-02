@@ -14,6 +14,7 @@ import org.nrg.action.ClientException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
@@ -47,12 +48,17 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 
         final String parameter = String.valueOf(parameters.get(hasSessionParameter ? "session" : "path"));
         _sessionPath = (hasSessionParameter ? Paths.get(XDAT.getSiteConfigurationProperty("inboxPath"), parameter) : Paths.get(parameter)).toFile();
-
         if (!_sessionPath.exists()) {
             throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No session folder was found at the specified " + (hasSessionParameter ? "inbox location " : "path: ") + parameter);
         }
         if (!_sessionPath.isDirectory()) {
             throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "The location specified by the specified " + (hasSessionParameter ? "inbox location" : "path") + " must be a folder: " + parameter);
+        }
+
+        // If the call specifies an experiment label...
+        if (parameters.containsKey(URIManager.EXPT_LABEL)) {
+            // Remove the session parameter so that it doesn't cause the final imported session to be renamed.
+            parameters.remove("session");
         }
 
         _service = XDAT.getContextService().getBean(DicomInboxImportRequestService.class);

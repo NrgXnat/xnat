@@ -82,10 +82,10 @@
         <nrg.dicom-edit4.version>1.0.1-SNAPSHOT</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>1.0.1-SNAPSHOT</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.0.2</nrg.ecat.version>
-        <nrg.extattr.version>4.2.2</nrg.extattr.version>
+        <nrg.ecat.version>1.0.3</nrg.ecat.version>
+        <nrg.extattr.version>4.2.3</nrg.extattr.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
         <pipelinedev.version>${xnatdev.version}</pipelinedev.version>

@@ -15,7 +15,6 @@
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
         <version>1.7.4-SNAPSHOT</version>
-        <relativePath/>
     </parent>
 
     <artifactId>automation</artifactId>

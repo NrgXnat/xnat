@@ -14,12 +14,11 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.3</version>
-        <relativePath/>
+        <version>1.7.4</version>
     </parent>
 
     <artifactId>ExtAttr</artifactId>
-    <version>4.2.2</version>
+    <version>4.2.3</version>
 
     <name>External Attribute library</name>
     <description>

@@ -10,12 +10,9 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.dcm.DicomFileNamer;
-import org.nrg.dcm.DicomSCPManager;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
 import org.nrg.dcm.id.TemplatizedDicomFileNamer;
-import org.nrg.dcm.preferences.DicomSCPPreference;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.utils.XnatUserProvider;
@@ -28,7 +25,7 @@ import org.springframework.context.annotation.Primary;
 import java.util.*;
 
 @Configuration
-@ComponentScan({"org.nrg.dcm.preferences", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl"})
+@ComponentScan({"org.nrg.dcm.scp", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl"})
 public class DicomImportConfig {
     @Bean
     @Primary
@@ -40,11 +37,6 @@ public class DicomImportConfig {
     @Bean
     public DicomFileNamer dicomFileNamer() throws Exception {
         return new TemplatizedDicomFileNamer("${StudyInstanceUID}-${SeriesNumber}-${InstanceNumber}-${HashSOPClassUIDWithSOPInstanceUID}");
-    }
-
-    @Bean
-    public DicomSCPManager dicomSCPManager(final DicomSCPPreference dicomScpPreferences, final SiteConfigPreferences siteConfigPreferences, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) throws Exception {
-        return new DicomSCPManager(dicomScpPreferences, siteConfigPreferences, primaryDicomObjectIdentifier, dicomObjectIdentifiers);
     }
 
     @Bean

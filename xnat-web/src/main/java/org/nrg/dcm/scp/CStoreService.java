@@ -1,5 +1,5 @@
 /*
- * web: org.nrg.dcm.CStoreService
+ * web: org.nrg.dcm.scp.CStoreService
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
@@ -7,7 +7,7 @@
  * Released under the Simplified BSD.
  */
 
-package org.nrg.dcm;
+package org.nrg.dcm.scp;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +27,7 @@ import org.dcm4che2.net.service.CStoreSCP;
 import org.dcm4che2.net.service.DicomService;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.dcm.DicomFileNamer;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;

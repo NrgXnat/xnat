@@ -58,6 +58,11 @@ public class XnatTaskServiceImpl implements XnatTaskService {
 			if (taskAnno != null) {
 				return resolver.shouldRunTask(taskAnno.taskId());
 			}
+		} else {
+			final Class<?> sClazz = clazz.getSuperclass();
+			if (sClazz!=null) {
+				return shouldRunTask(sClazz);
+			}
 		}
 		// Default to run on node when not (correctly) configured.
 		_log.warn("The shouldRunTask method for the task (CLASS=?) was not able to match any configuration.  The task will be run.", clazz.getName());
@@ -74,6 +79,11 @@ public class XnatTaskServiceImpl implements XnatTaskService {
 		if (taskAnno != null) {
 			final String taskId = taskAnno.taskId();
 			_taskInfoService.recordTaskRun(_xnatNode, taskId);
+		} else {
+			final Class<?> sClazz = clazz.getSuperclass();
+			if (sClazz != null ) {
+				recordTaskRun(sClazz);
+			}
 		}
 	}
 
@@ -103,7 +113,7 @@ public class XnatTaskServiceImpl implements XnatTaskService {
 					return resolver;
 				}
 			}
-		}
+		} 
 		_log.warn("Invalid XnatTaskExecutionResolver configuration for task (CLASS=?).");
 		return null;
 	}
@@ -134,7 +144,7 @@ public class XnatTaskServiceImpl implements XnatTaskService {
 					return getConfigurationYamlWithResolverConfig(taskAnno, _executionResolvers, resolver, resolver.getConfigurationElementsYaml(taskId));
 				}
 			}
-		}
+		} 
 		_log.warn("Invalid XnatTaskExecutionResolver configuration for task (CLASS=?).");
 		return null;
 	}

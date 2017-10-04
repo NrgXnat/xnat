@@ -28,6 +28,7 @@ import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -107,7 +108,14 @@ public class CatalogApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "download", restrictTo = Read, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<String> createDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @RequestBody @ProjectId final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
-        final UserI user = getSessionUser();
+        UserI user = getSessionUser();
+        if(user==null){
+            try{
+                user=Users.getGuest();
+            }catch(Exception e){
+                _log.error("Cannot create download catalog for null user.",e);
+            }
+        }
 
         final boolean hasProjectId = resources.containsKey("projectId");
         final boolean hasProjectIds = resources.containsKey("projectIds");
@@ -140,7 +148,14 @@ public class CatalogApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "download/{catalogId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<CatCatalogI> getDownloadSessionsCatalog(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
-        final UserI user = getSessionUser();
+        UserI user = getSessionUser();
+        if(user==null){
+            try{
+                user=Users.getGuest();
+            }catch(Exception e){
+                _log.error("Cannot build catalog for null user.",e);
+            }
+        }
 
         _log.info("User {} requested download catalog {}", user.getUsername(), catalogId);
         final CatCatalogI catalog = _service.getCachedCatalog(user, catalogId);
@@ -160,7 +175,14 @@ public class CatalogApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "download/{catalogId}/xml", produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalogXml(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException, IOException, NrgServiceException {
-        final UserI user = getSessionUser();
+        UserI user = getSessionUser();
+        if(user==null){
+            try{
+                user=Users.getGuest();
+            }catch(Exception e){
+                _log.error("Cannot build catalog for null user.",e);
+            }
+        }
 
         _log.info("User {} requested download catalog: {}", catalogId);
         final CatCatalogI catalog = _service.getCachedCatalog(user, catalogId);
@@ -207,8 +229,14 @@ public class CatalogApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "download/{catalogId}/zip", produces = ZipStreamingResponseBody.MEDIA_TYPE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZip(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, IOException {
-        final UserI user = getSessionUser();
-
+        UserI user = getSessionUser();
+        if(user==null){
+            try{
+                user=Users.getGuest();
+            }catch(Exception e){
+                _log.error("Cannot build catalog for null user.",e);
+            }
+        }
         if (StringUtils.isBlank(catalogId)) {
             throw new NoContentException("There was no catalog specified in the request.");
         }
@@ -232,7 +260,14 @@ public class CatalogApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "download/{catalogId}/test", produces = ZipStreamingResponseBody.MEDIA_TYPE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZipTest(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, IOException {
-        final UserI user = getSessionUser();
+        UserI user = getSessionUser();
+        if(user==null){
+            try{
+                user=Users.getGuest();
+            }catch(Exception e){
+                _log.error("Cannot build catalog for null user.",e);
+            }
+        }
 
         if (StringUtils.isBlank(catalogId)) {
             throw new NoContentException("There was no catalog specified in the request.");

@@ -27,6 +27,7 @@ import org.nrg.xdat.bean.CatEntryMetafieldBean;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
@@ -61,6 +62,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -99,8 +102,10 @@ public class FileList extends XNATCatalogTemplate {
                             if (!alreadyAdded.contains(id) && (id.toString().equals(resourceID) || (label != null && label.equals(resourceID)))) {
                                 XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(id, user, false);
                                 if (row.length == 7) res.setBaseURI((String) row[6]);
-                                resources.add(res);
-                                alreadyAdded.add(id);
+                                if(proj==null || Permissions.canReadProject(user,proj.getId())) {
+                                    resources.add(res);
+                                    alreadyAdded.add(id);
+                                }
                             }
                         }
                     }
@@ -115,7 +120,32 @@ public class FileList extends XNATCatalogTemplate {
                         Integer id = Integer.parseInt(resourceID);
                         XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(id, user, false);
                         if (res != null && !alreadyAdded.contains(id)) {
-                            resources.add(res);
+
+                            XnatImageassessordata assessorObject = null;
+                            try {
+                                Matcher m = Pattern.compile("\\/[aA][sS][sS][eE][sS][sS][oO][rR][sS]\\/([^\\/]+)").matcher(((XnatResourcecatalog) res).getUri());
+                                if (m != null && m.find()) {
+                                    String assessorId = m.group(1);
+                                    if (StringUtils.isNotBlank(assessorId)) {
+                                        assessorObject = (XnatImageassessordata) XnatExperimentdata.getXnatExperimentdatasById(assessorId, AdminUtils.getAdminUser(), false);
+
+                                        if (assessorObject == null) {
+                                            Matcher m2 = Pattern.compile("\\/[aA][rR][cC][hH][iI][vV][eE]\\/([^\\/]+)").matcher(((XnatResourcecatalog) res).getUri());
+                                            if (m2 != null && m2.find()) {
+                                                String projectString = m2.group(1);
+                                                assessorObject = (XnatImageassessordata) XnatExperimentdata.GetExptByProjectIdentifier(projectString, assessorId, AdminUtils.getAdminUser(), false);
+                                            }
+                                        }
+
+                                    }
+
+                                }
+                            }catch(Exception e){
+                                logger.error("Error getting assessor object to check permissions.", e);
+                            }
+                            if((proj==null || Permissions.canReadProject(user,proj.getId())) && (assessorObject==null || Permissions.canRead(user,assessorObject))) {
+                                resources.add(res);
+                            }
                         }
                     } catch (NumberFormatException e) {
                         // ignore... this is probably a resource label
@@ -211,7 +241,13 @@ public class FileList extends XNATCatalogTemplate {
                     Object o = rowHash.get("xnat_abstractresource_id");
                     XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(o, getUser(), false);
                     if (rowHash.containsKey("resource_path")) res.setBaseURI((String) rowHash.get("resource_path"));
-                    resources.add(res);
+                    try{
+                        if(proj==null || Permissions.canReadProject(getUser(),proj.getId())){
+                            resources.add(res);
+                        }
+                    }catch(Exception e){
+                        logger.error("Exception checking whether user has project access.",e);
+                    }
                 }
 
                 return handleMultipleCatalogs(mt);

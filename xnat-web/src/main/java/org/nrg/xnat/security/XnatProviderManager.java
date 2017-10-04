@@ -22,6 +22,8 @@ import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -356,7 +358,12 @@ public class XnatProviderManager extends ProviderManager {
                             if (ua.getFailedLoginAttempts().equals(XDAT.getSiteConfigPreferences().getMaxFailedLogins())) {
                                 String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), 1000 * (int) SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
                                 _log.info("Locked out " + ua.getXdatUsername() + " user account until " + expiration);
-                                AdminUtils.sendAdminEmail(ua.getXdatUsername() + " account temporarily disabled.", "User " + ua.getXdatUsername() + " has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at " + expiration + ".");
+                                if(Roles.isSiteAdmin(new XDATUser(ua.getXdatUsername()))){
+                                    AdminUtils.emailAllAdmins(ua.getXdatUsername() + " account temporarily disabled. This is an admin account.", "User " + ua.getXdatUsername() + " has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at " + expiration + ".");
+                                }
+                                else{
+                                    AdminUtils.sendAdminEmail(ua.getXdatUsername() + " account temporarily disabled.", "User " + ua.getXdatUsername() + " has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at " + expiration + ".");
+                                }
                             }
                         } catch (Exception e) {
                             //ignore
@@ -371,6 +378,7 @@ public class XnatProviderManager extends ProviderManager {
                 XdatUserAuth ua = _manager.getUserByAuth(auth);
                 if (ua != null) {
                     ua.setFailedLoginAttempts(0);
+                    ua.setLockoutTime(null);
                     XDAT.getXdatUserAuthService().update(ua);
                 }
             }

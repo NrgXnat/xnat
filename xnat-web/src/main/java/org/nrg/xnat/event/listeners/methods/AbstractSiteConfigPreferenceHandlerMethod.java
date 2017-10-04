@@ -16,6 +16,7 @@ import org.nrg.xnat.utils.XnatUserProvider;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractSiteConfigPreferenceHandlerMethod extends AbstractPreferenceHandlerMethod {
     protected AbstractSiteConfigPreferenceHandlerMethod() {
@@ -25,6 +26,15 @@ public abstract class AbstractSiteConfigPreferenceHandlerMethod extends Abstract
     protected AbstractSiteConfigPreferenceHandlerMethod(final XnatUserProvider userProvider) {
         _userProvider = userProvider;
     }
+
+    @Override
+    public abstract List<String> getHandledPreferences();
+
+    @Override
+    public abstract void handlePreferences(final Map<String, String> values);
+
+    @Override
+    public abstract void handlePreference(final String preference, final String value);
 
     @Override
     public List<String> getToolIds() {

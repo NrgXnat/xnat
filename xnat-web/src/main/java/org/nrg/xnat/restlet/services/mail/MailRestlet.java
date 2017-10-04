@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class MailRestlet extends SecureResource {
     private static final String PARAM_BCC     = "bcc";
@@ -70,6 +71,11 @@ public class MailRestlet extends SecureResource {
             if (!extractParameters(entity)) {
                 _log.warn("I was unable to properly parse an incoming request, check the logs for more information, returning: " + Status.CLIENT_ERROR_BAD_REQUEST);
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+                return;
+            }
+            if(!isFromValidIp()){
+                _log.error("IP blocked from sending email, check the logs for more information, returning: " + Status.CLIENT_ERROR_FORBIDDEN);
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
                 return;
             }
 
@@ -275,6 +281,22 @@ public class MailRestlet extends SecureResource {
             message.append(String.format(FORMAT_ISSUE, error));
         }
         return message.toString();
+    }
+
+    private boolean isFromValidIp(){
+        try {
+            String ipRegExp = XDAT.getSiteConfigPreferences().getIpsThatCanSendEmailsThroughRest();
+            if (StringUtils.isNotBlank(ipRegExp) && !StringUtils.equals(ipRegExp, "^.*$")) {
+                return Pattern.matches(ipRegExp, this.getRequest().getClientInfo().getAddress());
+            }
+            else{
+                return true;
+            }
+        }
+        catch(Exception e){
+            _log.error("Exception checking IP user is trying to send email from.", e);
+            return false;
+        }
     }
 
     private static final String FORMAT_ISSUE = " * %s\n";

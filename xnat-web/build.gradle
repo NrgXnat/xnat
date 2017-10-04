@@ -11,11 +11,10 @@ import org.gradle.internal.jvm.Jvm
 
 buildscript {
     ext {
-        vXnat = '1.7.3.1'
-        vXnatDependencies = '1.7.3'
+        vXnatDev = '1.7.4'
     }
     repositories {
-        // mavenLocal()
+        mavenLocal()
         jcenter()
         mavenCentral()
         maven {
@@ -31,38 +30,17 @@ buildscript {
         }
     }
     dependencies {
-        classpath "com.bmuschko:gradle-cargo-plugin:2.2.2"
-        classpath "com.bmuschko:gradle-tomcat-plugin:2.2.4"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.5.3"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
+        classpath "com.bmuschko:gradle-cargo-plugin:2.2.3"
+        classpath "com.bmuschko:gradle-tomcat-plugin:2.3"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
     }
 }
 
-def vDicomEdit4 = '1.0'
-def vDicomEdit6 = '1.0'
-def vExtAttr = '4.2.2'
-def vXImgView = '1.0.0-SNAPSHOT'
-def vSpring = '4.2.9.RELEASE'
-def vSpringSecurity = '4.0.4.RELEASE'
-def vSwagger = '2.4.0'
-def vHibernate = '4.3.11.Final'
-def vEhcache = '2.6.11'
-def vAspectJ = '1.8.10'
-def vJackson = '2.6.5'
-def vPostgreSQL = '9.4.1209.jre7'
-def vServletApi = '3.1.0'
-def vTomcat = '7.0.68'
-def vCargo = '1.4.18'
-def vSlf4j = '1.7.25'
-def vLog4j = '1.2.17'
-def vJunit = '4.12'
-def vJacoco = '0.7.9'
-def vSaxon = '9.1.0.8'
-def vGroovy = '2.4.7'
-def vJython = '2.7.0'
+group "org.nrg.xnat"
+version = vXnatDev
 
-group 'org.nrg.xnat'
-version = "${vXnat}"
-
+apply plugin: 'io.spring.dependency-management'
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'war'
@@ -76,7 +54,7 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 repositories {
-    // mavenLocal()
+    mavenLocal()
     maven {
         url 'http://dcm4che.org/maven2'
         name 'dcm4che Maven Repository'
@@ -111,13 +89,13 @@ if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
     if (hasProperty("rt.17.jar")) {
         // Solution for bootstrap classpath warning and possible issues with compatibility with 1.7 libraries
         // was taken from this post on discuss.gradle.org: http://bit.ly/24xD9j0
-        def rt17jar = getProperty("rt.17.jar")
+        def rt17jar = property "rt.17.jar"
         logger.info "Using ${rt17jar} as the bootstrap class path jar."
         gradle.projectsEvaluated {
             tasks.withType(JavaCompile) {
                 options.fork = true
                 options.compilerArgs << "-XDignore.symbol.file"
-                options.bootClasspath = rt17jar
+                options.bootClasspath = rt17jar as String
             }
         }
     } else {
@@ -139,147 +117,6 @@ if (hasProperty("archiveName")) {
     war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
 } else {
     war.baseName = "xnat-web"
-}
-
-tomcatRun.contextPath = '/'
-tomcatRunWar.contextPath = '/'
-
-[tomcatRun, tomcatRunWar].each { task ->
-    // TODO: This can be configured with an external folder reference to be used for loading XNAT modules.
-    task.additionalRuntimeResources << file('/Users/rherrick/xnat/config/plugins')
-}
-
-task deployToTomcat(type: Copy, dependsOn: war) {
-    from war.archivePath
-    into "${propertyWithDefault('tomcatHome', '.')}/webapps"
-}
-
-cargo {
-    // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command line in
-    // the form -PdeployPort=8080 -PdeployContext=/ -PdeployHost=localhost -PdeployUser=deploy -PdeployPassword=deploy
-    containerId = 'tomcat7x'
-    port = propertyWithDefault('deployPort', 8080) as int
-
-    deployable {
-        context = propertyWithDefault('deployContext', '/')
-    }
-
-    remote {
-        hostname = propertyWithDefault('deployHost', 'localhost')
-        username = propertyWithDefault('deployUser', 'deploy')
-        password = propertyWithDefault('deployPassword', 'deploy')
-    }
-}
-
-// Pulls in the Jenkins BUILD_NUMBER environment variable if available.
-def buildDate = new Date()
-def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: "Manual"
-def revision = gitVersion().replace("${version}-", "")
-
-logger.info "Git version:            ${gitVersion()}"
-logger.info "Build-Date:             ${buildDate}"
-logger.info "Build-Number:           ${buildNumber}"
-logger.info "Implementation-Sha:     ${revision}"
-logger.info "Implementation-Version: ${version}"
-
-jar {
-    manifest {
-        attributes 'Application-Name': 'XNAT',
-                'Build-Date': buildDate,
-                'Build-Number': buildNumber,
-                'Implementation-Sha': revision,
-                'Implementation-Version': version
-    }
-}
-
-war {
-    manifest {
-        attributes 'Application-Name': 'XNAT',
-                'Build-Date': buildDate,
-                'Build-Number': buildNumber,
-                'Implementation-Sha': revision,
-                'Implementation-Version': version
-    }
-}
-
-jacoco {
-    toolVersion = vJacoco
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.enabled false
-        csv.enabled false
-        html.destination file("${buildDir}/jacocoHtml")
-    }
-}
-
-task sourceJar(type: Jar, dependsOn: classes) {
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    from javadoc.destinationDir
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            artifact sourceJar {
-                classifier "sources"
-            }
-
-            artifact javadocJar {
-                classifier "javadoc"
-            }
-
-            pom.withXml {
-                def root = asNode()
-                root.appendNode('name', 'XNAT Server')
-                root.appendNode('description', 'XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.')
-                root.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
-                root.appendNode('inceptionYear', '2016')
-
-                def scm = root.appendNode('scm')
-                scm.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
-                scm.appendNode('connection', 'scm:https://bitbucket.org/xnatdev/xnat-web.git')
-                scm.appendNode('developerConnection', 'scm:git://bitbucket.org/xnatdev/xnat-web.git')
-
-                def license = root.appendNode('licenses').appendNode('license')
-                license.appendNode('name', 'Simplified BSD 2-Clause License')
-                license.appendNode('url', 'http://xnat.org/about/license.php')
-                license.appendNode('distribution', 'repo')
-
-                def developers = root.appendNode('developers')
-                def rherrick = developers.appendNode('developer')
-                rherrick.appendNode('id', 'rherrick')
-                rherrick.appendNode('name', 'Rick Herrick')
-                rherrick.appendNode('email', 'jrherrick@wustl.edu')
-            }
-        }
-    }
-    repositories {
-        maven {
-            credentials {
-                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
-                // line in the form -PrepoUsername=foo -PrepoPassword=bar.
-                username propertyWithDefault('repoUsername', 'username')
-                password propertyWithDefault('repoPassword', 'password')
-            }
-            if (project.version.endsWith('-SNAPSHOT')) {
-                url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local"
-            } else {
-                url "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
-            }
-        }
-    }
-}
-
-def propertyWithDefault(String property, Object value) {
-    hasProperty(property) ? getProperty(property) : value
 }
 
 configurations {
@@ -345,169 +182,306 @@ configurations {
     all*.exclude module: 'slf4j-simple'
 }
 
+dependencyManagement.imports {
+    mavenBom "org.nrg:parent:${vXnatDev}"
+}
+
 dependencies {
     // NRG dependencies first.
-    compile "org.nrg.xnat:spawner:${vXnatDependencies}"
-    compile("org.nrg.xnat:xnat-data-models:${vXnatDependencies}") {
+    implementation "org.nrg.xnat:spawner"
+    implementation("org.nrg.xnat:xnat-data-models") {
         transitive = false
     }
-    compile "org.nrg.xdat:core:${vXnatDependencies}"
-    compile "org.nrg:framework:${vXnatDependencies}"
-    compile "org.nrg:transaction:${vXnatDependencies}"
-    compile "org.nrg:prefs:${vXnatDependencies}"
-    compile "org.nrg:config:${vXnatDependencies}"
-    compile "org.nrg:automation:${vXnatDependencies}"
-    compile "org.nrg:dicomtools:${vXnatDependencies}"
-    compile "org.nrg.dicom:dicom-edit4:${vDicomEdit4}"
-    compile "org.nrg.dicom:dicom-edit6:${vDicomEdit6}"
-    compile "org.nrg:mail:${vXnatDependencies}"
-    compile "org.nrg:notify:${vXnatDependencies}"
+    implementation "org.nrg.xdat:core"
+    implementation "org.nrg:framework"
+    implementation "org.nrg:transaction"
+    implementation "org.nrg:prefs"
+    implementation "org.nrg:config"
+    implementation "org.nrg:automation"
+    implementation "org.nrg:dicomtools"
+    implementation "org.nrg.dicom:dicom-edit4"
+    implementation "org.nrg.dicom:dicom-edit6"
+    implementation "org.nrg:mail"
+    implementation "org.nrg:notify"
 
-    compile "org.nrg:dicom-xnat-mx:${vXnatDependencies}"
-    compile "org.nrg:dicom-xnat-sop:${vXnatDependencies}"
-    compile "org.nrg:dicom-xnat-util:${vXnatDependencies}"
-    compile "org.nrg:ecat4xnat:${vXnatDependencies}"
-    compile "org.nrg:ExtAttr:${vExtAttr}"
-    compile "org.nrg:DicomImageUtils:${vXnatDependencies}"
-    compile "org.nrg:PrearcImporter:${vXnatDependencies}"
-    compile "org.nrg:SessionBuilders:${vXnatDependencies}"
+    implementation "org.nrg:dicom-xnat-mx"
+    implementation "org.nrg:dicom-xnat-sop"
+    implementation "org.nrg:dicom-xnat-util"
+    implementation "org.nrg:ecat4xnat"
+    implementation "org.nrg:ExtAttr"
+    implementation "org.nrg:DicomImageUtils"
+    implementation "org.nrg:PrearcImporter"
+    implementation "org.nrg:SessionBuilders"
 
-    compile "org.nrg:pipelineBase:1.0"
-    compile "org.nrg:pipelineBuild:1.0"
-    compile "org.nrg:pipelineWorkflow:1.0"
-    compile "org.nrg:pipelineXNAT:1.0"
-    compile "org.nrg.xnat.pipeline:client:1.7.0"
-    compile "org.nrg.xnat.pipeline:xnat_pipeline:1.7.0"
-    compile "org.nrg.xnat.pipeline:xnat_tools:1.7.0"
-
-    compile("org.nrg.xnat:plexiviewer:1.7.0") {
+    compile("org.nrg.xnat:plexiviewer") {
         transitive = false
     }
 
-    compile "dcm4che:dcm4che-core:2.0.25"
-    compile "dcm4che:dcm4che-image:2.0.25"
-    compile "dcm4che:dcm4che-imageio:2.0.25"
-    compile "dcm4che:dcm4che-imageio-rle:2.0.25"
-    compile "dcm4che:dcm4che-iod:2.0.25"
-    compile "dcm4che:dcm4che-net:2.0.25"
-    compile "com.sun.media:jai_imageio:1.1"
+    implementation "org.nrg:pipelineBase"
+    implementation "org.nrg:pipelineBuild"
+    implementation "org.nrg:pipelineWorkflow"
+    implementation "org.nrg:pipelineXNAT"
+    implementation "org.nrg.xnat.pipeline:client"
+    implementation "org.nrg.xnat.pipeline:xnat_pipeline"
+    implementation "org.nrg.xnat.pipeline:xnat_tools"
 
-    compile "org.springframework:spring-aop:${vSpring}"
-    compile "org.springframework:spring-beans:${vSpring}"
-    compile "org.springframework:spring-context-support:${vSpring}"
-    compile "org.springframework:spring-context:${vSpring}"
-    compile "org.springframework:spring-core:${vSpring}"
-    compile "org.springframework:spring-jdbc:${vSpring}"
-    compile "org.springframework:spring-jms:${vSpring}"
-    compile "org.springframework:spring-messaging:${vSpring}"
-    compile "org.springframework:spring-orm:${vSpring}"
-    compile "org.springframework:spring-oxm:${vSpring}"
-    compile "org.springframework:spring-tx:${vSpring}"
-    compile "org.springframework:spring-web:${vSpring}"
-    compile "org.springframework:spring-webmvc:${vSpring}"
+    implementation "dcm4che:dcm4che-core"
+    implementation "dcm4che:dcm4che-image"
+    implementation "dcm4che:dcm4che-imageio"
+    implementation "dcm4che:dcm4che-imageio-rle"
+    implementation "dcm4che:dcm4che-iod"
+    implementation "dcm4che:dcm4che-net"
 
-    compile "io.springfox:springfox-swagger2:${vSwagger}"
-    compile "io.springfox:springfox-swagger-ui:${vSwagger}"
+    implementation "org.springframework:spring-aop"
+    implementation "org.springframework:spring-beans"
+    implementation "org.springframework:spring-context-support"
+    implementation "org.springframework:spring-context"
+    implementation "org.springframework:spring-core"
+    implementation "org.springframework:spring-jdbc"
+    implementation "org.springframework:spring-jms"
+    implementation "org.springframework:spring-messaging"
+    implementation "org.springframework:spring-orm"
+    implementation "org.springframework:spring-oxm"
+    implementation "org.springframework:spring-tx"
+    implementation "org.springframework:spring-web"
+    implementation "org.springframework:spring-webmvc"
 
-    compile "org.springframework.security:spring-security-acl:${vSpringSecurity}"
-    compile "org.springframework.security:spring-security-aspects:${vSpringSecurity}"
-    compile "org.springframework.security:spring-security-config:${vSpringSecurity}"
-    compile "org.springframework.security:spring-security-ldap:${vSpringSecurity}"
-    compile "org.springframework.security:spring-security-taglibs:${vSpringSecurity}"
-    compile "org.springframework.ldap:spring-ldap-core:2.0.4.RELEASE"
+    implementation "io.springfox:springfox-swagger2"
+    implementation "io.springfox:springfox-swagger-ui"
 
-    compile "org.hibernate:hibernate-core:${vHibernate}"
-    compile "org.hibernate:hibernate-ehcache:${vHibernate}"
-    compile "org.hibernate:hibernate-validator:4.3.2.Final"
-    compile "org.hibernate:hibernate-envers:4.3.11.Final"
-    compile "net.sf.ehcache:ehcache-core:${vEhcache}"
-    compile "com.marvinformatics.hibernate:hibernate-native-json:0.4"
+    implementation "org.springframework.security:spring-security-acl"
+    implementation "org.springframework.security:spring-security-aspects"
+    implementation "org.springframework.security:spring-security-config"
+    implementation "org.springframework.security:spring-security-ldap"
+    implementation "org.springframework.security:spring-security-taglibs"
+    implementation "org.springframework.ldap:spring-ldap-core"
 
-    compile "org.aspectj:aspectjweaver:${vAspectJ}"
-    compile "org.aspectj:aspectjrt:${vAspectJ}"
+    implementation "org.hibernate:hibernate-core"
+    implementation "org.hibernate:hibernate-ehcache"
+    implementation "org.hibernate:hibernate-validator"
+    implementation "org.hibernate:hibernate-envers"
+    implementation "net.sf.ehcache:ehcache-core"
+    implementation "com.marvinformatics.hibernate:hibernate-native-json"
 
-    compile "com.noelios.restlet:com.noelios.restlet:1.1.10"
-    compile "com.noelios.restlet:com.noelios.restlet.ext.servlet:1.1.10"
-    compile "org.restlet:org.restlet.ext.fileupload:1.1.10"
+    implementation "org.aspectj:aspectjweaver"
+    implementation "org.aspectj:aspectjrt"
 
-    compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
-    compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
-    compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${vJackson}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4:${vJackson}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${vJackson}"
-    compile "org.json:json:20151123"
-    compile "com.thoughtworks.xstream:xstream:1.4.9"
-    compile "xerces:xercesImpl:2.11.0"
+    implementation "com.noelios.restlet:com.noelios.restlet"
+    implementation "com.noelios.restlet:com.noelios.restlet.ext.servlet"
+    implementation "org.restlet:org.restlet.ext.fileupload"
 
-    compile "commons-beanutils:commons-beanutils:1.9.2"
-    compile "commons-codec:commons-codec:1.10"
-    compile "commons-collections:commons-collections:3.2.2"
-    compile "commons-configuration:commons-configuration:1.10"
-    compile "commons-digester:commons-digester:1.8.1"
-    compile "commons-discovery:commons-discovery:0.5"
-    compile "commons-fileupload:commons-fileupload:1.3.1"
-    compile "commons-net:commons-net:3.4"
+    implementation "com.fasterxml.jackson.core:jackson-annotations"
+    implementation "com.fasterxml.jackson.core:jackson-core"
+    implementation "com.fasterxml.jackson.core:jackson-databind"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
+    implementation "org.json:json"
+    implementation "com.thoughtworks.xstream:xstream"
+    implementation "xerces:xercesImpl"
 
-    compile "org.apache.commons:commons-configuration2:2.1"
-    compile "org.apache.commons:commons-math:2.2"
+    implementation "commons-beanutils:commons-beanutils"
+    implementation "commons-codec:commons-codec"
+    implementation "commons-collections:commons-collections"
+    implementation "commons-configuration:commons-configuration"
+    implementation "commons-digester:commons-digester"
+    implementation "commons-discovery:commons-discovery"
+    implementation "commons-fileupload:commons-fileupload"
+    implementation "commons-net:commons-net"
 
-    compile "org.apache.httpcomponents:httpclient:4.5.1"
-    compile "org.apache.httpcomponents:httpcore:4.4.4"
-    compile "org.apache.httpcomponents:httpcore-nio:4.4.4"
+    implementation "org.apache.commons:commons-configuration2"
+    implementation "org.apache.commons:commons-math"
 
-    compile "org.codehaus.groovy:groovy-all:${vGroovy}"
-    compile "org.python:jython-standalone:${vJython}"
+    implementation "org.apache.httpcomponents:httpclient"
+    implementation "org.apache.httpcomponents:httpcore"
+    implementation "org.apache.httpcomponents:httpcore-nio"
 
-    // compile "net.sf.saxon:Saxon-HE:${vSaxon}"
-    compile "net.sourceforge.saxon:saxon:${vSaxon}"
-    compile "xalan:xalan:2.7.2"
+    implementation "org.codehaus.groovy:groovy-all"
+    implementation "org.python:jython-standalone"
 
-    compile "eu.bitwalker:UserAgentUtils:1.20"
-    compile "com.twmacinta:fast-md5:2.7.1"
-    compile "com.h2database:h2:1.4.191"
-    compile "com.lowagie:itext:4.2.1"
-    compile "net.java.dev.msv:msv-core:2013.6.1"
-    compile "gnu.getopt:java-getopt:1.0.13"
-    compile "org.quartz-scheduler:quartz:2.2.2"
-    compile "org.reflections:reflections:0.9.10"
-    compile "org.apache.xmlbeans:xmlbeans:2.6.0"
-    compile "org.apache.xmlbeans:xmlbeans-xpath:2.6.0"
-    compile "org.apache.xbean:xbean-spring:4.5"
-    compile "net.java.dev.msv:xsdlib:2013.6.1"
+    implementation "net.sourceforge.saxon:saxon"
+    implementation "xalan:xalan"
 
-    compile "org.postgresql:postgresql:${vPostgreSQL}"
+    implementation "eu.bitwalker:UserAgentUtils"
+    implementation "com.twmacinta:fast-md5"
+    implementation "com.h2database:h2"
+    implementation "com.lowagie:itext"
+    implementation "net.java.dev.msv:msv-core"
+    implementation "gnu.getopt:java-getopt"
+    implementation "org.quartz-scheduler:quartz"
+    implementation "org.reflections:reflections"
+    implementation "org.apache.xmlbeans:xmlbeans"
+    implementation "org.apache.xmlbeans:xmlbeans-xpath"
+    implementation "org.apache.xbean:xbean-spring"
+    implementation "net.java.dev.msv:xsdlib"
 
-    compile "org.slf4j:slf4j-api:${vSlf4j}"
-    compile "org.slf4j:slf4j-log4j12:${vSlf4j}"
-    compile "org.slf4j:jul-to-slf4j:${vSlf4j}"
-    compile "log4j:log4j:${vLog4j}"
-    compile "javax.servlet:jstl:1.2"
-    compile 'com.google.code.gson:gson:2.6.2'
-    compile 'com.google.guava:guava:20.0'
+    implementation "org.postgresql:postgresql"
 
-    runtime "org.nrg.xnatx.plugins:ximgview-plugin:${vXImgView}"
-    runtime "org.apache.activemq:activemq-core:5.7.0"
-    runtime "org.apache.ant:ant:1.9.8"
-    runtime "axis:axis-ant:1.4"
-    runtime "axis:axis-schema:1.3"
-    runtime "cglib:cglib:3.2.0"
-    runtime "org.hsqldb:hsqldb:1.8.0.10"
-    runtime "org.codehaus.groovy.modules.http-builder:http-builder:0.7.2"
-    runtime "net.imagej:ij:1.50e"
-    runtime "net.bull.javamelody:javamelody-core:1.58.0"
-    runtime "org.javassist:javassist:3.21.0-GA"
+    implementation "org.slf4j:slf4j-api"
+    implementation "org.slf4j:slf4j-log4j12"
+    implementation "org.slf4j:jul-to-slf4j"
+    implementation "log4j:log4j"
+    implementation "javax.servlet:jstl"
+    implementation 'com.google.code.gson:gson:2.6.2'
+    implementation 'com.google.guava:guava:20.0'
 
-    providedCompile "javax.servlet:javax.servlet-api:${vServletApi}"
+    runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
+    runtimeOnly "org.apache.activemq:activemq-core"
+    runtimeOnly "org.apache.ant:ant"
+    runtimeOnly "axis:axis-ant"
+    runtimeOnly "axis:axis-schema"
+    runtimeOnly "cglib:cglib"
+    runtimeOnly "org.hsqldb:hsqldb"
+    runtimeOnly "org.codehaus.groovy.modules.http-builder:http-builder"
+    runtimeOnly "net.imagej:ij"
+    runtimeOnly "com.sun.media:jai_imageio"
+    runtimeOnly "net.bull.javamelody:javamelody-core"
+    runtimeOnly "org.javassist:javassist"
 
-    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${vTomcat}",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli:${vTomcat}",
-            "org.apache.tomcat.embed:tomcat-embed-jasper:${vTomcat}"
+    providedCompile "javax.servlet:javax.servlet-api"
 
-    cargo "org.codehaus.cargo:cargo-core-uberjar:${vCargo}",
-            "org.codehaus.cargo:cargo-ant:${vCargo}"
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core",
+            "org.apache.tomcat.embed:tomcat-embed-logging-juli",
+            "org.apache.tomcat.embed:tomcat-embed-jasper"
 
-    testCompile "org.nrg:test:${vXnatDependencies}"
-    testCompile "junit:junit:${vJunit}"
-    testCompile "org.springframework:spring-test:${vSpring}"
+    cargo "org.codehaus.cargo:cargo-core-uberjar",
+            "org.codehaus.cargo:cargo-ant"
+
+    testCompile "org.nrg:test"
+    testCompile "junit:junit"
+    testCompile "org.springframework:spring-test"
+}
+
+tomcatRun.contextPath = '/'
+tomcatRunWar.contextPath = '/'
+
+[tomcatRun, tomcatRunWar].each { task ->
+    // TODO: This can be configured with an external folder reference to be used for loading XNAT modules.
+    task.additionalRuntimeResources << file('/Users/rherrick/xnat/config/plugins')
+}
+
+task deployToTomcat(type: Copy, dependsOn: war) {
+    from war.archivePath
+    into "${propertyWithDefault('tomcatHome', '.')}/webapps"
+}
+
+cargo {
+    // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command line in
+    // the form -PdeployPort=8080 -PdeployContext=/ -PdeployHost=localhost -PdeployUser=deploy -PdeployPassword=deploy
+    containerId = 'tomcat7x'
+    port = propertyWithDefault('deployPort', 8080) as int
+
+    deployable {
+        context = propertyWithDefault('deployContext', '/')
+    }
+
+    remote {
+        hostname = propertyWithDefault('deployHost', 'localhost')
+        username = propertyWithDefault('deployUser', 'deploy')
+        password = propertyWithDefault('deployPassword', 'deploy')
+    }
+}
+
+// Pulls in the Jenkins BUILD_NUMBER environment variable if available.
+def buildDate = new Date()
+def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: "Manual"
+def revision = gitVersion().replace("${version}-", "")
+
+logger.info "Git version:            ${gitVersion()}"
+logger.info "Build-Date:             ${buildDate}"
+logger.info "Build-Number:           ${buildNumber}"
+logger.info "Implementation-Sha:     ${revision}"
+logger.info "Implementation-Version: ${version}"
+
+jar {
+    manifest {
+        attributes 'Application-Name': 'XNAT',
+                'Build-Date': buildDate,
+                'Build-Number': buildNumber,
+                'Implementation-Sha': revision,
+                'Implementation-Version': version
+    }
+}
+
+war {
+    manifest {
+        attributes 'Application-Name': 'XNAT',
+                'Build-Date': buildDate,
+                'Build-Number': buildNumber,
+                'Implementation-Sha': revision,
+                'Implementation-Version': version
+    }
+}
+
+jacoco {
+    toolVersion = dependencyManagement.importedProperties['jacoco.version']
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled = false
+        csv.enabled = false
+        html.destination file("${buildDir}/jacocoHtml")
+    }
+}
+
+task sourceJar(type: Jar, dependsOn: classes) {
+    classifier "sources"
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier "javadoc"
+    from javadoc.destinationDir
+}
+
+publishing.publications {
+    mavenJava(MavenPublication) {
+        from components.java
+
+        artifacts {
+            artifact sourceJar
+            artifact javadocJar
+        }
+
+        pom.withXml {
+            def root = asNode()
+            root.appendNode('name', 'XNAT Server')
+            root.appendNode('description', 'XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.')
+            root.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
+            root.appendNode('inceptionYear', '2016')
+
+            def scm = root.appendNode('scm')
+            scm.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
+            scm.appendNode('connection', 'scm:https://bitbucket.org/xnatdev/xnat-web.git')
+            scm.appendNode('developerConnection', 'scm:git://bitbucket.org/xnatdev/xnat-web.git')
+
+            def license = root.appendNode('licenses').appendNode('license')
+            license.appendNode('name', 'Simplified BSD 2-Clause License')
+            license.appendNode('url', 'http://xnat.org/about/license.php')
+            license.appendNode('distribution', 'repo')
+
+            def developers = root.appendNode('developers')
+            def rherrick = developers.appendNode('developer')
+            rherrick.appendNode('id', 'rherrick')
+            rherrick.appendNode('name', 'Rick Herrick')
+            rherrick.appendNode('email', 'jrherrick@wustl.edu')
+        }
+    }
+}
+publishing.repositories {
+    maven {
+        credentials {
+            // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+            // line in the form -PrepoUsername=foo -PrepoPassword=bar.
+            username propertyWithDefault('repoUsername', 'username')
+            password propertyWithDefault('repoPassword', 'password')
+        }
+        url project.version.endsWith('-SNAPSHOT') ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
+    }
+}
+
+def propertyWithDefault(String name, Object value) {
+    hasProperty(name) ? property(name) : value
 }

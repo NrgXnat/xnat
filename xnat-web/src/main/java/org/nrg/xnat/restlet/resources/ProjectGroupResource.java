@@ -180,7 +180,12 @@ public class ProjectGroupResource extends SecureResource {
 							getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Display name is required.");
 							return;
 						}
-						
+						//display name cannot contain underscore
+						else if(tempGroup.getDisplayname().contains("_")){
+							getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Display name cannot contain underscores.");
+							return;
+						}
+
 						//set ID to the standard value
 						if(StringUtils.isEmpty(tempGroup.getId())){
 							tempGroup.setId(proj.getId()+"_" + tempGroup.getDisplayname());

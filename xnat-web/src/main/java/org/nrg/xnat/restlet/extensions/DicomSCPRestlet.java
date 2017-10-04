@@ -11,10 +11,11 @@ package org.nrg.xnat.restlet.extensions;
 
 import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.dcm.DicomSCPManager;
-import org.nrg.dcm.exceptions.DICOMReceiverWithDuplicateAeTitleException;
-import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
-import org.nrg.dcm.preferences.DicomSCPInstance;
+import org.nrg.dcm.scp.DicomSCPInstance;
+import org.nrg.dcm.scp.DicomSCPManager;
+import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicateTitleAndPortException;
+import org.nrg.dcm.scp.exceptions.DicomNetworkException;
+import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
@@ -58,7 +59,7 @@ public class DicomSCPRestlet extends SecureResource {
 
         final String scpId = (String) getRequest().getAttributes().get(PARAM_SCP_ID);
         _scpId = StringUtils.isBlank(scpId) ? null : Integer.parseInt(scpId);
-        if (_scpId != null && !_dicomSCPManager.hasDicomSCP(_scpId)) {
+        if (_scpId != null && !_dicomSCPManager.hasDicomSCPInstance(_scpId)) {
             final String message = String.format("DICOM SCP instance '%s' not found in configuration.", _scpId);
             getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
             throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
@@ -85,7 +86,7 @@ public class DicomSCPRestlet extends SecureResource {
 
         try {
             if (Method.DELETE.equals(getRequest().getMethod()) || (StringUtils.isNotBlank(_action) && _action.equalsIgnoreCase("status"))) {
-                return new StringRepresentation(getSerializer().toJson(_dicomSCPManager.areDicomSCPsStarted()));
+                return new StringRepresentation(getSerializer().toJson(_dicomSCPManager.areDicomSCPInstancesStarted()));
             } else if (_scpId == null) {
                 return new StringRepresentation(getSerializer().toJson(_dicomSCPManager.getDicomSCPInstances()));
             } else {
@@ -111,15 +112,15 @@ public class DicomSCPRestlet extends SecureResource {
         try {
             final String           serialized = getRequest().getEntity().getText();
             final DicomSCPInstance instance   = getSerializer().deserializeJson(serialized, DicomSCPInstance.class);
-            _dicomSCPManager.create(instance);
+            _dicomSCPManager.setDicomSCPInstance(instance);
+        } catch (DICOMReceiverWithDuplicateTitleAndPortException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e, "There was an error provisioning the DICOM SCP instance, an enabled instance already exists with the same AE title and port: " + e.getAeTitle() + ":" + e.getPort());
+        } catch (UnknownDicomHelperInstanceException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, e, "There was an error provisioning the DICOM SCP instance: " + e.getMessage());
         } catch (IOException e) {
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An error occurred trying to retrieve the body text of the PUT request.");
-        } catch (NrgServiceException e) {
-            if (e.getServiceError() == NrgServiceError.ConfigurationError) {
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e, "There was an error creating the DICOM SCP instance, probably an existing ID");
-            } else {
-                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An unknown service error occurred trying to create the DICOM SCP instance.");
-            }
+        } catch (DicomNetworkException e) {
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An error occurred during DICOM communication or transport.");
         }
     }
 
@@ -130,45 +131,47 @@ public class DicomSCPRestlet extends SecureResource {
 
     @Override
     public void handlePut() {
-        if (StringUtils.isBlank(_action)) {
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify an action to perform.");
-        } else if (_action.equalsIgnoreCase("start")) {
-            if (_scpId != null) {
-                _dicomSCPManager.startDicomSCP(_scpId);
-            } else {
-                _dicomSCPManager.startDicomSCPs();
-            }
-            returnDefaultRepresentation();
-        } else if (_action.equalsIgnoreCase("stop")) {
-            if (_scpId != null) {
-                _dicomSCPManager.stopDicomSCP(_scpId);
-            } else {
-                _dicomSCPManager.stopDicomSCPs();
-            }
-            returnDefaultRepresentation();
-        } else if (_action.equalsIgnoreCase("enable")) {
-            if (_scpId == null) {
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to enable.");
-            } else {
-                try {
-                    _dicomSCPManager.enableDicomSCP(_scpId);
-                } catch (DICOMReceiverWithDuplicateAeTitleException e) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "There is already another DICOM SCP instance with the same AE title: " + e.getExisting().toString());
-                } catch (EnabledDICOMReceiverWithDuplicatePortException e) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "There is already another DICOM SCP instance enabled with the same port: " + e.getExisting().toString());
+        try {
+            if (StringUtils.isBlank(_action)) {
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify an action to perform.");
+            } else if (_action.equalsIgnoreCase("start")) {
+                if (_scpId != null) {
+                    _dicomSCPManager.enableDicomSCPInstance(_scpId);
+                } else {
+                    _dicomSCPManager.start();
+                    returnDefaultRepresentation();
+                }
+            } else if (_action.equalsIgnoreCase("stop")) {
+                if (_scpId != null) {
+                    _dicomSCPManager.disableDicomSCPInstance(_scpId);
+                } else {
+                    _dicomSCPManager.stop();
                 }
                 returnDefaultRepresentation();
-            }
-        } else if (_action.equalsIgnoreCase("disable")) {
-            if (_scpId == null) {
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to disable.");
+            } else if (_action.equalsIgnoreCase("enable")) {
+                if (_scpId == null) {
+                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to enable.");
+                } else {
+                    _dicomSCPManager.enableDicomSCPInstance(_scpId);
+                    returnDefaultRepresentation();
+                }
+            } else if (_action.equalsIgnoreCase("disable")) {
+                if (_scpId == null) {
+                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to disable.");
+                } else {
+                    _dicomSCPManager.disableDicomSCPInstance(_scpId);
+                    returnDefaultRepresentation();
+                }
             } else {
-                _dicomSCPManager.disableDicomSCP(_scpId);
+                _dicomSCPManager.start();
                 returnDefaultRepresentation();
             }
-        } else {
-            _dicomSCPManager.startDicomSCPs();
-            returnDefaultRepresentation();
+        } catch (DICOMReceiverWithDuplicateTitleAndPortException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "There is already another DICOM SCP instance enabled with the same AE title and port: " + e.getAeTitle() + ":" + e.getPort());
+        } catch (UnknownDicomHelperInstanceException e) {
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "There was an error starting the DICOM SCP instance(s): " + e.getMessage());
+        } catch (DicomNetworkException e) {
+            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An error occurred during DICOM communication or transport.");
         }
     }
 
@@ -183,7 +186,7 @@ public class DicomSCPRestlet extends SecureResource {
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to delete.");
         } else {
             try {
-                _dicomSCPManager.delete(_scpId);
+                _dicomSCPManager.deleteDicomSCPInstance(_scpId);
                 returnDefaultRepresentation();
             } catch (NrgServiceException e) {
                 if (e.getServiceError() == NrgServiceError.UnknownEntity) {

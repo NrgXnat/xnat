@@ -675,6 +675,118 @@ public class XNATTemplate extends SecureResource {
 
             } else if ((allowAll) && (this.isQueryVariableTrue("all") || resourceIDs != null)) {
                 xmlPath = "xnat:experimentData/resources/resource";
+                String exptsString = "";
+                int expCounter = 0;
+                for (XnatExperimentdata expt : expts) {
+                    if (expCounter++ > 0) {
+                        exptsString+=", ";
+                    }
+                    exptsString+="'";
+                    exptsString+=expt.getId();
+                    exptsString+="'";
+
+                }
+                String assessorIdsUserCanAccessSelect="( SELECT * FROM xnat_imageassessordata WHERE id IN (SELECT id " +
+                        " FROM   (SELECT xea.element_name, " +
+                        "                xfm.field, " +
+                        "                xfm.field_value " +
+                        "         FROM   xdat_user u " +
+                        "                JOIN xdat_user_groupid map " +
+                        "                  ON u.xdat_user_id = map.groups_groupid_xdat_user_xdat_user_id " +
+                        "                JOIN xdat_usergroup gp " +
+                        "                  ON map.groupid = gp.id " +
+                        "                JOIN xdat_element_access xea " +
+                        "                  ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                        "                JOIN xdat_field_mapping_set xfms " +
+                        "                  ON " +
+                        " xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                        " JOIN xdat_field_mapping xfm " +
+                        "   ON " +
+                        " xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                        " AND read_element = 1 " +
+                        " AND field_value != '' " +
+                        " AND field != '' " +
+                        " WHERE  u.login = 'guest' " +
+                        "  UNION " +
+                        "  SELECT xea.element_name, " +
+                        "         xfm.field, " +
+                        "         xfm.field_value " +
+                        "  FROM   xdat_user_groupid map " +
+                        "         JOIN xdat_usergroup gp " +
+                        "           ON map.groupid = gp.id " +
+                        "         JOIN xdat_element_access xea " +
+                        "           ON gp.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                        "         JOIN xdat_field_mapping_set xfms " +
+                        "           ON " +
+                        " xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                        " JOIN xdat_field_mapping xfm " +
+                        "   ON " +
+                        " xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                        " AND read_element = 1 " +
+                        " AND field_value != '' " +
+                        " AND field != '' " +
+                        " WHERE  map.groups_groupid_xdat_user_xdat_user_id = " +getUser().getID()+ " " +
+                        " OR xfm.field_value IN (SELECT proj.id " +
+                        "         FROM   xnat_projectdata proj " +
+                        "         JOIN (SELECT field_value, " +
+                        "                        read_element AS " +
+                        "                                                        project_read " +
+                        "                                FROM   xdat_element_access " +
+                        "                                ea " +
+                        "                                LEFT JOIN xdat_field_mapping_set fms " +
+                        "                                ON ea.xdat_element_access_id = " +
+                        "                                fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                        "                                LEFT JOIN xdat_user u " +
+                        "                                ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
+                        "                                LEFT JOIN xdat_field_mapping fm " +
+                        "                                ON fms.xdat_field_mapping_set_id = " +
+                        "                                fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                        "                                WHERE  login = 'guest' " +
+                        "                                AND read_element = 1 " +
+                        "                                AND element_name = 'xnat:projectData')project_read " +
+                        " ON proj.id = project_read.field_value " +
+                        " JOIN (SELECT field_value, " +
+                        "       read_element AS subject_read " +
+                        "               FROM   xdat_element_access ea " +
+                        "               LEFT JOIN xdat_field_mapping_set fms " +
+                        "               ON ea.xdat_element_access_id = " +
+                        "               fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                        "               LEFT JOIN xdat_user u " +
+                        "               ON ea.xdat_user_xdat_user_id = u.xdat_user_id " +
+                        "               LEFT JOIN xdat_field_mapping fm " +
+                        "               ON fms.xdat_field_mapping_set_id = " +
+                        "               fm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                        "               WHERE  login = 'guest' " +
+                        "               AND read_element = 1 " +
+                        "               AND field = 'xnat:subjectData/project')subject_read " +
+                        " ON proj.id = subject_read.field_value)) perms " +
+                        " INNER JOIN (SELECT iad.id, " +
+                        "                    element_name " +
+                        "                    || '/project' AS field, " +
+                        "                    expt.project, " +
+                        "                    expt.label " +
+                        "             FROM   xnat_imageassessordata iad " +
+                        "                    LEFT JOIN xnat_experimentdata expt " +
+                        "                           ON iad.id = expt.id " +
+                        "                    LEFT JOIN xdat_meta_element xme " +
+                        "                           ON expt.extension = xme.xdat_meta_element_id " +
+                        "             WHERE  iad.imagesession_id IN ( " +
+                        exptsString +
+                        " ) " +
+                        "             UNION " +
+                        "             SELECT expt.id, " +
+                        "                    xme.element_name " +
+                        "                    || '/sharing/share/project', " +
+                        "                    shr.project, " +
+                        "                    shr.label " +
+                        "             FROM   xnat_experimentdata_share shr " +
+                        "                    LEFT JOIN xnat_experimentdata expt " +
+                        "                           ON expt.id = shr.sharing_share_xnat_experimentda_id " +
+                        "                    LEFT JOIN xdat_meta_element xme " +
+                        "                           ON expt.extension = xme.xdat_meta_element_id) expts " +
+                        "         ON perms.field = expts.field " +
+                        "            AND perms.field_value = expts.project " +
+                        " ORDER  BY element_name) )";
                 // resources
 
                 query.append("SELECT * FROM (");
@@ -751,7 +863,7 @@ public class XNATTemplate extends SecureResource {
                     query.append(" || '/assessors/' || iad.id || '/out'");
                     query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM xnat_imageAssessorData iad");
+                query.append(" FROM "+assessorIdsUserCanAccessSelect+" iad");
                 query.append(" JOIN img_assessor_out_resource map ON iad.id=map.xnat_imageassessordata_id");
                 query.append(" JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
                 query.append(" JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
@@ -762,7 +874,7 @@ public class XNATTemplate extends SecureResource {
                     if (sC++ > 0) {
                         query.append(" OR ");
                     }
-                    query.append("imagesession_id='");
+                    query.append("iad.imagesession_id='");
                     query.append(expt.getId());
                     query.append("'");
                 }
@@ -775,7 +887,7 @@ public class XNATTemplate extends SecureResource {
                     query.append(" || '/assessors/' || iad.id");
                     query.append(" || '/resources/' || abst.xnat_abstractresource_id AS resource_path");
                 }
-                query.append(" FROM xnat_imageAssessorData iad");
+                query.append(" FROM "+assessorIdsUserCanAccessSelect+" iad");
                 query.append(" JOIN xnat_experimentdata_resource map ON iad.id=map.xnat_experimentdata_id");
                 query.append(" JOIN xnat_abstractresource abst ON map.xnat_abstractresource_xnat_abstractresource_id=abst.xnat_abstractresource_id");
                 query.append(" JOIN xdat_meta_element xme ON abst.extension=xme.xdat_meta_element_id");
@@ -786,7 +898,7 @@ public class XNATTemplate extends SecureResource {
                     if (sC++ > 0) {
                         query.append(" OR ");
                     }
-                    query.append("imagesession_id='");
+                    query.append("iad.imagesession_id='");
                     query.append(expt.getId());
                     query.append("'");
                 }

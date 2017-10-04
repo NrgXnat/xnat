@@ -69,11 +69,12 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/xapi/dicomscp' + appended);
     }
 
-    // keep track of used ports to help prevent port conflicts
-    dicomScpManager.usedPorts = [];
+    function formatAeTitleAndPort(aeTitle, port) {
+        return aeTitle + ':' + port;
+    }
 
-    // keep track of used aes to help prevent AE title conflicts
-    dicomScpManager.usedAe = [];
+    // keep track of used ports to help prevent port conflicts
+    dicomScpManager.usedAeTitlesAndPorts = [];
 
     // keep track of scpIds to prevent id conflicts
     dicomScpManager.ids = [];
@@ -81,21 +82,16 @@ var XNAT = getObject(XNAT || {});
     // get the list of DICOM SCP Receivers
     dicomScpManager.getReceivers = dicomScpManager.getAll = function(callback){
         callback = isFunction(callback) ? callback : function(){};
-        dicomScpManager.usedPorts = [];
-        dicomScpManager.usedAe = [];
+        dicomScpManager.usedAeTitlesAndPorts = [];
         dicomScpManager.ids = [];
         return XNAT.xhr.get({
             url: scpUrl(),
             dataType: 'json',
             success: function(data){
                 dicomScpManager.receivers = data;
-                // refresh the 'usedPorts' array every time this function is called
-                // refresh the 'usedAe' array every time this function is called
+                // refresh the 'usedAeTitlesAndPorts' array every time this function is called
                 data.forEach(function(item){
-                    if(dicomScpManager.enabled) {
-                        dicomScpManager.usedPorts.push(item.port);
-                    }
-                    dicomScpManager.usedAe.push(item.aeTitle);
+                    dicomScpManager.usedAeTitlesAndPorts.push(formatAeTitleAndPort(item.aeTitle, item.port));
                     dicomScpManager.ids.push(item.id);
                 });
                 callback.apply(this, arguments);
@@ -201,25 +197,15 @@ var XNAT = getObject(XNAT || {});
                         var newTitle = $title.val();
                         console.log(newTitle);
 
-                        // only check for port conflicts if we're changing the port
-                        if (newPort+'' !== oldPort+''){
-                            dicomScpManager.usedPorts.forEach(function(usedPort){
-                                if (usedPort+'' === newPort+''){
-                                    errors++;
-                                    errorMsg += '<li>Port <b>' + newPort + '</b> is already in use. Please use another port number.</li>';
-                                    $port.addClass('invalid');
-                                    return false;
-                                }
-                            });
-                        }
+                        var newAeTitleAndPort = formatAeTitleAndPort(newTitle, newPort);
 
-                        // only check for AE conflicts if we're changing the AE
-                        if (newTitle+'' !== oldTitle+''){
-                            dicomScpManager.usedAe.forEach(function(usedTitle){
-                                if (usedTitle+'' === newTitle+''){
+                        // only check for port conflicts if we're changing the port
+                        if (newTitle + '' !== oldTitle + '' || newPort + '' !== oldPort + '') {
+                            dicomScpManager.usedAeTitlesAndPorts.forEach(function(usedAeTitleAndPort){
+                                if (usedAeTitleAndPort+'' === newAeTitleAndPort+''){
                                     errors++;
-                                    errorMsg += '<li>AE Title <b>' + newTitle + '</b> is already in use. Please use another AE title.</li>';
-                                    $title.addClass('invalid');
+                                    errorMsg += '<li>The AE title and port <b>' + newAeTitleAndPort + '</b> is already in use. Please use another AE title or port number.</li>';
+                                    $port.addClass('invalid');
                                     return false;
                                 }
                             });

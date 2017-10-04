@@ -320,8 +320,9 @@ public class UsersApi extends AbstractXapiRestController {
 
         boolean isDirty = false;
         if ((StringUtils.isNotBlank(model.getUsername())) && (!StringUtils.equals(user.getUsername(), model.getUsername()))) {
-            user.setLogin(model.getUsername());
-            isDirty = true;
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//            user.setLogin(model.getUsername());
+//            isDirty = true;
         }
         if ((StringUtils.isNotBlank(model.getFirstName())) && (!StringUtils.equals(user.getFirstname(), model.getFirstName()))) {
             user.setFirstname(model.getFirstName());

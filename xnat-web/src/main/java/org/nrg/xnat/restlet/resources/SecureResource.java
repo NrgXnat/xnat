@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -68,12 +69,15 @@ import org.nrg.xnat.restlet.representations.*;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.ext.fileupload.RestletFileUpload;
 import org.restlet.resource.*;
 import org.restlet.util.Series;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -87,6 +91,8 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
 
@@ -179,15 +185,10 @@ public abstract class SecureResource extends Resource {
     }
 
     public void logAccess() {
-        String url = getRequest().getResourceRef().toString();
+        final String url = getSiteUrlResolvedReference().toString();
 
         if (!(Method.GET.equals(getRequest().getMethod()) && url.contains("resources/SNAPSHOTS"))) {
-            String login = "";
-            if (user != null) {
-                login = user.getLogin();
-            }
-
-            AccessLogger.LogServiceAccess(login, getRequest().getClientInfo().getAddress(), getRequest().getMethod() + " " + url, "");
+            AccessLogger.LogServiceAccess(user != null ? user.getLogin() : "", getRequest().getClientInfo().getAddress(), getRequest().getMethod() + " " + url, "");
         }
     }
 
@@ -888,16 +889,44 @@ public abstract class SecureResource extends Resource {
         return item;
     }
 
-    public void returnSuccessfulCreateFromList(String newURI) {
-        Reference ticket_ref = getRequest().getResourceRef().addSegment(newURI);
-        getResponse().setLocationRef(ticket_ref);
+    public void returnSuccessfulCreateFromList(final String newURI) {
+        final Reference ticketRef = getSiteUrlResolvedReference().addSegment(newURI);
+        getResponse().setLocationRef(ticketRef);
 
-        String targetRef = ticket_ref.getTargetRef().toString();
+        String targetRef = ticketRef.getTargetRef().toString();
         if (targetRef.contains("?")) {
             targetRef = targetRef.substring(0, targetRef.indexOf("?"));
         }
 
         returnRepresentation(new StringRepresentation(targetRef));
+    }
+
+    /**
+     * Takes the request reference and modifies the protocol and server to use the configured site URL value. This works around the fact that,
+     * when XNAT sits behind a front-end proxy such as nginx or Apache HTTPD that provides SSL, XNAT sees the URL as using http, since the
+     * connection between the proxy and Tomcat is unencrypted. As a result, the URL returned by XNAT specifies http even though that may be
+     * unreachable for any clients trying to use the resulting URL.
+     *
+     * Note that, if any errors occur retrieving or parsing the URL specified for the site URL preference, this method logs that error then
+     * returns the original unmodified reference value.
+     *
+     * @return A reference that uses the site URL setting for the protocol and server values.
+     */
+    protected Reference getSiteUrlResolvedReference() {
+        final Reference reference = getRequest().getResourceRef();
+        try {
+            final String siteUrlProperty = XDAT.getSiteConfigurationProperty("siteUrl");
+            try {
+                final URL siteUrl = new URL(siteUrlProperty);
+                reference.setProtocol(new Protocol(siteUrl.getProtocol()));
+                reference.setAuthority(siteUrl.getAuthority());
+            } catch (MalformedURLException e) {
+                logger.warn("An error occurred trying to convert the site URL value " + siteUrlProperty + " to a URL object: " + e.getMessage());
+            }
+        } catch (ConfigServiceException e) {
+            logger.warn("An error occurred trying to retrieve the site URL from the configuration service", e);
+        }
+        return reference;
     }
 
     public void returnString(String message, Status status) {
@@ -977,6 +1006,43 @@ public abstract class SecureResource extends Resource {
 
     protected HttpServletRequest getHttpServletRequest() {
         return new RequestUtil().getHttpServletRequest(getRequest());
+    }
+
+    /**
+     * This method tests whether the current user is a guest. If so, it then tests whether the request came from an
+     * interactive agent such as a browser. If neither of these is true, the response status is set to 404 Not Found.
+     * If so, the HTTP request is stored in the session request cache and a redirect to the login page is added to the
+     * response. On successful authentication, the client is redirected to the page requested in the original request.
+     */
+    protected void setGuestDataResponse() {
+        setGuestDataResponse(null);
+    }
+
+    /**
+     * This method tests whether the current user is a guest. If so, it then tests whether the request came from an
+     * interactive agent such as a browser. If neither of these is true, the response status is set to 404 Not Found.
+     * If so, the HTTP request is stored in the session request cache and a redirect to the login page is added to the
+     * response. On successful authentication, the client is redirected to the page requested in the original request.
+     *
+     * @param message The message to add to the response status. Can be null or empty.
+     */
+    protected void setGuestDataResponse(final String message) {
+        final UserI user = getUser();
+        final Response response = getResponse();
+        if (user.isGuest()) {
+            final HttpServletRequest httpServletRequest = getHttpServletRequest();
+            if (XDAT.getContextService().getBean(InteractiveAgentDetector.class).isInteractiveAgent(httpServletRequest)) {
+                final RequestCache cache = new HttpSessionRequestCache();
+                cache.saveRequest(httpServletRequest, null);
+                response.redirectTemporary("/app/template/Login.vm");
+            }
+        } else {
+            if (StringUtils.isBlank(message)) {
+                response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+            } else {
+                response.setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
+            }
+        }
     }
 
     /**

@@ -14,8 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.dcm.exceptions.DICOMReceiverWithDuplicateAeTitleException;
-import org.nrg.dcm.exceptions.EnabledDICOMReceiverWithDuplicatePortException;
+import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicateTitleAndPortException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.exceptions.*;
@@ -32,6 +31,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
@@ -44,16 +44,13 @@ public class XapiRestControllerAdvice {
     @Autowired
     public XapiRestControllerAdvice(final SiteConfigPreferences preferences) {
         _preferences = preferences;
-        _headers.put(NotAuthenticatedException.class, new HttpHeaders() {{ add("WWW-Authenticate", "Basic realm=\"" + _preferences.getSiteId() + "\""); }});
+        _headers.put(NotAuthenticatedException.class, new HttpHeaders() {{
+            add("WWW-Authenticate", "Basic realm=\"" + _preferences.getSiteId() + "\"");
+        }});
     }
 
-    @ExceptionHandler(EnabledDICOMReceiverWithDuplicatePortException.class)
-    public ResponseEntity<?> handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final HttpServletResponse response, final EnabledDICOMReceiverWithDuplicatePortException exception) {
-        return getExceptionResponseEntity(request, exception);
-    }
-
-    @ExceptionHandler(DICOMReceiverWithDuplicateAeTitleException.class)
-    public ResponseEntity<?> handleDICOMReceiverWithDuplicateAeTitle(final HttpServletRequest request, final HttpServletResponse response, final DICOMReceiverWithDuplicateAeTitleException exception) {
+    @ExceptionHandler(DICOMReceiverWithDuplicateTitleAndPortException.class)
+    public ResponseEntity<?> handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final HttpServletResponse response, final DICOMReceiverWithDuplicateTitleAndPortException exception) {
         return getExceptionResponseEntity(request, exception);
     }
 
@@ -79,13 +76,13 @@ public class XapiRestControllerAdvice {
 
     @ExceptionHandler(NrgServiceException.class)
     public ResponseEntity<?> handleNrgServiceException(final HttpServletRequest request, final HttpServletResponse response, final NrgServiceException exception) {
-        return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "An NRG service error occurred.");
+        return getExceptionResponseEntity(request, HttpStatus.INTERNAL_SERVER_ERROR, exception, "An NRG service error occurred.");
     }
 
     @ExceptionHandler(URISyntaxException.class)
     public ResponseEntity<?> handleUriSyntaxException(final HttpServletRequest request, final HttpServletResponse response, final URISyntaxException exception) {
         final String message = "An error occurred at index " + exception.getIndex() + " when processing the URI " + exception.getInput() + ": " + exception.getMessage();
-        return getExceptionResponseEntity(HttpStatus.BAD_REQUEST, message);
+        return getExceptionResponseEntity(request, HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler(FileNotFoundException.class)
@@ -100,22 +97,22 @@ public class XapiRestControllerAdvice {
 
     @ExceptionHandler(ConfigServiceException.class)
     public ResponseEntity<?> handleConfigServiceException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
-        return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred when accessing the configuration service: " + exception.getMessage());
+        return getExceptionResponseEntity(request, HttpStatus.INTERNAL_SERVER_ERROR, exception, "An error occurred when accessing the configuration service: " + exception.getMessage());
     }
 
     @ExceptionHandler(ServerException.class)
     public ResponseEntity<?> handleServerException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
-        return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred on the server during the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, HttpStatus.INTERNAL_SERVER_ERROR, exception, "An error occurred on the server during the request: " + exception.getMessage());
     }
 
     @ExceptionHandler(ClientException.class)
     public ResponseEntity<?> handleClientException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
-        return getExceptionResponseEntity(HttpStatus.BAD_REQUEST, "There was an error in the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, HttpStatus.BAD_REQUEST, "There was an error in the request: " + exception.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handlexception(final HttpServletRequest request, final HttpServletResponse response, final Exception exception) {
-        return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "There was an error in the request: " + exception.getMessage());
+    public ResponseEntity<?> handleException(final HttpServletRequest request, final HttpServletResponse response, final Exception exception) {
+        return getExceptionResponseEntity(request, HttpStatus.INTERNAL_SERVER_ERROR, exception, "There was an error in the request: " + exception.getMessage());
     }
 
     @NotNull
@@ -124,8 +121,8 @@ public class XapiRestControllerAdvice {
     }
 
     @NotNull
-    private ResponseEntity<?> getExceptionResponseEntity(final HttpStatus status, final String message) {
-        return getExceptionResponseEntity(null, status, null, message, null);
+    private ResponseEntity<?> getExceptionResponseEntity(final HttpServletRequest request, final HttpStatus status, final String message) {
+        return getExceptionResponseEntity(request, status, null, message, null);
     }
 
     @NotNull
@@ -139,7 +136,7 @@ public class XapiRestControllerAdvice {
     }
 
     @NotNull
-    private ResponseEntity<?> getExceptionResponseEntity(final HttpServletRequest request, final HttpStatus status, final Exception exception, final String message, final HttpHeaders headers) {
+    private ResponseEntity<?> getExceptionResponseEntity(@Nonnull final HttpServletRequest request, final HttpStatus status, final Exception exception, final String message, final HttpHeaders headers) {
         final String resolvedMessage;
         if (message == null && exception == null) {
             resolvedMessage = null;
@@ -154,7 +151,10 @@ public class XapiRestControllerAdvice {
         // If there's an explicit status, use that. Otherwise try to get it off of the exception and default to 500 if not available.
         final HttpStatus resolvedStatus = status != null ? status : getExceptionResponseStatus(exception, HttpStatus.INTERNAL_SERVER_ERROR);
 
-        if (_log.isInfoEnabled() && request != null && exception != null) {
+        // Log 500s as errors, other statuses can just be logged as info messages.
+        if (resolvedStatus == HttpStatus.INTERNAL_SERVER_ERROR) {
+            _log.error("HTTP status 500: Request by user " + XDAT.getUserDetails().getUsername() + " to URL " + request.getServletPath() + request.getPathInfo() + " caused an internal server error", exception);
+        } else if (_log.isInfoEnabled() && exception != null) {
             _log.info("HTTP status {}: Request by user {} to URL {} caused an exception of type {}{}",
                       resolvedStatus,
                       XDAT.getUserDetails().getUsername(),

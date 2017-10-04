@@ -80,7 +80,15 @@ public class DefaultCatalogService implements CatalogService {
     @Override
     public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
         final CatCatalogBean catalog = new CatCatalogBean();
-        catalog.setId(String.format(CATALOG_FORMAT, user.getLogin(), getPrearchiveTimestamp()));
+        UserI tempUser = user;
+        if(tempUser==null){
+            try{
+                tempUser=Users.getGuest();
+            }catch(Exception e){
+                _log.error("Cannot build catalog for null user.",e);
+            }
+        }
+        catalog.setId(String.format(CATALOG_FORMAT, tempUser.getLogin(), getPrearchiveTimestamp()));
 
         final DownloadArchiveOptions options = DownloadArchiveOptions.getOptions(resourceMap.get("options"));
         catalog.setDescription(options.getDescription());
@@ -117,7 +125,7 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
 
-        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(user, sessions, unescapedScanTypes, unescapedScanFormats);
+        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(tempUser, sessions, unescapedScanTypes, unescapedScanFormats);
 
         for (final String project : projects.keySet()) {
             final Map<String, Map<String, String>> subjects = projects.get(project);
@@ -146,7 +154,7 @@ public class DefaultCatalogService implements CatalogService {
                         addSafeEntrySet(sessionCatalog, reconstructionsCatalog);
                     }
 
-                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options, user);
+                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options, tempUser);
                     if (assessorsCatalog != null) {
                         addSafeEntrySet(sessionCatalog, assessorsCatalog);
                     }
@@ -156,7 +164,7 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
 
-        storeToCache(user, catalog);
+        storeToCache(tempUser, catalog);
 
         return catalog.getId();
     }
@@ -808,8 +816,29 @@ public class DefaultCatalogService implements CatalogService {
             final String label = atoms[2];
             final String sessionId = atoms[3];
 
-            matchingSessions.put(projectId, sessionId);
-            subjectLabelMap.put(projectId + ":" + sessionId, new String[]{subject, label});
+            ArrayList<String> sessionList = new ArrayList<>();
+            sessionList.add(sessionId);
+
+            try {
+                Multimap<String, String> accessMap = Permissions.verifyAccessToSessions(_parameterized, user, sessionList, projectId);
+                if(accessMap==null || !accessMap.containsKey(projectId)){
+                    throw new InsufficientPrivilegesException(user.getUsername(), sessionId);
+                }
+                else if(accessMap.get(projectId).contains(sessionId)){
+                    //user has access to the session
+                    matchingSessions.put(projectId, sessionId);
+                    subjectLabelMap.put(projectId + ":" + sessionId, new String[]{subject, label});
+                }
+                else{
+                    throw new InsufficientPrivilegesException(user.getUsername(), sessionId);
+                }
+            } catch (InsufficientPrivilegesException e) {
+                throw e;
+            } catch (Exception e) {
+                _log.error("An unexpected error occurred while trying to resolve read access for user " + user.getUsername() + " on project " + projectId);
+                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, e);
+            }
+
         }
 
         for (final String projectId : matchingSessions.keySet()) {
@@ -974,7 +1003,7 @@ public class DefaultCatalogService implements CatalogService {
                 final String sessionLabel = URLEncoder.encode(resource.get("session_label").toString(), "UTF-8");
                 final String proj = URLEncoder.encode(resource.get("project").toString(), "UTF-8");
                 try{
-                    if(Permissions.canReadProject(user,proj)) {
+                    if(Permissions.canReadProject(user,proj) && Permissions.canRead(user, resource.get("xsi").toString()+"/project", proj)) {
                         entry.setName(getPath(options, project, subject, sessionLabel, "assessors", assessorLabel, "resources", resourceLabel));
                         entry.setUri(StrSubstitutor.replace("/archive/experiments/${session_id}/assessors/${assessor_id}/out/resources/${resource_label}/files", resource));
                         _log.debug("Created session assessor entry for project {} session {} assessor {} resource {} with name {}: {}", project, sessionId, assessorLabel, resourceLabel, entry.getName(), entry.getUri());
@@ -1081,7 +1110,8 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "  assessor.label AS assessor_label, "
                                                                          + "  session.id AS session_id, "
                                                                          + "  session.label AS session_label, "
-                                                                         + "  assessor.project AS project "
+                                                                         + "  assessor.project AS project, "
+                                                                         + "  xme.element_name AS xsi "
                                                                          + "FROM xnat_abstractresource abstract "
                                                                          + "  LEFT JOIN img_assessor_out_resource imgOut "
                                                                          + "    ON imgOut.xnat_abstractresource_xnat_abstractresource_id = abstract.xnat_abstractresource_id "

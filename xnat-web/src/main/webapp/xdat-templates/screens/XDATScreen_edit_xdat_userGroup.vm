@@ -130,8 +130,12 @@ $page.setVlinkColor($ui.vlink)
     #set($pValue=$ug.getTag())
 
 	##project permissions
-	#set($pi="")
-    #set($pi=$ug.getRootPermissionObject("xnat:projectData","xnat:projectData/ID","$ug.getTag()"))
+    #set($pi="")
+    #set($permList = $ug.getPermissionsByDataTypeAndField("xnat:subjectData","xnat:subjectData/project"))
+    #if($permList.size()>0)
+        #set($pi=$permList.get(0))
+    #end
+
 	<tr class='body highlight'>
 		<td>Project</td>
 		<td title="Read" class="checkbox"><label><INPUT type="checkbox" class='' value="1" CHECKED DISABLED /></label><INPUT class='' type="hidden" name="xnat:projectData_xnat:projectData/ID_$!{pValue}_R" value="1"  /></td>
@@ -140,9 +144,13 @@ $page.setVlinkColor($ui.vlink)
 	</tr>
 	
 	##subject permissions
-	#set($pi="")
-    #set($pi=$ug.getRootPermissionObject("xnat:subjectData","xnat:subjectData/project","$ug.getTag()"))
-	<tr class='body highlight'>
+    #set($pi="")
+    #set($permList = $ug.getPermissionsByDataTypeAndField("xnat:subjectData","xnat:subjectData/project"))
+    #if($permList.size()>0)
+        #set($pi=$permList.get(0))
+    #end
+
+    <tr class='body highlight'>
 		<td>Subjects</td>
 		<td title="Read" class="checkbox"><label><INPUT type="checkbox" class='' value="1" CHECKED DISABLED /></label><INPUT class='' type="hidden" value="1" name="xnat:subjectData_xnat:subjectData/project_$!{pValue}_R" /></td>
 		<td title="Edit" class="checkbox"><label><INPUT type="checkbox" class='edit subject' value="1" name="xnat:subjectData_xnat:subjectData/project_$!{pValue}_E" #if($pi.getEdit())CHECKED #end /></label></td>
@@ -163,9 +171,13 @@ $page.setVlinkColor($ui.vlink)
 		#set($permissionCount = $permissionCount + 1)
 		#set($elementSQLName = $elementManager.get(2))
 		#if($elementManager.get(5).getSchemaElement().instanceOf("xnat:imageSessionData"))
-    		#set($pi="")
-    		#set($pi=$ug.getRootPermissionObject("${elementName}","${elementName}/project","$ug.getTag()"))		
-			#if($pi!="" && ($pi.getRead() || $pi.getCreate() || $pi.getEdit() || $pi.getDelete()))
+            #set($pi="")
+            #set($permList = $ug.getPermissionsByDataTypeAndField("${elementName}","${elementName}/project"))
+            #if($permList.size()>0)
+                #set($pi=$permList.get(0))
+            #end
+
+            #if($pi!="" && ($pi.getRead() || $pi.getCreate() || $pi.getEdit() || $pi.getDelete()))
 				<input type="hidden" value="1" name="${elementName}_${elementName}/project_$!{pValue}_wasSet"/>
 			#end
 			<tr class="body highlight">
@@ -190,8 +202,11 @@ $page.setVlinkColor($ui.vlink)
 		#set($permissionCount = $permissionCount + 1)
 		#set($elementSQLName = $elementManager.get(2))
 		#if($elementManager.get(5).getSchemaElement().instanceOf("xnat:imageAssessorData"))
-			#set($pi="")
-    		#set($pi=$ug.getRootPermissionObject("${elementName}","${elementName}/project","$ug.getTag()"))		
+            #set($pi="")
+            #set($permList = $ug.getPermissionsByDataTypeAndField("${elementName}","${elementName}/project"))
+            #if($permList.size()>0)
+                #set($pi=$permList.get(0))
+            #end
 			#if($pi!="" && ($pi.getRead() || $pi.getCreate() || $pi.getEdit() || $pi.getDelete()))
 				<input type="hidden" value="1" name="${elementName}_${elementName}/project_$!{pValue}_wasSet"/>
 			#end

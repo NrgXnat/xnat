@@ -363,6 +363,16 @@ generalSecuritySettings:
             description: >
                 If required, then only registered users will be able to access your site. If not required, anyone
                 visiting your site will automatically be logged in as 'guest' with access to public data.
+        refreshGuestFrequency:
+            kind: panel.input.text
+            name: refreshGuestFrequency
+            label: Refresh Guest Frequency
+            validation: interval onblur
+            description: >
+                How often to update the guest user object that is shared by users who are not logged in. If the
+                guest didn't have access to any sessions of a given type and one is added, the guest user will
+                not see this session in Browse->Data until the guest user object is refreshed. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         restrictUserListAccessToAdmins:
             kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins
@@ -382,6 +392,31 @@ generalSecuritySettings:
                 Should this site allow non-administrator users to create new projects?
                 If enabled, the site is more secure, but this can make it more difficult for
                 regular users to create new projects for their research efforts.
+        allowNonAdminsToClaimUnassignedSessions:
+            kind: panel.input.switchbox
+            name: allowNonAdminsToClaimUnassignedSessions
+            label: "Allow non-administrators <br>to find and claim <br>unassigned sessions?"
+            onText: Allow
+            offText: Do Not Allow
+            description: >
+                Should this site allow non-administrator users to search the prearchive for unassigned
+                sessions and claim any sessions matching the patient name, patient ID, or study date they
+                provide? Disabling this removes the "Find my study" feature and can help prevent users
+                from stealing another user's data. But it can also make it harder for users to get their
+                data into XNAT and increase the burden on site administrators.
+        ipsThatCanSendEmailsThroughRest:
+            kind: panel.input.text
+            name: ipsThatCanSendEmailsThroughRest
+            label: IPs that can send emails via REST
+            description: >
+              This must be a regular expression (do not include bounding '/' characters) which matches
+              trusted IPs from which users or pipelines should be able to send emails via an XNAT REST
+              call. By default this is set to allow all IPs but should be changed so that malicious
+              users do not use this to send phishing emails.
+            validation: "!pattern:^/"
+            element:
+                data:
+                    message: Please do not include bounding "/" characters in your regex pattern.
 
 userLoginsSessionControls:
     kind: panel.form
@@ -461,6 +496,16 @@ userLoginsSessionControls:
             description: >
               How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        canResetFailedLoginsWithForgotPassword:
+            kind: panel.input.switchbox
+            name: canResetFailedLoginsWithForgotPassword
+            label: Reset failed login count on forgot password?
+            onText: Enabled
+            offText: Disabled
+            description: >
+                Indicates whether a user should be able to click the link from a forgot password email to reset their
+                count of failed logins. If enabled, a locked out user will be able to request a forgot password email
+                and click the link from that email to change their password and unlock their account.
         userInactivityLockout:
             kind: panel.input.text
             name: inactivityBeforeLockout
@@ -477,6 +522,26 @@ userLoginsSessionControls:
             description: >
               How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        interactiveAgentIds:
+            kind: panel.input.text
+            name: interactiveAgentIds
+            label: Interactive Agent IDs
+            placeholder: .*MSIE.*, .*Mozilla.*, .*AppleWebKit.*, .*Opera.*
+            description: >
+              Regular-expression patterns that define user-agent header values that indicate whether a particular
+              request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
+              scriptable or automatable client. Separate multiple agent IDs with commas.
+        dataPaths:
+            kind: panel.input.text
+            name: dataPaths
+            label: Data Paths
+            placeholder: /xapi/**, /data/**, /REST/**, /fs/**
+            description: >
+              Ant patterns that define URL patterns that represent data paths (e.g. REST API calls). XNAT uses these
+              paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
+              example, instead of simply returning a "404 Not Found" error when an inaccessible resource is indicated,
+              a call to a data path by a browser may be redirected to the login page. Separate multiple data paths with
+              commas.
 
 passwords:
     kind: panel.form
@@ -1025,7 +1090,7 @@ registrationOptions:
         requireEmailVerificationToRegister:
             kind: panel.input.switchbox
             name: emailVerification
-            label: "Require Email Verification <br>to Register?"
+            label: "Require Email Verification?"
             onText: Required
             offText: Not Required
             description: >
@@ -1033,6 +1098,7 @@ registrationOptions:
                 link in the email to verify their email address before they are able to use their account.
                 If false, no verification emails will be sent and users will not be required to verify their email
                 before using their account. Either way the administrator receives an email notification when a user registers.
+                If true, users who wish to change their email will also be required to verify their new email address.
         emailVerificationMessage:
             kind: panel.textarea
             name: emailVerificationMessage
@@ -1237,9 +1303,12 @@ dicomScpReceivers:
         message:
             tag: div.message.bold
             content: >
-                Caution: Changes to this setting will take effect immediately.
-                Before disabling the receiver, verify that there are no
-                transmissions currently in progress.
+                Caution: Changes to these settings take effect immediately.
+                Note that any changes, including defining a new receiver and
+                editing or deleting an existing receiver, require restarting
+                <i>all other receivers</i> on the same port. Before performing
+                any operations like this, verify that there are no transmissions
+                currently in progress to any of the receivers on that port.
         dicomScpEditorTemplate:
             tag: "div#dicom-scp-editor-template.html-template"
             contents:

@@ -20,7 +20,6 @@ import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -57,6 +56,7 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.xml.sax.SAXException;
 
 import java.net.URISyntaxException;
@@ -69,8 +69,8 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 	String exptID=null;
 	XnatSubjectassessordata existing;
 	String subID= null;
-	
-	public SubjAssessmentResource(Context context, Request request, Response response) {
+
+	public SubjAssessmentResource(Context context, Request request, Response response) throws InsufficientAuthenticationException {
 		super(context, request, response);
 
 		final UserI  user = getUser();
@@ -78,52 +78,52 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 		if (pID != null) {
 			proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 		}
-		
-		if(proj==null){
-			response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+
+		if (proj == null) {
+			setGuestDataResponse();
 			return;
 		}
 
-			subID= (String)getParameter(request,"SUBJECT_ID");
-			if(subID!=null){
+		subID = (String) getParameter(request, "SUBJECT_ID");
+		if (subID != null) {
 			subject = XnatSubjectdata.GetSubjectByProjectIdentifier(proj
-					.getId(), subID, user, false);
-				
-				if(subject==null){
+																			.getId(), subID, user, false);
+
+			if (subject == null) {
 				subject = XnatSubjectdata.getXnatSubjectdatasById(subID, user,
-						false);
+																  false);
 				if (subject != null
-						&& (proj != null && !subject.hasProject(proj.getId()))) {
+					&& (proj != null && !subject.hasProject(proj.getId()))) {
 					subject = null;
 				}
-				}
 			}
-			
-			exptID= (String)getParameter(request,"EXPT_ID");
-			if(exptID!=null){
+		}
+
+		exptID = (String) getParameter(request, "EXPT_ID");
+		if (exptID != null) {
 			if (proj != null) {
 				if (existing == null) {
 					existing = (XnatSubjectassessordata) XnatExperimentdata
 							.GetExptByProjectIdentifier(proj.getId(), exptID,
-									user, false);
-			}
+														user, false);
+				}
 			}
 
 			if (existing == null) {
 				existing = (XnatSubjectassessordata) XnatExperimentdata
 						.getXnatExperimentdatasById(exptID, user, false);
 				if (existing != null
-						&& (proj != null && !existing.hasProject(proj.getId()))) {
+					&& (proj != null && !existing.hasProject(proj.getId()))) {
 					existing = null;
 				}
 			}
 
 			this.getVariants().add(new Variant(MediaType.TEXT_HTML));
 			this.getVariants().add(new Variant(MediaType.TEXT_XML));
-		}else{
+		} else {
 			response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 		}
-		this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.EXPERIMENT_DATA,false));
+		this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.EXPERIMENT_DATA, false));
 	}
 
 	@Override

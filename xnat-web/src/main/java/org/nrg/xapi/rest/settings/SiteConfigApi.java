@@ -78,16 +78,16 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return new ResponseEntity<>((Map<String, Object>) _preferences, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Sets a map of site configuration properties.", notes = "Sets the site configuration properties specified in the map.", response = Void.class)
+    @ApiOperation(value = "Sets a map of site configuration properties.", notes = "Sets the site configuration properties specified in the map.")
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST, restrictTo = Admin)
-    public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) throws InitializationException {
+    public ResponseEntity<Void> setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) throws InitializationException {
         // Is this call initializing the system?
         final boolean isInitialized = _appInfo.isInitialized();
-        final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && StringUtils.equals("true", properties.get("initialized"));
+        final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && (boolean) properties.get("initialized");
         for (final String name : properties.keySet()) {
             try {
                 // If we're initializing, we're going to make sure everything else is set BEFORE we set initialized to true, so skip it here.
@@ -97,8 +97,17 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 if (!isInitialized && properties.containsKey("adminEmail")) {
                     _template.update(EMAIL_UPDATE, properties);
                 }
-                _preferences.set(properties.get(name), name);
-                _log.info("Set property {} to value: {}", name, properties.get(name));
+                final Object value = properties.get(name);
+                if (value instanceof List) {
+                    _preferences.setListValue(name, (List) value);
+                } else if (value instanceof Map) {
+                    _preferences.setMapValue(name, (Map) value);
+                } else if (value.getClass().isArray()) {
+                    _preferences.setArrayValue(name, (Object[]) value);
+                } else {
+                    _preferences.set(value.toString(), name);
+                }
+                _log.info("Set property {} to value: {}", name, value);
             } catch (InvalidPreferenceName invalidPreferenceName) {
                 _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
             }
@@ -152,7 +161,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return new ResponseEntity<>(value, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Sets a single site configuration property.", notes = "Sets the site configuration property specified in the URL to the value set in the body.", response = Void.class)
+    @ApiOperation(value = "Sets a single site configuration property.", notes = "Sets the site configuration property specified in the URL to the value set in the body.")
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully set."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),

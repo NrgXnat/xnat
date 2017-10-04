@@ -6,7 +6,7 @@ import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xnat.event.listeners.methods.AbstractSiteConfigPreferenceHandlerMethod;
+import org.nrg.xnat.event.listeners.methods.AbstractScopedSiteConfigPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -81,17 +81,7 @@ public class UserResourceXapiAuthorization extends AbstractXapiAuthorization imp
     private static final String       RESTRICT_PREF = "restrictUserListAccessToAdmins";
     private static final List<String> PREFERENCES   = ImmutableList.copyOf(Collections.singletonList(RESTRICT_PREF));
 
-    private final PreferenceHandlerMethod _handlerProxy = new AbstractSiteConfigPreferenceHandlerMethod() {
-        @Override
-        public List<String> getHandledPreferences() {
-            return PREFERENCES;
-        }
-
-        @Override
-        public void handlePreferences(final Map<String, String> values) {
-            handlePreference(RESTRICT_PREF, values.get(RESTRICT_PREF));
-        }
-
+    private final PreferenceHandlerMethod _handlerProxy = new AbstractScopedSiteConfigPreferenceHandlerMethod(PREFERENCES) {
         @Override
         public void handlePreference(final String preference, final String value) {
             _restrictUserListAccessToAdmins = Boolean.parseBoolean(value);

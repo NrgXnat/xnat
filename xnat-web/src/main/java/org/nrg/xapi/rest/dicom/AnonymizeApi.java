@@ -121,7 +121,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script."),
                    @ApiResponse(code = 404, message = "The specified project wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "projects/{projectId}", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT, restrictTo = Owner)
+    @XapiRequestMapping(value = "projects/{projectId}", consumes = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT, restrictTo = Delete)
     public ResponseEntity<Void> setProjectAnonScript(@ApiParam(value = "Indicates the ID of the project to be enabled or disabled.", required = true)
                                                          @PathVariable("projectId")
                                                          @ProjectId final String projectId,
@@ -149,7 +149,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully set the status of the project-specific anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Owner)
+    @XapiRequestMapping(value = "projects/{projectId}/enabled", consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Delete)
     public ResponseEntity<Void> setProjectAnonScriptEnabled(@PathVariable("projectId") @ProjectId final String projectId,
                                                             @RequestParam(required= false, defaultValue = "true") final boolean enable) throws NrgServiceException {
         if (enable) {

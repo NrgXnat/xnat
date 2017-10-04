@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 
-public class CatalogResourceList extends XNATTemplate {
+public class    CatalogResourceList extends XNATTemplate {
     private final static Logger logger = LoggerFactory.getLogger(ScanList.class);
 
     public CatalogResourceList(Context context, Request request, Response response) {
@@ -146,60 +146,62 @@ public class CatalogResourceList extends XNATTemplate {
     @Override
     public Representation represent(Variant variant) {
         final UserI user = getUser();
+
         XFTTable table = null;
 
-        if(recons.size()>0 || scans.size()>0 || expts.size()>0 || sub!=null || proj!=null){
+        if (recons.size() > 0 || scans.size() > 0 || expts.size() > 0 || sub != null || proj != null) {
             try {
-                table=loadCatalogs(null, false, isQueryVariableTrue("all"));
+                table = loadCatalogs(null, false, isQueryVariableTrue("all"));
             } catch (Exception e) {
-                logger.error("",e);
+                logger.error("", e);
             }
         }
 
-        boolean fileStats = isQueryVariableTrue("file_stats");
-        boolean cacheFileStats = isQueryVariableTrue("cache_file_stats");
-        if(fileStats) {
+        final boolean fileStats      = isQueryVariableTrue("file_stats");
+        final boolean cacheFileStats = isQueryVariableTrue("cache_file_stats");
+        if (fileStats) {
             try {
-                if(proj==null){
-                    if(parent.getItem().instanceOf("xnat:experimentData")){
-                        proj = ((XnatExperimentdata)parent).getPrimaryProject(false);
+                if (proj == null) {
+                    if (parent.getItem().instanceOf("xnat:experimentData")) {
+                        proj = ((XnatExperimentdata) parent).getPrimaryProject(false);
                         // Per FogBugz 4746, prevent NPE when user doesn't have access to resource (MRH)
                         // Check access through shared project when user doesn't have access to primary project
                         if (proj == null) {
-                            proj = (XnatProjectdata)((XnatExperimentdata)parent).getFirstProject();
+                            proj = (XnatProjectdata) ((XnatExperimentdata) parent).getFirstProject();
                         }
-                    }else if(security.getItem().instanceOf("xnat:experimentData")){
-                        proj = ((XnatExperimentdata)security).getPrimaryProject(false);
+                    } else if (security.getItem().instanceOf("xnat:experimentData")) {
+                        proj = ((XnatExperimentdata) security).getPrimaryProject(false);
                         // Per FogBugz 4746, ....
                         if (proj == null) {
-                            proj = (XnatProjectdata)((XnatExperimentdata)security).getFirstProject();
+                            proj = (XnatProjectdata) ((XnatExperimentdata) security).getFirstProject();
                         }
-                    }else if(security.getItem().instanceOf("xnat:subjectData")){
-                        proj = ((XnatSubjectdata)security).getPrimaryProject(false);
+                    } else if (security.getItem().instanceOf("xnat:subjectData")) {
+                        proj = ((XnatSubjectdata) security).getPrimaryProject(false);
                         // Per FogBugz 4746, ....
                         if (proj == null) {
-                            proj = (XnatProjectdata)((XnatSubjectdata)security).getFirstProject();
+                            proj = (XnatProjectdata) ((XnatSubjectdata) security).getFirstProject();
                         }
-                    }else if(security.getItem().instanceOf("xnat:projectData")){
-                        proj = (XnatProjectdata)security;
+                    } else if (security.getItem().instanceOf("xnat:projectData")) {
+                        proj = (XnatProjectdata) security;
                     }
                 }
 
             } catch (ElementNotFoundException e) {
-                logger.error("",e);
+                logger.error("", e);
             }
         }
 
-        table = CatalogUtils.populateTable(table, user, proj, cacheFileStats);
 
-        Hashtable<String,Object> params= new Hashtable<>();
+        final Hashtable<String, Object> params = new Hashtable<>();
         params.put("title", "Resources");
 
-        if(table!=null) {
+        if (table != null) {
+            table = CatalogUtils.populateTable(table, user, proj, cacheFileStats);
+
             // If table.rows() is null, set recordCount to 0
-            ArrayList<Object[]> r = table.rows();
-            int recordCount = (r != null) ? r.size() : 0;
-            
+            final ArrayList<Object[]> records     = table.rows();
+            final int                 recordCount = (records != null) ? records.size() : 0;
+
             if (logger.isDebugEnabled()) {
                 logger.debug("Found a total of " + recordCount + " records");
             }

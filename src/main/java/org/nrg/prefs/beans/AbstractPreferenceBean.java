@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -53,8 +54,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.io.*;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -1354,31 +1357,57 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             }
             _log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
         }
-        final Method method;
+        Method method = null;
         if (_methods.containsKey(preference)) {
             method = _methods.get(preference);
         } else {
             method = getGetter(getClass(), AbstractPreferenceBean.class, preference, ReflectionUtils.withAnnotation(NrgPreference.class));
             if (method == null) {
-                final Tool tool = _preferenceService.getTool(getToolId());
-                if (tool.isStrict()) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
-                }
-                final String returnValue = getValue(preference);
-                if (StringUtils.isNotBlank(returnValue)) {
-                    storeToCache(preference, returnValue);
-                    return returnValue;
-                }
-                if (defaultValue == null) {
-                    return null;
-                }
+                final Set<Method> methods = ReflectionUtils.getMethods(getClass(), new PreferencePropertyNamePredicate(preference));
+                switch (methods.size()) {
+                    case 0:
+                        final Tool tool = _preferenceService.getTool(getToolId());
+                        if (tool.isStrict()) {
+                            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
+                        }
+                        final String returnValue = getValue(preference);
+                        if (StringUtils.isNotBlank(returnValue)) {
+                            storeToCache(preference, returnValue);
+                            return returnValue;
+                        }
+                        if (defaultValue == null) {
+                            return null;
+                        }
 
-                storeToCache(preference, defaultValue);
-                return defaultValue;
+                        storeToCache(preference, defaultValue);
+                        return defaultValue;
+
+                    case 1:
+                        method = methods.iterator().next();
+                        break;
+
+                    default:
+                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "More than one preference on the " + getClass().getName() + " preference bean is using the name " + preference + ".");
+                }
             }
             _methods.put(preference, method);
         }
         return method;
+    }
+
+    private static class PreferencePropertyNamePredicate implements Predicate<AnnotatedElement> {
+        private PreferencePropertyNamePredicate(final String preference) {
+            _preference = preference;
+        }
+
+        @Override
+        public boolean apply(@Nullable AnnotatedElement element) {
+            return element != null &&
+                    element.isAnnotationPresent(NrgPreference.class) &&
+                    StringUtils.equals(_preference, element.getAnnotation(NrgPreference.class).property());
+        }
+
+        private final String _preference;
     }
 
     private static ObjectMapper getObjectMapper() {

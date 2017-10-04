@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.4-SNAPSHOT</version>
+    <version>1.7.4</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -64,8 +64,8 @@
         <signing.keypass>keypass</signing.keypass>
         <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
-        <xnat.version>1.7.3</xnat.version>
-        <xnatdev.version>1.7.4-SNAPSHOT</xnatdev.version>
+        <xnat.version>1.7.4</xnat.version>
+        <xnatdev.version>1.7.4</xnatdev.version>
         <xams.version>1.0-SNAPSHOT</xams.version>
         <xdat.version>${xnatdev.version}</xdat.version>
         <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
@@ -76,16 +76,16 @@
         <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
         <nrg.test.version>${xnatdev.version}</nrg.test.version>
         <nrg.transaction.version>${xnatdev.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.0.1-SNAPSHOT</nrg.mizer.version>
+        <nrg.mizer.version>1.0.1</nrg.mizer.version>
         <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.0.1-SNAPSHOT</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.0.1-SNAPSHOT</nrg.dicom-edit6.version>
+        <nrg.dicom-edit4.version>1.0.1</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>1.0.1</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.0.3-SNAPSHOT</nrg.ecat.version>
-        <nrg.extattr.version>4.2.3-SNAPSHOT</nrg.extattr.version>
+        <nrg.ecat.version>1.0.3</nrg.ecat.version>
+        <nrg.extattr.version>4.2.3</nrg.extattr.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
         <pipelinedev.version>${xnatdev.version}</pipelinedev.version>
@@ -429,7 +429,7 @@
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>
                 <artifactId>ximgview-plugin</artifactId>
-                <version>1.0.0-SNAPSHOT</version>
+                <version>1.0.0</version>
             </dependency>
 
             <!-- Pipeline dependency definitions -->

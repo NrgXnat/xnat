@@ -72,7 +72,7 @@ public class XDATTool {
      */
     public XDATTool(String instanceLocation) throws Exception {
         location = FileUtils.AppendSlash(instanceLocation);
-        XDAT.init(location,false);
+        XDAT.init(location,false, true);
     }
     /**
      *
@@ -80,13 +80,13 @@ public class XDATTool {
     public XDATTool(String instanceLocation, UserI u) throws Exception {
         user=u;
         location= FileUtils.AppendSlash(instanceLocation);
-        XDAT.init(location,false);
+        XDAT.init(location,false, true);
     }
 
 	public XDATTool(String instanceLocation,String username, String password) throws Exception
     {
         location = new File(instanceLocation).toURI().toString();
-        XDAT.init(location,true);
+        XDAT.init(location,true, true);
         login(username,password);
     }
 

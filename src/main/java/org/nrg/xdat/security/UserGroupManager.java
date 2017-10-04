@@ -25,6 +25,7 @@ import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
@@ -47,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class UserGroupManager implements UserGroupServiceI{
 
@@ -62,7 +64,7 @@ public class UserGroupManager implements UserGroupServiceI{
     	UserGroup g =(UserGroup) CacheManager.GetInstance().retrieve(XdatUsergroup.SCHEMA_ELEMENT_NAME, id);
     	if(g==null){
     		try {
-                XdatUsergroup temp = XdatUsergroup.getXdatUsergroupsById(id, null, true);
+                XdatUsergroup temp = XdatUsergroup.getXdatUsergroupsById(id, AdminUtils.getAdminUser(), true);
                 if(temp!=null){
                     g = new UserGroup(temp);
                     CacheManager.GetInstance().put(XdatUsergroup.SCHEMA_ELEMENT_NAME, id, g);
@@ -113,7 +115,7 @@ public class UserGroupManager implements UserGroupServiceI{
 	@Override
 	public void removeUserFromGroup(UserI user, UserI currentUser, String groupId, EventMetaI ci) throws Exception {
 		for (XdatUserGroupid map : ((XDATUser)user).getGroups_groupid()) {
-			if (map.getGroupid().equals(groupId)) {
+			if (StringUtils.equals(map.getGroupid(),groupId)) {
 				SaveItemHelper.authorizedDelete(map.getItem(), currentUser, ci);
 			}
 		}
@@ -316,10 +318,8 @@ public class UserGroupManager implements UserGroupServiceI{
 	@Override
 	public List<UserGroupI> getGroupsByTag(String tag) throws Exception {
 		List<UserGroupI> ug=Lists.newArrayList();
-		
-		final CriteriaCollection col = new CriteriaCollection("AND");
-        col.addClause(XdatUsergroup.SCHEMA_ELEMENT_NAME +".tag","=", "'" + tag + "'");
-        for(XdatUsergroup gp:XdatUsergroup.getXdatUsergroupsByField(col, null, false)){
+
+        for(XdatUsergroup gp:XdatUsergroup.getXdatUsergroupsByTag(tag, null, false)){
         	ug.add(new UserGroup(gp));
         }
 

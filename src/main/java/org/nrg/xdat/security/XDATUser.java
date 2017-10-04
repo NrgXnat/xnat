@@ -1116,7 +1116,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             List<String> groups = Groups.getGroupIdsForUser(this);
             if (groups != null && groups.size() > 0) {
                 for (String group : groups) {
-                    _authorities.add(new SimpleGrantedAuthority(group));
+                    if(group!=null) {
+                        _authorities.add(new SimpleGrantedAuthority(group));
+                    }
                 }
             }
             if (logger.isDebugEnabled()) {
@@ -1131,7 +1133,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean isAccountNonLocked() {
-        return true;
+        return _authorization!=null && _authorization.getLockoutTime()==null;
     }
 
     public boolean isCredentialsNonExpired() {

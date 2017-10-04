@@ -181,7 +181,7 @@ public class GenerateResources {
 
             XFT.VERBOSE = true;
 
-            XDAT.init(schemaDir, false);
+            XDAT.init(schemaDir, false, true);
 
             final JavaFileGenerator generator = new JavaFileGenerator();
             final JavaScriptGenerator jsGenerator = new JavaScriptGenerator();

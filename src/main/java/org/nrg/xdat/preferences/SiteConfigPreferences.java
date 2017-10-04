@@ -294,6 +294,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "5 minutes")
+    public String getRefreshGuestFrequency() {
+        return getValue("refreshGuestFrequency");
+    }
+
+    public void setRefreshGuestFrequency(final String refreshGuestFrequency) {
+        try {
+            set(refreshGuestFrequency, "refreshGuestFrequency");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'refreshGuestFrequency': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true")
     public boolean getEmailVerification() {
         return getBooleanValue("emailVerification");
@@ -371,6 +384,32 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             setBooleanValue(restrictUserListAccessToAdmins, "restrictUserListAccessToAdmins");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'restrictUserListAccessToAdmins': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "['/xapi/**', '/data/**', '/REST/**', '/fs/**']")
+    public List<String> getDataPaths() {
+        return getListValue("dataPaths");
+    }
+
+    public void setDataPaths(final List<String> dataPaths) {
+        try {
+            setListValue("dataPaths", dataPaths);
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'dataPaths': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "['.*MSIE.*', '.*Mozilla.*', '.*AppleWebKit.*', '.*Opera.*']")
+    public List<String> getInteractiveAgentIds() {
+        return getListValue("interactiveAgentIds");
+    }
+
+    public void setInteractiveAgentIds(final List<String> interactiveAgentIds) {
+        try {
+            setListValue("interactiveAgentIds", interactiveAgentIds);
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'interactiveAgentIds': something is very wrong here.", e);
         }
     }
 
@@ -1133,6 +1172,32 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "true")
+    public boolean getAllowNonAdminsToClaimUnassignedSessions() {
+        return getBooleanValue("allowNonAdminsToClaimUnassignedSessions");
+    }
+
+    public void setAllowNonAdminsToClaimUnassignedSessions(final boolean allowNonAdminsToClaimUnassignedSessions) {
+        try {
+            setBooleanValue(allowNonAdminsToClaimUnassignedSessions, "allowNonAdminsToClaimUnassignedSessions");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'allowNonAdminsToClaimUnassignedSessions': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "^.*$")
+    public String getIpsThatCanSendEmailsThroughRest() {
+        return getValue("ipsThatCanSendEmailsThroughRest");
+    }
+
+    public void setIpsThatCanSendEmailsThroughRest(final String ipsThatCanSendEmailsThroughRest) {
+        try {
+            set(ipsThatCanSendEmailsThroughRest, "ipsThatCanSendEmailsThroughRest");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'ipsThatCanSendEmailsThroughRest': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "Your login attempt failed because the username and password combination you provided was invalid or your user already has the maximum number of user sessions open. After %d failed login attempts, your user account will be locked. If you believe your account is currently locked, you can:<ul><li>Unlock it by resetting your password</li><li>Wait one hour for it to unlock automatically</li></ul>",
             aliases = "UI.login_failure_message")
     public String getUiLoginFailureMessage() {
@@ -1225,7 +1290,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "5")
+    @NrgPreference(defaultValue = "20")
     public int getMaxFailedLogins() {
         return getIntegerValue("maxFailedLogins");
     }
@@ -1261,6 +1326,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             set(resetFailedLoginsSchedule, "resetFailedLoginsSchedule");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'resetFailedLoginsSchedule': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true")
+    public boolean getCanResetFailedLoginsWithForgotPassword() {
+        return getBooleanValue("canResetFailedLoginsWithForgotPassword");
+    }
+
+    public void setCanResetFailedLoginsWithForgotPassword(final String canResetFailedLoginsWithForgotPassword) {
+        try {
+            set(canResetFailedLoginsWithForgotPassword, "canResetFailedLoginsWithForgotPassword");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'canResetFailedLoginsWithForgotPassword': something is very wrong here.", e);
         }
     }
 

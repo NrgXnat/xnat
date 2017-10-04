@@ -933,22 +933,14 @@ public class TurbineUtils {
     }
     
     public String validateTemplate(String screen, String project) {
-        final String key;
-        if (StringUtils.isBlank(project)) {
-            key = screen.endsWith(".vm") ? screen : screen + ".vm";
-        } else {
-            key = (screen.endsWith(".vm") ? screen.substring(0, screen.length() - 3) : screen) + "_" + project + ".vm";
+        if (StringUtils.isNotBlank(project)) {
+            final String key = (screen.endsWith(".vm") ? screen.substring(0, screen.length() - 3) : screen) + "_" + project + ".vm";
+            if (isValidResourceKey(key)) {
+                return key;
+            }
         }
-
-        final boolean isDebugMode = Boolean.parseBoolean(XDAT.safeSiteConfigProperty("debugMode", "false"));
-
-        if (isDebugMode) {
-            return resourceExists(key) ? key : null;
-        }
-        if (!_templates.containsKey(key)) {
-            _templates.put(key, resourceExists(key));
-        }
-        return _templates.get(key) ? key : null;
+        final String key = screen.endsWith(".vm") ? screen : screen + ".vm";
+        return isValidResourceKey(key) ? key : null;
     }
 
     /**
@@ -1397,6 +1389,20 @@ public class TurbineUtils {
             }
         }
     };
+
+    private boolean isValidResourceKey(final String key) {
+        final boolean isDebugMode = Boolean.parseBoolean(XDAT.safeSiteConfigProperty("debugMode", "false"));
+
+        if (isDebugMode) {
+            return resourceExists(key);
+        }
+
+        if (!_templates.containsKey(key)) {
+            _templates.put(key, resourceExists(key));
+        }
+
+        return _templates.get(key);
+    }
 
     private static final Map<String, Boolean> _templates = new ConcurrentHashMap<>();
 }

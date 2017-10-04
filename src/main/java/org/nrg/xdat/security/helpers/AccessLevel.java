@@ -30,6 +30,7 @@ public enum AccessLevel {
     Admin("admin", AdminXapiAuthorization.class),
     Read("read", ProjectAccessXapiAuthorization.class),
     Edit("edit", ProjectAccessXapiAuthorization.class),
+    Delete("delete", ProjectAccessXapiAuthorization.class),
     Collaborator("collaborator", ProjectAccessXapiAuthorization.class),
     Member("member", ProjectAccessXapiAuthorization.class),
     Owner("owner", ProjectAccessXapiAuthorization.class),

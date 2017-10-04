@@ -708,6 +708,9 @@ public class Permissions {
             case Edit:
                 return Permissions.canEditProject(user, projectId);
 
+            case Delete:
+                return Permissions.canDeleteProject(user, projectId);
+
             case Owner:
                 return Permissions.isProjectOwner(user, projectId);
 
@@ -734,6 +737,14 @@ public class Permissions {
         return StringUtils.isNotBlank(access) && PROJECT_GROUPS.subList(1, PROJECT_GROUP_COUNT).contains(access);
     }
 
+    public static boolean canDeleteProject(final UserI user, final String projectId) {
+        if (Roles.isSiteAdmin(user)) {
+            return true;
+        }
+        final String access = getUserProjectAccess(user, projectId);
+        return StringUtils.isNotBlank(access) && PROJECT_GROUPS.subList(2, PROJECT_GROUP_COUNT).contains(access);
+    }
+
     public static boolean isProjectOwner(final UserI user, final String projectId) {
         return AccessLevel.Owner.equals(getUserProjectAccess(user, projectId));
     }
@@ -748,14 +759,20 @@ public class Permissions {
 
     public static String getUserProjectAccess(final UserI user, final String projectId) {
         final Pattern pattern = Pattern.compile(String.format(PROJECT_ROLE_TEMPLATE, projectId));
-        for (final GrantedAuthority authority : user.getAuthorities()) {
-            final Matcher matcher = pattern.matcher(authority.getAuthority());
-            if (matcher.find()) {
-                final String access = matcher.group("access");
-                if (PROJECT_GROUPS.contains(access)) {
-                    return access;
+        try {
+            List<UserGroupI> groups = Groups.getGroupsByTag(projectId);
+            List<String> usersGroups = Groups.getGroupIdsForUser(user);
+            if(usersGroups!=null && groups!=null){
+                for(UserGroupI group: groups){
+                    String groupId = group.getId();
+                    if(groupId!= null && usersGroups.contains(groupId)){
+                        return groupId.substring(projectId.length()+1);
+                    }
                 }
             }
+        }
+        catch(Exception e){
+
         }
         return null;
     }
@@ -798,8 +815,40 @@ public class Permissions {
     }
 
     public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
+        final List<Map<String, Object>> locatedTypes = template.queryForList(QUERY_GET_XSI_TYPES_FROM_EXPTS, new HashMap<String, Object>() {{
+            put("sessionIds", sessionIds);
+        }});
+        HashSet<String> sessionsUserCanRead = new HashSet<>();
+        for (final Map<String, Object> session : locatedTypes) {
+            try{
+                if(StringUtils.isBlank(scopedProjectId)){
+                    Set<String> sessionSet = new HashSet<>();
+                    sessionSet.add(session.get("id").toString());
+                    Multimap<String, String> projMap = getProjectsForSessions(template, sessionSet);
+                    Set<String> projectsSessionIsIn = projMap.keySet();
+                    boolean canReadOne = false;
+                    for(String pr : projectsSessionIsIn){
+                        if(canRead(user, session.get("xsi").toString()+"/project", pr)){
+                            canReadOne = true;
+                        }
+                    }
+                    if(canReadOne){
+                        sessionsUserCanRead.add(session.get("id").toString());
+                    }
+                }
+                else {
+                    if (canRead(user, session.get("xsi").toString() + "/project", scopedProjectId)) {
+                        sessionsUserCanRead.add(session.get("id").toString());
+                    }
+                }
+            }
+            catch(Exception e){
+                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, sessionIds);
+            }
+        }
+
         // Get all projects, primary and shared, that contain the specified session IDs.
-        final Multimap<String, String> projectSessionMap = getProjectsForSessions(template, sessionIds);
+        final Multimap<String, String> projectSessionMap = getProjectsForSessions(template, sessionsUserCanRead);
 
         // If they specified a project ID...
         final Set<String> projectIds = projectSessionMap.keySet();
@@ -807,13 +856,13 @@ public class Permissions {
             // Make sure that it's in the list of projects associated with the session IDs.
             if (!projectSessionMap.containsKey(scopedProjectId)) {
                 // If it's not, then it's time to freak out.
-                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, sessionIds);
+                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, sessionsUserCanRead);
             }
 
             // Now check that all of the requested sessions are available in the scoped project.
             final Collection<String> located = projectSessionMap.get(scopedProjectId);
-            if (!located.containsAll(sessionIds)) {
-                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, Sets.difference(new HashSet<>(sessionIds), new HashSet<>(located)));
+            if (!located.containsAll(sessionsUserCanRead)) {
+                throw new InsufficientPrivilegesException(user.getUsername(), scopedProjectId, Sets.difference(new HashSet<>(sessionsUserCanRead), new HashSet<>(located)));
             }
 
             // Limit the map to just the specified project.
@@ -847,8 +896,8 @@ public class Permissions {
 
             // The list of sessions from accessible projects should be the same as the submitted list of sessions or
             // else the user requested sessions that aren't accessible. In that case, freak out.
-            if (authorized.size() != sessionIds.size()) {
-                throw new InsufficientPrivilegesException(user.getUsername(), Sets.difference(sessionIds, authorized));
+            if (authorized.size() != sessionsUserCanRead.size()) {
+                throw new InsufficientPrivilegesException(user.getUsername(), Sets.difference(sessionsUserCanRead, authorized));
             }
         }
 
@@ -856,6 +905,11 @@ public class Permissions {
     }
 
     public static Multimap<String, String> getProjectsForSessions(final NamedParameterJdbcTemplate template, final Set<String> sessions) {
+        final ArrayListMultimap<String, String> projectSessionMap = ArrayListMultimap.create();
+        if(sessions.size()<=0){
+            return projectSessionMap;
+        }
+
         final List<Map<String, Object>> located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new HashMap<String, Object>() {{
             put("sessionIds", sessions);
         }});
@@ -863,7 +917,6 @@ public class Permissions {
             throw new InvalidSearchException("The submitted sessions are not associated with any projects:\n * Sessions: " + Joiner.on(", ").join(sessions));
         }
 
-        final ArrayListMultimap<String, String> projectSessionMap = ArrayListMultimap.create();
         for (final Map<String, Object> session : located) {
             projectSessionMap.put(session.get("project").toString(), session.get("experiment").toString());
         }
@@ -905,6 +958,21 @@ public class Permissions {
             + "FROM xnat_experimentdata_share share "
             + "WHERE share.sharing_share_xnat_experimentda_id IN (:sessionIds) "
             + "ORDER BY project";
+
+    /**
+     * Requires one parameter:
+     *
+     * <ul>
+     * <li><b>sessions</b> is a list of session IDs</li>
+     * </ul>
+     */
+    private static final String QUERY_GET_XSI_TYPES_FROM_EXPTS = "SELECT "
+            + "  xnat_experimentdata.id         AS id, "
+            + "  xdat_meta_element.element_name AS xsi "
+            + "FROM xnat_experimentdata "
+            + "LEFT JOIN xdat_meta_element "
+            + "ON xnat_experimentdata.extension=xdat_meta_element.xdat_meta_element_id "
+            + "WHERE xnat_experimentdata.id IN (:sessionIds)";
 
     private static final List<String> PROJECT_GROUPS        = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();

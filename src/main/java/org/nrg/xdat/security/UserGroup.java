@@ -18,6 +18,7 @@ import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.services.GroupFeatureService;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -75,7 +76,7 @@ public class UserGroup implements UserGroupI{
 
     public XdatUsergroup getUserGroupImpl(){
     	if(xdatGroup==null){
-    		return XdatUsergroup.getXdatUsergroupsById(id, null, true);
+    		return XdatUsergroup.getXdatUsergroupsById(id, AdminUtils.getAdminUser(), true);
     	}else{
     		return xdatGroup;
     	}

@@ -416,7 +416,7 @@
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>plexiviewer</artifactId>
-                <version>${xnat.version}</version>
+                <version>1.7.4</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -461,7 +461,7 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>catalog</artifactId>
-                <version>${pipeline.version}</version>
+                <version>1.7.3</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
@@ -471,22 +471,22 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-pipeline</artifactId>
-                <version>${pipelinedev.version}</version>
+                <version>1.7.4</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-tools</artifactId>
-                <version>${pipeline.version}</version>
+                <version>1.7.4</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>imagingtools</artifactId>
-                <version>${pipeline.version}</version>
+                <version>1.7.3</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>pipeline-client</artifactId>
-                <version>${pipeline.version}</version>
+                <version>1.7.3</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

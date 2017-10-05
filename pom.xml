@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.4</version>
+    <version>1.7.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -65,7 +65,7 @@
         <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
         <xnat.version>1.7.4</xnat.version>
-        <xnatdev.version>1.7.4</xnatdev.version>
+        <xnatdev.version>1.7.5-SNAPSHOT</xnatdev.version>
         <xams.version>1.0-SNAPSHOT</xams.version>
         <xdat.version>${xnatdev.version}</xdat.version>
         <nrg.automation.version>${xnatdev.version}</nrg.automation.version>

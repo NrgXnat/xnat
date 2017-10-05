@@ -16,6 +16,8 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
+import org.nrg.xnat.security.tokens.XnatAuthenticationToken;
+import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -39,10 +41,12 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      * Performs authentication with the same contract as {@link AuthenticationManager#authenticate(Authentication)}.
      *
      * @param authentication the authentication request object.
+     *
      * @return a fully authenticated object including credentials. May return <code>null</code> if the
-     * <code>AuthenticationProvider</code> is unable to support authentication of the passed
-     * <code>Authentication</code> object. In such a case, the next <code>AuthenticationProvider</code> that
-     * supports the presented <code>Authentication</code> class will be tried.
+     *         <code>AuthenticationProvider</code> is unable to support authentication of the passed
+     *         <code>Authentication</code> object. In such a case, the next <code>AuthenticationProvider</code> that
+     *         supports the presented <code>Authentication</code> class will be tried.
+     *
      * @throws AuthenticationException if authentication fails.
      */
     @Override
@@ -70,8 +74,9 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      * conducted at runtime the <code>ProviderManager</code>.</p>
      *
      * @param authentication DOCUMENT ME!
+     *
      * @return <code>true</code> if the implementation can more closely evaluate the <code>Authentication</code> class
-     * presented
+     *         presented
      */
     @Override
     public boolean supports(final Class<?> authentication) {
@@ -89,9 +94,34 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
         return false;
     }
 
+    /**
+     * For this implementation, calling this method has no effect.
+     *
+     * @param visible Whether the provider should be visible to and usable by users.
+     */
+    @Override
+    public void setVisible(final boolean visible) {
+        //
+    }
+
+    /**
+     * Gets the provider's name.
+     *
+     * @return The provider's name.
+     */
     @Override
     public String getName() {
         return XdatUserAuthService.TOKEN;
+    }
+
+    /**
+     * Sets the provider's name. For this implementation, calling this method has no effect.
+     *
+     * @param name The display name to set for the XNAT authentication provider.
+     */
+    @Override
+    public void setName(final String name) {
+        //
     }
 
     @Override
@@ -117,6 +147,16 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
     @Override
     public void setOrder(int order) {
         _order = order;
+    }
+
+    @Override
+    public XnatAuthenticationToken createToken(final String username, final String password) {
+        return new AliasTokenAuthenticationToken(username, password);
+    }
+
+    @Override
+    public boolean supports(final Authentication authentication) {
+        return supports(authentication.getClass()) && StringUtils.equals(getProviderId(), ((XnatAuthenticationToken) authentication).getProviderId());
     }
 
     @Override
@@ -161,7 +201,9 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      * @param username       The username to retrieve
      * @param authentication The authentication request, which subclasses <em>may</em> need to perform a binding-based
      *                       retrieval of the <code>UserDetails</code>
+     *
      * @return the user information (never <code>null</code> - instead an exception should the thrown)
+     *
      * @throws AuthenticationException If the credentials could not be validated (generally a
      *                                 <code>BadCredentialsException</code>, an <code>AuthenticationServiceException</code> or
      *                                 <code>UsernameNotFoundException</code>)

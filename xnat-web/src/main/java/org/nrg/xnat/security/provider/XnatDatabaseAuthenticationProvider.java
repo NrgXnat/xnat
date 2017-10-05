@@ -9,23 +9,26 @@
 
 package org.nrg.xnat.security.provider;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.security.tokens.XnatAuthenticationToken;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.*;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.authentication.encoding.PlaintextPasswordEncoder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 
 public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvider implements XnatAuthenticationProvider {
-
-    public XnatDatabaseAuthenticationProvider() {
+    public XnatDatabaseAuthenticationProvider(final String displayName, final String providerId) {
         super();
         setPreAuthenticationChecks(new PreAuthenticationChecks());
+        _displayName = StringUtils.defaultIfBlank(displayName, "XNAT");
+        _providerId = StringUtils.defaultIfBlank(providerId, XdatUserAuthService.LOCALDB);
     }
 
     /**
@@ -40,6 +43,11 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     }
 
     @Override
+    public void setVisible(final boolean visible) {
+
+    }
+
+    @Override
     public boolean supports(Class<?> authentication) {
         return XnatDatabaseUsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
@@ -51,20 +59,17 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
 
     @Override
     public String getName() {
-        return displayName;
+        return _displayName;
     }
 
-    public void setName(String newName) {
-        displayName = newName;
+    @Override
+    public void setName(final String name) {
+        _displayName = name;
     }
 
     @Override
     public String getProviderId() {
         return _providerId;
-    }
-
-    public void setProviderId(String providerId) {
-        _providerId = providerId;
     }
 
     @Override
@@ -83,6 +88,16 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     }
 
     @Override
+    public XnatAuthenticationToken createToken(final String username, final String password) {
+        return new XnatDatabaseUsernamePasswordAuthenticationToken(username, password);
+    }
+
+    @Override
+    public boolean supports(final Authentication authentication) {
+        return supports(authentication.getClass()) && StringUtils.equals(getProviderId(), ((XnatAuthenticationToken) authentication).getProviderId());
+    }
+
+    @Override
     protected void additionalAuthenticationChecks(final UserDetails userDetails, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
         if (!UserI.class.isAssignableFrom(userDetails.getClass())) {
             throw new AuthenticationServiceException("User details class is not of a type I know how to handle: " + userDetails.getClass());
@@ -94,35 +109,27 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
         super.additionalAuthenticationChecks(userDetails, authentication);
     }
 
-    public boolean isPlainText() {
-        return (this.getPasswordEncoder().getClass() == plainText);
-    }
-
-    private String displayName = "";
-    private String _providerId = "";
-    private Class plainText = PlaintextPasswordEncoder.class;
-
     private class PreAuthenticationChecks implements UserDetailsChecker {
         public void check(UserDetails user) {
             if (!user.isAccountNonLocked()) {
                 logger.debug("User account is locked");
 
                 throw new LockedException(messages.getMessage("AbstractUserDetailsAuthenticationProvider.locked",
-                        "User account is locked: " + user.getUsername()));
+                                                              "User account is locked: " + user.getUsername()));
             }
 
             if (!user.isEnabled() && !disabledDueToInactivity(user)) {
                 logger.debug("User account is disabled");
 
                 throw new DisabledException(messages.getMessage("AbstractUserDetailsAuthenticationProvider.disabled",
-                        "User is disabled: " + user.getUsername()));
+                                                                "User is disabled: " + user.getUsername()));
             }
 
             if (!user.isAccountNonExpired()) {
                 logger.debug("User account is expired");
 
                 throw new AccountExpiredException(messages.getMessage("AbstractUserDetailsAuthenticationProvider.expired",
-                        "User account has expired: " + user.getUsername()));
+                                                                      "User account has expired: " + user.getUsername()));
             }
         }
 
@@ -131,13 +138,13 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
                 UserI xdatUserDetails = (UserI) user;
                 if (!xdatUserDetails.isEnabled()) {
                     String query = "SELECT COUNT(*) AS count " +
-                            "FROM xdat_user_history " +
-                            "WHERE xdat_user_id=" + xdatUserDetails.getID() + " " +
-                            "AND change_user=" + xdatUserDetails.getID() + " " +
-                            "AND change_date = (SELECT MAX(change_date) " +
-                            "FROM xdat_user_history " +
-                            "WHERE xdat_user_id=" + xdatUserDetails.getID() + " " +
-                            "AND enabled=1)";
+                                   "FROM xdat_user_history " +
+                                   "WHERE xdat_user_id=" + xdatUserDetails.getID() + " " +
+                                   "AND change_user=" + xdatUserDetails.getID() + " " +
+                                   "AND change_date = (SELECT MAX(change_date) " +
+                                   "FROM xdat_user_history " +
+                                   "WHERE xdat_user_id=" + xdatUserDetails.getID() + " " +
+                                   "AND enabled=1)";
                     Long result = (Long) PoolDBUtils.ReturnStatisticQuery(query, "count", xdatUserDetails.getDBName(), xdatUserDetails.getUsername());
 
                     return result > 0;
@@ -150,5 +157,8 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
         }
     }
 
+    private final String _providerId;
+
+    private String _displayName;
     private int _order = -1;
 }

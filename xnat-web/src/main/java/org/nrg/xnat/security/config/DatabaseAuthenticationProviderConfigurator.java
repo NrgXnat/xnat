@@ -36,11 +36,10 @@ public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenti
         ReflectionSaltSource saltSource = new ReflectionSaltSource();
         saltSource.setUserPropertyToUse("salt");
 
-        final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider();
+        final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(name, id);
         sha2DatabaseAuthProvider.setUserDetailsService(_userDetailsService);
         sha2DatabaseAuthProvider.setPasswordEncoder(Users.getEncoder());
         sha2DatabaseAuthProvider.setName(name);
-        sha2DatabaseAuthProvider.setProviderId(id);
         sha2DatabaseAuthProvider.setSaltSource(saltSource);
         providers.add(sha2DatabaseAuthProvider);
 

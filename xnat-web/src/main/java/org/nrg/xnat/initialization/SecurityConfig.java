@@ -19,7 +19,6 @@ import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
 import org.nrg.xnat.security.config.AuthenticationProviderAggregator;
 import org.nrg.xnat.security.config.AuthenticationProviderConfigurator;
 import org.nrg.xnat.security.config.DatabaseAuthenticationProviderConfigurator;
-import org.nrg.xnat.security.config.LdapAuthenticationProviderConfigurator;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.validation.DateValidation;
@@ -34,7 +33,6 @@ import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.vote.AuthenticatedVoter;
 import org.springframework.security.access.vote.RoleVoter;
 import org.springframework.security.access.vote.UnanimousBased;
-import org.springframework.security.authentication.AnonymousAuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -157,11 +155,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    public LdapAuthenticationProviderConfigurator ldapConfigurator(final XdatUserAuthService service, final SiteConfigPreferences preferences) {
-        return new LdapAuthenticationProviderConfigurator(service, preferences);
-    }
-
-    @Bean
     public AuthenticationProviderAggregator providerAggregator(final List<AuthenticationProvider> providers, final List<AuthenticationProviderConfigurator> configurators, final ConfigPaths configFolderPaths) {
         final Map<String, AuthenticationProviderConfigurator> configuratorMap = new HashMap<>();
         for (final AuthenticationProviderConfigurator configurator : configurators) {
@@ -173,8 +166,8 @@ public class SecurityConfig {
 
     @Bean
     @Primary
-    public XnatProviderManager customAuthenticationManager(final SiteConfigPreferences preferences, final AuthenticationProviderAggregator aggregator, final XdatUserAuthService userAuthService, @SuppressWarnings("SpringJavaAutowiringInspection") final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource) {
-        return new XnatProviderManager(preferences, aggregator, userAuthService, anonymousAuthenticationProvider, dataSource);
+    public XnatProviderManager customAuthenticationManager(final SiteConfigPreferences preferences, final AuthenticationProviderAggregator aggregator, final XdatUserAuthService userAuthService) {
+        return new XnatProviderManager(preferences, userAuthService, aggregator);
     }
 
     @Bean

@@ -11,6 +11,7 @@ package org.nrg.xnat.security;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.xnat.security.exceptions.NewAutoAccountNotAutoEnabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 
@@ -44,7 +45,7 @@ public class XnatUrlAuthenticationFailureHandler extends SimpleUrlAuthentication
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
 			throws IOException, ServletException
 	{
-		if( exception instanceof NewLdapAccountNotAutoEnabledException )
+		if( exception instanceof NewAutoAccountNotAutoEnabledException)
 		{
 			onAuthenticationFailureNewLdapAccountNotAutoEnabled( request, response, exception );
 		}

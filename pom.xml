@@ -66,29 +66,36 @@
 
         <xnat.version>1.7.4</xnat.version>
         <xnatdev.version>1.7.5-SNAPSHOT</xnatdev.version>
+        <xnat-web.version>${xnatdev.version}</xnat-web.version>
         <xams.version>1.0-SNAPSHOT</xams.version>
+        <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
+        <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
+        <spawner.version>${xnat.version}</spawner.version>
+        <xnat-data-models.version>${xnat.version}</xnat-data-models.version>
+        <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
         <xdat.version>${xnatdev.version}</xdat.version>
-        <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
-        <nrg.config.version>${xnatdev.version}</nrg.config.version>
-        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
-        <nrg.mail.version>${xnatdev.version}</nrg.mail.version>
-        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
-        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
-        <nrg.test.version>${xnatdev.version}</nrg.test.version>
-        <nrg.transaction.version>${xnatdev.version}</nrg.transaction.version>
+        <nrg.automation.version>${xnat.version}</nrg.automation.version>
+        <nrg.config.version>${xnat.version}</nrg.config.version>
+        <nrg.framework.version>${xnat.version}</nrg.framework.version>
+        <nrg.mail.version>${xnat.version}</nrg.mail.version>
+        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
+        <nrg.test.version>${xnat.version}</nrg.test.version>
+        <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.mizer.version>1.0.1</nrg.mizer.version>
-        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
+        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0.1</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>1.0.1</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>5.1.1</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.3</nrg.ecat.version>
         <nrg.extattr.version>4.2.3</nrg.extattr.version>
+        <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <pipeline.version>${xnat.version}</pipeline.version>
-        <pipelinedev.version>${xnatdev.version}</pipelinedev.version>
+        <pipelinedev.version>${xnat.version}</pipelinedev.version>
 
         <spring-framework.version>4.3.10.RELEASE</spring-framework.version>
         <spring-security.version>4.2.3.RELEASE</spring-security.version>
@@ -316,7 +323,7 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>PrearcImporter</artifactId>
-                <version>${xnat.version}</version>
+                <version>${prearcimporter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
@@ -363,27 +370,27 @@
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>tasks</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${xnat-tasks.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.build</groupId>
                 <artifactId>xnat-data-builder</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${xnat-data-builder.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>web</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${xnat-web.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>spawner</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${spawner.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>xnat-data-models</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${xnat-data-models.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -394,7 +401,7 @@
             <dependency>
                 <groupId>org.nrg.xdat.build</groupId>
                 <artifactId>xdat-data-builder</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${xdat-data-builder.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xdat</groupId>

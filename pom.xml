@@ -323,7 +323,7 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>PrearcImporter</artifactId>
-                <version>${prearcimporter.version}</version>
+                <version>${nrg.prearcimporter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

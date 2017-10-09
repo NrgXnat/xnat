@@ -459,7 +459,10 @@ public class ConfigResource extends SecureResource {
         //restlet matches the first part of the path and ignores the rest.
         //if path is not null, we need to see if there's anything at the end of the URL to add.
         if (path != null) {
-            path = path + getRequest().getResourceRef().getRemainingPart();
+        	final String remainingPart = getRequest().getResourceRef().getRemainingPart();
+        	if (remainingPart != null) {
+        		path = path + remainingPart;
+        	}
 
             //lop off any query string parameters.
             int index = path.indexOf('?');

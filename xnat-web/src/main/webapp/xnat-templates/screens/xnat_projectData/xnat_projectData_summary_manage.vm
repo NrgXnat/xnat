@@ -41,7 +41,7 @@
     }
 
 
-            #events_table .item, #events_table .header, #events_manage_table .item, #events_manage_table .header {
+            #events_table .item, #events_table .header, #events_manage_table .item, #events_manage_table .header,#import_events_manage_table .item, #import_events_manage_table .header {
                 border-bottom: 1px solid #888;
                 font: 11px Arial, Helvetica, sans-serif;
                 margin-top: 0;
@@ -54,16 +54,16 @@
                 display: block;
             }
 
-            #events_table dl dl, #events_manage_table dl dl {
+            #events_table dl dl, #events_manage_table dl dl, #import_events_manage_table dl dl {
                 margin: 1px 0;
             }
 
-            #events_table .header, #events_manage_table .header {
+            #events_table .header, #events_manage_table .header, #import_events_manage_table .header {
                 background-color: #ccc;
                 font-weight: bold;
             }
 
-            #events_table dl dt, #events_table dl dd, #events_manage_table dl dt, #events_manage_table dl dd {
+            #events_table dl dt, #events_table dl dd, #events_manage_table dl dt, #events_manage_table dl dd, #import_events_manage_table dl dt, #import_events_manage_table dl dd {
                 display: block;
                 float: left;
                 padding: 4px 0;
@@ -76,26 +76,52 @@
             #events_manage_table .item:hover {
                 background-color: #fff;
             }
+			
+			#import_events_manage_table .item:hover {
+                background-color: #fff;
+            }
 
-            #events_table dd, #events_manage_table dd {
+            #events_table dd, #events_manage_table dd, #import_events_manage_table dd {
                 margin-left: 20px;
             }
+			
+			#import_events_manage_table dd.col0 {
+                width: 15px;
+                margin-left: 5px;
+            }
+			
+			#import_events_manage_table dd.col1 {
+                width: 180px;
+                margin-left: 15px
+            }
+			
+			#import_events_manage_table dd.col2 {
+                width: 180px;
+            }
+			
+			#import_events_manage_table dd.col3 {
+                width: 230px;
+            }
+			
+			
 
             #events_table dd.col1, #events_manage_table dd.col1 {
                 width: 140px;
                 margin-left: 10px
             }
+			
+			
 
             #events_table dd.col2, #events_manage_table dd.col2 {
-                width: 115px;
+                width: 145px;
             }
 
             #events_table dd.col3, #events_manage_table dd.col3 {
-                width: 230px;
+                width: 200px;
             }
 
             #events_table dd.col4, #events_manage_table dd.col4 {
-                width: 40px;
+                width: 30px;
             }
 
             #events_table dd.col5, #events_manage_table dd.col5 {
@@ -114,14 +140,14 @@
                 width: 90%;
                 padding-left: 70px;
             }
-            #events_table dd.colC, #events_manage_table dd.colC {
+            #events_table dd.colC, #events_manage_table dd.colC,#import_events_manage_table dd.colC {
                 width: 90%;
                 padding-left: 10px;
-		padding-top: 2px;
-		padding-bottom: 2px;
+				padding-top: 2px;
+				padding-bottom: 2px;
             }
 
-            #events_table dd.colEx, #events_manage_table dd.colEx {
+            #events_table dd.colEx, #events_manage_table dd.colEx, #import_events_manage_table dd.colEx {
                 position: relative;
             }
 
@@ -451,7 +477,8 @@
         <div id="events_table" class="xnat-table" style="display:none;width:100%;">
         </div>
         <br>
-        <button type="button" id="manage_event_handlers" class="btn1" style="font-size:12px;">Manage Event Handlers</button>
+        <button type="button" id="manage_event_handlers" class="btn1" style="font-size:12px;">Add Event Handlers</button>
+        <button type="button" id="import_event_handlers" class="btn1" style="font-size:12px;">Import Event Handlers</button>
     </div>
 
     #addCustomScreens($project.getXSIType() "report/manage_tab")

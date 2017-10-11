@@ -353,19 +353,9 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
 
         //project level scripts
         if (StringUtils.isNotBlank(projectId)) {
-
-            final Script script = _service.getScript(Scope.Project, projectId, eventClass, event, filterMap);
-            if (script != null) {
-                scripts.add(script);
-            }
+        	scripts.addAll(_service.getScript(Scope.Project, projectId, eventClass, event, filterMap));
         }
-
-        //site level scripts
-        final Script script = _service.getScript(Scope.Site, null, eventClass, event, filterMap);
-        if (script != null) {
-            scripts.add(script);
-        }
-
+        scripts.addAll(_service.getScript(Scope.Site, null, eventClass, event, filterMap));
         return scripts;
     }
 

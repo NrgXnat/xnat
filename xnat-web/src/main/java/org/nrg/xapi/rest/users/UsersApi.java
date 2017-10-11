@@ -25,6 +25,7 @@ import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xapi.rest.*;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
@@ -903,6 +904,31 @@ public class UsersApi extends AbstractXapiRestController {
 
         if (exception.hasDataFormatErrors()) {
             throw exception;
+        }
+    }
+    
+    @ApiOperation(value = "Returns list of projects that user has edit access.", notes = "Returns list of projects that user has edit access.", response = String.class, responseContainer = "List")
+    @XapiRequestMapping(value = "projects", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = User)
+    public ResponseEntity<Collection<String>> getProjectsByUser() {
+        final String username = getSessionUser().getUsername();
+        try {
+            final UserI user = getUserManagementService().getUser(username);
+            final Collection<String> projects = new ArrayList<>();
+            try {
+                for (final XnatProjectdata project : XnatProjectdata.getAllXnatProjectdatas(user, false)) {
+                    if(project.canEdit(user)) {
+                        projects.add(project.getProject());
+                    }
+                }
+            } catch (Exception e) {
+                _log.error("Error occurred while getting projects for  user {}.", username);
+            }
+            return new ResponseEntity<>(projects,HttpStatus.OK);
+        } catch (UserInitException e) {
+            _log.error("An error occurred initializing the user " + username, e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 

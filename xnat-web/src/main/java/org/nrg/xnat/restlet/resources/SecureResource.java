@@ -918,7 +918,7 @@ public abstract class SecureResource extends Resource {
             final String siteUrlProperty = XDAT.getSiteConfigurationProperty("siteUrl");
             try {
             	final String path = reference.getPath();
-            	final String remainingPart = reference.getRemainingPart();
+            	final String remainingPart = reference.getRemainingPart(false,false);
             	final String basePath = (remainingPart.length()>0 && path.contains(remainingPart)) ? path.substring(0,path.lastIndexOf(remainingPart)) : path; 
                 final URL siteUrl = new URL(siteUrlProperty);
                 reference.setProtocol(new Protocol(siteUrl.getProtocol()));

@@ -139,7 +139,7 @@ public class ScriptedSessionAssignmentExtractor extends ChainExtractor implement
 
     private Script getScript(final String projectId) {
         final boolean hasEntity = StringUtils.isNotBlank(projectId);
-        List<Script> scriptList=_service.getScript(hasEntity ? Scope.Project : Scope.Site, projectId, ScriptTrigger.DEFAULT_CLASS, _event, ScriptTrigger.DEFAULT_FILTER);
+        List<Script> scriptList=_service.getScripts(hasEntity ? Scope.Project : Scope.Site, projectId, ScriptTrigger.DEFAULT_CLASS, _event, ScriptTrigger.DEFAULT_FILTER);
         final Script script = (scriptList!=null && !scriptList.isEmpty())?scriptList.get(0):null;
 
         // If we didn't find a script for the indicated scope but we have an entity ID, then fail up to the site level.

@@ -14,12 +14,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.automation.entities.Script;
-import org.nrg.automation.entities.ScriptOutput;
-import org.nrg.automation.entities.ScriptOutput.Status;
-import org.nrg.automation.event.AutomationCompletionEventI;
 import org.nrg.automation.event.AutomationEventImplementerI;
-import org.nrg.automation.event.entities.AutomationCompletionEvent;
-import org.nrg.automation.event.entities.AutomationEventIds;
 import org.nrg.automation.event.entities.AutomationEventIdsIds;
 import org.nrg.automation.event.entities.AutomationFilters;
 import org.nrg.automation.event.entities.PersistentEvent;
@@ -33,14 +28,10 @@ import org.nrg.automation.services.impl.hibernate.HibernateScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.event.Filterable;
 import org.nrg.framework.event.persist.PersistentEventImplementerI;
-import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -50,7 +41,6 @@ import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -59,7 +49,6 @@ import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -353,9 +342,9 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
 
         //project level scripts
         if (StringUtils.isNotBlank(projectId)) {
-        	scripts.addAll(_service.getScript(Scope.Project, projectId, eventClass, event, filterMap));
+        	scripts.addAll(_service.getScripts(Scope.Project, projectId, eventClass, event, filterMap));
         }
-        scripts.addAll(_service.getScript(Scope.Site, null, eventClass, event, filterMap));
+        scripts.addAll(_service.getScripts(Scope.Site, null, eventClass, event, filterMap));
         return scripts;
     }
 

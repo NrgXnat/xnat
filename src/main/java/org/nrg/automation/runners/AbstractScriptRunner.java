@@ -38,9 +38,7 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
     @Override
     public ScriptOutput run(final Map<String, Object> properties, boolean exceptionOnError) {
         final String scriptId = (String) properties.get(ScriptProperty.ScriptId.key());
-        if (_log.isDebugEnabled()) {
-            _log.debug("Running script {} with engine ", scriptId, getEngine().getClass().getName());
-        }
+        _log.debug("Running script {} with engine ", scriptId, getEngine().getClass().getName());
 
         Bindings bindings = getEngine().createBindings();
         for (final String key : properties.keySet()) {
@@ -67,10 +65,9 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
 
             if (_log.isDebugEnabled()) {
                 if (result == null) {
-                    _log.debug("Got a null results object running script: " + scriptId);
+                    _log.debug("Got a null results object running script: {}", scriptId);
                 } else {
-                    _log.debug("Ran script " + scriptId + ", got a results object of type: " + result.getClass().getName());
-                    _log.debug("A simple toString yields: " + result.toString());
+                    _log.debug("Ran script {}, got a results object of type: {}\nA simple toString yields: {}", scriptId, result.getClass().getName(), result.toString());
                 }
             }
             _console.flush();
@@ -78,7 +75,6 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
             return new ScriptOutput(result, _console.toString(), _errorConsole.toString(), ScriptOutput.Status.SUCCESS);
             
         } catch (Throwable e) {
-        	
             final String message = "Found an error while running a " + properties.get(ScriptProperty.Language.key()) + " " + properties.get(ScriptProperty.LanguageVersion.key()) + " script with ID " + scriptId;
             _log.error(message, e);
             if (exceptionOnError) {
@@ -92,9 +88,7 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
        	          	throw new RuntimeException(message, e);
            	    }
            	}
-            
         }
-        
     }
 
     @Override
@@ -147,9 +141,7 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
         final String scriptId = (String) properties.get(ScriptProperty.ScriptId.key());
         final String source = (String) properties.remove(ScriptProperty.Script.key());
         if (!_scripts.containsKey(scriptId) || !_sources.containsKey(scriptId) || _sources.get(scriptId) != source.hashCode()) {
-            if (_log.isInfoEnabled()) {
-                _log.info("Creating new entry for script ID {}:\n{}", scriptId, source);
-            }
+            _log.info("Creating new entry for script ID {}:\n{}", scriptId, source);
             _scripts.put(scriptId, ((Compilable) getEngine()).compile(source));
             _sources.put(scriptId, source.hashCode());
         }

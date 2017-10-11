@@ -50,9 +50,7 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
         setDescription(description);
         setTriggers(triggers);
         setAssociatedEntities(associatedEntities);
-        if (_log.isDebugEnabled()) {
-            _log.debug("Creating a ScriptTriggerTemplate using values: {}", toString());
-        }
+        _log.debug("Creating a ScriptTriggerTemplate using values: {}", toString());
     }
 
     public String getTemplateId() {

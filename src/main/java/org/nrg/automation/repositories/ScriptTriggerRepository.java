@@ -10,10 +10,8 @@
 package org.nrg.automation.repositories;
 
 import org.hibernate.Criteria;
-import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.automation.entities.ScriptTrigger;
-import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,20 +53,23 @@ public class ScriptTriggerRepository extends AbstractHibernateDAO<ScriptTrigger>
      * @return the by id
      */
     public ScriptTrigger getById(final String id) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Attempting to find script trigger by ID: {}", id);
-        }
-        Long longId;
+        _log.debug("Attempting to find script trigger by ID: {}", id);
         try {
-        	longId = Long.valueOf(id);
+            final Criteria criteria = getCriteriaForType();
+            criteria.add(Restrictions.eq("enabled", true));
+            criteria.add(Restrictions.eq("id", Long.valueOf(id)));
+            final List list = criteria.list();
+            if (list == null || list.isEmpty()) {
+                _log.warn("Requested script trigger with ID {}, but that doesn't exist.", id);
+                return null;
+            }
+            final ScriptTrigger trigger = (ScriptTrigger) list.get(0);
+            _log.debug("Requested trigger of ID {} with event {} was found.", id, trigger.getEvent());
+            return trigger;
         } catch (NumberFormatException e) {
+            _log.error("The specified ID value {} can't be converted to a valid ID.", id);
         	return null;
         }
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.eq("enabled", true));
-        criteria.add(Restrictions.eq("id", longId));
-        final List list = criteria.list();
-        return (list == null || list.size() == 0) ? null : (ScriptTrigger) list.get(0);
     }
 
     /**
@@ -78,13 +79,17 @@ public class ScriptTriggerRepository extends AbstractHibernateDAO<ScriptTrigger>
      * @return the by trigger id
      */
     public ScriptTrigger getByTriggerId(final String triggerId) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Attempting to find script trigger by trigger ID: {}", triggerId);
-        }
+        _log.debug("Attempting to find script trigger by trigger ID: {}", triggerId);
         final Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("enabled", true));
         criteria.add(Restrictions.eq("triggerId", triggerId));
         final List list = criteria.list();
-        return (list == null || list.size() == 0) ? null : (ScriptTrigger) list.get(0);
+        if (list == null || list.isEmpty()) {
+            _log.warn("Requested script trigger with ID {}, but that doesn't exist.", triggerId);
+            return null;
+        }
+        final ScriptTrigger trigger = (ScriptTrigger) list.get(0);
+        _log.debug("Requested trigger of ID {} with event {} was found.", triggerId, trigger.getEvent());
+        return trigger;
     }
 }

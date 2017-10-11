@@ -29,17 +29,13 @@ public class ScriptTriggerTemplateRepository extends AbstractHibernateDAO<Script
 
     @SuppressWarnings("unchecked")
     public List<ScriptTriggerTemplate> getTemplatesForEntity(final String entityId) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Finding templates associated with the entity ID {}", entityId);
-        }
+        _log.debug("Finding templates associated with the entity ID {}", entityId);
         return getSession().createQuery("from org.nrg.automation.entities.ScriptTriggerTemplate as template where :entityId in elements(template.associatedEntities)").setString("entityId", entityId).list();
     }
 
     @SuppressWarnings("unchecked")
     public List<ScriptTriggerTemplate> getTemplatesForTrigger(ScriptTrigger trigger) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Finding templates associated with the trigger {}", trigger.getTriggerId());
-        }
+        _log.debug("Finding templates associated with the trigger {}", trigger.getTriggerId());
         return getSession().createQuery("from org.nrg.automation.entities.ScriptTriggerTemplate template where :trigger in elements(template.triggers)").setEntity("trigger",  trigger).list();
     }
 }

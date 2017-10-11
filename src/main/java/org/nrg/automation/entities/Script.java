@@ -35,17 +35,11 @@ import java.util.Properties;
 public class Script extends AbstractHibernateEntity {
 
     public Script() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Creating default Script object");
-        }
+        _log.debug("Creating default Script object");
     }
 
     public Script(final String scriptId, final String scriptLabel, final String description, final String language, final String languageVersion, final String content) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Creating Script object with parameters:\n * Script ID: " + scriptId + "\n" +
-                    " * Script Label: \" + scriptLabel + \"\n * Description: " + description + "\n" +
-                    " * Language: " + language + "\n * Language version: " + languageVersion);
-        }
+        _log.debug("Creating Script object with parameters:\n * Script ID: {}\n * Script Label: \" + scriptLabel + \"\n * Description: {}\n * Language: {}\n * Language version: ", scriptId, description, language, languageVersion);
         setScriptId(scriptId);
         setScriptLabel(scriptLabel);
         setDescription(description);

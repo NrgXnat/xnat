@@ -106,7 +106,7 @@ public class HibernateScriptService extends AbstractHibernateEntityService<Scrip
         AuditReader reader = AuditReaderFactory.get(session);
         AuditQuery query = reader.createQuery().forRevisionsOfEntity(Script.class, false, true).add(AuditEntity.id().eq(id));
         List revisionsList = query.getResultList();
-        ArrayList<String> revisionNumbersList = new ArrayList<String>();
+        ArrayList<String> revisionNumbersList = new ArrayList<>();
         for(Object revision : revisionsList){
             Object[] rev = (Object[]) revision;
             revisionNumbersList.add(""+((DefaultRevisionEntity)rev[1]).getId());
@@ -121,7 +121,7 @@ public class HibernateScriptService extends AbstractHibernateEntityService<Scrip
         try {
             FileUtils.writeStringToFile(new File(filePath), script.getContent());
         } catch (IOException e) {
-            _log.error("",e);
+            _log.error("An error occurred trying to write the script for ID " + scriptId + " out to the file path " + filePath, e);
         }
     }
 

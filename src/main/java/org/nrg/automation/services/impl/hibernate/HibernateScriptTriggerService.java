@@ -9,7 +9,6 @@
 
 package org.nrg.automation.services.impl.hibernate;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.nrg.automation.entities.Event;
 import org.nrg.automation.entities.ScriptTrigger;
@@ -23,10 +22,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+
+import static org.nrg.automation.services.Filtering.propertiesMatchFilterMap;
 
 /**
  * HibernateScriptTriggerTemplateService class.
@@ -35,7 +36,7 @@ import java.util.Map.Entry;
  */
 @Service
 public class HibernateScriptTriggerService extends AbstractHibernateEntityService<ScriptTrigger, ScriptTriggerRepository> implements ScriptTriggerService {
-	
+
     /**
      * Update old style script triggers.
      */
@@ -43,7 +44,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
     public void updateOldStyleScriptTriggers() {
     	getDao().updateOldStyleTriggers();
     }
-	
+
 	/**
      * Overrides the default polymorphic {@link AbstractHibernateEntityService#create(Object...)} method to support
      * translating a string parameter into an event ID and retrieving or creating an {@link Event} object to associate
@@ -67,7 +68,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
     @Transactional
     public ScriptTrigger getById(String id) {
         if (_log.isDebugEnabled()) {
-            _log.debug("Retrieving script trigger by ID: " + id);
+            _log.debug("Retrieving script trigger by ID: {}", id);
         }
         return getDao().getById(id);
     }
@@ -83,7 +84,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
     @Transactional
     public ScriptTrigger getByTriggerId(String triggerId) {
         if (_log.isDebugEnabled()) {
-            _log.debug("Retrieving script trigger by ID: " + triggerId);
+            _log.debug("Retrieving script trigger by ID: {}", triggerId);
         }
         return getDao().getByTriggerId(triggerId);
     }
@@ -167,9 +168,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         properties.put("srcEventClass", eventClass);
         properties.put("event", eventId);
         final List<ScriptTrigger> results = getDao().findByProperties(properties);
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found {} triggers for event {}", results == null ? "no" : results.size(), eventId);
-        }
+        _log.debug("Found {} triggers for event {}", results == null ? "no" : results.size(), eventId);
         return results;
     }
 
@@ -183,35 +182,25 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
 	 */
 	@Override
     @Transactional
-	public List<ScriptTrigger> getByEventAndFilters(String eventClass, String eventId, Map<String, String> filterMap) {
+    public List<ScriptTrigger> getByEventAndFilters(String eventClass, String eventId, Map<String, String> filterMap) {
         final Map<String, Object> properties = new HashMap<>();
         properties.put("srcEventClass", eventClass);
         properties.put("event", eventId);
         final List<ScriptTrigger> results = getDao().findByProperties(properties);
-        List<ScriptTrigger> returnList = null;
-        if (results != null) {
-        	returnList = Lists.newArrayList();
-        	outerloop:
-            for (final ScriptTrigger trigger : results) {
-            	final Map<String, List<String>> eventFiltersMap = trigger.getEventFiltersAsMap();
-            	for (final Entry<String, List<String>> entry : eventFiltersMap.entrySet()) {
-            		final String key = entry.getKey();
-            		final List<String> value = entry.getValue();
-            		if (value == null || value.isEmpty()) {
-            			continue;
-            		}
-            		if (!filterMap.containsKey(key) || !value.contains(filterMap.get(key))) {
-            			continue outerloop;
-            		}
-            	}
-                returnList.add(trigger);
+        if (results == null) {
+            _log.debug("Found no triggers for event {}", eventId);
+            return null;
+        }
+        final List<ScriptTrigger> triggers = new ArrayList<>();
+        for (final ScriptTrigger trigger : results) {
+            final Map<String, List<String>> eventFiltersMap = trigger.getEventFiltersAsMap();
+            if (propertiesMatchFilterMap(filterMap, eventFiltersMap)) {
+                triggers.add(trigger);
             }
         }
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found {} triggers for event {}", returnList == null ? "no" : returnList.size(), eventId);
-        }
-        return returnList;
-	}
+        _log.debug("Found {} triggers for event {}", triggers.size(), eventId);
+        return triggers;
+    }
 
     /**
      * Retrieves all triggers for the indicated scope and entity.
@@ -244,20 +233,11 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
 	public ScriptTrigger getByScopeEntityAndEventAndFilters(Scope scope, String entityId, String eventClass, String event, Map<String, String> filterMap) {
         final List<ScriptTrigger> results = getByAssociationAndEvent(Scope.encode(scope, entityId), eventClass, event);
         if (results != null) {
-        	outerloop:
             for (final ScriptTrigger trigger : results) {
             	final Map<String, List<String>> eventFiltersMap = trigger.getEventFiltersAsMap();
-            	for (final Entry<String, List<String>> entry : eventFiltersMap.entrySet()) {
-            		final String key = entry.getKey();
-            		final List<String> value = entry.getValue();
-            		if (value == null || value.isEmpty()) {
-            			continue;
-            		}
-            		if (!filterMap.containsKey(key) || !value.contains(filterMap.get(key))) {
-            			continue outerloop;
-            		}
-            	}
-                return trigger;
+                if (propertiesMatchFilterMap(filterMap, eventFiltersMap)) {
+                    return trigger;
+                }
             }
         }
         return null;
@@ -312,11 +292,8 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         properties.put("srcEventClass", eventClass);
         properties.put("event", eventId);
         final List<ScriptTrigger> triggers = getDao().findByProperties(properties);
-        if (triggers == null || triggers.size() == 0) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Found no trigger for association {} and event {}", association, eventId);
-            }
-            return null;
+        if (triggers == null || triggers.isEmpty()) {
+            _log.debug("Found no trigger for association {} and event {}", association, eventId);
         }
         return triggers;
     }
@@ -339,7 +316,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
 
     /** The Constant EXCLUDE_PROPS_SCOPE. */
     private static final String[] EXCLUDE_PROPS_SCOPE = AbstractHibernateEntity.getExcludedProperties("triggerId", "description", "scriptId", "event", "srcEventClass", "eventFilters");
-    
+
     /** The Constant EXCLUDE_PROPS_SCRIPT_ID. */
     private static final String[] EXCLUDE_PROPS_SCRIPT_ID = AbstractHibernateEntity.getExcludedProperties("triggerId", "description", "association", "event", "srcEventClass", "eventFilters");
 

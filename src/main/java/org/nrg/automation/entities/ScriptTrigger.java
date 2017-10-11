@@ -79,9 +79,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
      */
     public ScriptTrigger(final String triggerId, final String description, final String scriptId, final String association, final String srcEventClass, final String event) {
     	this(triggerId, description, scriptId, association, srcEventClass, event, new HashSet<EventFilters>());
-        if (_log.isDebugEnabled()) {
-            _log.debug("Creating a ScriptTrigger object with the values: {}", toString());
-        }
+        _log.debug("Creating a ScriptTrigger object with the values: {}", toString());
     }
 
     /**
@@ -108,9 +106,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         	final Set<EventFilters> emptySet = Sets.newHashSet();
         	setEventFilters(emptySet);
         }
-        if (_log.isDebugEnabled()) {
-            _log.debug("Creating a ScriptTrigger object with the values: {}", toString());
-        }
+        _log.debug("Creating a ScriptTrigger object with the values: {}", toString());
     }
 
     /**

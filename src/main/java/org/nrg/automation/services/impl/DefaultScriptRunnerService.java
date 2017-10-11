@@ -16,6 +16,7 @@ import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
+import org.nrg.automation.services.Filtering;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.ScriptTriggerService;
@@ -36,7 +37,6 @@ import javax.script.ScriptEngine;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.Map.Entry;
 
 /**
  * The Class DefaultScriptRunnerService.
@@ -55,12 +55,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * <p>This method allows the bean instance to perform initialization only
      * possible when all bean properties have been set and to throw an
      * exception in the event of misconfiguration.
-     *
-     * @throws Exception in the event of misconfiguration (such as failure to set an essential property) or if
-     * initialization fails.
      */
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         if (_packages == null) {
             _packages = new ArrayList<>();
         } else if (!_packages.contains("org.nrg.automation.runners")) {
@@ -95,7 +92,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * Gets the script for the specified script ID. If a script doesn't exist with that script ID, this method returns
      * null. Note that this method does no checking of the scope, associated entity, or event, but just returns the
      * script. You can get @{link Script scripts} for particular scopes or events by calling {@link
-     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String,
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScripts(Scope, String, String,
      * String, Map)}.
      *
      * @param scriptId The ID of the script to locate.
@@ -125,7 +122,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * indicated scope, entity ID, and event. If a script doesn't exist with that script ID and trigger association,
      * this method returns null. Note that this method does no checking of the scope, associated entity, or event, but
      * just returns the script. You can get @{link Script scripts} for particular scopes or events by calling {@link
-     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String,
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScripts(Scope, String, String,
      * String, Map)}.
      *
      * @param scriptId     The ID of the script to locate.
@@ -134,35 +131,24 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param eventClass the event class
      * @param event        The event for the script.
      * @param filterMap the filter map
+     *
      * @return The {@link Script} object if a script with the indicated script ID and association is found, <b>null</b>
      * otherwise.
      */
     @Override
     @Transactional
-    public Script getScript(final String scriptId, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,String> filterMap) {
+    public Script getScript(final String scriptId, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String, String> filterMap) {
         final List<ScriptTrigger> triggers = _triggerService.getByScopeEntityAndEvent(scope, entityId, eventClass, event);
-        ScriptTrigger trigger = null;
-        if (triggers != null) {
-        	outerloop:
-        	for (final ScriptTrigger currTrigger : triggers) {
-        		final Map<String, List<String>> eventFiltersMap = currTrigger.getEventFiltersAsMap();
-        		for (final Entry<String, List<String>> entry : eventFiltersMap.entrySet()) {
-        			final String key = entry.getKey();
-        			final List<String> value = entry.getValue();
-        			if (value == null || value.isEmpty()) {
-        				continue;
-        			}
-        			if (!filterMap.containsKey(key) || !value.contains(filterMap.get(key))) {
-        				continue outerloop;
-        			}
-        		}
-        		trigger = currTrigger;
-        	}
+        if (triggers == null) {
+            return null;
         }
-        if (trigger == null) {
-        	return null;
+        for (final ScriptTrigger currTrigger : triggers) {
+            final Map<String, List<String>> eventFiltersMap = currTrigger.getEventFiltersAsMap();
+            if (Filtering.propertiesMatchFilterMap(filterMap, eventFiltersMap)) {
+                return _scriptService.getByScriptId(scriptId);
+            }
         }
-        return _scriptService.getByScriptId(scriptId);
+        return null;
     }
 
     /**
@@ -226,39 +212,25 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * otherwise.
      */
     @Override
-    public List<Script> getScript(final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,String> filterMap) {
-    	List<Script> scripts=new ArrayList<Script>();
+    public List<Script> getScripts(final Scope scope, final String entityId, final String eventClass, final String event, final Map<String, String> filterMap) {
         final List<ScriptTrigger> triggers = _triggerService.getByScopeEntityAndEvent(scope, entityId, eventClass, event);
-        ScriptTrigger trigger = null;
-        if (triggers != null) {
-        	outerloop:
-        	for (final ScriptTrigger currTrigger : triggers) {
-        		final Map<String, List<String>> eventFiltersMap = currTrigger.getEventFiltersAsMap();
-        		for (final Entry<String, List<String>> entry : eventFiltersMap.entrySet()) {
-        			final String key = entry.getKey();
-        			final List<String> value = entry.getValue();
-        			if (value == null || value.isEmpty()) {
-        				continue;
-        			}
-        			if (!filterMap.containsKey(key) || !value.contains(filterMap.get(key))) {
-        				continue outerloop;
-        			}
-  				}
-        		trigger = currTrigger;
-    	        final Script script = _scriptService.getByScriptId(trigger.getScriptId());
-    	        if(script!=null)
-    	        {
-    	        	 scripts.add(script);
-    	        }
-    	        if (_log.isDebugEnabled()) {
-    	            if (script == null) {
-    	                _log.debug("Found no script associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", scope, entityId, eventClass, event, filterMap);
-    	            } else {
-    	                _log.debug("Found script {} associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", script.getScriptId(), scope, entityId, eventClass, event, filterMap);
-    	               
-    	            }
-    	        }
-        	}
+        if (triggers == null) {
+            return Collections.emptyList();
+        }
+        final List<Script> scripts = new ArrayList<>();
+        for (final ScriptTrigger trigger : triggers) {
+            if (Filtering.propertiesMatchFilterMap(filterMap, trigger.getEventFiltersAsMap())) {
+                final Script script = _scriptService.getByScriptId(trigger.getScriptId());
+                if (script != null) {
+                    scripts.add(script);
+                }
+                if (script == null) {
+                    _log.debug("Found no script associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", scope, entityId, eventClass, event, filterMap);
+                } else {
+                    _log.debug("Found script {} associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", script.getScriptId(), scope, entityId, eventClass, event, filterMap);
+
+                }
+            }
         }
         return scripts;
     }
@@ -467,12 +439,12 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         final String language = properties.getProperty("language", ScriptRunner.DEFAULT_LANGUAGE);
         setScript(scriptId, scriptLabel, content, description, scope, entityId, eventClass, event, ScriptTrigger.DEFAULT_FILTERS, language);
     }
-    
+
     /**
      * This attempts to run the submitted script. Note that this method does no checking of the scope, associated
      * entity, or event, but just executes the script. You can get @{link Script scripts} for particular scopes by
      * calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or {@link
-     * #getScript(Scope, String, String, String, Map)} methods.
+     * #getScripts(Scope, String, String, String, Map)} methods.
      *
      * @param script The script to run.
      * @return The results of the script execution.
@@ -487,7 +459,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * This attempts to run the submitted script, passing in the <b>parameters</b> map as parameters to the script. Note
      * that this method does no checking of the scope, associated entity, or event, but just executes the script. You
      * can get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
-     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String, String, Map)} methods.
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScripts(Scope, String, String, String, Map)} methods.
      *
      * @param script     The script to run.
      * @param parameters The parameters to pass to the script.
@@ -503,7 +475,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
      * from the trigger parameter, into the script execution environment. You can get @{link Script scripts} for
      * particular scopes by calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or
-     * {@link #getScript(Scope, String, String, String, Map)} methods.
+     * {@link #getScripts(Scope, String, String, String, Map)} methods.
      *
      * @param script  The script to run.
      * @param trigger The associated trigger for the script execution.
@@ -519,7 +491,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
      * from the trigger parameter, as well as the submitted parameters, into the script execution environment. You can
      * get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
-     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String, String, Map)} methods.
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScripts(Scope, String, String, String, Map)} methods.
      *
      * @param script     The script to run.
      * @param trigger    The associated trigger for the script execution.
@@ -530,9 +502,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     @Override
     public ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException {
         return runScript(script, trigger, parameters, true);
-    	
+
     }
-    
+
     /**
      * Run script.
      *
@@ -602,11 +574,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
             // Sometimes a runner can't find its engine (missing dependency, etc.), so we need to throw it out.
             final ScriptRunner instance = createScriptRunnerInstance(runner);
             if (instance.getEngine() != null) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Adding runner for {} using engine {} version {}", instance.getLanguage(), instance.getEngine().get(ScriptEngine.ENGINE), instance.getEngine().get(ScriptEngine.ENGINE_VERSION));
-                }
+                _log.debug("Adding runner for {} using engine {} version {}", instance.getLanguage(), instance.getEngine().get(ScriptEngine.ENGINE), instance.getEngine().get(ScriptEngine.ENGINE_VERSION));
                 addRunner(runner);
-            } else if (_log.isInfoEnabled()) {
+            } else {
                 _log.debug("Not adding the runner for {}, no engine found", instance.getLanguage());
             }
         }
@@ -872,7 +842,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
 
     /** The _runners. */
     private final Map<String, Class<? extends ScriptRunner>> _runners = new HashMap<>();
-    
+
     /** The _packages. */
     private List<String> _packages;
 }

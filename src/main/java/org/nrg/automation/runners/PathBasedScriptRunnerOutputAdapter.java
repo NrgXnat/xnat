@@ -66,14 +66,10 @@ public class PathBasedScriptRunnerOutputAdapter implements ScriptRunnerOutputAda
 
     protected void initialize(String path) {
         if (StringUtils.isNotBlank(path)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Initializing the path-based script runner output adapter with the path: " + path);
-            }
+            _log.debug("Initializing the path-based script runner output adapter with the path: {}", path);
             setPath(path);
         } else {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Initializing the path-based script runner output adapter without a path specified. Using temp path.");
-            }
+            _log.debug("Initializing the path-based script runner output adapter without a path specified. Using temp path.");
             final Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
             final Path scripts = tmpdir.resolve("scripts");
             //noinspection ResultOfMethodCallIgnored

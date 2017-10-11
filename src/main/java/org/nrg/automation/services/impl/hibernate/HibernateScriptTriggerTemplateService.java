@@ -33,27 +33,21 @@ public class HibernateScriptTriggerTemplateService extends AbstractHibernateEnti
     @Override
     @Transactional
     public List<ScriptTriggerTemplate> getTemplatesForEntity(final String entityId) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Finding templates associated with the entity ID {}", entityId);
-        }
+        _log.debug("Finding templates associated with the entity ID {}", entityId);
         return getDao().getTemplatesForEntity(entityId);
     }
 
     @Override
     @Transactional
     public List<ScriptTriggerTemplate> getTemplatesForTrigger(ScriptTrigger trigger) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Finding templates associated with the trigger {}", trigger.getTriggerId());
-        }
+        _log.debug("Finding templates associated with the trigger {}", trigger.getTriggerId());
         return getDao().getTemplatesForTrigger(trigger);
     }
 
     @Override
     @Transactional
     public ScriptTriggerTemplate getByName(String name) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Finding template with the name {}", name);
-        }
+        _log.debug("Finding template with the name {}", name);
         return getDao().findByUniqueProperty("name", name);
     }
 }

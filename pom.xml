@@ -74,7 +74,7 @@
         <xnat-data-models.version>${xnat.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
         <xdat.version>${xnatdev.version}</xdat.version>
-        <nrg.automation.version>${xnat.version}</nrg.automation.version>
+        <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
         <nrg.framework.version>${xnat.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
@@ -161,6 +161,7 @@
         <itext.version>1.1.4</itext.version>
         <jackson.version>2.6.5</jackson.version>
         <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
+        <lombok.version>1.16.18</lombok.version>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
@@ -181,6 +182,7 @@
         <json.version>20160810</json.version>
         <jstl.version>1.2</jstl.version>
         <hamcrest.version>1.3</hamcrest.version>
+        <assertj.version>2.8.0</assertj.version>
         <junit.version>4.12</junit.version>
         <jacoco.version>0.7.9</jacoco.version>
         <jython.version>2.7.0</jython.version>
@@ -1129,6 +1131,11 @@
                 <version>${java-uuid-generator.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.xml</groupId>
                 <artifactId>jaxrpc-api</artifactId>
                 <version>1.1</version>
@@ -1636,6 +1643,12 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-library</artifactId>
                 <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

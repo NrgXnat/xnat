@@ -917,9 +917,14 @@ public abstract class SecureResource extends Resource {
         try {
             final String siteUrlProperty = XDAT.getSiteConfigurationProperty("siteUrl");
             try {
+            	final String path = reference.getPath();
+            	final String remainingPart = reference.getRemainingPart();
+            	final String basePath = (remainingPart.length()>0 && path.contains(remainingPart)) ? path.substring(0,path.lastIndexOf(remainingPart)) : path; 
                 final URL siteUrl = new URL(siteUrlProperty);
                 reference.setProtocol(new Protocol(siteUrl.getProtocol()));
                 reference.setAuthority(siteUrl.getAuthority());
+                reference.setBaseRef(reference.getScheme() + "://" + reference.getAuthority() + basePath);
+                
             } catch (MalformedURLException e) {
                 logger.warn("An error occurred trying to convert the site URL value " + siteUrlProperty + " to a URL object: " + e.getMessage());
             }

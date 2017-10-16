@@ -336,8 +336,8 @@ public class PrearcSessionArchiver extends StatusProducer implements Callable<St
         if (!overrideExceptions) {//allow overriding of this behavior via the overwrite parameter
             Collection<? extends PersistentWorkflowI> wrks = PersistentWorkflowUtils.getOpenWorkflows(user, id);
             if (!wrks.isEmpty()) {
-                this.failed("Session processing in progress:" + ((WrkWorkflowdata) CollectionUtils.get(wrks, 0)).getOnlyPipelineName());
-                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Session processing may already be in progress: " + ((WrkWorkflowdata) CollectionUtils.get(wrks, 0)).getOnlyPipelineName() + ".  Concurrent modification is discouraged.", new Exception());
+                this.failed("Session processing in progress for session " + id + ":" + ((WrkWorkflowdata) CollectionUtils.get(wrks, 0)).getOnlyPipelineName());
+                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Session processing may already be in progress for session " + id + ": " + ((WrkWorkflowdata) CollectionUtils.get(wrks, 0)).getOnlyPipelineName() + ".  Concurrent modification is discouraged.", new Exception());
             }
         }
     }

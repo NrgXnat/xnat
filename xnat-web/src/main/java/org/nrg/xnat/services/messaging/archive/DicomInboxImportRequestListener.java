@@ -63,7 +63,16 @@ public final class DicomInboxImportRequestListener {
      */
     @JmsListener(destination = "dicom-inbox-import-requests")
     public void onRequest(final DicomInboxImportRequest request) {
-        final String username = request.getUsername();
+        final String username    = request.getUsername();
+        final String sessionPath = request.getSessionPath();
+
+        // Check for debug because it's not cheap to convert parameter map to string.
+        if (log.isDebugEnabled()) {
+            log.debug("Processing inbox import request for path {} requested by user {} with parameters {}", sessionPath, username, request.getParameters());
+        } else {
+            log.info("Processing inbox import request for path {} requested by user {}", sessionPath, username, request.getParameters());
+        }
+
         try {
             final UserI user = Users.getUser(username);
             _service.setToAccepted(request);
@@ -74,7 +83,7 @@ public final class DicomInboxImportRequestListener {
             if (parameters.containsKey("identifier")) {
                 final String key = String.valueOf(parameters.get("identifier"));
                 if (!_identifiers.containsKey(key)) {
-                    _service.fail(request, "Import operation for session " + request.getSessionPath() + " specified using the identifier \"" + key + "\", but there's no identifier with that key.");
+                    _service.fail(request, "Import operation for session " + sessionPath + " specified using the identifier \"" + key + "\", but there's no identifier with that key.");
                 }
                 identifier = _identifiers.get(key);
             } else {
@@ -85,7 +94,7 @@ public final class DicomInboxImportRequestListener {
             if (parameters.containsKey("namer")) {
                 final String key = String.valueOf(parameters.get("namer"));
                 if (!_namers.containsKey(key)) {
-                    _service.fail(request, "Import operation for session " + request.getSessionPath() + " specified using the namer \"" + key + "\", but there's no namer with that key.");
+                    _service.fail(request, "Import operation for session " + sessionPath + " specified using the namer \"" + key + "\", but there's no namer with that key.");
                 }
                 namer = _namers.get(key);
             } else {
@@ -111,7 +120,7 @@ public final class DicomInboxImportRequestListener {
                 if (results != null) {
                     _service.complete(request, "Completed importing request with results: " + Joiner.on(", ").join(uris));
                 } else {
-                    _service.fail(request, "The session for the request " + request.getSessionPath() + " was locked.");
+                    _service.fail(request, "The session for the request " + sessionPath + " was locked.");
                 }
             }
         } catch (FileNotFoundException e) {
@@ -120,17 +129,17 @@ public final class DicomInboxImportRequestListener {
             // folder, it throws FNF exception with no value set.
             final String path = e.getMessage();
             if (StringUtils.isBlank(path)) {
-                _service.fail(request, "The location specified must be a folder but isn't: " + request.getSessionPath());
+                _service.fail(request, "The location specified must be a folder but isn't: " + sessionPath);
             } else {
-                _service.fail(request, "No session folder was found at the specified location :" + request.getSessionPath());
+                _service.fail(request, "No session folder was found at the specified location :" + sessionPath);
             }
         } catch (UserInitException e) {
-            _service.fail(request, "An error occurred trying to initialize the user for " + username + " while trying to import the session located at: " + request.getSessionPath() + "\n" + e.getMessage());
+            _service.fail(request, "An error occurred trying to initialize the user for " + username + " while trying to import the session located at: " + sessionPath + "\n" + e.getMessage());
         } catch (UserNotFoundException e) {
-            _service.fail(request, "Couldn't find a user by the name of " + username + " while trying to import the session located at: " + request.getSessionPath() + "\n" + e.getMessage());
+            _service.fail(request, "Couldn't find a user by the name of " + username + " while trying to import the session located at: " + sessionPath + "\n" + e.getMessage());
         } catch (Exception e) {
             final String exception = e.getClass().getSimpleName();
-            _service.fail(request, "The request to import data located at " + request.getSessionPath() + " failed due to an exception of type " + exception + ":\n" + e.getMessage());
+            _service.fail(request, "The request to import data located at " + sessionPath + " failed due to an exception of type " + exception + ":\n" + e.getMessage());
         }
     }
 

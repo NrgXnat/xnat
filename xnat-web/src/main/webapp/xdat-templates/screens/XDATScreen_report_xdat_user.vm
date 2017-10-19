@@ -595,7 +595,7 @@ $page.setVlinkColor($ui.vlink)
 
                                             return XNAT.xhr.request({
                                                 method: mthd,
-                                                url: _url,
+                                                url: XNAT.url.rootUrl(_url),
                                                 success: function(){
                                                     setRole(++i)
                                                 }

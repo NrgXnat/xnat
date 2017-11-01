@@ -31,6 +31,7 @@ import org.nrg.xnat.servlet.ArchiveServlet;
 import org.nrg.xnat.servlet.Log4JServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
@@ -45,8 +46,8 @@ import java.util.Enumeration;
 import java.util.List;
 import org.apache.log4j.PropertyConfigurator;
 
+@Component
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
-
     @Override
     public void onStartup(final ServletContext context) throws ServletException {
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");
@@ -60,7 +61,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         super.onStartup(context);
 
         // Now initialize everything else.
-        context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
+        // context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
         context.addFilter("updateExpirationCookie", UpdateExpirationCookie.class).addMappingForUrlPatterns(null, false, "/*");
 
         context.addListener(XnatSessionEventPublisher.class);

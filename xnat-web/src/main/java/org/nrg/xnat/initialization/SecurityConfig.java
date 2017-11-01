@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.initialization;
 
-import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
@@ -24,6 +23,7 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.validation.DateValidation;
 import org.nrg.xnat.utils.DefaultInteractiveAgentDetector;
 import org.nrg.xnat.utils.InteractiveAgentDetector;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -35,28 +35,64 @@ import org.springframework.security.access.vote.RoleVoter;
 import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.channel.ChannelDecisionManagerImpl;
+import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.access.channel.InsecureChannelProcessor;
 import org.springframework.security.web.access.channel.SecureChannelProcessor;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.security.web.authentication.session.*;
+import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
+import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.session.ConcurrentSessionFilter;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.util.*;
 
 @Configuration
 @EnableWebSecurity
-@ImportResource("WEB-INF/conf/xnat-security.xml")
-public class SecurityConfig {
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Autowired
+    public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final JdbcTemplate template, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
+        _preferences = preferences;
+        _appInfo = appInfo;
+        _template = template;
+        _aliasTokenService = aliasTokenService;
+        _dateValidation = dateValidation;
+    }
+
+    @Override
+    protected void configure(final HttpSecurity http) throws Exception {
+        final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, interactiveAgentDetector(_preferences));
+        http.headers().frameOptions().sameOrigin()
+            .httpStrictTransportSecurity().disable()
+            .contentSecurityPolicy("frame-ancestors 'self'");
+        http.httpBasic().authenticationEntryPoint(authenticationEntryPoint);
+        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint);
+        http.csrf().disable();
+        http.sessionManagement().sessionAuthenticationStrategy(sessionAuthenticationStrategy(sessionRegistry(), _preferences));
+        http.addFilterAt(channelProcessingFilter(_preferences), ChannelProcessingFilter.class)
+            .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(customBasicAuthenticationFilter(authenticationManager(), authenticationEntryPoint), BasicAuthenticationFilter.class)
+            .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
+            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class)
+            .addFilterAt(concurrencyFilter(sessionRegistry()), ConcurrentSessionFilter.class)
+            .addFilterAt(logoutFilter(sessionRegistry()), LogoutFilter.class);
+    }
+
     @Bean
     public UnanimousBased unanimousBased() {
         final RoleVoter voter = new RoleVoter();
@@ -99,21 +135,13 @@ public class SecurityConfig {
 
     @Bean
     @Primary
-    public CompositeSessionAuthenticationStrategy sas(final SessionRegistry sessionRegistry, final SiteConfigPreferences preferences) throws SiteConfigurationException {
-        ArrayList<SessionAuthenticationStrategy> authStrategies = new ArrayList<>();
-
-        final ConcurrentSessionControlAuthenticationStrategy strategy = new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
-        strategy.setMaximumSessions(preferences.getConcurrentMaxSessions());
-        strategy.setExceptionIfMaximumExceeded(true);
-        authStrategies.add(strategy);
-
-        SessionFixationProtectionStrategy fixationProtectionStrategy = new SessionFixationProtectionStrategy();
-        authStrategies.add(fixationProtectionStrategy);
-
-        RegisterSessionAuthenticationStrategy registerSessionAuthenticationStrategy = new RegisterSessionAuthenticationStrategy(sessionRegistry);
-        authStrategies.add(registerSessionAuthenticationStrategy);
-
-        return new CompositeSessionAuthenticationStrategy(authStrategies);
+    public CompositeSessionAuthenticationStrategy sessionAuthenticationStrategy(final SessionRegistry sessionRegistry, final SiteConfigPreferences preferences) {
+        return new CompositeSessionAuthenticationStrategy(Arrays.asList(new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry) {{
+                                                                            setMaximumSessions(preferences.getConcurrentMaxSessions());
+                                                                            setExceptionIfMaximumExceeded(true);
+                                                                        }},
+                                                                        new SessionFixationProtectionStrategy(),
+                                                                        new RegisterSessionAuthenticationStrategy(sessionRegistry)));
     }
 
     @Bean
@@ -130,12 +158,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor(final SiteConfigPreferences preferences, final XnatAppInfo appInfo) throws IOException {
+    public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor(final SiteConfigPreferences preferences, final XnatAppInfo appInfo) {
         return new FilterSecurityInterceptorBeanPostProcessor(preferences, appInfo);
     }
 
     @Bean
-    public TranslatingChannelProcessingFilter channelProcessingFilter(final SiteConfigPreferences preferences) throws SiteConfigurationException {
+    public TranslatingChannelProcessingFilter channelProcessingFilter(final SiteConfigPreferences preferences) {
         final ChannelDecisionManagerImpl decisionManager = new ChannelDecisionManagerImpl();
         decisionManager.setChannelProcessors(Arrays.asList(new SecureChannelProcessor(), new InsecureChannelProcessor()));
         final TranslatingChannelProcessingFilter filter = new TranslatingChannelProcessingFilter();
@@ -164,6 +192,7 @@ public class SecurityConfig {
         return new AuthenticationProviderAggregator(providers, configuratorMap, configFolderPaths);
     }
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     @Primary
     public XnatProviderManager customAuthenticationManager(final SiteConfigPreferences preferences, final AuthenticationProviderAggregator aggregator, final XdatUserAuthService userAuthService) {
@@ -197,7 +226,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) throws IOException {
+    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) {
         return new XnatInitCheckFilter(appInfo);
     }
 
@@ -205,4 +234,10 @@ public class SecurityConfig {
     public XnatDatabaseUserDetailsService customDatabaseService(final XdatUserAuthService userAuthService, final DataSource dataSource) {
         return new XnatDatabaseUserDetailsService(userAuthService, dataSource);
     }
+
+    private final SiteConfigPreferences _preferences;
+    private final XnatAppInfo           _appInfo;
+    private final JdbcTemplate          _template;
+    private final AliasTokenService     _aliasTokenService;
+    private final DateValidation        _dateValidation;
 }

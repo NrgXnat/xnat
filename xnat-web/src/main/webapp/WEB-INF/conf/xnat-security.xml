@@ -19,21 +19,6 @@
 
     <context:annotation-config/>
 
-    <security:http auto-config="false" use-expressions="true" entry-point-ref="loginUrlAuthenticationEntryPoint">
-        <security:csrf disabled="true"/>
-        <security:custom-filter position="CHANNEL_FILTER" ref="channelProcessingFilter"/>
-        <security:custom-filter before="FORM_LOGIN_FILTER" ref="customAuthenticationFilter"/>
-        <security:custom-filter after="BASIC_AUTH_FILTER" ref="customBasicAuthenticationFilter"/>
-        <security:custom-filter before="REMEMBER_ME_FILTER" ref="xnatInitCheckFilter"/>
-        <security:custom-filter after="SECURITY_CONTEXT_FILTER" ref="expiredPasswordFilter"/>
-        <security:custom-filter position="CONCURRENT_SESSION_FILTER" ref="concurrencyFilter"/>
-        <security:custom-filter position="LOGOUT_FILTER" ref="logoutFilter"/>
-        <security:session-management session-authentication-strategy-ref="sas"/>
-        <security:headers>
-            <security:frame-options policy="SAMEORIGIN"/>
-            <security:header name="Content-Security-Policy" value="frame-ancestors 'self'"/>
-            <security:hsts disabled="true"/>
-        </security:headers>
-    </security:http>
+    <security:http entry-point-ref="loginUrlAuthenticationEntryPoint"/>
 
 </beans>

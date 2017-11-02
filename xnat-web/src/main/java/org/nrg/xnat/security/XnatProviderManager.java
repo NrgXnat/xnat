@@ -13,16 +13,13 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.VelocityContext;
 import org.hibernate.exception.DataException;
-import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserAuthI;
@@ -39,6 +36,7 @@ import org.nrg.xnat.security.exceptions.NewAutoAccountNotAutoEnabledException;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.tokens.XnatAuthenticationToken;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -46,26 +44,34 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
+import static org.nrg.xnat.initialization.SecurityConfig.ANONYMOUS_AUTH_PROVIDER_KEY;
+
+@Service
+@Slf4j
 public class XnatProviderManager extends ProviderManager {
-
+    @Autowired
     public XnatProviderManager(final SiteConfigPreferences preferences, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers) {
         super(providers);
+
         _userAuthService = userAuthService;
         _eventPublisher = new AuthenticationAttemptEventPublisher(this, preferences);
 
         final Set<AnonymousAuthenticationProvider> anonymousProviders = Sets.newHashSet(Iterables.filter(providers, AnonymousAuthenticationProvider.class));
         if (anonymousProviders.isEmpty()) {
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Couldn't find an anonymous authentication provider!");
+            log.warn("Didn't find an anonymous authentication provider. This may lead to weirdness later on, but I'm creating a stand-in just in case.");
+            _anonymousAuthenticationProvider = new AnonymousAuthenticationProvider(ANONYMOUS_AUTH_PROVIDER_KEY);
+        } else {
+            if (anonymousProviders.size() > 1) {
+                log.warn("Found multiple (" + anonymousProviders.size() + ") anonymous providers. Just using the first one, but that may not be the right thing to do.");
+            }
+            _anonymousAuthenticationProvider = anonymousProviders.iterator().next();
         }
-
-        if (anonymousProviders.size() > 1) {
-            _log.warn("Found multiple (" + anonymousProviders.size() + ") anonymous providers. Just using the first one, but that may not be the right thing to do.");
-        }
-        _anonymousAuthenticationProvider = anonymousProviders.iterator().next();
 
         _xnatAuthenticationProviders.putAll(Maps.uniqueIndex(Iterables.filter(providers, XnatAuthenticationProvider.class), new Function<XnatAuthenticationProvider, String>() {
             @Nullable
@@ -111,13 +117,13 @@ public class XnatProviderManager extends ProviderManager {
 
         final Map<AuthenticationProvider, AuthenticationException> exceptionMap = new HashMap<>();
         for (final AuthenticationProvider provider : providers) {
-            _log.debug("Authentication attempt using " + provider.getClass().getName());
+            log.debug("Authentication attempt using " + provider.getClass().getName());
 
             try {
                 final Authentication result = provider.authenticate(converted);
                 if (result != null) {
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Found a provider that worked for " + authentication.getName() + ": " + provider.getClass().getSimpleName());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Found a provider that worked for " + authentication.getName() + ": " + provider.getClass().getSimpleName());
                     }
 
                     copyDetails(authentication, result);
@@ -125,17 +131,17 @@ public class XnatProviderManager extends ProviderManager {
                     return result;
                 }
             } catch (AccountStatusException exception) {
-                _log.warn("Error occurred authenticating login request with provider " + provider.getClass(), exception);
+                log.warn("Error occurred authenticating login request with provider " + provider.getClass(), exception);
                 exceptionMap.put(provider, exception);
             } catch (NewAutoAccountNotAutoEnabledException exception) {
                 try {
                     AdminUtils.sendNewUserNotification(exception.getUser(), "", "", "", new VelocityContext());
                 } catch (Exception embedded) {
-                    _log.error("Error occurred sending new user request email", embedded);
+                    log.error("Error occurred sending new user request email", embedded);
                 }
                 exceptionMap.put(provider, exception);
             } catch (AuthenticationServiceException exception) {
-                _log.error("Got a service exception for the provider " + provider.toString(), exception);
+                log.error("Got a service exception for the provider " + provider.toString(), exception);
                 exceptionMap.put(provider, exception);
             } catch (AuthenticationException exception) {
                 exceptionMap.put(provider, exception);
@@ -152,7 +158,7 @@ public class XnatProviderManager extends ProviderManager {
             provider = pair.getLeft();
             cause = pair.getRight();
         }
-        _log.info("Provider " + (provider != null ? provider.toString() : "<unknown>") + " failed to validate user " + authentication.getPrincipal(), cause);
+        log.info("Provider " + (provider != null ? provider.toString() : "<unknown>") + " failed to validate user " + authentication.getPrincipal(), cause);
         _eventPublisher.publishAuthenticationFailure(cause, authentication);
         throw cause;
     }
@@ -204,8 +210,8 @@ public class XnatProviderManager extends ProviderManager {
     }
 
     public String retrieveAuthMethod(final String username) {
-        if (_cachedAuthMethods.containsKey(username)) {
-            return _cachedAuthMethods.get(username);
+        if (CACHED_AUTH_METHODS.containsKey(username)) {
+            return CACHED_AUTH_METHODS.get(username);
         } else {
             final String authMethod;
             try {
@@ -228,10 +234,10 @@ public class XnatProviderManager extends ProviderManager {
                     authMethod = XdatUserAuthService.LOCALDB;
                 }
             } catch (DataException exception) {
-                _log.error("An error occurred trying to retrieve the auth method", exception);
+                log.error("An error occurred trying to retrieve the auth method", exception);
                 throw new RuntimeException("An error occurred trying to validate the given information. Please check your username and password. If this problem persists, please contact your system administrator.");
             }
-            _cachedAuthMethods.put(username, authMethod);
+            CACHED_AUTH_METHODS.put(username, authMethod);
             return authMethod;
         }
     }
@@ -381,7 +387,7 @@ public class XnatProviderManager extends ProviderManager {
                         try {
                             if (ua.getFailedLoginAttempts().equals(XDAT.getSiteConfigPreferences().getMaxFailedLogins())) {
                                 String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), 1000 * (int) SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getMaxFailedLoginsLockoutDuration())));
-                                _log.info("Locked out " + ua.getXdatUsername() + " user account until " + expiration);
+                                log.info("Locked out " + ua.getXdatUsername() + " user account until " + expiration);
                                 if (Roles.isSiteAdmin(new XDATUser(ua.getXdatUsername()))) {
                                     AdminUtils.emailAllAdmins(ua.getXdatUsername() + " account temporarily disabled. This is an admin account.", "User " + ua.getXdatUsername() + " has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at " + expiration + ".");
                                 } else {
@@ -412,6 +418,7 @@ public class XnatProviderManager extends ProviderManager {
         boolean matches(XnatAuthenticationProvider provider);
     }
 
+    private static final Map<String, String>                            CACHED_AUTH_METHODS    = new ConcurrentHashMap<>(); // This will prevent 20,000 curl scripts from hitting the db every time
     private static final List<Class<? extends AuthenticationException>> RANKED_AUTH_EXCEPTIONS = Arrays.asList(BadCredentialsException.class,
                                                                                                                AuthenticationCredentialsNotFoundException.class,
                                                                                                                AuthenticationServiceException.class,
@@ -419,14 +426,12 @@ public class XnatProviderManager extends ProviderManager {
                                                                                                                InsufficientAuthenticationException.class,
                                                                                                                AccountStatusException.class);
 
-    private static final Log _log = LogFactory.getLog(XnatProviderManager.class);
-
-    private static final Map<String, String> _cachedAuthMethods = Maps.newConcurrentMap(); // This will prevent 20,000 curl scripts from hitting the db every time
 
     private final MessageSourceAccessor                   _messageSource               = SpringSecurityMessageSource.getAccessor();
     private final Map<String, XnatAuthenticationProvider> _xnatAuthenticationProviders = new HashMap<>();
 
-    private final XdatUserAuthService             _userAuthService;
-    private final AnonymousAuthenticationProvider _anonymousAuthenticationProvider;
-    private final AuthenticationEventPublisher    _eventPublisher;
+    private final XdatUserAuthService          _userAuthService;
+    private final AuthenticationEventPublisher _eventPublisher;
+
+    private AnonymousAuthenticationProvider _anonymousAuthenticationProvider;
 }

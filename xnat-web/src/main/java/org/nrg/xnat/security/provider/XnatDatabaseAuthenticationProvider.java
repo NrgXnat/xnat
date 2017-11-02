@@ -24,6 +24,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 
 public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvider implements XnatAuthenticationProvider {
+    public XnatDatabaseAuthenticationProvider(final String displayName) {
+        this(displayName, XdatUserAuthService.LOCALDB);
+    }
+
     public XnatDatabaseAuthenticationProvider(final String displayName, final String providerId) {
         super();
         setPreAuthenticationChecks(new PreAuthenticationChecks());

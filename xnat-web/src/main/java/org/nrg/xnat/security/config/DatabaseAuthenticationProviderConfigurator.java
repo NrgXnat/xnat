@@ -16,19 +16,22 @@ import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.ReflectionSaltSource;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenticationProviderConfigurator {
+// @Component
+public class DatabaseAuthenticationProviderConfigurator { // extends AbstractAuthenticationProviderConfigurator {
     @Autowired
     public DatabaseAuthenticationProviderConfigurator(final XnatDatabaseUserDetailsService userDetailsService) {
         super();
         _userDetailsService = userDetailsService;
-        setConfiguratorId("db");
+        // setConfiguratorId("db");
     }
 
+    /*
     @Override
     public List<AuthenticationProvider> getAuthenticationProviders(String id, String name) {
         List<AuthenticationProvider> providers = new ArrayList<>();
@@ -59,5 +62,6 @@ public class DatabaseAuthenticationProviderConfigurator extends AbstractAuthenti
         return providers;
     }
 
+    */
     private final XnatDatabaseUserDetailsService _userDetailsService;
 }

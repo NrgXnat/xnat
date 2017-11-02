@@ -9,7 +9,9 @@
 
 package org.nrg.xnat.security;
 
-import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -25,7 +27,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -36,10 +37,15 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import static org.nrg.xnat.utils.XnatHttpUtils.getCredentials;
+
+@Slf4j
 public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     @Autowired
     public XnatBasicAuthenticationFilter(final AuthenticationManager manager, final AuthenticationEntryPoint entryPoint) {
@@ -55,6 +61,83 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     @Autowired
     public void setSessionAuthenticationStrategy(final SessionAuthenticationStrategy strategy) {
         _authenticationStrategy = strategy;
+    }
+
+    @Override
+    protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws IOException, ServletException {
+        final Pair<String, String> credentials;
+        try {
+            credentials = getCredentials(request);
+        } catch (ParseException e) {
+            // This means that the basic authentication header was found but wasn't properly formatted, so we can't find credentials.
+            throw new ServletException(e.getMessage());
+        }
+
+        final String               username    = credentials.getLeft();
+        final String               password    = credentials.getRight();
+
+        if (StringUtils.isNotBlank(username) && authenticationIsRequired(username)) {
+            final UsernamePasswordAuthenticationToken authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);
+            authRequest.setDetails(_authenticationDetailsSource.buildDetails(request));
+
+            try {
+                final Authentication authResult = getAuthenticationManager().authenticate(authRequest);
+                _authenticationStrategy.onAuthentication(authResult, request, response);
+
+                log.debug("Authentication success: " + authResult.toString());
+
+                SecurityContextHolder.getContext().setAuthentication(authResult);
+                onSuccessfulAuthentication(request, response, authResult);
+            } catch (AuthenticationException failed) {
+                // Authentication failed
+                log.info("Authentication request for user: '{}' failed: {}", username, failed.getMessage());
+
+                SecurityContextHolder.getContext().setAuthentication(null);
+                onUnsuccessfulAuthentication(request, response, failed);
+
+                XnatAuthenticationFilter.logFailedAttempt(username, request); //originally I put this in the onUnsuccessfulAuthentication method, but that would force me to re-parse the username
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AdminUtils.GetLoginFailureMessage());
+                return;
+            }
+        }
+
+        chain.doFilter(request, response);
+    }
+
+    @Override
+    // XNAT-2186 requested that REST logins also leave records of last login date
+    protected void onSuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, Authentication authResult) throws IOException {
+        try {
+            final UserI user = XDAT.getUserDetails();
+            if (user != null) {
+                final Object lock = getUserLock(user);
+
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (lock) {
+                    final Date    today = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+                    final XFTItem item  = XFTItem.NewItem("xdat:user_login", user);
+                    item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
+                    item.setProperty("xdat:user_login.login_date", today);
+                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
+                    item.setProperty("xdat:user_login.session_id", request.getSession().getId());
+                    SaveItemHelper.authorizedSave(item, null, true, false, EventUtils.DEFAULT_EVENT(user, null));
+                }
+                request.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(user));
+            }
+        } catch (Exception e) {
+            log.error("An unknown error occurred", e);
+        }
+
+        super.onSuccessfulAuthentication(request, response, authResult);
+    }
+
+    private Object getUserLock(final UserI user) {
+        final Object lock = LOCKS.get(user.getID());
+        if (lock != null) {
+            return lock;
+        }
+        LOCKS.put(user.getID(), new Object());
+        return LOCKS.get(user.getID());
     }
 
     private boolean authenticationIsRequired(String username) {
@@ -84,98 +167,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
 
     }
 
-    protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws IOException, ServletException {
-        final boolean debug = logger.isDebugEnabled();
-
-        String header = request.getHeader("Authorization");
-
-        if ((header != null) && header.startsWith("Basic ")) {
-            byte[] base64Token = header.substring(6).getBytes("UTF-8");
-            String token       = new String(Base64.decode(base64Token), getCredentialsCharset(request));
-
-            String username = "";
-            String password = "";
-            int    position = token.indexOf(":");
-
-            if (position != -1) {
-                username = token.substring(0, position);
-                password = token.substring(position + 1);
-            }
-
-            if (debug) {
-                logger.debug("Basic Authentication Authorization header found for user '" + username + "'");
-            }
-
-            if (authenticationIsRequired(username)) {
-                UsernamePasswordAuthenticationToken authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);
-                authRequest.setDetails(_authenticationDetailsSource.buildDetails(request));
-
-                final Authentication authResult;
-
-                try {
-                    authResult = getAuthenticationManager().authenticate(authRequest);
-                    _authenticationStrategy.onAuthentication(authResult, request, response);
-                } catch (AuthenticationException failed) {
-                    // Authentication failed
-                    if (debug) {
-                        logger.debug("Authentication request for user: " + username + " failed: " + failed.toString());
-                    }
-
-                    SecurityContextHolder.getContext().setAuthentication(null);
-                    onUnsuccessfulAuthentication(request, response, failed);
-
-                    XnatAuthenticationFilter.logFailedAttempt(username, request);//originally I put this in the onUnsuccessfulAuthentication method, but that would force me to re-parse the username
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AdminUtils.GetLoginFailureMessage());
-
-                    return;
-                }
-
-                // Authentication success
-                if (debug) {
-                    logger.debug("Authentication success: " + authResult.toString());
-                }
-
-                SecurityContextHolder.getContext().setAuthentication(authResult);
-                onSuccessfulAuthentication(request, response, authResult);
-            }
-        }
-
-        chain.doFilter(request, response);
-    }
-
-    private static final Map<Integer, Object> locks = Maps.newConcurrentMap();
-
-    @Override
-    // XNAT-2186 requested that REST logins also leave records of last login date
-    protected void onSuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                              Authentication authResult) throws IOException {
-        try {
-            final UserI user = XDAT.getUserDetails();
-            if (user != null) {
-                Object lock = locks.get(user.getID());
-                if (lock == null) {
-                    locks.put(user.getID(), new Object());
-                    lock = locks.get(user.getID());
-                }
-
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (lock) {
-                    Date    today = Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-                    XFTItem item  = XFTItem.NewItem("xdat:user_login", user);
-                    item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
-                    item.setProperty("xdat:user_login.login_date", today);
-                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
-                    item.setProperty("xdat:user_login.session_id", request.getSession().getId());
-                    SaveItemHelper.authorizedSave(item, null, true, false, EventUtils.DEFAULT_EVENT(user, null));
-                }
-                request.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(user));
-            }
-        } catch (Exception e) {
-            logger.error(e);
-        }
-
-        super.onSuccessfulAuthentication(request, response, authResult);
-    }
+    private static final Map<Integer, Object> LOCKS = new ConcurrentHashMap<>();
 
     private final WebAuthenticationDetailsSource _authenticationDetailsSource;
     private       XnatProviderManager            _providerManager;

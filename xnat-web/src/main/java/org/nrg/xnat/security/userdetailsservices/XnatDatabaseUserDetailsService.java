@@ -9,19 +9,21 @@
 
 package org.nrg.xnat.security.userdetailsservices;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xnat.security.PasswordExpiredException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.userdetails.jdbc.JdbcDaoImpl;
+import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 
+@Service
+@Slf4j
 public class XnatDatabaseUserDetailsService extends JdbcDaoImpl implements UserDetailsService {
     @Autowired
     public XnatDatabaseUserDetailsService(final XdatUserAuthService userAuthService, final DataSource dataSource) {
@@ -33,13 +35,11 @@ public class XnatDatabaseUserDetailsService extends JdbcDaoImpl implements UserD
     @Override
     public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException, DataAccessException, PasswordExpiredException {
         final UserDetails user = _userAuthService.getUserDetailsByNameAndAuth(username, XdatUserAuthService.LOCALDB, "");
-        if (_log.isDebugEnabled()) {
-            _log.debug("Loaded user {} by username from user-auth service.", user.getUsername());
+        if (log.isDebugEnabled()) {
+            log.debug("Loaded user {} by username from user-auth service.", user.getUsername());
         }
         return user;
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(XnatDatabaseUserDetailsService.class);
 
     private final XdatUserAuthService _userAuthService;
 }

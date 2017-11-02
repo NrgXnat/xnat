@@ -9,10 +9,9 @@
 
 package org.nrg.xnat.security;
 
-import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -24,12 +23,12 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -37,10 +36,14 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import static org.nrg.xnat.utils.XnatHttpUtils.getCredentials;
+
+@Slf4j
 public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     @Autowired
     public void setAuthenticationManager(final AuthenticationManager authenticationManager) {
@@ -72,38 +75,21 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        String username = StringUtils.isNotBlank(request.getParameter("username")) ? request.getParameter("username") : request.getParameter("j_username");
-        String password = StringUtils.isNotBlank(request.getParameter("password")) ? request.getParameter("password") : request.getParameter("j_password");
-
-        // If we didn't find a username
-        if (StringUtils.isBlank(username)) {
-            // See if there's an authorization header.
-            final String header = request.getHeader("Authorization");
-            if (!StringUtils.isBlank(header) && header.startsWith("Basic ")) {
-                try {
-                    final byte[] base64Token = header.substring(6).getBytes("UTF-8");
-                    final String token       = new String(Base64.decode(base64Token), "UTF-8");
-                    final int    position    = token.indexOf(":");
-
-                    if (position != -1) {
-                        username = token.substring(0, position);
-                        password = token.substring(position + 1);
-                    }
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Basic Authentication Authorization header found for user '" + username + "'");
-                    }
-                } catch (UnsupportedEncodingException exception) {
-                    _log.error("Encoding exception on authentication attempt", exception);
-                }
-            }
+        final Pair<String, String> credentials;
+        try {
+            credentials = getCredentials(request);
+        } catch (ParseException e) {
+            // This means that the basic authentication header wasn't properly formatted, so we can't find credentials.
+            throw new AuthenticationCredentialsNotFoundException(e.getMessage());
         }
 
-        //SHOULD we be throwing an exception if the username is null?
+        final String username     = credentials.getLeft();
+        final String password     = credentials.getRight();
+        final String providerName = request.getParameter("login_method");
 
-        final String                              providerName = request.getParameter("login_method");
         final UsernamePasswordAuthenticationToken authRequest;
 
-        if (StringUtils.isEmpty(providerName) && !StringUtils.isEmpty(username)) {
+        if (StringUtils.isBlank(providerName) && StringUtils.isNotBlank(username)) {
             // Try to guess the auth method
             final String authMethod = _providerManager.retrieveAuthMethod(username);
             if (StringUtils.isEmpty(authMethod)) {
@@ -119,31 +105,32 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
 
         try {
             AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "SUCCESS");
-            Authentication auth = getAuthenticationManager().authenticate(authRequest);
+            final Authentication authentication = getAuthenticationManager().authenticate(authRequest);
 
             //Fixed XNAT-4409 by adding a check for a par parameter on login. If a PAR is present and valid, then grant the user that just logged in the appropriate project permissions.
-            if(StringUtils.isNotBlank(request.getParameter("par"))){
-                String parId = request.getParameter("par");
+            if (StringUtils.isNotBlank(request.getParameter("par"))) {
+                final String parId = request.getParameter("par");
                 request.getSession().setAttribute("par", parId);
-                ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parId, null);
+
+                final ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parId, null);
                 if (par.getApproved() != null || par.getApprovalDate() != null) {
-                    logger.debug("PAR not approved or already accepted: " + par.getGuid());
+                    log.debug("PAR not approved or already accepted: " + par.getGuid());
                 } else {
                     XDATUser user = new XDATUser(username);
                     par.process(user, true, EventUtils.TYPE.WEB_FORM, "", "");
                 }
             }
 
-            return auth;
+            return authentication;
         } catch (AuthenticationException e) {
             logFailedAttempt(username, request);
             throw e;
         } catch (UserNotFoundException e) {
-            _log.error("",e);
+            log.error("Couldn't find a user with the name '" + username + "'", e);
         } catch (UserInitException e) {
-            _log.error("",e);
+            log.error("An error occurred trying to initialize the user with the name '" + username + "'", e);
         } catch (Exception e) {
-            _log.error("",e);
+            log.error("An unknown error occurred while trying to authenticate the user with the name '" + username + "'", e);
         }
         return null;
     }
@@ -153,13 +140,13 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
             final Integer uid = retrieveUserId(username);
             if (uid != null) {
                 try {
-                    XFTItem item = XFTItem.NewItem("xdat:user_login", null);
-                    item.setProperty("xdat:user_login.user_xdat_user_id", uid);
-                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(req));
-                    item.setProperty("xdat:user_login.login_date", Calendar.getInstance(java.util.TimeZone.getDefault()).getTime());
+                    final XFTItem item = XFTItem.NewItem("xdat:userlogin", null);
+                    item.setProperty("xdat:userlogin.user_xdat_user_id", uid);
+                    item.setProperty("xdat:userlogin.ip_address", AccessLogger.GetRequestIp(req));
+                    item.setProperty("xdat:userlogin.login_date", Calendar.getInstance(java.util.TimeZone.getDefault()).getTime());
                     SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
-                } catch (Exception exception) {
-                    _log.error(exception);
+                } catch (Exception e) {
+                    log.error("An unknown error occurred while trying to record a failed login attempt for the user '" + username + "'", e);
                 }
             }
             AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(req), "Authentication", "FAILED");
@@ -176,15 +163,14 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
                 return checked.get(username);
             }
 
-            final Integer i = Users.getUserid(username);
-            checked.put(username, i);
+            final int userId = Users.getUserid(username);
+            checked.put(username, userId);
 
-            return i;
+            return userId;
         }
     }
 
-    private static final Log                  _log    = LogFactory.getLog(XnatAuthenticationFilter.class);
-    private static final Map<String, Integer> checked = Maps.newHashMap();
+    private static final Map<String, Integer> checked = new ConcurrentHashMap<>();
 
     private XnatProviderManager _providerManager;
 }

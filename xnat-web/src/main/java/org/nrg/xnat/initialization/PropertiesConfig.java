@@ -17,11 +17,13 @@ import org.nrg.framework.utilities.IniImporter;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 
 import java.io.File;
@@ -143,6 +145,13 @@ public class PropertiesConfig {
             }
         }
         return _configFolderPaths;
+    }
+
+    @Bean
+    public MessageSource messageSource() {
+        return new ReloadableResourceBundleMessageSource() {{
+            setBasename("classpath:org/nrg/xnat/messages/system");
+        }};
     }
 
     private static File getNodeConfigurationFile(final Environment environment) {

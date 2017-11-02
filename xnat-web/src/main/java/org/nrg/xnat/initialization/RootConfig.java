@@ -16,7 +16,6 @@ import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import org.apache.commons.beanutils.BeanUtils;
 import org.nrg.framework.beans.Beans;
@@ -32,7 +31,6 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -58,7 +56,6 @@ import java.util.Properties;
  * for standard XNAT components should be added in the {@link ApplicationConfig application configuration class}.
  */
 @Configuration
-@Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class, NodeConfig.class})
 public class RootConfig {
     @Bean
     public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref) throws IOException {
@@ -66,7 +63,7 @@ public class RootConfig {
     }
 
     @Bean
-    public ContextService contextService() throws NrgServiceException {
+    public ContextService contextService() {
         return ContextService.getInstance();
     }
 
@@ -137,6 +134,7 @@ public class RootConfig {
         return new SerializerRegistry();
     }
 
+    @SuppressWarnings("SpringJavaAutowiredFieldsWarningInspection")
     @Autowired
     private Module[] _jacksonModules;
 }

@@ -12,47 +12,33 @@ package org.nrg.xnat.utils;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
+import java.util.concurrent.Callable;
 
 public class NetUtils {
-
-    public static void main(String[] args) throws Exception {
-	int port = Integer.valueOf(args[0]);
-	System.out.println("Port " + port + " available? " + isPortAvailable(port));
-	//occupyTcpPort(port);
-    }
-
     public static boolean isPortAvailable(int port) {
-	ServerSocket ss = null;
-	DatagramSocket ds = null;
-	try {
-	    ss = new ServerSocket(port);
-	    ss.setReuseAddress(true);
-	    ds = new DatagramSocket(port);
-	    ds.setReuseAddress(true);
-	    return true;
-	} catch (IOException e) {
-	} finally {
-	    if (ds != null) {
-		ds.close();
-	    }
-
-	    if (ss != null) {
-		try {
-		    ss.close();
-		} catch (IOException e) {
-		    /* should not be thrown */
-		}
-	    }
-	}
-
-	return false;
+        try (final ServerSocket serverSocket = new ServerSocket(port)) {
+            serverSocket.setReuseAddress(true);
+            try (final DatagramSocket datagramSocket = new DatagramSocket(port)) {
+                datagramSocket.setReuseAddress(true);
+            }
+            return true;
+        } catch (IOException ignored) {
+        }
+        return false;
     }
 
-    public static void occupyTcpPort(int port) throws Exception {
-	ServerSocket ss = new ServerSocket(port);
-	ss.setReuseAddress(true);
-	while (true) {
-	    Thread.sleep(1000);
-	}
+    @SuppressWarnings("unused")
+    public static void occupyTcpPort(final int port) throws Exception {
+        new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                final ServerSocket serverSocket = new ServerSocket(port);
+                serverSocket.setReuseAddress(true);
+                while (serverSocket.isBound()) {
+                    Thread.sleep(1000);
+                }
+                return null;
+            }
+        }.call();
     }
 }

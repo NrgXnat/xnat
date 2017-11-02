@@ -313,7 +313,6 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
 
     implementation "org.codehaus.groovy:groovy-all"
-    implementation "org.python:jython-standalone"
 
     implementation "net.sourceforge.saxon:saxon"
     implementation "xalan:xalan"

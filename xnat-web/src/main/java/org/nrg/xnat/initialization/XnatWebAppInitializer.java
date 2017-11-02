@@ -9,30 +9,24 @@
 
 package org.nrg.xnat.initialization;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.transport.http.AdminServlet;
 import org.apache.axis.transport.http.AxisHTTPSessionListener;
 import org.apache.axis.transport.http.AxisServlet;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.PatternLayout;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
+import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.nrg.xnat.servlet.ArchiveServlet;
 import org.nrg.xnat.servlet.Log4JServlet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.*;
@@ -44,10 +38,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import org.apache.log4j.PropertyConfigurator;
 
 @Component
+@Slf4j
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+    public static final Class<?>[] EMPTY_ARRAY = new Class<?>[0];
+
     @Override
     public void onStartup(final ServletContext context) throws ServletException {
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");
@@ -90,6 +86,11 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     protected Class<?>[] getRootConfigClasses() {
         final List<Class<?>> configClasses = new ArrayList<>();
         configClasses.add(RootConfig.class);
+        configClasses.add(PropertiesConfig.class);
+        configClasses.add(DatabaseConfig.class);
+        configClasses.add(SecurityConfig.class);
+        configClasses.add(ApplicationConfig.class);
+        configClasses.add(NodeConfig.class);
         configClasses.addAll(getPluginConfigs());
         configClasses.add(ControllerConfig.class);
         return configClasses.toArray(new Class[configClasses.size()]);
@@ -118,6 +119,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final String prefix = "xnat_" + Long.toString(System.nanoTime());
         try {
             final Path path = Paths.get(root, subfolder);
+            //noinspection ResultOfMethodCallIgnored
             path.toFile().mkdirs();
             final Path tmpDir = Files.createTempDirectory(path, prefix);
             tmpDir.toFile().deleteOnExit();
@@ -137,16 +139,16 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final List<Class<?>> configs = new ArrayList<>();
         try {
             for (final XnatPluginBean plugin : XnatPluginBeanManager.scanForXnatPluginBeans().values()) {
-                if (_log.isInfoEnabled()) {
-                    _log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
+                if (log.isInfoEnabled()) {
+                    log.info("Found plugin {} {}: {}", plugin.getId(), plugin.getName(), plugin.getDescription());
                 }
                 configs.add(Class.forName(plugin.getPluginClass()));
             }
         } catch (ClassNotFoundException e) {
-            _log.error("Did not find a class specified in a plugin definition.", e);
+            log.error("Did not find a class specified in a plugin definition.", e);
         }
 
-        _log.info("Found a total of {} plugins", configs.size());
+        log.info("Found a total of {} plugins", configs.size());
         return configs;
     }
 
@@ -189,9 +191,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
         private ServletContext _context;
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(XnatWebAppInitializer.class);
-    private static final Class<?>[] EMPTY_ARRAY = new Class<?>[0];
 
     private ServletContext _context;
 }

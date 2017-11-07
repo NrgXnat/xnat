@@ -236,7 +236,7 @@ this.xsiType="xdat:criteria";
 
 	this.toXML=function(xmlTxt,preventComments){
 		xmlTxt+="<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-		xmlTxt+="\n<xdat:criteria";
+		xmlTxt+="<xdat:criteria";
 		xmlTxt+=this.getXMLAtts();
 		xmlTxt+=" xmlns:arc=\"http://nrg.wustl.edu/arc\"";
 		xmlTxt+=" xmlns:cat=\"http://nrg.wustl.edu/catalog\"";
@@ -251,7 +251,7 @@ this.xsiType="xdat:criteria";
 		xmlTxt+=" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"";
 		xmlTxt+=">";
 		xmlTxt+=this.getXMLBody(preventComments)
-		xmlTxt+="\n</xdat:criteria>";
+		xmlTxt+="</xdat:criteria>";
 		return xmlTxt;
 	}
 
@@ -288,25 +288,25 @@ this.xsiType="xdat:criteria";
 	this.getXMLBody=function(preventComments){
 		var xmlTxt=this.getXMLComments(preventComments);
 		if (this.SchemaField!=null){
-			xmlTxt+="\n<xdat:schema_field";
+			xmlTxt+="<xdat:schema_field";
 			xmlTxt+=">";
 			xmlTxt+=this.SchemaField.replace(/>/g,"&gt;").replace(/</g,"&lt;");
 			xmlTxt+="</xdat:schema_field>";
 		}
 		if (this.ComparisonType!=null){
-			xmlTxt+="\n<xdat:comparison_type";
+			xmlTxt+="<xdat:comparison_type";
 			xmlTxt+=">";
 			xmlTxt+=this.ComparisonType.replace(/>/g,"&gt;").replace(/</g,"&lt;");
 			xmlTxt+="</xdat:comparison_type>";
 		}
 		if (this.CustomSearch!=null){
-			xmlTxt+="\n<xdat:custom_search";
+			xmlTxt+="<xdat:custom_search";
 			xmlTxt+=">";
 			xmlTxt+=this.CustomSearch.replace(/>/g,"&gt;").replace(/</g,"&lt;");
 			xmlTxt+="</xdat:custom_search>";
 		}
 		if (this.Value!=null){
-			xmlTxt+="\n<xdat:value";
+			xmlTxt+="<xdat:value";
 			xmlTxt+=">";
 			xmlTxt+=this.Value.replace(/>/g,"&gt;").replace(/</g,"&lt;");
 			xmlTxt+="</xdat:value>";

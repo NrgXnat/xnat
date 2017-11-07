@@ -967,7 +967,7 @@ this.xsiType="xdat:stored_search";
 
 	this.toXML=function(xmlTxt,preventComments){
 		xmlTxt+="<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-		xmlTxt+="\n<xdat:bundle";
+		xmlTxt+="<xdat:bundle";
 		xmlTxt+=this.getXMLAtts();
 		xmlTxt+=" xmlns:arc=\"http://nrg.wustl.edu/arc\"";
 		xmlTxt+=" xmlns:cat=\"http://nrg.wustl.edu/catalog\"";
@@ -982,7 +982,7 @@ this.xsiType="xdat:stored_search";
 		xmlTxt+=" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"";
 		xmlTxt+=">";
 		xmlTxt+=this.getXMLBody(preventComments)
-		xmlTxt+="\n</xdat:bundle>";
+		xmlTxt+="</xdat:bundle>";
 		return xmlTxt;
 	}
 
@@ -1032,13 +1032,13 @@ this.xsiType="xdat:stored_search";
 	this.getXMLBody=function(preventComments){
 		var xmlTxt=this.getXMLComments(preventComments);
 		if (this.RootElementName!=null){
-			xmlTxt+="\n<xdat:root_element_name";
+			xmlTxt+="<xdat:root_element_name";
 			xmlTxt+=">";
 			xmlTxt+=this.RootElementName.replace(/>/g,"&gt;").replace(/</g,"&lt;");
 			xmlTxt+="</xdat:root_element_name>";
 		}
 		for(var SearchFieldCOUNT=0;SearchFieldCOUNT<this.SearchField.length;SearchFieldCOUNT++){
-			xmlTxt +="\n<xdat:search_field";
+			xmlTxt +="<xdat:search_field";
 			xmlTxt +=this.SearchField[SearchFieldCOUNT].getXMLAtts();
 			if(this.SearchField[SearchFieldCOUNT].xsiType!="xdat:search_field"){
 				xmlTxt+=" xsi:type=\"" + this.SearchField[SearchFieldCOUNT].xsiType + "\"";
@@ -1050,7 +1050,7 @@ this.xsiType="xdat:stored_search";
 			}else {xmlTxt+="/>";}
 		}
 		for(var SearchWhereCOUNT=0;SearchWhereCOUNT<this.SearchWhere.length;SearchWhereCOUNT++){
-			xmlTxt +="\n<xdat:search_where";
+			xmlTxt +="<xdat:search_where";
 			xmlTxt +=this.SearchWhere[SearchWhereCOUNT].getXMLAtts();
 			if(this.SearchWhere[SearchWhereCOUNT].xsiType!="xdat:criteria_set"){
 				xmlTxt+=" xsi:type=\"" + this.SearchWhere[SearchWhereCOUNT].xsiType + "\"";
@@ -1068,29 +1068,29 @@ this.xsiType="xdat:stored_search";
 			if(this.SortBy_fieldId!=null)
 			child0++;
 			if(child0>0 || att0>0){
-				xmlTxt+="\n<xdat:sort_by";
+				xmlTxt+="<xdat:sort_by";
 			if(child0==0){
 				xmlTxt+="/>";
 			}else{
 				xmlTxt+=">";
 		if (this.SortBy_elementName!=null){
-			xmlTxt+="\n<xdat:element_name";
+			xmlTxt+="<xdat:element_name";
 			xmlTxt+=">";
 			xmlTxt+=this.SortBy_elementName.replace(/>/g,"&gt;").replace(/</g,"&lt;");
 			xmlTxt+="</xdat:element_name>";
 		}
 		if (this.SortBy_fieldId!=null){
-			xmlTxt+="\n<xdat:field_ID";
+			xmlTxt+="<xdat:field_ID";
 			xmlTxt+=">";
 			xmlTxt+=this.SortBy_fieldId.replace(/>/g,"&gt;").replace(/</g,"&lt;");
 			xmlTxt+="</xdat:field_ID>";
 		}
-				xmlTxt+="\n</xdat:sort_by>";
+				xmlTxt+="</xdat:sort_by>";
 			}
 			}
 
 		for(var AllowedUserCOUNT=0;AllowedUserCOUNT<this.AllowedUser.length;AllowedUserCOUNT++){
-			xmlTxt +="\n<xdat:allowed_user";
+			xmlTxt +="<xdat:allowed_user";
 			xmlTxt +=this.AllowedUser[AllowedUserCOUNT].getXMLAtts();
 			if(this.AllowedUser[AllowedUserCOUNT].xsiType!="xdat:stored_search_allowed_user"){
 				xmlTxt+=" xsi:type=\"" + this.AllowedUser[AllowedUserCOUNT].xsiType + "\"";
@@ -1105,7 +1105,7 @@ this.xsiType="xdat:stored_search";
 			var att1=0;
 			child1+=this.AllowedGroups_groupid.length;
 			if(child1>0 || att1>0){
-				xmlTxt+="\n<xdat:allowed_groups";
+				xmlTxt+="<xdat:allowed_groups";
 			if(child1==0){
 				xmlTxt+="/>";
 			}else{
@@ -1113,7 +1113,7 @@ this.xsiType="xdat:stored_search";
 		for(var AllowedGroups_groupidCOUNT=0;AllowedGroups_groupidCOUNT<this.AllowedGroups_groupid.length;AllowedGroups_groupidCOUNT++){
 			xmlTxt+=this.AllowedGroups_groupid[AllowedGroups_groupidCOUNT].getXMLBody(preventComments);
 		}
-				xmlTxt+="\n</xdat:allowed_groups>";
+				xmlTxt+="</xdat:allowed_groups>";
 			}
 			}
 

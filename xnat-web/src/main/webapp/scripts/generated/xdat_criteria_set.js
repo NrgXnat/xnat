@@ -467,7 +467,7 @@ this.xsiType="xdat:criteria_set";
 
 	this.toXML=function(xmlTxt,preventComments){
 		xmlTxt+="<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-		xmlTxt+="\n<xdat:criteria_set";
+		xmlTxt+="<xdat:criteria_set";
 		xmlTxt+=this.getXMLAtts();
 		xmlTxt+=" xmlns:arc=\"http://nrg.wustl.edu/arc\"";
 		xmlTxt+=" xmlns:cat=\"http://nrg.wustl.edu/catalog\"";
@@ -482,7 +482,7 @@ this.xsiType="xdat:criteria_set";
 		xmlTxt+=" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"";
 		xmlTxt+=">";
 		xmlTxt+=this.getXMLBody(preventComments)
-		xmlTxt+="\n</xdat:criteria_set>";
+		xmlTxt+="</xdat:criteria_set>";
 		return xmlTxt;
 	}
 
@@ -519,7 +519,7 @@ this.xsiType="xdat:criteria_set";
 	this.getXMLBody=function(preventComments){
 		var xmlTxt=this.getXMLComments(preventComments);
 		for(var CriteriaCOUNT=0;CriteriaCOUNT<this.Criteria.length;CriteriaCOUNT++){
-			xmlTxt +="\n<xdat:criteria";
+			xmlTxt +="<xdat:criteria";
 			xmlTxt +=this.Criteria[CriteriaCOUNT].getXMLAtts();
 			if(this.Criteria[CriteriaCOUNT].xsiType!="xdat:criteria"){
 				xmlTxt+=" xsi:type=\"" + this.Criteria[CriteriaCOUNT].xsiType + "\"";
@@ -531,7 +531,7 @@ this.xsiType="xdat:criteria_set";
 			}else {xmlTxt+="/>";}
 		}
 		for(var ChildSetCOUNT=0;ChildSetCOUNT<this.ChildSet.length;ChildSetCOUNT++){
-			xmlTxt +="\n<xdat:child_set";
+			xmlTxt +="<xdat:child_set";
 			xmlTxt +=this.ChildSet[ChildSetCOUNT].getXMLAtts();
 			if(this.ChildSet[ChildSetCOUNT].xsiType!="xdat:criteria_set"){
 				xmlTxt+=" xsi:type=\"" + this.ChildSet[ChildSetCOUNT].xsiType + "\"";

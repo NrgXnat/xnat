@@ -176,7 +176,7 @@
         <jena-tdb.version>1.0.1</jena-tdb.version>
         <jena.version>2.11.1</jena.version>
         <jetty.version>6.1.25</jetty.version>
-        <cargo.version>1.6.4</cargo.version>
+        <cargo.version>1.6.5</cargo.version>
         <joda-time.version>2.7</joda-time.version>
         <jruby.version>1.7.19</jruby.version>
         <json.version>20160810</json.version>
@@ -223,6 +223,7 @@
         <gradle-tomcat-plugin.version>2.3</gradle-tomcat-plugin.version>
         <gradle-cargo-plugin.version>2.2.3</gradle-cargo-plugin.version>
         <gradle-dependency-management.version>1.0.3.RELEASE</gradle-dependency-management.version>
+        <tomcat-embed.version>7.0.82</tomcat-embed.version>
 
         <!-- Maven plugin versions -->
         <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
@@ -1620,6 +1621,31 @@
                 <groupId>gradle.plugin.com.palantir.gradle.gitversion</groupId>
                 <artifactId>gradle-git-version</artifactId>
                 <version>${gradle-git-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat-embed.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-jasper</artifactId>
+                <version>${tomcat-embed.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-logging-juli</artifactId>
+                <version>${tomcat-embed.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-ant</artifactId>
+                <version>${cargo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-core-uberjar</artifactId>
+                <version>${cargo.version}</version>
             </dependency>
 
             <!-- Test dependencies -->

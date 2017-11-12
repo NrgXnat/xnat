@@ -61,9 +61,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private static final long serialVersionUID = -8144623503683531831L;
     private static final Logger logger = LoggerFactory.getLogger(XDATUser.class);
 
-    private static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
-    private static final SimpleGrantedAuthority AUTHORITY_ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
-    private static final SimpleGrantedAuthority AUTHORITY_USER = new SimpleGrantedAuthority("ROLE_USER");
     private static final String[] REPLACEMENT_LIST = {"id", "xnat_experimentData", "xnat_experimentData_share", "sharing_share_xnat_experimentda_id"};
 
     private Hashtable<String, ElementAccessManager> accessManagers = null;

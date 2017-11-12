@@ -32,31 +32,38 @@ public class TestXdatUserAuthService {
 
     @Test
     public void testUserAuthCreation() {
-    	XdatUserAuth created = _service.newEntity();
-    	created.setAuthUser("mike");
-    	created.setAuthMethod("ldap");
-    	created.setAuthMethodId("wustlkey");
-    	_service.create(created);
-    	
-    	UserAuthI retrieved = _service.getUserByNameAndAuth(created.getAuthUser(),created.getAuthMethod(),created.getAuthMethodId());
-    	assertNotNull(retrieved);
+        final XdatUserAuth created = _service.newEntity();
+        created.setAuthUser("mike");
+        created.setAuthMethod("ldap");
+        created.setAuthMethodId("wustlkey");
+        _service.create(created);
+
+        final UserAuthI retrieved = _service.getUserByNameAndAuth(created.getAuthUser(), created.getAuthMethod(), created.getAuthMethodId());
+        assertNotNull(retrieved);
+
+        final boolean hasMike = _service.hasUserByNameAndAuth("mike", "ldap", "wustlkey");
+        assertTrue(hasMike);
 
         assertEquals(created, retrieved);
-        
+
         _service.delete(created);
-        retrieved = _service.retrieve(created.getId());
-        assertTrue(retrieved == null);
+        final UserAuthI deleted = _service.retrieve(created.getId());
+        assertTrue(deleted == null);
+
+        final boolean hasDeletedMike = _service.hasUserByNameAndAuth("mike", "ldap", "wustlkey");
+        assertFalse(hasDeletedMike);
     }
-    
+
     @Test(expected = ConstraintViolationException.class)
     public void testConstraints() {
-    	XdatUserAuth userAuth1 = _service.newEntity();
+        final XdatUserAuth userAuth1 = _service.newEntity();
         userAuth1.setAuthUser("mmckay");
         userAuth1.setAuthMethod("ldap");
         userAuth1.setAuthMethodId("wustlkey");
         userAuth1.setXdatUsername("mike");
         _service.create(userAuth1);
-        XdatUserAuth userAuth2 = _service.newEntity();
+
+        final XdatUserAuth userAuth2 = _service.newEntity();
         userAuth2.setAuthUser("mmckay");
         userAuth2.setAuthMethod("ldap");
         userAuth2.setAuthMethodId("wustlkey");

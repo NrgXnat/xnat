@@ -62,7 +62,6 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.cache.CacheManager;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.security.authentication.AnonymousAuthenticationProvider;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -77,6 +76,8 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+
+import static org.nrg.xft.security.UserI.AUTHORITIES_ANONYMOUS;
 
 /**
  * @author Tim
@@ -220,8 +221,7 @@ public class XDAT implements Initializable, Configurable{
 	}
 
 	public static Authentication setGuestUserDetails() throws UserNotFoundException, UserInitException {
-		final UserI guest = Users.getGuest();
-		return new AnonymousAuthenticationToken(getContextService().getBean(AnonymousAuthenticationProvider.class).getKey(), guest, Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+		return new AnonymousAuthenticationToken(UserI.ANONYMOUS_AUTH_PROVIDER_KEY, Users.getGuest(), AUTHORITIES_ANONYMOUS);
 	}
 
 	public static Authentication setUserDetails(UserI user) throws UserNotFoundException, UserInitException {

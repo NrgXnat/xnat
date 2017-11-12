@@ -12,17 +12,27 @@ package org.nrg.xft.security;
 
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xft.exception.MetaDataException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author Tim
  *
  */
 public interface UserI extends UserDetails,Serializable{
-	Integer getID();
+    String                 ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-auth-provider";
+    SimpleGrantedAuthority AUTHORITY_ANONYMOUS         = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
+    List<GrantedAuthority> AUTHORITIES_ANONYMOUS       = Collections.<GrantedAuthority>singletonList(AUTHORITY_ANONYMOUS);
+    SimpleGrantedAuthority AUTHORITY_ADMIN             = new SimpleGrantedAuthority("ROLE_ADMIN");
+    SimpleGrantedAuthority AUTHORITY_USER              = new SimpleGrantedAuthority("ROLE_USER");
+
+    Integer getID();
 	String getUsername();
     String getLogin();
     boolean isGuest();
@@ -36,9 +46,9 @@ public interface UserI extends UserDetails,Serializable{
     Boolean isVerified();
     String getSalt();
     boolean isActive()throws MetaDataException;
-	
+
     Date getLastModified();
-	
+
     void setLogin(String login);
     void setEmail(String e);
     void setFirstname(String firstname);
@@ -48,7 +58,7 @@ public interface UserI extends UserDetails,Serializable{
     void setPrimaryPassword_encrypt(Object b);
     void setEnabled(Object enabled);
     void setVerified(Object verified);
-	
+
     UserAuthI setAuthorization(UserAuthI newUserAuth);
     UserAuthI getAuthorization();
 }

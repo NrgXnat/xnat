@@ -73,8 +73,8 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
             throw new ServletException(e.getMessage());
         }
 
-        final String               username    = credentials.getLeft();
-        final String               password    = credentials.getRight();
+        final String username = credentials.getLeft();
+        final String password = credentials.getRight();
 
         if (StringUtils.isNotBlank(username) && authenticationIsRequired(username)) {
             final UsernamePasswordAuthenticationToken authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);

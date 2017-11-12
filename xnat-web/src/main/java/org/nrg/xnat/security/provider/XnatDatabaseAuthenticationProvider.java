@@ -11,6 +11,8 @@ package org.nrg.xnat.security.provider;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
@@ -24,15 +26,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 
 public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvider implements XnatAuthenticationProvider {
-    public XnatDatabaseAuthenticationProvider(final String displayName) {
-        this(displayName, XdatUserAuthService.LOCALDB);
+    public XnatDatabaseAuthenticationProvider(final String displayName, final AliasTokenService aliasTokenService) {
+        this(displayName, XdatUserAuthService.LOCALDB, aliasTokenService);
     }
 
-    public XnatDatabaseAuthenticationProvider(final String displayName, final String providerId) {
+    public XnatDatabaseAuthenticationProvider(final String displayName, final String providerId, final AliasTokenService aliasTokenService) {
         super();
         setPreAuthenticationChecks(new PreAuthenticationChecks());
         _displayName = StringUtils.defaultIfBlank(displayName, "XNAT");
         _providerId = StringUtils.defaultIfBlank(providerId, XdatUserAuthService.LOCALDB);
+        _aliasTokenService = aliasTokenService;
     }
 
     /**
@@ -51,9 +54,17 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
 
     }
 
+    /**
+     * This class prefers the {@link XnatDatabaseUsernamePasswordAuthenticationToken} class, but supports the base
+     * Spring <b>UsernamePasswordAuthenticationToken</b> class as well.
+     *
+     * @param authentication The authentication token to test.
+     *
+     * @return Returns <b>true</b> if the indicated authentication token class is supported by this provider.
+     */
     @Override
-    public boolean supports(Class<?> authentication) {
-        return XnatDatabaseUsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
+    public boolean supports(final Class<?> authentication) {
+        return XnatDatabaseUsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication) || UsernamePasswordAuthenticationToken.class.equals(authentication);
     }
 
     @Override
@@ -98,7 +109,14 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
 
     @Override
     public boolean supports(final Authentication authentication) {
-        return supports(authentication.getClass()) && StringUtils.equals(getProviderId(), ((XnatAuthenticationToken) authentication).getProviderId());
+        if (!supports(authentication.getClass())) {
+            return false;
+        }
+
+        final Class<? extends UsernamePasswordAuthenticationToken> clazz = authentication.getClass().asSubclass(UsernamePasswordAuthenticationToken.class);
+        return clazz.equals(UsernamePasswordAuthenticationToken.class)
+               || XnatDatabaseUsernamePasswordAuthenticationToken.class.isAssignableFrom(clazz)
+                  && StringUtils.equals(getProviderId(), ((XnatAuthenticationToken) authentication).getProviderId());
     }
 
     @Override
@@ -110,8 +128,17 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
         if ((XDAT.getSiteConfigPreferences().getEmailVerification() && !xdatUserDetails.isVerified() && xdatUserDetails.isEnabled()) || !xdatUserDetails.isAccountNonLocked()) {
             throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + xdatUserDetails.getUsername());
         }
+        final String principal = authentication.getPrincipal().toString();
+        if (!StringUtils.equals(userDetails.getUsername(), principal) && AliasToken.isAliasFormat(principal)) {
+            // If we validate the token by alias and secret and that maps to the same user, then skip the super checks.
+            final String username = _aliasTokenService.validateToken(principal, authentication.getCredentials().toString());
+            if (StringUtils.equals(userDetails.getUsername(), username)) {
+                return;
+            }
+        }
         super.additionalAuthenticationChecks(userDetails, authentication);
     }
+
 
     private class PreAuthenticationChecks implements UserDetailsChecker {
         public void check(UserDetails user) {
@@ -165,4 +192,5 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
 
     private String _displayName;
     private int _order = -1;
+    private AliasTokenService _aliasTokenService;
 }

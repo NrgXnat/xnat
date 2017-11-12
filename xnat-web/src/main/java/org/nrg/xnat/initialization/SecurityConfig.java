@@ -14,9 +14,8 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.*;
-import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
-import org.nrg.xnat.security.config.DatabaseAuthenticationProviderConfigurator;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -26,7 +25,6 @@ import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -34,7 +32,6 @@ import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.vote.AuthenticatedVoter;
 import org.springframework.security.access.vote.RoleVoter;
 import org.springframework.security.access.vote.UnanimousBased;
-import org.springframework.security.authentication.AnonymousAuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.ReflectionSaltSource;
@@ -75,11 +72,8 @@ import static org.nrg.xnat.initialization.XnatWebAppInitializer.EMPTY_ARRAY;
 
 @Configuration
 @EnableWebSecurity
-@ComponentScan({"org.nrg.xnat.security.config", "org.nrg.xnat.security.userdetailsservices"})
 @Slf4j
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    public static final String ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-auth-provider";
-
     @Autowired
     public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource, final NamedParameterJdbcTemplate template, final DataSource dataSource) {
         _preferences = preferences;
@@ -90,18 +84,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         _messageSource = messageSource;
         _template = template;
         _dataSource = dataSource;
-        _anonymousAuthenticationProvider = new AnonymousAuthenticationProvider(ANONYMOUS_AUTH_PROVIDER_KEY);
     }
 
-    @SuppressWarnings("unused")
-    public void configureGlobal(final AuthenticationManagerBuilder builder) {
-        log.debug("Now in the global WebSecurityConfigurerAdapter.configure() override method.");
+    @Autowired
+    public void setAuthenticationProviders(final List<AuthenticationProvider> providers) {
+        _providers = providers;
     }
 
     @Override
     protected void configure(final AuthenticationManagerBuilder builder) throws Exception {
-        log.debug("Now in the standard (non-global) WebSecurityConfigurerAdapter.configure() override method.");
-        builder.parentAuthenticationManager(customAuthenticationManager()).userDetailsService(new XnatDatabaseUserDetailsService(_userAuthService, _dataSource));
+        builder.authenticationProvider(xnatDatabaseAuthenticationProvider()).userDetailsService(userDetailsService());
     }
 
     @Override
@@ -114,27 +106,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .contentSecurityPolicy("frame-ancestors 'self'");
         http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint);
         http.csrf().disable();
-        http.anonymous().authenticationProvider(anonymousAuthenticationProvider()).init(http);
+        http.anonymous().key(UserI.ANONYMOUS_AUTH_PROVIDER_KEY);
         http.sessionManagement().sessionAuthenticationStrategy(sessionAuthenticationStrategy(sessionRegistry(), _preferences));
+        http.userDetailsService(userDetailsService());
         http.addFilterAt(channelProcessingFilter(_preferences), ChannelProcessingFilter.class)
             .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-            .addFilterAt(customBasicAuthenticationFilter(authenticationManager(), authenticationEntryPoint), BasicAuthenticationFilter.class)
+            .addFilterAfter(customBasicAuthenticationFilter(authenticationManager(), authenticationEntryPoint), BasicAuthenticationFilter.class)
             .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
             .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class)
             .addFilterAt(concurrencyFilter(sessionRegistry()), ConcurrentSessionFilter.class)
             .addFilterAt(logoutFilter(sessionRegistry()), LogoutFilter.class);
     }
 
-    @Autowired
-    public void setAuthenticationProviders(final List<AuthenticationProvider> providers) {
-        _providers = providers;
+    @Override
+    protected AuthenticationManager authenticationManager() {
+        return customAuthenticationManager();
     }
 
     @Bean(BeanIds.USER_DETAILS_SERVICE)
     @Override
     public UserDetailsService userDetailsService() {
-        // This is a trick to expose the Spring Security object as a bean in the standard Spring application context.
-        return super.userDetailsService();
+        return new XnatDatabaseUserDetailsService(_dataSource);
     }
 
     @Bean
@@ -217,16 +209,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public AnonymousAuthenticationProvider anonymousAuthenticationProvider() {
-        return _anonymousAuthenticationProvider;
-    }
-
-    @Bean
-    public DatabaseAuthenticationProviderConfigurator dbConfigurator(final XnatDatabaseUserDetailsService userDetailsService) {
-        return new DatabaseAuthenticationProviderConfigurator(userDetailsService);
-    }
-
-    @Bean
     public XnatProviderManager customAuthenticationManager() {
         return new XnatProviderManager(_preferences, _userAuthService, _providers);
     }
@@ -262,18 +244,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public AliasTokenAuthenticationProvider aliasTokenAuthenticationProvider() {
-        return new AliasTokenAuthenticationProvider(_aliasTokenService, _userAuthService);
-    }
-
-    @Bean
     public XnatDatabaseAuthenticationProvider xnatDatabaseAuthenticationProvider() {
         final ReflectionSaltSource saltSource = new ReflectionSaltSource();
         saltSource.setUserPropertyToUse("salt");
 
         final String name = _messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_ARRAY, "Database", Locale.getDefault());
 
-        final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(name);
+        final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(name, _aliasTokenService);
         sha2DatabaseAuthProvider.setUserDetailsService(userDetailsService());
         sha2DatabaseAuthProvider.setPasswordEncoder(Users.getEncoder());
         sha2DatabaseAuthProvider.setName(name);
@@ -281,15 +258,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return sha2DatabaseAuthProvider;
     }
 
-    private final SiteConfigPreferences           _preferences;
-    private final XnatAppInfo                     _appInfo;
-    private final AliasTokenService               _aliasTokenService;
-    private final XdatUserAuthService             _userAuthService;
-    private final MessageSource                   _messageSource;
-    private final DateValidation                  _dateValidation;
-    private final NamedParameterJdbcTemplate      _template;
-    private final DataSource                      _dataSource;
-    private final AnonymousAuthenticationProvider _anonymousAuthenticationProvider;
+    private final SiteConfigPreferences      _preferences;
+    private final XnatAppInfo                _appInfo;
+    private final AliasTokenService          _aliasTokenService;
+    private final XdatUserAuthService        _userAuthService;
+    private final MessageSource              _messageSource;
+    private final DateValidation             _dateValidation;
+    private final NamedParameterJdbcTemplate _template;
+    private final DataSource                 _dataSource;
 
     private List<AuthenticationProvider> _providers;
 }

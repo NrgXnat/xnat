@@ -12,7 +12,6 @@ package org.nrg.xnat.security;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -50,28 +49,20 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.nrg.xnat.initialization.SecurityConfig.ANONYMOUS_AUTH_PROVIDER_KEY;
-
 @Service
 @Slf4j
 public class XnatProviderManager extends ProviderManager {
+
+    private static final GrantedAuthority                       AUTHORITY_ANONYMOUS         = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
+    private static final Collection<? extends GrantedAuthority> AUTHORITIES_ANONYMOUS       = Collections.singletonList(AUTHORITY_ANONYMOUS);
+    private static final String                                 ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-provider-key";
+
     @Autowired
     public XnatProviderManager(final SiteConfigPreferences preferences, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers) {
         super(providers);
 
         _userAuthService = userAuthService;
         _eventPublisher = new AuthenticationAttemptEventPublisher(this, preferences);
-
-        final Set<AnonymousAuthenticationProvider> anonymousProviders = Sets.newHashSet(Iterables.filter(providers, AnonymousAuthenticationProvider.class));
-        if (anonymousProviders.isEmpty()) {
-            log.warn("Didn't find an anonymous authentication provider. This may lead to weirdness later on, but I'm creating a stand-in just in case.");
-            _anonymousAuthenticationProvider = new AnonymousAuthenticationProvider(ANONYMOUS_AUTH_PROVIDER_KEY);
-        } else {
-            if (anonymousProviders.size() > 1) {
-                log.warn("Found multiple (" + anonymousProviders.size() + ") anonymous providers. Just using the first one, but that may not be the right thing to do.");
-            }
-            _anonymousAuthenticationProvider = anonymousProviders.iterator().next();
-        }
 
         _xnatAuthenticationProviders.putAll(Maps.uniqueIndex(Iterables.filter(providers, XnatAuthenticationProvider.class), new Function<XnatAuthenticationProvider, String>() {
             @Nullable
@@ -90,8 +81,7 @@ public class XnatProviderManager extends ProviderManager {
         // HACK: This is a hack to work around open XNAT auth issue. If this is a bare un/pw auth token, use anon auth.
         final Authentication converted;
         if (authentication.getClass() == UsernamePasswordAuthenticationToken.class && authentication.getName().equalsIgnoreCase("guest")) {
-            providers.add(_anonymousAuthenticationProvider);
-            converted = new AnonymousAuthenticationToken(_anonymousAuthenticationProvider.getKey(), authentication.getPrincipal(), Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+            converted = new AnonymousAuthenticationToken(ANONYMOUS_AUTH_PROVIDER_KEY, authentication.getPrincipal(), AUTHORITIES_ANONYMOUS);
         } else {
             converted = authentication;
             for (final AuthenticationProvider candidate : getProviders()) {
@@ -199,14 +189,12 @@ public class XnatProviderManager extends ProviderManager {
         }
     }
 
-    public UsernamePasswordAuthenticationToken buildUPTokenForAuthMethod(String authMethod, String username, String password) {
-        XnatAuthenticationProvider chosenProvider = findAuthenticationProviderByAuthMethod(authMethod);
-        return buildUPToken(chosenProvider, username, password);
+    public UsernamePasswordAuthenticationToken buildUPTokenForAuthMethod(final String authMethod, final String username, final String password) {
+        return buildUPToken(findAuthenticationProviderByAuthMethod(authMethod), username, password);
     }
 
-    public UsernamePasswordAuthenticationToken buildUPTokenForProviderName(String providerName, String username, String password) {
-        XnatAuthenticationProvider chosenProvider = findAuthenticationProviderByProviderName(providerName);
-        return buildUPToken(chosenProvider, username, password);
+    public UsernamePasswordAuthenticationToken buildUPTokenForProviderName(final String providerName, final String username, final String password) {
+        return buildUPToken(findAuthenticationProviderByProviderName(providerName), username, password);
     }
 
     public String retrieveAuthMethod(final String username) {
@@ -432,6 +420,4 @@ public class XnatProviderManager extends ProviderManager {
 
     private final XdatUserAuthService          _userAuthService;
     private final AuthenticationEventPublisher _eventPublisher;
-
-    private AnonymousAuthenticationProvider _anonymousAuthenticationProvider;
 }

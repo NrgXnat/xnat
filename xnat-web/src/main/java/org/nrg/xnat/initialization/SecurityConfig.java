@@ -16,6 +16,7 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.*;
+import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -43,7 +44,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.channel.ChannelDecisionManagerImpl;
 import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.access.channel.InsecureChannelProcessor;
@@ -57,7 +57,6 @@ import org.springframework.security.web.authentication.session.CompositeSessionA
 import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.session.ConcurrentSessionFilter;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
@@ -91,6 +90,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         _providers = providers;
     }
 
+    public void configureGlobal(final AuthenticationManagerBuilder builder) throws Exception {
+        builder.ldapAuthentication().
+    }
+
     @Override
     protected void configure(final AuthenticationManagerBuilder builder) throws Exception {
         builder.authenticationProvider(xnatDatabaseAuthenticationProvider()).userDetailsService(userDetailsService());
@@ -98,9 +101,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
-        super.configure(http);
-
         final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, interactiveAgentDetector(_preferences));
+        http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint));
         http.headers().frameOptions().sameOrigin()
             .httpStrictTransportSecurity().disable()
             .contentSecurityPolicy("frame-ancestors 'self'");
@@ -111,16 +113,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.userDetailsService(userDetailsService());
         http.addFilterAt(channelProcessingFilter(_preferences), ChannelProcessingFilter.class)
             .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-            .addFilterAfter(customBasicAuthenticationFilter(authenticationManager(), authenticationEntryPoint), BasicAuthenticationFilter.class)
             .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
             .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class)
             .addFilterAt(concurrencyFilter(sessionRegistry()), ConcurrentSessionFilter.class)
             .addFilterAt(logoutFilter(sessionRegistry()), LogoutFilter.class);
     }
 
+    @Bean(BeanIds.AUTHENTICATION_MANAGER)
     @Override
     protected AuthenticationManager authenticationManager() {
-        return customAuthenticationManager();
+        return new XnatProviderManager(_preferences, _userAuthService, _providers);
     }
 
     @Bean(BeanIds.USER_DETAILS_SERVICE)
@@ -209,18 +211,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public XnatProviderManager customAuthenticationManager() {
-        return new XnatProviderManager(_preferences, _userAuthService, _providers);
+    public AliasTokenAuthenticationProvider aliasTokenAuthenticationProvider(final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService) {
+        return new AliasTokenAuthenticationProvider(aliasTokenService, userAuthService);
     }
 
     @Bean
     public XnatAuthenticationFilter customAuthenticationFilter() {
         return new XnatAuthenticationFilter();
-    }
-
-    @Bean
-    public XnatBasicAuthenticationFilter customBasicAuthenticationFilter(final AuthenticationManager authenticationManager, final AuthenticationEntryPoint entryPoint) {
-        return new XnatBasicAuthenticationFilter(authenticationManager, entryPoint);
     }
 
     @Bean

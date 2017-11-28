@@ -9,7 +9,6 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
-import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
@@ -32,59 +31,56 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Login extends VelocitySecureScreen {
 	@Override
 	protected void doBuildTemplate(RunData data) throws Exception {
-		String message = data.getMessage();
+		final String message = data.getMessage();
 		
 		if (!StringUtils.isBlank(message) && (message.startsWith("Password changed") || message.startsWith("Registration successful"))) {
 		//If a user goes to the login page after changing their password, this logs them out.
-			HttpSession session = data.getRequest().getSession(false);
+			final HttpSession session = data.getRequest().getSession(false);
 	        if (session != null) {
 	            session.invalidate();
 	            if(XDAT.getContextService()!=null && XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class)!=null){
-			        SessionInformation si = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class).getSessionInformation(session.getId());
-			        if (si!=null) {
-			            si.expireNow();
+			        final SessionInformation sessionInfo = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class).getSessionInformation(session.getId());
+			        if (sessionInfo!=null) {
+			            sessionInfo.expireNow();
 			        }
 		        }
 	        }
 	        SecurityContextHolder.clearContext();	
 		}
 		
-		String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
+		final String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
 		
-		Cookie[] cookies = data.getRequest().getCookies();
+		final Cookie[] cookies = data.getRequest().getCookies();
 		boolean sessionTimedOut = false;
 		boolean recentTimeout = false;
 		Date logoutTime = new Date();
         if (cookies != null) {
-            for (Cookie cookie : cookies) {
+            for (final Cookie cookie : cookies) {
 				if (cookie.getName().equalsIgnoreCase("SESSION_TIMED_OUT")) {
-					String val = cookie.getValue();
-					if(StringUtils.equals(val,"true")){
+					if (StringUtils.equals(cookie.getValue(), "true")){
 						sessionTimedOut = true;
 					}
 				}
                 if (cookie.getName().equalsIgnoreCase("SESSION_TIMEOUT_TIME")) {
-                	String val = cookie.getValue();
-                	if(val!=null && (!val.equals("")) && (cookie.getValue()!=null)){
+                	final String value = cookie.getValue();
+                	if(StringUtils.isNotBlank(value)){
                 		logoutTime = (new Date(Long.parseLong(cookie.getValue())));
-                		Date currTime = new Date();
                 		//If their session timed out within the last 5 seconds, display a message to the user telling them that their session timed out.
-                		if((currTime.getTime()-logoutTime.getTime())<5000){
-							recentTimeout=true;
+                		if ((new Date().getTime() - logoutTime.getTime()) < 5000) {
+							recentTimeout = true;
                 		}
-
                 	}
                 }
             }
-			if(sessionTimedOut&&recentTimeout){
+			if (sessionTimedOut && recentTimeout) {
 				String messageTemplate = XDAT.getSiteConfigPreferences().getSessionTimeoutMessage();
-				data.setMessage(messageTemplate.replaceAll("TIMEOUT_TIME",logoutTime.toString()));
-			}
-			else if(!StringUtils.isBlank(message) && message.startsWith("Session timed out at")){
+				data.setMessage(messageTemplate.replaceAll("TIMEOUT_TIME", logoutTime.toString()));
+			} else if (!StringUtils.isBlank(message) && message.startsWith("Session timed out at")) {
 				//If the message still says "Session timed out at ...", but they did not time out recently, reset it
 				data.setMessage("");
 			}
@@ -96,8 +92,8 @@ public class Login extends VelocitySecureScreen {
 
 		final Context context = TurbineVelocity.getContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
-        List<AuthenticationProvider> prov = XDAT.getContextService().getBean("customAuthenticationManager",ProviderManager.class).getProviders();
-        List<String> providerNames = new ArrayList<String>();
+        List<AuthenticationProvider> prov = XDAT.getContextService().getBean("authenticationManager",ProviderManager.class).getProviders();
+        List<String> providerNames = new ArrayList<>();
         for(AuthenticationProvider p : prov){
         	String name = p.toString();
         	if(!providerNames.contains(name)){
@@ -148,10 +144,9 @@ public class Login extends VelocitySecureScreen {
 	}
 
 	@Override
-	protected boolean isAuthorized(RunData arg0) throws Exception {
+	protected boolean isAuthorized(final RunData data) {
 		return false;
 	}
 
-
-    private static final Map<String, Boolean> _providers = Maps.newConcurrentMap();
+    private static final Map<String, Boolean> _providers = new ConcurrentHashMap<>();
 }

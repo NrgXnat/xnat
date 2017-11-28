@@ -76,7 +76,7 @@
         <xdat.version>${xnatdev.version}</xdat.version>
         <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
         <nrg.config.version>${xnat.version}</nrg.config.version>
-        <nrg.framework.version>${xnat.version}</nrg.framework.version>
+        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>

@@ -9,19 +9,15 @@ import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
-import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -34,32 +30,46 @@ import static org.nrg.xnat.initialization.XnatWebAppInitializer.EMPTY_ARRAY;
 @Slf4j
 public class AuthenticationProviderConfigurationLocator {
     @Autowired
-    public AuthenticationProviderConfigurationLocator(final ConfigPaths configPaths, final SerializerService serializer, final MessageSource messageSource) {
+    public AuthenticationProviderConfigurationLocator(final ConfigPaths configPaths, final MessageSource messageSource) {
         _configPaths = configPaths;
         _messageSource = messageSource;
-        _emptyName = _messageSource.getMessage("authProviders.none.defaults.name", new Object[0], "", Locale.getDefault());
 
-        final List<Properties> definitions = getDefinitions(_messageSource, _emptyName);
+        final List<Properties> definitions = getProviderDefinitions();
         for (final Properties definition : definitions) {
+            final String id   = definition.getProperty("id");
             final String type = definition.getProperty("type");
-            if (_definitionsByType.containsKey(type)) {
-                final Properties existing = _definitionsByType.get(type);
-                log.warn("The definition for {} specifies its type as {}, but that type is already defined by {} and mapped to the implementation class {}. Duplicate provider type definitions are not allowed.", definition.getProperty("id"), definition.getProperty("type"), existing.getProperty("id"), existing.getProperty("implementation"));
-            } else {
-                _definitionsByType.put(type, definition);
+            if (_definitionsByName.containsKey("id")) {
+                throw new RuntimeException("There's already a provider definition with the ID {}, can't have duplicate IDs.");
             }
+            _definitionsByName.put(id, definition);
+            if (!_definitionsByType.containsKey(type)) {
+                _definitionsByType.put(type, new HashMap<String, Properties>());
+            }
+            _definitionsByType.get(type).put(id, definition);
         }
+    }
+
+    public Properties getProviderDefinition(final String providerId) {
+        if (StringUtils.isBlank(providerId) || !_definitionsByName.containsKey(providerId)) {
+            return null;
+        }
+        return _definitionsByName.get(providerId);
+    }
+
+    public Map<String, Properties> getProviderDefinitions(final String providerType) {
+        if (StringUtils.isBlank(providerType) || !_definitionsByName.containsKey(providerType)) {
+            return null;
+        }
+        return _definitionsByType.get(providerType);
     }
 
     /**
      * Finds all {@link XnatAuthenticationProvider XNAT authentication provider configurations} defined in properties files named <b>*-provider.properties</b>
-     * and found in the configuration folder <b>auth</b> or on the classpath in <b>META-INF/xnat/security</b> or one of its subfolders. Paired with {@link
-     * #getProviders(List)}, you can get a list of defined providers, filter out any already existing providers or specifically black-listed providers, then
-     * create only the remaining providers.
+     * and found in the configuration folder <b>auth</b> or on the classpath in <b>META-INF/xnat/security</b> or one of its subfolders.
      *
      * @return A list of provider definitions.
      */
-    public List<Properties> getProviderDefinitions() {
+    private List<Properties> getProviderDefinitions() {
         final List<Properties> providers = new ArrayList<>();
 
         // Populate map of properties for each provider
@@ -69,10 +79,13 @@ public class AuthenticationProviderConfigurationLocator {
             final Path authPath = Paths.get(currPath.toString(), "auth");
 
             log.debug("AuthPath is {}", authPath.toString());
-            final Collection<File> files = FileUtils.listFiles(authPath.toFile(), PROVIDER_FILENAME_FILTER, DirectoryFileFilter.DIRECTORY);
-            for (final File file : files) {
-                if (!authFilePaths.contains(file.toString())) {
-                    authFilePaths.add(file.toString());
+            final File             directory = authPath.toFile();
+            if (directory.exists() && directory.isDirectory()) {
+                final Collection<File> files     = FileUtils.listFiles(directory, PROVIDER_FILENAME_FILTER, DirectoryFileFilter.DIRECTORY);
+                for (final File file : files) {
+                    if (!authFilePaths.contains(file.toString())) {
+                        authFilePaths.add(file.toString());
+                    }
                 }
             }
         }
@@ -120,132 +133,7 @@ public class AuthenticationProviderConfigurationLocator {
         return providers;
     }
 
-    /**
-     * Gets an instance of each of the {@link XnatAuthenticationProvider XNAT authentication provider configurations} in the submitted definitions.
-     * Paired with {@link #getProviderDefinitions()}, you can get a list of defined providers, filter out any already existing providers or specifically
-     * black-listed providers, then create only the remaining providers.
-     *
-     * @param definitions The list of provider definitions
-     *
-     * @return Any {@link XnatAuthenticationProvider authentication provider instances} created from the list of definitions.
-     */
-    public List<XnatAuthenticationProvider> getProviders(final List<Properties> definitions) {
-        final List<XnatAuthenticationProvider> providers = new ArrayList<>();
-
-        // Create providers from provider list
-        for (final Properties definition : definitions) {
-            final String name           = definition.getProperty("name");
-            final String id             = definition.getProperty("id");
-            final String type           = definition.getProperty("type", "");
-            final String implementation = definition.getProperty("implementation", "");
-
-            assert StringUtils.isNotBlank(name) : "You must provide a name for all authentication provider configurations";
-            assert StringUtils.isNotBlank(id) : "You must provide an ID for all authentication provider configurations";
-            assert StringUtils.isNotBlank(type) || StringUtils.isNotBlank(implementation) : "You must provide a type or implementation class for all authentication provider configurations";
-
-            final XnatAuthenticationProvider provider = getProvider(definition);
-            if (provider != null) {
-                providers.add(provider);
-            }
-        }
-
-        Collections.sort(providers, new Comparator<AuthenticationProvider>() {
-            public int compare(AuthenticationProvider o1, AuthenticationProvider o2) {
-                if (XnatAuthenticationProvider.class.isAssignableFrom(o1.getClass())) {
-                    if (XnatAuthenticationProvider.class.isAssignableFrom(o2.getClass())) {
-                        if (((XnatAuthenticationProvider) o1).getOrder() == ((XnatAuthenticationProvider) o2).getOrder()) {
-                            return 0;
-                        }
-                        return ((XnatAuthenticationProvider) o1).getOrder() < ((XnatAuthenticationProvider) o2).getOrder() ? -1 : 1;
-                    } else {
-                        return 1;
-                    }
-                } else {
-                    if (XnatAuthenticationProvider.class.isAssignableFrom(o2.getClass())) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
-                }
-            }
-        });
-
-        return providers;
-    }
-
-    private XnatAuthenticationProvider getProvider(final Properties definition) {
-        final String implementationClass = definition.getProperty("implementation", _definitionsByType.get(definition.getProperty("type")).getProperty("implementation"));
-        if (StringUtils.isBlank(implementationClass)) {
-            log.error("There is no implementation specified explicitly or through the provider type for the provider definition {}", definition.getProperty("id"));
-            return null;
-        }
-        try {
-            final Class<? extends XnatAuthenticationProvider> providerClass = Class.forName(implementationClass).asSubclass(XnatAuthenticationProvider.class);
-            final Constructor<? extends XnatAuthenticationProvider> constructor = getConstructorByPriority(providerClass);
-            if (constructor == null) {
-                log.warn("Tried to create an instance of the {} authentication provider as defined for ID {}, but couldn't find one of the standard constructors. This may be OK: you can create it explicitly.", implementationClass, definition.getProperty("id"));
-            } else {
-                try {
-                    final Class<?>[] types = constructor.getParameterTypes();
-                    switch (types.length) {
-                        case 0:
-                            return constructor.newInstance();
-
-                        case 2:
-                            return constructor.newInstance(definition.getProperty("name"), definition.getProperty("id"));
-
-                        case 3:
-                            return constructor.newInstance(definition.getProperty("name"), definition.getProperty("id"), definition.getProperty("type"));
-
-                        case 4:
-                            return constructor.newInstance(definition.getProperty("name"), definition.getProperty("id"), definition.getProperty("type"), Integer.parseInt(definition.getProperty("order")));
-
-                        case 1:
-                            if (Properties.class.isAssignableFrom(types[0])) {
-                                return constructor.newInstance(definition);
-                            }
-                            return constructor.newInstance(definition.getProperty("name"));
-                    }
-                } catch (IllegalAccessException e) {
-                    log.error("The located constructor is inaccessible", e);
-                } catch (InstantiationException | InvocationTargetException e) {
-                    log.error("The located constructor resulted in an error", e);
-                }
-            }
-        } catch (ClassNotFoundException e) {
-            log.error("The authentication provider ID {} specified an implementation class that couldn't be found: {}", definition.getProperty("id"), implementationClass);
-        }
-        return null;
-    }
-
-    private static Constructor<? extends XnatAuthenticationProvider> getConstructorByPriority(final Class<? extends XnatAuthenticationProvider> providerClass) {
-        try {
-            return providerClass.getConstructor(Properties.class);
-        } catch (NoSuchMethodException e) {
-            try {
-                return providerClass.getConstructor(String.class, String.class, String.class, Integer.class);
-            } catch (NoSuchMethodException e1) {
-                try {
-                    return providerClass.getConstructor(String.class, String.class, String.class);
-                } catch (NoSuchMethodException e2) {
-                    try {
-                        return providerClass.getConstructor(String.class, String.class);
-                    } catch (NoSuchMethodException e3) {
-                        try {
-                            return providerClass.getConstructor(String.class);
-                        } catch (NoSuchMethodException e4) {
-                            try {
-                                return providerClass.getConstructor();
-                            } catch (NoSuchMethodException e5) {
-                                return null;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    @SuppressWarnings("unused")
     private static List<Properties> getDefinitions(final MessageSource messageSource, final String emptyName) {
         final List<Properties> providerImplementations = new ArrayList<>();
         try {
@@ -321,9 +209,9 @@ public class AuthenticationProviderConfigurationLocator {
     private static final RegexFileFilter PROVIDER_FILENAME_FILTER    = new RegexFileFilter("^." + PROVIDER_FILENAME);
     private static final Pattern         PROPERTY_NAME_VALUE_PATTERN = Pattern.compile("^(?:provider\\.)?(?<providerId>[A-z0-9_-]+)\\.(?<property>.*)$");
 
-    private final ConfigPaths       _configPaths;
-    private final MessageSource     _messageSource;
-    private final String            _emptyName;
+    private final ConfigPaths   _configPaths;
+    private final MessageSource _messageSource;
 
-    private final Map<String, Properties> _definitionsByType = new HashMap<>();
+    private final Map<String, Properties>              _definitionsByName = new HashMap<>();
+    private final Map<String, Map<String, Properties>> _definitionsByType = new HashMap<>();
 }

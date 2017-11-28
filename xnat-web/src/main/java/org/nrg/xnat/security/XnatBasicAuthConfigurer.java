@@ -125,9 +125,9 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
         final MediaTypeRequestMatcher restMatcher = new MediaTypeRequestMatcher(contentNegotiationStrategy, MEDIA_TYPES);
         restMatcher.setIgnoredMediaTypes(Collections.singleton(MediaType.ALL));
 
-        final RequestMatcher notHtmlMatcher = new NegatedRequestMatcher(new MediaTypeRequestMatcher(contentNegotiationStrategy, MediaType.TEXT_HTML));
+        final RequestMatcher notHtmlMatcher     = new NegatedRequestMatcher(new MediaTypeRequestMatcher(contentNegotiationStrategy, MediaType.TEXT_HTML));
         final RequestMatcher restNotHtmlMatcher = new AndRequestMatcher(Arrays.asList(notHtmlMatcher, restMatcher));
-        final RequestMatcher preferredMatcher = new OrRequestMatcher(Arrays.asList(X_REQUESTED_WITH, restNotHtmlMatcher));
+        final RequestMatcher preferredMatcher   = new OrRequestMatcher(Arrays.asList(X_REQUESTED_WITH, restNotHtmlMatcher));
 
         registerDefaultEntryPoint(http, preferredMatcher);
         registerDefaultLogoutSuccessHandler(http, preferredMatcher);
@@ -158,7 +158,7 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
 
     @Override
     public void configure(final B http) {
-        final AuthenticationManager authenticationManager = http.getSharedObject(AuthenticationManager.class);
+        final AuthenticationManager         authenticationManager     = http.getSharedObject(AuthenticationManager.class);
         final XnatBasicAuthenticationFilter basicAuthenticationFilter = new XnatBasicAuthenticationFilter(authenticationManager, _authenticationEntryPoint);
         if (_authenticationDetailsSource != null) {
             basicAuthenticationFilter.setAuthenticationDetailsSource(_authenticationDetailsSource);

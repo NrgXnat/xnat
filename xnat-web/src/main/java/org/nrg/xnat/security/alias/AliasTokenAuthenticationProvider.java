@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.security.alias;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Users;
@@ -27,7 +28,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
 
+@Component
+@Slf4j
 public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider implements XnatAuthenticationProvider {
     @Autowired
     public AliasTokenAuthenticationProvider(final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService) {
@@ -56,6 +60,7 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
             throw new BadCredentialsException("No valid alias token found for alias: " + alias);
         }
         // Translate the token into the actual user name and allow the DAO to retrieve the user object.
+        log.debug("Authenticating token for {}", alias);
         return super.authenticate(authentication);
     }
 
@@ -150,33 +155,40 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
 
     @Override
     public XnatAuthenticationToken createToken(final String username, final String password) {
+        log.debug("Creating new alias token authentication token for alias {}", username);
         return new AliasTokenAuthenticationToken(username, password);
     }
 
     @Override
     public boolean supports(final Authentication authentication) {
-        return supports(authentication.getClass()) && StringUtils.equals(getProviderId(), ((XnatAuthenticationToken) authentication).getProviderId());
+        final String providerId      = getProviderId();
+        final String tokenProviderId = ((XnatAuthenticationToken) authentication).getProviderId();
+        log.debug("Checking whether this provider with ID {} supports an authentication token with provider ID {}", providerId, tokenProviderId);
+        return supports(authentication.getClass()) && StringUtils.equals(providerId, tokenProviderId);
     }
 
     @Override
     protected void additionalAuthenticationChecks(final UserDetails userDetails, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
         if (authentication.getCredentials() == null) {
-            logger.debug("Authentication failed: no credentials provided");
+            log.debug("Authentication failed: no credentials provided");
             throw new BadCredentialsException("The submitted alias token was empty.");
         }
 
         if (!UserI.class.isAssignableFrom(userDetails.getClass())) {
             throw new AuthenticationServiceException("User details class is not of a type I know how to handle: " + userDetails.getClass());
         }
+
         final UserI xdatUserDetails = (UserI) userDetails;
+        log.debug("Validating alias token login for user {}", xdatUserDetails.getUsername());
         Users.validateUserLogin(xdatUserDetails);
 
-        String alias  = ((AliasTokenAuthenticationToken) authentication).getAlias();
-        String secret = ((AliasTokenAuthenticationToken) authentication).getSecret();
-        String userId = _aliasTokenService.validateToken(alias, secret);
+        final String alias  = ((AliasTokenAuthenticationToken) authentication).getAlias();
+        final String secret = ((AliasTokenAuthenticationToken) authentication).getSecret();
+        final String userId = _aliasTokenService.validateToken(alias, secret);
         if (StringUtils.isBlank(userId) || !userId.equals(userDetails.getUsername())) {
             throw new BadCredentialsException("The submitted alias token was invalid: " + alias);
         }
+        log.info("Validated alias token login for user {} with alias {}", userId, alias);
     }
 
     /**
@@ -190,11 +202,10 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      * the correctness of credentials was assured by subclasses adopting a binding-based strategy in this method.
      * Accordingly it is important that subclasses either disable caching (if they want to ensure that this method is
      * the only method that is capable of authenticating a request, as no <code>UserDetails</code> will ever be
-     * cached) or ensure subclasses implement {@link #additionalAuthenticationChecks(org.springframework.security.core.userdetails.UserDetails,
-     * org.springframework.security.authentication.UsernamePasswordAuthenticationToken)} to compare the credentials of a cached <code>UserDetails</code> with
-     * subsequent authentication requests.</p>
+     * cached) or ensure subclasses implement {@link #additionalAuthenticationChecks(UserDetails, UsernamePasswordAuthenticationToken)}
+     * to compare the credentials of a cached <code>UserDetails</code> with subsequent authentication requests.</p>
      * <p>Most of the time subclasses will not perform credentials inspection in this method, instead
-     * performing it in {@link #additionalAuthenticationChecks(org.springframework.security.core.userdetails.UserDetails, org.springframework.security.authentication.UsernamePasswordAuthenticationToken)} so
+     * performing it in {@link #additionalAuthenticationChecks(UserDetails, UsernamePasswordAuthenticationToken)} so
      * that code related to credentials validation need not be duplicated across two methods.</p>
      *
      * @param username       The username to retrieve
@@ -209,7 +220,7 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      */
     @Override
     protected UserDetails retrieveUser(final String username, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
-        AliasToken token = _aliasTokenService.locateToken(username);
+        final AliasToken token = _aliasTokenService.locateToken(username);
         if (token == null) {
             throw new UsernameNotFoundException("Unable to locate token with alias: " + username);
         }

@@ -31,6 +31,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -45,6 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.nrg.xnat.utils.XnatHttpUtils.getCredentials;
 
+@Component
 @Slf4j
 public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     @Autowired

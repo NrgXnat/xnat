@@ -9,9 +9,7 @@
 
 package org.nrg.xnat.security;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nrg.xdat.XDAT;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AbstractAuthenticationTargetUrlRequestHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -21,35 +19,31 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+@Slf4j
 public class XnatLogoutSuccessHandler extends AbstractAuthenticationTargetUrlRequestHandler implements LogoutSuccessHandler {
-
-    public void setOpenXnatLogoutSuccessUrl(String openXnatLogoutSuccessUrl) {
+    public XnatLogoutSuccessHandler(final boolean requireLogin, final String openXnatLogoutSuccessUrl, final String securedXnatLogoutSuccessUrl) {
+        _requireLogin = requireLogin;
         _openXnatLogoutSuccessUrl = openXnatLogoutSuccessUrl;
-    }
-
-    public void setSecuredXnatLogoutSuccessUrl(String securedXnatLogoutSuccessUrl) {
         _securedXnatLogoutSuccessUrl = securedXnatLogoutSuccessUrl;
     }
 
-    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
-            throws IOException, ServletException {
+    @Override
+    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         setDefaultTargetUrl(getRequiredLogoutSuccessUrl());
         super.handle(request, response, authentication);
     }
 
-    private String getRequiredLogoutSuccessUrl() {
-        final boolean requireLogin = XDAT.getSiteConfigPreferences().getRequireLogin();
-        final String returnUrl = requireLogin ? _securedXnatLogoutSuccessUrl : _openXnatLogoutSuccessUrl;
-
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found require login set to: " + requireLogin + ", setting required logout success URL to: " + returnUrl);
-        }
-
-        return returnUrl;
+    public void setRequireLogin(final boolean requireLogin) {
+        _requireLogin = requireLogin;
     }
 
-    private static final Log _log = LogFactory.getLog(XnatLogoutSuccessHandler.class);
+    private String getRequiredLogoutSuccessUrl() {
+        log.debug("Found require login set to: {}, setting required logout success URL to: {}", _requireLogin, _requireLogin ? _securedXnatLogoutSuccessUrl : _openXnatLogoutSuccessUrl);
+        return _requireLogin ? _securedXnatLogoutSuccessUrl : _openXnatLogoutSuccessUrl;
+    }
 
-    private String _openXnatLogoutSuccessUrl;
-    private String _securedXnatLogoutSuccessUrl;
+    private final String _openXnatLogoutSuccessUrl;
+    private final String _securedXnatLogoutSuccessUrl;
+
+    private boolean _requireLogin;
 }

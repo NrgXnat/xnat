@@ -74,7 +74,7 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+    public Authentication attemptAuthentication(final HttpServletRequest request, final HttpServletResponse response) throws AuthenticationException {
         final Pair<String, String> credentials;
         try {
             credentials = getCredentials(request);

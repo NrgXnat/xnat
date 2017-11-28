@@ -10,6 +10,7 @@
 package org.nrg.xnat.initialization;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
@@ -17,6 +18,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.*;
 import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
+import org.nrg.xnat.security.provider.AuthenticationProviderConfigurationLocator;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -36,7 +38,6 @@ import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.ReflectionSaltSource;
-import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -90,42 +91,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         _providers = providers;
     }
 
-    public void configureGlobal(final AuthenticationManagerBuilder builder) throws Exception {
-        builder.ldapAuthentication().
-    }
-
-    @Override
-    protected void configure(final AuthenticationManagerBuilder builder) throws Exception {
-        builder.authenticationProvider(xnatDatabaseAuthenticationProvider()).userDetailsService(userDetailsService());
-    }
-
-    @Override
-    protected void configure(final HttpSecurity http) throws Exception {
-        final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, interactiveAgentDetector(_preferences));
-        http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint));
-        http.headers().frameOptions().sameOrigin()
-            .httpStrictTransportSecurity().disable()
-            .contentSecurityPolicy("frame-ancestors 'self'");
-        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint);
-        http.csrf().disable();
-        http.anonymous().key(UserI.ANONYMOUS_AUTH_PROVIDER_KEY);
-        http.sessionManagement().sessionAuthenticationStrategy(sessionAuthenticationStrategy(sessionRegistry(), _preferences));
-        http.userDetailsService(userDetailsService());
-        http.addFilterAt(channelProcessingFilter(_preferences), ChannelProcessingFilter.class)
-            .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
-            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class)
-            .addFilterAt(concurrencyFilter(sessionRegistry()), ConcurrentSessionFilter.class)
-            .addFilterAt(logoutFilter(sessionRegistry()), LogoutFilter.class);
-    }
-
-    @Bean(BeanIds.AUTHENTICATION_MANAGER)
-    @Override
-    protected AuthenticationManager authenticationManager() {
+    @Bean
+    public XnatProviderManager customAuthenticationManager() {
         return new XnatProviderManager(_preferences, _userAuthService, _providers);
     }
 
-    @Bean(BeanIds.USER_DETAILS_SERVICE)
+    @Bean
     @Override
     public UserDetailsService userDetailsService() {
         return new XnatDatabaseUserDetailsService(_dataSource);
@@ -184,15 +155,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public LogoutFilter logoutFilter(final SessionRegistry sessionRegistry) {
-        final XnatLogoutSuccessHandler logoutSuccessHandler = new XnatLogoutSuccessHandler();
-        logoutSuccessHandler.setOpenXnatLogoutSuccessUrl("/");
-        logoutSuccessHandler.setSecuredXnatLogoutSuccessUrl("/app/template/Login.vm");
         final SecurityContextLogoutHandler securityContextLogoutHandler = new SecurityContextLogoutHandler();
         securityContextLogoutHandler.setInvalidateHttpSession(true);
-        final XnatLogoutHandler xnatLogoutHandler = new XnatLogoutHandler(sessionRegistry);
-        final LogoutFilter      filter            = new LogoutFilter(logoutSuccessHandler, securityContextLogoutHandler, xnatLogoutHandler);
+        final LogoutFilter filter = new LogoutFilter(logoutSuccessHandler(),
+                                                     securityContextLogoutHandler,
+                                                     new XnatLogoutHandler(sessionRegistry));
         filter.setFilterProcessesUrl("/app/action/LogoutUser");
         return filter;
+    }
+
+    @Bean
+    public XnatLogoutSuccessHandler logoutSuccessHandler() {
+        return new XnatLogoutSuccessHandler(_preferences.getRequireLogin(), "/", "/app/template/Login.vm");
     }
 
     @Bean
@@ -201,13 +175,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public TranslatingChannelProcessingFilter channelProcessingFilter(final SiteConfigPreferences preferences) {
+    public TranslatingChannelProcessingFilter channelProcessingFilter() {
         final ChannelDecisionManagerImpl decisionManager = new ChannelDecisionManagerImpl();
         decisionManager.setChannelProcessors(Arrays.asList(new SecureChannelProcessor(), new InsecureChannelProcessor()));
-        final TranslatingChannelProcessingFilter filter = new TranslatingChannelProcessingFilter();
-        filter.setChannelDecisionManager(decisionManager);
-        filter.setRequiredChannel(preferences.getSecurityChannel());
-        return filter;
+        return new TranslatingChannelProcessingFilter(decisionManager, _preferences.getSecurityChannel());
     }
 
     @Bean
@@ -253,6 +224,55 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         sha2DatabaseAuthProvider.setName(name);
         sha2DatabaseAuthProvider.setSaltSource(saltSource);
         return sha2DatabaseAuthProvider;
+    }
+
+    @Bean
+    @Autowired
+    public AuthenticationProviderConfigurationLocator authenticationProviderConfigurationLocator(final ConfigPaths configPaths) {
+        return new AuthenticationProviderConfigurationLocator(configPaths, _messageSource);
+    }
+
+    @Bean
+    @Override
+    protected AuthenticationManager authenticationManager() throws Exception {
+        return super.authenticationManager();
+    }
+
+    @Override
+    protected void configure(final AuthenticationManagerBuilder builder) {
+        builder.parentAuthenticationManager(customAuthenticationManager());
+        final XnatDatabaseAuthenticationProvider xnatDbAuthProvider = xnatDatabaseAuthenticationProvider();
+        builder.authenticationProvider(xnatDbAuthProvider);
+        for (final AuthenticationProvider provider : _providers) {
+            if (!provider.equals(xnatDbAuthProvider)) {
+                builder.authenticationProvider(provider);
+            }
+        }
+    }
+
+    @Override
+    protected void configure(final HttpSecurity http) throws Exception {
+        // This is basically what super.configure() does, minus httpBasic().
+        http.authorizeRequests().anyRequest().authenticated().and().formLogin();
+
+        final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, interactiveAgentDetector(_preferences));
+        http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint));
+
+        http.headers().frameOptions().sameOrigin()
+            .httpStrictTransportSecurity().disable()
+            .contentSecurityPolicy("frame-ancestors 'self'");
+
+        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint);
+        http.csrf().disable();
+        http.anonymous().key(UserI.ANONYMOUS_AUTH_PROVIDER_KEY);
+        http.sessionManagement().sessionAuthenticationStrategy(sessionAuthenticationStrategy(sessionRegistry(), _preferences));
+
+        http.addFilterAt(channelProcessingFilter(), ChannelProcessingFilter.class)
+            .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
+            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class)
+            .addFilterAt(concurrencyFilter(sessionRegistry()), ConcurrentSessionFilter.class)
+            .addFilterAt(logoutFilter(sessionRegistry()), LogoutFilter.class);
     }
 
     private final SiteConfigPreferences      _preferences;

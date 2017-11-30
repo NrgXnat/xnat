@@ -27,6 +27,7 @@ public final class Attributes {
     SeriesNumber = new FixedDicomAttributeIndex("SeriesNumber", Tag.SeriesNumber),
     SeriesDate = new FixedDicomAttributeIndex("SeriesDate", Tag.SeriesDate),
     SeriesTime = new FixedDicomAttributeIndex("SeriesTime", Tag.SeriesTime),
+    BitsAllocated = new FixedDicomAttributeIndex("BitsAllocated", Tag.BitsAllocated),
     AcquisitionDateTime = new FixedDicomAttributeIndex("AcquisitionDateTime", Tag.AcquisitionDateTime),
     AcquisitionDate = new FixedDicomAttributeIndex("AcquisitionDate", Tag.AcquisitionDate),
     AcquisitionTime = new FixedDicomAttributeIndex("AcquisitionTime", Tag.AcquisitionTime),

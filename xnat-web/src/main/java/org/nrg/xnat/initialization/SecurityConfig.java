@@ -88,7 +88,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     public void setAuthenticationProviders(final List<AuthenticationProvider> providers) {
-        _providers = providers;
+        _providers.addAll(providers);
+    }
+
+    @Autowired(required = false)
+    public void setXnatSecurityExtensions(final List<XnatSecurityExtension> extensions) {
+        _extensions.addAll(extensions);
     }
 
     @Bean
@@ -221,7 +226,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(name, _aliasTokenService);
         sha2DatabaseAuthProvider.setUserDetailsService(userDetailsService());
         sha2DatabaseAuthProvider.setPasswordEncoder(Users.getEncoder());
-        sha2DatabaseAuthProvider.setName(name);
         sha2DatabaseAuthProvider.setSaltSource(saltSource);
         return sha2DatabaseAuthProvider;
     }
@@ -239,13 +243,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    protected void configure(final AuthenticationManagerBuilder builder) {
+    protected void configure(final AuthenticationManagerBuilder builder) throws Exception {
         builder.parentAuthenticationManager(customAuthenticationManager());
         final XnatDatabaseAuthenticationProvider xnatDbAuthProvider = xnatDatabaseAuthenticationProvider();
         builder.authenticationProvider(xnatDbAuthProvider);
         for (final AuthenticationProvider provider : _providers) {
             if (!provider.equals(xnatDbAuthProvider)) {
                 builder.authenticationProvider(provider);
+            }
+        }
+
+        if (_extensions.size() > 0) {
+            for (final XnatSecurityExtension extension : _extensions) {
+                log.info("Now processing the security extension {} for authentication manager configuration", extension.getAuthMethod());
+                extension.configure(builder);
             }
         }
     }
@@ -273,6 +284,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class)
             .addFilterAt(concurrencyFilter(sessionRegistry()), ConcurrentSessionFilter.class)
             .addFilterAt(logoutFilter(sessionRegistry()), LogoutFilter.class);
+
+        if (_extensions.size() > 0) {
+            for (final XnatSecurityExtension extension : _extensions) {
+                log.info("Now processing the security extension {} for HTTP security configuration", extension.getAuthMethod());
+                extension.configure(http);
+            }
+        }
     }
 
     private final SiteConfigPreferences      _preferences;
@@ -284,5 +302,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final NamedParameterJdbcTemplate _template;
     private final DataSource                 _dataSource;
 
-    private List<AuthenticationProvider> _providers;
+    private final List<AuthenticationProvider> _providers  = new ArrayList<>();
+    private final List<XnatSecurityExtension>  _extensions = new ArrayList<>();
 }

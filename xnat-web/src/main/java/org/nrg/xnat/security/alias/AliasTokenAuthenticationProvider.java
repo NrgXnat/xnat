@@ -99,9 +99,9 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
     }
 
     /**
-     * For this implementation, calling this method has no effect.
+     * This is a no-op method: the alias token provider is never visible and can't be set to be visible.
      *
-     * @param visible Whether the provider should be visible to and usable by users.
+     * @param visible This parameter's value is ignored.
      */
     @Override
     public void setVisible(final boolean visible) {
@@ -116,16 +116,6 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
     @Override
     public String getName() {
         return XdatUserAuthService.TOKEN;
-    }
-
-    /**
-     * Sets the provider's name. For this implementation, calling this method has no effect.
-     *
-     * @param name The display name to set for the XNAT authentication provider.
-     */
-    @Override
-    public void setName(final String name) {
-        //
     }
 
     @Override

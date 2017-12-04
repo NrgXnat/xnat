@@ -32,6 +32,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.exceptions.NewAutoAccountNotAutoEnabledException;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
+import org.nrg.xnat.security.provider.XnatMulticonfigAuthenticationProvider;
 import org.nrg.xnat.security.tokens.XnatAuthenticationToken;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -273,10 +274,18 @@ public class XnatProviderManager extends ProviderManager {
         });
     }
 
-    private XnatAuthenticationProvider findAuthenticationProvider(XnatAuthenticationProviderMatcher matcher) {
+    private XnatAuthenticationProvider findAuthenticationProvider(final XnatAuthenticationProviderMatcher matcher) {
         final List<AuthenticationProvider> providers = getProviders();
         for (final AuthenticationProvider provider : providers) {
-            if (XnatAuthenticationProvider.class.isAssignableFrom(provider.getClass())) {
+            if (XnatMulticonfigAuthenticationProvider.class.isAssignableFrom(provider.getClass())) {
+                final XnatMulticonfigAuthenticationProvider multiconfigAuthenticationProvider = (XnatMulticonfigAuthenticationProvider) provider;
+                for (final String providerId : multiconfigAuthenticationProvider.getProviderIds()) {
+                    final XnatAuthenticationProvider xnatAuthenticationProvider = multiconfigAuthenticationProvider.getProvider(providerId);
+                    if (matcher.matches(xnatAuthenticationProvider)) {
+                        return xnatAuthenticationProvider;
+                    }
+                }
+            } else if (XnatAuthenticationProvider.class.isAssignableFrom(provider.getClass())) {
                 final XnatAuthenticationProvider xnatAuthenticationProvider = (XnatAuthenticationProvider) provider;
                 if (matcher.matches(xnatAuthenticationProvider)) {
                     return xnatAuthenticationProvider;

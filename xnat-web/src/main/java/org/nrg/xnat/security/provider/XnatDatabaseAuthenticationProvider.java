@@ -46,12 +46,12 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
      */
     @Override
     public boolean isVisible() {
-        return true;
+        return _visible;
     }
 
     @Override
     public void setVisible(final boolean visible) {
-
+        _visible = visible;
     }
 
     /**
@@ -75,11 +75,6 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     @Override
     public String getName() {
         return _displayName;
-    }
-
-    @Override
-    public void setName(final String name) {
-        _displayName = name;
     }
 
     @Override
@@ -188,9 +183,11 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
         }
     }
 
-    private final String _providerId;
+    private final String            _providerId;
+    private final AliasTokenService _aliasTokenService;
 
-    private String _displayName;
+    private String  _displayName;
+    private boolean _visible;
+
     private int _order = -1;
-    private AliasTokenService _aliasTokenService;
 }

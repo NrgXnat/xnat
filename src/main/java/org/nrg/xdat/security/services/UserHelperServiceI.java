@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"unused", "SameParameterValue"})
 public abstract class UserHelperServiceI {
-	public abstract void setUser(UserI user);
 	public abstract UserI getUser();
 	
 	public abstract XFTTable getQueryResults(String query) throws SQLException, DBPoolException;

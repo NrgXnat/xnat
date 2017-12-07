@@ -10,9 +10,11 @@
 package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.security.services.UserHelperServiceI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
@@ -23,114 +25,111 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class XDATUserHelperService extends UserHelperServiceI {
-    static Logger logger = Logger.getLogger(XDATUserHelperService.class);
-	private XDATUser user;
-	
-	@Override
-	public void setUser(UserI user) {
-		this.user=(XDATUser)user;
-	}
+    public XDATUserHelperService(final UserI user) throws UserNotFoundException, UserInitException {
+        _user = (user instanceof XDATUser) ? (XDATUser) user : new XDATUser(user.getUsername());
+    }
 
-	@Override
-	public UserI getUser() {
-		return user;
-	}
+    @Override
+    public UserI getUser() {
+        return _user;
+    }
 
-	@Override
-	public XFTTable getQueryResults(String query) throws SQLException,
-			DBPoolException {
-		return user.getQueryResults(query);
-	}
+    @Override
+    public XFTTable getQueryResults(final String query) throws SQLException, DBPoolException {
+        return _user.getQueryResults(query);
+    }
 
-	@Override
-	public List<List> getQueryResultsAsArrayList(String query)
-			throws SQLException, DBPoolException {
-		return user.getQueryResultsAsArrayList(query);
-	}
+    @Override
+    public List<List> getQueryResultsAsArrayList(final String query) throws SQLException, DBPoolException {
+        return _user.getQueryResultsAsArrayList(query);
+    }
 
-	@Override
-	public List<List> getQueryResults(String xmlPaths, String rootElement) {
-		return user.getQueryResults(xmlPaths, rootElement);
-	}
+    @Override
+    public List<List> getQueryResults(final String xmlPaths, final String rootElement) {
+        return _user.getQueryResults(xmlPaths, rootElement);
+    }
 
-	@Override
-	public boolean isOwner(String tag) {
-		return user.isOwner(tag);
-	}
+    @Override
+    public boolean isOwner(final String tag) {
+        return _user.isOwner(tag);
+    }
 
-	@Override
-	public Map getReadableCounts() {
-		return user.getReadableCounts();
-	}
+    @Override
+    public Map getReadableCounts() {
+        return _user.getReadableCounts();
+    }
 
-	@Override
-	public Map getTotalCounts() {
-		return user.getTotalCounts();
-	}
+    @Override
+    public Map getTotalCounts() {
+        return _user.getTotalCounts();
+    }
 
-	@Override
-	public List<ItemI> getCachedItems(String elementName, String security_permission, boolean preLoad) {
-		return user.getCachedItems(elementName, security_permission, preLoad);
-	}
+    @Override
+    public List<ItemI> getCachedItems(final String elementName, final String securityPermission, final boolean preLoad) {
+        return _user.getCachedItems(elementName, securityPermission, preLoad);
+    }
 
-	@Override
-	public List<ItemI> getCachedItemsByFieldValue(String elementName, String security_permission, boolean preLoad, String field, Object value) {
-		return user.getCachedItemsByFieldValue(elementName, security_permission, preLoad, field, value);
-	}
+    @Override
+    public List<ItemI> getCachedItemsByFieldValue(final String elementName, final String securityPermission, final boolean preLoad, final String field, final Object value) {
+        return _user.getCachedItemsByFieldValue(elementName, securityPermission, preLoad, field, value);
+    }
 
-	@Override
-	public Map<Object, Object> getCachedItemValuesHash(String elementName, String security_permission, boolean preLoad, String idField,	String valueField) {
-		return user.getCachedItemValuesHash(elementName, security_permission, preLoad, idField, valueField);
-	}
+    @Override
+    public Map<Object, Object> getCachedItemValuesHash(final String elementName, final String securityPermission, final boolean preLoad, final String idField, final String valueField) {
+        return _user.getCachedItemValuesHash(elementName, securityPermission, preLoad, idField, valueField);
+    }
 
-	@Override
-	public Date getPreviousLogin() throws Exception {
-		return user.getPreviousLogin();
-	}
+    @Override
+    public Date getPreviousLogin() throws Exception {
+        return _user.getPreviousLogin();
+    }
 
-	@Override
-	public List<ElementDisplay> getSearchableElementDisplays() {
-		return user.getSearchableElementDisplays();
-	}
+    @Override
+    public List<ElementDisplay> getSearchableElementDisplays() {
+        return _user.getSearchableElementDisplays();
+    }
 
-	@Override
-	public List<ElementDisplay> getSearchableElementDisplaysByDesc() {
-		return user.getSearchableElementDisplaysByDesc();
-	}
+    @Override
+    public List<ElementDisplay> getSearchableElementDisplaysByDesc() {
+        return _user.getSearchableElementDisplaysByDesc();
+    }
 
-	@Override
-	public List<ElementDisplay> getSearchableElementDisplaysByPluralDesc() {
-		return user.getSearchableElementDisplaysByPluralDesc();
-	}
+    @Override
+    public List<ElementDisplay> getSearchableElementDisplaysByPluralDesc() {
+        return _user.getSearchableElementDisplaysByPluralDesc();
+    }
 
-	@Override
-	public List<ElementDisplay> getBrowseableElementDisplays() {
-		return user.getBrowseableElementDisplays();
-	}
+    @Override
+    public List<ElementDisplay> getBrowseableElementDisplays() {
+        return _user.getBrowseableElementDisplays();
+    }
 
-	@Override
-	public List<ElementDisplay> getBrowseableCreateableElementDisplays() {
-		return user.getBrowseableCreateableElementDisplays();
-	}
+    @Override
+    public List<ElementDisplay> getBrowseableCreateableElementDisplays() {
+        return _user.getBrowseableCreateableElementDisplays();
+    }
 
-	@Override
-	public ElementDisplay getBrowseableElementDisplay(String elementName) {
-		return user.getBrowseableElementDisplay(elementName);
-	}
+    @Override
+    public ElementDisplay getBrowseableElementDisplay(final String elementName) {
+        return _user.getBrowseableElementDisplay(elementName);
+    }
 
-	@Override
-	public List<ElementDisplay> getCreateableElementDisplays() {
-		try {
-			return user.getCreateableElementDisplays();
-		} catch (Exception e) {
-			logger.error("",e);
-			return Lists.newArrayList();
-		}
-	}
+    @Override
+    public List<ElementDisplay> getCreateableElementDisplays() {
+        try {
+            return _user.getCreateableElementDisplays();
+        } catch (Exception e) {
+            log.error("", e);
+            return Lists.newArrayList();
+        }
+    }
 
-	@Override
-	public boolean hasEditAccessToSessionDataByTag(String tag) throws Exception {
-		return user.hasAccessTo(tag);
-	}
+    @Override
+    public boolean hasEditAccessToSessionDataByTag(final String tag) throws Exception {
+        return _user.hasAccessTo(tag);
+    }
+
+    private final XDATUser _user;
 }

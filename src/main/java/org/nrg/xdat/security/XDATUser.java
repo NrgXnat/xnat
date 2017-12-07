@@ -778,41 +778,35 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return A list of query results (each set of results is itself a list).
      */
     protected List<List> getQueryResults(String xmlPaths, String rootElement) {
-        ArrayList results = new ArrayList();
+        final List<List> results = new ArrayList<>();
         try {
-
-            QueryOrganizer qo = new QueryOrganizer(rootElement, this, ViewManager.ALL);
-
-            ArrayList fields = XftStringUtils.CommaDelimitedStringToArrayList(xmlPaths);
-            for (Object field : fields) {
-                qo.addField((String) field);
+            final QueryOrganizer queryOrganizer = new QueryOrganizer(rootElement, this, ViewManager.ALL);
+            final ArrayList fields = XftStringUtils.CommaDelimitedStringToArrayList(xmlPaths);
+            for (final Object field : fields) {
+                queryOrganizer.addField((String) field);
             }
 
-            String query = qo.buildQuery();
+            final String query = queryOrganizer.buildQuery();
 
-            XFTTable t = getQueryResults(query);
+            logger.debug("Preparing to execute the following query for user {}: {}", getUsername(), query);
+            final XFTTable table = getQueryResults(query);
 
-            ArrayList<Integer> colHeaders = new ArrayList<>();
-            for (Object field : fields) {
-                String header = qo.translateXMLPath((String) field);
-                Integer index = t.getColumnIndex(header.toLowerCase());
-                colHeaders.add(index);
+            final ArrayList<Integer> columns = new ArrayList<>();
+            for (final Object field : fields) {
+                final String  header = queryOrganizer.translateXMLPath((String) field);
+                final Integer index  = table.getColumnIndex(header.toLowerCase());
+                columns.add(index);
             }
 
-            t.resetRowCursor();
-
-            while (t.hasMoreRows()) {
-                Object[] row = t.nextRow();
-
-                ArrayList newRow = new ArrayList();
-
-                for (Integer index : colHeaders) {
+            table.resetRowCursor();
+            while (table.hasMoreRows()) {
+                final Object[] row = table.nextRow();
+                final List<Object> newRow = new ArrayList<>();
+                for (final Integer index : columns) {
                     newRow.add(row[index]);
                 }
-
                 results.add(newRow);
             }
-
         } catch (Exception e) {
             logger.error("", e);
         }

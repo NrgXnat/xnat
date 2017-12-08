@@ -27,14 +27,14 @@ public abstract class EventTriggeringAbstractPreferenceBean extends AbstractPref
     }
 
     @SuppressWarnings("WeakerAccess")
-    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths) {
-        super(preferenceService,configFolderPaths);
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths) {
+        super(preferenceService,configPaths);
         _eventService = eventService;
     }
 
     @SuppressWarnings("WeakerAccess")
-    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        super(preferenceService,configFolderPaths, initPrefs);
+    protected EventTriggeringAbstractPreferenceBean(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+        super(preferenceService,configPaths, initPrefs);
         _eventService = eventService;
     }
 

@@ -48,8 +48,8 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     private static final String FORGOT_PASSWORD_EMAIL = "Dear USER_FIRSTNAME USER_LASTNAME,\nPlease click this link to reset your password: RESET_URL <br/>\r\nThis link will expire in 24 hours.";
 
     @Autowired
-    public NotificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        super(preferenceService, eventService, configFolderPaths, initPrefs);
+    public NotificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+        super(preferenceService, eventService, configPaths, initPrefs);
     }
 
     /**

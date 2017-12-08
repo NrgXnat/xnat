@@ -69,8 +69,8 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
     @Autowired
-    public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        super(preferenceService, eventService, configFolderPaths, initPrefs);
+    public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+        super(preferenceService, eventService, configPaths, initPrefs);
     }
 
     @NrgPreference(defaultValue = "false")

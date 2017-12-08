@@ -34,6 +34,8 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
 
+import com.google.common.io.Files;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -89,20 +91,32 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 
 	private List<String> processXarFile() throws ClientException,ServerException {
 
-        String cachepath = ArcSpecManager.GetInstance().getGlobalCachePath();
-        Date d = Calendar.getInstance().getTime();
-        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyyMMdd_HHmmss");
-        String uploadID = formatter.format(d);
-        cachepath+="user_uploads/"+user.getID() + "/" + uploadID + "/";
+		final String localFilePath = (this.params.containsKey("localFilePath")) ? 
+				this.params.get("localFilePath").toString() : null;
+		final Date d = Calendar.getInstance().getTime();
+		final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyyMMdd_HHmmss");
+		final String uploadID = formatter.format(d);
+		final String cachepath = ArcSpecManager.GetInstance().getGlobalCachePath()
+				+ "user_uploads/" +user.getID() + "/" + uploadID + "/";
 
-        File destination = new File(cachepath);
-        final File original = new File(cachepath);
+		File destination = new File(cachepath);
+		final File original = new File(cachepath);
+		
 
-        final String fileName = fw.getName();
-		ZipI zipper = getZipper(fileName);
-
+      	final File localFile;
         try {
-        	zipper.extract(fw.getInputStream(),cachepath);
+		
+        	if (localFilePath != null && localFilePath.length()>0) {
+        		localFile = new File(localFilePath);
+        		final ZipI zipper = getZipper(localFile.getName());
+        		zipper.extract(Files.asByteSource(localFile).openStream(),cachepath);
+        	} else {
+        		localFile = null;
+        		final String fileName = fw.getName();
+        		final ZipI zipper = getZipper(fileName);
+        		zipper.extract(fw.getInputStream(),cachepath);
+        	}
+        	
         } catch (Exception e) {
         	throw new ClientException("Archive file is corrupt or not a valid archive file type.");
         }
@@ -398,6 +412,23 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
           	throw new ClientException("Multiple data types cannot share a single XAR.  Please separate files into separate XARs");
 
         }
+        
+        // If we've got here (have a valid XAR file), and users have requested the local file to be removed, 
+        // let's remove it. Don't want to let users use the URL to delete arbitrary files from the server.
+       	if (localFilePath != null && localFilePath.length()>0) {
+       		final String removeAfterImport = this.params.get("removeLocalFileAfterImport").toString();
+       		Boolean removeLocalFile = (removeAfterImport != null && removeAfterImport.equalsIgnoreCase("true"));
+       		if (removeLocalFile && localFile.exists() && localFile.canWrite()) {
+       			new Thread(new Runnable() {
+       				@Override
+       				public void run() {
+       					if (localFile != null) {	
+       						localFile.delete();
+       					}
+       				}
+    			}).start();
+        	}
+        } 
 
         FileUtils.DeleteFile(original);
 		return urlList;

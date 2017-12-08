@@ -30,8 +30,8 @@ public class AutomationPreferences extends EventTriggeringAbstractPreferenceBean
     public static final String AUTOMATION_TOOL_ID = "automation";
 
     @Autowired
-    public AutomationPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        super(preferenceService, eventService, configFolderPaths, initPrefs);
+    public AutomationPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+        super(preferenceService, eventService, configPaths, initPrefs);
     }
 
     @NrgPreference(defaultValue = "true")

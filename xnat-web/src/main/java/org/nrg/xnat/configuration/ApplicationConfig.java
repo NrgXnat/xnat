@@ -79,18 +79,18 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        return new SiteConfigPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
+    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+        return new SiteConfigPreferences(preferenceService, eventService, configPaths, initPrefs);
     }
 
     @Bean
-    public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        return new NotificationsPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
+    public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+        return new NotificationsPreferences(preferenceService, eventService, configPaths, initPrefs);
     }
 
     @Bean
-    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final NrgEventService service, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
-        return new AutomationPreferences(preferenceService, service, configFolderPaths, initPrefs);
+    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final NrgEventService service, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
+        return new AutomationPreferences(preferenceService, service, configPaths, initPrefs);
     }
 
     @Bean

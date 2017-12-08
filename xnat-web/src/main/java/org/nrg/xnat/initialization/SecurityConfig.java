@@ -231,12 +231,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    @Autowired
-    public AuthenticationProviderConfigurationLocator authenticationProviderConfigurationLocator(final ConfigPaths configPaths) {
-        return new AuthenticationProviderConfigurationLocator(configPaths, _messageSource);
-    }
-
-    @Bean
     @Override
     protected AuthenticationManager authenticationManager() throws Exception {
         return super.authenticationManager();

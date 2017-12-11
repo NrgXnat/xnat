@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
@@ -26,18 +27,18 @@ import org.springframework.security.core.session.SessionRegistryImpl;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 public class Login extends VelocitySecureScreen {
 	@Override
 	protected void doBuildTemplate(RunData data) throws Exception {
 		final String message = data.getMessage();
-		
+
 		if (!StringUtils.isBlank(message) && (message.startsWith("Password changed") || message.startsWith("Registration successful"))) {
 		//If a user goes to the login page after changing their password, this logs them out.
 			final HttpSession session = data.getRequest().getSession(false);
@@ -50,11 +51,11 @@ public class Login extends VelocitySecureScreen {
 			        }
 		        }
 	        }
-	        SecurityContextHolder.clearContext();	
+	        SecurityContextHolder.clearContext();
 		}
-		
+
 		final String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
-		
+
 		final Cookie[] cookies = data.getRequest().getCookies();
 		boolean sessionTimedOut = false;
 		boolean recentTimeout = false;
@@ -92,46 +93,41 @@ public class Login extends VelocitySecureScreen {
 
 		final Context context = TurbineVelocity.getContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
-        List<AuthenticationProvider> prov = XDAT.getContextService().getBean("authenticationManager",ProviderManager.class).getProviders();
-        List<String> providerNames = new ArrayList<>();
-        for(AuthenticationProvider p : prov){
-        	String name = p.toString();
-        	if(!providerNames.contains(name)){
-                if (isVisibleProvider(p)) {
-        		    providerNames.add(name);
-                }
-        	}
+
+        final List<AuthenticationProvider> providers = XDAT.getContextService().getBean("authenticationManager",ProviderManager.class).getProviders();
+        final List<String> providerNames = new ArrayList<>();
+        for (final AuthenticationProvider provider : providers) {
+            final String providerName = provider.toString();
+            if (!providerNames.contains(providerName) && isVisibleProvider(provider)) {
+                providerNames.add(providerName);
+            }
         }
 
         context.put("login_methods", providerNames);
         doBuildTemplate(data, context);
 	}
 
-    private boolean isVisibleProvider(final AuthenticationProvider provider) {
-        String name = provider.toString();
-        if (!_providers.containsKey(name)) {
-            Method[] methods = provider.getClass().getMethods();
-            Method foundMethod = null;
-            for (Method method : methods) {
-                if (method.getName().equals("isVisible")) {
-                    foundMethod = method;
-                }
-            }
-            if (foundMethod != null) {
-                    try {
-                    _providers.put(name, (Boolean) foundMethod.invoke(provider));
-                    } catch (IllegalAccessException exception) {
-                        log.warn("Strange provider found with isVisible() method both accessible and inaccessible", exception);
-                    } catch (InvocationTargetException exception) {
-                        log.warn("Error invoking isVisible() method on provider", exception);
-                    }
-            } else {
-                // We default to assuming that, if a provider without isVisible() was added, that it's implicit, so don't show it.
-                _providers.put(name, false);
-            }
-        }
-        return _providers.get(name);
-    }
+	private boolean isVisibleProvider(final AuthenticationProvider provider) {
+		final String name = provider.toString();
+		if (!_providers.containsKey(name)) {
+			try {
+				// Get the isVisible method if present.
+				_providers.put(name, (Boolean) provider.getClass().getMethod("isVisible").invoke(provider));
+			} catch (IllegalAccessException exception) {
+				log.warn("Strange provider found with isVisible() method both accessible and inaccessible", exception);
+				_providers.put(name, false);
+			} catch (InvocationTargetException exception) {
+				log.warn("Error invoking isVisible() method on provider", exception);
+				_providers.put(name, false);
+			} catch (NoSuchMethodException e) {
+				// We default to assuming that, if a provider without isVisible() was added, that it's implicit, so don't show it.
+				log.debug("Didn't find the isVisible() method on provider {} with class {}, returning false for visible.", name, provider.getClass().getName());
+				_providers.put(name, false);
+			}
+		}
+		return _providers.get(name);
+
+	}
 
     @Override
 	protected void doBuildTemplate(RunData data, Context context) throws Exception {

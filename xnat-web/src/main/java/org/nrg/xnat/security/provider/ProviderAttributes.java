@@ -1,5 +1,7 @@
 package org.nrg.xnat.security.provider;
 
+import org.apache.commons.lang3.ObjectUtils;
+
 import java.util.Properties;
 
 /**
@@ -11,13 +13,13 @@ public class ProviderAttributes {
         _providerId = providerId;
         _authMethod = authMethod;
         _displayName = displayName;
-        _visible = visible;
-        _order = order;
+        _visible = ObjectUtils.defaultIfNull(visible, true);
+        _order = ObjectUtils.defaultIfNull(order, -1);
         _properties = properties;
     }
 
     public ProviderAttributes(final Properties properties) {
-        this(properties.getProperty("id"), properties.getProperty("type"), properties.getProperty("name"), properties.containsKey("visible") ? Boolean.parseBoolean(properties.getProperty("visible")) : null, properties.containsKey("order") ? Integer.parseInt(properties.getProperty("order")) : null, properties);
+        this(properties.getProperty("id"), properties.getProperty("type"), properties.getProperty("name"), Boolean.parseBoolean(properties.getProperty("visible", "true")), Integer.parseInt(properties.getProperty("order", "-1")), properties);
     }
 
     /**
@@ -104,6 +106,6 @@ public class ProviderAttributes {
     private final String     _displayName;
     private final Properties _properties;
 
-    private Boolean _visible;
-    private Integer _order;
+    private boolean _visible;
+    private int     _order;
 }

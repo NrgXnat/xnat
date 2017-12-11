@@ -150,12 +150,6 @@ public class PropertiesConfig {
     }
 
     @Bean
-    public AuthenticationProviderConfigurationLocator authenticationProviderConfigurationLocator() {
-        return new AuthenticationProviderConfigurationLocator(configPaths(), messageSource());
-    }
-
-
-    @Bean
     public MessageSource messageSource() {
         return new ReloadableResourceBundleMessageSource() {{
             setBasename("classpath:org/nrg/xnat/messages/system");

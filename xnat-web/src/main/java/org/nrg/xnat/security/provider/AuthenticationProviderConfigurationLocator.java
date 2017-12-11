@@ -11,11 +11,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
-import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -26,62 +24,57 @@ import java.util.regex.Pattern;
 
 import static org.nrg.xnat.initialization.XnatWebAppInitializer.EMPTY_ARRAY;
 
-@Component
 @Slf4j
 public class AuthenticationProviderConfigurationLocator {
-    @Autowired
-    public AuthenticationProviderConfigurationLocator(final ConfigPaths configPaths, final MessageSource messageSource) {
-        _configPaths = configPaths;
-        _messageSource = messageSource;
-
-        final List<Properties> definitions = getProviderDefinitions();
+    public AuthenticationProviderConfigurationLocator(final String providerType, final ConfigPaths configPaths, final MessageSource messageSource) {
+        final List<Properties> definitions = getProviderDefinitions(providerType, configPaths, messageSource);
         for (final Properties definition : definitions) {
-            final String id   = definition.getProperty("id");
             final String type = definition.getProperty("type");
-            if (_definitionsByName.containsKey("id")) {
-                throw new RuntimeException("There's already a provider definition with the ID {}, can't have duplicate IDs.");
+            if (StringUtils.equals(providerType, type)) {
+                final String id = definition.getProperty("id");
+                if (_definitions.containsKey("id")) {
+                    throw new RuntimeException("There's already a provider definition with the ID {}, can't have duplicate IDs.");
+                }
+                _definitions.put(id, definition);
             }
-            _definitionsByName.put(id, definition);
-            if (!_definitionsByType.containsKey(type)) {
-                _definitionsByType.put(type, new HashMap<String, Properties>());
-            }
-            _definitionsByType.get(type).put(id, definition);
         }
     }
 
+    public Map<String, Properties> getProviderDefinitions() {
+        return _definitions;
+    }
+
+    @SuppressWarnings("unused")
     public Properties getProviderDefinition(final String providerId) {
-        if (StringUtils.isBlank(providerId) || !_definitionsByName.containsKey(providerId)) {
+        if (StringUtils.isBlank(providerId) || !_definitions.containsKey(providerId)) {
             return null;
         }
-        return _definitionsByName.get(providerId);
-    }
-
-    public Map<String, Properties> getProviderDefinitions(final String providerType) {
-        if (StringUtils.isBlank(providerType) || !_definitionsByName.containsKey(providerType)) {
-            return null;
-        }
-        return _definitionsByType.get(providerType);
+        return _definitions.get(providerId);
     }
 
     /**
      * Finds all {@link XnatAuthenticationProvider XNAT authentication provider configurations} defined in properties files named <b>*-provider.properties</b>
      * and found in the configuration folder <b>auth</b> or on the classpath in <b>META-INF/xnat/security</b> or one of its subfolders.
      *
+     * @param providerType  The type of provider definition to be retrieved.
+     * @param configPaths   The config paths locator.
+     * @param messageSource The message source.
+     *
      * @return A list of provider definitions.
      */
-    private List<Properties> getProviderDefinitions() {
+    private List<Properties> getProviderDefinitions(final String providerType, final Iterable<? extends Path> configPaths, final MessageSource messageSource) {
         final List<Properties> providers = new ArrayList<>();
 
         // Populate map of properties for each provider
         final ArrayList<String> authFilePaths = new ArrayList<>();
         //First see if there are any properties files in config/auth
-        for (final Path currPath : _configPaths) {
+        for (final Path currPath : configPaths) {
             final Path authPath = Paths.get(currPath.toString(), "auth");
 
             log.debug("AuthPath is {}", authPath.toString());
-            final File             directory = authPath.toFile();
+            final File directory = authPath.toFile();
             if (directory.exists() && directory.isDirectory()) {
-                final Collection<File> files     = FileUtils.listFiles(directory, PROVIDER_FILENAME_FILTER, DirectoryFileFilter.DIRECTORY);
+                final Collection<File> files = FileUtils.listFiles(directory, PROVIDER_FILENAME_FILTER, DirectoryFileFilter.DIRECTORY);
                 for (final File file : files) {
                     if (!authFilePaths.contains(file.toString())) {
                         authFilePaths.add(file.toString());
@@ -122,9 +115,9 @@ public class AuthenticationProviderConfigurationLocator {
             log.warn("Tried to find plugin authentication provider definitions, but got an error trying to search {}", PROVIDER_CLASSPATH, e.getMessage());
         }
 
-        if (providers.isEmpty()) {
+        if (providers.isEmpty() && StringUtils.equals(providerType, XdatUserAuthService.LOCALDB)) {
             final Properties provider = new Properties();
-            provider.put("name", _messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_ARRAY, "Database", Locale.getDefault()));
+            provider.put("name", messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_ARRAY, "Database", Locale.getDefault()));
             provider.put("id", "db");
             provider.put("type", XdatUserAuthService.LOCALDB);
             providers.add(provider);
@@ -209,9 +202,5 @@ public class AuthenticationProviderConfigurationLocator {
     private static final RegexFileFilter PROVIDER_FILENAME_FILTER    = new RegexFileFilter("^." + PROVIDER_FILENAME);
     private static final Pattern         PROPERTY_NAME_VALUE_PATTERN = Pattern.compile("^(?:provider\\.)?(?<providerId>[A-z0-9_-]+)\\.(?<property>.*)$");
 
-    private final ConfigPaths   _configPaths;
-    private final MessageSource _messageSource;
-
-    private final Map<String, Properties>              _definitionsByName = new HashMap<>();
-    private final Map<String, Map<String, Properties>> _definitionsByType = new HashMap<>();
+    private final Map<String, Properties> _definitions = new HashMap<>();
 }

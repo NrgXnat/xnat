@@ -52,11 +52,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @Slf4j
 public class XnatProviderManager extends ProviderManager {
-
-    private static final GrantedAuthority                       AUTHORITY_ANONYMOUS         = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
-    private static final Collection<? extends GrantedAuthority> AUTHORITIES_ANONYMOUS       = Collections.singletonList(AUTHORITY_ANONYMOUS);
-    private static final String                                 ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-provider-key";
-
     @Autowired
     public XnatProviderManager(final SiteConfigPreferences preferences, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers) {
         super(providers);
@@ -416,14 +411,16 @@ public class XnatProviderManager extends ProviderManager {
         boolean matches(XnatAuthenticationProvider provider);
     }
 
-    private static final Map<String, String>                            CACHED_AUTH_METHODS    = new ConcurrentHashMap<>(); // This will prevent 20,000 curl scripts from hitting the db every time
-    private static final List<Class<? extends AuthenticationException>> RANKED_AUTH_EXCEPTIONS = Arrays.asList(BadCredentialsException.class,
-                                                                                                               AuthenticationCredentialsNotFoundException.class,
-                                                                                                               AuthenticationServiceException.class,
-                                                                                                               ProviderNotFoundException.class,
-                                                                                                               InsufficientAuthenticationException.class,
-                                                                                                               AccountStatusException.class);
-
+    private static final GrantedAuthority                               AUTHORITY_ANONYMOUS         = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
+    private static final Collection<? extends GrantedAuthority>         AUTHORITIES_ANONYMOUS       = Collections.singletonList(AUTHORITY_ANONYMOUS);
+    private static final String                                         ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-provider-key";
+    private static final Map<String, String>                            CACHED_AUTH_METHODS         = new ConcurrentHashMap<>(); // This will prevent 20,000 curl scripts from hitting the db every time
+    private static final List<Class<? extends AuthenticationException>> RANKED_AUTH_EXCEPTIONS      = Arrays.asList(BadCredentialsException.class,
+                                                                                                                    AuthenticationCredentialsNotFoundException.class,
+                                                                                                                    AuthenticationServiceException.class,
+                                                                                                                    ProviderNotFoundException.class,
+                                                                                                                    InsufficientAuthenticationException.class,
+                                                                                                                    AccountStatusException.class);
 
     private final MessageSourceAccessor                   _messageSource               = SpringSecurityMessageSource.getAccessor();
     private final Map<String, XnatAuthenticationProvider> _xnatAuthenticationProviders = new HashMap<>();

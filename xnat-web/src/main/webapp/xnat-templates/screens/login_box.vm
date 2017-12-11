@@ -11,7 +11,7 @@
         #formLabel("Login via")
 	    <td>
             ##$login_methods is customizable and is added to the context in Login.java in xdat.
-            #if($login_methods && $login_methods.size() == 0)
+            #if(!$login_methods || $login_methods.size() == 0)
                 #xdatTextBox("login_method" $item "" $vr)
             #elseif($login_methods && $login_methods.size() > 1)
                 #xdatSelectBoxWDefault("login_method" $item $login_methods $vr)

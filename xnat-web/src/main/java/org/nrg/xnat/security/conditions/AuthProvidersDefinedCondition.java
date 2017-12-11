@@ -29,7 +29,7 @@ public abstract class AuthProvidersDefinedCondition implements Condition {
             log.debug("Didn't find an auth provider configuration locator, nothing to do");
             return false;
         }
-        final Map<String, Properties> definitions = locator.getProviderDefinitions(_providerType);
+        final Map<String, Properties> definitions = locator.getProviderDefinitions();
         if (ObjectUtils.isEmpty(locator)) {
             log.debug("Found an auth provider configuration locator, but it doesn't have any LDAP providers, nothing to do");
             return false;

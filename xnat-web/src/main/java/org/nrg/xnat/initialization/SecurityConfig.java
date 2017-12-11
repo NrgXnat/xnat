@@ -10,7 +10,7 @@
 package org.nrg.xnat.initialization;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.configuration.ConfigPaths;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
@@ -18,7 +18,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.*;
 import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
-import org.nrg.xnat.security.provider.AuthenticationProviderConfigurationLocator;
+import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -81,13 +81,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         _aliasTokenService = aliasTokenService;
         _userAuthService = userAuthService;
         _dateValidation = dateValidation;
-        _messageSource = messageSource;
         _template = template;
         _dataSource = dataSource;
+
+        _dbAuthProviderName = messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_ARRAY, "Database", Locale.getDefault());
     }
 
     @Autowired
     public void setAuthenticationProviders(final List<AuthenticationProvider> providers) {
+        if (!containsDbAuthProvider(providers)) {
+            _providers.add(xnatDatabaseAuthenticationProvider());
+        }
         _providers.addAll(providers);
     }
 
@@ -217,13 +221,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public XnatDatabaseAuthenticationProvider xnatDatabaseAuthenticationProvider() {
+    public AuthenticationProvider xnatDatabaseAuthenticationProvider() {
         final ReflectionSaltSource saltSource = new ReflectionSaltSource();
         saltSource.setUserPropertyToUse("salt");
 
-        final String name = _messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_ARRAY, "Database", Locale.getDefault());
-
-        final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(name, _aliasTokenService);
+        final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(_dbAuthProviderName, _aliasTokenService);
         sha2DatabaseAuthProvider.setUserDetailsService(userDetailsService());
         sha2DatabaseAuthProvider.setPasswordEncoder(Users.getEncoder());
         sha2DatabaseAuthProvider.setSaltSource(saltSource);
@@ -238,11 +240,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final AuthenticationManagerBuilder builder) throws Exception {
+        final AuthenticationProvider dbAuthProvider = xnatDatabaseAuthenticationProvider();
         builder.parentAuthenticationManager(customAuthenticationManager());
-        final XnatDatabaseAuthenticationProvider xnatDbAuthProvider = xnatDatabaseAuthenticationProvider();
-        builder.authenticationProvider(xnatDbAuthProvider);
+        builder.authenticationProvider(dbAuthProvider);
+
         for (final AuthenticationProvider provider : _providers) {
-            if (!provider.equals(xnatDbAuthProvider)) {
+            if (!provider.equals(dbAuthProvider)) {
                 builder.authenticationProvider(provider);
             }
         }
@@ -287,14 +290,23 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         }
     }
 
+    private boolean containsDbAuthProvider(final List<AuthenticationProvider> providers) {
+        for (final AuthenticationProvider provider : providers) {
+            if (provider instanceof XnatAuthenticationProvider && StringUtils.equals(_dbAuthProviderName, ((XnatAuthenticationProvider) provider).getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;
     private final AliasTokenService          _aliasTokenService;
     private final XdatUserAuthService        _userAuthService;
-    private final MessageSource              _messageSource;
     private final DateValidation             _dateValidation;
     private final NamedParameterJdbcTemplate _template;
     private final DataSource                 _dataSource;
+    private final String                     _dbAuthProviderName;
 
     private final List<AuthenticationProvider> _providers  = new ArrayList<>();
     private final List<XnatSecurityExtension>  _extensions = new ArrayList<>();

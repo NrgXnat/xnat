@@ -186,8 +186,8 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     private final String            _providerId;
     private final AliasTokenService _aliasTokenService;
 
-    private String  _displayName;
-    private boolean _visible;
+    private String _displayName;
 
-    private int _order = -1;
+    private boolean _visible = true;
+    private int     _order   = -1;
 }

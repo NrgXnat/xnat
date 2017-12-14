@@ -432,8 +432,14 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
     			}).start();
         	}
         } 
-
-        FileUtils.DeleteFile(original);
+       	// Let's not wait for the cleanup.  This can take a long time on huge xar files and was causing some
+       	// connections to timeout.
+      	new Thread(new Runnable() {
+       		@Override
+       		public void run() {
+       			FileUtils.DeleteFile(original);
+       		}
+    	}).start();
 		return urlList;
 
 	}

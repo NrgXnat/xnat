@@ -7,6 +7,12 @@
  * Released under the Simplified BSD.
  */
 
+
+import com.github.kongchen.swagger.docgen.mavenplugin.ApiSource
+import com.github.zhurlik.SwaggerTask
+import io.swagger.models.Contact
+import io.swagger.models.Info
+import io.swagger.models.License
 import org.gradle.internal.jvm.Jvm
 
 buildscript {
@@ -34,6 +40,12 @@ buildscript {
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.3"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.3"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
+        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
+        classpath "io.swagger:swagger-core:1.5.+"
+        classpath "com.github.kongchen:swagger-maven-plugin:3.1.+"
+        classpath "org.nrg.xnat:xnat-data-models:1.7.5-SNAPSHOT"
+        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
+        classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
     }
 }
 
@@ -45,6 +57,7 @@ apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'maven'
+apply plugin: "com.github.zhurlik.swagger"
 apply plugin: 'jacoco'
 apply plugin: 'maven-publish'
 apply plugin: 'com.bmuschko.tomcat'
@@ -120,6 +133,8 @@ if (hasProperty("archiveName")) {
 }
 
 configurations {
+    javadocCoverage
+
     all*.exclude group: 'ant', module: 'ant'
     all*.exclude group: 'avalon-logkit'
     all*.exclude group: 'berkeleydb'
@@ -350,6 +365,8 @@ dependencies {
     testCompile "org.nrg:test"
     testCompile "junit:junit"
     testCompile "org.springframework:spring-test"
+
+    javadocCoverage "com.manoelcampos:javadoc-coverage:1.1.0"
 }
 
 tomcatRun.contextPath = '/'
@@ -426,12 +443,54 @@ jacocoTestReport {
     }
 }
 
+task swagger(type: SwaggerTask, dependsOn: classes) {
+
+    // any dirs with classes
+    classesDirs = [
+            file("${buildDir}/classes/java/main")
+    ]
+
+    apiSources = [
+            new ApiSource(
+                    springmvc: true,
+                    locations: ["org/nrg/xapi/rest"],
+                    schemes: ["http", "https"],
+                    host: "xnat.org",
+                    basePath: "/xapi",
+                    info: new Info(
+                            title: "XNAT REST API",
+                            version: "${version}",
+                            description: "REST API for the XNAT server",
+                            contact: new Contact(
+                                    email: "info@xnat.org",
+                                    name: "XNAT",
+                                    url: "http://www.xnat.org"
+                            ),
+                            license: new License(
+                                    url: "https://opensource.org/licenses/BSD-2-Clause",
+                                    name: "Simplified 2-Clause BSD"
+                            )
+                    ),
+                    outputPath: file("${buildDir}/docs").path,
+                    outputFormats: "json,yaml",
+                    swaggerDirectory: file("${buildDir}/docs").path,
+            )
+    ]
+}
+
+task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
+    source = sourceSets.main.allJava
+    destinationDir = reporting.file("javadoc")
+    options.docletpath = configurations.javadocCoverage.files.asType(List)
+    options.doclet = "com.manoelcampos.javadoc.coverage.CoverageDoclet"
+}
+
 task sourceJar(type: Jar, dependsOn: classes) {
     classifier "sources"
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
+task javadocJar(type: Jar, dependsOn: [javadocCoverageReport, swagger]) {
     classifier "javadoc"
     from javadoc.destinationDir
 }

@@ -38,6 +38,7 @@ import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.ReflectionSaltSource;
+import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -45,22 +46,14 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.access.channel.ChannelDecisionManagerImpl;
 import org.springframework.security.web.access.channel.ChannelProcessingFilter;
-import org.springframework.security.web.access.channel.InsecureChannelProcessor;
-import org.springframework.security.web.access.channel.SecureChannelProcessor;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.LogoutFilter;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
-import org.springframework.security.web.session.ConcurrentSessionFilter;
-import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -147,30 +140,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public ConcurrentSessionFilter concurrencyFilter(final SessionRegistry sessionRegistry) {
-        return new ConcurrentSessionFilter(sessionRegistry, new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm"));
-    }
-
-    @Bean
     @Primary
-    public CompositeSessionAuthenticationStrategy sessionAuthenticationStrategy(final SessionRegistry sessionRegistry, final SiteConfigPreferences preferences) {
-        return new CompositeSessionAuthenticationStrategy(Arrays.asList(new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry) {{
-                                                                            setMaximumSessions(preferences.getConcurrentMaxSessions());
-                                                                            setExceptionIfMaximumExceeded(true);
-                                                                        }},
-                                                                        new SessionFixationProtectionStrategy(),
-                                                                        new RegisterSessionAuthenticationStrategy(sessionRegistry)));
-    }
-
-    @Bean
-    public LogoutFilter logoutFilter(final SessionRegistry sessionRegistry) {
-        final SecurityContextLogoutHandler securityContextLogoutHandler = new SecurityContextLogoutHandler();
-        securityContextLogoutHandler.setInvalidateHttpSession(true);
-        final LogoutFilter filter = new LogoutFilter(logoutSuccessHandler(),
-                                                     securityContextLogoutHandler,
-                                                     new XnatLogoutHandler(sessionRegistry));
-        filter.setFilterProcessesUrl("/app/action/LogoutUser");
-        return filter;
+    public CompositeSessionAuthenticationStrategy sessionAuthenticationStrategy() {
+        return new CompositeSessionAuthenticationStrategy(Arrays.asList(new SessionFixationProtectionStrategy(),
+                                                                        new RegisterSessionAuthenticationStrategy(sessionRegistry())));
     }
 
     @Bean
@@ -181,13 +154,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public ConfigurableSecurityMetadataSourceFactory metadataSourceFactory() {
         return new ConfigurableSecurityMetadataSourceFactory(_preferences, _appInfo);
-    }
-
-    @Bean
-    public TranslatingChannelProcessingFilter channelProcessingFilter() {
-        final ChannelDecisionManagerImpl decisionManager = new ChannelDecisionManagerImpl();
-        decisionManager.setChannelProcessors(Arrays.asList(new SecureChannelProcessor(), new InsecureChannelProcessor()));
-        return new TranslatingChannelProcessingFilter(decisionManager, _preferences.getSecurityChannel());
     }
 
     @Bean
@@ -266,21 +232,38 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, interactiveAgentDetector(_preferences));
         http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint));
 
+        http.sessionManagement().sessionAuthenticationStrategy(sessionAuthenticationStrategy())
+            .maximumSessions(_preferences.getConcurrentMaxSessions())
+            .maxSessionsPreventsLogin(true).expiredUrl("/app/template/Login.vm");
+
         http.headers().frameOptions().sameOrigin()
             .httpStrictTransportSecurity().disable()
             .contentSecurityPolicy("frame-ancestors 'self'");
 
-        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint);
-        http.csrf().disable();
-        http.anonymous().key(UserI.ANONYMOUS_AUTH_PROVIDER_KEY);
-        http.sessionManagement().sessionAuthenticationStrategy(sessionAuthenticationStrategy(sessionRegistry(), _preferences));
+        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint).and()
+            .csrf().disable()
+            .anonymous().key(UserI.ANONYMOUS_AUTH_PROVIDER_KEY);
 
-        http.addFilterAt(channelProcessingFilter(), ChannelProcessingFilter.class)
-            .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+        http.logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser")
+            .addLogoutHandler(new XnatLogoutHandler(sessionRegistry()));
+
+        final String securityChannel = _preferences.getSecurityChannel();
+        if (!StringUtils.equals("any", securityChannel)) {
+            http.requiresChannel().anyRequest().requires(securityChannel).withObjectPostProcessor(new ObjectPostProcessor<ChannelProcessingFilter>() {
+                @Override
+                public <O extends ChannelProcessingFilter> O postProcess(final O filter) {
+                    if (filter != null) {
+                        log.error("Found the damned filter!");
+                    }
+                    return null;
+                }
+            });
+        }
+
+        // If we can get the default channel processing filter as a bean, we could remove this.
+        http.addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
-            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class)
-            .addFilterAt(concurrencyFilter(sessionRegistry()), ConcurrentSessionFilter.class)
-            .addFilterAt(logoutFilter(sessionRegistry()), LogoutFilter.class);
+            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class);
 
         if (_extensions.size() > 0) {
             for (final XnatSecurityExtension extension : _extensions) {

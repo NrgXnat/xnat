@@ -11,23 +11,34 @@ package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xnat.security.TranslatingChannelProcessingFilter;
 import org.nrg.xnat.security.XnatLogoutSuccessHandler;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.config.http.ChannelAttributeFactory;
+import org.springframework.security.web.access.channel.ChannelProcessingFilter;
+import org.springframework.security.web.access.intercept.DefaultFilterInvocationSecurityMetadataSource;
+import org.springframework.security.web.access.intercept.FilterInvocationSecurityMetadataSource;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @Slf4j
-public class SecuritySettingsHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+public class SecuritySettingsHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod implements ApplicationContextAware {
     @Autowired
-    public SecuritySettingsHandlerMethod(final TranslatingChannelProcessingFilter filter, final XnatLogoutSuccessHandler logoutSuccessHandler) {
-        _filter = filter;
+    public SecuritySettingsHandlerMethod(final XnatLogoutSuccessHandler logoutSuccessHandler) {
         _logoutSuccessHandler = logoutSuccessHandler;
+    }
+
+    @Autowired
+    @Override
+    public void setApplicationContext(final ApplicationContext context) throws BeansException {
+        _context = context;
     }
 
     @Override
@@ -60,8 +71,13 @@ public class SecuritySettingsHandlerMethod extends AbstractSiteConfigPreferenceH
         }
     }
 
-    private void updateRequiredChannel(final String value) {
-        _filter.setRequiredChannel(value);
+    private void updateRequiredChannel(final String requiredChannel) {
+        final ChannelProcessingFilter filter = _context.getBean(ChannelProcessingFilter.class);
+        log.debug("Setting the default pattern required channel to: {}", requiredChannel);
+        final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
+        map.put(new AntPathRequestMatcher("/**"), ChannelAttributeFactory.createChannelAttributes(requiredChannel));
+        final FilterInvocationSecurityMetadataSource metadataSource = new DefaultFilterInvocationSecurityMetadataSource(map);
+        filter.setSecurityMetadataSource(metadataSource);
     }
 
     private void updateRequireLogin(final String value) {
@@ -70,6 +86,7 @@ public class SecuritySettingsHandlerMethod extends AbstractSiteConfigPreferenceH
 
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("securityChannel", "requireLogin"));
 
-    private final TranslatingChannelProcessingFilter _filter;
-    private final XnatLogoutSuccessHandler           _logoutSuccessHandler;
+    private final XnatLogoutSuccessHandler _logoutSuccessHandler;
+
+    private ApplicationContext _context;
 }

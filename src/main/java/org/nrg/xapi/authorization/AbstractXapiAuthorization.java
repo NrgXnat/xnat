@@ -32,8 +32,9 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
 
     @Override
     public void check(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) throws InsufficientPrivilegesException, NotAuthenticatedException {
-        // We can just cut everything off if the user is a guest: it can't be admin, auth, user, etc. and impl must consider guests as a possibility.
-        if ((considerGuests() || accessLevel.equalsAny(Admin, Authenticated, User, Edit, Collaborator, Member, Owner)) && user.isGuest()) {
+        // We can just cut everything off if the user is a guest: it can't be admin, auth, user, edit, coll, member, owner.
+        // However, if accessLevel is something else, and considerGuests returns true, we should not cut things off
+        if ((!considerGuests() || accessLevel.equalsAny(Admin, Authenticated, User, Edit, Collaborator, Member, Owner)) && user.isGuest()) {
             throw new NotAuthenticatedException(request.getRequestURL().toString());
         }
 

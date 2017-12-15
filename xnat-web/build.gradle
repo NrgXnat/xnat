@@ -474,6 +474,7 @@ task swagger(type: SwaggerTask, dependsOn: classes) {
                     outputPath: file("${buildDir}/docs").path,
                     outputFormats: "json,yaml",
                     swaggerDirectory: file("${buildDir}/docs").path,
+                    swaggerFileName: "${project.group}.${project.name}-${project.version}-swagger"
             )
     ]
 }

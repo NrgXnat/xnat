@@ -76,7 +76,7 @@ public class PreferencesApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "ini", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Admin)
-    public ResponseEntity<String> getPreferenceSettingsIni() {
+    public ResponseEntity<String> getPreferenceSettingsInis() {
         _log.info("User {} requested all system preference settings in ini format.", getSessionUser().getUsername());
         final Map<String, Properties> beanProperties = Maps.transformEntries(_preferences, new Maps.EntryTransformer<String, AbstractPreferenceBean, Properties>() {
             @Override

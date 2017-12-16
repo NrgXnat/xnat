@@ -51,7 +51,7 @@ public class XnatPluginApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<Map<String, XnatPluginBean>> getAllDataTypeSchemas() throws IOException {
+    public ResponseEntity<Map<String, XnatPluginBean>> getAllPlugins() throws IOException {
         return new ResponseEntity<>(_plugins, HttpStatus.OK);
     }
 
@@ -61,7 +61,7 @@ public class XnatPluginApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "The requested resource wasn't found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{plugin}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<XnatPluginBean> getRequestedDataTypeSchema(@PathVariable("plugin") final String plugin) throws IOException {
+    public ResponseEntity<XnatPluginBean> getRequestedPlugin(@PathVariable("plugin") final String plugin) throws IOException {
         if (!_plugins.containsKey(plugin)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

@@ -7,7 +7,6 @@
  * Released under the Simplified BSD.
  */
 
-
 import com.github.kongchen.swagger.docgen.mavenplugin.ApiSource
 import com.github.zhurlik.SwaggerTask
 import io.swagger.models.Contact
@@ -17,7 +16,7 @@ import org.gradle.internal.jvm.Jvm
 
 buildscript {
     ext {
-        vXnat = '1.7.5-SNAPSHOT'
+        vXnat = "1.7.5-SNAPSHOT"
     }
     repositories {
         mavenLocal()
@@ -27,64 +26,66 @@ buildscript {
             url "https://plugins.gradle.org/m2/"
         }
         maven {
-            url 'https://nrgxnat.jfrog.io/nrgxnat/libs-release'
-            name 'XNAT Release Repository'
+            url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
+            name "XNAT Release Repository"
         }
         maven {
-            url 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot'
-            name 'XNAT Snapshot Repository'
+            url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
+            name "XNAT Snapshot Repository"
         }
     }
     dependencies {
-        classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.3"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.3"
-        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
-        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
-        classpath "io.swagger:swagger-core:1.5.+"
         classpath "com.github.kongchen:swagger-maven-plugin:3.1.+"
+        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
+        classpath "io.franzbecker:gradle-lombok:1.10"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
+        classpath "io.swagger:swagger-core:1.5.+"
         classpath "org.nrg.xnat:xnat-data-models:1.7.5-SNAPSHOT"
-        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
         classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
+        classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
     }
 }
 
 group "org.nrg.xnat"
 version = vXnat
 
-apply plugin: 'io.spring.dependency-management'
-apply plugin: 'groovy'
-apply plugin: 'java'
-apply plugin: 'war'
-apply plugin: 'maven'
 apply plugin: "com.github.zhurlik.swagger"
-apply plugin: 'jacoco'
-apply plugin: 'maven-publish'
-apply plugin: 'com.bmuschko.tomcat'
-apply plugin: 'com.bmuschko.cargo'
 apply plugin: "com.palantir.git-version"
-apply plugin: 'idea'
-apply plugin: 'eclipse'
+apply plugin: "com.bmuschko.cargo"
+apply plugin: "com.bmuschko.tomcat"
+apply plugin: "eclipse"
+apply plugin: "groovy"
+apply plugin: "idea"
+apply plugin: "io.franzbecker.gradle-lombok"
+apply plugin: "io.spring.dependency-management"
+apply plugin: "jacoco"
+apply plugin: "java"
+apply plugin: "maven"
+apply plugin: "maven-publish"
+apply plugin: "war"
 
 repositories {
     mavenLocal()
     maven {
-        url 'http://dcm4che.org/maven2'
-        name 'dcm4che Maven Repository'
+        url "http://dcm4che.org/maven2"
+        name "dcm4che Maven Repository"
     }
     jcenter()
     mavenCentral()
     maven {
-        url 'https://nrgxnat.jfrog.io/nrgxnat/libs-release'
-        name 'XNAT Release Repository'
+        url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
+        name "XNAT Release Repository"
     }
     maven {
-        url 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot'
-        name 'XNAT Snapshot Repository'
+        url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
+        name "XNAT Snapshot Repository"
     }
     maven {
-        url 'https://nrgxnat.jfrog.io/nrgxnat/ext-release'
-        name 'XNAT External Release Repository'
+        url "https://nrgxnat.jfrog.io/nrgxnat/ext-release"
+        name "XNAT External Release Repository"
     }
 }
 
@@ -95,7 +96,7 @@ def javaVersion = Jvm.current().javaVersion
 if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
     allprojects {
         tasks.withType(Javadoc) {
-            options.addStringOption('Xdoclint:none', '-quiet')
+            options.addStringOption("Xdoclint:none", "-quiet")
         }
     }
 
@@ -135,66 +136,66 @@ if (hasProperty("archiveName")) {
 configurations {
     javadocCoverage
 
-    all*.exclude group: 'ant', module: 'ant'
-    all*.exclude group: 'avalon-logkit'
-    all*.exclude group: 'berkeleydb'
-    all*.exclude group: 'com.github.jai-imageio'
-    all*.exclude group: 'com.metaparadigm'
-    all*.exclude group: 'com.sun.jdmk', module: 'jmxtools'
-    all*.exclude group: 'com.sun.jmx', module: 'jmxri'
-    all*.exclude group: 'commons-beanutils', module: 'commons-beanutils-core'
-    all*.exclude group: 'commons-betwixt'
-    all*.exclude group: 'commons-dbcp'
-    all*.exclude group: 'commons-email'
-    all*.exclude group: 'commons-messenger'
-    all*.exclude group: 'commons-pool'
-    all*.exclude group: 'edu.ucar', module: 'netcdf'
-    all*.exclude group: 'excalibur-component'
-    all*.exclude group: 'excalibur-instrument'
-    all*.exclude group: 'excalibur-logger'
-    all*.exclude group: 'excalibur-pool'
-    all*.exclude group: 'fulcrum'
-    all*.exclude group: 'geronimo-spec'
-    all*.exclude group: 'hsqldb'
-    all*.exclude group: 'imagej'
-    all*.exclude group: 'jakarta-regexp'
-    all*.exclude group: 'jamon'
-    all*.exclude group: 'javax.jms', module: 'jms'
-    all*.exclude group: 'javax.mail', module: 'mail'
-    all*.exclude group: 'javax.servlet', module: 'servlet-api'
-    all*.exclude group: 'javax.sql', module: 'jdbc-stdext'
-    all*.exclude group: 'javax.transaction', module: 'jta'
-    all*.exclude group: 'jdbc', module: 'jdbc'
-    all*.exclude group: 'jmock'
-    all*.exclude group: 'jms', module: 'jms'
-    all*.exclude group: 'jndi'
-    all*.exclude group: 'jython'
-    all*.exclude group: 'mockobjects'
-    all*.exclude group: 'mysql'
-    all*.exclude group: 'net.sf.saxon', module: 'Saxon-B'
-    all*.exclude group: 'net.sf.saxon', module: 'saxon'
-    all*.exclude group: 'net.sf.saxon', module: 'saxon-dom'
-    all*.exclude group: 'net.sf.saxon', module: 'saxon-xpath'
-    all*.exclude group: 'ojb', module: 'ojb'
-    all*.exclude group: 'org.apache.geronimo.specs'
-    all*.exclude group: 'org.apache.struts'
-    all*.exclude group: 'org.nrg', module: 'nrg'
-    all*.exclude group: 'org.nrg', module: 'nrgutil'
-    all*.exclude group: 'org.nrg', module: 'plexiviewer'
-    all*.exclude group: 'org.nrg.xdat', module: 'beans'
-    all*.exclude group: 'org.nrg.xnat', module: 'web'
-    all*.exclude group: 'quartz'
-    all*.exclude group: 'resources', module: 'resources'
-    all*.exclude group: 'servletapi'
-    all*.exclude group: 'stax', module: 'stax-api'
-    all*.exclude group: 'tomcat'
-    all*.exclude group: 'velocity'
-    all*.exclude group: 'xerces', module: 'xmlParserAPIs'
-    all*.exclude group: 'xml-apis'
-    all*.exclude group: 'xmlrpc'
-    all*.exclude module: 'log4j-slf4j-impl'
-    all*.exclude module: 'pipelineCNDAXNAT'
-    all*.exclude module: 'slf4j-simple'
+    all*.exclude group: "ant", module: "ant"
+    all*.exclude group: "avalon-logkit"
+    all*.exclude group: "berkeleydb"
+    all*.exclude group: "com.github.jai-imageio"
+    all*.exclude group: "com.metaparadigm"
+    all*.exclude group: "com.sun.jdmk", module: "jmxtools"
+    all*.exclude group: "com.sun.jmx", module: "jmxri"
+    all*.exclude group: "commons-beanutils", module: "commons-beanutils-core"
+    all*.exclude group: "commons-betwixt"
+    all*.exclude group: "commons-dbcp"
+    all*.exclude group: "commons-email"
+    all*.exclude group: "commons-messenger"
+    all*.exclude group: "commons-pool"
+    all*.exclude group: "edu.ucar", module: "netcdf"
+    all*.exclude group: "excalibur-component"
+    all*.exclude group: "excalibur-instrument"
+    all*.exclude group: "excalibur-logger"
+    all*.exclude group: "excalibur-pool"
+    all*.exclude group: "fulcrum"
+    all*.exclude group: "geronimo-spec"
+    all*.exclude group: "hsqldb"
+    all*.exclude group: "imagej"
+    all*.exclude group: "jakarta-regexp"
+    all*.exclude group: "jamon"
+    all*.exclude group: "javax.jms", module: "jms"
+    all*.exclude group: "javax.mail", module: "mail"
+    all*.exclude group: "javax.servlet", module: "servlet-api"
+    all*.exclude group: "javax.sql", module: "jdbc-stdext"
+    all*.exclude group: "javax.transaction", module: "jta"
+    all*.exclude group: "jdbc", module: "jdbc"
+    all*.exclude group: "jmock"
+    all*.exclude group: "jms", module: "jms"
+    all*.exclude group: "jndi"
+    all*.exclude group: "jython"
+    all*.exclude group: "mockobjects"
+    all*.exclude group: "mysql"
+    all*.exclude group: "net.sf.saxon", module: "Saxon-B"
+    all*.exclude group: "net.sf.saxon", module: "saxon"
+    all*.exclude group: "net.sf.saxon", module: "saxon-dom"
+    all*.exclude group: "net.sf.saxon", module: "saxon-xpath"
+    all*.exclude group: "ojb", module: "ojb"
+    all*.exclude group: "org.apache.geronimo.specs"
+    all*.exclude group: "org.apache.struts"
+    all*.exclude group: "org.nrg", module: "nrg"
+    all*.exclude group: "org.nrg", module: "nrgutil"
+    all*.exclude group: "org.nrg", module: "plexiviewer"
+    all*.exclude group: "org.nrg.xdat", module: "beans"
+    all*.exclude group: "org.nrg.xnat", module: "web"
+    all*.exclude group: "quartz"
+    all*.exclude group: "resources", module: "resources"
+    all*.exclude group: "servletapi"
+    all*.exclude group: "stax", module: "stax-api"
+    all*.exclude group: "tomcat"
+    all*.exclude group: "velocity"
+    all*.exclude group: "xerces", module: "xmlParserAPIs"
+    all*.exclude group: "xml-apis"
+    all*.exclude group: "xmlrpc"
+    all*.exclude module: "log4j-slf4j-impl"
+    all*.exclude module: "pipelineCNDAXNAT"
+    all*.exclude module: "slf4j-simple"
 }
 
 dependencyManagement.imports {
@@ -337,8 +338,8 @@ dependencies {
     implementation "org.slf4j:jul-to-slf4j"
     implementation "log4j:log4j"
     implementation "javax.servlet:jstl"
-    implementation 'com.google.code.gson:gson:2.6.2'
-    implementation 'com.google.guava:guava:20.0'
+    implementation "com.google.code.gson:gson"
+    implementation "com.google.guava:guava"
 
     runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"
@@ -366,36 +367,36 @@ dependencies {
     testCompile "junit:junit"
     testCompile "org.springframework:spring-test"
 
-    javadocCoverage "com.manoelcampos:javadoc-coverage:1.1.0"
+    javadocCoverage "com.manoelcampos:javadoc-coverage"
 }
 
-tomcatRun.contextPath = '/'
-tomcatRunWar.contextPath = '/'
+tomcatRun.contextPath = "/"
+tomcatRunWar.contextPath = "/"
 
 [tomcatRun, tomcatRunWar].each { task ->
     // TODO: This can be configured with an external folder reference to be used for loading XNAT modules.
-    task.additionalRuntimeResources << file('/Users/rherrick/xnat/config/plugins')
+    task.additionalRuntimeResources << file("/Users/rherrick/xnat/config/plugins")
 }
 
 task deployToTomcat(type: Copy, dependsOn: war) {
     from war.archivePath
-    into "${propertyWithDefault('tomcatHome', '.')}/webapps"
+    into "${propertyWithDefault("tomcatHome", ".")}/webapps"
 }
 
 cargo {
     // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command line in
     // the form -PdeployPort=8080 -PdeployContext=/ -PdeployHost=localhost -PdeployUser=deploy -PdeployPassword=deploy
-    containerId = 'tomcat7x'
-    port = propertyWithDefault('deployPort', 8080) as int
+    containerId = "tomcat7x"
+    port = propertyWithDefault("deployPort", 8080) as int
 
     deployable {
-        context = propertyWithDefault('deployContext', '/')
+        context = propertyWithDefault("deployContext", "/")
     }
 
     remote {
-        hostname = propertyWithDefault('deployHost', 'localhost')
-        username = propertyWithDefault('deployUser', 'deploy')
-        password = propertyWithDefault('deployPassword', 'deploy')
+        hostname = propertyWithDefault("deployHost", "localhost")
+        username = propertyWithDefault("deployUser", "deploy")
+        password = propertyWithDefault("deployPassword", "deploy")
     }
 }
 
@@ -412,26 +413,26 @@ logger.info "Implementation-Version: ${version}"
 
 jar {
     manifest {
-        attributes 'Application-Name': 'XNAT',
-                'Build-Date': buildDate,
-                'Build-Number': buildNumber,
-                'Implementation-Sha': revision,
-                'Implementation-Version': version
+        attributes "Application-Name": "XNAT",
+                "Build-Date": buildDate,
+                "Build-Number": buildNumber,
+                "Implementation-Sha": revision,
+                "Implementation-Version": version
     }
 }
 
 war {
     manifest {
-        attributes 'Application-Name': 'XNAT',
-                'Build-Date': buildDate,
-                'Build-Number': buildNumber,
-                'Implementation-Sha': revision,
-                'Implementation-Version': version
+        attributes "Application-Name": "XNAT",
+                "Build-Date": buildDate,
+                "Build-Number": buildNumber,
+                "Implementation-Sha": revision,
+                "Implementation-Version": version
     }
 }
 
 jacoco {
-    toolVersion = dependencyManagement.importedProperties['jacoco.version']
+    toolVersion = dependencyManagement.importedProperties["jacoco.version"]
 }
 
 jacocoTestReport {
@@ -453,7 +454,7 @@ task swagger(type: SwaggerTask, dependsOn: classes) {
     apiSources = [
             new ApiSource(
                     springmvc: true,
-                    locations: ["org/nrg/xapi/rest"],
+                    locations: ["org.nrg.xapi.rest"],
                     schemes: ["http", "https"],
                     host: "xnat.org",
                     basePath: "/xapi",
@@ -507,26 +508,26 @@ publishing.publications {
 
         pom.withXml {
             def root = asNode()
-            root.appendNode('name', 'XNAT Server')
-            root.appendNode('description', 'XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.')
-            root.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
-            root.appendNode('inceptionYear', '2016')
+            root.appendNode("name", "XNAT Server")
+            root.appendNode("description", "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.")
+            root.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+            root.appendNode("inceptionYear", "2016")
 
-            def scm = root.appendNode('scm')
-            scm.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
-            scm.appendNode('connection', 'scm:https://bitbucket.org/xnatdev/xnat-web.git')
-            scm.appendNode('developerConnection', 'scm:git://bitbucket.org/xnatdev/xnat-web.git')
+            def scm = root.appendNode("scm")
+            scm.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+            scm.appendNode("connection", "scm:https://bitbucket.org/xnatdev/xnat-web.git")
+            scm.appendNode("developerConnection", "scm:git://bitbucket.org/xnatdev/xnat-web.git")
 
-            def license = root.appendNode('licenses').appendNode('license')
-            license.appendNode('name', 'Simplified BSD 2-Clause License')
-            license.appendNode('url', 'http://xnat.org/about/license.php')
-            license.appendNode('distribution', 'repo')
+            def license = root.appendNode("licenses").appendNode("license")
+            license.appendNode("name", "Simplified BSD 2-Clause License")
+            license.appendNode("url", "http://xnat.org/about/license.php")
+            license.appendNode("distribution", "repo")
 
-            def developers = root.appendNode('developers')
-            def rherrick = developers.appendNode('developer')
-            rherrick.appendNode('id', 'rherrick')
-            rherrick.appendNode('name', 'Rick Herrick')
-            rherrick.appendNode('email', 'jrherrick@wustl.edu')
+            def developers = root.appendNode("developers")
+            def rherrick = developers.appendNode("developer")
+            rherrick.appendNode("id", "rherrick")
+            rherrick.appendNode("name", "Rick Herrick")
+            rherrick.appendNode("email", "jrherrick@wustl.edu")
         }
     }
 }
@@ -535,10 +536,10 @@ publishing.repositories {
         credentials {
             // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
             // line in the form -PrepoUsername=foo -PrepoPassword=bar.
-            username propertyWithDefault('repoUsername', 'username')
-            password propertyWithDefault('repoPassword', 'password')
+            username propertyWithDefault("repoUsername", "username")
+            password propertyWithDefault("repoPassword", "password")
         }
-        url project.version.endsWith('-SNAPSHOT') ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
+        url project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
     }
 }
 

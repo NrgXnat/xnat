@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
@@ -17,9 +18,9 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.validators.PasswordValidatorChain;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.validators.PasswordValidatorChain;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -29,8 +30,6 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -40,9 +39,8 @@ import java.util.List;
 import java.util.TimeZone;
 
 @SuppressWarnings("unused")
+@Slf4j
 public class XDATRegisterUser extends VelocitySecureAction {
-    private static final Logger logger = LoggerFactory.getLogger(XDATRegisterUser.class);
-
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
         //noinspection Duplicates
@@ -78,9 +76,19 @@ public class XDATRegisterUser extends VelocitySecureAction {
         		List<? extends UserI> matches2=Users.getUsersByEmail(noWhiteEmail);
 
                 if (matches.size()==0 && matches2.size()==0) {
-	                String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
-	                final String message = XDAT.getContextService().getBean(PasswordValidatorChain.class).isValid(tempPass, null);
-	                if (StringUtils.isBlank(message)) {
+                    final String operation = data.getParameters().getString("operation");
+	                final String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
+
+                    // If this is a register operation, we don't want to validate the password because there isn't one: we're just
+                    // creating the XNAT account to correspond with the auth account.
+	                final String message;
+	                if (StringUtils.equals("register", operation)) {
+	                    message = "";
+                    } else {
+                        message = XDAT.getContextService().getBean(PasswordValidatorChain.class).isValid(tempPass, null);
+                    }
+
+                    if (StringUtils.isBlank(message)) {
                         // NEW USER
                         found.setPassword(tempPass);
 
@@ -112,7 +120,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                 try {
                                     sendNewUserVerificationEmail(data, context, found);
                                 } catch (Exception e) {
-                                    logger.error("Error occurred sending new user email", e);
+                                    log.error("Error occurred sending new user email", e);
                                     handleInvalid(data, context, "We are unable to send you the verification email. If you entered a valid email address, please contact our technical support.");
                                 }
                             } else {
@@ -139,7 +147,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                 try {
                                     directRequest(data, context, found);
                                 } catch (Exception e) {
-                                    logger.error("Error directing request after new user was registered.", e);
+                                    log.error("Error directing request after new user was registered.", e);
                                     handleInvalid(data, context, "Error directing request after new user was registered.");
                                 }
                             }
@@ -147,7 +155,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                             try {
                                 directRequest(data, context, found);
                             } catch (Exception e) {
-                                logger.error("", e);
+                                log.error("An error occurred trying to run directRequest()", e);
                             }
 
                             try {
@@ -161,7 +169,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                 }
                             } catch (Exception exception) {
                                 //Email send failed
-                                logger.error("Error occurred sending new user email", exception);
+                                log.error("Error occurred sending new user email", exception);
                                 handleInvalid(data, context, "Email send failed. If you are unable to log in to your account, please contact an administrator or create an account with a different email address.");
                             }
                         }
@@ -179,7 +187,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
             }
         } catch (Exception e) {
             //Other Error
-            logger.error("Error Storing User",e);
+            log.error("Error Storing User",e);
             handleInvalid(data, context, "Error Storing User.");
         }
     }
@@ -218,7 +226,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
             // OLD USER
             data.setMessage(message);
         } catch (Exception e) {
-            logger.error(message,e);
+            log.error(message,e);
             data.setMessage(message);
         }finally{
             data.setScreenTemplate("Register.vm");
@@ -267,7 +275,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
     }
 
     @Override
-    protected boolean isAuthorized(RunData data) throws Exception {
+    protected boolean isAuthorized(RunData data) {
         return true;
     }
 }

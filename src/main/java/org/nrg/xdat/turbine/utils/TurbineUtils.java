@@ -275,7 +275,6 @@ public class TurbineUtils {
         }
     }
 
-
     public static void SetEditItem(Object item, RunData data) {
         if (data != null) {
             data.getSession().setAttribute(EDIT_ITEM, item);
@@ -1063,7 +1062,6 @@ public class TurbineUtils {
 
     protected final Map<String, List<Properties>> cachedVMS = new Hashtable<>();
 
-
     /**
      * Note: much of this was copied from SecureScreen.  This version looks at the other templates directories (not just templates).  We may want to merge the two impls.
      *
@@ -1307,6 +1305,16 @@ public class TurbineUtils {
 
     public int getYear() {
         return Calendar.getInstance().get(Calendar.YEAR);
+    }
+
+    /**
+     * Redirects to the page indicated by the <b>template.login</b> Turbine property.
+     *
+     * @param data The data object for the screen or action class.
+     */
+    public static void redirectToLogin(final RunData data) {
+        final String loginTemplate = Turbine.getConfiguration().getString("template.login");
+        data.setScreenTemplate(StringUtils.defaultIfBlank(loginTemplate, Turbine.getConfiguration().getString("screen.login")));
     }
 
     /**

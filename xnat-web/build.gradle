@@ -34,6 +34,7 @@ buildscript {
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.3"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.3"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
+        classpath "io.franzbecker:gradle-lombok:1.11"
     }
 }
 
@@ -41,6 +42,7 @@ group "org.nrg.xnat"
 version = vXnat
 
 apply plugin: 'io.spring.dependency-management'
+apply plugin: 'io.franzbecker.gradle-lombok'
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'war'
@@ -297,7 +299,6 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
 
     implementation "org.codehaus.groovy:groovy-all"
-    implementation "org.python:jython-standalone"
 
     implementation "net.sourceforge.saxon:saxon"
     implementation "xalan:xalan"

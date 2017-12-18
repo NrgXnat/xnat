@@ -1,0 +1,38 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="userInfo" type="org.nrg.xdat.exceptions.UsernameAuthMappingNotFoundException" *#
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Login.vm")
+
+<div id="layout_content">
+    <div id="login_area">
+        <div id="login_box">
+            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="friendlyForm" id="merge_form">
+                <p>You've successfully logged in with your account ${userInfo.username}, but this doesn't correspond</p>
+                <p>with an existing XNAT user account. If you already have an XNAT account, enter your login credentials</p>
+                <p>below and click <b>Submit</b>.</p>
+                <p><label for="username">Username</label><input type="text" name="username"></p>
+                <p><label for="password">Password</label><input type="password" name="password"></p>
+                <p class="form-submit"><input type="submit" value="Submit"></p>
+                <input type="hidden" name="operation" value="merge">
+                <input type="hidden" name="authUsername" value="$userInfo.username">
+                <input type="hidden" name="authMethod" value="$userInfo.authMethod">
+                <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
+                <input type="hidden" name="authEmail" value="$userInfo.email">
+                <input type="hidden" name="authLastName" value="$userInfo.lastName">
+                <input type="hidden" name="authFirstName" value="$userInfo.firstName">
+            </form>
+        </div>
+        <div id="login_box">
+            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="friendlyForm" id="register_form">
+                <p>You've successfully logged in with your account ${userInfo.username}, but this doesn't correspond</p>
+                <p>with an existing XNAT user account. If you already have an XNAT account, enter your login credentials</p>
+                <p>below and click <b>Submit</b>.</p>
+                <div id="register_box">
+                    #parse("/screens/register_box.vm")
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

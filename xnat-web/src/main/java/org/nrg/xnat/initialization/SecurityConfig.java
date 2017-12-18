@@ -95,7 +95,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public XnatProviderManager customAuthenticationManager() {
-        return new XnatProviderManager(_preferences, _userAuthService, _providers);
+        return new XnatProviderManager(_preferences, _template, _userAuthService, _providers);
     }
 
     @Bean

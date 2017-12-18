@@ -1,34 +1,59 @@
-#* @vtlvariable name="username" type="java.lang.String" *#
-#* @vtlvariable name="firstName" type="java.lang.String" *#
-#* @vtlvariable name="lastName" type="java.lang.String" *#
-#* @vtlvariable name="email" type="java.lang.String" *#
-#* @vtlvariable name="phone" type="java.lang.String" *#
-#* @vtlvariable name="lab" type="java.lang.String" *#
 #* @vtlvariable name="comments" type="java.lang.String" *#
-#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="email" type="java.lang.String" *#
+#* @vtlvariable name="firstName" type="java.lang.String" *#
+#* @vtlvariable name="hidePassword" type="java.lang.Boolean" *#
+#* @vtlvariable name="lab" type="java.lang.String" *#
+#* @vtlvariable name="lastName" type="java.lang.String" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="phone" type="java.lang.String" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="userInfo" type="org.nrg.xdat.exceptions.UsernameAuthMappingNotFoundException" *#
+#* @vtlvariable name="username" type="java.lang.String" *#
 <!-- BEGIN xnat-templates/screens/register_box.vm -->
 #parse("/screens/userValidationJS.vm")
-<form name="form2" id="register_form" class="friendlyForm optOutOfXnatDefaultFormValidation" method="post" action="$link.setAction("XDATRegisterUser")">
+
+#if($hidePassword)
+    #set($formAction = "RegisterExternalLogin")
+    #set($username = $userInfo.username)
+    #set($firstName = $userInfo.firstName)
+    #set($lastName = $userInfo.lastName)
+    #set($email = $userInfo.email)
+#else
+    #set($formAction = "XDATRegisterUser")
+#end
+
+<form name="form2" id="register_form" class="friendlyForm optOutOfXnatDefaultFormValidation" method="post" action="$link.setAction($formAction)">
     #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
         #if ($key!="action" && $key!="template" &&$key!="password" &&$key!="phone" &&$key!="comments" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception")
             <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
         #end
     #end
+    #if($formAction == "RegisterExternalLogin")
+        <input type="hidden" name="operation" value="register">
+        <input type="hidden" name="authUsername" value="$userInfo.username">
+        <input type="hidden" name="authMethod" value="$userInfo.authMethod">
+        <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
+        <input type="hidden" name="authEmail" value="$userInfo.email">
+        <input type="hidden" name="authLastName" value="$userInfo.lastName">
+        <input type="hidden" name="authFirstName" value="$userInfo.firstName">
+    #end
     <p>
         <label for="xdat:user.login" class="formLabelRequired">Username</label>
         <input type="text" class="required alphaNumSP" id="xdat:user.login" name="xdat:user.login" value="$!username">
     </p>
-    <p>
-        <label for="xdat:user.primary_password" class="formLabelRequired">Password</label>
-        <input type="password" id="xdat:user.primary_password" name="xdat:user.primary_password" autocomplete="off">
-    </p>
-    <p>
-        <label for="xdat:user.password_check" class="formLabelRequired">Re-enter password</label>
-        <input type="password" id="xdat:user.password_check" name="xdat:user.primary_password" autocomplete="off">
-    </p>
+    #if(!$hidePassword)
+        <p>
+            <label for="xdat:user.primary_password" class="formLabelRequired">Password</label>
+            <input type="password" id="xdat:user.primary_password" name="xdat:user.primary_password" autocomplete="off">
+        </p>
+        <p>
+            <label for="xdat:user.password_check" class="formLabelRequired">Re-enter password</label>
+            <input type="password" id="xdat:user.password_check" name="xdat:user.primary_password" autocomplete="off">
+        </p>
+    #end
     <hr/>
     <p>
         <label for="xdat:user.firstname" class="formLabelRequired">First Name</label>
@@ -65,9 +90,9 @@
 </form>
 
 <script>
-    $(function(){
+    $(function () {
         $(".formLabelRequired").append(" <b>*</b>");
-        $("input").on("focusout", function(){
+        $("input").on("focusout", function () {
             $(this).closest('p').find('.errorMsg').remove();
         });
     });

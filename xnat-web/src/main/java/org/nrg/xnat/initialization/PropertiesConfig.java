@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.utilities.IniImporter;
 import org.nrg.framework.utilities.OrderedProperties;
-import org.nrg.xnat.security.provider.AuthenticationProviderConfigurationLocator;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

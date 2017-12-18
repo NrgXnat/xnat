@@ -41,17 +41,12 @@ public class XnatUrlAuthenticationFailureHandler extends SimpleUrlAuthentication
 	{
 		this.newLdapAccountNotAutoEnabledFailureUrl = newLdapAccountNotAutoEnabledFailureUrl;
 	}
-	
-	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
-			throws IOException, ServletException
-	{
-		if( exception instanceof NewAutoAccountNotAutoEnabledException)
-		{
-			onAuthenticationFailureNewLdapAccountNotAutoEnabled( request, response, exception );
-		}
-		else
-		{
-			super.onAuthenticationFailure( request, response, exception );
+
+	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+		if (exception instanceof NewAutoAccountNotAutoEnabledException) {
+			onAuthenticationFailureNewLdapAccountNotAutoEnabled(request, response, exception);
+		} else {
+			super.onAuthenticationFailure(request, response, exception);
 		}
 	}
 	

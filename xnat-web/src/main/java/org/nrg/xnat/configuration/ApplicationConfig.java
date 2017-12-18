@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.configuration;
 
-import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
@@ -99,7 +98,7 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public PETTracerUtils petTracerUtils(final ConfigService configService) throws Exception {
+    public PETTracerUtils petTracerUtils(final ConfigService configService) {
         return new PETTracerUtils(configService);
     }
 
@@ -116,12 +115,12 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public XnatUserProvider primaryAdminUserProvider(final SiteConfigPreferences preferences) throws SiteConfigurationException {
+    public XnatUserProvider primaryAdminUserProvider(final SiteConfigPreferences preferences) {
         return new XnatUserProvider(preferences, "primaryAdminUsername");
     }
 
     @Bean
-    public XnatUserProvider receivedFileUserProvider(final SiteConfigPreferences preferences) throws SiteConfigurationException {
+    public XnatUserProvider receivedFileUserProvider(final SiteConfigPreferences preferences) {
         return new XnatUserProvider(preferences, "receivedFileUser");
     }
 

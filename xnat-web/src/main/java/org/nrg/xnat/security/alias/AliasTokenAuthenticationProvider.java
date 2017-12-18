@@ -216,8 +216,9 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
         }
         /*
          * We don't really know which provider the user was authenticated under when this token was created.
-         * The hack is to return the user details for the most recent successful login of the user, as that is likely the provider that was used.
-         * Not perfect, but better than just hard-coding to localdb provider (cause then it won't work for a token created by an LDAP-authenticated user).
+         * The hack is to return the user details for the most recent successful login of the user, as that is likely
+         * the provider that was used. Not perfect, but better than just hard-coding to localdb provider cause then
+         * it won't work for a token created by an user authenticated by some other means).
          */
         return _userAuthService.getUserDetailsByUsernameAndMostRecentSuccessfulLogin(token.getXdatUserId());
     }

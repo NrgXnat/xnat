@@ -12,11 +12,13 @@ package org.nrg.xnat.security;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.nrg.xdat.exceptions.UsernameAuthMappingNotFoundException;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -105,7 +107,15 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
 
         try {
             AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "SUCCESS");
-            final Authentication authentication = getAuthenticationManager().authenticate(authRequest);
+            final Authentication authentication;
+            try {
+                authentication = getAuthenticationManager().authenticate(authRequest);
+            } catch (UsernameAuthMappingNotFoundException e) {
+                log.info("User {} attempted to log using {} provider {}, creating new user auth and diverting to account merge page.");
+                request.getSession().setAttribute(UsernameAuthMappingNotFoundException.class.getSimpleName(), e);
+                response.sendRedirect(TurbineUtils.GetFullServerPath() + "/app/template/RegisterExternalLogin.vm");
+                return null;
+            }
 
             //Fixed XNAT-4409 by adding a check for a par parameter on login. If a PAR is present and valid, then grant the user that just logged in the appropriate project permissions.
             if (StringUtils.isNotBlank(request.getParameter("par"))) {

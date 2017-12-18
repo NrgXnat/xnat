@@ -16,6 +16,7 @@ openUrls:
   - /app/action/AcceptProjectAccess/par/
   - /app/action/InactiveAccountEmail
   - /app/action/ModifyPassword
+  - /app/action/RegisterExternalLogin
   - /app/action/XDATForgotLogin
   - /app/action/XDATRegisterUser
   - /app/template/Error.vm
@@ -24,6 +25,7 @@ openUrls:
   - /app/template/Login.vm
   - /app/template/PostRegister.vm
   - /app/template/Register.vm
+  - /app/template/RegisterExternalLogin.vm
   - /app/template/ResendEmail.vm
   - /app/template/ResendVerification.vm
   - /app/template/VerificationSent.vm

@@ -178,8 +178,8 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                     chain.doFilter(req, res);
                 } else {
                     final UserAuthI authorization = user.getAuthorization();
-                    if (authorization != null && authorization.getAuthMethod().equals(XdatUserAuthService.LDAP)) {
-                        // Shouldn't check for a localdb expired password if user is coming in through LDAP
+                    if (authorization != null && !StringUtils.equals(authorization.getAuthMethod(), XdatUserAuthService.LOCALDB)) {
+                        // Shouldn't check for a localdb expired password if user is coming in through another validation method.
                         chain.doFilter(req, res);
                     } else if (user.isEnabled()) {
                         final boolean isExpired     = checkForExpiredPassword(user);
@@ -291,7 +291,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
             parameters.put("username", username);
             parameters.put(passwordExpirationKey, passwordExpirationValue);
             return _template.queryForObject(passwordExpirationQuery, parameters, Boolean.class);
-        } catch (Throwable e) { // ldap authentication can throw an exception during these queries
+        } catch (Throwable e) { // Some authentication methods can throw an exception during these queries
             log.error(e.getMessage(), e);
         }
         return false;

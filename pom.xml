@@ -100,7 +100,7 @@
         <spring-framework.version>4.3.10.RELEASE</spring-framework.version>
         <spring-security.version>4.2.3.RELEASE</spring-security.version>
         <spring-ldap.version>2.3.1.RELEASE</spring-ldap.version>
-        <swagger.version>2.4.0</swagger.version>
+        <swagger.version>2.7.0</swagger.version>
         <native-json.version>0.4</native-json.version>
 
         <activemq.version>5.7.0</activemq.version>
@@ -240,6 +240,7 @@
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
         <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
+        <javadoc-coverage.version>1.1.0</javadoc-coverage.version>
     </properties>
 
     <dependencyManagement>
@@ -656,6 +657,11 @@
                 <groupId>io.springfox</groupId>
                 <artifactId>springfox-swagger-ui</artifactId>
                 <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.manoelcampos</groupId>
+                <artifactId>javadoc-coverage</artifactId>
+                <version>${javadoc-coverage.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
@@ -1842,7 +1848,7 @@
                                 <docletArtifact>
                                     <groupId>com.manoelcampos</groupId>
                                     <artifactId>javadoc-coverage</artifactId>
-                                    <version>1.1.0</version>
+                                    <version>${javadoc-coverage.version}</version>
                                 </docletArtifact>
                             </configuration>
                         </execution>

@@ -30,7 +30,7 @@ public class ProjectAccessXapiAuthorization extends AbstractXapiAuthorization {
 
     @Override
     protected boolean considerGuests() {
-        return false;
+        return true;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(ProjectAccessXapiAuthorization.class);

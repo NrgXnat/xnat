@@ -21,13 +21,21 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
+import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
+import java.util.List;
 
+@Component 
 public class XDATScreen_add_xnat_projectData extends EditScreenA {
 	static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(XDATScreen_add_xnat_projectData.class);
+	
+	@Autowired
+	List<PostAddProjectContextPopulator> contextPopulators;
 	
 	public String getElementName() {
 	    return "xnat:projectData";
@@ -81,7 +89,13 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
             context.put("subjectAssessors", subjectAssessors);
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
-	    context.put("page_title", "New " + DisplayManager.GetInstance().getSingularDisplayNameForProject());
+            context.put("page_title", "New " + DisplayManager.GetInstance().getSingularDisplayNameForProject());
+            
+            if(null != contextPopulators) {
+                for (PostAddProjectContextPopulator populator : contextPopulators) {
+                    context.put(populator.getName(), populator.getObject());
+                }
+            }
 		    
 			if (item.getProperty("ID")!=null)
 			{
@@ -94,5 +108,4 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
 			logger.error("",e);
 		}
 	}
-
 }

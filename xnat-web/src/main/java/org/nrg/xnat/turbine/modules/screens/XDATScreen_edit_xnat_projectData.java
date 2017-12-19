@@ -21,10 +21,13 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
+import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
+import java.util.List;
 
 /**
  * @author XDAT
@@ -35,6 +38,11 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#getElementName()
 	 */
+	
+	
+	@Autowired
+	List<PostAddProjectContextPopulator> contextPopulators;
+	
 	public String getElementName() {
 	    return "xnat:projectData";
 	}
@@ -87,6 +95,12 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
             context.put("subjectAssessors", subjectAssessors);
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
+            
+            if(null != contextPopulators) {
+                for (PostAddProjectContextPopulator populator : contextPopulators) {
+                    context.put(populator.getName(), populator.getObject());
+                }
+            }
                         
 			if (item.getProperty("ID")==null)
 			{

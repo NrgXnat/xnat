@@ -94,39 +94,7 @@ public class Login extends VelocitySecureScreen {
 		final Context context = TurbineVelocity.getContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
 
-        final List<AuthenticationProvider> providers = XDAT.getContextService().getBean("authenticationManager",ProviderManager.class).getProviders();
-        final List<String> providerNames = new ArrayList<>();
-        for (final AuthenticationProvider provider : providers) {
-            final String providerName = provider.toString();
-            if (!providerNames.contains(providerName) && isVisibleProvider(provider)) {
-                providerNames.add(providerName);
-            }
-        }
-
-        context.put("login_methods", providerNames);
         doBuildTemplate(data, context);
-	}
-
-	private boolean isVisibleProvider(final AuthenticationProvider provider) {
-		final String name = provider.toString();
-		if (!_providers.containsKey(name)) {
-			try {
-				// Get the isVisible method if present.
-				_providers.put(name, (Boolean) provider.getClass().getMethod("isVisible").invoke(provider));
-			} catch (IllegalAccessException exception) {
-				log.warn("Strange provider found with isVisible() method both accessible and inaccessible", exception);
-				_providers.put(name, false);
-			} catch (InvocationTargetException exception) {
-				log.warn("Error invoking isVisible() method on provider", exception);
-				_providers.put(name, false);
-			} catch (NoSuchMethodException e) {
-				// We default to assuming that, if a provider without isVisible() was added, that it's implicit, so don't show it.
-				log.debug("Didn't find the isVisible() method on provider {} with class {}, returning false for visible.", name, provider.getClass().getName());
-				_providers.put(name, false);
-			}
-		}
-		return _providers.get(name);
-
 	}
 
     @Override
@@ -143,6 +111,4 @@ public class Login extends VelocitySecureScreen {
 	protected boolean isAuthorized(final RunData data) {
 		return false;
 	}
-
-    private static final Map<String, Boolean> _providers = new ConcurrentHashMap<>();
 }

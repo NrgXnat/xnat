@@ -354,6 +354,14 @@ generalSecuritySettings:
                         any: Any
                         http: http
                         https: https
+        enabledProviders:
+            kind: panel.input.text
+            name: enabledProviders
+            label: Enabled Authentication Providers
+            value: $?/xapi/security
+            description: >
+                If required, then only registered users will be able to access your site. If not required, anyone
+                visiting your site will automatically be logged in as 'guest' with access to public data.
         requireLogin:
             kind: panel.input.switchbox
             name: requireLogin

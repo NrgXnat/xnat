@@ -15,6 +15,7 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.NotificationsPreferences;
+import org.nrg.xdat.preferences.SecurityPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -80,6 +81,11 @@ public class ApplicationConfig {
     @Bean
     public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
         return new SiteConfigPreferences(preferenceService, eventService, configPaths, initPrefs);
+    }
+
+    @Bean
+    public SecurityPreferences securityPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths) {
+        return new SecurityPreferences(preferenceService, eventService, configPaths);
     }
 
     @Bean

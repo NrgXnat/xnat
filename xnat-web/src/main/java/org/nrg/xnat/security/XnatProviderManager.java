@@ -19,10 +19,10 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.velocity.VelocityContext;
 import org.hibernate.exception.DataException;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
+import org.nrg.xdat.preferences.SecurityPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Roles;
@@ -30,10 +30,6 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
-import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.exceptions.NewAutoAccountNotAutoEnabledException;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
@@ -42,15 +38,12 @@ import org.nrg.xnat.security.tokens.XnatAuthenticationToken;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -62,13 +55,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class XnatProviderManager extends ProviderManager {
     @Autowired
-    public XnatProviderManager(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate template, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers) {
+    public XnatProviderManager(final SiteConfigPreferences siteConfigPreferences, final SecurityPreferences securityPreferences, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers) {
         super(providers);
 
-        _preferences = preferences;
-        _template = template;
+        _securityPreferences = securityPreferences;
         _userAuthService = userAuthService;
-        _eventPublisher = new AuthenticationAttemptEventPublisher(this, userAuthService, preferences);
+        _eventPublisher = new AuthenticationAttemptEventPublisher(this, userAuthService, siteConfigPreferences);
 
         _xnatAuthenticationProviders.putAll(Maps.uniqueIndex(Iterables.filter(providers, XnatAuthenticationProvider.class), new Function<XnatAuthenticationProvider, String>() {
             @Nullable
@@ -96,12 +88,14 @@ public class XnatProviderManager extends ProviderManager {
                     continue;
                 }
 
-                // Test whether it's an XNAT auth provider and it supports this token instance...
-                if (candidate instanceof XnatAuthenticationProvider && !((XnatAuthenticationProvider) candidate).supports(authentication)) {
-                    // If yes and no, then bail: XNAT auth provider may support the token CLASS, but not the token instance.
-                    continue;
+                // Test whether it's an XNAT auth provider...
+                if (candidate instanceof XnatAuthenticationProvider) {
+                    // Now check whether the provider is enabled and supports the token instance.
+                    final XnatAuthenticationProvider xnatAuthenticationProvider = (XnatAuthenticationProvider) candidate;
+                    if (_securityPreferences.getEnabledProviders().contains(xnatAuthenticationProvider.getProviderId()) && xnatAuthenticationProvider.supports(authentication)) {
+                        providers.add(candidate);
+                    }
                 }
-                providers.add(candidate);
             }
         }
 
@@ -230,91 +224,6 @@ public class XnatProviderManager extends ProviderManager {
         }
     }
 
-    private UserI handleNewUserAuthMapping(final String id, String username, String email, String firstName, String lastName) {
-        UserI newUser = null;
-        try {
-            String ldapUsername = username;
-            username = findUnusedLocalUsernameForNewExternalAuthUser(ldapUsername);
-            log.debug("Adding LDAP user '{}' to database.", username);
-
-            PersistentWorkflowI wrk = PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Created user from LDAP", null, null));
-
-            try {
-                newUser = createXDATUser(username, email, firstName, lastName);
-
-                Users.save(newUser, XDAT.getUserDetails(), true, wrk.buildEvent());
-                wrk.setId(newUser.getID().toString());
-
-                XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
-                _userAuthService.create(newUserAuth);
-
-                // <HACK_ALERT>
-                /*
-                 * We must save enabled flag to DB as true above, because the administrator code for enabling a user account does not flip this flag
-                 * (no time to mess with that now).
-                 * But for purposes of determining whether or not the user can log in right now after we've just created their account,
-                 * we use the system-wide auto-enable config setting.
-                 * Must clone a new object to return, rather than modifying the existing, so that Hibernate still saves the desired values to the DB.
-                 */
-                newUserAuth = new XdatUserAuth(newUserAuth);
-                newUserAuth.setEnabled(_preferences.getUserRegistration());
-                // </HACK_ALERT>
-
-                newUser.setAuthorization(newUserAuth);
-
-                XDAT.setUserDetails(newUser);
-
-                PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-            } catch (Exception e) {
-                log.error("An unknown error occurred", e);
-                try {
-                    PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
-                } catch (Exception e1) {
-                    log.error("An unknown error occurred", e);
-                }
-            }
-        } catch (PersistentWorkflowUtils.EventRequirementAbsent exception) {
-            log.error("An unknown error occurred", exception);
-            throw new UsernameNotFoundException(SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.notFound", new Object[]{username}, "Username {0} not found"));
-        }
-
-        return newUser;
-    }
-
-    private String findUnusedLocalUsernameForNewExternalAuthUser(final String username) {
-        //This is necessary to ensure that the XNAT username for the LDAP user does not contain characters that will break XNAT.
-        final String cleaned = username.replaceAll("[^A-Za-z0-9]", "_");
-
-        int index = 0;
-
-        do {
-            final String  candidate  = cleaned + "_" + String.format("%02d", index);
-            final Integer count = _template.queryForObject("SELECT COUNT(*) FROM xdat_user WHERE login = :username", new MapSqlParameterSource("username", candidate), Integer.class);
-            if (count == 0) {
-                log.info("Found a valid unused username {} for the external username {}", candidate, username);
-                return candidate;
-            }
-        } while (++index < 100);
-
-        // If we made it this far, we didn't find a name.
-        throw new RuntimeException("Ran out of possible XNAT user ids to check (last one checked was " + cleaned + "_99)");
-    }
-
-    private UserI createXDATUser(final String username, final String email, final String firstName, final String lastName) throws Exception {
-        Map<String, String> newUserProperties = new HashMap<>();
-        newUserProperties.put(XFT.PREFIX + ":user.login", username);
-        newUserProperties.put(XFT.PREFIX + ":user.email", email);
-        newUserProperties.put(XFT.PREFIX + ":user.primary_password", null);
-        newUserProperties.put(XFT.PREFIX + ":user.firstname", firstName);
-        newUserProperties.put(XFT.PREFIX + ":user.lastname", lastName);
-        newUserProperties.put(XFT.PREFIX + ":user.primary_password.encrypt", "true");
-        // TODO: Need to add ability to verify email address in cases where we may not completely trust LDAP repo.
-        newUserProperties.put(XFT.PREFIX + ":user.verified", "true");
-        newUserProperties.put(XFT.PREFIX + ":user.enabled", Boolean.toString(_preferences.getUserRegistration()));
-
-        return Users.createUser(newUserProperties);
-    }
-
     private Pair<AuthenticationProvider, AuthenticationException> getMostImportantException(final Map<AuthenticationProvider, AuthenticationException> exceptionMap) {
         final ArrayList<AuthenticationException> exceptions = new ArrayList<>(exceptionMap.values());
         Collections.sort(exceptions, new Comparator<AuthenticationException>() {
@@ -394,8 +303,8 @@ public class XnatProviderManager extends ProviderManager {
     }
 
     private static final class AuthenticationAttemptEventPublisher implements AuthenticationEventPublisher {
-        private AuthenticationAttemptEventPublisher(final XnatProviderManager manager, final XdatUserAuthService userAuthService, final SiteConfigPreferences preferences) {
-            _failedAttemptsManager = new FailedAttemptsManager(manager, userAuthService, preferences);
+        private AuthenticationAttemptEventPublisher(final XnatProviderManager manager, final XdatUserAuthService userAuthService, final SiteConfigPreferences siteConfigPreferences) {
+            _failedAttemptsManager = new FailedAttemptsManager(manager, userAuthService, siteConfigPreferences);
             _lastSuccessfulLoginManager = new LastSuccessfulLoginManager(manager, userAuthService);
         }
 
@@ -499,8 +408,8 @@ public class XnatProviderManager extends ProviderManager {
         }
 
         private final XnatProviderManager   _manager;
-        private final SiteConfigPreferences _preferences;
         private final XdatUserAuthService   _userAuthService;
+        private final SiteConfigPreferences _preferences;
     }
 
     private interface XnatAuthenticationProviderMatcher {
@@ -521,8 +430,7 @@ public class XnatProviderManager extends ProviderManager {
     private final MessageSourceAccessor                   _messageSource               = SpringSecurityMessageSource.getAccessor();
     private final Map<String, XnatAuthenticationProvider> _xnatAuthenticationProviders = new HashMap<>();
 
-    private final SiteConfigPreferences        _preferences;
-    private final NamedParameterJdbcTemplate   _template;
+    private final SecurityPreferences          _securityPreferences;
     private final XdatUserAuthService          _userAuthService;
     private final AuthenticationEventPublisher _eventPublisher;
 }

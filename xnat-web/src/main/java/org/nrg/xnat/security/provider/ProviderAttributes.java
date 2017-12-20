@@ -18,6 +18,15 @@ public class ProviderAttributes {
         _properties = properties;
     }
 
+    public ProviderAttributes(final XnatAuthenticationProvider provider) {
+        _providerId = provider.getProviderId();
+        _authMethod = provider.getAuthMethod();
+        _displayName = provider.getName();
+        _visible = provider.isVisible();
+        _order = provider.getOrder();
+        _properties = new Properties();
+    }
+
     public ProviderAttributes(final Properties properties) {
         this(properties.getProperty("id"), properties.getProperty("type"), properties.getProperty("name"), Boolean.parseBoolean(properties.getProperty("visible", "true")), Integer.parseInt(properties.getProperty("order", "-1")), properties);
     }

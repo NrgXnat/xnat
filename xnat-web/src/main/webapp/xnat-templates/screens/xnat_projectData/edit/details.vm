@@ -111,6 +111,9 @@
         </td>
     </tr>
 
+   ## Add custom details
+   #addCustomScreens("xnat:projectData" "edit/details")
+    
     <tr>
         <th>
             <span class="nobr">${PROJECT_DISPLAY_NAME} Description</span>

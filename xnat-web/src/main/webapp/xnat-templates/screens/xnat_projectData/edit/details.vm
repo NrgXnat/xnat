@@ -136,7 +136,6 @@
         </td>
     </tr>
 
-    #addCustomScreens($om.getXSIType() "edit/details")
     #set($pathInfo = $arcP.getPaths())
 
     <input type="hidden" name="arc:project/current_arc" value="arc001">

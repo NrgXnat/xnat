@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.security.ElementSecurity;
@@ -38,10 +39,6 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#getElementName()
 	 */
-	
-	
-	@Autowired
-	List<PostAddProjectContextPopulator> contextPopulators;
 	
 	public String getElementName() {
 	    return "xnat:projectData";
@@ -96,11 +93,21 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
             
-            if(null != contextPopulators) {
-                for (PostAddProjectContextPopulator populator : contextPopulators) {
-                    context.put(populator.getName(), populator.getObject());
-                }
-            }
+            // 
+            // getBeansOfType(PostAddProjectContextPopulator.class) is not working. 
+            //
+            // Collection<PostAddProjectContextPopulator>  contextPopulators = XDAT.getContextService().getBeansOfType(PostAddProjectContextPopulator.class).values();
+            // if(null != contextPopulators) {
+            //     for (PostAddProjectContextPopulator p : contextPopulators) {
+            //         context.put(p.getName(), p.getObject());
+            //     }
+            // }
+             
+             // Retrieve a single bean of type PostAddProjectContextPopulator
+             PostAddProjectContextPopulator populator = XDAT.getContextService().getBeanSafely(PostAddProjectContextPopulator.class);
+             if(null != populator) {
+                 context.put(populator.getName(), populator.getObject());
+             }
                         
 			if (item.getProperty("ID")==null)
 			{

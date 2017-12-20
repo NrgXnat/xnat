@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.security.ElementSecurity;
@@ -22,20 +23,15 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
-@Component 
 public class XDATScreen_add_xnat_projectData extends EditScreenA {
 	static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(XDATScreen_add_xnat_projectData.class);
-	
-	@Autowired
-	List<PostAddProjectContextPopulator> contextPopulators;
 	
 	public String getElementName() {
 	    return "xnat:projectData";
@@ -50,8 +46,8 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
 	 */
+	@SuppressWarnings("rawtypes")
 	public void finalProcessing(RunData data, Context context) {
-
         Hashtable hash = XNATUtils.getInvestigatorsForCreate(getElementName(),data);
         context.put("investigators",hash);
         context.put("arc",ArcSpecManager.GetInstance());
@@ -84,19 +80,30 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
                     logger.error("",e);
                 }
             }
-            
+
             context.put("root", root);
             context.put("subjectAssessors", subjectAssessors);
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
             context.put("page_title", "New " + DisplayManager.GetInstance().getSingularDisplayNameForProject());
             
-            if(null != contextPopulators) {
-                for (PostAddProjectContextPopulator populator : contextPopulators) {
-                    context.put(populator.getName(), populator.getObject());
-                }
+           
+           // 
+           // getBeansOfType(PostAddProjectContextPopulator.class) is not working. 
+           //
+           // Collection<PostAddProjectContextPopulator>  contextPopulators = XDAT.getContextService().getBeansOfType(PostAddProjectContextPopulator.class).values();
+           // if(null != contextPopulators) {
+           //     for (PostAddProjectContextPopulator p : contextPopulators) {
+           //         context.put(p.getName(), p.getObject());
+           //     }
+           // }
+            
+            // Retrieve a single bean of type PostAddProjectContextPopulator
+            PostAddProjectContextPopulator populator = XDAT.getContextService().getBeanSafely(PostAddProjectContextPopulator.class);
+            if(null != populator) {
+                context.put(populator.getName(), populator.getObject());
             }
-		    
+
 			if (item.getProperty("ID")!=null)
 			{
                 ArcProject p = ArcSpecManager.GetInstance().getProjectArc(item.getStringProperty("ID"));

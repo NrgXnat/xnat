@@ -619,6 +619,8 @@ public abstract class SecureResource extends Resource {
             mt = MediaType.IMAGE_TIFF;
         } else if (fName.endsWith(".html")) {
             mt = MediaType.TEXT_HTML;
+        } else if (fName.endsWith(".svg")) {
+            mt = MediaType.IMAGE_SVG;
         } else {
             if ((mt != null && mt.equals(MediaType.TEXT_XML)) && !fName.endsWith(".xml")) {
                 mt = MediaType.ALL;
@@ -795,7 +797,7 @@ public abstract class SecureResource extends Resource {
                             }
                         }
                     }
-
+                    
                     if (dataType != null) {
                         PopulateItem populator = item != null ? PopulateItem.Populate(params, user, dataType, true, item) : PopulateItem.Populate(params, user, dataType, true);
                         item = populator.getItem();
@@ -888,7 +890,7 @@ public abstract class SecureResource extends Resource {
         }
         return item;
     }
-
+    
     public void returnSuccessfulCreateFromList(final String newURI) {
         final Reference ticketRef = getSiteUrlResolvedReference().addSegment(newURI);
         getResponse().setLocationRef(ticketRef);

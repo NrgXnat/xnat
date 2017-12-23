@@ -16,7 +16,10 @@ import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.St
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class DicomInboxImportRequest extends AbstractHibernateEntity {
-    public enum Status {
+	
+	private static final long serialVersionUID = -3293317266317350423L;
+
+	public enum Status {
         Queued,
         Trawling,
         Importing,
@@ -49,6 +52,10 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
     @Builder.Default
     private Status status = Queued;
 
+    @NonNull
+    @Builder.Default
+    private Boolean cleanupAfterImport = true;
+
     @Column(length = 4096)
     private String resolution;
 
@@ -68,7 +75,8 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
      *
      * @param parameters The parameters to be set.
      */
-    @Transient
+    @SuppressWarnings("serial")
+	@Transient
     public void setParametersFromObjectMap(final Map<String, Object> parameters) {
         setParameters(new HashMap<String, String>() {{
             for (final Map.Entry<String, Object> entry : parameters.entrySet()) {
@@ -85,6 +93,7 @@ public class DicomInboxImportRequest extends AbstractHibernateEntity {
      *
      * @return The parameters as a map of object values.
      */
+    @SuppressWarnings("serial")
     @Transient
     public Map<String, Object> getObjectParametersMap() {
         return new HashMap<String, Object>() {{

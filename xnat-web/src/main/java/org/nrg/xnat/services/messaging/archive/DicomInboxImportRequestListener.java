@@ -23,6 +23,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.helpers.file.StoredFile;
@@ -45,6 +46,7 @@ import java.util.*;
 @Slf4j
 @Component
 public final class DicomInboxImportRequestListener {
+	
     @Autowired
     public DicomInboxImportRequestListener(final DicomInboxImportRequestService service,
                                            final SiteConfigPreferences preferences,
@@ -101,7 +103,9 @@ public final class DicomInboxImportRequestListener {
                 namer = _namers.get("dicomFileNamer");
             }
 
-            final List<String> uris = new DicomInboxImportRequestImporter(user, _service, Paths.get(_preferences.getInboxPath()), request, identifier, namer).call();
+            final DicomInboxImportRequestImporter importer = new DicomInboxImportRequestImporter(user, _service, Paths.get(_preferences.getInboxPath()), request, identifier, namer);
+            final List<String> uris = importer.call();
+            importer.close();
             if (log.isDebugEnabled()) {
                 final StringBuilder message = new StringBuilder("Processed ").append(uris.size()).append(" URIs:\n");
                 for (final String uri : uris) {
@@ -123,6 +127,7 @@ public final class DicomInboxImportRequestListener {
                     _service.fail(request, "The session for the request " + sessionPath + " was locked.");
                 }
             }
+            
         } catch (FileNotFoundException e) {
             // This is a little weird: in the importer class, if the specified session path can't be found, it throws a
             // FNF exception with the bad path. If it finds the path but the path indicates something that's not a
@@ -180,6 +185,9 @@ public final class DicomInboxImportRequestListener {
                 Files.walkFileTree(_sessionPath.toPath(), WALKER_OPTIONS, Integer.MAX_VALUE, this);
                 log.info("Completed processing the inbox session located at {}, with a total of {} folders and {} files found.", _sessionPath.getAbsolutePath(), _folderUris.size(), _fileUris.size());
                 _service.setToProcessed(_request);
+                if (_request.getCleanupAfterImport()) {
+                	FileUtils.deleteDirQuietly(_sessionPath);
+                }
             } catch (IOException e) {
                 _service.fail(_request, "An error occurred reading data while processing the session located at {}:\n{}", _request.getSessionPath(), e.getMessage());
             }
@@ -229,7 +237,8 @@ public final class DicomInboxImportRequestListener {
         private final Set<String> _fileUris   = new LinkedHashSet<>();
 
         private final DicomInboxImportRequestService _service;
-        private final Path                           _inboxPath;
+        @SuppressWarnings("unused")
+		private final Path                           _inboxPath;
         private final DicomInboxImportRequest        _request;
         private final UserI                          _user;
         private final Map<String, Object>            _parameters;
@@ -240,4 +249,5 @@ public final class DicomInboxImportRequestListener {
     private final SiteConfigPreferences                               _preferences;
     private       Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
     private       Map<String, DicomFileNamer>                         _namers;
+	
 }

@@ -1393,6 +1393,7 @@ fileSystem:
         ${ftpPath}
         ${buildPath}
         ${pipelinePath}
+        ${inboxPath}
         ${zipExtensions}
         ${checksums}
 asyncOperations:

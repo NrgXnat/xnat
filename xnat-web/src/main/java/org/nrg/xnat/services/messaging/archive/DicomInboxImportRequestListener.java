@@ -17,6 +17,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
@@ -185,7 +186,8 @@ public final class DicomInboxImportRequestListener {
                 Files.walkFileTree(_sessionPath.toPath(), WALKER_OPTIONS, Integer.MAX_VALUE, this);
                 log.info("Completed processing the inbox session located at {}, with a total of {} folders and {} files found.", _sessionPath.getAbsolutePath(), _folderUris.size(), _fileUris.size());
                 _service.setToProcessed(_request);
-                if (_request.getCleanupAfterImport()) {
+                if (_request.getCleanupAfterImport() && isInboxDirectory()) {
+                	log.debug("Cleaning up inbox files after import - " + _sessionPath.getAbsolutePath());
                 	FileUtils.deleteDirQuietly(_sessionPath);
                 }
             } catch (IOException e) {
@@ -194,7 +196,27 @@ public final class DicomInboxImportRequestListener {
             return new ArrayList<>(_fileUris);
         }
 
-        @Override
+        private boolean isInboxDirectory() {
+        	final String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
+        	if (inboxPath == null || inboxPath.length()<1) {
+        		return false;
+        	}
+        	final File inboxFile = new File(inboxPath);
+        	if (!inboxFile.exists() && inboxFile.isDirectory()) {
+        		return false;
+        	}
+        	File parentFile = _sessionPath.getParentFile();
+        	while (parentFile != null) {
+        		if (parentFile.equals(inboxFile)) {
+        			return true;
+        		}
+        		parentFile = parentFile.getParentFile();
+        	}
+        	log.warn("Inbox cleanup requested, but file location is not under the configured inbox (" + inboxPath + ").  Files not removed.");
+			return false;
+		}
+
+		@Override
         public FileVisitResult preVisitDirectory(final Path folder, final BasicFileAttributes attributes) {
             Objects.requireNonNull(folder);
             Objects.requireNonNull(attributes);

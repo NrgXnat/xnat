@@ -20,15 +20,13 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xnat.services.velocity.context.PostAddProjectContextPopulatorService;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.velocity.context.PostAddProjectContextPopulator;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
-import java.util.List;
 
 /**
  * @author XDAT
@@ -93,20 +91,13 @@ public class XDATScreen_edit_xnat_projectData extends EditScreenA {
             context.put("mrAssessors", mrAssessors);
             context.put("petAssessors", petAssessors);
             
-            // 
-            // getBeansOfType(PostAddProjectContextPopulator.class) is not working. 
-            //
-            // Collection<PostAddProjectContextPopulator>  contextPopulators = XDAT.getContextService().getBeansOfType(PostAddProjectContextPopulator.class).values();
-            // if(null != contextPopulators) {
-            //     for (PostAddProjectContextPopulator p : contextPopulators) {
-            //         context.put(p.getName(), p.getObject());
-            //     }
-            // }
-             
-             // Retrieve a single bean of type PostAddProjectContextPopulator
-             PostAddProjectContextPopulator populator = XDAT.getContextService().getBeanSafely(PostAddProjectContextPopulator.class);
-             if(null != populator) {
-                 context.put(populator.getName(), populator.getObject());
+            // Add custom content into the velocity context.
+            // Define new objects of type PostAddProjectContextPopulator to have them injected here.
+            Collection<PostAddProjectContextPopulator> contextPopulators = XDAT.getContextService().getBean(PostAddProjectContextPopulatorService.class).getContextPopulators();
+             if(null != contextPopulators) {
+                 for (PostAddProjectContextPopulator p : contextPopulators) {
+                     context.put(p.getName(), p.getObject());
+                 }
              }
                         
 			if (item.getProperty("ID")==null)

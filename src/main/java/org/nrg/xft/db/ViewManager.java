@@ -49,33 +49,49 @@ public class ViewManager {
 	public final static boolean DEFAULT_MULTI = true;
 	
 	public static boolean PRE_LOAD_HISTORY = false;
+
 	/**
-	 * Object [4] : 0-tableName,1-field_name,2-header,3-tableAlias
-	 * @param e
-	 * @param header
-	 * @param level
-	 * @param allowMultiples
-	 * @return
+	 * Gets subfields for the element. This returns a list of string arrays, where each array contains:
+	 *
+	 * <ul>
+	 *     <li>Table name</li>
+	 *     <li>Field name</li>
+	 *     <li>Header</li>
+	 *     <li>The table alias</li>
+	 * </ul>
+	 *
+	 * @param element        The element to analyze.
+	 * @param level          The level of the current field.
+	 * @param allowMultiples Indicates whether multiple fields should be considered.
+	 * @param tableAlias     The alias for the element's table.
+	 * @param hierarchy      The current hierarchy.
+	 * @param xmlPath        The XML path for the element.
+	 * @param isRoot         Indicates whether the element is a root element
+	 *
+	 * @return Returns a list of string arrays indicating all direct fields for the element.
+	 *
+	 * @throws XFTInitException When an error occurs accessing XFT
+	 * @throws ElementNotFoundException When the element or a referenced element can't be found.
 	 */
-	private static ArrayList GetSubFields(GenericWrapperElement e, String level, boolean allowMultiples, String tableAlias, ArrayList hierarchy,String xmlPath,boolean isRoot) throws XFTInitException,ElementNotFoundException
+	private static ArrayList GetSubFields(final GenericWrapperElement element, final String level, final boolean allowMultiples, final String tableAlias, final ArrayList hierarchy, final String xmlPath, final boolean isRoot) throws XFTInitException, ElementNotFoundException
 	{
 		ArrayList al = new ArrayList();
 		
 		ArrayList localHierarchy = (ArrayList) hierarchy.clone();
-		localHierarchy.add(e.getFullXMLName());
+		localHierarchy.add(element.getFullXMLName());
 		
-		al.addAll(GetDirectFields(e,tableAlias,xmlPath,isRoot,allowMultiples));
+		al.addAll(GetDirectFields(element,tableAlias,xmlPath,isRoot,allowMultiples));
 	
-		if (!e.getAddin().equalsIgnoreCase("meta"))
+		if (!element.getAddin().equalsIgnoreCase("meta"))
 		{
-			Iterator refs = e.getReferenceFieldsWXMLDisplay(true, true).iterator();
+			Iterator refs = element.getReferenceFieldsWXMLDisplay(true, true).iterator();
 			while (refs.hasNext()) {
 				GenericWrapperField field = (GenericWrapperField) refs.next();
 				if (field.isReference()
 					&& ((!field.isMultiple())|| (field.isMultiple() && allowMultiples))) {
 					try {
 						GenericWrapperElement ref =((GenericWrapperElement) field.getReferenceElement());
-						if ((e.getAddin().equalsIgnoreCase("")) || (!ref.getAddin().equalsIgnoreCase("")))
+						if ((element.getAddin().equalsIgnoreCase("")) || (!ref.getAddin().equalsIgnoreCase("")))
 						{
 							if (!localHierarchy.contains(ref.getFullXMLName()))
 							{
@@ -84,13 +100,13 @@ public class ViewManager {
 									Iterator refFields = null;
 									if (tableAlias != null && !tableAlias.equalsIgnoreCase(""))
 									{
-									    if(e.getExtensionFieldName().equals(field.getName()))
+									    if(element.getExtensionFieldName().equals(field.getName()))
 									        refFields = (ViewManager.GetSubFields(ref,level,allowMultiples,tableAlias,localHierarchy,xmlPath + field.getXMLPathString(""),true)).iterator();
 									    else{
 									        refFields = (ViewManager.GetSubFields(ref,level,allowMultiples,tableAlias,localHierarchy,xmlPath + field.getXMLPathString(""),true)).iterator();
 									    }
 									}else{
-									    if(e.getExtensionFieldName().equals(field.getName()))
+									    if(element.getExtensionFieldName().equals(field.getName()))
 											refFields = (ViewManager.GetSubFields(ref,level,allowMultiples,field.getSQLName() + "_" + ref.getSQLName(),localHierarchy,xmlPath + field.getXMLPathString(""),true)).iterator();
 									    else{
 											refFields = (ViewManager.GetSubFields(ref,level,allowMultiples,field.getSQLName() + "_" + ref.getSQLName(),localHierarchy,xmlPath + field.getXMLPathString(""),true)).iterator();
@@ -123,7 +139,7 @@ public class ViewManager {
 						}
 					} catch (Exception e1) {
 						logger.error(
-							"ELEMENT:'" + e.getFullXMLName() + "'",
+							"ELEMENT:'" + element.getFullXMLName() + "'",
 							e1);
 					}
 				}
@@ -133,11 +149,11 @@ public class ViewManager {
 		
 		if (PRE_LOAD_HISTORY)
 		{
-			if (e.getAddin().equalsIgnoreCase(""))
+			if (element.getAddin().equalsIgnoreCase(""))
 			{
 				if (level.equalsIgnoreCase(ViewManager.ALL))
 				{
-					GenericWrapperElement foreign = GenericWrapperElement.GetElement(e.getFullXMLName() + "_history");
+					GenericWrapperElement foreign = GenericWrapperElement.GetElement(element.getFullXMLName() + "_history");
 					Iterator refFields = ViewManager.GetDirectFields(foreign, foreign.getSQLName(), xmlPath + XFT.PATH_SEPARATOR + "history", false, allowMultiples).iterator();
 					while (refFields.hasNext())
 					{
@@ -162,17 +178,30 @@ public class ViewManager {
 	}
 	
 	/**
-	 * Object [4] : 0-tableName,1-field_name,2-header,3-tableAlias
-	 * @param e
-	 * @param header
-	 * @param level
-	 * @param allowMultiples
-	 * @return
+	 * Gets the direct fields for the element. This returns a list of string arrays, where each array contains:
+	 *
+	 * <ul>
+	 *     <li>Table name</li>
+	 *     <li>Field name</li>
+	 *     <li>Header</li>
+	 *     <li>The table alias</li>
+	 * </ul>
+	 *
+	 * @param element        The element to analyze.
+	 * @param tableAlias     The alias for the element's table.
+	 * @param xmlPath        The XML path for the element.
+	 * @param isRoot         Indicates whether the element is a root element
+	 * @param allowMultiples Deprecated and ignored.
+	 *
+	 * @return Returns a list of string arrays indicating all direct fields for the element.
+	 *
+	 * @throws XFTInitException When an error occurs accessing XFT
+	 * @throws ElementNotFoundException When the element or a referenced element can't be found.
 	 */
-	private static ArrayList GetDirectFields(GenericWrapperElement e, String tableAlias,String xmlPath,boolean isRoot,boolean allowMultiples) throws XFTInitException,ElementNotFoundException
+	private static ArrayList GetDirectFields(final GenericWrapperElement element, final String tableAlias, final String xmlPath, final boolean isRoot, final boolean allowMultiples) throws XFTInitException,ElementNotFoundException
 	{
 		ArrayList minimizedFieldsForMetaData = new ArrayList();
-		if (e.getAddin().equalsIgnoreCase("meta") && !isRoot)
+		if (element.getAddin().equalsIgnoreCase("meta") && !isRoot)
 		{
 			minimizedFieldsForMetaData.add("status");
 			minimizedFieldsForMetaData.add("meta_data_id");
@@ -188,7 +217,7 @@ public class ViewManager {
 		}
 		
 		ArrayList al = new ArrayList();
-		Iterator iter = e.getAllFieldNames().iterator();
+		Iterator iter = element.getAllFieldNames().iterator();
 		while (iter.hasNext()) {
 			Object[] field = (Object[]) iter.next();
 			if (((String) field[2]).equalsIgnoreCase("false")) {
@@ -200,18 +229,18 @@ public class ViewManager {
 					while (refs.hasNext()) {
 						ArrayList ref = (ArrayList) refs.next();
 						String array[] = new String[6];
-						array[0]= e.getSQLName();
+						array[0]= element.getSQLName();
 						array[1]= (String) ref.get(0);
-						array[2]= XftStringUtils.RegCharsAbbr(e.getSQLName());
+						array[2]= XftStringUtils.RegCharsAbbr(element.getSQLName());
 						if (tableAlias !=null && !tableAlias.equalsIgnoreCase(""))
 						{
 							array[3]= tableAlias;
 						}else{
-							array[3]= e.getSQLName();
+							array[3]= element.getSQLName();
 						}
 						array[5] = xmlPath + XFT.PATH_SEPARATOR + (String) ref.get(0);
 						
-						if (e.getAddin().equalsIgnoreCase("meta") && !isRoot)
+						if (element.getAddin().equalsIgnoreCase("meta") && !isRoot)
 						{
 							if (minimizedFieldsForMetaData.contains(array[1]))
 							{
@@ -223,18 +252,18 @@ public class ViewManager {
 					}
 				}else{
 					String temp[] = new String[6];
-					temp[0]= e.getSQLName();
+					temp[0]= element.getSQLName();
 					temp[1]= (String)field[0];
-					temp[2]= XftStringUtils.RegCharsAbbr(e.getSQLName());
+					temp[2]= XftStringUtils.RegCharsAbbr(element.getSQLName());
 					if (tableAlias !=null && !tableAlias.equalsIgnoreCase(""))
 					{
 						temp[3]= tableAlias;
 					}else{
-						temp[3]= e.getSQLName();
+						temp[3]= element.getSQLName();
 					}
 					temp[5]= xmlPath + f.getXMLPathString("");
 					
-					if (e.getAddin().equalsIgnoreCase("meta") && !isRoot)
+					if (element.getAddin().equalsIgnoreCase("meta") && !isRoot)
 					{
 						if (minimizedFieldsForMetaData.contains(temp[1]))
 						{

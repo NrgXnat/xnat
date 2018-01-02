@@ -8,6 +8,7 @@
  */
 
 package org.nrg.xft;
+
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -49,11 +50,11 @@ import org.nrg.xft.search.ItemSearch.IdentifierResults;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -3991,14 +3992,19 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		}
 	}
 
-    /**
-     * Gets item property by its XML dot-syntax name.
-     * @param xmlPath
-     * @return
-     * @throws XFTInitException
-     * @throws ElementNotFoundException
-     * @throws FieldNotFoundException
-     */
+	/**
+	 * Gets item property by its XML dot-syntax name. This calls {@link #getXMLProperty(String, boolean, UserI)}, passing the user associated with
+	 * the current item as the requesting user.
+	 *
+	 * @param xmlPath             The XML path to the property.
+	 * @param allowMultipleValues Whether multiple values should be considered.
+	 *
+	 * @return The value set for the specified property.
+	 *
+	 * @throws XFTInitException When an error occurs in XFT.
+	 * @throws ElementNotFoundException When a specified element isn't found on the object.
+	 * @throws FieldNotFoundException   When a specified field isn't found on the object.
+	 */
     @SuppressWarnings("unused")
     private Object getXMLProperty(String xmlPath,boolean allowMultipleValues) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
@@ -4007,13 +4013,18 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Gets item property by its XML dot-syntax name.
-	 * @param xmlPath
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws FieldNotFoundException
+	 *
+	 * @param xmlPath             The XML path to the property.
+	 * @param allowMultipleValues Whether multiple values should be considered.
+	 * @param user                The user requesting the property.
+	 *
+	 * @return The value set for the specified property.
+	 *
+	 * @throws XFTInitException When an error occurs in XFT.
+	 * @throws ElementNotFoundException When a specified element isn't found on the object.
+	 * @throws FieldNotFoundException   When a specified field isn't found on the object.
 	 */
-	private Object getXMLProperty(String xmlPath,boolean allowMultipleValues,UserI user) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+	private Object getXMLProperty(String xmlPath, final boolean allowMultipleValues, final UserI user) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 		String original = xmlPath;
 		GenericWrapperField lastField = null;
@@ -5144,15 +5155,19 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         return seperatorIndex;
     }
 
-	 /**
-	 * Gets item property by its XML dot-syntax name.
-	 * @param xmlPath
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws FieldNotFoundException
+    /**
+     * Gets an item property by its XML dot-syntax name.
+     *
+     * @param xmlPath The XML path to the property.
+     * @param user    The user requesting the property.
+     *
+     * @return All child items for the property.
+     *
+     * @throws XFTInitException When an error occurs in XFT.
+	 * @throws ElementNotFoundException When a specified element isn't found on the object.
+	 * @throws FieldNotFoundException   When a specified field isn't found on the object.
 	 */
-	private ArrayList getXMLChildItems(String xmlPath,UserI user) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+	private ArrayList getXMLChildItems(String xmlPath, final UserI user) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 		GenericWrapperField lastField = null;
 		xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
@@ -5208,15 +5223,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                         String wValue = where.substring(indexEq+1);
 
                         ArrayList newSubs = new ArrayList();
-                        Iterator subIter = subs.iterator();
 
-                        while (subIter.hasNext())
-                        {
-                            ItemI sub = (ItemI)subIter.next();
-                            if(sub.hasProperty(wField,wValue)){
-                                newSubs.add(sub);
-                            }
-                        }
+						for (final Object sub1 : subs) {
+							ItemI sub = (ItemI) sub1;
+							if (sub.hasProperty(wField, wValue)) {
+								newSubs.add(sub);
+							}
+						}
 
                         subs = newSubs;
                     }
@@ -5230,12 +5243,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 						}
 					}else{
 					    ArrayList childItems = new ArrayList();
-					    Iterator subIter = subs.iterator();
-					    while (subIter.hasNext())
-					    {
-					        XFTItem sub = (XFTItem)subIter.next();
-					        childItems.addAll(sub.getChildItems(xmlPath));
-					    }
+						for (final Object sub1 : subs) {
+							XFTItem sub = (XFTItem) sub1;
+							childItems.addAll(sub.getChildItems(xmlPath));
+						}
 					    return childItems;
 					}
 				}

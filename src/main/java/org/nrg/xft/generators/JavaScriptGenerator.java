@@ -1436,14 +1436,15 @@ public class JavaScriptGenerator {
         return rootName;
     }
     /**
-     * @param e
-     * @return
+     * Formats a field name to a method signature.
+     *
+     * @param fieldName The name of the field to be formatted.
+     *
+     * @return The formatted field name.
      */
-    private String formatFieldName(String s)
-    {
-        return XftStringUtils.FormatStringToMethodSignature(s);
+    private String formatFieldName(final String fieldName) {
+        return XftStringUtils.FormatStringToMethodSignature(fieldName);
     }
-    
 
     public static void GenerateJSFiles(String javalocation, boolean skipXDAT) throws Exception
     {

@@ -1433,11 +1433,20 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     }
 
     /**
-     * arraylist of string[2] 0:SQL 1: ASC/DESC 2:ALIAS
-     * @param rootFilterField
-     * @return
-     * @throws ElementNotFoundException
-     * @throws FieldNotFoundException
+     * Returns a list of ORDER BY classes in the form of a list of string arrays. Each array contains:
+     *
+     * <ul>
+     *     <li>SQL for the ORDER BY</li>
+     *     <li>ASC or DESC</li>
+     *     <li>Alias</li>
+     * </ul>
+     *
+     * @param rootFilterField The root filter field on which the order bys should be based.
+     *
+     * @return Returns a list of ORDER BY clauses, where each clause is actually an array of strings.
+     *
+     * @throws ElementNotFoundException When an element in the query can't be found.
+     * @throws FieldNotFoundException When an field in the query can't be found.
      */
     private ArrayList getOrderBys(String rootFilterField) throws ElementNotFoundException,FieldNotFoundException
     {

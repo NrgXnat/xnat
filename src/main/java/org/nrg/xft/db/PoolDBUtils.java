@@ -9,13 +9,13 @@
 
 
 package org.nrg.xft.db;
+
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.XftStringUtils;
@@ -226,43 +226,35 @@ public class PoolDBUtils {
 		return o;
 	}
 
-	private void sendBatchExec(List<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
-	    Date start = Calendar.getInstance().getTime();
-	    try {
-			_connection = getConnection();
-            try {
-            	_connection.setAutoCommit(false);
+	private void sendBatchExec(List<String> statements, String db, String userName, int resultSetType, int resultSetConcurrency) throws SQLException, Exception {
+		final Date start = Calendar.getInstance().getTime();
+		try (final Connection connection = getConnection()) {
+			try {
+				connection.setAutoCommit(false);
 
-				_statement = _connection.createStatement(resultSetType, resultSetConcurrency);
-            	_statement.clearBatch();
-            	for (String stmt:statements)
-            	{
-            	    _statement.addBatch(stmt);
-            	}
+				_statement = connection.createStatement(resultSetType, resultSetConcurrency);
+				_statement.clearBatch();
+				for (String stmt : statements) {
+					_statement.addBatch(stmt);
+				}
 
-            	_statement.executeBatch();
+				_statement.executeBatch();
 
-            	logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace("BATCH", "\n", " "));
+				logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace("BATCH", "\n", " "));
 
-            	_statement.clearBatch();
+				_statement.clearBatch();
 
-            	_connection.commit();
-            }catch (SQLException e) {
-                _connection.rollback();
-                logger.error(statements.toString());
-                logger.error(e.getMessage());
-               throw e.getNextException();
-			}finally{
-			    _connection.setAutoCommit(true);
+				connection.commit();
+			} catch (SQLException e) {
+				connection.rollback();
+				logger.error(statements.toString());
+				logger.error(e.getMessage());
+				throw e.getNextException();
+			} finally {
+				connection.setAutoCommit(true);
 			}
-        } catch (DBPoolException e) {
-            logger.error("",e);
-            throw e;
-        }finally{
-		    closeConnection(null);
 		}
 	}
-
 
 	public void sendBatch(DBItemCache cache,String db,String userName) throws SQLException, Exception
 	{
@@ -492,9 +484,13 @@ public class PoolDBUtils {
 	}
 
 	/**
-	 * @return
+	 * Gets a database connection from the configured data source.
+	 *
+	 * @return A connection to the database.
+	 *
+	 * @throws SQLException When an error occurs trying to get the database connection.
 	 */
-	private Connection getConnection() throws SQLException, DBPoolException {
+	private Connection getConnection() throws SQLException {
 		if (_connection == null) {
 			final DataSource dataSource = XDAT.getDataSource();
 			if (dataSource != null) {

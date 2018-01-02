@@ -27,9 +27,12 @@ public class ItemMerger {
 	}
 	
 	/**
-	 * Input is expected to represent different versions of the same data object (different timepoints)
-	 * @param items
-	 * @return
+	 * Merges the {@link FlattenedItemI flattened items} in the submitted list into a single flattened item. The input items are expected to represent different versions
+	 * of the same data object (different timepoints).
+	 *
+	 * @param items The items to be flattened.
+	 *
+	 * @return A single flattened item combining the items in the submitted list.
 	 */
 	private static FlattenedItemI mergeItems(List<FlattenedItemI> items){
 		FlattenedItemI primary=null;
@@ -129,8 +132,11 @@ public class ItemMerger {
 	}
 	
 	/**
-	 * @param items
-	 * @return
+	 * Groups a list of {@link FlattenedItemI flattened items} by similar items as determined by the {@link FlattenedItemA#isLike(FlattenedItemI, FlattenedItemI)} method.
+	 *
+	 * @param items The items to be grouped.
+	 *
+	 * @return A list of lists of flattened items, where each list is a group of similar flattened items.
 	 */
 	private static List<List<FlattenedItemI>> group(List<FlattenedItemI> items){
 		List<List<FlattenedItemI>> itemsByLike=new ArrayList<List<FlattenedItemI>>();

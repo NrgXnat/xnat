@@ -972,20 +972,27 @@ public class JavaFileGenerator {
     }
     
     /**
-     * @param e
+     * Formats the element's name as an auto-class name.
+     *
+     * @param element The element to be formatted.
+     *
      * @return Returns the class name for the generated class
      */
-    public String getClassName(GenericWrapperElement e)
+    public String getClassName(final GenericWrapperElement element)
     {
-        return XftStringUtils.FormatStringToClassName("Auto_" + e.getFormattedName());
+        return XftStringUtils.FormatStringToClassName("Auto_" + element.getFormattedName());
     }
+
     /**
-     * @param s
-     * @return
+     * Formats the field name as a method signature.
+     *
+     * @param fieldName The name to be formatted.
+     *
+     * @return Returns the method signature for the specified field name.
      */
-    private String formatFieldName(String s)
+    private String formatFieldName(final String fieldName)
     {
-        return XftStringUtils.FormatStringToMethodSignature(s);
+        return XftStringUtils.FormatStringToMethodSignature(fieldName);
     }
 
     /**

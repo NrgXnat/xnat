@@ -656,11 +656,35 @@ csrf:
             description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
         csrfEmailAlert:
             kind: panel.input.switchbox
-            name: csrfEmailAlert
+            name: csrfEmailAlert 
             label: CSRF Email Alert
             onText: Enabled
             offText: Disabled
             description: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
+
+cors:
+    kind: panel.form
+    name: cors
+    label: Cross-Origin Resource Sharing
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        enableCors:
+            kind: panel.input.switchbox
+            name: enableCors
+            label: Enable CORS?
+            onText: Enabled
+            offText: Disabled
+            description: <p>Should this site support Cross-Origin Resource Sharing?</p <p>The same-origin policy is a security policy enforced on client-side web apps (e.g., web browsers) to prevent interactions between resources from different origins.
+                         <p>While useful for preventing malicious behavior, this security measure also prevents useful and legitimate interactions between known origins. </p><p> The Cross Origin Resource Sharing (CORS) spec was developed by the World Wide Web Consortium (W3C) to get around this limitation.</p> 
+                         <p>XNAT supports this specification by allowing you to use CORS-compliant responses.</p>
+        corsAllowedOrigin:
+            kind: panel.input.text
+            name: corsAllowedOrigin
+            label: Allowed Origin
+            description: <p>You must specify the origin that you want to allow cross-domain requests from, for example, http://www.example.com. </p><p>You can also specify https to enable only secure origins.</p>
+            validation: allow-empty url onblur
 
 securityServices:
     kind: panel.form
@@ -1554,6 +1578,7 @@ adminPage:
                 ${userLoginsSessionControls}
                 ${passwords}
                 ${csrf}
+                ${cors}
                 ${securityServices}
         emailServer:
             kind: tab

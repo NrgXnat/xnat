@@ -58,7 +58,7 @@
            copyOnRead="false"
            copyOnWrite="false"
            clearOnFlush="true"
-           timeToLiveSeconds="30">
+           timeToLiveSeconds="3600">
         <persistence strategy="none"/>
     </cache>
 

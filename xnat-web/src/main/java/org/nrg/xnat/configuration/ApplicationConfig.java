@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.configuration;
 
-import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
@@ -29,8 +28,11 @@ import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.services.PETTracerUtils;
+import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.utils.XnatUserProvider;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
 import org.springframework.context.annotation.*;
@@ -53,6 +55,7 @@ import java.util.List;
                 "org.nrg.xnat.node", "org.nrg.xnat.task"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
+@EnableCaching
 public class ApplicationConfig {
     @Bean
     public ThemeService themeService() {
@@ -99,7 +102,7 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public PETTracerUtils petTracerUtils(final ConfigService configService) throws Exception {
+    public PETTracerUtils petTracerUtils(final ConfigService configService) {
         return new PETTracerUtils(configService);
     }
 
@@ -116,12 +119,12 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public XnatUserProvider primaryAdminUserProvider(final SiteConfigPreferences preferences) throws SiteConfigurationException {
+    public XnatUserProvider primaryAdminUserProvider(final SiteConfigPreferences preferences) {
         return new XnatUserProvider(preferences, "primaryAdminUsername");
     }
 
     @Bean
-    public XnatUserProvider receivedFileUserProvider(final SiteConfigPreferences preferences) throws SiteConfigurationException {
+    public XnatUserProvider receivedFileUserProvider(final SiteConfigPreferences preferences) {
         return new XnatUserProvider(preferences, "receivedFileUser");
     }
 

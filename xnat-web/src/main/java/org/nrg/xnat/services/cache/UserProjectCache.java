@@ -256,11 +256,11 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
      * @return The project object if the user can access it, null otherwise.
      */
     public XnatProjectdata get(final UserI user, final String idOrAlias) {
-        final String userId = user.getUsername();
-
         if (isCachedNonexistentProject(idOrAlias)) {
             return null;
         }
+
+        final String userId = user.getUsername();
 
         // Check that the project is readable by the user and, if so, return it.
         if (canRead(userId, idOrAlias)) {
@@ -283,29 +283,27 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
             return false;
         }
 
-        // Everything's writable for site admins.
-        if (_siteAdmins.contains(userId)) {
-            return true;
-        }
-
         // If they've tried to access a non-existent user more than once, we can just return false here.
         if (_nonexistentUsers.contains(userId)) {
             return false;
         }
 
-        // If they're not in the non-admin list, maybe they're an admin and we just don't have that cached?
+        // If the user is not in the user lists, try to retrieve and cache it.
         final XDATUser user;
-        if (!_nonAdmins.contains(userId)) {
+        final boolean  isSiteAdmin;
+        if (!_nonAdmins.contains(userId) && !_siteAdmins.contains(userId)) {
             try {
                 // Get the user...
                 user = new XDATUser(userId);
                 // If the user is an admin, add the user ID to the admin list and return true.
                 if (Roles.isSiteAdmin(user)) {
                     _siteAdmins.add(userId);
-                    return true;
+                    isSiteAdmin = true;
+                } else {
+                    // Not an admin but let's track that we've retrieved the user by adding it to the non-admin list.
+                    _nonAdmins.add(userId);
+                    isSiteAdmin = false;
                 }
-                // Not an admin but let's track that we've retrieved the user by adding it to the non-admin list.
-                _nonAdmins.add(userId);
             } catch (UserNotFoundException e) {
                 // User doesn't exist, so cache that and we can just return false if asked again later.
                 _nonexistentUsers.add(userId);
@@ -318,16 +316,26 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
         } else {
             // Set the user to null. It will only get initialized later in the initProjectCache() method if required.
             user = null;
+            isSiteAdmin = _siteAdmins.contains(userId);
         }
 
         try {
-            // User's not a site admin but does exist, so let's see if there's already a cache for the current project.
-            final String       projectId    = getCanonicalProjectId(idOrAlias, user, userId);
+            // Check for existing cache for the current project.
+            final String projectId = getCanonicalProjectId(idOrAlias, user, userId);
+            if (StringUtils.equals(NOT_A_PROJECT, projectId)) {
+                return false;
+            }
+
             final ProjectCache projectCache = getProjectCache(idOrAlias, user, userId);
 
             // If the project cache is null, the project doesn't exist (same as isCachedNonexistentProject() but it wasn't cached previously).
             if (projectCache == null) {
                 return false;
+            }
+
+            // We don't care about checking the user against the project if it's a site admin: they have access to everything.
+            if (isSiteAdmin) {
+                return true;
             }
 
             // If the user isn't already cached...

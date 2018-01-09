@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.6-SNAPSHOT</version>
+    <version>1.7.6-eventservice-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -51,8 +51,8 @@
         <application.name>${project.name}</application.name>
         <build.number>manual</build.number>
 
-        <java.source.version>1.7</java.source.version>
-        <java.target.version>1.7</java.target.version>
+        <java.source.version>1.8</java.source.version>
+        <java.target.version>1.8</java.target.version>
         <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
         <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 
@@ -66,17 +66,19 @@
 
         <xnat.version>1.7.5</xnat.version>
         <xnatdev.version>1.7.6-SNAPSHOT</xnatdev.version>
-        <xnat-web.version>${xnatdev.version}</xnat-web.version>
+        <xnatES.version>1.7.6-eventservice-SNAPSHOT</xnatES.version>
+        <xnat-web.version>${xnatES.version}</xnat-web.version>
+
         <xams.version>1.0-SNAPSHOT</xams.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
         <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
+        <xnat-data-models.version>${xnatES.version}</xnat-data-models.version>
         <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
-        <xdat.version>${xnatdev.version}</xdat.version>
+        <xdat.version>${xnatES.version}</xdat.version>
         <nrg.automation.version>${xnatdev.version}</nrg.automation.version>
         <nrg.config.version>${xnatdev.version}</nrg.config.version>
-        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
+        <nrg.framework.version>${xnatES.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
@@ -1826,6 +1828,11 @@
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-test</artifactId>
                 <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jayway.jsonpath</groupId>
+                <artifactId>json-path</artifactId>
+                <version>2.2.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

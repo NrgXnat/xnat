@@ -38,6 +38,8 @@
         </security:headers>
     </security:http>
     
+<!--                                Uncomment to enable CORS                             -->
+<!-- 
     <bean id="corsConfigurationSource" class="org.springframework.web.cors.UrlBasedCorsConfigurationSource">
         <property name="corsConfigurations">
             <map>
@@ -45,8 +47,7 @@
             </map>
          </property>
     </bean>
-<!--                                Uncomment to enable CORS                             -->
-<!-- 
+
     <bean id="xnatCorsConfiguration" class="org.springframework.web.cors.CorsConfiguration">
         <property name="allowedOrigins" value="http://sample.origin.com"/>
         <property name="allowCredentials" value="true"/>

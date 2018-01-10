@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
                 "org.nrg.xnat.services.investigators",
                 "org.nrg.xnat.services.system.impl.hibernate",
                 "org.nrg.xnat.services.validation",
-                "org.nrg.xnat.services.velocity.context"})
+                "org.nrg.xnat.services.velocity.context",
+                "org.nrg.xnat.services.mapping"})
 public class XnatServicesConfig {
 }

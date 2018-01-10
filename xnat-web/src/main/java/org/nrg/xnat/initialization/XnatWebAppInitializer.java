@@ -19,7 +19,6 @@ import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
-import org.nrg.xnat.restlet.filter.SimpleCORSFilter;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
@@ -57,8 +56,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         // Now initialize everything else.
         context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
         context.addFilter("updateExpirationCookie", UpdateExpirationCookie.class).addMappingForUrlPatterns(null, false, "/*");
-        context.addFilter("simpleCorsFilter", SimpleCORSFilter.class).addMappingForUrlPatterns(null, false, "/*");
-        
         
         context.addListener(XnatSessionEventPublisher.class);
         context.addListener(AxisHTTPSessionListener.class);

@@ -18,6 +18,7 @@
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
+    <version>1.7.5-performance-SNAPSHOT</version>
 
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>
@@ -157,6 +158,10 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
             <groupId>org.restlet</groupId>

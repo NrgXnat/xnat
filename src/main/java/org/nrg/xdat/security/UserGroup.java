@@ -11,24 +11,24 @@ package org.nrg.xdat.security;
 
 import com.google.common.base.Function;
 import com.google.common.collect.*;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.GroupFeatureService;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+@Slf4j
 public class UserGroup implements UserGroupI{
 	public UserGroup(XdatUsergroup gp) throws Exception{
 		id=gp.getId();
@@ -64,7 +64,7 @@ public class UserGroup implements UserGroupI{
             try {
                 init(getUserGroupImpl());
             } catch (Exception e) {
-                logger.error("",e);
+                log.error("", e);
             }
         }
         return accessManagers;
@@ -76,7 +76,7 @@ public class UserGroup implements UserGroupI{
 
     public XdatUsergroup getUserGroupImpl(){
     	if(xdatGroup==null){
-    		return XdatUsergroup.getXdatUsergroupsById(id, AdminUtils.getAdminUser(), true);
+    		return XdatUsergroup.getXdatUsergroupsById(id, Users.getAdminUser(), true);
     	}else{
     		return xdatGroup;
     	}
@@ -138,7 +138,7 @@ public class UserGroup implements UserGroupI{
                         _storedSearches.put(search.getId(), search);
                     }
                 } catch (Exception e) {
-                    logger.error("",e);
+                    log.error("", e);
                 }
 			}
 		}
@@ -163,7 +163,7 @@ public class UserGroup implements UserGroupI{
 			final String id  = search.getStringProperty("ID");
 			_storedSearches.put(id, search);
 		} catch (ElementNotFoundException | FieldNotFoundException e) {
-			logger.error("",e);
+			log.error("", e);
 		}
 	}
 
@@ -348,8 +348,6 @@ public class UserGroup implements UserGroupI{
 	private static String formatTypeAndField(final String type, final String field) {
 		return type + "/" + field;
 	}
-
-	private static final Logger logger = LoggerFactory.getLogger(UserGroup.class);
 
 	private String        id          = null;
 	private Integer       pk          = null;

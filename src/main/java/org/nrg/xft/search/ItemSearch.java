@@ -10,6 +10,8 @@
 
 package org.nrg.xft.search;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -29,11 +31,11 @@ import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.*;
 
+@Slf4j
 public class ItemSearch implements SearchI {
-	static org.apache.log4j.Logger logger = Logger.getLogger(ItemSearch.class);
-	private UserI user = null;
-	private GenericWrapperElement element = null;
-	private CriteriaCollection criteriaCollection = new CriteriaCollection("AND");
+	private UserI                  user               = null;
+	private GenericWrapperElement  element            = null;
+	private CriteriaCollection     criteriaCollection = new CriteriaCollection("AND");
 
 	private boolean rootItem = true;
 	private boolean extend = true;
@@ -358,47 +360,40 @@ public class ItemSearch implements SearchI {
         Exception ex = null;
 		for (List<IdentifierResults> rows:matches)
 		{
-			String ids="";
+			StringBuilder ids = new StringBuilder();
 		    query = "SELECT " + functionName + "(";
 		    int count =0;
 		    for (IdentifierResults ir:rows)
 		    {
 		        if (count++>0){
                     query+=", ";
-                    ids +=",";
+                    ids.append(",");
                 }
-                ids +=ir.value.toString();
+                ids.append(ir.value.toString());
 		        query+=ir.getParsedValue();
 		    }
-		    if (allowMultiples)
-		    {
-			    query+=",0,TRUE,TRUE," + this.isPreventLoop() +")";
-		    }else{
-			    query+=",0,FALSE,TRUE," + this.isPreventLoop() +")";
-		    }
-            String s = null;
-            if (allowMultiples && element.canBeRoot())
-            {
-                s=PoolDBUtils.RetrieveItemString(element.getFullXMLName(), ids, query, functionName, login);
-            }else{
-                long localTime = Calendar.getInstance().getTimeInMillis();
-                s =(String)PoolDBUtils.ReturnStatisticQuery(query,functionName,element.getDbName(),login);
-                //System.out.println((Calendar.getInstance().getTimeInMillis()-localTime) + "ms \tREALTIME:" + element.getFullXMLName() + ":" + ids);
-            }
-		    XFTItem item;
-            try {
-            	if(s!=null){
-                    item = XFTItem.PopulateItemFromFlatString(s,user,allowMultiples);
-                    item.removeEmptyItems();
-                    if(item.hasProperties()){
-                        items.add(item);
-                        loaded++;
-                    }
-            	}
-            } catch (IllegalAccessException e) {
-                logger.error("",e);
-                ex = e;
-            }
+			query += ",0,";
+			query += allowMultiples ? "TRUE" : "FALSE";
+			query += ",TRUE," + this.isPreventLoop() + ")";
+
+			final String flatString = allowMultiples && element.canBeRoot()
+									  ? PoolDBUtils.RetrieveItemString(element.getFullXMLName(), ids.toString(), query, functionName, login)
+									  : (String) PoolDBUtils.ReturnStatisticQuery(query, functionName, element.getDbName(), login);
+			XFTItem item;
+			try {
+				if (StringUtils.isNotBlank(flatString)) {
+					log.debug("Preparing to populate item from flat string: {}", flatString);
+					item = XFTItem.PopulateItemFromFlatString(flatString, user, allowMultiples);
+					item.removeEmptyItems();
+					if (item.hasProperties()) {
+						items.add(item);
+						loaded++;
+					}
+				}
+			} catch (IllegalAccessException e) {
+				log.error("", e);
+				ex = e;
+			}
 		}
 
         if (loaded==0){
@@ -568,9 +563,9 @@ public class ItemSearch implements SearchI {
 		ArrayList objects = new ArrayList();
 
 		if (!element.getName().endsWith("_meta_data"))
-		    logger.debug("ItemSearch (" + element.getName() +") TABLE ROWS : " + table.size());
+		    log.debug("ItemSearch (" + element.getName() + ") TABLE ROWS : " + table.size());
 
-		//logger.debug("BEGIN POPULATE ITEMS");
+		//log.debug("BEGIN POPULATE ITEMS");
 		table.resetRowCursor();
 
 		while (table.hasMoreRows())
@@ -604,24 +599,24 @@ public class ItemSearch implements SearchI {
 
 		items.addAll(objects);
 
-		//logger.debug("ItemSearch ITEMS : " + items.size());
-		//logger.debug("END POPULATE ITEMS");
+		//log.debug("ItemSearch ITEMS : " + items.size());
+		//log.debug("END POPULATE ITEMS");
 
-		//logger.debug("BEGIN EXTENSIONS");
+		//log.debug("BEGIN EXTENSIONS");
 		if (extend)
 		    items.extendAll(allowMultiples);
-		//logger.debug("END EXTENSIONS");
+		//log.debug("END EXTENSIONS");
 
 
         items.finalizeLoading();
 
-		//logger.debug("BEGIN SECURITY CHECK");
+		//log.debug("BEGIN SECURITY CHECK");
 		if (this.user !=null)
 		    items.secureAllForRead(user);
-		//logger.debug("END SECURITY CHECK");
+		//log.debug("END SECURITY CHECK");
 
 		if (!element.getName().endsWith("_meta_data"))
-		    logger.debug("ItemSearch ITEMS : " + items.size());
+		    log.debug("ItemSearch ITEMS : " + items.size());
 
 		return items;
 	}
@@ -713,7 +708,7 @@ public class ItemSearch implements SearchI {
 		try {
             this.element = GenericWrapperElement.GetElement(elementName);
         } catch (XFTInitException e) {
-            logger.error("",e);
+            log.error("", e);
         }
 	}
 	/**
@@ -824,7 +819,7 @@ public class ItemSearch implements SearchI {
 		try {
 	    return GetItems(clause.getElementName(),cc,user,preLoad);
 		} catch (IllegalAccessException e) {
-			logger.warn("Got an illegal access exception: \"" + e.getMessage() + "\". Returning empty item collection.");
+			log.warn("Got an illegal access exception: \"" + e.getMessage() + "\". Returning empty item collection.");
 			return new ItemCollection();
 		}
 	}

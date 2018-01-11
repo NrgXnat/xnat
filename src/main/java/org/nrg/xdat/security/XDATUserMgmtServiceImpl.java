@@ -10,6 +10,7 @@
 package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
@@ -36,8 +37,6 @@ import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
@@ -48,11 +47,8 @@ import java.util.Objects;
 
 @SuppressWarnings("unused")
 @Service
+@Slf4j
 public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
-    private UserI _guest;
-    private String _guestName;
-    private Integer _guestId;
-
     @Override
     public UserI createUser() {
         return new XDATUser();
@@ -86,11 +82,11 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
             try {
                 _guest = getUser(XDAT.getSiteConfigurationProperty("security.user.guestName", "guest"));
             } catch (ConfigServiceException e) {
-                logger.error("", e);
+                log.error("", e);
                 _guest = getUser("guest");
             }
             if (_guest == null) {
-                logger.error("Unable to create the guest user");
+                log.error("Unable to create the guest user");
             } else {
                 _guestId = _guest.getID();
                 _guestName = _guest.getLogin();
@@ -123,7 +119,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     }
 
     @Override
-    public UserI createUser(Map<String, ?> properties) throws UserFieldMappingException, UserInitException {
+    public UserI createUser(Map<String, ?> properties) throws UserFieldMappingException {
         try {
             PopulateItem populator = new PopulateItem(properties, null, org.nrg.xft.XFT.PREFIX + ":user", true);
             ItemI        found     = populator.getItem();
@@ -160,7 +156,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
             if (id.equals(user.getLogin())) {
                 //this was a new user or didn't include the user's id.
                 //before we save the workflow entry, we should replace the login with the ID.
-                Integer userId = Users.getUserid(user.getLogin());
+                Integer userId = Users.getUserId(user.getLogin());
                 if (userId != null) {
                     wrk.setId(user.getID().toString());
                 } else {
@@ -290,5 +286,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
         return ((XDATUser) user).login(credentials.password);
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(XDATUserMgmtServiceImpl.class);
+    private UserI _guest;
+    private String _guestName;
+    private Integer _guestId;
 }

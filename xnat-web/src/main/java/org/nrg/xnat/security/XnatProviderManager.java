@@ -352,7 +352,7 @@ public class XnatProviderManager extends ProviderManager {
                 }
 
                 if (StringUtils.isNotEmpty(ua.getXdatUsername())) {
-                    Integer uid = Users.getUserid(ua.getXdatUsername());
+                    Integer uid = Users.getUserId(ua.getXdatUsername());
                     if (uid != null) {
                         try {
                             if (ua.getFailedLoginAttempts().equals(XDAT.getSiteConfigPreferences().getMaxFailedLogins())) {

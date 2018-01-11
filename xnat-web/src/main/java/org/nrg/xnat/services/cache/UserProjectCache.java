@@ -230,6 +230,7 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
      *
      * @return Returns true if the user can write to the specified project or false otherwise.
      */
+    @SuppressWarnings("unused")
     public boolean canWrite(final String userId, final String idOrAlias) {
         return hasAccess(userId, idOrAlias, Edit);
     }

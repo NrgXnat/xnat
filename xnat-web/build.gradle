@@ -11,7 +11,8 @@ import org.gradle.internal.jvm.Jvm
 
 buildscript {
     ext {
-        vXnat = '1.7.5-SNAPSHOT'
+        vXnatDev = "1.7.5-performance-SNAPSHOT"
+        vXnat = "1.7.5-SNAPSHOT"
     }
     repositories {
         mavenLocal()
@@ -39,7 +40,7 @@ buildscript {
 }
 
 group "org.nrg.xnat"
-version = vXnat
+version = vXnatDev
 
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'io.franzbecker.gradle-lombok'
@@ -194,7 +195,7 @@ dependencies {
     implementation("org.nrg.xnat:xnat-data-models") {
         transitive = false
     }
-    implementation "org.nrg.xdat:core"
+    implementation "org.nrg.xdat:core:${vXnatDev}"
     implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"

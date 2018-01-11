@@ -10,14 +10,13 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.nrg.xnat.utils.XnatUserProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class InitializedHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
     @Autowired
     public InitializedHandlerMethod(final SiteConfigPreferences preferences, final XnatUserProvider primaryAdminUserProvider) {
@@ -85,7 +85,7 @@ public class InitializedHandlerMethod extends AbstractSiteConfigPreferenceHandle
         buffer.append(" * siteUrl: ").append(siteUrl).append(System.lineSeparator());
         buffer.append(" * userRegistration: ").append(userRegistration).append(System.lineSeparator());
 
-        _log.info(buffer.toString());
+        log.info(buffer.toString());
 
         // In the case where the application hasn't yet been initialized, this operation should mean that the system is
         // being initialized from the set-up page. In that case, we need to propagate a few properties to the arc-spec
@@ -96,8 +96,6 @@ public class InitializedHandlerMethod extends AbstractSiteConfigPreferenceHandle
             throw new InitializationException(e);
         }
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(InitializedHandlerMethod.class);
 
     private static final String       INITIALIZED = "initialized";
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList(INITIALIZED));

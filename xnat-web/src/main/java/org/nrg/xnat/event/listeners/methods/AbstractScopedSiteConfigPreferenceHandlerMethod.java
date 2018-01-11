@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import org.nrg.xnat.utils.XnatUserProvider;
+import org.nrg.xdat.security.user.XnatUserProvider;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,10 +23,6 @@ public abstract class AbstractScopedSiteConfigPreferenceHandlerMethod extends Ab
 
     protected AbstractScopedSiteConfigPreferenceHandlerMethod(final List<String> preferences) {
         this(null, preferences);
-    }
-
-    protected AbstractScopedSiteConfigPreferenceHandlerMethod(final XnatUserProvider userProvider, final String... preferences) {
-        this(userProvider, Arrays.asList(preferences));
     }
 
     protected AbstractScopedSiteConfigPreferenceHandlerMethod(final XnatUserProvider userProvider, final List<String> preferences) {

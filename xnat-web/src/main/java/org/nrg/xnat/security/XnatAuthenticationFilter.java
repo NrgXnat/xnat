@@ -10,9 +10,8 @@
 package org.nrg.xnat.security;
 
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -41,6 +40,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
 import java.util.Map;
 
+@Slf4j
 public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     @Autowired
     public void setAuthenticationManager(final AuthenticationManager authenticationManager) {
@@ -89,11 +89,9 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
                         username = token.substring(0, position);
                         password = token.substring(position + 1);
                     }
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Basic Authentication Authorization header found for user '" + username + "'");
-                    }
+                    log.debug("Basic Authentication Authorization header found for user '{}'", username);
                 } catch (UnsupportedEncodingException exception) {
-                    _log.error("Encoding exception on authentication attempt", exception);
+                    log.error("Encoding exception on authentication attempt", exception);
                 }
             }
         }
@@ -122,14 +120,14 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
             Authentication auth = getAuthenticationManager().authenticate(authRequest);
 
             //Fixed XNAT-4409 by adding a check for a par parameter on login. If a PAR is present and valid, then grant the user that just logged in the appropriate project permissions.
-            if(StringUtils.isNotBlank(request.getParameter("par"))){
-                String parId = request.getParameter("par");
+            if (StringUtils.isNotBlank(request.getParameter("par"))) {
+                final String parId = request.getParameter("par");
                 request.getSession().setAttribute("par", parId);
-                ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parId, null);
+                final ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parId, null);
                 if (par.getApproved() != null || par.getApprovalDate() != null) {
-                    logger.debug("PAR not approved or already accepted: " + par.getGuid());
+                    log.warn("User {} tried to access a PAR that is not approved or has already been accepted: {}", username, par.getGuid());
                 } else {
-                    XDATUser user = new XDATUser(username);
+                    final XDATUser user = new XDATUser(username);
                     par.process(user, true, EventUtils.TYPE.WEB_FORM, "", "");
                 }
             }
@@ -139,30 +137,30 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
             logFailedAttempt(username, request);
             throw e;
         } catch (UserNotFoundException e) {
-            _log.error("",e);
+            log.error("Didn't find a user with the username " + username, e);
         } catch (UserInitException e) {
-            _log.error("",e);
+            log.error("An error occurred trying to access the user database", e);
         } catch (Exception e) {
-            _log.error("",e);
+            log.error("An unknown error occurred.", e);
         }
         return null;
     }
 
-    public static void logFailedAttempt(String username, HttpServletRequest req) {
+    public static void logFailedAttempt(final String username, final HttpServletRequest request) {
         if (!StringUtils.isBlank(username)) {
             final Integer uid = retrieveUserId(username);
             if (uid != null) {
                 try {
-                    XFTItem item = XFTItem.NewItem("xdat:user_login", null);
+                    final XFTItem item = XFTItem.NewItem("xdat:user_login", null);
                     item.setProperty("xdat:user_login.user_xdat_user_id", uid);
-                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(req));
+                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
                     item.setProperty("xdat:user_login.login_date", Calendar.getInstance(java.util.TimeZone.getDefault()).getTime());
                     SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
                 } catch (Exception exception) {
-                    _log.error(exception);
+                    log.error("An exception occurred trying to log a failed login attempt for the user " + username, exception);
                 }
             }
-            AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(req), "Authentication", "FAILED");
+            AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "FAILED");
         }
     }
 
@@ -176,14 +174,13 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
                 return checked.get(username);
             }
 
-            final Integer i = Users.getUserid(username);
+            final Integer i = Users.getUserId(username);
             checked.put(username, i);
 
             return i;
         }
     }
 
-    private static final Log                  _log    = LogFactory.getLog(XnatAuthenticationFilter.class);
     private static final Map<String, Integer> checked = Maps.newHashMap();
 
     private XnatProviderManager _providerManager;

@@ -10,11 +10,10 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.dicomtools.filters.*;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xnat.utils.XnatUserProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class SeriesImportFilterHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
     @Autowired
     public SeriesImportFilterHandlerMethod(final SiteConfigPreferences preferences, final DicomFilterService dicomFilterService, final XnatUserProvider primaryAdminUserProvider) {
@@ -67,11 +67,10 @@ public class SeriesImportFilterHandlerMethod extends AbstractSiteConfigPreferenc
                 _dicomFilterService.commit(seriesImportFilter, getAdminUsername(), "Updated site-wide series import filter from administrator UI.");
             }
         } catch (Exception e) {
-            _log.error("Failed to update Series Import Filter.", e);
+            log.error("Failed to update Series Import Filter.", e);
         }
     }
 
-    private static final Logger       _log        = LoggerFactory.getLogger(SeriesImportFilterHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("enableSitewideSeriesImportFilter", "sitewideSeriesImportFilterMode", "sitewideSeriesImportFilter"));
 
     private final SiteConfigPreferences _preferences;

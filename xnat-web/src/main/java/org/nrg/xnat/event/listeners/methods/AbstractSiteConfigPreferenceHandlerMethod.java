@@ -11,8 +11,8 @@ package org.nrg.xnat.event.listeners.methods;
 
 import org.nrg.prefs.events.AbstractPreferenceHandlerMethod;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.utils.XnatUserProvider;
 
 import java.util.Collections;
 import java.util.List;

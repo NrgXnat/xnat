@@ -10,11 +10,10 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.helpers.merge.AnonUtils;
-import org.nrg.xnat.utils.XnatUserProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
     @Autowired
     public AnonymizationHandlerMethod(final SiteConfigPreferences preferences, final XnatUserProvider primaryAdminUserProvider, final AnonUtils anonUtils) {
@@ -55,7 +55,7 @@ public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHand
         try {
             _anonUtils.setSiteWideScript(getAdminUsername(), _preferences.getSitewideAnonymizationScript());
         } catch (Exception e) {
-            _log.error("Failed to set sitewide anon script.", e);
+            log.error("Failed to set sitewide anon script.", e);
         }
         try {
             if (_preferences.getEnableSitewideAnonymizationScript()) {
@@ -64,11 +64,10 @@ public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHand
                 _anonUtils.disableSiteWide(getAdminUsername());
             }
         } catch (Exception e) {
-            _log.error("Failed to enable/disable sitewide anon script.", e);
+            log.error("Failed to enable/disable sitewide anon script.", e);
         }
     }
 
-    private static final Logger       _log        = LoggerFactory.getLogger(AnonymizationHandlerMethod.class);
     private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("enableSitewideAnonymizationScript", "sitewideAnonymizationScript"));
 
     private final SiteConfigPreferences _preferences;

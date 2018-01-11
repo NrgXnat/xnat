@@ -20,8 +20,8 @@ public class ScanArchiveEvent extends CombinedEventServiceEvent<ScanArchiveEvent
 
     public ScanArchiveEvent(){};
 
-    public ScanArchiveEvent(final XnatImagescandataI payload, final Integer eventUserId) {
-        super(payload, eventUserId);
+    public ScanArchiveEvent(final XnatImagescandataI payload, final String eventUser) {
+        super(payload, eventUser);
     }
 
     @Override

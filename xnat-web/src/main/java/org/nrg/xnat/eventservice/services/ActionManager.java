@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.services;
 
+import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
@@ -24,5 +25,6 @@ public interface ActionManager {
 
     boolean validateAction(Action action, UserI actionUser);
 
+    PersistentWorkflowI generateWorkflowEntryIfAppropriate(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user);
     void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user);
 }

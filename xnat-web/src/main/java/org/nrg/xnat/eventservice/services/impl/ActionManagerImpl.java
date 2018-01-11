@@ -2,6 +2,10 @@ package org.nrg.xnat.eventservice.services.impl;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import org.nrg.xdat.base.BaseElement;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
@@ -10,6 +14,7 @@ import org.nrg.xnat.eventservice.services.ActionManager;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,6 +139,39 @@ public class ActionManagerImpl implements ActionManager {
         return false;
     }
 
+
+    //PersistentWorkflowI workflow = WorkflowUtils.getOrCreateWorkflowData(someInt, user, xftItem, EventUtils.newEventInstance());
+    //EventMetaI event = workflow.buildEvent();
+    //try {
+    //    WorkflowUtils.setStep(workflow, "1");
+    //    WorkflowUtils.setStep(workflow, "2");
+    //    WorkflowUtils.setStep(workflow, "3");
+    //    WorkflowUtils.complete(workflow, event);
+    //} catch (Exception e) {
+    //    WorkflowUtils.fail(workflow, event);
+    //}
+    @Override
+    public PersistentWorkflowI generateWorkflowEntryIfAppropriate(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user) {
+        if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem()instanceof XFTItem) {
+            XFTItem eventXftItem = ((BaseElement)esEvent.getObject()).getItem();
+            log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.getName() + ".");
+            try {
+                final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem,
+                        EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
+                                subscription.getName(), "Event Service Action Called", subscription.getActionProvider()));
+                WorkflowUtils.save(workflow, workflow.buildEvent());
+                log.debug("Created workflow " + workflow.getId());
+                return workflow;
+            }catch (Exception e){
+                log.error("Failed to create workflow entry for " + esEvent.getId() + "\n" + e.getMessage());
+            }
+        }
+        else {
+            log.debug("Skipping workflow entry creation. Not available for non-XFTItem: " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.getName() + ".");
+        }
+        return null;
+    }
+
     private EventServiceActionProvider getActionProviderByKey(String actionKey) {
         String providerId;
         Iterable<String> key = Splitter.on(':')
@@ -150,12 +188,30 @@ public class ActionManagerImpl implements ActionManager {
 
     @Override
     public void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user) {
+        PersistentWorkflowI workflow = generateWorkflowEntryIfAppropriate(subscription, esEvent, user);
         EventServiceActionProvider provider = getActionProviderByKey(subscription.getActionKey());
         if(provider!= null) {
             log.debug("Passing event to Action Provider: " + provider.getName());
             provider.processEvent(esEvent, subscription, user);
+            if(workflow !=null){
+                try {
+                    WorkflowUtils.complete(workflow, workflow.buildEvent());
+                    log.debug("Workflow {} complete.", workflow.getId());
+                } catch (Exception e) {
+                    log.error("Workflow completion exception for workflow:" + workflow.getId());
+                    log.error(e.getMessage());
+                }
+            }
         } else {
-            log.error("Could not find Action Provider for ActionKey: " + subscription.getActionKey());
+            String errorMessage = "Could not find Action Provider for ActionKey: " + subscription.getActionKey();
+            workflow.setStatus(errorMessage);
+            try {
+                WorkflowUtils.fail(workflow, workflow.buildEvent());
+            } catch (Exception e) {
+                log.error("Workflow completion exception for workflow:" + workflow.getId());
+                log.error(e.getMessage());
+            }
+            log.error(errorMessage);
         }
     }
 

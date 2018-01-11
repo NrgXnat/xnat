@@ -22,8 +22,8 @@ public class TimerEvent extends CombinedEventServiceEvent<TimerEvent, Date>{
 
     public TimerEvent(){ };
 
-    public TimerEvent(final Date payload, final Integer userId) {
-        super(payload, userId);
+    public TimerEvent(final Date payload, final String eventUser) {
+        super(payload, eventUser);
     }
 
     @Override

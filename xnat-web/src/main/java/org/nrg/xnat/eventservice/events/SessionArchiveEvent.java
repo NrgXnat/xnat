@@ -18,8 +18,8 @@ public class SessionArchiveEvent extends CombinedEventServiceEvent<SessionArchiv
 
     public SessionArchiveEvent(){};
 
-    public SessionArchiveEvent(XnatImagesessiondata payload, Integer eventUserId) {
-        super(payload, eventUserId);
+    public SessionArchiveEvent(XnatImagesessiondata payload, String eventUser) {
+        super(payload, eventUser);
     }
 
 

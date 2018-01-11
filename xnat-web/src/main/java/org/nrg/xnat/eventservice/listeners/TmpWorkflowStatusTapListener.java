@@ -51,10 +51,10 @@ public class TmpWorkflowStatusTapListener implements Consumer<Event<WorkflowStat
                 final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(wfsEvent.getEntityId(), user, true);
                 String projectId = session.getProject();
                 // Trigger Session Archived Lifecycle event from here until we figure out where to launch the event.
-                eventService.triggerEvent(new SessionArchiveEvent(session, user.getID()), projectId);
+                eventService.triggerEvent(new SessionArchiveEvent(session, user.getLogin()), projectId);
                 // Firing ScanArchiveEvent for each contained scan
                 for (final XnatImagescandataI scan : session.getScans_scan()) {
-                    eventService.triggerEvent(new ScanArchiveEvent(scan, user.getID()), projectId);
+                    eventService.triggerEvent(new ScanArchiveEvent(scan, user.getLogin()), projectId);
                 }
 
 
@@ -85,7 +85,7 @@ public class TmpWorkflowStatusTapListener implements Consumer<Event<WorkflowStat
                 final XnatProjectdata projectData = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
 
                 // Trigger Session Archived Lifecycle event from here until we figure out where to launch the event.
-                eventService.triggerEvent(new ProjectCreatedEvent(projectData, user.getID()), projectId);
+                eventService.triggerEvent(new ProjectCreatedEvent(projectData, user.getLogin()), projectId);
             } catch (UserNotFoundException e) {
                 log.warn("The specified user was not found: {}", wfsEvent.getUserId());
             } catch (UserInitException e) {
@@ -100,7 +100,7 @@ public class TmpWorkflowStatusTapListener implements Consumer<Event<WorkflowStat
                 String projectId = subjectdata.getFirstProject().getId();
 
                 // Trigger Session Archived Lifecycle event from here until we figure out where to launch the event.
-                eventService.triggerEvent(new SubjectCreatedEvent(subjectdata, user.getID()), projectId);
+                eventService.triggerEvent(new SubjectCreatedEvent(subjectdata, user.getLogin()), projectId);
 
             } catch (UserNotFoundException e) {
                 log.warn("The specified user was not found: {}", wfsEvent.getUserId());

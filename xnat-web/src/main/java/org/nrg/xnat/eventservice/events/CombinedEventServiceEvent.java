@@ -20,7 +20,7 @@ import java.util.UUID;
 public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent, EventObjectT>
         implements EventServiceEvent<EventObjectT>, EventServiceListener<EventT> {
 
-    Integer eventUserId;
+    String eventUser;
     EventObjectT object;
     UUID listenerId = UUID.randomUUID();
 
@@ -29,9 +29,9 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
 
     public CombinedEventServiceEvent() {};
 
-    public CombinedEventServiceEvent(final EventObjectT object, final Integer eventUserId) {
+    public CombinedEventServiceEvent(final EventObjectT object, final String eventUser) {
         this.object = object;
-        this.eventUserId = eventUserId;
+        this.eventUser = eventUser;
     }
 
     @Override
@@ -57,8 +57,8 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     }
 
     @Override
-    public Integer getUser() {
-        return eventUserId;
+    public String getUser() {
+        return eventUser;
     }
 
     public void setEventService(EventService eventService){

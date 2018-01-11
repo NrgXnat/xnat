@@ -34,7 +34,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
     private Map<String,String> attributes;
     private EventServiceFilterEntity eventServiceFilterEntity;
     private Boolean actAsEventUser;
-    private Integer ownerId;
+    private String subscriptionOwner;
     private Integer counter;
 
 
@@ -51,11 +51,12 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
                           .add("actionKey", actionKey)
                           .add("attributes", attributes)
                           .add("eventServiceFilterEntity", eventServiceFilterEntity)
+                          .add("subscriptionOwner", subscriptionOwner)
                           .add("actAsEventUser", actAsEventUser).toString();
 
     }
 
-    public SubscriptionEntity(String name, java.lang.Boolean active, String listenerRegistrationKey, String eventType, String customListenerId, String actionKey, Map<String, String> attributes, EventServiceFilterEntity eventServiceFilterEntity, Boolean actAsEventUser) {
+    public SubscriptionEntity(String name, java.lang.Boolean active, String listenerRegistrationKey, String eventType, String customListenerId, String actionKey, Map<String, String> attributes, EventServiceFilterEntity eventServiceFilterEntity, Boolean actAsEventUser, String subscriptionOwner) {
         this.name = name;
         this.active = active;
         this.listenerRegistrationKey = listenerRegistrationKey;
@@ -65,6 +66,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         this.attributes = attributes;
         this.eventServiceFilterEntity = eventServiceFilterEntity;
         this.actAsEventUser = actAsEventUser;
+        this.subscriptionOwner = subscriptionOwner;
     }
 
     @Transactional
@@ -79,7 +81,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         this.attributes = subscription.attributes() == null ? this.attributes : subscription.attributes();
         this.eventServiceFilterEntity = subscription.eventFilter() == null ? this.eventServiceFilterEntity : EventServiceFilterEntity.fromPojo(subscription.eventFilter());
         this.actAsEventUser = subscription.actAsEventUser() == null ? this.actAsEventUser : subscription.actAsEventUser();
-        this.ownerId = subscription.subscriptionOwner() == null ? this.ownerId : subscription.subscriptionOwner();
+        this.subscriptionOwner = subscription.subscriptionOwner() == null ? this.subscriptionOwner : subscription.subscriptionOwner();
         return this;
     }
 
@@ -157,7 +159,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         template.attributes = subscription.attributes() != null ? subscription.attributes() : template.attributes;
         template.eventServiceFilterEntity = subscription.eventFilter() != null ? EventServiceFilterEntity.fromPojo(subscription.eventFilter()) : template.eventServiceFilterEntity;
         template.actAsEventUser = subscription.actAsEventUser() != null ? subscription.actAsEventUser() : template.actAsEventUser;
-        template.ownerId = subscription.subscriptionOwner() != null ? subscription.subscriptionOwner() : template.ownerId;
+        template.subscriptionOwner = subscription.subscriptionOwner() != null ? subscription.subscriptionOwner() : template.subscriptionOwner;
         template.counter = subscription.useCounter() != null ? subscription.useCounter() : template.counter;
         return template;
     }
@@ -175,7 +177,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
                            .attributes(this.attributes)
                            .eventFilter(this.eventServiceFilterEntity != null ? this.eventServiceFilterEntity.toPojo() : null)
                            .actAsEventUser(this.actAsEventUser)
-                           .subscriptionOwner(this.ownerId)
+                           .subscriptionOwner(this.subscriptionOwner)
                            .useCounter(this.counter)
                            .build();
     }
@@ -216,9 +218,9 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         this.actionKey = actionKey;
     }
 
-    public Integer getOwnerId() { return ownerId; }
+    public String getSubscriptionOwner() { return subscriptionOwner; }
 
-    public void setOwnerId(Integer ownerId) { this.ownerId = ownerId; }
+    public void setSubscriptionOwner(String subscriptionOwner) { this.subscriptionOwner = subscriptionOwner; }
 
     public Integer getCounter() { return counter; }
 

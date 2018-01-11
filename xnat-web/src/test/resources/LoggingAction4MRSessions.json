@@ -1,0 +1,14 @@
+{
+  "name": "Logging action for MR Sessions",
+  "active": true,
+  "event-id": "org.nrg.xnat.eventservice.events.SessionArchiveEvent",
+  "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
+  "event-filter": {
+    "name": "Project ABC123 MR Sessions",
+    "project-ids": [
+      "ABC123"
+    ],
+    "json-path-filter": "$[?(@.modality == \"MR\")]"
+  },
+  "act-as-event-user": false
+}

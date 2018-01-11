@@ -13,8 +13,8 @@ public class ProjectCreatedEvent extends CombinedEventServiceEvent<ProjectCreate
 
     public ProjectCreatedEvent(){};
 
-    public ProjectCreatedEvent(final XnatProjectdata payload, final Integer userId) {
-        super(payload, userId);
+    public ProjectCreatedEvent(final XnatProjectdata payload, final String eventUser) {
+        super(payload, eventUser);
     }
 
     @Override

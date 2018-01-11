@@ -2,7 +2,6 @@ package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagesessiondataI;
-import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
@@ -14,8 +13,8 @@ public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEve
 
     public TestCombinedEvent(){};
 
-    public TestCombinedEvent(final XnatImagesessiondataI payload, final UserI user) {
-        super(payload, user.getID());
+    public TestCombinedEvent(final XnatImagesessiondataI payload, final String eventUser) {
+        super(payload, eventUser);
     }
 
     @Override

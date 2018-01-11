@@ -16,8 +16,8 @@ public class SubjectCreatedEvent extends CombinedEventServiceEvent<SubjectCreate
 
     public SubjectCreatedEvent(){};
 
-    public SubjectCreatedEvent(XnatSubjectdata payload, Integer eventUserId) {
-        super(payload, eventUserId);
+    public SubjectCreatedEvent(XnatSubjectdata payload, String eventUser) {
+        super(payload, eventUser);
     }
 
 

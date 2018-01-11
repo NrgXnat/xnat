@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.services.ContextService;
@@ -36,12 +37,11 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.registry.Registration;
-import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
-import reactor.fn.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.persistence.EntityNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static reactor.bus.selector.Selectors.R;
@@ -87,39 +87,55 @@ public class EventSubscriptionEntityServiceImpl
         try {
             actionUser = userManagementService.getUser(subscription.subscriptionOwner());
         } catch (UserNotFoundException|UserInitException e) {
-            log.error("Could not load Subscription Owner for userID: " + subscription.subscriptionOwner() != null ? Integer.toString(subscription.subscriptionOwner()) : "null" + "\n" + e.getMessage());
-            throw new SubscriptionValidationException("Could not load Subscription Owner for userID: " + subscription.subscriptionOwner() != null ? Integer.toString(subscription.subscriptionOwner()) : "null" + "\n" + e.getMessage());
+            log.error("Could not load Subscription Owner for userID: " + subscription.subscriptionOwner() != null ? subscription.subscriptionOwner() : "null" + "\n" + e.getMessage());
+            throw new SubscriptionValidationException("Could not load Subscription Owner for userID: " + subscription.subscriptionOwner() != null ? subscription.subscriptionOwner() : "null" + "\n" + e.getMessage());
         }
         Class<?> clazz;
         try {
             clazz = Class.forName(subscription.eventId());
             if (clazz == null || !EventServiceEvent.class.isAssignableFrom(clazz)) {
-                log.error("Event class does not have a default listener: " + subscription.eventId() != null ? subscription.eventId() : "unknown");
-                throw new SubscriptionValidationException("Event class does not have a default listener: " + subscription.eventId() != null ? subscription.eventId() : "unknown");
+                String message = "Event class cannot be found based on Event-Id: " + subscription.eventId() != null ? subscription.eventId() : "unknown";
+                log.error(message);
+                throw new SubscriptionValidationException(message);
             }
         } catch (NoSuchBeanDefinitionException|ClassNotFoundException e) {
             log.error("Could not load Event class: " + subscription.eventId() != null ? subscription.eventId() : "unknown" + "\n" + e.getMessage());
             throw new SubscriptionValidationException("Could not load Event class: " + subscription.eventId() != null ? subscription.eventId() : "unknown");
         }
+        String listenerErrorMessage = "";
         try {
-            // Check that event class has a default listener loaded into the application context
-            if(!EventServiceListener.class.isAssignableFrom(clazz) || contextService.getBean(clazz) == null){
-                log.error("Could not load Bean of type " + subscription.eventId() != null ? subscription.eventId() : "unknown" + ", from application context.");
-                throw new NoSuchBeanDefinitionException("Could not load Bean of type " + subscription.eventId() != null ? subscription.eventId() : "unknown" + ", from application context.");
+            // Check that event class has a valid default or custom listener
+            Class<?> listenerClazz = null;
+            if(EventServiceListener.class.isAssignableFrom(clazz)) {
+                listenerClazz = clazz;
+            } else if(subscription.customListenerId() == null){
+                listenerErrorMessage = "Event class is not a listener and no custom listener found.";
+            } else {
+                try {
+                    listenerClazz = Class.forName(subscription.customListenerId());
+                } catch (ClassNotFoundException e) {
+                    listenerErrorMessage = "Could not load custom listerner class: " + subscription.customListenerId();
+                    throw new SubscriptionValidationException(listenerErrorMessage);
+                }
             }
-            // Check that Action is valid and service is accessible
-            Action action = actionManager.getActionByKey(subscription.actionKey(), actionUser);
-            if(action == null){
-                log.error("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
-                throw new SubscriptionValidationException("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
-            }
-            if (! actionManager.validateAction(action, actionUser)) {
-                log.error("Could not validate Action Provider Class " + (subscription.actionKey() != null ? subscription.actionKey() : "unknown"));
-                throw new SubscriptionValidationException("Could not validate Action Provider Class " + subscription.actionKey() != null ? subscription.actionKey() : "unknown");
+            if(listenerClazz == null || !EventServiceListener.class.isAssignableFrom(listenerClazz) || contextService.getBean(listenerClazz) == null){
+                listenerErrorMessage = "Could not find bean of type EventServiceListener from: " + listenerClazz != null ? listenerClazz.getName() : "unknown";
+                throw new NoSuchBeanDefinitionException(listenerErrorMessage);
             }
         } catch (NoSuchBeanDefinitionException e) {
-            log.error("Could not load default Listener/Consumer: " + subscription.eventId() != null ? subscription.eventId() : "unknown" + ", from application context. \n" + e.getMessage());
-            throw new SubscriptionValidationException("Could not load default Listener/Consumer: " + subscription.eventId() != null ? subscription.eventId() : "unknown" + ", from application context. \n" + e.getMessage());
+            log.error(listenerErrorMessage + "\n" + e.getMessage());
+            throw new SubscriptionValidationException(listenerErrorMessage + "\n" + e.getMessage());
+        }
+
+        // Check that Action is valid and service is accessible
+        Action action = actionManager.getActionByKey(subscription.actionKey(), actionUser);
+        if(action == null){
+            log.error("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
+            throw new SubscriptionValidationException("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
+        }
+        if (! actionManager.validateAction(action, actionUser)) {
+            log.error("Could not validate Action Provider Class " + (subscription.actionKey() != null ? subscription.actionKey() : "unknown"));
+            throw new SubscriptionValidationException("Could not validate Action Provider Class " + subscription.actionKey() != null ? subscription.actionKey() : "unknown");
         }
         return subscription;
     }
@@ -258,8 +274,16 @@ public class EventSubscriptionEntityServiceImpl
 
     @Override
     public List<Subscription> getAllSubscriptions() {
-        Registry<Object, Consumer<? extends Event<?>>> consumerRegistry = eventBus.getConsumerRegistry();
-        return SubscriptionEntity.toPojo(super.getAll());
+        List<Subscription> subscriptions = new ArrayList<>();
+        //Registry<Object, Consumer<? extends Event<?>>> consumerRegistry = eventBus.getConsumerRegistry();
+        for (SubscriptionEntity se : super.getAll()) {
+            try {
+                subscriptions.add(getSubscription(se.getId()));
+            } catch (NotFoundException e) {
+                log.error("Could not find subscription for ID: " + Long.toString(se.getId()) + "\n" + e.getMessage());
+            }
+        }
+        return subscriptions;
     }
 
     @Override
@@ -270,7 +294,13 @@ public class EventSubscriptionEntityServiceImpl
 
     @Override
     public Subscription getSubscription(Long id) throws NotFoundException {
-        return super.get(id).toPojo();
+        Subscription subscription = super.get(id).toPojo();
+        try {
+            subscription = validate(subscription).toBuilder().valid(true).validationMessage(null).build();
+        } catch (SubscriptionValidationException e) {
+            subscription = subscription.toBuilder().valid(false).validationMessage(e.getMessage()).build();
+        }
+        return subscription;
     }
 
     @Override
@@ -306,7 +336,7 @@ public class EventSubscriptionEntityServiceImpl
                             log.error("Could not serialize event object in: " + esEvent.toString());
                             return;
                         }
-                        log.debug("Serialized Object: " + jsonObject);
+                        log.debug("Serialized Object: " + StringUtils.substring(jsonObject, 0, 60) + "...");
                     }catch(JsonProcessingException e){
                         log.error("Aborting Event Service processEvent. Exception serializing event object: " + esEvent.getObjectClass());
                         log.error(e.getMessage());
@@ -318,10 +348,10 @@ public class EventSubscriptionEntityServiceImpl
                         Configuration conf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
                         List<String> filterResult =  JsonPath.using(conf).parse(jsonObject).read(jsonFilter);
                         if(filterResult.isEmpty()){
-                            log.debug("Aborting event pipeline - Serialized event:\n" + jsonObject + "\ndidn't match JSONPath Filter:\n" + jsonFilter);
+                            log.debug("Aborting event pipeline - Serialized event:\n" + StringUtils.substring(jsonObject, 0, 60) + "..." + "\ndidn't match JSONPath Filter:\n" + jsonFilter);
                             return;
                         } else {
-                            log.debug("JSONPath Filter Match - Serialized event:\n" + jsonObject + "\nJSONPath Filter:\n" + jsonFilter);
+                            log.debug("JSONPath Filter Match - Serialized event:\n" + StringUtils.substring(jsonObject, 0, 60)+ "..." + "\nJSONPath Filter:\n" + jsonFilter);
                         }
 
                     }

@@ -24,8 +24,11 @@ public abstract class Subscription {
     @Nullable @JsonProperty("attributes") public abstract Map<String, String> attributes();
     @Nullable @JsonProperty("event-filter") public abstract EventFilter eventFilter();
     @Nullable @JsonProperty("act-as-event-user") public abstract Boolean actAsEventUser();
-    @Nullable @JsonProperty("subscription-owner") public abstract Integer subscriptionOwner();
+    @Nullable @JsonProperty("subscription-owner") public abstract String subscriptionOwner();
     @Nullable @JsonProperty("use-counter") public abstract Integer useCounter();
+    @Nullable @JsonProperty("valid") public abstract Boolean valid();
+    @Nullable @JsonProperty("validation-message") public abstract String validationMessage();
+
 
     public static Builder builder() {
         return new AutoValue_Subscription.Builder();
@@ -33,6 +36,13 @@ public abstract class Subscription {
 
     public abstract Builder toBuilder();
 
+    public Subscription setInvalid(String message) {
+        return this.toBuilder().valid(false).validationMessage(message).build();
+   }
+
+    public Subscription setValid() {
+        return this.toBuilder().valid(true).validationMessage("").build();
+    }
 
     @JsonCreator
     public static Subscription create(@JsonProperty("id") final Long id,
@@ -45,7 +55,7 @@ public abstract class Subscription {
                                       @JsonProperty("attributes") final Map<String, String> attributes,
                                       @JsonProperty("eventId-filter") final EventFilter eventFilter,
                                       @JsonProperty("act-as-eventId-user") final Boolean actAsEventUser,
-                                      @JsonProperty("subscription-owner") final Integer subscriptionOwner) {
+                                      @JsonProperty("subscription-owner") final String subscriptionOwner) {
         return builder()
                 .id(id)
                 .name(name)
@@ -75,7 +85,7 @@ public abstract class Subscription {
                 .build();
     }
 
-    public static Subscription create(final SubscriptionCreator creator, final Integer subscriptionOwner) {
+    public static Subscription create(final SubscriptionCreator creator, final String subscriptionOwner) {
         return builder()
                 .name(creator.name())
                 .active(creator.active())
@@ -111,10 +121,15 @@ public abstract class Subscription {
 
         public abstract Builder actAsEventUser(Boolean actAsEventUser);
 
-        public abstract Builder subscriptionOwner(Integer user);
+        public abstract Builder subscriptionOwner(String user);
 
         public abstract Builder useCounter(Integer useCounter);
 
+        public abstract Builder valid(Boolean valid);
+
+        public abstract Builder validationMessage(String validationMessage);
+
         public abstract Subscription build();
     }
+
 }

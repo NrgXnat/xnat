@@ -39,10 +39,7 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.selector.Selector;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.empty;
@@ -257,6 +254,13 @@ public class EventServiceTest {
     }
 
     @Test
+    public void getInstalledListeners() throws Exception {
+        List<EventServiceListener> listeners = componentManager.getInstalledListeners();
+        assertThat(listeners, notNullValue());
+        assertThat(listeners, not(is(empty())));
+    }
+
+    @Test
     public void createSubscription() throws Exception {
         List<SimpleEvent> events = mockEventService.getEvents();
         assertThat("eventService.getEvents() should not return a null list", events, notNullValue());
@@ -283,7 +287,7 @@ public class EventServiceTest {
                                                                      .actAsEventUser(false)
                                                                      .build();
 
-        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getID());
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
         assertThat("Created subscription should not be null", subscription, notNullValue());
 
         eventService.validateSubscription(subscription);
@@ -440,7 +444,7 @@ public class EventServiceTest {
                                                                      .build();
         assertThat("Json Filtered SubscriptionCreator builder failed :(", subscriptionCreator, notNullValue());
 
-        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getID());
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
         assertThat("Json Filtered Subscription creation failed :(", subscription, notNullValue());
 
         Subscription createdSubsciption = eventService.createSubscription(subscription);
@@ -464,7 +468,7 @@ public class EventServiceTest {
         session.setProject("PROJECTID-1");
         session.setSessionType("xnat:imageSessionData");
 
-        TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser);
+        TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser.getLogin());
         String filter =  "project-id:PROJECTID-1";
         eventBus.notify(filter, Event.wrap(combinedEvent));
 
@@ -508,7 +512,7 @@ public class EventServiceTest {
         session.setProject("PROJECTID-1");
         session.setSessionType("xnat:imageSessionData");
 
-        TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser);
+        TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser.getLogin());
         String filter =  "project-id:PROJECTID-1";
         eventBus.notify(filter, Event.wrap(combinedEvent));
 

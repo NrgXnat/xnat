@@ -131,12 +131,23 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
-    public boolean validateAction(Action action, UserI user) {
-        List<Action> actions = getActionsByProvider(action.provider(), user);
-        if(actions != null && actions.contains(action)) {
-            return true;
+    public boolean validateAction(Action action, String projectId, String xnatType, UserI user) {
+        EventServiceActionProvider provider = action.provider();
+        if(!provider.isActionAvailable(action, projectId, xnatType, user)) {
+            log.error("Action:{} validation failed for ProjectId:{}, XnatType:{}, User:{}", action.displayName(), projectId, xnatType, user.getLogin());
+            return false;
         }
-        return false;
+        return true;
+    }
+
+    @Override
+    public boolean validateAction(Action action, List<String> projectIds, String xnatType, UserI user) {
+        for(String projectId:projectIds){
+            if(!validateAction(action, projectId, xnatType, user)){
+                return false;
+            }
+        }
+        return true;
     }
 
 

@@ -23,7 +23,8 @@ public interface ActionManager {
     List<EventServiceActionProvider> getActionProviders();
     EventServiceActionProvider getActionProvider(String providerName);
 
-    boolean validateAction(Action action, UserI actionUser);
+    boolean validateAction(Action action, String projectId, String xnatType, UserI user);
+    boolean validateAction(Action action, List<String> projectIds, String xnatType, UserI user);
 
     PersistentWorkflowI generateWorkflowEntryIfAppropriate(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user);
     void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user);

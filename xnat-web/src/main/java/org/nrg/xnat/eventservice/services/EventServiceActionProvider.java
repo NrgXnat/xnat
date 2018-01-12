@@ -21,6 +21,8 @@ public interface EventServiceActionProvider {
     List<Action> getActions(String xnatType, UserI user);
     List<Action> getActions(String projectId, String xnatType, UserI user);
 
+    Boolean isActionAvailable(Action action, String projectId, String xnatType, UserI user);
+
     // actionKey uniquely identifies an action across the system
     // format: <actionId:providerId>
     String actionKeyToActionId(String actionKey);

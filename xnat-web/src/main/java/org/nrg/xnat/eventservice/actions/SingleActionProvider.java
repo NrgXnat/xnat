@@ -52,6 +52,11 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
         return getActions();
     }
 
+    @Override
+    public Boolean isActionAvailable(Action action, String projectId, String xnatType, UserI user) {
+        return getAction() == action;
+    }
+
     public String getActionKey() {
         return actionIdToActionKey(this.getName());
     }

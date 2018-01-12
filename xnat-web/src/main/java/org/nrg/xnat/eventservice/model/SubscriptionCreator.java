@@ -10,6 +10,7 @@ import com.google.auto.value.AutoValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 
@@ -18,6 +19,7 @@ import java.util.Map;
 public abstract class SubscriptionCreator {
 
     @JsonProperty("name") public abstract String name();
+    @Nullable @JsonProperty("projects") public abstract List<String> projects();
     @Nullable @JsonProperty("active") public abstract Boolean active();
     @JsonProperty("event-id") public abstract String eventId();
     @Nullable @JsonIgnore public abstract String customListenerId();
@@ -34,6 +36,7 @@ public abstract class SubscriptionCreator {
 
     @JsonCreator
     public static SubscriptionCreator create(@Nonnull @JsonProperty("name") final String name,
+                                             @Nullable @JsonProperty("projects") final List<String> projects,
                                              @JsonProperty("active") final Boolean active,
                                              @Nonnull @JsonProperty("event-id") final String eventId,
                                              @Nullable @JsonProperty("custom-listener-id") final String customListenerId,
@@ -43,6 +46,7 @@ public abstract class SubscriptionCreator {
                                              @JsonProperty("act-as-event-user") final Boolean actAsEventUser) {
         return builder()
                 .name(name)
+                .projects(projects)
                 .active(active)
                 .eventId(eventId)
                 .customListenerId(customListenerId)
@@ -58,6 +62,8 @@ public abstract class SubscriptionCreator {
     public abstract static class Builder {
 
         public abstract Builder name(String name);
+
+        public abstract Builder projects(List<String> projects);
 
         public abstract Builder attributes(Map<String, String> attributes);
 

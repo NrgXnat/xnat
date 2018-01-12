@@ -2,12 +2,12 @@ package org.nrg.xnat.eventservice.model;
 
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
-import org.nrg.xft.security.UserI;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
+import java.util.List;
 import java.util.Map;
 
 
@@ -16,6 +16,7 @@ public abstract class Subscription {
 
     @Nullable @JsonProperty("id") public abstract Long id();
     @JsonProperty("name") public abstract String name();
+    @Nullable @JsonProperty("projects") public abstract List<String> projects();
     @Nullable @JsonProperty("active") public abstract Boolean active();
     @Nullable @JsonProperty("registration-key") public abstract  String listenerRegistrationKey();
     @JsonProperty("event-id") public abstract String eventId();
@@ -47,6 +48,7 @@ public abstract class Subscription {
     @JsonCreator
     public static Subscription create(@JsonProperty("id") final Long id,
                                       @JsonProperty("name") final String name,
+                                      @Nullable @JsonProperty("projects") final List<String> projects,
                                       @JsonProperty("active") final Boolean active,
                                       @JsonProperty("registration-key") final String listenerRegistrationKey,
                                       @JsonProperty("event-id") final String eventId,
@@ -59,6 +61,7 @@ public abstract class Subscription {
         return builder()
                 .id(id)
                 .name(name)
+                .projects(projects)
                 .active(active)
                 .listenerRegistrationKey(listenerRegistrationKey)
                 .eventId(eventId)
@@ -75,6 +78,7 @@ public abstract class Subscription {
     public static Subscription create(final SubscriptionCreator creator) {
         return builder()
                 .name(creator.name())
+                .projects(creator.projects())
                 .active(creator.active())
                 .eventId(creator.eventId())
                 .customListenerId(creator.customListenerId())
@@ -88,6 +92,7 @@ public abstract class Subscription {
     public static Subscription create(final SubscriptionCreator creator, final String subscriptionOwner) {
         return builder()
                 .name(creator.name())
+                .projects(creator.projects())
                 .active(creator.active())
                 .eventId(creator.eventId())
                 .customListenerId(creator.customListenerId())
@@ -104,6 +109,8 @@ public abstract class Subscription {
         public abstract Builder id(Long id);
 
         public abstract Builder name(String name);
+
+        public abstract Builder projects(List<String> projects);
 
         public abstract Builder listenerRegistrationKey(String listenerRegistrationKey);
 

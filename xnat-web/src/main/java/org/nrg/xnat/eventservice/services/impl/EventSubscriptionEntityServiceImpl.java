@@ -19,14 +19,10 @@ import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.EventFilter;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
-import org.nrg.xnat.eventservice.services.ActionManager;
-import org.nrg.xnat.eventservice.services.EventService;
-import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
-import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
+import org.nrg.xnat.eventservice.services.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -128,12 +124,12 @@ public class EventSubscriptionEntityServiceImpl
         }
         try {
             // Check that Action is valid and service is accessible
-            Action action = actionManager.getActionByKey(subscription.actionKey(), actionUser);
-            if (action == null) {
-                log.error("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
-                throw new SubscriptionValidationException("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
+            EventServiceActionProvider provider = actionManager.getActionProviderByKey(subscription.actionKey());
+            if (provider == null) {
+                log.error("Could not load Action Provider for key:" + subscription.actionKey());
+                throw new SubscriptionValidationException("Could not load Action Provider for key:" + subscription.actionKey());
             }
-            if (!actionManager.validateAction(action, subscription.projects(), null, actionUser)) {
+            if (!actionManager.validateAction(subscription.actionKey(), subscription.projects(), null, actionUser)) {
                 log.error("Could not validate Action Provider Class " + (subscription.actionKey() != null ? subscription.actionKey() : "unknown") + "for user:" + actionUser.getLogin());
                 throw new SubscriptionValidationException("Could not validate Action Provider Class " + subscription.actionKey() != null ? subscription.actionKey() : "unknown");
             }

@@ -131,22 +131,22 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
-    public boolean validateAction(Action action, String projectId, String xnatType, UserI user) {
-        EventServiceActionProvider provider = action.provider();
-        if(!provider.isActionAvailable(action, projectId, xnatType, user)) {
-            log.error("Action:{} validation failed for ProjectId:{}, XnatType:{}, User:{}", action.displayName(), projectId, xnatType, user.getLogin());
+    public boolean validateAction(String actionKey, String projectId, String xnatType, UserI user) {
+        EventServiceActionProvider provider = getActionProviderByKey(actionKey);
+        if(!provider.isActionAvailable(actionKey, projectId, xnatType, user)) {
+            log.error("Action:{} validation failed for ProjectId:{}, XnatType:{}, User:{}", actionKey, projectId, xnatType, user.getLogin());
             return false;
         }
         return true;
     }
 
     @Override
-    public boolean validateAction(Action action, List<String> projectIds, String xnatType, UserI user) {
+    public boolean validateAction(String actionKey, List<String> projectIds, String xnatType, UserI user) {
         if(projectIds == null || projectIds.isEmpty()){
-          return validateAction(action, "", xnatType, user);
+          return validateAction(actionKey, "", xnatType, user);
         } else {
             for (String projectId : projectIds) {
-                if (!validateAction(action, projectId, xnatType, user)) {
+                if (!validateAction(actionKey, projectId, xnatType, user)) {
                     return false;
                 }
             }
@@ -187,7 +187,8 @@ public class ActionManagerImpl implements ActionManager {
         return null;
     }
 
-    private EventServiceActionProvider getActionProviderByKey(String actionKey) {
+    @Override
+    public EventServiceActionProvider getActionProviderByKey(String actionKey) {
         String providerId;
         Iterable<String> key = Splitter.on(':')
                                        .trimResults()

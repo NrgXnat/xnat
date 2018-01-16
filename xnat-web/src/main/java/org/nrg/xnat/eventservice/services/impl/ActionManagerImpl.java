@@ -142,9 +142,13 @@ public class ActionManagerImpl implements ActionManager {
 
     @Override
     public boolean validateAction(Action action, List<String> projectIds, String xnatType, UserI user) {
-        for(String projectId:projectIds){
-            if(!validateAction(action, projectId, xnatType, user)){
-                return false;
+        if(projectIds == null || projectIds.isEmpty()){
+          return validateAction(action, "", xnatType, user);
+        } else {
+            for (String projectId : projectIds) {
+                if (!validateAction(action, projectId, xnatType, user)) {
+                    return false;
+                }
             }
         }
         return true;

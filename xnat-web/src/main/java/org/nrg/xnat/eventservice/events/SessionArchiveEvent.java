@@ -25,7 +25,7 @@ public class SessionArchiveEvent extends CombinedEventServiceEvent<SessionArchiv
 
     @Override
     public String getDisplayName() {
-        return "SessionArchiveEvent";
+        return "Session Archived";
     }
 
     @Override

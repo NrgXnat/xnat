@@ -126,16 +126,20 @@ public class EventSubscriptionEntityServiceImpl
             log.error(listenerErrorMessage + "\n" + e.getMessage());
             throw new SubscriptionValidationException(listenerErrorMessage + "\n" + e.getMessage());
         }
-
-        // Check that Action is valid and service is accessible
-        Action action = actionManager.getActionByKey(subscription.actionKey(), actionUser);
-        if(action == null){
-            log.error("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
-            throw new SubscriptionValidationException("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
-        }
-        if (! actionManager.validateAction(action, subscription.projects(),null, actionUser)) {
-            log.error("Could not validate Action Provider Class " + (subscription.actionKey() != null ? subscription.actionKey() : "unknown") + "for user:" + actionUser.getLogin());
-            throw new SubscriptionValidationException("Could not validate Action Provider Class " + subscription.actionKey() != null ? subscription.actionKey() : "unknown");
+        try {
+            // Check that Action is valid and service is accessible
+            Action action = actionManager.getActionByKey(subscription.actionKey(), actionUser);
+            if (action == null) {
+                log.error("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
+                throw new SubscriptionValidationException("Could not load Action for key:" + subscription.actionKey() + "  User:" + actionUser.getUsername());
+            }
+            if (!actionManager.validateAction(action, subscription.projects(), null, actionUser)) {
+                log.error("Could not validate Action Provider Class " + (subscription.actionKey() != null ? subscription.actionKey() : "unknown") + "for user:" + actionUser.getLogin());
+                throw new SubscriptionValidationException("Could not validate Action Provider Class " + subscription.actionKey() != null ? subscription.actionKey() : "unknown");
+            }
+        } catch (Exception e){
+            log.error("Could not validate Action: {} \n {}", subscription.actionKey(), e.getMessage());
+            throw new SubscriptionValidationException("Could not validate Action: " + subscription.actionKey() + "\n" + e.getMessage());
         }
         return subscription;
     }

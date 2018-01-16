@@ -23,7 +23,7 @@ public class SubjectCreatedEvent extends CombinedEventServiceEvent<SubjectCreate
 
     @Override
     public String getDisplayName() {
-        return "SubjectCreatedEvent";
+        return "Subject Created";
     }
 
     @Override

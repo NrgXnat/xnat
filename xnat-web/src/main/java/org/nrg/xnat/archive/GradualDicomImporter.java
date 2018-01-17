@@ -46,7 +46,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xnat.services.cache.UserProjectCache;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
 import org.slf4j.Logger;

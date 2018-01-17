@@ -16,7 +16,7 @@ import org.dcm4che2.data.DicomObject;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.services.cache.UserProjectCache;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

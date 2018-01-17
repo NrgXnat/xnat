@@ -15,7 +15,7 @@ import org.nrg.dcm.id.TemplatizedDicomFileNamer;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.DicomObjectIdentifier;
-import org.nrg.xnat.services.cache.UserProjectCache;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;

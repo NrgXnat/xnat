@@ -1,5 +1,5 @@
 /*
- * web: org.nrg.xnat.services.cache.UserProjectCacheManager
+ * web: org.nrg.xnat.services.cache.DefaultUserProjectCache
  * XNAT http://www.xnat.org
  * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
@@ -32,6 +32,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -58,12 +59,12 @@ import static reactor.bus.selector.Selectors.predicate;
 @SuppressWarnings("Duplicates")
 @Service
 @Slf4j
-public class UserProjectCache extends CacheEventListenerAdapter implements Consumer<Event<XftItemEvent>> {
+public class DefaultUserProjectCache extends CacheEventListenerAdapter implements Consumer<Event<XftItemEvent>>, UserProjectCache<XnatProjectdata> {
     public static final String NOT_A_PROJECT           = "NOT_A_PROJECT";
     public static final String USER_PROJECT_CACHE_NAME = "UserProjectCacheManagerCache";
 
     @Autowired
-    public UserProjectCache(final CacheManager cacheManager, final EventBus eventBus, final NamedParameterJdbcTemplate template) {
+    public DefaultUserProjectCache(final CacheManager cacheManager, final EventBus eventBus, final NamedParameterJdbcTemplate template) {
         _cache = cacheManager.getCache(USER_PROJECT_CACHE_NAME);
         _template = template;
 
@@ -181,6 +182,7 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
      *
      * @return Returns true if the ID or alias is mapped to a project cache entry, false otherwise.
      */
+    @Override
     public boolean has(final String idOrAlias) {
         return _aliasMapping.containsKey(idOrAlias);
     }
@@ -193,6 +195,7 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
      *
      * @return Returns true if the user is mapped to a cache entry for the cached project ID or alias, false otherwise.
      */
+    @Override
     public boolean has(final UserI user, final String idOrAlias) {
         if (!has(idOrAlias)) {
             return false;
@@ -217,6 +220,7 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
      *
      * @return Returns true if the user can delete the specified project or false otherwise.
      */
+    @Override
     public boolean canDelete(final String userId, final String idOrAlias) {
         return hasAccess(userId, idOrAlias, Delete);
     }
@@ -230,6 +234,7 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
      *
      * @return Returns true if the user can write to the specified project or false otherwise.
      */
+    @Override
     @SuppressWarnings("unused")
     public boolean canWrite(final String userId, final String idOrAlias) {
         return hasAccess(userId, idOrAlias, Edit);
@@ -244,6 +249,7 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
      *
      * @return Returns true if the user can read from the specified project or false otherwise.
      */
+    @Override
     public boolean canRead(final String userId, final String idOrAlias) {
         return hasAccess(userId, idOrAlias, Read);
     }
@@ -256,6 +262,7 @@ public class UserProjectCache extends CacheEventListenerAdapter implements Consu
      *
      * @return The project object if the user can access it, null otherwise.
      */
+    @Override
     public XnatProjectdata get(final UserI user, final String idOrAlias) {
         if (isCachedNonexistentProject(idOrAlias)) {
             return null;

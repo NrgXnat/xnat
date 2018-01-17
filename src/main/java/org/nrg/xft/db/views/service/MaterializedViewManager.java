@@ -90,7 +90,7 @@ public class MaterializedViewManager {
 						PoolDBUtils.ExecuteNonSelectQuery(query, dbname, "system");
 					}
 					
-					query="SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE last_access + interval '1 hour'< NOW();";
+					query="SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE last_access + INTERVAL '1 hour'< NOW();";
 					XFTTable table = XFTTable.Execute(query, dbname, "system");
 					
 					for(Hashtable row : table.rowHashs()){

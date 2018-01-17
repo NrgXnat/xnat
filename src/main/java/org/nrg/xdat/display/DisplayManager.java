@@ -715,7 +715,7 @@ public class DisplayManager {
                 "\n    declare" +
                 "\n	entry xdat_searches%ROWTYPE;" +
                 "\n    begin" +
-                "\n	FOR entry IN SELECT * FROM xdat_searches WHERE last_access + interval ''1 hour'' / int ''2'' < NOW()" +
+                "\n	FOR entry IN SELECT * FROM xdat_searches WHERE last_access + INTERVAL ''1 hour'' / int ''2'' < NOW()" +
                 "\n	LOOP" +
                 "\n		PERFORM xdat_search_drop(entry.search_name);" +
                 "\n" +
@@ -735,7 +735,7 @@ public class DisplayManager {
                 "\n	entry xdat_searches%ROWTYPE;" +
                 "\n        search_owner alias for $1;" +
                 "\n    begin" +
-                "\n	FOR entry IN SELECT * FROM xdat_searches WHERE owner=search_owner AND last_access + interval ''1 hour'' / int ''2'' < NOW()" +
+                "\n	FOR entry IN SELECT * FROM xdat_searches WHERE owner=search_owner AND last_access + INTERVAL ''1 hour'' / int ''2'' < NOW()" +
                 "\n	LOOP" +
                 "\n		PERFORM xdat_search_drop(entry.search_name);" +
                 "\n" +

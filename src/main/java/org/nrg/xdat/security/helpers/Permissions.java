@@ -14,8 +14,9 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -26,6 +27,7 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
@@ -38,18 +40,12 @@ import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.security.core.GrantedAuthority;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+@Slf4j
 public class Permissions {
-    static Logger logger = Logger.getLogger(Permissions.class);
-
-    private static PermissionsServiceI singleton = null;
-
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a
      * new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured package). You
@@ -60,12 +56,12 @@ public class Permissions {
      */
     public static PermissionsServiceI getPermissionsService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
-        if (singleton == null) {
+        if (_service == null) {
             // First find out if it exists in the application context.
             final ContextService contextService = XDAT.getContextService();
             if (contextService != null) {
                 try {
-                    return singleton = contextService.getBean(PermissionsServiceI.class);
+                    return _service = contextService.getBean(PermissionsServiceI.class);
                 } catch (NoSuchBeanDefinitionException ignored) {
                     // This is OK, we'll just create it from the indicated class.
                 }
@@ -76,25 +72,46 @@ public class Permissions {
                 if (classes != null && classes.size() > 0) {
                     for (Class<?> clazz : classes) {
                         if (PermissionsServiceI.class.isAssignableFrom(clazz)) {
-                            singleton = (PermissionsServiceI) clazz.newInstance();
+                            _service = (PermissionsServiceI) clazz.newInstance();
                         }
                     }
                 }
             } catch (ClassNotFoundException | InstantiationException | IOException | IllegalAccessException e) {
-                logger.error("", e);
+                log.error("", e);
             }
 
             //default to PermissionsServiceImpl implementation (unless a different default is configured)
-            if (singleton == null) {
+            if (_service == null) {
                 try {
                     String className = XDAT.safeSiteConfigProperty("security.permissionsService.default", "org.nrg.xdat.security.PermissionsServiceImpl");
-                    singleton = (PermissionsServiceI) Class.forName(className).newInstance();
+                    _service = (PermissionsServiceI) Class.forName(className).newInstance();
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                    logger.error("", e);
+                    log.error("", e);
                 }
             }
         }
-        return singleton;
+        return _service;
+    }
+
+    /**
+     * Returns the {@link UserProjectCache user project cache}.
+     *
+     * @return The user project cache.
+     */
+    public static UserProjectCache getUserProjectCache() {
+        // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
+        if (_cache == null) {
+            // First find out if it exists in the application context.
+            final ContextService contextService = XDAT.getContextService();
+            if (contextService != null) {
+                try {
+                    return _cache = contextService.getBean(UserProjectCache.class);
+                } catch (NoSuchBeanDefinitionException ignored) {
+                    log.warn("Unable to find an instance of the UserProjectCache class.");
+                }
+            }
+        }
+        return _cache;
     }
 
     /**
@@ -726,7 +743,7 @@ public class Permissions {
     }
 
     public static boolean canReadProject(final UserI user, final String projectId) throws Exception {
-        return Roles.isSiteAdmin(user) || isProjectPublic(projectId) | StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
+        return Roles.isSiteAdmin(user) || isProjectPublic(projectId) || StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
     }
 
     public static boolean canEditProject(final UserI user, final String projectId) {
@@ -758,21 +775,19 @@ public class Permissions {
     }
 
     public static String getUserProjectAccess(final UserI user, final String projectId) {
-        final Pattern pattern = Pattern.compile(String.format(PROJECT_ROLE_TEMPLATE, projectId));
         try {
-            List<UserGroupI> groups = Groups.getGroupsByTag(projectId);
-            List<String> usersGroups = Groups.getGroupIdsForUser(user);
-            if(usersGroups!=null && groups!=null){
-                for(UserGroupI group: groups){
-                    String groupId = group.getId();
-                    if(groupId!= null && usersGroups.contains(groupId)){
-                        return groupId.substring(projectId.length()+1);
+            final List<UserGroupI> groups      = Groups.getGroupsByTag(projectId);
+            final List<String>     usersGroups = Groups.getGroupIdsForUser(user);
+            if (CollectionUtils.isNotEmpty(usersGroups) && CollectionUtils.isNotEmpty(groups)) {
+                for (final UserGroupI group : groups) {
+                    final String groupId = group.getId();
+                    if (groupId != null && usersGroups.contains(groupId)) {
+                        return groupId.substring(projectId.length() + 1);
                     }
                 }
             }
-        }
-        catch(Exception e){
-
+        } catch (Exception e) {
+            log.warn("An error occurred trying to find the access level to the project " + projectId + " for the user " + user.getUsername(), e);
         }
         return null;
     }
@@ -880,7 +895,7 @@ public class Permissions {
                     unauthorized.add(projectId);
                 }
             } catch (Exception e) {
-                logger.warn("An exception occurred trying to test read access for user " + user.getUsername() + " on project " + projectId + ". Adding project as unauthorized but this may be incorrect depending on the nature of the error.", e);
+                log.warn("An exception occurred trying to test read access for user " + user.getUsername() + " on project " + projectId + ". Adding project as unauthorized but this may be incorrect depending on the nature of the error.", e);
                 unauthorized.add(projectId);
             }
         }
@@ -976,5 +991,7 @@ public class Permissions {
 
     private static final List<String> PROJECT_GROUPS        = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();
-    private static final String       PROJECT_ROLE_TEMPLATE = "^%s_(?<access>" + Joiner.on("|").join(PROJECT_GROUPS) + ")$";
+
+    private static PermissionsServiceI _service = null;
+    private static UserProjectCache    _cache   = null;
 }

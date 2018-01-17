@@ -35,7 +35,7 @@ public class DisableInactiveUsers implements Runnable {
                                                                 ") y " + //get last login times for each user
                                                                 "ON y.xdat_user_id=xdat_user_meta_data.meta_data_id AND y.login NOT IN (SELECT username FROM xhbm_user_role WHERE role='Administrator') AND y.xdat_user_id NOT IN (SELECT xdat_user_xdat_user_id FROM xdat_r_xdat_role_type_assign_xdat_user WHERE xdat_r_xdat_role_type_assign_xdat_user.xdat_role_type_role_name = 'Administrator')" +
                                                                 ") x " + //get dates that each non-admin user was created
-                                                                "ON x.login=xdat_user.login AND ((x.activation_date<(now()- INTERVAL('%1$s seconds'))) AND ((x.last_login IS NULL) OR x.last_login<(now()- INTERVAL('%1$s seconds')))) AND xdat_user.enabled=1";
+                                                                "ON x.login=xdat_user.login AND ((x.activation_date<(now()- INTERVAL '%1$s seconds')) AND ((x.last_login IS NULL) OR x.last_login<(now() - INTERVAL '%1$s seconds'))) AND xdat_user.enabled=1";
 
     public DisableInactiveUsers(final int inactivityBeforeLockout, final int lockoutDuration) {
         _inactivityBeforeLockout = inactivityBeforeLockout;

@@ -292,7 +292,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 return false;
             }
             if (isPasswordExpirationInterval()) {
-                List<Boolean> expired = _jdbcTemplate.query("SELECT ((now()-password_updated)> (Interval '" + passwordExpirationSetting + "')) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[]{username}, new RowMapper<Boolean>() {
+                List<Boolean> expired = _jdbcTemplate.query("SELECT ((now() - password_updated)> (INTERVAL '" + passwordExpirationSetting + "')) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[]{username}, new RowMapper<Boolean>() {
                     public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                         return rs.getBoolean(1);
                     }

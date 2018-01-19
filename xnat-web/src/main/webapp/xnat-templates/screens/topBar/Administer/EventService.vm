@@ -1,0 +1,10 @@
+<!-- Sequence: 19 -->
+<li id="view-event-service-adminlink">
+    <a href="${SITE_ROOT}/app/template/Page.vm?view=admin/event-service">Event Service</a>
+</li>
+<script src="${SITE_ROOT}/scripts/xnat/admin/eventServiceUi.js"></script>
+##<script>
+##    $(document).ready(function(){
+##        XNAT.admin.xnatTaskSettings.checkDisplay();
+##    });
+##</script>

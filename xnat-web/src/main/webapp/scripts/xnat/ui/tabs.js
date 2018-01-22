@@ -52,8 +52,7 @@ var XNAT = getObject(XNAT || {});
         if (!id) return; // a tab group MUST have an id
         // return if the group already exists
         if ($('ul#' + id + '.nav.tab-group').length) return;
-        return spawn('ul.nav.tab-group', { i
-        d: id }, [
+        return spawn('ul.nav.tab-group', { id: id }, [
             ['li.label', (obj.label || obj.title || obj.text || 'Tab Group')]
         ]);
     };

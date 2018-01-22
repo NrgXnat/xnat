@@ -96,10 +96,32 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.admin.eventServicePanel.populateDisplay = function(rootDiv) {
         var $container = $(rootDiv || '#event-service-admin-tabs');
-        $container.empty().append(
-            spawn('p','Tap tap, is this thing on?')
-        );
+        $container.empty();
 
+        var infoTab =  {
+            kind: 'tab',
+            label: 'Event Service Info',
+            group: 'General',
+            active: true,
+            contents: spawn('div#eventInfo')
+        };
+        var historyTab = {
+            kind: 'tab',
+            label: 'Event Service History',
+            group: 'General',
+            contents: spawn('div#historyTable')
+        };
+        var eventTabSet = {
+            kind: 'tabs',
+            name: 'eventSettings',
+            label: 'Event Service Administration',
+            contents: {
+                infoTab: infoTab,
+                historyTab: historyTab
+            }
+        };
+
+        XNAT.spawner.spawn({ eventSettings: eventTabSet }).render($container);
 
     }
 

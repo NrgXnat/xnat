@@ -23,13 +23,12 @@
 
             <div id="admin-page">
                 <header id="content-header">
-                    <h2 class="pull-left"></h2>
+                    <h2 class="pull-left">Event Service Administration</h2>
                     <div class="clearfix"></div>
                 </header>
 
                 <!-- Task Settings tab container -->
-                <div id="event-service-admin-tabs">
-                </div>
+                <div id="event-service-admin-tabs" class="xnat-tab-container"></div>
                 <script src="/scripts/xnat/admin/eventServiceUi.js"></script>
                 <script>
                     XNAT.admin.eventServicePanel.populateDisplay();

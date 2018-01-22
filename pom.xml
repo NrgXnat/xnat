@@ -427,7 +427,7 @@
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>plexiviewer</artifactId>
-                <version>1.7.4</version>
+                <version>${xnatdev.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -482,12 +482,12 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-pipeline</artifactId>
-                <version>1.7.4</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-tools</artifactId>
-                <version>1.7.4</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>

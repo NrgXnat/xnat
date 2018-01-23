@@ -88,6 +88,8 @@ var XNAT = getObject(XNAT || {});
         'xnat:imageScanData'
     ];
 
+    eventServicePanel.events = {};
+
     function getProjectListUrl(){
         return rootUrl('/data/projects?format=json');
     }
@@ -197,8 +199,18 @@ var XNAT = getObject(XNAT || {});
             .th('<b>Action</b>')
             .th('<b>Created By</b>')
             .th('<b>Enabled</b>')
-            .th('<b>Action</b>');
+            .th({ style: { width: '90px' }, html: '<b>Action</b>' });
 
+        function subscriptionNiceLabel(label){
+            return spawn('a',{
+                href: '#!',
+                style: { 'font-weight': 'bold' },
+                onclick: function(e){
+                    e.preventDefault();
+                    eventServicePanel.editSubscription(subscription.id, false);
+                }
+            }, label);
+        }
         function projectLinks(ids){
             var projectLinks = [];
             if (ids) {
@@ -210,6 +222,12 @@ var XNAT = getObject(XNAT || {});
             else {
                 return 'N/A';
             }
+        }
+        function eventNiceName(eventId){
+            return eventServicePanel.events[eventId]['display-name'];
+        }
+        function actionNiceName(subscription){
+            return spawn('span.truncate.truncate200', subscription['action-key']);
         }
 
         function enabledCheckbox(item){
@@ -231,17 +249,34 @@ var XNAT = getObject(XNAT || {});
             ]);
         }
 
+        function editSubscriptionButton(subscription){
+            return spawn('button.btn.sm', {
+                onclick: function(e){
+                    e.preventDefault();
+                    eventServicePanel.editSubscription(subscription.id, false);
+                }
+            }, [ spawn('span.fa.fa-pencil') ]);
+        }
+        function deleteSubscriptionButton(subscription){
+            return spawn('button.btn.sm', {
+                onclick: function(e){
+                    e.preventDefault();
+                    eventServicePanel.editSubscription(subscription.id, false);
+                }
+            }, [ spawn('span.fa.fa-trash') ]);
+        }
+
         eventServicePanel.getSubscriptions().done(function(data){
             if (data.length) {
                 data.forEach(function(subscription){
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
-                        .td(subscription.name)
+                        .td([ subscriptionNiceLabel(subscription.name) ])
                         .td([ projectLinks(subscription.projects) ])
-                        .td(subscription['event-id'])
-                        .td(subscription['action-key'])
+                        .td([ eventNiceName(subscription['event-id']) ])
+                        .td([ actionNiceName(subscription) ])
                         .td(subscription['subscription-owner'])
                         .td([ enabledCheckbox(subscription) ])
-                        .td()
+                        .td([ editSubscriptionButton(subscription), spacer(6), deleteSubscriptionButton(subscription) ])
                 })
             }
             else {
@@ -309,15 +344,20 @@ var XNAT = getObject(XNAT || {});
     };
 
     eventServicePanel.init = function(){
+
+        // Prerequisite: Get known events
+        // translate events array into an object driven by the event ID
+
         eventServicePanel.getEvents().done(function(events){
-            eventServicePanel.events = events;
+            events.forEach(function(event){
+                eventServicePanel.events[event.id] = event;
+            });
 
-
-
+            // Populate event subscription table
             eventServicePanel.populateDisplay();
         });
 
 
-    }
+    };
 
 }));

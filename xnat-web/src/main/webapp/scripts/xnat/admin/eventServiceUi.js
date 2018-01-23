@@ -179,7 +179,11 @@ var XNAT = getObject(XNAT || {});
             }
         })
     };
-    
+
+
+    /* -------------------------- *
+     * Subscription Display Table *
+     * -------------------------- */
     eventServicePanel.subscriptionTable = function(){
         // initialize the table
         var subTable = XNAT.table({
@@ -201,6 +205,7 @@ var XNAT = getObject(XNAT || {});
             .th('<b>Enabled</b>')
             .th({ style: { width: '90px' }, html: '<b>Action</b>' });
 
+        /* Formatted table cells */
         function subscriptionNiceLabel(label){
             return spawn('a',{
                 href: '#!',
@@ -229,8 +234,7 @@ var XNAT = getObject(XNAT || {});
         function actionNiceName(subscription){
             return spawn('span.truncate.truncate200', subscription['action-key']);
         }
-
-        function enabledCheckbox(item){
+        function subscriptionEnabledCheckbox(item){
             var enabled = !!item.active;
             var ckbox = spawn('input.subscription-enabled', {
                 type: 'checkbox',
@@ -248,7 +252,6 @@ var XNAT = getObject(XNAT || {});
                 ])
             ]);
         }
-
         function editSubscriptionButton(subscription){
             return spawn('button.btn.sm', {
                 onclick: function(e){
@@ -275,7 +278,7 @@ var XNAT = getObject(XNAT || {});
                         .td([ eventNiceName(subscription['event-id']) ])
                         .td([ actionNiceName(subscription) ])
                         .td(subscription['subscription-owner'])
-                        .td([ enabledCheckbox(subscription) ])
+                        .td([ subscriptionEnabledCheckbox(subscription) ])
                         .td([ editSubscriptionButton(subscription), spacer(6), deleteSubscriptionButton(subscription) ])
                 })
             }
@@ -289,6 +292,102 @@ var XNAT = getObject(XNAT || {});
 
         return subTable.table;
     };
+
+    /* ---------------------------------- *
+     * Create, Edit, Delete Subscriptions *
+     * ---------------------------------- */
+
+    var createFormObj = {
+        kind: 'panel.form',
+        id: 'edit-subscription-form',
+        header: false,
+        footer: false,
+        style: { border: 'none' },
+        contents: {
+            subName: {
+                kind: 'panel.input.text',
+                name: 'name',
+                label: 'Event Subscription Label',
+                validation: 'not-empty',
+                order: 10
+            },
+            subProjSelector: {
+                kind: 'panel.select.single',
+                name: 'project',
+                label: 'Select Project',
+                id: 'subscription-project-selector',
+                order: 20
+            },
+            subDataSelector: {
+                kind: 'panel.select.single',
+                name: 'xnattype',
+                label: 'Select Data Type',
+                id: 'subscription-xsitype-selector',
+                order: 30
+            },
+            subEventSelector: {
+                kind: 'panel.select.single',
+                name: 'event-id',
+                label: 'Select Event',
+                id: 'subscription-event-selector',
+                order: 40
+            },
+            subActionSelector: {
+                kind: 'panel.select.single',
+                name: 'action-key',
+                label: 'Select Action',
+                id: 'subscription-action-selector',
+                order: 50
+            },
+            subUserProxy: {
+                kind: 'panel.input.switchbox',
+                name: 'act-as-event-user',
+                label: 'Perform Action As:',
+                onText: 'Action is performed as the user who initiates the event',
+                offText: 'Action is performed as you (the subscription owner)',
+                value: 'true',
+                order: 60
+            }
+        }
+    };
+
+    eventServicePanel.createSubscription = function(){
+
+        eventServicePanel.getProjects().done(function(data){
+            var projs = data.ResultSet.Result;
+            if (projs.length) {
+
+                XNAT.ui.dialog.open({
+                    title: 'Create Subscription',
+                    width: 600,
+                    content: '<div id="subscription-form-container"></div>',
+                    beforeShow: function(obj){
+                        var $container = obj.$modal.find('#subscription-form-container');
+                        XNAT.spawner.spawn({ form: createFormObj }).render($container);
+
+                        var $form = obj.$modal.find('form');
+                        projs.forEach(function(project){
+                            $form.find('#subscription-project-selector').append(spawn('option', { value: project.ID, html: project['secondary_ID'] }));
+                        });
+                    }
+                })
+            }
+            else {
+                errorHandler({}, 'Could not load projects');
+            }
+
+        });
+    };
+
+    $(document).on('click', '#create-new-subscription', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        XNAT.admin.eventServicePanel.createSubscription();
+    });
+
+    /* ------------------------- *
+     * Initialize tabs & Display *
+     * ------------------------- */
 
     XNAT.admin.eventServicePanel.populateDisplay = function(rootDiv) {
         var $container = $(rootDiv || '#event-service-admin-tabs');
@@ -305,7 +404,17 @@ var XNAT = getObject(XNAT || {});
                     label: 'Event Subscriptions',
                     contents: {
                         subscriptionFilterBar: {
-                            tag: 'div#subscriptionFilters'
+                            tag: 'div#subscriptionFilters',
+                            contents: {
+                                addNewSubscription: {
+                                    tag: 'button#create-new-subscription.pull-right.btn1',
+                                    contents: 'Add New Event Subscription'
+                                },
+                                clearfix: {
+                                    tag: 'div.clear.clearfix',
+                                    contents: '<br>'
+                                }
+                            }
                         },
                         subscriptionTableContainer: {
                             tag: 'div#subscriptionTableContainer'

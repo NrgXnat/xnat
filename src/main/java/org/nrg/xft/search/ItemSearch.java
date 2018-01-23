@@ -581,6 +581,9 @@ public class ItemSearch implements SearchI {
             //org.nrg.xft.XFT.LogCurrentTime("BEGIN POPULATE ITEMS::2");
 
             Object pkValue = item.getPK();
+            if (pkValue == null || pksValues == null) {
+                continue;
+            }
             int index = Collections.binarySearch(pksValues,pkValue);
             if (index < 0)
             {

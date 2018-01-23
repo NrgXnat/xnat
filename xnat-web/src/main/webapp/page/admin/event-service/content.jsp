@@ -30,9 +30,6 @@
                 <!-- Task Settings tab container -->
                 <div id="event-service-admin-tabs" class="xnat-tab-container"></div>
                 <script src="/scripts/xnat/admin/eventServiceUi.js"></script>
-                <script>
-                    XNAT.admin.eventServicePanel.populateDisplay();
-                </script>
 
             </div>
 

@@ -81,6 +81,21 @@ var XNAT = getObject(XNAT || {});
     XNAT.admin.eventServicePanel = eventServicePanel =
         getObject(XNAT.admin.eventServicePanel || {});
 
+    eventServicePanel.xsiTypes = [
+        'xnat:projectData',
+        'xnat:subjectData',
+        'xnat:imageSessionData',
+        'xnat:imageScanData'
+    ];
+
+    function getProjectListUrl(){
+        return rootUrl('/data/projects?format=json');
+    }
+
+    function getEventActionsUrl(projectId,xsiType){
+        return rootUrl('/xapi/events/actions?projectid='+projectId+'&xnattype='+xsiType);
+    }
+
     function getEventSubscriptionUrl(id){
         id = id || false;
         var path = (id) ? '/xapi/events/subscription/'+id : '/xapi/events/subscriptions';
@@ -94,34 +109,214 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl(path + appended);
     }
 
+    eventServicePanel.getProjects = function(callback){
+        callback = isFunction(callback) ? callback : function(){};
+        return XNAT.xhr.getJSON({
+            url: getProjectListUrl(),
+            success: function(data){
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
+            },
+            fail: function(e){
+                errorHandler(e,'Could not retrieve projects');
+            }
+        })
+    };
+
+    eventServicePanel.getEvents = function(callback){
+        callback = isFunction(callback) ? callback : function(){};
+
+        return XNAT.xhr.getJSON({
+            url: XNAT.url.rootUrl('/xapi/events/events'),
+            success: function(data){
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
+            },
+            fail: function(e){
+                errorHandler(e,'Could not retrieve events');
+            }
+        })
+    };
+
+    eventServicePanel.getSubscriptions = function(callback){
+        callback = isFunction(callback) ? callback : function(){};
+
+        return XNAT.xhr.getJSON({
+            url: getEventSubscriptionUrl(),
+            success: function(data){
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
+            },
+            fail: function(e){
+                errorHandler(e,'Could not retrieve event subscriptions');
+            }
+        })
+    };
+
+    eventServicePanel.getActions = function(opts,callback){
+        if (!opts.project || !opts.xsiType) return false;
+
+        callback = isFunction(callback) ? callback : function(){};
+
+        return XNAT.xhr.getJSON({
+            url: getEventActionsUrl(opts.project,opts.xsiType),
+            success: function(data){
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
+            },
+            fail: function(e){
+                errorHandler(e,'Could not retrieve event actions');
+            }
+        })
+    };
+    
+    eventServicePanel.subscriptionTable = function(){
+        // initialize the table
+        var subTable = XNAT.table({
+            addClass: 'xnat-table compact',
+            style: {
+                width: '100%',
+                marginTop: '15px',
+                marginBottom: '15px'
+            }
+        });
+
+        // add table header row
+        subTable.tr()
+            .th({ addClass: 'left', html: '<b>Name</b>' })
+            .th('<b>Project</b>')
+            .th('<b>Trigger Event</b>')
+            .th('<b>Action</b>')
+            .th('<b>Created By</b>')
+            .th('<b>Enabled</b>')
+            .th('<b>Action</b>');
+
+        function projectLinks(ids){
+            var projectLinks = [];
+            if (ids) {
+                ids.forEach(function(id){
+                    projectLinks.push( spawn('a',{ href: XNAT.url.rootUrl('/data/projects/'+id+'?format=html'), style: { display: 'block' }}, id) );
+                });
+                return spawn( 'div.center', projectLinks );
+            }
+            else {
+                return 'N/A';
+            }
+        }
+
+        function enabledCheckbox(item){
+            var enabled = !!item.active;
+            var ckbox = spawn('input.subscription-enabled', {
+                type: 'checkbox',
+                checked: enabled,
+                value: enabled,
+                onchange: function(){
+
+                }
+            });
+
+            return spawn('div.center', [
+                spawn('label.switchbox|title=' + item.name, [
+                    ckbox,
+                    ['span.switchbox-outer', [['span.switchbox-inner']]]
+                ])
+            ]);
+        }
+
+        eventServicePanel.getSubscriptions().done(function(data){
+            if (data.length) {
+                data.forEach(function(subscription){
+                    subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
+                        .td(subscription.name)
+                        .td([ projectLinks(subscription.projects) ])
+                        .td(subscription['event-id'])
+                        .td(subscription['action-key'])
+                        .td(subscription['subscription-owner'])
+                        .td([ enabledCheckbox(subscription) ])
+                        .td()
+                })
+            }
+            else {
+                subTable.tr().td({ colSpan: '7', html: 'No event subscriptions have been created' })
+            }
+
+        });
+
+        eventServicePanel.$table = $(subTable.table);
+
+        return subTable.table;
+    };
+
     XNAT.admin.eventServicePanel.populateDisplay = function(rootDiv) {
         var $container = $(rootDiv || '#event-service-admin-tabs');
         $container.empty();
 
-        var infoTab =  {
+        var subscriptionTab =  {
             kind: 'tab',
-            label: 'Event Service Info',
+            label: 'Event Subscriptions',
             group: 'General',
             active: true,
-            contents: spawn('div#eventInfo')
+            contents: {
+                subscriptionPanel: {
+                    kind: 'panel',
+                    label: 'Event Subscriptions',
+                    contents: {
+                        subscriptionFilterBar: {
+                            tag: 'div#subscriptionFilters'
+                        },
+                        subscriptionTableContainer: {
+                            tag: 'div#subscriptionTableContainer'
+                        }
+                    }
+                }
+            }
         };
         var historyTab = {
             kind: 'tab',
             label: 'Event Service History',
             group: 'General',
-            contents: spawn('div#historyTable')
+            contents: {
+                eventHistoryContainer: {
+                    tag: 'div#historyTable'
+                }
+            }
         };
         var eventTabSet = {
             kind: 'tabs',
             name: 'eventSettings',
             label: 'Event Service Administration',
             contents: {
-                infoTab: infoTab,
+                subscriptionTab: subscriptionTab,
                 historyTab: historyTab
             }
         };
 
-        XNAT.spawner.spawn({ eventSettings: eventTabSet }).render($container);
+        eventServicePanel.tabSet = XNAT.spawner.spawn({ eventSettings: eventTabSet });
+        eventServicePanel.tabSet.render($container);
+
+        $('#subscriptionTableContainer').append( eventServicePanel.subscriptionTable() );
+
+        XNAT.ui.tab.activate('subscription-tab');
+
+    };
+
+    eventServicePanel.init = function(){
+        eventServicePanel.getEvents().done(function(events){
+            eventServicePanel.events = events;
+
+
+
+            eventServicePanel.populateDisplay();
+        });
+
 
     }
 

@@ -12,7 +12,11 @@ public interface ActionManager {
 
     Action getActionByKey(String actionKey, UserI user);
 
+    List<Action> getAllActions();
+
+    @Deprecated
     List<Action> getActions(UserI user);
+
     List<Action> getActions(String xnatType, UserI user);
     List<Action> getActions(String projectId, String xnatType, UserI user);
 

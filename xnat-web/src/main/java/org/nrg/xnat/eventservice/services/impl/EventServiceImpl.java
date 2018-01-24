@@ -139,17 +139,17 @@ public class EventServiceImpl implements EventService {
 
 
     @Override
-    public List<Action> getAllActions(UserI user) {
-        return actionManager.getActions(user);
+    public List<Action> getAllActions() {
+        return actionManager.getAllActions();
     }
 
     @Override
-    public List<Action> getAllActions(String xnatType, UserI user) {
+    public List<Action> getActions(String xnatType, UserI user) {
         return actionManager.getActions(xnatType, user);
     }
 
     @Override
-    public List<Action> getAllActions(String projectId, String xnatType, UserI user) {
+    public List<Action> getActions(String projectId, String xnatType, UserI user) {
         return actionManager.getActions(projectId, xnatType, user);
     }
 
@@ -159,9 +159,9 @@ public class EventServiceImpl implements EventService {
         EventServiceEvent event = componentManager.getEvent(eventId);
         if(event != null && !StringUtils.isNullOrEmpty(event.getPayloadXnatType())){
             if(StringUtils.isNullOrEmpty(projectId)){
-                actions = getAllActions(event.getPayloadXnatType(), user);
+                actions = getActions(event.getPayloadXnatType(), user);
             } else {
-                actions = getAllActions(projectId, event.getPayloadXnatType(), user);
+                actions = getActions(projectId, event.getPayloadXnatType(), user);
             }
         }
         return actions;

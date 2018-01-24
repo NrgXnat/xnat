@@ -183,13 +183,20 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         final UserI user = XDAT.getUserDetails();
         checkCreateOrThrow(user);
         if(projectId != null && xnatType != null)
-            return eventService.getAllActions(projectId, xnatType, user);
-        else if(xnatType != null)
-            return eventService.getAllActions(xnatType, user);
+            return eventService.getActions(projectId, xnatType, user);
         else
-            return eventService.getAllActions(user);
-            
+            return eventService.getActions(xnatType, user);
     }
+
+    @XapiRequestMapping(value = "/allactions", method = GET, params = {"!projectid", "!xnattype"})
+    @ResponseBody
+    public List<Action> getAllActions()
+            throws NrgServiceRuntimeException, UnauthorizedException {
+        final UserI user = XDAT.getUserDetails();
+        checkCreateOrThrow(user);
+        return eventService.getAllActions();
+    }
+
 
     @XapiRequestMapping(value = "/actionsbyevent", method = GET, params = {"!xnattype"})
     @ApiOperation(value="Get actions that can act on a particular Event type")

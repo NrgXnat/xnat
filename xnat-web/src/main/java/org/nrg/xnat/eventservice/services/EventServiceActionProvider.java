@@ -16,6 +16,9 @@ public interface EventServiceActionProvider {
     String getDisplayName();
     String getDescription();
 
+    // Return all actions available to users on the system
+    List<Action> getAllActions();
+
     // Return a list of org.nrg.xnat.eventservice.model.Action objects to describe actions available to the user //
     List<Action> getActions(UserI user);
     List<Action> getActions(String xnatType, UserI user);

@@ -62,6 +62,17 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
+    public List<Action> getAllActions(){
+        List<Action> actions = new ArrayList<>();
+        for(EventServiceActionProvider provider:getActionProviders()) {
+            List<Action> providerActions = provider.getAllActions();
+            if(providerActions != null)
+                actions.addAll(providerActions);
+        }
+        return actions;
+    }
+
+    @Override
     public List<Action> getActions(UserI user) {
         List<Action> actions = new ArrayList<>();
         for(EventServiceActionProvider provider:getActionProviders()) {

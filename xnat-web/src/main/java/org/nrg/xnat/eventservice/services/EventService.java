@@ -21,9 +21,10 @@ public interface EventService {
     List<ActionProvider> getActionProviders();
     List<ActionProvider> getActionProviders(String xnatType, String projectId);
 
-    List<Action> getAllActions(UserI user);
-    List<Action> getAllActions(String xnatType, UserI user);
-    List<Action> getAllActions(String projectId, String xnatType, UserI user);
+    List<Action> getAllActions();
+
+    List<Action> getActions(String xnatType, UserI user);
+    List<Action> getActions(String projectId, String xnatType, UserI user);
     List<Action> getActionsByEvent(String eventId, String projectId, UserI user);
     List<Action> getActionsByProvider(String actionProvider, UserI user);
     Action getActionByKey(String actionKey, UserI user);

@@ -2,13 +2,12 @@
 {
   "action-key": "4:org.nrg.containers.services.CommandActionProvider",
   "active": true,
-  "attributes": {"command":"echo \"Test Complete\" > ~/TestComplete.txt",
+   "project-id": "ABC123",
+    "attributes": {"command":"echo \"Test Complete\" > ~/TestComplete.txt",
                  "output-file":"~/OutputFile.txt"},
   "event-filter": {
     "name": "FilterByProjectAndModality",
-    "project-ids": [
-      "ABC123"
-    ],
+
     "json-path-filter": "$[?(@.modality == \"MR\")]"
   },
   "event-id": "org.nrg.xnat.eventservice.events.SessionArchiveEvent",

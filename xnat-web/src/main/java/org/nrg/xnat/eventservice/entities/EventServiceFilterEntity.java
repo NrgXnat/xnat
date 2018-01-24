@@ -4,8 +4,10 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import org.nrg.xnat.eventservice.model.EventFilter;
 
-import javax.persistence.*;
-import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
 
 @Entity
@@ -15,7 +17,6 @@ public class EventServiceFilterEntity {
 
     private long id;
     private String name;
-    private List<String> projectIds;
     private String jsonPathFilter;
 
 
@@ -24,7 +25,6 @@ public class EventServiceFilterEntity {
         return MoreObjects.toStringHelper(this)
                           .add("id", id)
                 .add("name", name)
-                .add("projectIds", projectIds)
                 .toString();
     }
 
@@ -36,18 +36,16 @@ public class EventServiceFilterEntity {
         EventServiceFilterEntity that = (EventServiceFilterEntity) o;
         return id == that.id &&
                 Objects.equal(name, that.name) &&
-                Objects.equal(jsonPathFilter, that.jsonPathFilter) &&
-                Objects.equal(projectIds, that.projectIds);
+                Objects.equal(jsonPathFilter, that.jsonPathFilter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id, name, jsonPathFilter, projectIds);
+        return Objects.hashCode(id, name, jsonPathFilter);
     }
 
-    public EventServiceFilterEntity(String name, List<String> projectIds, String jsonPathFilter) {
+    public EventServiceFilterEntity(String name, String jsonPathFilter) {
         this.name = name;
-        this.projectIds = projectIds;
         this.jsonPathFilter = jsonPathFilter;
     }
 
@@ -56,7 +54,6 @@ public class EventServiceFilterEntity {
         return eventServiceFilter != null ?
                 new EventServiceFilterEntity(
                         eventServiceFilter.name(),
-                        eventServiceFilter.projectIds(),
                         eventServiceFilter.jsonPathFilter())
                 : null;
 
@@ -76,16 +73,10 @@ public class EventServiceFilterEntity {
 
     public void setName(String name) { this.name = name; }
 
-    @ElementCollection
-    public List<String> getProjectIds() { return projectIds; }
-
-    public void setProjectIds(List<String> projectIds) { this.projectIds = projectIds; }
-
     public EventFilter toPojo() {
         return EventFilter.builder()
                           .id(this.id)
                           .name(this.name)
-                          .projectIds(this.projectIds)
                           .jsonPathFilter(this.jsonPathFilter)
                           .build();
     }

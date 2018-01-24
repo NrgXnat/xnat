@@ -233,14 +233,8 @@ public class EventServiceImpl implements EventService {
     public void triggerEvent(EventServiceEvent event, String projectId) {
         log.debug("Firing EventService Event.");
         // Manually build event label
-        EventFilter filter;
-        if(StringUtils.isNullOrEmpty(projectId)){
-            filter = EventFilter.builder().addProjectId(projectId).build();
-        }
-        else {
-            filter = EventFilter.builder().addProjectId(projectId).build();
-        }
-        String regexKey = filter.toRegexKey(event.getClass().getName());
+        EventFilter filter = EventFilter.builder().build();
+        String regexKey = filter.toRegexKey(event.getClass().getName(), projectId);
         eventBus.notify(regexKey, Event.wrap(event));
         log.debug("Fired EventService Event for Label: " + regexKey);
     }

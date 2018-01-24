@@ -158,9 +158,9 @@ public class EventSubscriptionEntityServiceImpl
                 uniqueListener.setEventService(eventService);
                 String eventFilterRegexMatcher;
                 if(subscription.eventFilter() == null){
-                    eventFilterRegexMatcher = EventFilter.builder().build().toRegexMatcher(eventClazz.getName());
+                    eventFilterRegexMatcher = EventFilter.builder().build().toRegexMatcher(eventClazz.getName(), subscription.projectId());
                 } else {
-                    eventFilterRegexMatcher = subscription.eventFilter().toRegexMatcher(eventClazz.getName());
+                    eventFilterRegexMatcher = subscription.eventFilter().toRegexMatcher(eventClazz.getName(), subscription.projectId());
                 }
                 Selector selector = R(eventFilterRegexMatcher);
                 log.debug("Building Reactor RegEx Selector on matcher: " + eventFilterRegexMatcher);

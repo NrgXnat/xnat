@@ -129,7 +129,7 @@ public class EventSubscriptionEntityServiceImpl
                 log.error("Could not load Action Provider for key:" + subscription.actionKey());
                 throw new SubscriptionValidationException("Could not load Action Provider for key:" + subscription.actionKey());
             }
-            if (!actionManager.validateAction(subscription.actionKey(), subscription.projects(), null, actionUser)) {
+            if (!actionManager.validateAction(subscription.actionKey(), subscription.projectId(), null, actionUser)) {
                 log.error("Could not validate Action Provider Class " + (subscription.actionKey() != null ? subscription.actionKey() : "unknown") + "for user:" + actionUser.getLogin());
                 throw new SubscriptionValidationException("Could not validate Action Provider Class " + subscription.actionKey() != null ? subscription.actionKey() : "unknown");
             }

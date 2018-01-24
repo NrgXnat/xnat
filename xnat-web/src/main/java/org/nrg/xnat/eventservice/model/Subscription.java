@@ -16,7 +16,7 @@ public abstract class Subscription {
 
     @Nullable @JsonProperty("id") public abstract Long id();
     @JsonProperty("name") public abstract String name();
-    @Nullable @JsonProperty("projects") public abstract List<String> projects();
+    @Nullable @JsonProperty("project-id") public abstract String projectId();
     @Nullable @JsonProperty("active") public abstract Boolean active();
     @Nullable @JsonProperty("registration-key") public abstract  String listenerRegistrationKey();
     @JsonProperty("event-id") public abstract String eventId();
@@ -48,7 +48,7 @@ public abstract class Subscription {
     @JsonCreator
     public static Subscription create(@JsonProperty("id") final Long id,
                                       @JsonProperty("name") final String name,
-                                      @Nullable @JsonProperty("projects") final List<String> projects,
+                                      @Nullable @JsonProperty("project-id") final String projectId,
                                       @JsonProperty("active") final Boolean active,
                                       @JsonProperty("registration-key") final String listenerRegistrationKey,
                                       @JsonProperty("event-id") final String eventId,
@@ -61,7 +61,7 @@ public abstract class Subscription {
         return builder()
                 .id(id)
                 .name(name)
-                .projects(projects)
+                .projectId(projectId)
                 .active(active)
                 .listenerRegistrationKey(listenerRegistrationKey)
                 .eventId(eventId)
@@ -78,7 +78,7 @@ public abstract class Subscription {
     public static Subscription create(final SubscriptionCreator creator) {
         return builder()
                 .name(creator.name())
-                .projects(creator.projects())
+                .projectId(creator.projectId())
                 .active(creator.active())
                 .eventId(creator.eventId())
                 .customListenerId(creator.customListenerId())
@@ -92,7 +92,7 @@ public abstract class Subscription {
     public static Subscription create(final SubscriptionCreator creator, final String subscriptionOwner) {
         return builder()
                 .name(creator.name())
-                .projects(creator.projects())
+                .projectId(creator.projectId())
                 .active(creator.active())
                 .eventId(creator.eventId())
                 .customListenerId(creator.customListenerId())
@@ -110,7 +110,7 @@ public abstract class Subscription {
 
         public abstract Builder name(String name);
 
-        public abstract Builder projects(List<String> projects);
+        public abstract Builder projectId(String projectId);
 
         public abstract Builder listenerRegistrationKey(String listenerRegistrationKey);
 

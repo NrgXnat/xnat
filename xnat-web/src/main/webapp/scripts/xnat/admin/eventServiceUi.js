@@ -301,6 +301,9 @@ var XNAT = getObject(XNAT || {});
      * Create, Edit, Delete Subscriptions *
      * ---------------------------------- */
 
+    var emptyOptionObj = {
+        html: '<option selected></option>'
+    };
     var createFormObj = {
         kind: 'panel.form',
         id: 'edit-subscription-form',
@@ -315,33 +318,30 @@ var XNAT = getObject(XNAT || {});
                 validation: 'not-empty',
                 order: 10
             },
-            subProjSelector: {
-                kind: 'panel.select.single',
-                name: 'project-id',
-                label: 'Select Project',
-                id: 'subscription-project-selector',
-                order: 20
-            },
-            subDataSelector: {
-                kind: 'panel.select.single',
-                name: 'xnattype',
-                label: 'Select Data Type',
-                id: 'subscription-xsitype-selector',
-                order: 30
-            },
             subEventSelector: {
                 kind: 'panel.select.single',
                 name: 'event-id',
                 label: 'Select Event',
                 id: 'subscription-event-selector',
-                order: 40
+                element: emptyOptionObj,
+                order: 20
+            },
+            subProjSelector: {
+                kind: 'panel.select.single',
+                name: 'project-id',
+                label: 'Select Project',
+                id: 'subscription-project-selector',
+                element: emptyOptionObj,
+                order: 30
             },
             subActionSelector: {
                 kind: 'panel.select.single',
                 name: 'action-key',
                 label: 'Select Action',
                 id: 'subscription-action-selector',
-                order: 50
+                element: emptyOptionObj,
+                description: 'Available actions are dependent on your project and xsiType selections',
+                order: 40
             },
             subUserProxy: {
                 kind: 'panel.input.switchbox',
@@ -350,22 +350,34 @@ var XNAT = getObject(XNAT || {});
                 onText: 'Action is performed as the user who initiates the event',
                 offText: 'Action is performed as you (the subscription owner)',
                 value: 'true',
+                order: 50
+            },
+            subActive: {
+                kind: 'panel.input.switchbox',
+                name: 'active',
+                label: 'Status',
+                onText: 'Enabled',
+                offText: 'Disabled',
+                value: 'true',
                 order: 60
             }
         }
     };
 
-    function findActions($form){
-        var project = $form.find('select[name=project]').find('option:selected').val();
-        var xsiType = $form.find('select[name=xnattype]').find('option:selected').val();
+    function findActions($element){
+        var $form = $element.parents('form');
+        var project = $form.find('select[name=project-id]').find('option:selected').val();
+        var xsiType = $form.find('select[name=event-id]').find('option:selected').data('xsitype');
         var actionSelector = $form.find('select[name=action-key]');
 
-        if (project && xsiType && actionSelector) {
+        if (project && actionSelector) {
             XNAT.xhr.get({
                 url: getEventActionsUrl(project,xsiType),
                 success: function(data){
+                    actionSelector
+                        .empty()
+                        .append(spawn('option', { selected: true }));
                     if (data.length){
-                        actionSelector.empty();
                         data.forEach(function(action){
                             actionSelector.append( spawn('option', { value: action['action-key'] }, action['display-name'] ))
                         });
@@ -390,20 +402,22 @@ var XNAT = getObject(XNAT || {});
 
                     var $form = obj.$modal.find('form');
                     projs.forEach(function(project){
-                        $form.find('#subscription-project-selector').append(spawn('option', { value: project.ID }, project['secondary_ID'] ));
-                    });
-                    eventServicePanel.xsiTypes.forEach(function(xsiType){
-                        $form.find('#subscription-xsitype-selector').append(spawn('option', { value: xsiType }, xsiType));
+                        $form.find('#subscription-project-selector')
+                            .append(spawn(
+                                'option',
+                                { value: project.ID },
+                                project['secondary_ID']
+                            ));
                     });
                     Object.keys(eventServicePanel.events).forEach(function(event){
-                        $form.find('#subscription-event-selector').append(spawn('option', { value: event }, eventServicePanel.events[event]['display-name']))
-                    });
-                    eventServicePanel.actions.forEach(function(action){
-                        $form.find('#subscription-action-selector').append(spawn('option', { value: action['action-key'] }, action['display-name'] ));
+                        $form.find('#subscription-event-selector')
+                            .append(spawn(
+                                'option',
+                                { value: event, data: { xsitype: eventServicePanel.events[event]['xnat-type'] }},
+                                eventServicePanel.events[event]['display-name']
+                            ));
                     });
 
-                    $form.on('change','#subscription-project-selector', findActions($form));
-                    $form.on('change','#subscription-xsitype-selector', findActions($form));
                 },
                 buttons: [
                     {
@@ -413,6 +427,8 @@ var XNAT = getObject(XNAT || {});
                         action: function(obj){
                             // var formData = obj.$modal.find('form').serialize();
                             var jsonFormData = JSON.stringify(obj.$modal.find('form'));
+                            delete jsonFormData.xnattype;
+
                             XNAT.xhr.ajax({
                                 url: setEventSubscriptionUrl(),
                                 data: jsonFormData,
@@ -428,6 +444,10 @@ var XNAT = getObject(XNAT || {});
                                 }
                             })
                         }
+                    },
+                    {
+                        label: 'Cancel',
+                        close: true
                     }
                 ]
             })
@@ -437,9 +457,16 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
-    $(document).off('click').on('click', '#create-new-subscription', function(e){
+    $(document).off('click','#create-new-subscription').on('click', '#create-new-subscription', function(e){
         // console.log(e);
         XNAT.admin.eventServicePanel.createSubscription();
+    });
+
+    $(document).off('change','select[name=project-id]').on('change','select[name=project-id]', function(){
+        findActions($(this));
+    });
+    $(document).off('change','select[name=event-id]').on('change','select[name=event-id]', function(){
+        findActions($(this));
     });
 
     /* ------------------------- *

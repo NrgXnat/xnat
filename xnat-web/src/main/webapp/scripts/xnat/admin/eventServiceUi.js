@@ -208,7 +208,7 @@ var XNAT = getObject(XNAT || {});
             .th('<b>Action</b>')
             .th('<b>Created By</b>')
             .th('<b>Enabled</b>')
-            .th({ style: { width: '90px' }, html: '<b>Action</b>' });
+            .th({ style: { width: '125px' }, html: '<b>Action</b>' });
 
         /* Formatted table cells */
         function subscriptionNiceLabel(label){
@@ -258,15 +258,24 @@ var XNAT = getObject(XNAT || {});
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
-                    eventServicePanel.editSubscription(subscription.id, false);
+                    eventServicePanel.editSubscription(subscription.id);
                 }
             }, [ spawn('span.fa.fa-pencil') ]);
+        }
+        function cloneSubscriptionButton(subscription){
+            var cloneMe = true;
+            return spawn('button.btn.sm', {
+                onclick: function(e){
+                    e.preventDefault();
+                    eventServicePanel.editSubscription(subscription.id,cloneMe);
+                }
+            }, [ spawn('span.fa.fa-clone') ]);
         }
         function deleteSubscriptionButton(subscription){
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
-                    eventServicePanel.editSubscription(subscription.id, false);
+                    eventServicePanel.deleteSubscriptionConfirmation(subscription);
                 }
             }, [ spawn('span.fa.fa-trash') ]);
         }
@@ -281,7 +290,7 @@ var XNAT = getObject(XNAT || {});
                         .td([ actionNiceName(subscription['action-key']) ])
                         .td(subscription['subscription-owner'])
                         .td([ subscriptionEnabledCheckbox(subscription) ])
-                        .td([ editSubscriptionButton(subscription), spacer(6), deleteSubscriptionButton(subscription) ])
+                        .td({ addClass: 'center' },[ editSubscriptionButton(subscription), spacer(4), cloneSubscriptionButton(subscription), spacer(4), deleteSubscriptionButton(subscription) ])
                 })
             }
             else {
@@ -434,9 +443,8 @@ var XNAT = getObject(XNAT || {});
                                 data: jsonFormData,
                                 method: 'POST',
                                 contentType: 'application/json',
-                                success: function(data){
+                                success: function(){
                                     XNAT.ui.banner.top(2000,'Created new event subscription','success');
-                                    console.log(data);
                                     eventServicePanel.populateDisplay();
                                 },
                                 fail: function(e){
@@ -456,6 +464,51 @@ var XNAT = getObject(XNAT || {});
             errorHandler({}, 'Could not load projects');
         }
     };
+
+    eventServicePanel.deleteSubscriptionConfirmation = function(subscription){
+        XNAT.ui.dialog.open({
+            title: 'Confirm Deletion',
+            width: 350,
+            content: '<p>Are you sure you want to permanently delete the <strong>' + subscription.name + '</strong> event subscription? This operation cannot be undone. Alternately, you can just disable it.</p>',
+            buttons: [
+                {
+                    label: 'Confirm Delete',
+                    isDefault: true,
+                    close: true,
+                    action: function(){
+                        eventServicePanel.deleteSubscription(subscription.id);
+                    }
+                },
+                {
+                    label: 'Disable',
+                    close: true,
+                    action: function(){
+                        eventServicePanel.disableSubscription(subscription.id);
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
+                }
+            ]
+        })
+    };
+    eventServicePanel.deleteSubscription = function(id){
+        if (!id) return false;
+        XNAT.xhr.ajax({
+            url: getEventSubscriptionUrl(id),
+            method: 'DELETE',
+            success: function(){
+                XNAT.ui.banner.top(2000,'Permanently deleted event subscription', 'success');
+                eventServicePanel.populateDisplay();
+            },
+            fail: function(e){
+                errorHandler(e, 'Could not delete event subscription');
+            }
+        })
+    };
+
+    /* browser event listeners */
 
     $(document).off('click','#create-new-subscription').on('click', '#create-new-subscription', function(e){
         // console.log(e);

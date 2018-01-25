@@ -95,7 +95,10 @@ var XNAT = getObject(XNAT || {});
     }
 
     function getEventActionsUrl(projectId,xsiType){
-        return rootUrl('/xapi/events/actions?projectid='+projectId+'&xnattype='+xsiType);
+        var path = (projectId && xsiType) ?
+            '/xapi/events/actions?projectid='+projectId+'&xnattype='+xsiType :
+            '/xapi/events/allactions';
+        return rootUrl(path);
     }
 
     function getEventSubscriptionUrl(id){
@@ -162,12 +165,13 @@ var XNAT = getObject(XNAT || {});
     };
 
     eventServicePanel.getActions = function(opts,callback){
-        if (!opts.project || !opts.xsiType) return false;
+        var project = (opts) ? opts.project : false;
+        var xsiType = (opts) ? opts.xsiType : false;
 
         callback = isFunction(callback) ? callback : function(){};
 
         return XNAT.xhr.getJSON({
-            url: getEventActionsUrl(opts.project,opts.xsiType),
+            url: getEventActionsUrl(project,xsiType),
             success: function(data){
                 if (data) {
                     return data;
@@ -313,7 +317,7 @@ var XNAT = getObject(XNAT || {});
             },
             subProjSelector: {
                 kind: 'panel.select.single',
-                name: 'project',
+                name: 'project-id',
                 label: 'Select Project',
                 id: 'subscription-project-selector',
                 order: 20
@@ -351,37 +355,90 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
-    eventServicePanel.createSubscription = function(){
+    function findActions($form){
+        var project = $form.find('select[name=project]').find('option:selected').val();
+        var xsiType = $form.find('select[name=xnattype]').find('option:selected').val();
+        var actionSelector = $form.find('select[name=action-key]');
 
-        eventServicePanel.getProjects().done(function(data){
-            var projs = data.ResultSet.Result;
-            if (projs.length) {
-
-                XNAT.ui.dialog.open({
-                    title: 'Create Subscription',
-                    width: 600,
-                    content: '<div id="subscription-form-container"></div>',
-                    beforeShow: function(obj){
-                        var $container = obj.$modal.find('#subscription-form-container');
-                        XNAT.spawner.spawn({ form: createFormObj }).render($container);
-
-                        var $form = obj.$modal.find('form');
-                        projs.forEach(function(project){
-                            $form.find('#subscription-project-selector').append(spawn('option', { value: project.ID, html: project['secondary_ID'] }));
+        if (project && xsiType && actionSelector) {
+            XNAT.xhr.get({
+                url: getEventActionsUrl(project,xsiType),
+                success: function(data){
+                    if (data.length){
+                        actionSelector.empty();
+                        data.forEach(function(action){
+                            actionSelector.append( spawn('option', { value: action['action-key'] }, action['display-name'] ))
                         });
                     }
-                })
-            }
-            else {
-                errorHandler({}, 'Could not load projects');
-            }
+                }
+            })
+        }
+        else return false;
+    }
 
-        });
+    eventServicePanel.createSubscription = function(){
+        var projs = eventServicePanel.projects;
+        if (projs.length) {
+
+            XNAT.ui.dialog.open({
+                title: 'Create Subscription',
+                width: 600,
+                content: '<div id="subscription-form-container"></div>',
+                beforeShow: function(obj){
+                    var $container = obj.$modal.find('#subscription-form-container');
+                    XNAT.spawner.spawn({ form: createFormObj }).render($container);
+
+                    var $form = obj.$modal.find('form');
+                    projs.forEach(function(project){
+                        $form.find('#subscription-project-selector').append(spawn('option', { value: project.ID }, project['secondary_ID'] ));
+                    });
+                    eventServicePanel.xsiTypes.forEach(function(xsiType){
+                        $form.find('#subscription-xsitype-selector').append(spawn('option', { value: xsiType }, xsiType));
+                    });
+                    Object.keys(eventServicePanel.events).forEach(function(event){
+                        $form.find('#subscription-event-selector').append(spawn('option', { value: event }, eventServicePanel.events[event]['display-name']))
+                    });
+                    eventServicePanel.actions.forEach(function(action){
+                        $form.find('#subscription-action-selector').append(spawn('option', { value: action['action-key'] }, action['display-name'] ));
+                    });
+
+                    $form.on('change','#subscription-project-selector', findActions($form));
+                    $form.on('change','#subscription-xsitype-selector', findActions($form));
+                },
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function(obj){
+                            // var formData = obj.$modal.find('form').serialize();
+                            var jsonFormData = JSON.stringify(obj.$modal.find('form'));
+                            XNAT.xhr.ajax({
+                                url: setEventSubscriptionUrl(),
+                                data: jsonFormData,
+                                method: 'POST',
+                                contentType: 'application/json',
+                                success: function(data){
+                                    XNAT.ui.banner.top(2000,'Created new event subscription','success');
+                                    console.log(data);
+                                    eventServicePanel.populateDisplay();
+                                },
+                                fail: function(e){
+                                    errorHandler(e,'Could not create event subscription')
+                                }
+                            })
+                        }
+                    }
+                ]
+            })
+        }
+        else {
+            errorHandler({}, 'Could not load projects');
+        }
     };
 
-    $(document).on('click', '#create-new-subscription', function(e){
-        e.preventDefault();
-        e.stopPropagation();
+    $(document).off('click').on('click', '#create-new-subscription', function(e){
+        // console.log(e);
         XNAT.admin.eventServicePanel.createSubscription();
     });
 
@@ -449,7 +506,6 @@ var XNAT = getObject(XNAT || {});
         $('#subscriptionTableContainer').append( eventServicePanel.subscriptionTable() );
 
         XNAT.ui.tab.activate('subscription-tab');
-
     };
 
     eventServicePanel.init = function(){
@@ -465,6 +521,14 @@ var XNAT = getObject(XNAT || {});
             // Populate event subscription table
             eventServicePanel.populateDisplay();
         });
+
+        // initialize arrays of values that we'll need later
+        eventServicePanel.getProjects().done(function(data){
+            eventServicePanel.projects = data.ResultSet.Result;
+        });
+        eventServicePanel.getActions().done(function(data){
+            eventServicePanel.actions = data;
+        })
 
 
     };

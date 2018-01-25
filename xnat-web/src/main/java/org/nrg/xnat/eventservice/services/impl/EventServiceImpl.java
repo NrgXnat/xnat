@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import javassist.Modifier;
 import org.h2.util.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xft.security.UserI;
@@ -65,6 +66,11 @@ public class EventServiceImpl implements EventService {
     @Override
     public void deleteSubscription(Long id) throws Exception {
         subscriptionService.delete(id);
+    }
+
+    @Override
+    public void throwExceptionIfExists(Subscription subscription) throws NrgServiceRuntimeException {
+        subscriptionService.throwExceptionIfExists(subscription);
     }
 
     @Override

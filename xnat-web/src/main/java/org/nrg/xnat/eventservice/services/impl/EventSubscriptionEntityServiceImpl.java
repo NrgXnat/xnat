@@ -8,6 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -218,6 +219,20 @@ public class EventSubscriptionEntityServiceImpl
         Subscription saved = toPojo(create(fromPojo(subscription)));
         log.debug("Saved subscription with ID:" + Long.toString(saved.id()));
         return saved;
+    }
+
+    @Override
+    public void throwExceptionIfExists(Subscription subscription) throws NrgServiceRuntimeException {
+        String name = subscription.name();
+        SubscriptionEntity existing = null;
+        try {
+            existing = this.getDao().findByName(name);
+        } catch (Exception e) {
+            throw new NrgServiceRuntimeException("Could not check database for duplication subscription name.");
+        }
+        if (existing != null) {
+            throw new NrgServiceRuntimeException("Subscription with the name :" + name + " exists.");
+        }
     }
 
     @Transactional

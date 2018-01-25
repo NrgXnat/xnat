@@ -2,6 +2,7 @@ package org.nrg.xnat.eventservice.services;
 
 
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
@@ -36,6 +37,7 @@ public interface EventService {
     Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException;
     Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException;
     void deleteSubscription(Long id) throws Exception;
+    void throwExceptionIfExists(Subscription subscription) throws NrgServiceRuntimeException;
 
     void reactivateAllSubscriptions();
 

@@ -171,7 +171,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
             return fromPojo(subscription);
         }
         template.name = subscription.name() != null ? subscription.name() : template.name;
-        template.active = subscription.active() != null ? subscription.active() : template.active;
+        template.active = subscription.active() != null ? subscription.active() : (template.active == null ? true : template.active);
         template.listenerRegistrationKey = subscription.listenerRegistrationKey() != null ? subscription.listenerRegistrationKey() : template.listenerRegistrationKey;
         template.eventType = subscription.eventId() != null ? subscription.eventId() : template.eventType;
         template.customListenerId = subscription.customListenerId() != null ? subscription.customListenerId() : template.customListenerId;

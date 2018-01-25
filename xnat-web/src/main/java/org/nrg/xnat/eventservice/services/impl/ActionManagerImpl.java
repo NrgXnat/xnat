@@ -18,6 +18,7 @@ import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -214,7 +215,9 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
+    @Async
     public void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user) {
+        log.debug("ActionManager.processEvent started on Thread: " + Thread.currentThread().getName());
         PersistentWorkflowI workflow = generateWorkflowEntryIfAppropriate(subscription, esEvent, user);
         EventServiceActionProvider provider = getActionProviderByKey(subscription.getActionKey());
         if(provider!= null) {

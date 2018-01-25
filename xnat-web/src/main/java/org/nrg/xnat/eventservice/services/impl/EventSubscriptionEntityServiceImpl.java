@@ -175,8 +175,11 @@ public class EventSubscriptionEntityServiceImpl
                 log.error("Could not activate subscription:" + Long.toString(subscription.id()) + ". No appropriate listener found.");
                 throw new SubscriptionValidationException("Could not activate subscription. No appropriate listener found.");
             }
+            update(subscription);
+            log.debug("Updated subscription: " + subscription.name() + " with registration key: " + subscription.listenerRegistrationKey());
+
         }
-        catch (SubscriptionValidationException | ClassNotFoundException e) {
+        catch (SubscriptionValidationException | ClassNotFoundException | NotFoundException e) {
             log.error("Event subscription failed for " + subscription.toString());
             log.error(e.getMessage());
         }
@@ -266,8 +269,6 @@ public class EventSubscriptionEntityServiceImpl
             if (subscription.active()) {
                 subscription = activate(subscription);
                 log.debug("Activated subscription: " + subscription.name());
-                subscription = update(subscription);
-                log.debug("Updated subscription: " + subscription.name() + " with registration key: " + subscription.listenerRegistrationKey());
             } else {
                 log.debug("Subscription set to not active. Skipping activation.");
             }

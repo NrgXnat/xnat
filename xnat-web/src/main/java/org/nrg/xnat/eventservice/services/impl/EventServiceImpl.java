@@ -261,6 +261,7 @@ public class EventServiceImpl implements EventService {
     public void activateSubscription(long id) throws NotFoundException {
         Subscription subscription = subscriptionService.getSubscription(id);
         subscriptionService.activate(subscription);
+
     }
 
 

@@ -89,6 +89,7 @@ var XNAT = getObject(XNAT || {});
     ];
 
     eventServicePanel.events = {};
+    eventServicePanel.actions = {};
 
     function getProjectListUrl(){
         return rootUrl('/data/projects?format=json');
@@ -220,13 +221,10 @@ var XNAT = getObject(XNAT || {});
                 }
             }, label);
         }
-        function projectLinks(ids){
-            var projectLinks = [];
-            if (ids) {
-                ids.forEach(function(id){
-                    projectLinks.push( spawn('a',{ href: XNAT.url.rootUrl('/data/projects/'+id+'?format=html'), style: { display: 'block' }}, id) );
-                });
-                return spawn( 'div.center', projectLinks );
+        function projectLinks(id){
+            if (id) {
+                var projectLink = spawn('a',{ href: XNAT.url.rootUrl('/data/projects/'+id+'?format=html'), style: { display: 'block' }}, id);
+                return spawn( 'div.center', [ projectLink ]);
             }
             else {
                 return 'N/A';
@@ -235,8 +233,8 @@ var XNAT = getObject(XNAT || {});
         function eventNiceName(eventId){
             return eventServicePanel.events[eventId]['display-name'];
         }
-        function actionNiceName(subscription){
-            return spawn('span.truncate.truncate200', subscription['action-key']);
+        function actionNiceName(actionKey){
+            return eventServicePanel.actions[actionKey]['display-name'];
         }
         function subscriptionEnabledCheckbox(item){
             var enabled = !!item.active;
@@ -278,9 +276,9 @@ var XNAT = getObject(XNAT || {});
                 data.forEach(function(subscription){
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
                         .td([ subscriptionNiceLabel(subscription.name) ])
-                        .td([ projectLinks(subscription.projects) ])
+                        .td([ projectLinks(subscription['project-id']) ])
                         .td([ eventNiceName(subscription['event-id']) ])
-                        .td([ actionNiceName(subscription) ])
+                        .td([ actionNiceName(subscription['action-key']) ])
                         .td(subscription['subscription-owner'])
                         .td([ subscriptionEnabledCheckbox(subscription) ])
                         .td([ editSubscriptionButton(subscription), spacer(6), deleteSubscriptionButton(subscription) ])
@@ -309,7 +307,9 @@ var XNAT = getObject(XNAT || {});
         id: 'edit-subscription-form',
         header: false,
         footer: false,
-        style: { border: 'none' },
+        element: {
+            style: { border: 'none', margin: '0' }
+        },
         contents: {
             subName: {
                 kind: 'panel.input.text',
@@ -545,17 +545,22 @@ var XNAT = getObject(XNAT || {});
                 eventServicePanel.events[event.id] = event;
             });
 
-            // Populate event subscription table
-            eventServicePanel.populateDisplay();
+            eventServicePanel.getActions().done(function(actions){
+                actions.forEach(function(action){
+                    eventServicePanel.actions[action['action-key']] = action;
+                });
+
+                // Populate event subscription table
+                eventServicePanel.populateDisplay();
+            });
+
         });
 
         // initialize arrays of values that we'll need later
         eventServicePanel.getProjects().done(function(data){
             eventServicePanel.projects = data.ResultSet.Result;
         });
-        eventServicePanel.getActions().done(function(data){
-            eventServicePanel.actions = data;
-        })
+
 
 
     };

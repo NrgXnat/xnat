@@ -236,19 +236,25 @@ var XNAT = getObject(XNAT || {});
         function actionNiceName(actionKey){
             return eventServicePanel.actions[actionKey]['display-name'];
         }
-        function subscriptionEnabledCheckbox(item){
-            var enabled = !!item.active;
+        function subscriptionEnabledCheckbox(subscription){
+            var enabled = !!subscription.active;
             var ckbox = spawn('input.subscription-enabled', {
                 type: 'checkbox',
                 checked: enabled,
                 value: enabled,
                 onchange: function(){
-
+                    // if a subscription was enabled before the click, disable it.
+                    if (enabled) {
+                        eventServicePanel.disableSubscription(subscription.id);
+                    }
+                    else {
+                        eventServicePanel.enableSubscription(subscription.id);
+                    }
                 }
             });
 
             return spawn('div.center', [
-                spawn('label.switchbox|title=' + item.name, [
+                spawn('label.switchbox|title=' + subscription.name, [
                     ckbox,
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
@@ -352,6 +358,35 @@ var XNAT = getObject(XNAT || {});
                 description: 'Available actions are dependent on your project and xsiType selections',
                 order: 40
             },
+            subActionPreview: {
+                tag: 'div#subscription-action-preview.panel-element',
+                element: {
+                    style: {
+                        display: 'none'
+                    }
+                },
+                contents: {
+                    subActionPreviewPane: {
+                        tag: 'div.preview-pane',
+                        element: {
+                            style: {
+                                border: '1px dotted #ccc',
+                                'margin-bottom': '1em',
+                                padding: '1em',
+                                float: 'right',
+                                width: '70%'
+                            }
+                        },
+                        content: '<button id="set-sub-action-attributes">Set Attributes</button>'
+                    }
+                },
+                order: 41
+            },
+            subActionAttributes: {
+                kind: 'panel.input.hidden',
+                name: 'attributes',
+                id: 'subscription-action-attributes'
+            },
             subUserProxy: {
                 kind: 'panel.input.switchbox',
                 name: 'act-as-event-user',
@@ -373,6 +408,7 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
+    // populate the Action Select menu based on selected project and event (which provides xsitype)
     function findActions($element){
         var $form = $element.parents('form');
         var project = $form.find('select[name=project-id]').find('option:selected').val();
@@ -389,12 +425,28 @@ var XNAT = getObject(XNAT || {});
                     if (data.length){
                         data.forEach(function(action){
                             actionSelector.append( spawn('option', { value: action['action-key'] }, action['display-name'] ))
+                            // if the action has attributes, add them to the global actions object
+                            if (action['attributes']) {
+                                eventServicePanel.actions[action['action-key']].attributes = action['attributes'];
+                            }
                         });
                     }
                 }
             })
         }
         else return false;
+    }
+
+    // populate or hide the Action Attributes selector depending on whether it is required by the selected action
+    function getActionAttributes($element){
+        var $form = $element.parents('form');
+        var actionId = $element.find('option:selected').val();
+        if (eventServicePanel.actions[actionId].attributes && eventServicePanel.actions[actionId].attributes !== {}) {
+            $('#subscription-action-preview').slideDown(300);
+        }
+        else {
+            $('#subscription-action-preview').slideUp(300);
+        }
     }
 
     eventServicePanel.createSubscription = function(){
@@ -434,18 +486,20 @@ var XNAT = getObject(XNAT || {});
                         isDefault: true,
                         close: true,
                         action: function(obj){
-                            // var formData = obj.$modal.find('form').serialize();
-                            var jsonFormData = JSON.stringify(obj.$modal.find('form'));
-                            delete jsonFormData.xnattype;
+                            var formData = JSON.stringify(obj.$modal.find('form'));
+                            var jsonFormData = JSON.parse(formData);
+                            if (jsonFormData.attributes === '') jsonFormData.attributes = {};
+
+                            formData = JSON.stringify(jsonFormData);
 
                             XNAT.xhr.ajax({
                                 url: setEventSubscriptionUrl(),
-                                data: jsonFormData,
+                                data: formData,
                                 method: 'POST',
                                 contentType: 'application/json',
                                 success: function(){
                                     XNAT.ui.banner.top(2000,'Created new event subscription','success');
-                                    eventServicePanel.populateDisplay();
+                                    eventServicePanel.refreshSubscriptionList();
                                 },
                                 fail: function(e){
                                     errorHandler(e,'Could not create event subscription')
@@ -463,6 +517,31 @@ var XNAT = getObject(XNAT || {});
         else {
             errorHandler({}, 'Could not load projects');
         }
+    };
+
+    eventServicePanel.enableSubscription = function(id){
+        XNAT.xhr.ajax({
+            url: setEventSubscriptionUrl(id,'/activate'),
+            method: 'POST',
+            success: function(){
+                XNAT.ui.banner.top(2000,'Event subscription enabled','success');
+            },
+            fail: function(e){
+                errorHandler(e,'Could not enable event subscription')
+            }
+        })
+    };
+    eventServicePanel.disableSubscription = function(id){
+        XNAT.xhr.ajax({
+            url: setEventSubscriptionUrl(id,'/deactivate'),
+            method: 'POST',
+            success: function(){
+                XNAT.ui.banner.top(2000,'Event subscription disabled','success');
+            },
+            fail: function(e){
+                errorHandler(e,'Could not disable event subscription');
+            }
+        })
     };
 
     eventServicePanel.deleteSubscriptionConfirmation = function(subscription){
@@ -500,7 +579,7 @@ var XNAT = getObject(XNAT || {});
             method: 'DELETE',
             success: function(){
                 XNAT.ui.banner.top(2000,'Permanently deleted event subscription', 'success');
-                eventServicePanel.populateDisplay();
+                eventServicePanel.refreshSubscriptionList();
             },
             fail: function(e){
                 errorHandler(e, 'Could not delete event subscription');
@@ -521,12 +600,15 @@ var XNAT = getObject(XNAT || {});
     $(document).off('change','select[name=event-id]').on('change','select[name=event-id]', function(){
         findActions($(this));
     });
+    $(document).off('change','select[name=action-key]').on('change','select[name=action-key]', function(){
+        getActionAttributes($(this));
+    });
 
     /* ------------------------- *
      * Initialize tabs & Display *
      * ------------------------- */
 
-    XNAT.admin.eventServicePanel.populateDisplay = function(rootDiv) {
+   eventServicePanel.populateDisplay = function(rootDiv) {
         var $container = $(rootDiv || '#event-service-admin-tabs');
         $container.empty();
 
@@ -583,10 +665,17 @@ var XNAT = getObject(XNAT || {});
         eventServicePanel.tabSet = XNAT.spawner.spawn({ eventSettings: eventTabSet });
         eventServicePanel.tabSet.render($container);
 
-        $('#subscriptionTableContainer').append( eventServicePanel.subscriptionTable() );
+        eventServicePanel.showSubscriptionList();
 
         XNAT.ui.tab.activate('subscription-tab');
     };
+
+   eventServicePanel.showSubscriptionList = eventServicePanel.refreshSubscriptionList = function(container){
+       var $container = $(container || '#subscriptionTableContainer');
+       $container
+           .empty()
+           .append( eventServicePanel.subscriptionTable() );
+   };
 
     eventServicePanel.init = function(){
 

@@ -70,7 +70,12 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			}
 
             if (existing == null) {
-            	String emailWithWhite = found.getEmail();
+            	final String emailWithWhite = found.getEmail();
+            	if (StringUtils.isBlank(emailWithWhite)) {
+                    handleInvalid(data, context, "No valid email address provided.");
+                    return;
+                }
+
         		String noWhiteEmail = emailWithWhite.trim();
         		found.setEmail(emailWithWhite);
 
@@ -267,7 +272,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
     }
 
     @Override
-    protected boolean isAuthorized(RunData data) throws Exception {
+    protected boolean isAuthorized(RunData data) {
         return true;
     }
 }

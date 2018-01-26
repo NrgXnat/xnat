@@ -9,7 +9,6 @@
 
 package org.nrg.xdat.security.user;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -24,6 +23,8 @@ import org.nrg.xft.security.UserI;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Provider;
+
+import static lombok.AccessLevel.PRIVATE;
 
 /**
  * Defines the default user for XNAT services.
@@ -67,7 +68,7 @@ public class XnatUserProvider implements Provider<UserI> {
 
     private String _login;
 
-    @Getter(AccessLevel.PRIVATE)
-    @Setter(AccessLevel.PRIVATE)
+    @Getter(PRIVATE)
+    @Setter(PRIVATE)
     private UserI _user;
 }

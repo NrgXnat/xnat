@@ -9,7 +9,6 @@
 
 package org.nrg.xdat.preferences;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
@@ -35,12 +34,10 @@ import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.postgresql.util.PGInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -122,6 +119,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             set(siteUrl, "siteUrl");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name siteUrl: something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference
+    public String getProcessingUrl() {
+        return getValue("processingUrl");
+    }
+
+    public void setProcessingUrl(final String processingUrl) {
+        try {
+            set(processingUrl, "processingUrl");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name processingUrl: something is very wrong here.", e);
         }
     }
 
@@ -1497,17 +1507,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'requireEventName': something is very wrong here.", e);
         }
-    }
-
-    @JsonIgnore
-    public static long convertPGIntervalToSeconds(final String expression) throws SQLException {
-        final PGInterval interval = new PGInterval(expression);
-        return ((long) interval.getYears()) * 31536000L +
-               ((long) interval.getMonths()) * 2592000L +
-               ((long) interval.getDays()) * 86400L +
-               ((long) interval.getHours()) * 3600L +
-               ((long) interval.getMinutes()) * 60L +
-               ((long) interval.getSeconds());
     }
 
     public boolean isComplete() {

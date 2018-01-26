@@ -30,10 +30,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
+
+import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToSeconds;
 
 @Service
 public class HibernateAliasTokenService extends AbstractHibernateEntityService<AliasToken, AliasTokenDAO> implements AliasTokenService {
@@ -103,14 +104,8 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
     public AliasToken issueTokenForUser(final UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses) {
         AliasToken token = newEntity();
         final Calendar calendar = Calendar.getInstance();
-        try {
-            // Try to get the configuration setting for the alias token timeout.
-            final long seconds = SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getAliasTokenTimeout());
-            calendar.add(Calendar.SECOND, ((Long) seconds).intValue());
-        } catch (SQLException e) {
-            // If that fails--always means number format exception--use two days as the default.
-            calendar.add(Calendar.DATE, 2);
-        }
+        final long seconds = convertPGIntervalToSeconds(_preferences.getAliasTokenTimeout());
+        calendar.add(Calendar.SECOND, ((Long) seconds).intValue());
         token.setEstimatedExpirationTime(calendar.getTime());
         token.setXdatUserId(xdatUser.getLogin());
         token.setSingleUse(isSingleUse);

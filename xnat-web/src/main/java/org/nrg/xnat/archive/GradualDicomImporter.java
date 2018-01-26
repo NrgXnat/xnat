@@ -23,13 +23,14 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.Decompress;
-import org.nrg.dicom.mizer.service.*;
+import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
@@ -46,7 +47,6 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xdat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
@@ -66,24 +66,21 @@ public class GradualDicomImporter extends ImporterHandlerA {
     public static final String SENDER_ID_PARAM       = "Sender-ID";
     public static final String TSUID_PARAM           = "Transfer-Syntax-UID";
 
-    public GradualDicomImporter(final Object listenerControl,
-                                final UserI user,
-                                final FileWriterWrapperI fileWriter,
-                                final Map<String, Object> parameters)
-            throws IOException, ClientException {
+    @SuppressWarnings("RedundantThrows")
+    public GradualDicomImporter(final Object listenerControl, final UserI user, final FileWriterWrapperI fileWriter, final Map<String, Object> parameters) throws ServerException {
         super(listenerControl, user, fileWriter, parameters);
         _user = user;
-        _userId = user.getUsername();
         _fileWriter = fileWriter;
         _parameters = parameters;
         if (_parameters.containsKey(TSUID_PARAM)) {
             _transferSyntax = TransferSyntax.valueOf((String) _parameters.get(TSUID_PARAM));
         }
+        //noinspection unchecked
         _cache = XDAT.getContextService().getBean(UserProjectCache.class);
     }
 
     @Override
-    public List<String> call() throws ClientException, ServerException {
+    public List<String> call() throws ClientException {
         final String name = _fileWriter.getName();
         final DicomObject dicom;
         final XnatProjectdata project;
@@ -328,15 +325,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
     }
 
-    private boolean canCreateIn(final XnatProjectdata p) {
-        try {
-            return PrearcUtils.canModify(_user, p.getId());
-        } catch (Throwable t) {
-            logger.error("Unable to check permissions for " + _user + " in " + p, t);
-            return false;
-        }
-    }
-
     private XnatProjectdata getProject(final String alias, final Callable<XnatProjectdata> lookupProject) {
         if (null != alias) {
             logger.debug("looking for project matching alias {} from query parameters", alias);
@@ -462,8 +450,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private static void write(final DicomObject fmi, final DicomObject dataset, final BufferedInputStream remainder, final File f, final String source)
-            throws ClientException, IOException {
+    private static void write(final DicomObject fmi, final DicomObject dataset, final BufferedInputStream remainder, final File f, final String source) throws ClientException, IOException {
         IOException ioexception = null;
         final FileOutputStream fos = new FileOutputStream(f);
         final BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -556,11 +543,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private static final String  RENAME_PARAM            = "rename";
     private static final boolean canDecompress           = initializeCanDecompress();
 
-    private final UserProjectCache    _cache;
-    private final FileWriterWrapperI  _fileWriter;
-    private final UserI               _user;
-    private final String              _userId;
-    private final Map<String, Object> _parameters;
+    private final UserProjectCache<XnatProjectdata> _cache;
+    private final FileWriterWrapperI                _fileWriter;
+    private final UserI                             _user;
+    private final Map<String, Object>               _parameters;
 
     private TransferSyntax     _transferSyntax;
     private DicomFilterService _filterService;

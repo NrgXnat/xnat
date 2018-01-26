@@ -185,8 +185,7 @@ public abstract class SecureResource extends Resource {
     }
 
     public void logAccess() {
-        final String url = getSiteUrlResolvedReference().toString();
-
+        final String url = getRequest().getResourceRef().toString();
         if (!(Method.GET.equals(getRequest().getMethod()) && url.contains("resources/SNAPSHOTS"))) {
             AccessLogger.LogServiceAccess(user != null ? user.getLogin() : "", getRequest().getClientInfo().getAddress(), getRequest().getMethod() + " " + url, "");
         }
@@ -915,6 +914,12 @@ public abstract class SecureResource extends Resource {
     protected Reference getSiteUrlResolvedReference() {
         final Reference reference = getRequest().getResourceRef();
         try {
+            // If the reference starts with the processing URL, we'll assume that that's what they really meant and
+            // just return that without translating it to the siteUrl.
+            final String processingUrl = XDAT.getSiteConfigurationProperty("processingUrl", null);
+            if (StringUtils.startsWithIgnoreCase(reference.toString(), processingUrl)) {
+                return reference;
+            }
             final String siteUrlProperty = XDAT.getSiteConfigurationProperty("siteUrl");
             try {
             	final String path = reference.getPath();
@@ -924,7 +929,6 @@ public abstract class SecureResource extends Resource {
                 reference.setProtocol(new Protocol(siteUrl.getProtocol()));
                 reference.setAuthority(siteUrl.getAuthority());
                 reference.setBaseRef(reference.getScheme() + "://" + reference.getAuthority() + basePath);
-                
             } catch (MalformedURLException e) {
                 logger.warn("An error occurred trying to convert the site URL value " + siteUrlProperty + " to a URL object: " + e.getMessage());
             }

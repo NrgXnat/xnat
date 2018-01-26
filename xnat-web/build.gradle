@@ -37,12 +37,12 @@ buildscript {
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.3"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.3"
-        classpath "com.github.kongchen:swagger-maven-plugin:3.1.+"
+        classpath "com.github.kongchen:swagger-maven-plugin:3.1.5"
         classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
         classpath "io.franzbecker:gradle-lombok:1.10"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
-        classpath "io.swagger:swagger-core:1.5.+"
+        classpath "io.swagger:swagger-core:1.5.13"
         classpath "org.nrg.xnat:xnat-data-models:1.7.5-SNAPSHOT"
         classpath "org.springframework:spring-jdbc:4.3.10.RELEASE"
         classpath "org.springframework:spring-webmvc:4.3.10.RELEASE"
@@ -492,7 +492,7 @@ task sourceJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar, dependsOn: [javadocCoverageReport, swagger]) {
+task javadocJar(type: Jar) { // TODO: Issues with both coverage report and Swagger JSON generation, removing until we spend time on them and they're useful. , dependsOn: [javadocCoverageReport, swagger]) {
     classifier "javadoc"
     from javadoc.destinationDir
 }

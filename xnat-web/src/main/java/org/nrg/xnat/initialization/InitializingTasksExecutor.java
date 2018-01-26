@@ -9,9 +9,9 @@
 
 package org.nrg.xnat.initialization;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.schema.XFTManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -23,64 +23,64 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 
 @Component
+@Slf4j
 public class InitializingTasksExecutor {
-
     @Autowired
     @Lazy
     public InitializingTasksExecutor(final TaskScheduler scheduler, final List<InitializingTask> tasks) {
+        log.debug("Creating InitializingTasksExecutor bean with a scheduler of type {} and {} tasks", scheduler.getClass().getName(), tasks.size());
         _tasks = tasks;
         _scheduler = scheduler;
     }
 
     @EventListener
     public void executeOnContextRefresh(final ContextRefreshedEvent event) {
-        _log.debug("Handling context refreshed event at {}", event.getTimestamp());
+        log.debug("Handling context refreshed event at {}", event.getTimestamp());
         if (_future == null || _future.isCancelled()) {
+            log.info("Scheduling CheckTasks with delay of 15,000");
             _future = _scheduler.scheduleWithFixedDelay(new CheckTasks(), 15000);
         }
     }
 
-    private class CheckTasks implements Runnable {
+    private class CheckTasks extends AbstractXnatRunnable {
         @Override
-        public void run() {
+        protected void runTask() {
             if (!XFTManager.isInitialized()) {
-                _log.info("XFTManager not yet initialized. Delaying check for initializing tasks.");
+                log.info("XFTManager not yet initialized. Delaying check for initializing tasks.");
                 return;
             }
             if (_tasks.size() == 0) {
-                _log.info("No initializing tasks found, cancelling future executions of initializing tasks.");
+                log.info("No initializing tasks found, cancelling future executions of initializing tasks.");
                 _future.cancel(false);
             }
             int completedTasks = 0, incompleteTasks = 0;
             for (final InitializingTask task : _tasks) {
                 if (!task.isCompleted() && !task.isMaxedOut()) {
-                    _log.debug("Beginning execution {} for initializing task \"{}\".", task.executions() + 1, task.getTaskName());
+                    log.debug("Beginning execution {} for initializing task \"{}\".", task.executions() + 1, task.getTaskName());
                     try {
                         final boolean completed = task.call();
                         if (completed) {
-                            _log.info("Task \"{}\" completed at {}, {} completed tasks found.", task.getTaskName(), task.completedAt(), ++completedTasks);
+                            log.info("Task \"{}\" completed at {}, {} completed tasks found.", task.getTaskName(), task.completedAt(), ++completedTasks);
                         } else {
-                            _log.debug("Task \"{}\" not yet completed, {} executions attempted, {} incomplete tasks found.", task.getTaskName(), task.executions(), ++incompleteTasks);
+                            log.debug("Task \"{}\" not yet completed, {} executions attempted, {} incomplete tasks found.", task.getTaskName(), task.executions(), ++incompleteTasks);
                         }
                     } catch (Exception e) {
-                        _log.error("An error occurred while running the task " + task.getTaskName() + ", " + ++incompleteTasks + " incomplete tasks found.", e);
+                        log.error("An error occurred while running the task " + task.getTaskName() + ", " + ++incompleteTasks + " incomplete tasks found.", e);
                     }
                 } else if (task.isCompleted()) {
-                    _log.debug("Found task {}, but it is marked as already completed, {} completed tasks found.", task.getTaskName(), ++completedTasks);
+                    log.debug("Found task {}, but it is marked as already completed, {} completed tasks found.", task.getTaskName(), ++completedTasks);
                 } else {
-                    _log.debug("Found task {}, but it is marked as maxed out: {} total executions completed, {} completed tasks found.", task.getTaskName(), task.executions(), ++completedTasks);
+                    log.debug("Found task {}, but it is marked as maxed out: {} total executions completed, {} completed tasks found.", task.getTaskName(), task.executions(), ++completedTasks);
                 }
             }
             if (incompleteTasks > 0) {
-                _log.debug("There are {} completed initializing tasks, with {} incomplete initializing tasks remaining. Will continue processing initializing tasks at regular intervals.", completedTasks, incompleteTasks);
+                log.debug("There are {} completed initializing tasks, with {} incomplete initializing tasks remaining. Will continue processing initializing tasks at regular intervals.", completedTasks, incompleteTasks);
             } else {
-                _log.info("{} initializing tasks completed, no incomplete tasks remaining, terminating further initializing tasks processing.", completedTasks);
+                log.info("{} initializing tasks completed, no incomplete tasks remaining, terminating further initializing tasks processing.", completedTasks);
                 _future.cancel(false);
             }
         }
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(InitializingTasksExecutor.class);
 
     private final TaskScheduler          _scheduler;
     private final List<InitializingTask> _tasks;

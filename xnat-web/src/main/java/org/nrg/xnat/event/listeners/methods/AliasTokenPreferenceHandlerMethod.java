@@ -10,67 +10,78 @@
 package org.nrg.xnat.event.listeners.methods;
 
 import com.google.common.collect.ImmutableList;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.security.alias.ClearExpiredAliasTokens;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.concurrent.ScheduledFuture;
+import java.util.Arrays;
+import java.util.List;
+
+import static lombok.AccessLevel.PRIVATE;
+import static lombok.AccessLevel.PROTECTED;
 
 @Component
-public class AliasTokenPreferenceHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+@Getter(PROTECTED)
+@Setter(PRIVATE)
+@Accessors(prefix = "_")
+public class AliasTokenPreferenceHandlerMethod extends AbstractScheduledXnatPreferenceHandlerMethod {
     @Autowired
-    public AliasTokenPreferenceHandlerMethod(final AliasTokenService service, final SiteConfigPreferences preferences, final JdbcTemplate template, final ThreadPoolTaskScheduler scheduler) {
-        _service=service;
-        _preferences = preferences;
-        _template = template;
-        _scheduler = scheduler;
+    public AliasTokenPreferenceHandlerMethod(final AliasTokenService service, final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler) {
+        super(scheduler, TIMEOUT, SCHEDULE);
+
+        _service = service;
+
+        setAliasTokenTimeout(preferences.getAliasTokenTimeout());
+        setAliasTokenTimeoutSchedule(preferences.getAliasTokenTimeoutSchedule());
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
+    protected AbstractXnatRunnable getTask() {
+        return new ClearExpiredAliasTokens(getService(), getAliasTokenTimeout());
     }
 
     @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateAliasTokenTimeout();
-        }
+    protected Trigger getTrigger() {
+        return new CronTrigger(getAliasTokenTimeoutSchedule());
     }
 
+    /**
+     * Updates the value for the specified preference according to the preference type.
+     *
+     * @param preference     The preference to set.
+     * @param value          The value to set.
+     */
     @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateAliasTokenTimeout();
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        log.debug("Found preference {} that this handler can handle, setting value to {}", preference, value);
+        switch (preference) {
+            case TIMEOUT:
+                setAliasTokenTimeout(value);
+                break;
+
+            case SCHEDULE:
+                setAliasTokenTimeoutSchedule(value);
+                break;
         }
     }
 
-    private void updateAliasTokenTimeout() {
-        try {
-            _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-            for (final ScheduledFuture future : _timeouts) {
-                future.cancel(false);
-            }
-            _timeouts.clear();
-            _timeouts.add(_scheduler.schedule(new ClearExpiredAliasTokens(_service, _preferences, _template), new CronTrigger(_preferences.getAliasTokenTimeoutSchedule())));
-        } catch (Exception e1) {
-            _log.error("", e1);
-        }
-    }
+    public static final  String       TIMEOUT     = "aliasTokenTimeout";
+    public static final  String       SCHEDULE    = "aliasTokenTimeoutSchedule";
+    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList(TIMEOUT, SCHEDULE));
 
-    private static final Logger       _log        = LoggerFactory.getLogger(AliasTokenPreferenceHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("aliasTokenTimeout", "aliasTokenTimeoutSchedule"));
     private final AliasTokenService _service;
-    private final SiteConfigPreferences   _preferences;
-    private final JdbcTemplate            _template;
-    private final ThreadPoolTaskScheduler _scheduler;
-    private ArrayList<ScheduledFuture> _timeouts = new ArrayList<>();
+
+    private String _aliasTokenTimeout;
+    private String _aliasTokenTimeoutSchedule;
 }

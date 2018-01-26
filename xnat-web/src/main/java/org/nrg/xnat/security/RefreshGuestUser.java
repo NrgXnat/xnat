@@ -17,26 +17,28 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 
 import java.util.List;
 
 @Slf4j
-public class RefreshGuestUser implements Runnable {
+public class RefreshGuestUser extends AbstractXnatRunnable {
     /**
      * Refreshes guest user object so information about what permissions it has are up to date.
      */
     @Override
-    public void run() {
+    protected void runTask() {
         try {
-            final UserI                 guest           = Users.getGuest(true);
-            final List<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
+            final UserI guest = Users.getGuest(true);
 
             final List<Object> allowedValues = Permissions.getAllowedValues(guest, "xnat:projectData", "xnat:projectData/ID", org.nrg.xdat.security.SecurityManager.READ);
             for (final Object project : allowedValues) {
                 final String projectId = project != null ? project.toString() : "";
                 if (Permissions.canReadProject(guest, projectId)) {
+                    DefaultLoggingService.update(this, "Processing guest access to project {}", projectId);
                     final EventMetaI event = EventUtils.ADMIN_EVENT(guest);
-                    for (final ElementSecurity securedElement : securedElements) {
+                    for (final ElementSecurity securedElement : ElementSecurity.GetSecureElements()) {
                         if (securedElement != null && securedElement.hasField(securedElement.getElementName() + "/project") && securedElement.hasField(securedElement.getElementName() + "/sharing/share/project")) {
                             Permissions.setPermissions(guest, Users.getAdminUser(), securedElement.getElementName(), securedElement.getElementName() + "/project", projectId, false, true, false, false, true, true, event);
                             Permissions.setPermissions(guest, Users.getAdminUser(), securedElement.getElementName(), securedElement.getElementName() + "/sharing/share/project", projectId, false, false, false, false, false, true, event);

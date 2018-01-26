@@ -47,10 +47,9 @@ import org.nrg.xnat.restlet.XNATApplication;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.services.Archiver;
 import org.restlet.data.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -1907,18 +1906,18 @@ public final class PrearcDatabase {
      * @throws SessionException
      * @throws SQLException
      */
-    public static List<SessionData> getAllSessions() throws Exception, SessionException, SQLException {
-        final List<SessionData> sds = new ArrayList<SessionData>();
-        new SessionOp<Void>() {
-            public Void op() throws SQLException, Exception {
-                ResultSet rs = pdb.executeQuery(null, DatabaseSession.getAllRows(), null);
-                while (rs.next()) {
-                    sds.add(DatabaseSession.fillSession(rs));
+    @Nonnull
+    public static List<SessionData> getAllSessions() throws Exception {
+        return new SessionOp<List<SessionData>>() {
+            public List<SessionData> op() throws Exception {
+                final List<SessionData> sessionData = new ArrayList<>();
+                final ResultSet results = pdb.executeQuery(null, DatabaseSession.getAllRows(), null);
+                while (results.next()) {
+                    sessionData.add(DatabaseSession.fillSession(results));
                 }
-                return null;
+                return sessionData;
             }
         }.run();
-        return sds;
     }
 
 

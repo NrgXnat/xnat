@@ -9,15 +9,13 @@
 
 package org.nrg.xnat.initialization;
 
-import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.beans.Beans;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.xnat.node.NodeCheckInRunner;
 import org.nrg.xnat.node.services.XnatNodeInfoService;
-import org.nrg.framework.beans.Beans;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.CronTrigger;
 
@@ -27,7 +25,6 @@ import java.util.Properties;
  * Sets up the database configuration for XNAT.
  */
 @Configuration
-@EnableScheduling
 public class NodeConfig {
 	
     /**
@@ -35,10 +32,9 @@ public class NodeConfig {
      *
      * @param environment the environment
      * @return the xnat node
-     * @throws NrgServiceException the nrg service exception
      */
     @Bean
-    public XnatNode xnatNode(final Environment environment) throws NrgServiceException {
+    public XnatNode xnatNode(final Environment environment) {
         final Properties properties = Beans.getNamespacedProperties(environment, NODE_PROPERTIES_NAMESPACE, true);
         final XnatNode xnatNode = new XnatNode();
         if (properties.containsKey(NODE_PROPERTY_ID)) {
@@ -52,14 +48,14 @@ public class NodeConfig {
     /**
      * Perform node checkin.
      *
-     * @param nodeCheckin the node checkin
-     * @param xnatNodeInfoService the xnat node info service
+     * @param xnatNode        The node checking in
+     * @param nodeInfoService the node info service
+     *
      * @return the trigger task
      */
     @Bean
     public TriggerTask performNodeCheckin(final XnatNode xnatNode, XnatNodeInfoService nodeInfoService) {
       	return new TriggerTask(new NodeCheckInRunner(xnatNode, nodeInfoService), new CronTrigger("0 * * * * *"));
-
     }
     
     /** The Constant NODE_PROPERTIES_NAMESPACE. */

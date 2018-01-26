@@ -9,9 +9,8 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.exceptions.NrgServiceError;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -20,43 +19,23 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
 @Slf4j
-public class InitializedHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+public class InitializedHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
-    public InitializedHandlerMethod(final SiteConfigPreferences preferences, final XnatUserProvider primaryAdminUserProvider) {
-        super(primaryAdminUserProvider);
+    public InitializedHandlerMethod(final XnatUserProvider primaryAdminUserProvider, final SiteConfigPreferences preferences) {
+        super(primaryAdminUserProvider, "initialized");
         _preferences = preferences;
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
-
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (values.containsKey(INITIALIZED)) {
-            handlePreference(INITIALIZED, values.get(INITIALIZED));
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        if (StringUtils.equals("initialized", preference)) {
+            initialize();
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            try {
-                initialize();
-            } catch (InitializationException e) {
-                throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred attempting to complete system initialization", e);
-            }
-        }
-    }
-
-    private void initialize() throws InitializationException {
+    private void initialize() {
         final String adminEmail = _preferences.getAdminEmail();
         final String archivePath = _preferences.getArchivePath();
         final String buildPath = _preferences.getBuildPath();
@@ -93,12 +72,8 @@ public class InitializedHandlerMethod extends AbstractSiteConfigPreferenceHandle
         try {
             ArcSpecManager.initialize(getAdminUser());
         } catch (Exception e) {
-            throw new InitializationException(e);
+            throw new NrgServiceRuntimeException(new InitializationException(e));
         }
     }
-
-    private static final String       INITIALIZED = "initialized";
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList(INITIALIZED));
-
     private final SiteConfigPreferences _preferences;
 }

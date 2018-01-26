@@ -9,49 +9,25 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.security.TranslatingChannelProcessingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
-public class RequiredChannelHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+public class RequiredChannelHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
-    public RequiredChannelHandlerMethod(final SiteConfigPreferences preferences, final TranslatingChannelProcessingFilter filter) {
-        _preferences = preferences;
+    public RequiredChannelHandlerMethod(final TranslatingChannelProcessingFilter filter) {
+        super("securityChannel");
         _filter = filter;
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
-
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateRequiredChannel();
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        if (StringUtils.equals("securityChannel", preference)) {
+            _filter.setRequiredChannel(value);
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateRequiredChannel();
-        }
-    }
-
-    private void updateRequiredChannel() {
-        _filter.setRequiredChannel(_preferences.getSecurityChannel());
-    }
-
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList("securityChannel"));
-
-    private final SiteConfigPreferences              _preferences;
     private final TranslatingChannelProcessingFilter _filter;
 }

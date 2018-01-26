@@ -9,67 +9,52 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
 @Slf4j
-public class AnonymizationHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+public class AnonymizationHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
-    public AnonymizationHandlerMethod(final SiteConfigPreferences preferences, final XnatUserProvider primaryAdminUserProvider, final AnonUtils anonUtils) {
-        super(primaryAdminUserProvider);
-        _preferences = preferences;
+    public AnonymizationHandlerMethod(final XnatUserProvider primaryAdminUserProvider, final AnonUtils anonUtils) {
+        super(primaryAdminUserProvider, ENABLE_SITEWIDE_SCRIPT, SITEWIDE_ANONYMIZATION_SCRIPT);
         _anonUtils = anonUtils;
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        switch (preference) {
+            case ENABLE_SITEWIDE_SCRIPT:
+                if (Boolean.parseBoolean(value)) {
+                    try {
+                        _anonUtils.enableSiteWide(getAdminUsername());
+                    } catch (Exception e) {
+                        log.error("Failed to enable sitewide anon script.", e);
+                    }
+                } else {
+                    try {
+                        _anonUtils.disableSiteWide(getAdminUsername());
+                    } catch (Exception e) {
+                        log.error("Failed to disable sitewide anon script.", e);
+                    }
+                }
+                break;
 
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateAnon();
+            case SITEWIDE_ANONYMIZATION_SCRIPT:
+                try {
+                    _anonUtils.setSiteWideScript(getAdminUsername(), value);
+                } catch (Exception e) {
+                    log.error("Failed to set sitewide anon script.", e);
+                }
+                break;
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateAnon();
-        }
-    }
+    private static final String ENABLE_SITEWIDE_SCRIPT        = "enableSitewideAnonymizationScript";
+    private static final String SITEWIDE_ANONYMIZATION_SCRIPT = "sitewideAnonymizationScript";
 
-    private void updateAnon() {
-        try {
-            _anonUtils.setSiteWideScript(getAdminUsername(), _preferences.getSitewideAnonymizationScript());
-        } catch (Exception e) {
-            log.error("Failed to set sitewide anon script.", e);
-        }
-        try {
-            if (_preferences.getEnableSitewideAnonymizationScript()) {
-                _anonUtils.enableSiteWide(getAdminUsername());
-            } else {
-                _anonUtils.disableSiteWide(getAdminUsername());
-            }
-        } catch (Exception e) {
-            log.error("Failed to enable/disable sitewide anon script.", e);
-        }
-    }
-
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("enableSitewideAnonymizationScript", "sitewideAnonymizationScript"));
-
-    private final SiteConfigPreferences _preferences;
-    private final AnonUtils             _anonUtils;
+    private final AnonUtils _anonUtils;
 }

@@ -9,61 +9,81 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.ResetFailedLogins;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.concurrent.ScheduledFuture;
+import static lombok.AccessLevel.PRIVATE;
+import static lombok.AccessLevel.PROTECTED;
 
 @Component
-public class ResetFailedLoginsHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+@Getter(PROTECTED)
+@Setter(PRIVATE)
+@Accessors(prefix = "_")
+public class ResetFailedLoginsHandlerMethod extends AbstractScheduledXnatPreferenceHandlerMethod {
     @Autowired
-    public ResetFailedLoginsHandlerMethod(final SiteConfigPreferences preferences, final JdbcTemplate template, final ThreadPoolTaskScheduler scheduler) {
-        _preferences = preferences;
+    public ResetFailedLoginsHandlerMethod(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate template, final ThreadPoolTaskScheduler scheduler) {
+        super(scheduler, MAX_FAILED_LOGINS, LOCKOUT_DURATION, SCHEDULE);
+
         _template = template;
-        _scheduler = scheduler;
+
+        setMaxFailedLogins(preferences.getMaxFailedLogins());
+        setMaxFailedLoginsLockoutDuration(preferences.getMaxFailedLoginsLockoutDuration());
+        setResetFailedLoginsSchedule(preferences.getResetFailedLoginsSchedule());
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
+    protected AbstractXnatRunnable getTask() {
+        return new ResetFailedLogins(getTemplate(), getMaxFailedLogins(), getMaxFailedLoginsLockoutDuration());
     }
 
     @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateResetFailedLogins();
-        }
+    protected Trigger getTrigger() {
+        return new CronTrigger(getResetFailedLoginsSchedule());
     }
 
+    /**
+     * Updates the value for the specified preference according to the preference type.
+     *
+     * @param preference The preference to set.
+     * @param value      The value to set.
+     */
     @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateResetFailedLogins();
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        log.debug("Found preference {} that this handler can handle, setting value to {}", preference, value);
+        switch (preference) {
+            case MAX_FAILED_LOGINS:
+                setMaxFailedLogins(getMaxFailedLogins());
+                break;
+
+            case LOCKOUT_DURATION:
+                setMaxFailedLoginsLockoutDuration(getMaxFailedLoginsLockoutDuration());
+                break;
+
+            case SCHEDULE:
+                setResetFailedLoginsSchedule(getResetFailedLoginsSchedule());
+                break;
         }
     }
 
-    private void updateResetFailedLogins() {
-        _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-        _scheduler.getScheduledThreadPoolExecutor().getQueue().iterator();
-        for (ScheduledFuture temp : scheduledResetFailedLogins) {
-            temp.cancel(false);
-        }
-        scheduledResetFailedLogins.clear();
-        scheduledResetFailedLogins.add(_scheduler.schedule(new ResetFailedLogins(_template, _preferences), new CronTrigger(_preferences.getResetFailedLoginsSchedule())));
-    }
+    public static final String MAX_FAILED_LOGINS = "maxFailedLogins";
+    public static final String LOCKOUT_DURATION  = "maxFailedLoginsLockoutDuration";
+    public static final String SCHEDULE          = "resetFailedLoginsSchedule";
 
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("maxFailedLoginsLockoutDuration", "resetFailedLoginsSchedule"));
+    private final NamedParameterJdbcTemplate _template;
 
-    private final ArrayList<ScheduledFuture> scheduledResetFailedLogins = new ArrayList<>();
-
-    private final SiteConfigPreferences   _preferences;
-    private final JdbcTemplate            _template;
-    private final ThreadPoolTaskScheduler _scheduler;
+    private int    _maxFailedLogins;
+    private String _maxFailedLoginsLockoutDuration;
+    private String _resetFailedLoginsSchedule;
 }

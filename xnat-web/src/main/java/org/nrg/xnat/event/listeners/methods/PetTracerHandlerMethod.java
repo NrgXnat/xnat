@@ -9,57 +9,29 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.services.PETTracerUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
 @Slf4j
-public class PetTracerHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+public class PetTracerHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
-    public PetTracerHandlerMethod(final SiteConfigPreferences preferences, final XnatUserProvider primaryAdminUserProvider, final PETTracerUtils petTracerUtils) {
-        super(primaryAdminUserProvider);
-        _preferences = preferences;
+    public PetTracerHandlerMethod(final XnatUserProvider primaryAdminUserProvider, final PETTracerUtils petTracerUtils) {
+        super(primaryAdminUserProvider, "sitewidePetTracers");
         _petTracerUtils = petTracerUtils;
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
-
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updatePetTracer();
-        }
-    }
-
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updatePetTracer();
-        }
-    }
-
-    private void updatePetTracer() {
+    protected void handlePreferenceImpl(final String preference, final String value) {
         try {
-            _petTracerUtils.setSiteWideTracerList(getAdminUsername(), PETTracerUtils.buildScriptPath(PETTracerUtils.ResourceScope.SITE_WIDE, ""), _preferences.getSitewidePetTracers());
+            _petTracerUtils.setSiteWideTracerList(getAdminUsername(), value);
         } catch (Exception e) {
             log.error("Failed to set sitewide anon script.", e);
         }
     }
 
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList("sitewidePetTracers"));
-
-    private final SiteConfigPreferences _preferences;
-    private final PETTracerUtils        _petTracerUtils;
+    private final PETTracerUtils _petTracerUtils;
 }

@@ -9,42 +9,35 @@
 
 package org.nrg.xnat.security.alias;
 
-import org.hibernate.SessionFactory;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.services.AliasTokenService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 
-import javax.inject.Inject;
+import static lombok.AccessLevel.PRIVATE;
 
-public class ClearExpiredAliasTokens implements Runnable {
-    public ClearExpiredAliasTokens(final AliasTokenService aliasTokenService, final SiteConfigPreferences preferences, final JdbcTemplate template) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Initializing the alias token sweeper job");
-        }
+@Slf4j
+@Getter(PRIVATE)
+@Setter(PRIVATE)
+@Accessors(prefix = "_")
+public class ClearExpiredAliasTokens extends AbstractXnatRunnable {
+    public ClearExpiredAliasTokens(final AliasTokenService aliasTokenService, final String aliasTokenTimeout) {
         _service = aliasTokenService;
-        _preferences=preferences;
-        _template = template;
+        _aliasTokenTimeout = aliasTokenTimeout;
+        log.debug("Initializing the alias token sweeper job with alias token timeout set to {}", getAliasTokenTimeout());
     }
 
     /**
+     * Executes the alias token sweep function.
      */
     @Override
-    public void run() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Executing alias token sweep function");
-        }
-        _service.invalidateExpiredTokens(_preferences.getAliasTokenTimeout());
+    protected void runTask() {
+        log.debug("Executing alias token sweep function with timeout value {}", getAliasTokenTimeout());
+        getService().invalidateExpiredTokens(getAliasTokenTimeout());
     }
-    private final SiteConfigPreferences   _preferences;
 
-    @Inject
-    private SessionFactory _sessionFactory;
-
-    private final AliasTokenService         _service;
-
-    private static final Logger       _log                            = LoggerFactory.getLogger(ClearExpiredAliasTokens.class);
-
-    private final JdbcTemplate _template;
+    private final AliasTokenService _service;
+    private final String            _aliasTokenTimeout;
 }

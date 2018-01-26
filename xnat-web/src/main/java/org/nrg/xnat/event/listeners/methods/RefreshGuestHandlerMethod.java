@@ -9,64 +9,56 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.security.RefreshGuestUser;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import static lombok.AccessLevel.PRIVATE;
+import static lombok.AccessLevel.PROTECTED;
+import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToSeconds;
 
 @Component
-public class RefreshGuestHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+@Getter(PROTECTED)
+@Setter(PRIVATE)
+@Accessors(prefix = "_")
+public class RefreshGuestHandlerMethod extends AbstractScheduledXnatPreferenceHandlerMethod {
     @Autowired
     public RefreshGuestHandlerMethod(final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler) {
-        _preferences = preferences;
-        _scheduler = scheduler;
+        super(scheduler, REFRESH_GUEST_FREQUENCY);
+        setRefreshGuestFrequency(convertPGIntervalToSeconds(preferences.getRefreshGuestFrequency()));
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
+    protected AbstractXnatRunnable getTask() {
+        return new RefreshGuestUser();
     }
 
     @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateRefreshGuest();
-        }
+    protected Trigger getTrigger() {
+        return new PeriodicTrigger(getRefreshGuestFrequency(), TimeUnit.SECONDS);
     }
 
     @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateRefreshGuest();
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        if (StringUtils.equals(REFRESH_GUEST_FREQUENCY, preference)) {
+            setRefreshGuestFrequency(convertPGIntervalToSeconds(value));
         }
     }
 
-    private void updateRefreshGuest() {
-        _scheduler.getScheduledThreadPoolExecutor().setRemoveOnCancelPolicy(true);
-        for (ScheduledFuture temp : _scheduledRefreshGuest) {
-            temp.cancel(false);
-        }
-        _scheduledRefreshGuest.clear();
-        try {
-            _scheduledRefreshGuest.add(_scheduler.schedule(new RefreshGuestUser(), new PeriodicTrigger(1000 * (int) SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getRefreshGuestFrequency()))));
-        }catch(Exception e){
-            //Ignore
-        }
+    private static final String REFRESH_GUEST_FREQUENCY = "refreshGuestFrequency";
 
-    }
-
-    private static final List<String> PREFERENCES = Collections.singletonList("refreshGuestFrequency");
-
-    private final ArrayList<ScheduledFuture> _scheduledRefreshGuest = new ArrayList<>();
-
-    private final SiteConfigPreferences   _preferences;
-    private final ThreadPoolTaskScheduler _scheduler;
+    private long _refreshGuestFrequency;
 }

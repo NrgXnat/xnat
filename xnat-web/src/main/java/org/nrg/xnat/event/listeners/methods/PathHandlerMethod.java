@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -22,40 +21,17 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
 @Slf4j
-public class PathHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+public class PathHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
     public PathHandlerMethod(final XnatUserProvider primaryAdminUserProvider, final XnatAppInfo appInfo) {
-        super(primaryAdminUserProvider);
+        super(primaryAdminUserProvider, "archivePath", "prearchivePath", "cachePath", "ftpPath", "buildPath", "pipelinePath");
         _appInfo = appInfo;
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
-
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateArchivePath();
-        }
-    }
-
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateArchivePath();
-        }
-    }
-
-    private void updateArchivePath() {
+    protected void handlePreferenceImpl(final String preference, final String value) {
         if (!_appInfo.isInitialized()) {
             log.warn("Application is not yet initialized, update archive path operation aborted.");
             return;
@@ -78,8 +54,6 @@ public class PathHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod
             log.error("An unknown error occurred trying to update the archive path.", e);
         }
     }
-
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("archivePath", "prearchivePath", "cachePath", "ftpPath", "buildPath", "pipelinePath"));
 
     private final XnatAppInfo _appInfo;
 }

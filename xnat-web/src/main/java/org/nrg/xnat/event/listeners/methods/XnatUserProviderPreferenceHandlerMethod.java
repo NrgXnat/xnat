@@ -9,7 +9,8 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.Maps;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -23,34 +24,23 @@ import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Component
 @Slf4j
-public class XnatUserProviderPreferenceHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+public class XnatUserProviderPreferenceHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
     public XnatUserProviderPreferenceHandlerMethod(final List<XnatUserProvider> providers) {
+        super(getProviderKeys(providers));
         for (final XnatUserProvider provider : providers) {
             _providers.put(provider.getUserKey(), provider);
         }
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return new ArrayList<>(_providers.keySet());
-    }
-
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        for (final String key : values.keySet()) {
-            handlePreference(key, values.get(key));
-        }
-    }
-
-    @Override
-    public void handlePreference(final String preference, final String value) {
+    protected void handlePreferenceImpl(final String preference, final String value) {
         if (_providers.containsKey(preference)) {
             final XnatUserProvider provider = _providers.get(preference);
             if (!StringUtils.equals(value, provider.getLogin())) {
@@ -75,5 +65,14 @@ public class XnatUserProviderPreferenceHandlerMethod extends AbstractSiteConfigP
         }
     }
 
-    private final Map<String, XnatUserProvider> _providers = Maps.newHashMap();
+    private static String[] getProviderKeys(final List<XnatUserProvider> providers) {
+        return Lists.transform(providers, new Function<XnatUserProvider, String>() {
+            @Override
+            public String apply(final XnatUserProvider provider) {
+                return provider.getUserKey();
+            }
+        }).toArray(new String[0]);
+    }
+
+    private final Map<String, XnatUserProvider> _providers = new HashMap<>();
 }

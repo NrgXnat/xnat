@@ -9,47 +9,26 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
-public class ChecksumsHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+public class ChecksumsHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
-    public ChecksumsHandlerMethod(final SiteConfigPreferences preferences) {
-        _preferences = preferences;
+    public ChecksumsHandlerMethod() {
+        super(CHECKSUMS);
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
-
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateChecksums();
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        if (StringUtils.equals(CHECKSUMS, preference)) {
+            CatalogUtils.setChecksumConfiguration(Boolean.parseBoolean(value));
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateChecksums();
-        }
-    }
-
-    private void updateChecksums() {
-        CatalogUtils.setChecksumConfiguration(_preferences.getChecksums());
-    }
-
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList("checksums"));
-
-    private final SiteConfigPreferences _preferences;
+    private static final String CHECKSUMS = "checksums";
 }

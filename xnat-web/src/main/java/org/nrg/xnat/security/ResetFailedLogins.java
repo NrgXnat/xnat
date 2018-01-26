@@ -9,32 +9,39 @@
 
 package org.nrg.xnat.security;
 
-import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.nrg.xnat.task.AbstractXnatRunnable;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
-public class ResetFailedLogins implements Runnable {
-
-    public ResetFailedLogins(final JdbcTemplate template, final SiteConfigPreferences preferences) {
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+@Accessors(prefix = "_")
+public class ResetFailedLogins extends AbstractXnatRunnable {
+    public ResetFailedLogins(final NamedParameterJdbcTemplate template, final int maxFailedLogins, final String maxFailedLoginsLockoutDuration) {
         _template = template;
-        _preferences = preferences;
+        _sqlParameterSource = new MapSqlParameterSource("maxFailedLogins", maxFailedLogins).addValue("duration", maxFailedLoginsLockoutDuration);
     }
 
     @Override
-    public void run() {
-        if (_template.queryForObject("SELECT count(*) from xhbm_xdat_user_auth", Integer.TYPE) > 0) {
-            final int updated = _template.update("UPDATE xhbm_xdat_user_auth SET failed_login_attempts = 0, lockout_time = NULL WHERE failed_login_attempts >= "+_preferences.getMaxFailedLogins()+" AND lockout_time < NOW() - INTERVAL '" + _preferences.getMaxFailedLoginsLockoutDuration() + "'");
-            if (_log.isInfoEnabled()) {
-                _log.info("Reset {} failed login attempts.", updated);
-            }
+    protected void runTask() {
+        if (_template.queryForObject("SELECT count(*) FROM xhbm_xdat_user_auth", NO_PARAMS, Integer.TYPE) > 0) {
+            final int updated = _template.update(QUERY, getSqlParameterSource());
+            log.info("Reset {} failed login attempts.", updated);
         } else {
-            _log.info("Didn't reset any failed login attempts, there's no data in the relevant table.");
+            log.info("Didn't reset any failed login attempts, there's no data in the relevant table.");
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(ResetFailedLogins.class);
+    private static final SqlParameterSource NO_PARAMS = new EmptySqlParameterSource();
+    private static final String             QUERY     = "UPDATE xhbm_xdat_user_auth SET failed_login_attempts = 0, lockout_time = NULL WHERE failed_login_attempts >= :maxFailedLogins AND lockout_time < NOW() - :duration::INTERVAL";
 
-    private final JdbcTemplate _template;
-    private final SiteConfigPreferences _preferences;
+    private final NamedParameterJdbcTemplate _template;
+    private final SqlParameterSource         _sqlParameterSource;
 }

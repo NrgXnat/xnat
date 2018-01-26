@@ -9,55 +9,34 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.security.FilterSecurityInterceptorBeanPostProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
-public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
-    public UpdateSecurityFilterHandlerMethod(final SiteConfigPreferences preferences, @SuppressWarnings("SpringJavaAutowiringInspection") final FilterSecurityInterceptor interceptor, final FilterSecurityInterceptorBeanPostProcessor postProcessor) {
-        _preferences = preferences;
+    public UpdateSecurityFilterHandlerMethod(final FilterSecurityInterceptor interceptor, final FilterSecurityInterceptorBeanPostProcessor postProcessor) {
+        super("requireLogin");
         _interceptor = interceptor;
         _postProcessor = postProcessor;
-    }
-
-    @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
-
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateSecurityFilter();
+        if (_interceptor == null) {
+            log.warn("Filter security interceptor is null initializing, changes to requireLogin setting won't propagate");
         }
     }
 
     @Override
-    public void handlePreference(final String preference, final String value) {
-        if(PREFERENCES.contains(preference)){
-            updateSecurityFilter();
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        if (StringUtils.equals("requireLogin", preference) && _interceptor != null) {
+            _interceptor.setSecurityMetadataSource(_postProcessor.getMetadataSource(Boolean.parseBoolean(value)));
         }
     }
 
-    private void updateSecurityFilter(){
-        if(_interceptor!=null && _postProcessor!=null){
-            _interceptor.setSecurityMetadataSource(_postProcessor.getMetadataSource(_preferences.getRequireLogin()));
-        }
-	}
-
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Collections.singletonList("requireLogin"));
-
-    private final SiteConfigPreferences _preferences;
-    private final FilterSecurityInterceptor _interceptor;
+    private final FilterSecurityInterceptor                  _interceptor;
     private final FilterSecurityInterceptorBeanPostProcessor _postProcessor;
-
 }

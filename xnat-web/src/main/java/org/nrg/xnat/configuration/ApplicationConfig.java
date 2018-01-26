@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
@@ -54,6 +55,7 @@ import java.util.List;
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
 @EnableCaching
+@Slf4j
 public class ApplicationConfig {
     @Bean
     public ThemeService themeService() {
@@ -76,6 +78,7 @@ public class ApplicationConfig {
 
     @Bean
     public InitializingTasksExecutor initializingTasksExecutor(final TaskScheduler scheduler, final List<InitializingTask> tasks) {
+        log.debug("Creating InitializingTasksExecutor bean with a scheduler of type {} and {} tasks", scheduler.getClass().getName(), tasks.size());
         return new InitializingTasksExecutor(scheduler, tasks);
     }
 

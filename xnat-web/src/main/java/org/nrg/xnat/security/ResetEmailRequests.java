@@ -9,17 +9,18 @@
 
 package org.nrg.xnat.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.mail.services.EmailRequestLogService;
+import org.nrg.xnat.task.AbstractXnatRunnable;
 
-import java.util.concurrent.Callable;
-
-public class ResetEmailRequests implements Runnable {
+@Slf4j
+public class ResetEmailRequests extends AbstractXnatRunnable {
     public ResetEmailRequests(final EmailRequestLogService service) {
         _service = service;
     }
 
     @Override
-    public void run() {
+    protected void runTask() {
         if (_service != null) {
             _service.clearLogs();
         }

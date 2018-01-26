@@ -39,7 +39,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
-import org.nrg.xnat.event.listeners.methods.AbstractScopedSiteConfigPreferenceHandlerMethod;
+import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
@@ -526,8 +526,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
     }
 
-    private static final String ENABLE_DICOM_RECEIVER_PREF = "enableDicomReceiver";
-    private static final String DSCPM_DB_URL               = "jdbc:h2:mem:" + PREF_ID;
+    private static final String DSCPM_DB_URL = "jdbc:h2:mem:" + PREF_ID;
 
     // Read queries: no changes to DicomSCPs required.
     private static final String GET_INSTANCE_BY_ID                    = "SELECT * FROM dicom_scp_instance WHERE id = :id";
@@ -539,13 +538,13 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final String GET_PORTS_FOR_ENABLED_INSTANCES       = "SELECT DISTINCT port FROM dicom_scp_instance WHERE enabled = TRUE";
 
     // Update queries: updating DicomSCPs required.
-    private static final String CREATE_OR_UPDATE_INSTANCE         = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled)";
+    private static final String CREATE_OR_UPDATE_INSTANCE         = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, ENABLED) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled)";
     private static final String ENABLE_OR_DISABLE_INSTANCES_BY_ID = "UPDATE dicom_scp_instance SET enabled = :enabled WHERE id IN (:ids)";
     private static final String DELETE_INSTANCES_BY_ID            = "DELETE FROM dicom_scp_instance WHERE id IN (:ids)";
 
-    private final PreferenceHandlerMethod _handlerProxy = new AbstractScopedSiteConfigPreferenceHandlerMethod(ENABLE_DICOM_RECEIVER_PREF) {
+    private final PreferenceHandlerMethod _handlerProxy = new AbstractScopedXnatPreferenceHandlerMethod("enableDicomReceiver") {
         @Override
-        public void handlePreference(final String preference, final String value) {
+        protected void handlePreferenceImpl(final String preference, final String value) {
             _isEnableDicomReceiver = Boolean.parseBoolean(value);
         }
     };

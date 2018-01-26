@@ -16,7 +16,6 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
-import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,7 +56,7 @@ public interface CatalogService {
      * </ul>
      *
      * Each key can reference a list containing one or more data object IDs. This function returns the ID of the newly
-     * created catalog. You can retrieve the catalog itself by calling {@link #getResourcesForCatalog(UserI, String)}.
+     * created catalog. You can retrieve the catalog itself by calling {@link #getCachedCatalog(UserI, String)}.
      *
      * @param user       The user requesting the resources.
      * @param resources  The resources to be included in the catalog.

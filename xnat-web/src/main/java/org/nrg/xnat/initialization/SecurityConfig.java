@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.initialization;
 
-import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
@@ -25,11 +24,12 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.validation.DateValidation;
 import org.nrg.xnat.utils.DefaultInteractiveAgentDetector;
 import org.nrg.xnat.utils.InteractiveAgentDetector;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.vote.AuthenticatedVoter;
 import org.springframework.security.access.vote.RoleVoter;
@@ -52,7 +52,6 @@ import org.springframework.security.web.session.ConcurrentSessionFilter;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.util.*;
 
 @Configuration
@@ -101,7 +100,7 @@ public class SecurityConfig {
 
     @Bean
     @Primary
-    public CompositeSessionAuthenticationStrategy sas(final SessionRegistry sessionRegistry, final SiteConfigPreferences preferences) throws SiteConfigurationException {
+    public CompositeSessionAuthenticationStrategy sas(final SessionRegistry sessionRegistry, final SiteConfigPreferences preferences) {
         ArrayList<SessionAuthenticationStrategy> authStrategies = new ArrayList<>();
 
         final ConcurrentSessionControlAuthenticationStrategy strategy = new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
@@ -132,12 +131,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor(final SiteConfigPreferences preferences, final XnatAppInfo appInfo) throws IOException {
+    public FilterSecurityInterceptorBeanPostProcessor filterSecurityInterceptorBeanPostProcessor(final SiteConfigPreferences preferences, final XnatAppInfo appInfo) {
         return new FilterSecurityInterceptorBeanPostProcessor(preferences, appInfo);
     }
 
     @Bean
-    public TranslatingChannelProcessingFilter channelProcessingFilter(final SiteConfigPreferences preferences) throws SiteConfigurationException {
+    public TranslatingChannelProcessingFilter channelProcessingFilter(final SiteConfigPreferences preferences) {
         final ChannelDecisionManagerImpl decisionManager = new ChannelDecisionManagerImpl();
         decisionManager.setChannelProcessors(Arrays.asList(new SecureChannelProcessor(), new InsecureChannelProcessor()));
         final TranslatingChannelProcessingFilter filter = new TranslatingChannelProcessingFilter();
@@ -171,10 +170,11 @@ public class SecurityConfig {
         return new AuthenticationProviderAggregator(providers, configuratorMap, configFolderPaths);
     }
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     @Primary
-    public XnatProviderManager customAuthenticationManager(final SiteConfigPreferences preferences, final AuthenticationProviderAggregator aggregator, final XdatUserAuthService userAuthService, @SuppressWarnings("SpringJavaAutowiringInspection") final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource) {
-        return new XnatProviderManager(preferences, aggregator, userAuthService, anonymousAuthenticationProvider, dataSource);
+    public XnatProviderManager customAuthenticationManager(final SiteConfigPreferences preferences, final AuthenticationProviderAggregator aggregator, final XdatUserAuthService userAuthService, final AnonymousAuthenticationProvider anonymousAuthenticationProvider, final DataSource dataSource, final MessageSource messageSource) {
+        return new XnatProviderManager(preferences, aggregator, userAuthService, anonymousAuthenticationProvider, dataSource, messageSource);
     }
 
     @Bean
@@ -189,7 +189,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatExpiredPasswordFilter expiredPasswordFilter(final SiteConfigPreferences preferences, final JdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
+    public XnatExpiredPasswordFilter expiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
         return new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService, dateValidation) {{
             setChangePasswordPath("/app/template/XDATScreen_UpdateUser.vm");
             setChangePasswordDestination("/app/action/ModifyPassword");
@@ -204,7 +204,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) throws IOException {
+    public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) {
         return new XnatInitCheckFilter(appInfo);
     }
 

@@ -47,6 +47,6 @@ public interface EventService {
 
     void processEvent(EventServiceListener listener, Event event);
 
-    void activateSubscription(long id) throws NotFoundException;
-    void deactivateSubscription(long id) throws NotFoundException;
+    Subscription activateSubscription(long id) throws NotFoundException;
+    Subscription deactivateSubscription(long id) throws NotFoundException;
 }

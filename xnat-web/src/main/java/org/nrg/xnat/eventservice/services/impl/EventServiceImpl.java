@@ -210,9 +210,6 @@ public class EventServiceImpl implements EventService {
                     Subscription active = subscriptionService.activate(subscription);
                     if(active == null || !active.active()){
                         failedReactivations.add(subscription);
-                    }else {
-                        subscriptionService.update(active);
-                        log.debug("Updated subscription: " + subscription.name());
                     }
 
                 } catch (Exception e) {
@@ -258,17 +255,16 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public void activateSubscription(long id) throws NotFoundException {
+    public Subscription activateSubscription(long id) throws NotFoundException {
         Subscription subscription = subscriptionService.getSubscription(id);
-        subscriptionService.activate(subscription);
-
+        return subscriptionService.activate(subscription);
     }
 
 
     @Override
-    public void deactivateSubscription(long id) throws NotFoundException {
+    public Subscription deactivateSubscription(long id) throws NotFoundException {
         Subscription subscription = subscriptionService.getSubscription(id);
-        subscriptionService.deactivate(subscription);
+        return subscriptionService.deactivate(subscription);
     }
 
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {

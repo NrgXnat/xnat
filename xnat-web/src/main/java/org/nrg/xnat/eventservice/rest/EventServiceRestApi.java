@@ -4,7 +4,6 @@ package org.nrg.xnat.eventservice.rest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.h2.util.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -70,7 +69,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         Subscription toCreate = Subscription.create(subscription, userI.getLogin());
         eventService.throwExceptionIfExists(toCreate);
         Subscription created = eventService.createSubscription(toCreate);
-        if(created == null || StringUtils.isNullOrEmpty(created.listenerRegistrationKey())){
+        if(created == null){
             return new ResponseEntity<>("Failed to create subscription.",HttpStatus.FAILED_DEPENDENCY);
         }
         return new ResponseEntity<>(created.name() + ":" + Long.toString(created.id()), HttpStatus.CREATED);

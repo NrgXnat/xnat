@@ -1,6 +1,7 @@
 package org.nrg.xnat.eventservice.rest;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.services.ContextService;
@@ -80,6 +81,7 @@ public class EventServiceRestApiTest {
     }
 
     @Test
+    @Ignore
     public void testOk() throws Exception {
         final String path = "/events/test";
 
@@ -93,6 +95,7 @@ public class EventServiceRestApiTest {
     }
 
     @Test
+    @Ignore
     public void testAdminOk() throws Exception {
         final String path = "/events/admintest";
 
@@ -106,6 +109,7 @@ public class EventServiceRestApiTest {
     }
 
     @Test
+    @Ignore
     public void createSubscription() throws Exception {
         final String path = "/subscription";
 
@@ -129,6 +133,7 @@ public class EventServiceRestApiTest {
     }
 
     @Test
+    @Ignore
     public void getInstalledEvents() throws Exception {
         final String path = "/events/events";
 

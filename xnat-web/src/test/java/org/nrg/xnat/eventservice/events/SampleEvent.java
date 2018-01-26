@@ -41,7 +41,7 @@ public class SampleEvent implements EventServiceEvent {
     }
 
     @Override
-    public Integer getUser() {
+    public String getUser() {
         return null;
     }
 }

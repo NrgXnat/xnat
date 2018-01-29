@@ -241,15 +241,9 @@ var XNAT = getObject(XNAT || {});
             var ckbox = spawn('input.subscription-enabled', {
                 type: 'checkbox',
                 checked: enabled,
-                value: enabled,
+                value: 'true',
                 onchange: function(){
-                    // if a subscription was enabled before the click, disable it.
-                    if (enabled) {
-                        eventServicePanel.disableSubscription(subscription.id);
-                    }
-                    else {
-                        eventServicePanel.enableSubscription(subscription.id);
-                    }
+                    eventServicePanel.toggleSubscription(subscription.id, this);
                 }
             });
 
@@ -519,24 +513,39 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
-    eventServicePanel.enableSubscription = function(id){
+    eventServicePanel.toggleSubscription = function(id,selector){
+        // if underlying checkbox has just been checked, take action to enable this subscription
+        var enableMe = $(selector).prop('checked');
+        if (enableMe){
+            eventServicePanel.enableSubscription(id);
+        }
+        else {
+            eventServicePanel.disableSubscription(id);
+        }
+    };
+
+    eventServicePanel.enableSubscription = function(id,refresh){
+        refresh = refresh || false;
         XNAT.xhr.ajax({
             url: setEventSubscriptionUrl(id,'/activate'),
             method: 'POST',
             success: function(){
                 XNAT.ui.banner.top(2000,'Event subscription enabled','success');
+                if (refresh) eventServicePanel.refreshSubscriptionList();
             },
             fail: function(e){
                 errorHandler(e,'Could not enable event subscription')
             }
         })
     };
-    eventServicePanel.disableSubscription = function(id){
+    eventServicePanel.disableSubscription = function(id,refresh){
+        refresh = refresh || false;
         XNAT.xhr.ajax({
             url: setEventSubscriptionUrl(id,'/deactivate'),
             method: 'POST',
             success: function(){
                 XNAT.ui.banner.top(2000,'Event subscription disabled','success');
+                if (refresh) eventServicePanel.refreshSubscriptionList();
             },
             fail: function(e){
                 errorHandler(e,'Could not disable event subscription');
@@ -562,7 +571,7 @@ var XNAT = getObject(XNAT || {});
                     label: 'Disable',
                     close: true,
                     action: function(){
-                        eventServicePanel.disableSubscription(subscription.id);
+                        eventServicePanel.disableSubscription(subscription.id,true);
                     }
                 },
                 {

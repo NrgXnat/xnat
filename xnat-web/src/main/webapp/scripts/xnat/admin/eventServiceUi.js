@@ -211,13 +211,13 @@ var XNAT = getObject(XNAT || {});
             .th({ style: { width: '125px' }, html: '<b>Action</b>' });
 
         /* Formatted table cells */
-        function subscriptionNiceLabel(label){
+        function subscriptionNiceLabel(label,id){
             return spawn('a',{
                 href: '#!',
                 style: { 'font-weight': 'bold' },
                 onclick: function(e){
                     e.preventDefault();
-                    eventServicePanel.editSubscription(subscription.id, false);
+                    eventServicePanel.editSubscription(id, false);
                 }
             }, label);
         }
@@ -284,7 +284,7 @@ var XNAT = getObject(XNAT || {});
             if (data.length) {
                 data.forEach(function(subscription){
                     subTable.tr({ addClass: (subscription.valid) ? 'valid' : 'invalid', id: 'event-subscription-'+subscription.id, data: { id: subscription.id } })
-                        .td([ subscriptionNiceLabel(subscription.name) ])
+                        .td([ subscriptionNiceLabel(subscription.name,subscription.id) ])
                         .td([ projectLinks(subscription['project-id']) ])
                         .td([ eventNiceName(subscription['event-id']) ])
                         .td([ actionNiceName(subscription['action-key']) ])
@@ -442,9 +442,58 @@ var XNAT = getObject(XNAT || {});
             $('#subscription-action-preview').slideUp(300);
         }
     }
+    eventServicePanel.enterAttributesDialog = function(attributesObj){
+        var inputElements;
+        if (isArray(attributesObj)) {
+            inputElements = [];
+            attributesObj.forEach(function(attribute){
+                inputElements.push( XNAT.ui.panel.input.text({ label: attribute, name: attribute }) );
+            });
+            inputElements = spawn('!',inputElements);
+        }
+        else {
+            inputElements = XNAT.ui.panel.textarea({
+                name: 'attributes',
+                label: 'Enter Attributes',
+                description: 'Enter attributes in JSON notation',
+                value: JSON.stringify(attributesObj)
+            }).spawned;
+        }
+        eventServicePanel.subscriptionAttributes = "";
+        XNAT.ui.dialog.open({
+            width: 350,
+            title: 'Enter Attributes',
+            content: '<form class="xnat-form-panel panel panel-default" id="attributes-form" style="border: none; margin: 0"><div class="panel-body" id="attributes-elements-container"></div></form>',
+            beforeShow: function(obj){
+                var $container = obj.$modal.find('#attributes-elements-container');
+                $container.append( inputElements );
+            },
+            buttons: [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true,
+                    action: function(obj){
+                        var $form = obj.$modal.find('form');
+                        if (isArray(attributesObj)) {
+                            eventServicePanel.subscriptionAttributes = JSON.stringify($form);
+                        } else {
+                            eventServicePanel.subscriptionAttributes = obj.$modal.find('textarea').val();
+                        }
+
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
+                }
+            ]
+        })
+    };
 
     eventServicePanel.createSubscription = function(){
         var projs = eventServicePanel.projects;
+        eventServicePanel.subscriptionAttributes = false;
         if (projs.length) {
 
             XNAT.ui.dialog.open({
@@ -482,7 +531,11 @@ var XNAT = getObject(XNAT || {});
                         action: function(obj){
                             var formData = JSON.stringify(obj.$modal.find('form'));
                             var jsonFormData = JSON.parse(formData);
-                            if (jsonFormData.attributes === '') jsonFormData.attributes = {};
+                            if (eventServicePanel.subscriptionAttributes) {
+                                jsonFormData.attributes = JSON.parse(eventServicePanel.subscriptionAttributes);
+                            } else {
+                                jsonFormData.attributes = {};
+                            }
 
                             formData = JSON.stringify(jsonFormData);
 
@@ -611,6 +664,13 @@ var XNAT = getObject(XNAT || {});
     });
     $(document).off('change','select[name=action-key]').on('change','select[name=action-key]', function(){
         getActionAttributes($(this));
+    });
+    $(document).off('click','#set-sub-action-attributes').on('click','#set-sub-action-attributes', function(e){
+        e.preventDefault();
+        var $form = $(this).parents('form');
+        var actionKey = $form.find('select[name=action-key]').find('option:selected').val();
+        var attributesObj = eventServicePanel.actions[actionKey].attributes;
+        eventServicePanel.enterAttributesDialog(attributesObj);
     });
 
     /* ------------------------- *

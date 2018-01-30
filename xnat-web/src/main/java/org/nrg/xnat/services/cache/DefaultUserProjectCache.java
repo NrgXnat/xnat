@@ -73,7 +73,7 @@ public class DefaultUserProjectCache extends CacheEventListenerAdapter implement
         eventBus.on(predicate(new Predicate<Object>() {
             @Override
             public boolean test(final Object object) {
-                return object != null && object instanceof XftItemEvent && isGroupItem((XftItemEvent) object);
+                return object instanceof XftItemEvent && isGroupItem((XftItemEvent) object);
             }
         }), this);
     }

@@ -34,7 +34,7 @@ public abstract class AbstractInitializingTask implements InitializingTask {
         } catch (InitializingTaskException e) {
             switch (e.getLevel()) {
                 case RequiresInitialization:
-                    manageSingleNotice("The system is not yet fully initialized. Delaying execution of the intializing task \"" + getTaskName() + "\" until initialization is completed.");
+                    manageSingleNotice("The system is not yet fully initialized. Delaying execution of the initializing task \"" + getTaskName() + "\" until initialization is completed.");
                     break;
                 case SingleNotice:
                     manageSingleNotice(e.getMessage());

@@ -381,6 +381,13 @@ var XNAT = getObject(XNAT || {});
                 name: 'attributes',
                 id: 'subscription-action-attributes'
             },
+            subFilter: {
+                kind: 'panel.input.text',
+                name: 'event-filter',
+                label: 'Event Filter',
+                description: 'Optional. Enter filter in JSON path notation, e.g. <pre style="margin-top:0">$[?(@.xsiType == \\"xnat:mrScanData\\")]</pre>',
+                order: 50
+            },
             subUserProxy: {
                 kind: 'panel.input.switchbox',
                 name: 'act-as-event-user',
@@ -388,7 +395,7 @@ var XNAT = getObject(XNAT || {});
                 onText: 'Action is performed as the user who initiates the event',
                 offText: 'Action is performed as you (the subscription owner)',
                 value: 'true',
-                order: 50
+                order: 60
             },
             subActive: {
                 kind: 'panel.input.switchbox',
@@ -397,7 +404,7 @@ var XNAT = getObject(XNAT || {});
                 onText: 'Enabled',
                 offText: 'Disabled',
                 value: 'true',
-                order: 60
+                order: 70
             }
         }
     };
@@ -535,6 +542,15 @@ var XNAT = getObject(XNAT || {});
                                 jsonFormData.attributes = JSON.parse(eventServicePanel.subscriptionAttributes);
                             } else {
                                 jsonFormData.attributes = {};
+                            }
+
+                            if (jsonFormData['event-filter']) {
+                                var jsonpathfilter = jsonFormData['event-filter'];
+                                jsonFormData['event-filter'] = {};
+                                jsonFormData['event-filter']['json-path-filter'] = jsonpathfilter;
+                            }
+                            else {
+                                delete jsonFormData['event-filter'];
                             }
 
                             formData = JSON.stringify(jsonFormData);

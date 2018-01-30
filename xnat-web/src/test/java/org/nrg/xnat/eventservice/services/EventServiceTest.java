@@ -499,7 +499,6 @@ public class EventServiceTest {
         assertThat(allSubscriptions.size(), is(1));
 
         final Subscription subscription = allSubscriptions.get(0);
-        assertThat(subscription.useCounter(), is(1));
         // reactivate subscription
         eventService.reactivateAllSubscriptions();
 
@@ -584,6 +583,11 @@ public class EventServiceTest {
 
         @Override
         public void setEventService(EventService eventService) { }
+
+        @Override
+        public Date getDetectedTimestamp() {
+            return null;
+        }
 
         @Override
         public void accept(Event<SampleEvent> event) {

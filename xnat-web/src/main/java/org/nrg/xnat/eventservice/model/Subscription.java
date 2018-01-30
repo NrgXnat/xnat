@@ -55,7 +55,7 @@ public abstract class Subscription {
                                       @Nullable @JsonProperty("custom-listener-id") String customListenerId,
                                       @JsonProperty("action-key") final String actionKey,
                                       @JsonProperty("attributes") final Map<String, String> attributes,
-                                      @JsonProperty("eventId-filter") final EventFilter eventFilter,
+                                      @JsonProperty("event-filter") final EventFilter eventFilter,
                                       @JsonProperty("act-as-eventId-user") final Boolean actAsEventUser,
                                       @JsonProperty("subscription-owner") final String subscriptionOwner) {
         return builder()

@@ -11,9 +11,11 @@ import org.nrg.xnat.eventservice.model.*;
 import reactor.bus.Event;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface EventService {
     List<SimpleEvent> getEvents() throws Exception;
+    SimpleEvent getEvent(UUID uuid) throws Exception;
 
     @Deprecated
     List<Listener> getInstalledListeners();
@@ -49,4 +51,6 @@ public interface EventService {
 
     Subscription activateSubscription(long id) throws NotFoundException;
     Subscription deactivateSubscription(long id) throws NotFoundException;
+
+    List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId);
 }

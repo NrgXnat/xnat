@@ -2,6 +2,7 @@ package org.nrg.xnat.eventservice.model;
 
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 
@@ -20,13 +21,12 @@ public abstract class Subscription {
     @Nullable @JsonProperty("active") public abstract Boolean active();
     @Nullable @JsonProperty("registration-key") public abstract  String listenerRegistrationKey();
     @JsonProperty("event-id") public abstract String eventId();
-    @Nullable @JsonProperty("custom-listener-id") public abstract String customListenerId();
+    @JsonIgnore @Nullable public abstract String customListenerId();
     @JsonProperty("action-key") public abstract String actionKey();
     @Nullable @JsonProperty("attributes") public abstract Map<String, String> attributes();
     @Nullable @JsonProperty("event-filter") public abstract EventFilter eventFilter();
     @Nullable @JsonProperty("act-as-event-user") public abstract Boolean actAsEventUser();
     @Nullable @JsonProperty("subscription-owner") public abstract String subscriptionOwner();
-    @Nullable @JsonProperty("use-counter") public abstract Integer useCounter();
     @Nullable @JsonProperty("valid") public abstract Boolean valid();
     @Nullable @JsonProperty("validation-message") public abstract String validationMessage();
 
@@ -129,8 +129,6 @@ public abstract class Subscription {
         public abstract Builder actAsEventUser(Boolean actAsEventUser);
 
         public abstract Builder subscriptionOwner(String user);
-
-        public abstract Builder useCounter(Integer useCounter);
 
         public abstract Builder valid(Boolean valid);
 

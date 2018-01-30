@@ -10,10 +10,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.Action;
-import org.nrg.xnat.eventservice.services.ActionManager;
-import org.nrg.xnat.eventservice.services.EventService;
-import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
-import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
+import org.nrg.xnat.eventservice.services.*;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +19,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_CALLED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
 
 @Service
 public class ActionManagerImpl implements ActionManager {
@@ -30,10 +31,12 @@ public class ActionManagerImpl implements ActionManager {
     private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
     private final EventServiceComponentManager componentManager;
+    private final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
 
     @Autowired
-    public ActionManagerImpl(final EventServiceComponentManager componentManager) {
+    public ActionManagerImpl(final EventServiceComponentManager componentManager, SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
         this.componentManager = componentManager;
+        this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
     }
 
 
@@ -216,12 +219,13 @@ public class ActionManagerImpl implements ActionManager {
 
     @Override
     @Async
-    public void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user) {
+    public void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId) {
         log.debug("ActionManager.processEvent started on Thread: " + Thread.currentThread().getName());
         PersistentWorkflowI workflow = generateWorkflowEntryIfAppropriate(subscription, esEvent, user);
         EventServiceActionProvider provider = getActionProviderByKey(subscription.getActionKey());
         if(provider!= null) {
             log.debug("Passing event to Action Provider: " + provider.getName());
+            subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_CALLED, new Date(), "Event passed to Action Provider: " + provider.getName());
             provider.processEvent(esEvent, subscription, user);
             if(workflow !=null){
                 try {
@@ -234,6 +238,7 @@ public class ActionManagerImpl implements ActionManager {
             }
         } else {
             String errorMessage = "Could not find Action Provider for ActionKey: " + subscription.getActionKey();
+            subscriptionDeliveryEntityService.addStatus(deliveryId, FAILED, new Date(), "Could not find Action Provider for ActionKey: " + subscription.getActionKey());
             workflow.setStatus(errorMessage);
             try {
                 WorkflowUtils.fail(workflow, workflow.buildEvent());

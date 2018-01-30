@@ -12,6 +12,7 @@ import reactor.bus.Event;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.util.Date;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -22,16 +23,21 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
 
     String eventUser;
     EventObjectT object;
+    UUID eventUUID = UUID.randomUUID();
+    Date eventCreatedTimestamp = null;
     UUID listenerId = UUID.randomUUID();
+    Date eventDetectedTimestamp = null;
+
 
     @Autowired @Lazy
     EventService eventService;
 
-    public CombinedEventServiceEvent() {};
+    public CombinedEventServiceEvent() {}
 
     public CombinedEventServiceEvent(final EventObjectT object, final String eventUser) {
         this.object = object;
         this.eventUser = eventUser;
+        this.eventCreatedTimestamp = new Date();
     }
 
     @Override
@@ -61,14 +67,31 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
         return eventUser;
     }
 
+    @Override
+    public Date getEventTimestamp() {
+        return eventCreatedTimestamp;
+    }
+
+    @Override
+    public UUID getEventUUID() {
+        return eventUUID;
+    }
+
+    @Override
+    public Date getDetectedTimestamp() {
+        return eventDetectedTimestamp;
+    }
+
     public void setEventService(EventService eventService){
         this.eventService = eventService;
     }
 
     @Override
     public void accept(Event<EventT> event){
-        if( event.getData() instanceof EventServiceEvent)
+        if( event.getData() instanceof EventServiceEvent) {
+            this.eventDetectedTimestamp = new Date();
             eventService.processEvent(this, event);
+        }
     }
 
 

@@ -153,6 +153,16 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
 
 
+    @XapiRequestMapping(value = "/delivered", method = GET)
+    @ResponseBody
+    public List<SubscriptionDelivery> getDeliveredSubscriptions(
+            final @RequestParam(value = "projectid", required = false) String projectId,
+            final @RequestParam(value = "subscriptionid", required = false) Long subscriptionId)
+            throws Exception {
+        final UserI userI = XDAT.getUserDetails();
+        checkCreateOrThrow(userI);
+        return eventService.getSubscriptionDeliveries(projectId, subscriptionId);
+    }
 
 
 

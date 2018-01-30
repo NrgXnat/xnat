@@ -32,5 +32,5 @@ public interface ActionManager {
     boolean validateAction(String actionKey, List<String> projectIds, String xnatType, UserI user);
 
     PersistentWorkflowI generateWorkflowEntryIfAppropriate(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user);
-    void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user);
+    void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user, Long deliveryId);
 }

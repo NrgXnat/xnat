@@ -12,6 +12,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.CombinedEventServiceEvent;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
+import org.nrg.xnat.eventservice.model.SimpleEvent;
 import org.nrg.xnat.eventservice.model.xnat.*;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
@@ -137,6 +138,20 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
         return null;
     }
 
+    private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {
+        return SimpleEvent.builder()
+                .id(event.getId() == null ? "" : event.getId())
+                .listenerService(
+                        event instanceof EventServiceListener
+                                ? ((EventServiceListener) event).getClass().getName()
+                                : "")
+                .displayName(event.getDisplayName() == null ? "" : event.getDisplayName())
+                .description(event.getDescription() == null ? "" : event.getDescription())
+                .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass())
+                .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
+                .isXsiType(event.isPayloadXsiType() == null ? false : event.isPayloadXsiType())
+                .build();
+    }
 
 
 

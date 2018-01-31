@@ -217,7 +217,7 @@ var XNAT = getObject(XNAT || {});
                 style: { 'font-weight': 'bold' },
                 onclick: function(e){
                     e.preventDefault();
-                    eventServicePanel.editSubscription(id, false);
+                    eventServicePanel.editSubscription('Edit',id);
                 }
             }, label);
         }
@@ -258,16 +258,15 @@ var XNAT = getObject(XNAT || {});
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
-                    eventServicePanel.editSubscription(subscription.id);
+                    eventServicePanel.editSubscription('Edit',subscription.id);
                 }
             }, [ spawn('span.fa.fa-pencil') ]);
         }
         function cloneSubscriptionButton(subscription){
-            var cloneMe = true;
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
-                    eventServicePanel.editSubscription(subscription.id,cloneMe);
+                    eventServicePanel.editSubscription('Clone',subscription.id);
                 }
             }, [ spawn('span.fa.fa-clone') ]);
         }
@@ -327,6 +326,13 @@ var XNAT = getObject(XNAT || {});
                 validation: 'not-empty',
                 order: 10
             },
+            subId: {
+                kind: 'panel.input.hidden',
+                name: 'id',
+                element: {
+                    disabled: 'disabled'
+                }
+            },
             subEventSelector: {
                 kind: 'panel.select.single',
                 name: 'event-id',
@@ -381,6 +387,11 @@ var XNAT = getObject(XNAT || {});
                 name: 'attributes',
                 id: 'subscription-action-attributes'
             },
+            subActionInherited: {
+                kind: 'panel.input.hidden',
+                name: 'inherited-action',
+                id: 'subscription-inherited-action'
+            },
             subFilter: {
                 kind: 'panel.input.text',
                 name: 'event-filter',
@@ -414,6 +425,7 @@ var XNAT = getObject(XNAT || {});
         var $form = $element.parents('form');
         var project = $form.find('select[name=project-id]').find('option:selected').val();
         var xsiType = $form.find('select[name=event-id]').find('option:selected').data('xsitype');
+        var inheritedAction = $form.find('input[name=inherited-action]').val(); // hack to stored value for edited subscription
         var actionSelector = $form.find('select[name=action-key]');
 
         if (project && actionSelector) {
@@ -425,7 +437,15 @@ var XNAT = getObject(XNAT || {});
                         .append(spawn('option', { selected: true }));
                     if (data.length){
                         data.forEach(function(action){
-                            actionSelector.append( spawn('option', { value: action['action-key'] }, action['display-name'] ))
+                            var selected = false;
+                            if (inheritedAction.length && action['action-key'] === inheritedAction) {
+                                // if we're editing an existing subscription, we'll know the action before this select menu knows which actions exist.
+                                // get the stored value and mark this option selected if it matches, then clear the stored value.
+                                selected='selected';
+                                $form.find('input[name=inherited-action]').val('');
+                            }
+
+                            actionSelector.append( spawn('option', { value: action['action-key'], selected: selected }, action['display-name'] ))
                             // if the action has attributes, add them to the global actions object
                             if (action['attributes']) {
                                 eventServicePanel.actions[action['action-key']].attributes = action['attributes'];
@@ -442,11 +462,13 @@ var XNAT = getObject(XNAT || {});
     function getActionAttributes($element){
         var $form = $element.parents('form');
         var actionId = $element.find('option:selected').val();
-        if (eventServicePanel.actions[actionId].attributes && eventServicePanel.actions[actionId].attributes !== {}) {
-            $('#subscription-action-preview').slideDown(300);
-        }
-        else {
-            $('#subscription-action-preview').slideUp(300);
+        if (actionId) {
+            if (eventServicePanel.actions[actionId].attributes && eventServicePanel.actions[actionId].attributes !== {}) {
+                $('#subscription-action-preview').slideDown(300);
+            }
+            else {
+                $('#subscription-action-preview').slideUp(300);
+            }
         }
     }
     eventServicePanel.enterAttributesDialog = function(attributesObj){
@@ -498,13 +520,16 @@ var XNAT = getObject(XNAT || {});
         })
     };
 
-    eventServicePanel.createSubscription = function(){
+    eventServicePanel.modifySubscription = function(action,subscription){
         var projs = eventServicePanel.projects;
-        eventServicePanel.subscriptionAttributes = false;
+        subscription = subscription || false;
+        action = action || 'Create';
+
+        eventServicePanel.subscriptionAttributes = (subscription) ? subscription.attributes : false;
         if (projs.length) {
 
             XNAT.ui.dialog.open({
-                title: 'Create Subscription',
+                title: action + ' Subscription',
                 width: 600,
                 content: '<div id="subscription-form-container"></div>',
                 beforeShow: function(obj){
@@ -528,6 +553,28 @@ var XNAT = getObject(XNAT || {});
                                 eventServicePanel.events[event]['display-name']
                             ));
                     });
+
+                    if (subscription && subscription['event-filter']) subscription['event-filter'] = subscription['event-filter']['json-path-filter'];
+                    if (action.toLowerCase() === "clone") {
+                        delete subscription.name;
+                        delete subscription.id;
+                        delete subscription['registration-key'];
+                    }
+
+                    if (action.toLowerCase() !== "create") {
+                        $form.find('#subscription-inherited-action').val(subscription['action-key']);
+
+                        $form.setValues(subscription); // sets values in inputs and selectors, which triggers the onchange listeners below. Action has to be added again after the fact.
+                        $form.addClass((subscription.valid) ? 'valid' : 'invalid');
+
+                        if (Object.keys(subscription.attributes).length) {
+                            $form.find('#subscription-action-preview').show();
+                        }
+                    }
+
+                    if (action.toLowerCase() === "edit") {
+                        $form.find('input[name=id]').prop('disabled',false);
+                    }
 
                 },
                 buttons: [
@@ -555,13 +602,20 @@ var XNAT = getObject(XNAT || {});
 
                             formData = JSON.stringify(jsonFormData);
 
+                            var url = (action.toLowerCase() === 'edit') ? setEventSubscriptionUrl(subscription.id) : setEventSubscriptionUrl();
+                            var successMessages = {
+                                'Create': 'Created new event subscription',
+                                'Edit' : 'Edited event subscription',
+                                'Clone' : 'Created new event subscription'
+                            };
+
                             XNAT.xhr.ajax({
-                                url: setEventSubscriptionUrl(),
+                                url: url,
                                 data: formData,
                                 method: 'POST',
                                 contentType: 'application/json',
                                 success: function(){
-                                    XNAT.ui.banner.top(2000,'Created new event subscription','success');
+                                    XNAT.ui.banner.top(2000,successMessages[action],'success');
                                     eventServicePanel.refreshSubscriptionList();
                                 },
                                 fail: function(e){
@@ -580,6 +634,21 @@ var XNAT = getObject(XNAT || {});
         else {
             errorHandler({}, 'Could not load projects');
         }
+    };
+
+    eventServicePanel.editSubscription = function(action,subscriptionId) {
+        action = action || "Edit";
+        if (!subscriptionId) return false;
+
+        XNAT.xhr.getJSON({
+            url: getEventSubscriptionUrl(subscriptionId),
+            success: function(subscriptionData){
+                eventServicePanel.modifySubscription(action,subscriptionData);
+            },
+            fail: function(e){
+                errorHandler(e,'Could not retrieve event subscription details');
+            }
+        })
     };
 
     eventServicePanel.toggleSubscription = function(id,selector){
@@ -669,7 +738,7 @@ var XNAT = getObject(XNAT || {});
 
     $(document).off('click','#create-new-subscription').on('click', '#create-new-subscription', function(e){
         // console.log(e);
-        XNAT.admin.eventServicePanel.createSubscription();
+        XNAT.admin.eventServicePanel.modifySubscription('Create');
     });
 
     $(document).off('change','select[name=project-id]').on('change','select[name=project-id]', function(){

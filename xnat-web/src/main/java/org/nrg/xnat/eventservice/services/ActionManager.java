@@ -5,6 +5,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.Action;
+import org.springframework.scheduling.annotation.Async;
 
 import java.util.List;
 
@@ -33,4 +34,8 @@ public interface ActionManager {
 
     PersistentWorkflowI generateWorkflowEntryIfAppropriate(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user);
     void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user, Long deliveryId);
+
+    @Async
+    void processAsync(EventServiceActionProvider provider, SubscriptionEntity subscription, EventServiceEvent esEvent,
+                      UserI user, Long deliveryId);
 }

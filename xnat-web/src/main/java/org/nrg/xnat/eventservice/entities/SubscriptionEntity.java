@@ -35,12 +35,14 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
     private EventServiceFilterEntity eventServiceFilterEntity;
     private Boolean actAsEventUser;
     private String subscriptionOwner;
+    private List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities;
 
     public SubscriptionEntity(String name, Boolean active, String listenerRegistrationKey, String eventType,
                               String customListenerId, String actionKey, String projectId,
                               Map<String, String> attributes,
                               EventServiceFilterEntity eventServiceFilterEntity, Boolean actAsEventUser,
-                              String subscriptionOwner) {
+                              String subscriptionOwner,
+                              List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities) {
         this.name = name;
         this.active = active;
         this.listenerRegistrationKey = listenerRegistrationKey;
@@ -52,6 +54,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         this.eventServiceFilterEntity = eventServiceFilterEntity;
         this.actAsEventUser = actAsEventUser;
         this.subscriptionOwner = subscriptionOwner;
+        this.subscriptionDeliveryEntities = subscriptionDeliveryEntities;
     }
 
     @Override
@@ -154,10 +157,15 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
 
     public void setActAsEventUser(Boolean actAsEventUser) { this.actAsEventUser = actAsEventUser; }
 
+    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    public List<SubscriptionDeliveryEntity> getSubscriptionDeliveryEntities() {
+        return subscriptionDeliveryEntities;
+    }
 
-
-
-
+    public void setSubscriptionDeliveryEntities(
+            List<SubscriptionDeliveryEntity> subscriptionDeliveryEntities) {
+        this.subscriptionDeliveryEntities = subscriptionDeliveryEntities;
+    }
 
     public static SubscriptionEntity fromPojo(final Subscription subscription) {
         return fromPojoWithTemplate(subscription, new SubscriptionEntity());

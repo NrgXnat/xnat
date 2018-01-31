@@ -250,13 +250,7 @@ public class EventSubscriptionEntityServiceImpl
             Subscription subscription = getSubscription(subscriptionId);
             deactivate(subscription);
             SubscriptionEntity entity = retrieve(subscriptionId);
-            if(entity.getActive() == false) {
-                delete(entity);
-            }
-            else {
-                deactivate(subscription);
-                delete(entity);
-            }
+            delete(entity);
             log.debug("Deleted subscription:" + Long.toString(subscription.id()));
         } else {
             log.error("Failed to delete subscription. Invalid or missing subscription ID.");

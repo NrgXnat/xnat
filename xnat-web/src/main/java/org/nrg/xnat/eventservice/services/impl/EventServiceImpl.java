@@ -249,7 +249,6 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public void triggerEvent(EventServiceEvent event, String projectId) {
-        log.debug("Firing EventService Event.");
         // Manually build event label
         EventFilter filter = EventFilter.builder().build();
         String regexKey = filter.toRegexKey(event.getClass().getName(), projectId);
@@ -261,7 +260,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public void processEvent(EventServiceListener listener, Event event) {
         try {
-            log.debug("Event noticed by EventService: " + event.getClass().getSimpleName());
+            log.debug("Event noticed by EventService: " + event.getData().getClass().getSimpleName());
             subscriptionService.processEvent(listener, event);
         } catch (NotFoundException e) {
             log.error("Failed to processEvent with subscription service.\n" + e.getMessage());

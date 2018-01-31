@@ -197,7 +197,7 @@ public class ActionManagerImpl implements ActionManager {
             }
         }
         else {
-            log.debug("Skipping workflow entry creation. Not available for non-XFTItem: " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.getName() + ".");
+            log.debug("Skipping workflow entry creation. Not available for non-XFTItem: " + esEvent.getObject().getClass().getSimpleName() + " in subscription " + subscription.getName() + ".");
         }
         return null;
     }
@@ -218,7 +218,6 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     @Override
-    @Async
     public void processEvent(SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId) {
         log.debug("ActionManager.processEvent started on Thread: " + Thread.currentThread().getName());
         PersistentWorkflowI workflow = generateWorkflowEntryIfAppropriate(subscription, esEvent, user);
@@ -226,7 +225,7 @@ public class ActionManagerImpl implements ActionManager {
         if(provider!= null) {
             log.debug("Passing event to Action Provider: " + provider.getName());
             subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_CALLED, new Date(), "Event passed to Action Provider: " + provider.getName());
-            provider.processEvent(esEvent, subscription, user);
+            processAsync(provider, subscription, esEvent, user, deliveryId);
             if(workflow !=null){
                 try {
                     WorkflowUtils.complete(workflow, workflow.buildEvent());
@@ -248,6 +247,14 @@ public class ActionManagerImpl implements ActionManager {
             }
             log.error(errorMessage);
         }
+    }
+
+    @Async
+    @Override
+    public void processAsync(EventServiceActionProvider provider, SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId){
+        log.debug("Started Async process on thread: {}", Thread.currentThread().getName());
+        provider.processEvent(esEvent, subscription, user);
+        log.debug("Ending Async process on thread: {}", Thread.currentThread().getName());
     }
 
 }

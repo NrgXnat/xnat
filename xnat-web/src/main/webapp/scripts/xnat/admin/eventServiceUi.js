@@ -586,8 +586,11 @@ var XNAT = getObject(XNAT || {});
                             var formData = JSON.stringify(obj.$modal.find('form'));
                             var jsonFormData = JSON.parse(formData);
                             if (eventServicePanel.subscriptionAttributes) {
-                                jsonFormData.attributes = JSON.parse(eventServicePanel.subscriptionAttributes);
-                            } else {
+                                jsonFormData.attributes = (typeof eventServicePanel.subscriptionAttributes === 'object') ?
+                                    eventServicePanel.subscriptionAttributes :
+                                    JSON.parse(eventServicePanel.subscriptionAttributes);
+                            }
+                            else {
                                 jsonFormData.attributes = {};
                             }
 
@@ -603,6 +606,7 @@ var XNAT = getObject(XNAT || {});
                             formData = JSON.stringify(jsonFormData);
 
                             var url = (action.toLowerCase() === 'edit') ? setEventSubscriptionUrl(subscription.id) : setEventSubscriptionUrl();
+                            var method = (action.toLowerCase() === 'edit') ? 'PUT' : 'POST';
                             var successMessages = {
                                 'Create': 'Created new event subscription',
                                 'Edit' : 'Edited event subscription',
@@ -612,7 +616,7 @@ var XNAT = getObject(XNAT || {});
                             XNAT.xhr.ajax({
                                 url: url,
                                 data: formData,
-                                method: 'POST',
+                                method: method,
                                 contentType: 'application/json',
                                 success: function(){
                                     XNAT.ui.banner.top(2000,successMessages[action],'success');

@@ -13,5 +13,5 @@ form.panel.invalid:before {
     text-transform: uppercase;
     content: 'Invalid';
     display: block;
-    
+
 }

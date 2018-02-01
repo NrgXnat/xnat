@@ -33,5 +33,5 @@ public interface EventServiceActionProvider {
     String actionIdToActionKey(String actionId);
 
 
-    void processEvent(final EventServiceEvent event, SubscriptionEntity subscription, final UserI user);
+    void processEvent(final EventServiceEvent event, SubscriptionEntity subscription, final UserI user, final Long deliveryId);
 }

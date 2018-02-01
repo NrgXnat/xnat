@@ -253,7 +253,7 @@ public class ActionManagerImpl implements ActionManager {
     @Override
     public void processAsync(EventServiceActionProvider provider, SubscriptionEntity subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId){
         log.debug("Started Async process on thread: {}", Thread.currentThread().getName());
-        provider.processEvent(esEvent, subscription, user);
+        provider.processEvent(esEvent, subscription, user, deliveryId);
         log.debug("Ending Async process on thread: {}", Thread.currentThread().getName());
     }
 

@@ -35,7 +35,7 @@ public class EventServiceLoggingAction extends SingleActionProvider {
     public Map<String, ActionAttributeConfiguration> getAttributes() { return null; }
 
     @Override
-    public void processEvent(EventServiceEvent event, SubscriptionEntity subscription, UserI user) {
+    public void processEvent(EventServiceEvent event, SubscriptionEntity subscription, UserI user, final Long deliveryId) {
         log.error("EventServiceLoggingAction called for RegKey " + subscription.getListenerRegistrationKey());
 
     }

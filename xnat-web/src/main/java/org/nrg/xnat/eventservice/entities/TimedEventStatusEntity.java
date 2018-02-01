@@ -129,7 +129,7 @@ public class TimedEventStatusEntity implements Serializable {
         ACTION_CALLED,
         ACTION_STEP,
         ACTION_FAILED,
-        COMPLETE,
+        ACTION_COMPLETE,
         FAILED
     }
 }

@@ -39,9 +39,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     }
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    public SubscriptionEntity getSubscription() {
-        return subscription;
-    }
+    public SubscriptionEntity getSubscription() { return subscription; }
 
     public void setSubscription(SubscriptionEntity subscription) {
         this.subscription = subscription;

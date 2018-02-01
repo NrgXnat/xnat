@@ -1,12 +1,9 @@
 package org.nrg.xnat.eventservice.services.impl;
 
-import com.google.common.collect.Lists;
-import javassist.Modifier;
 import org.h2.util.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.ContextService;
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
@@ -17,17 +14,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.UUID;
 
 @Service
@@ -99,36 +92,6 @@ public class EventServiceImpl implements EventService {
     public Subscription validateSubscription(Subscription subscription) throws SubscriptionValidationException {
         return subscriptionService.validate(subscription);
     }
-
-    @Deprecated
-    public List<Class<?>> getClassList(Class<?> parentClass, String resourcePath, String propertyKey) {
-        final List<Class<?>> classList = Lists.newArrayList();
-        try {
-            for (final Resource resource : BasicXnatResourceLocator.getResources(resourcePath)) {
-                final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
-                if (!properties.containsKey(propertyKey)) {
-                    continue;
-                }
-                final String classStr = properties.get(propertyKey).toString();
-                try {
-                    final Class<?> clazz = Class.forName(classStr);
-                    if (parentClass.isAssignableFrom(clazz) && !clazz.isInterface() &&
-                            !Modifier.isAbstract(clazz.getModifiers())) {
-                        if (!classList.contains(clazz)) {
-                            classList.add(clazz);
-                        }
-                    }
-                } catch (ClassNotFoundException cex) {
-                    log.debug("Could not load class for class name (" + classStr + ")");
-                }
-            }
-        } catch (IOException e) {
-            log.debug("Could not load event class properties resources (" + resourcePath + ")");
-        }
-
-        return classList;
-    }
-
 
     @Override
     public List<ActionProvider> getActionProviders() {

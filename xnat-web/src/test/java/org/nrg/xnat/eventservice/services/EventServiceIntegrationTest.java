@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
@@ -33,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,8 +53,8 @@ import static reactor.bus.selector.Selectors.type;
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = EventServiceTestConfig.class)
-public class EventServiceTest {
-    private static final Logger log = LoggerFactory.getLogger(EventServiceTest.class);
+public class EventServiceIntegrationTest {
+    private static final Logger log = LoggerFactory.getLogger(EventServiceIntegrationTest.class);
 
     private static final String EVENT_RESOURCE_PATTERN ="classpath*:META-INF/xnat/event/*-xnateventserviceevent.properties";
 
@@ -65,6 +65,7 @@ public class EventServiceTest {
 
     @Autowired private EventBus eventBus;
     @Autowired private TestListener testListener;
+    @Autowired private EventServiceActionProvider testAction;
     @Autowired @Lazy private EventService eventService;
     @Autowired private EventService mockEventService;
     @Autowired private EventSubscriptionEntityService eventSubscriptionEntityService;
@@ -76,9 +77,11 @@ public class EventServiceTest {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private EventServiceLoggingAction mockEventServiceLoggingAction;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
+    @Autowired private SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService;
 
 
-    private SubscriptionCreator projectCreatedSubscription;
+    private SubscriptionCreator project1CreatedSubscription;
+    private SubscriptionCreator project2CreatedSubscription;
     private Scan mrScan1 = new Scan();
     private Scan mrScan2 = new Scan();
     private Scan ctScan1 = new Scan();
@@ -100,17 +103,27 @@ public class EventServiceTest {
 
         EventFilter eventServiceFilter = EventFilter.builder().build();
 
-        projectCreatedSubscription = SubscriptionCreator.builder()
-                                                        .name("TestSubscription")
+        project1CreatedSubscription = SubscriptionCreator.builder()
+                                                         .name("TestSubscription")
+                                                         .active(true)
+                                                         .projectId("PROJECTID-1")
+                                                         .eventId("org.nrg.xnat.eventservice.events.ProjectCreatedEvent")
+                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestListener")
+                                                         .actionKey("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction")
+                                                         .eventFilter(eventServiceFilter)
+                                                         .actAsEventUser(false)
+                                                         .build();
+
+        project2CreatedSubscription = SubscriptionCreator.builder()
+                                                        .name("TestSubscription2")
                                                         .active(true)
-                                                        .projectId("PROJECTID-1")
+                                                        .projectId("PROJECTID-2")
                                                         .eventId("org.nrg.xnat.eventservice.events.ProjectCreatedEvent")
                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestListener")
                                                         .actionKey("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction")
                                                         .eventFilter(eventServiceFilter)
                                                         .actAsEventUser(false)
                                                         .build();
-
 
         mrScan1.setId("1111");
         mrScan1.setLabel("TestLabel");
@@ -171,7 +184,7 @@ public class EventServiceTest {
 
     @Test
     public void checkContext() throws Exception {
-        assertThat(contextService.getBean("testListener"), not(nullValue()));
+        assertThat(contextService.getBean("eventService"), not(nullValue()));
     }
 
     @Test
@@ -181,10 +194,10 @@ public class EventServiceTest {
     }
 
     @Test
-    @Ignore
     public void filterSerializedModelObjects() throws Exception {
         String mrFilter = "$[?(@.modality == \"MR\")]";
         String ctFilter = "$[?(@.modality == \"CT\")]";
+        String mrCtProj1Filter = "$[?(@.project-id == \"PROJECTID-1\" && (@.modality == \"MR\" || @.modality == \"CT\"))]";
         String mrCtProj2Filter = "$[?(@.project-id == \"PROJECTID-2\" && (@.modality == \"MR\" || @.modality == \"CT\"))]";
         String proj2Filter = "$[?(@.project-id == \"PROJECTID-2\" && (@.modality == \"MR\" || @.modality == \"CT\"))]";
 
@@ -202,7 +215,7 @@ public class EventServiceTest {
         assertThat("JsonPath result should not be null", mismatch, notNullValue());
         assertThat("JsonPath mismatch result should be empty" + mismatch, mismatch, is(empty()));
 
-        match = JsonPath.parse(jsonMrScan2).read(mrCtProj2Filter);
+        match = JsonPath.parse(jsonCtScan1).read(mrCtProj1Filter);
         assertThat("JsonPath result should not be null", match, notNullValue());
         assertThat("JsonPath match result should not be empty", match, is(not(empty())));
 
@@ -222,35 +235,22 @@ public class EventServiceTest {
     }
 
     @Test
-    @Ignore
     public void getInstalledEvents() throws Exception {
         List<SimpleEvent> events = eventService.getEvents();
         Integer eventPropertyFileCount = BasicXnatResourceLocator.getResources(EVENT_RESOURCE_PATTERN).size();
-        System.out.println("\nFound " + events.size() + " Event classes:");
-        for (SimpleEvent event : events) {
-            System.out.println(event.toString());
-        }
+
         assert(events != null && events.size() == eventPropertyFileCount);
     }
 
     @Test
     public void getInstalledActionProviders() throws Exception {
-        System.out.println("Installed Action Providers\n");
         assertThat("componentManager.getActionProviders() should not be null.", componentManager.getActionProviders(), notNullValue());
         assertThat("componentManager.getActionProviders() should not be empty.", componentManager.getActionProviders().size(), not(equalTo(0)));
-        for(EventServiceActionProvider provider:componentManager.getActionProviders()) {
-            System.out.println(provider.toString());
-        }
-
     }
 
     @Test
     public void getInstalledActions() throws Exception {
         List<Action> actions = eventService.getAllActions();
-        System.out.println("\nFound " + actions.size() + " Actions:");
-        for (Action action : actions) {
-            System.out.println(action.toString());
-        }
         assert(actions != null && actions.size() > 0);
     }
 
@@ -262,17 +262,17 @@ public class EventServiceTest {
     }
 
     @Test
-    @Ignore
+    @DirtiesContext
     public void createSubscription() throws Exception {
-        List<SimpleEvent> events = mockEventService.getEvents();
+        List<SimpleEvent> events = eventService.getEvents();
         assertThat("eventService.getEvents() should not return a null list", events, notNullValue());
         assertThat("eventService.getEvents() should not return an empty list", events, is(not(empty())));
 
-        List<Action> actions = mockEventService.getAllActions();
+        List<Action> actions = eventService.getAllActions();
         assertThat("eventService.getAllActions() should not return a null list", actions, notNullValue());
         assertThat("eventService.getAllActions() should not return an empty list", actions, is(not(empty())));
 
-        List<EventServiceListener> listeners = mockComponentManager.getInstalledListeners();
+        List<EventServiceListener> listeners = componentManager.getInstalledListeners();
         assertThat("componentManager.getInstalledListeners() should not return a null list", listeners, notNullValue());
         assertThat("componentManager.getInstalledListeners() should not return an empty list", listeners, is(not(empty())));
 
@@ -294,20 +294,36 @@ public class EventServiceTest {
 
         eventService.validateSubscription(subscription);
 
-        Subscription savedSubscription = mockEventService.createSubscription(subscription);
+        Subscription savedSubscription = eventService.createSubscription(subscription);
         assertThat("eventService.createSubscription() should not return null", savedSubscription, notNullValue());
         assertThat("subscription id should not be null", savedSubscription.id(), notNullValue());
         assertThat("subscription id should not be zero", savedSubscription.id(), not(0));
         assertThat("subscription registration key should not be null", savedSubscription.listenerRegistrationKey(), notNullValue());
         assertThat("subscription registration key should not be empty", savedSubscription.listenerRegistrationKey(), not(""));
 
+        subscriptionCreator = SubscriptionCreator.builder().name("Test 2 Subscription")
+                                                                     .active(true)
+                                                                     .eventId(eventId)
+                                                                     .customListenerId(listenerType)
+                                                                     .actionKey(actionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+
+        subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+
+        eventService.validateSubscription(subscription);
+
+        Subscription secondSavedSubscription = eventService.createSubscription(subscription);
+
+        assertThat("Subscriptions should have unique listener IDs", savedSubscription.listenerRegistrationKey(), not(secondSavedSubscription.listenerRegistrationKey()));
+        assertThat("Subscriptions should have unique IDs", savedSubscription.id(), not(secondSavedSubscription.id()));
     }
 
     @Test
-    @Ignore
     public void listSubscriptions() throws Exception {
         createSubscription();
         assertThat("No subscriptions found.", eventService.getSubscriptions(), is(not(empty())));
+        assertThat("Two subscriptions expected.", eventService.getSubscriptions().size(), is(2));
         for (Subscription subscription:eventService.getSubscriptions()) {
             assertThat("subscription id is null for " + subscription.name(), subscription.id(), notNullValue());
             assertThat("subscription id is zero (0) for " + subscription.name(), subscription.id(), not(0));
@@ -315,39 +331,48 @@ public class EventServiceTest {
     }
 
     @Test
-    @Ignore
+    @DirtiesContext
     public void saveSubscriptionEntity() throws Exception {
-        Subscription subscription = eventSubscriptionEntityService.save(Subscription.create(projectCreatedSubscription));
+        Subscription subscription = eventSubscriptionEntityService.save(Subscription.create(project1CreatedSubscription, mockUser.getLogin()));
         assertThat("EventSubscriptionEntityService.save should not create a null entity.", subscription, not(nullValue()));
         assertThat("Saved subscription entity should have been assigned a database ID.", subscription.id(), not(nullValue()));
-        assertThat("Pojo name mis-match", subscription.name(), containsString(projectCreatedSubscription.name()));
-        assertThat("Pojo actionService mis-match", subscription.actionKey(), containsString(projectCreatedSubscription.actionKey()));
-        assertThat("Pojo active-status mis-match", subscription.active(), is(projectCreatedSubscription.active()));
-        assertThat("Pojo eventListenerFilter mis-match", subscription.eventFilter(), equalTo(projectCreatedSubscription.eventFilter()));
+        assertThat("Pojo name mis-match", subscription.name(), containsString(project1CreatedSubscription.name()));
+        assertThat("Pojo actionService mis-match", subscription.actionKey(), containsString(project1CreatedSubscription.actionKey()));
+        assertThat("Pojo active-status mis-match", subscription.active(), is(project1CreatedSubscription.active()));
+        assertThat("Pojo eventListenerFilter should have been assigned an ID", subscription.eventFilter().id(), notNullValue());
+        assertThat("Pojo eventListenerFilter should have been assigned a non-zero ID", subscription.eventFilter().id(), not(0));
+        assertThat("Pojo eventListenerFilter.name mis-match", subscription.eventFilter().name(), equalTo(project1CreatedSubscription.eventFilter().name()));
+        assertThat("Pojo eventListenerFilter.jsonPathFilter mis-match", subscription.eventFilter().jsonPathFilter(), equalTo(project1CreatedSubscription.eventFilter().jsonPathFilter()));
 
         SubscriptionEntity entity = eventSubscriptionEntityService.get(subscription.id());
         assertThat(entity, not(nullValue()));
     }
 
+    @Test
+    public void validateSubscription() throws Exception {
+        Subscription subscription = Subscription.create(project1CreatedSubscription, mockUser.getLogin());
+        Subscription validatedSubscription = eventSubscriptionEntityService.validate(subscription);
+        assertThat("Sample subscription validation failed.", validatedSubscription, notNullValue());
+    }
 
     @Test
-    @Ignore
+    @DirtiesContext
     public void activateAndSaveSubscriptions() throws Exception {
-        Subscription subscription1 = eventSubscriptionEntityService.createSubscription(Subscription.create(projectCreatedSubscription));
+        Subscription subscription1 = eventSubscriptionEntityService.createSubscription(Subscription.create(project1CreatedSubscription, mockUser.getLogin()));
         assertThat(subscription1, not(nullValue()));
         assertThat(subscription1.listenerRegistrationKey(), not(nullValue()));
 
-        Subscription subscription2 = eventSubscriptionEntityService.createSubscription(Subscription.create(projectCreatedSubscription));
+        Subscription subscription2 = eventSubscriptionEntityService.createSubscription(Subscription.create(project2CreatedSubscription, mockUser.getLogin()));
         assertThat("Subscription 2 needs a non-null ID", subscription2.id(), not(nullValue()));
         assertThat("Subscription 1 and 2 need unique IDs", subscription2.id(), not(is(subscription1.id())));
         assertThat("Subscription 1 and 2 should have unique registration keys.", subscription2.listenerRegistrationKey().toString(), not(containsString(subscription1.listenerRegistrationKey().toString())));
     }
 
     @Test
-    @Ignore
+    @DirtiesContext
     public void deleteSubscriptionEntity() throws Exception {
-        Subscription subscription1 = eventSubscriptionEntityService.createSubscription(Subscription.create(projectCreatedSubscription));
-        Subscription subscription2 = eventSubscriptionEntityService.createSubscription(Subscription.create(projectCreatedSubscription));
+        Subscription subscription1 = eventSubscriptionEntityService.createSubscription(Subscription.create(project1CreatedSubscription, mockUser.getLogin()));
+        Subscription subscription2 = eventSubscriptionEntityService.createSubscription(Subscription.create(project2CreatedSubscription, mockUser.getLogin()));
         assertThat("Expected two subscriptions in database.", eventSubscriptionEntityService.getAll().size(), equalTo(2));
 
         eventSubscriptionEntityService.delete(subscription1.id());
@@ -392,6 +417,7 @@ public class EventServiceTest {
     // ** Async Tests ** //
 
     @Test
+    @DirtiesContext
     public void testSampleEvent() throws InterruptedException {
         MockConsumer consumer = new MockConsumer();
 
@@ -401,6 +427,7 @@ public class EventServiceTest {
 
         // Trigger event
         EventServiceEvent event = new SampleEvent();
+
         eventBus.notify(event, Event.wrap(event));
 
         // wait for consumer (max 1 sec.)
@@ -412,25 +439,38 @@ public class EventServiceTest {
     }
 
     @Test
-    @Ignore
+    @DirtiesContext
     public void catchSubscribedEvent() throws Exception {
-        createSubscription();
+        EventServiceEvent event = new SampleEvent();
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder().name("Test Subscription")
+                                                                     .active(true)
+                                                                     .eventId(event.getId())
+                                                                     .customListenerId(testListener.getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        eventService.validateSubscription(subscription);
+        Subscription savedSubscription = eventService.createSubscription(subscription);
 
         // Trigger event
-        EventServiceEvent event = new SampleEvent();
-        eventBus.notify(event, Event.wrap(event));
+        eventService.triggerEvent(event);
 
         // wait for listener (max 1 sec.)
-        synchronized (testListener) {
-            testListener.wait(1000);
+        synchronized (testAction) {
+            testAction.wait(1000);
         }
-
-        assertThat("List of detected events should not be null.",testListener.getDetectedEvents(), notNullValue());
-        assertThat("List of detected events should not be empty.",testListener.getDetectedEvents().size(), not(0));
+        TestAction action = (TestAction) testAction;
+        assertThat("List of detected events should not be null.",action.getDetectedEvents(), notNullValue());
+        assertThat("List of detected events should not be empty.",action.getDetectedEvents().size(), not(0));
 
     }
 
     @Test
+    @DirtiesContext
     public void registerMrSessionSubscription() throws Exception {
         EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.TestCombinedEvent");
         assertThat("Could not load TestCombinedEvent from componentManager", testCombinedEvent, notNullValue());
@@ -460,7 +500,7 @@ public class EventServiceTest {
     }
 
     @Test
-    @Ignore
+    @DirtiesContext
     public void matchMrSubscriptionToMrSession() throws Exception {
         registerMrSessionSubscription();
 
@@ -475,8 +515,8 @@ public class EventServiceTest {
         session.setSessionType("xnat:imageSessionData");
 
         TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser.getLogin());
-        String filter =  "project-id:PROJECTID-1";
-        eventBus.notify(filter, Event.wrap(combinedEvent));
+
+        eventService.triggerEvent(combinedEvent, "PROJECTID-1");
 
         // wait for async action (max 1 sec.)
         synchronized (testAction) {
@@ -488,23 +528,57 @@ public class EventServiceTest {
         assertThat("List of detected events should not be empty.",actionProvider.getDetectedEvents().size(), not(0));
     }
 
+    @Test
+    @DirtiesContext
+    public void mismatchProjectIdMrSubscriptionToMrSession() throws Exception {
+        registerMrSessionSubscription();
+
+        Action testAction = actionManager.getActionByKey("org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction", mockUser);
+
+        XnatImagesessiondataI session = new XnatImagesessiondataBean();
+        session.setModality("MR");
+        session.setProject("PROJECTID-2");
+        session.setSessionType("xnat:imageSessionData");
+
+        TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser.getLogin());
+
+        eventService.triggerEvent(combinedEvent, "PROJECTID-2");
+
+        // wait for async action (max 1 sec.)
+        synchronized (testAction) {
+            testAction.wait(1000);
+        }
+
+        TestAction actionProvider = (TestAction) testAction.provider();
+        assertThat("List of detected events should be empty (Mis-matched Project IDs.", actionProvider.getDetectedEvents(), is(empty()));
+    }
 
     @Test
-    @Ignore
+    @DirtiesContext
     public void testReactivateAllActive() throws Exception {
         // Create a working subscription
         matchMrSubscriptionToMrSession();
 
-        List<Subscription> allSubscriptions = eventSubscriptionEntityService.getAllSubscriptions();
-        assertThat(allSubscriptions.size(), is(1));
+        List<Subscription> allSubscriptions1 = eventSubscriptionEntityService.getAllSubscriptions();
+        assertThat("Expected one subscription to be created.", allSubscriptions1.size(), is(1));
 
-        final Subscription subscription = allSubscriptions.get(0);
-        // reactivate subscription
+        final Subscription subscription1 = allSubscriptions1.get(0);
+        String regKey1 = subscription1.listenerRegistrationKey();
+
         eventService.reactivateAllSubscriptions();
+
+        List<Subscription> allSubscriptions2 = eventSubscriptionEntityService.getAllSubscriptions();
+        assertThat("Expected only a single subscription after reactivation", allSubscriptions2.size(), is(1));
+        final Subscription subscription2 = allSubscriptions2.get(0);
+        String regKey2 = subscription2.listenerRegistrationKey();
+
+        assertThat("Expected reactivated subscription to have unique registration key.", regKey1, is(not(regKey2)));
+
 
     }
 
     @Test
+    @DirtiesContext
     public void mismatchMrSubscriptionToCtSession() throws Exception {
         registerMrSessionSubscription();
 
@@ -519,8 +593,7 @@ public class EventServiceTest {
         session.setSessionType("xnat:imageSessionData");
 
         TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser.getLogin());
-        String filter =  "project-id:PROJECTID-1";
-        eventBus.notify(filter, Event.wrap(combinedEvent));
+        eventService.triggerEvent(combinedEvent, session.getProject());
 
         // wait for async action (max 1 sec.)
         synchronized (testAction) {
@@ -534,10 +607,6 @@ public class EventServiceTest {
 
     class MockSingleActionProvider extends SingleActionProvider {
 
-        @Override
-        public List<String> getAttributeKeys() {
-            return null;
-        }
 
         @Override
         public String getDisplayName() {
@@ -550,8 +619,14 @@ public class EventServiceTest {
         }
 
         @Override
-        public void processEvent(EventServiceEvent event, SubscriptionEntity subscription, UserI user) {
+        public void processEvent(EventServiceEvent event, SubscriptionEntity subscription, UserI user,
+                                 Long deliveryId) {
 
+        }
+
+        @Override
+        public Map<String, ActionAttributeConfiguration> getAttributes() {
+            return null;
         }
     }
 

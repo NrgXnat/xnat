@@ -2,6 +2,9 @@ package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 
+import java.util.Date;
+import java.util.UUID;
+
 @XnatEventServiceEvent(name="SampleEvent")
 public class SampleEvent implements EventServiceEvent {
 
@@ -42,6 +45,16 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public String getUser() {
+        return null;
+    }
+
+    @Override
+    public Date getEventTimestamp() {
+        return null;
+    }
+
+    @Override
+    public UUID getEventUUID() {
         return null;
     }
 }

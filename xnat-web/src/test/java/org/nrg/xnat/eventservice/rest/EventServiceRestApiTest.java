@@ -80,33 +80,7 @@ public class EventServiceRestApiTest {
         NONADMIN_AUTH = new TestingAuthenticationToken(nonAdmin, nonAdminPassword);
     }
 
-    @Test
-    @Ignore
-    public void testOk() throws Exception {
-        final String path = "/events/test";
 
-
-        final MockHttpServletRequestBuilder request =
-                post(path);
-
-        mockMvc.perform(request)
-               .andExpect(status().isOk());
-
-    }
-
-    @Test
-    @Ignore
-    public void testAdminOk() throws Exception {
-        final String path = "/events/admintest";
-
-
-        final MockHttpServletRequestBuilder request =
-                post(path);
-
-        mockMvc.perform(request)
-               .andExpect(status().isOk());
-
-    }
 
     @Test
     @Ignore

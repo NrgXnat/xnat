@@ -3,6 +3,8 @@ package org.nrg.xnat.eventservice.events;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.services.EventService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -27,6 +29,8 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     Date eventCreatedTimestamp = null;
     UUID listenerId = UUID.randomUUID();
     Date eventDetectedTimestamp = null;
+
+    private static final Logger log = LoggerFactory.getLogger(CombinedEventServiceEvent.class);
 
 
     @Autowired @Lazy
@@ -90,21 +94,25 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     public void accept(Event<EventT> event){
         if( event.getData() instanceof EventServiceEvent) {
             this.eventDetectedTimestamp = new Date();
-            eventService.processEvent(this, event);
+            if(eventService != null) {
+                eventService.processEvent(this, event);
+            } else {
+                log.error("Event Listener: {} is missing reference to eventService. Should have been set at activation.", this.getClass().getCanonicalName());
+            }
         }
     }
 
 
-    public static CombinedEventServiceEvent createFromResource(org.springframework.core.io.Resource resource)
+    public static EventServiceEvent createFromResource(org.springframework.core.io.Resource resource)
             throws IOException, ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException {
-        CombinedEventServiceEvent event = null;
+        EventServiceEvent event = null;
         final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
         Class<?> clazz = Class.forName(properties.get(XnatEventServiceEvent.EVENT_CLASS).toString());
-        if (CombinedEventServiceEvent.class.isAssignableFrom(clazz) &&
+        if (EventServiceEvent.class.isAssignableFrom(clazz) &&
                 !clazz.isInterface() &&
                 !Modifier.isAbstract(clazz.getModifiers())) {
             try {
-                event = (CombinedEventServiceEvent) clazz.getConstructor().newInstance();
+                event = (EventServiceEvent) clazz.getConstructor().newInstance();
 //                event.setDisplayName(properties.containsKey(XnatEventServiceEvent.EVENT_DISPLAY_NAME) ? properties.get(XnatEventServiceEvent.EVENT_DISPLAY_NAME).toString() : "");
 //                event.setDescription(properties.containsKey(XnatEventServiceEvent.EVENT_DESC) ? properties.get(XnatEventServiceEvent.EVENT_DESC).toString() : "");
 //                event.setEventObject(properties.containsKey(XnatEventServiceEvent.EVENT_OBJECT) ? properties.get(XnatEventServiceEvent.EVENT_OBJECT).toString() : "");

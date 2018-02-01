@@ -97,7 +97,7 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
         List<EventServiceEvent> events = new ArrayList<>();
         for (final Resource resource : BasicXnatResourceLocator.getResources(EVENT_RESOURCE_PATTERN)) {
             try {
-                CombinedEventServiceEvent event = CombinedEventServiceEvent.createFromResource(resource);
+                EventServiceEvent event = CombinedEventServiceEvent.createFromResource(resource);
                 if(event != null) { events.add(event); }
             } catch (IOException |ClassNotFoundException|IllegalAccessException|InvocationTargetException |InstantiationException e) {
                 log.error("Exception loading EventClass from " + resource.toString());
@@ -110,6 +110,10 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
 
     @Override
     public XnatModelObject getModelObject(Object object, UserI user) {
+
+        if(object == null){
+            return null;
+        }
 
         if(XnatImageassessordataI.class.isAssignableFrom(object.getClass())) {
             return new Assessor((XnatImageassessordataI) object);
@@ -124,7 +128,7 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
             String imageSessionId = ((XnatImagescandataI) object).getImageSessionId();
             Session session = new Session(imageSessionId, user);
             if(session == null) {
-                log.error("User:" + user.getLogin() + " could not load Scan parent Session:" + imageSessionId);
+                log.error("User:" + (user != null ? user.getLogin() : "NULL") + " could not load Scan parent Session:" + imageSessionId);
             }
             String sessionUri = session.getUri();
             return new Scan((XnatImagescandataI) object, sessionUri, null);

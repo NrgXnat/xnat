@@ -2,18 +2,23 @@ package org.nrg.xnat.eventservice.listeners;
 
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.services.EventService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
 public class TestListener implements EventServiceListener<EventServiceEvent> {
-    List<EventServiceEvent> detectedEvents = new ArrayList();
 
     UUID listenerId = UUID.randomUUID();
+    Date eventDetectedTimestamp = null;
+
+    EventService eventService;
+
+    private static final Logger log = LoggerFactory.getLogger(TestListener.class);
 
     @Override
     public String getId() { return this.getClass().getCanonicalName(); }
@@ -25,7 +30,7 @@ public class TestListener implements EventServiceListener<EventServiceEvent> {
 
     @Override
     public EventServiceListener getInstance() {
-        return this;
+        return new TestListener();
     }
 
     @Override
@@ -35,21 +40,22 @@ public class TestListener implements EventServiceListener<EventServiceEvent> {
 
     @Override
     public void setEventService(EventService eventService) {
-
+        this.eventService = eventService;
     }
 
-    public List<EventServiceEvent> getDetectedEvents(){
-        return detectedEvents;
+    @Override
+    public Date getDetectedTimestamp() {
+        return eventDetectedTimestamp;
     }
 
     @Override
     public void accept(Event<EventServiceEvent> event) {
         if (event.getData() instanceof EventServiceEvent)
-            detectedEvents.add((EventServiceEvent) event.getData());
-
-        synchronized (this) {
-            notifyAll();
-
-        }
+            this.eventDetectedTimestamp = new Date();
+            if(eventService != null) {
+                eventService.processEvent(this, event);
+            } else {
+                log.error("Event Listener: {} is missing reference to eventService. Should have been set at activation.", this.getClass().getCanonicalName());
+            }
     }
 }

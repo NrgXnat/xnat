@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
 
     private static final Logger log = LoggerFactory.getLogger(EventService.class);
 
-    public abstract Map<String, String> getAttributes();
+    public abstract Map<String, ActionAttributeConfiguration> getAttributes();
 
     public Action getAction() {
         return Action.builder().id(getName())

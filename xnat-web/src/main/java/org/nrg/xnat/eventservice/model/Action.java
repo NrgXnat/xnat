@@ -7,7 +7,6 @@ import com.google.auto.value.AutoValue;
 import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
 
 @AutoValue
@@ -23,7 +22,7 @@ public abstract class Action {
     @JsonIgnore
     @JsonProperty("provider") public abstract EventServiceActionProvider provider();
     @Nullable
-    @JsonProperty("attributes") public abstract Map<String, String> attributes();
+    @JsonProperty("attributes") public abstract Map<String, ActionAttributeConfiguration> attributes();
 
 
     public static Action create(String id,
@@ -31,7 +30,7 @@ public abstract class Action {
                                 String displayName,
                                 String description,
                                 EventServiceActionProvider provider,
-                                Map<String, String> attributes) {
+                                Map<String, ActionAttributeConfiguration> attributes) {
         return builder()
                 .id(id)
                 .actionKey(actionKey)
@@ -45,6 +44,8 @@ public abstract class Action {
     public static Builder builder() {
         return new AutoValue_Action.Builder();
     }
+
+    public abstract Builder toBuilder();
 
 
     @AutoValue.Builder
@@ -60,7 +61,7 @@ public abstract class Action {
 
         public abstract Builder provider(EventServiceActionProvider provider);
 
-        public abstract Builder attributes(Map<String, String> attributes);
+        public abstract Builder attributes(Map<String, ActionAttributeConfiguration> attributes);
 
         public abstract Action build();
     }

@@ -259,7 +259,8 @@ var XNAT = getObject(XNAT || {});
                 onclick: function(e){
                     e.preventDefault();
                     eventServicePanel.editSubscription('Edit',subscription.id);
-                }
+                },
+                title: 'Edit'
             }, [ spawn('span.fa.fa-pencil') ]);
         }
         function cloneSubscriptionButton(subscription){
@@ -267,7 +268,8 @@ var XNAT = getObject(XNAT || {});
                 onclick: function(e){
                     e.preventDefault();
                     eventServicePanel.editSubscription('Clone',subscription.id);
-                }
+                },
+                title: 'Duplicate'
             }, [ spawn('span.fa.fa-clone') ]);
         }
         function deleteSubscriptionButton(subscription){
@@ -275,7 +277,8 @@ var XNAT = getObject(XNAT || {});
                 onclick: function(e){
                     e.preventDefault();
                     eventServicePanel.deleteSubscriptionConfirmation(subscription);
-                }
+                },
+                title: 'Delete'
             }, [ spawn('span.fa.fa-trash') ]);
         }
 
@@ -367,17 +370,36 @@ var XNAT = getObject(XNAT || {});
                 },
                 contents: {
                     subActionPreviewPane: {
-                        tag: 'div.preview-pane',
+                        tag: 'div.preview-pane.panel-element',
                         element: {
                             style: {
                                 border: '1px dotted #ccc',
-                                'margin-bottom': '1em',
-                                padding: '1em',
-                                float: 'right',
-                                width: '70%'
+                                'margin-bottom': '2em',
+                                padding: '1em 1em 0'
                             }
                         },
-                        content: '<button id="set-sub-action-attributes">Set Attributes</button>'
+                        contents: {
+                            subAttributeLabel: {
+                                tag: 'label.element-label',
+                                content: 'Attributes'
+                            },
+                            subAttributePreview: {
+                                tag: 'div.element-wrapper',
+                                contents: {
+                                    subAttributePreviewTextarea: {
+                                        tag: 'p',
+                                        content: '<textarea id="sub-action-attribute-preview" class="disabled" disabled="disabled" readonly></textarea><br>'
+                                    },
+                                    subAttributeEditButton: {
+                                        tag: 'p',
+                                        content: '<button id="set-sub-action-attributes">Set Attributes</button>'
+                                    }
+                                }
+                            },
+                            subAttributeClear: {
+                                tag: 'div.clear.clearfix'
+                            }
+                        }
                     }
                 },
                 order: 41
@@ -464,33 +486,63 @@ var XNAT = getObject(XNAT || {});
         var actionId = $element.find('option:selected').val();
         if (actionId) {
             if (eventServicePanel.actions[actionId].attributes && eventServicePanel.actions[actionId].attributes !== {}) {
-                $('#subscription-action-preview').slideDown(300);
+                $form.find('#subscription-action-preview').slideDown(300);
             }
             else {
-                $('#subscription-action-preview').slideUp(300);
+                $form.find('#subscription-action-preview').slideUp(300);
             }
         }
     }
+    function renderAttributeInput(name,props){
+
+        var obj = {
+            label: name,
+            name: name,
+            description: props.description
+        };
+        if (props.required) obj.validation = 'required';
+        obj.value = props['default-value'] || '';
+
+        var el;
+
+        if (eventServicePanel.subscriptionAttributes) {
+            var presetAttributes = (typeof eventServicePanel.subscriptionAttributes === "string") ?
+                JSON.parse(eventServicePanel.subscriptionAttributes) :
+                eventServicePanel.subscriptionAttributes;
+            obj.value = presetAttributes[name];
+        }
+
+        switch (props.type){
+            case 'boolean':
+                obj.onText = 'On';
+                obj.offText = 'Off';
+                obj.value = obj.value || 'true';
+                el = XNAT.ui.panel.input.switchbox(obj);
+                break;
+            default:
+                el = XNAT.ui.panel.input.text(obj);
+        }
+
+        return el;
+    }
     eventServicePanel.enterAttributesDialog = function(attributesObj){
         var inputElements;
-        if (isArray(attributesObj)) {
+        if (Object.keys(attributesObj).length > 0) {
             inputElements = [];
-            attributesObj.forEach(function(attribute){
-                inputElements.push( XNAT.ui.panel.input.text({ label: attribute, name: attribute }) );
+            Object.keys(attributesObj).forEach(function(name){
+                var props = attributesObj[name];
+                if (props['user-settable']) {
+                    inputElements.push( renderAttributeInput(name,props) );
+                }
             });
             inputElements = spawn('!',inputElements);
         }
         else {
-            inputElements = XNAT.ui.panel.textarea({
-                name: 'attributes',
-                label: 'Enter Attributes',
-                description: 'Enter attributes in JSON notation',
-                value: JSON.stringify(attributesObj)
-            }).spawned;
+            return false
         }
         eventServicePanel.subscriptionAttributes = "";
         XNAT.ui.dialog.open({
-            width: 350,
+            width: 450,
             title: 'Enter Attributes',
             content: '<form class="xnat-form-panel panel panel-default" id="attributes-form" style="border: none; margin: 0"><div class="panel-body" id="attributes-elements-container"></div></form>',
             beforeShow: function(obj){
@@ -504,12 +556,8 @@ var XNAT = getObject(XNAT || {});
                     close: true,
                     action: function(obj){
                         var $form = obj.$modal.find('form');
-                        if (isArray(attributesObj)) {
-                            eventServicePanel.subscriptionAttributes = JSON.stringify($form);
-                        } else {
-                            eventServicePanel.subscriptionAttributes = obj.$modal.find('textarea').val();
-                        }
-
+                        eventServicePanel.subscriptionAttributes = JSON.stringify($form);
+                        $(document).find('#sub-action-attribute-preview').html(eventServicePanel.subscriptionAttributes);
                     }
                 },
                 {
@@ -569,6 +617,7 @@ var XNAT = getObject(XNAT || {});
 
                         if (Object.keys(subscription.attributes).length) {
                             $form.find('#subscription-action-preview').show();
+                            $form.find('#sub-action-attribute-preview').html( JSON.stringify(subscription.attributes) );
                         }
                     }
 
@@ -696,10 +745,12 @@ var XNAT = getObject(XNAT || {});
     };
 
     eventServicePanel.deleteSubscriptionConfirmation = function(subscription){
+
+
         XNAT.ui.dialog.open({
             title: 'Confirm Deletion',
             width: 350,
-            content: '<p>Are you sure you want to permanently delete the <strong>' + subscription.name + '</strong> event subscription? This operation cannot be undone. Alternately, you can just disable it.</p>',
+            content: '<p>Are you sure you want to permanently delete the <strong>'+ escapeHTML(subscription.name) +'</strong> event subscription? This operation cannot be undone. Alternately, you can just disable it.</p>',
             buttons: [
                 {
                     label: 'Confirm Delete',

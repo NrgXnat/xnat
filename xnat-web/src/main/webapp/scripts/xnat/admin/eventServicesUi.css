@@ -6,6 +6,11 @@ form.panel.invalid:before {
     margin-bottom: 1em;
     padding: 10px;
 }
+form.panel textarea.disabled {
+    background-color: #f9f9f9;
+    border-color: #e0e0e0;
+    cursor: not-allowed;
+}
 
 .xnat-table tr.invalid td:first-child:after {
     color: #ccc;
@@ -13,5 +18,4 @@ form.panel.invalid:before {
     text-transform: uppercase;
     content: 'Invalid';
     display: block;
-
 }

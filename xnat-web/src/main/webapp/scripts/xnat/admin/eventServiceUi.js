@@ -96,9 +96,11 @@ var XNAT = getObject(XNAT || {});
     }
 
     function getEventActionsUrl(projectId,xsiType){
-        var path = (projectId && xsiType) ?
-            '/xapi/events/actions?projectid='+projectId+'&xnattype='+xsiType :
+        var path = (xsiType) ?
+            '/xapi/events/actions?xnattype='+xsiType :
             '/xapi/events/allactions';
+
+        if (xsiType && projectId) path += '&projectid='+projectId;
         return rootUrl(path);
     }
 
@@ -349,7 +351,9 @@ var XNAT = getObject(XNAT || {});
                 name: 'project-id',
                 label: 'Select Project',
                 id: 'subscription-project-selector',
-                element: emptyOptionObj,
+                element: {
+                    html: '<option selected>Any Project</option>'
+                },
                 order: 30
             },
             subActionSelector: {
@@ -449,35 +453,40 @@ var XNAT = getObject(XNAT || {});
         var xsiType = $form.find('select[name=event-id]').find('option:selected').data('xsitype');
         var inheritedAction = $form.find('input[name=inherited-action]').val(); // hack to stored value for edited subscription
         var actionSelector = $form.find('select[name=action-key]');
+        var url = getEventActionsUrl();
 
         if (project && actionSelector) {
-            XNAT.xhr.get({
-                url: getEventActionsUrl(project,xsiType),
-                success: function(data){
-                    actionSelector
-                        .empty()
-                        .append(spawn('option', { selected: true }));
-                    if (data.length){
-                        data.forEach(function(action){
-                            var selected = false;
-                            if (inheritedAction.length && action['action-key'] === inheritedAction) {
-                                // if we're editing an existing subscription, we'll know the action before this select menu knows which actions exist.
-                                // get the stored value and mark this option selected if it matches, then clear the stored value.
-                                selected='selected';
-                                $form.find('input[name=inherited-action]').val('');
-                            }
-
-                            actionSelector.append( spawn('option', { value: action['action-key'], selected: selected }, action['display-name'] ))
-                            // if the action has attributes, add them to the global actions object
-                            if (action['attributes']) {
-                                eventServicePanel.actions[action['action-key']].attributes = action['attributes'];
-                            }
-                        });
-                    }
-                }
-            })
+            url = getEventActionsUrl(project,xsiType)
         }
-        else return false;
+        else if (actionSelector) {
+            url = getEventActionsUrl(false,xsiType)
+        }
+
+        XNAT.xhr.get({
+            url: url,
+            success: function(data){
+                actionSelector
+                    .empty()
+                    .append(spawn('option', { selected: true }));
+                if (data.length){
+                    data.forEach(function(action){
+                        var selected = false;
+                        if (inheritedAction.length && action['action-key'] === inheritedAction) {
+                            // if we're editing an existing subscription, we'll know the action before this select menu knows which actions exist.
+                            // get the stored value and mark this option selected if it matches, then clear the stored value.
+                            selected='selected';
+                            $form.find('input[name=inherited-action]').val('');
+                        }
+
+                        actionSelector.append( spawn('option', { value: action['action-key'], selected: selected }, action['display-name'] ))
+                        // if the action has attributes, add them to the global actions object
+                        if (action['attributes']) {
+                            eventServicePanel.actions[action['action-key']].attributes = action['attributes'];
+                        }
+                    });
+                }
+            }
+        })
     }
 
     // populate or hide the Action Attributes selector depending on whether it is required by the selected action
@@ -574,7 +583,7 @@ var XNAT = getObject(XNAT || {});
         action = action || 'Create';
 
         eventServicePanel.subscriptionAttributes = (subscription) ? subscription.attributes : false;
-        if (projs.length) {
+        // if (projs.length) {
 
             XNAT.ui.dialog.open({
                 title: action + ' Subscription',
@@ -585,14 +594,21 @@ var XNAT = getObject(XNAT || {});
                     XNAT.spawner.spawn({ form: createFormObj }).render($container);
 
                     var $form = obj.$modal.find('form');
-                    projs.forEach(function(project){
-                        $form.find('#subscription-project-selector')
-                            .append(spawn(
-                                'option',
-                                { value: project.ID },
-                                project['secondary_ID']
-                            ));
-                    });
+
+                    if (projs.length) {
+                        projs.forEach(function(project){
+                            $form.find('#subscription-project-selector')
+                                .append(spawn(
+                                    'option',
+                                    { value: project.ID },
+                                    project['secondary_ID']
+                                ));
+                        });
+                    }
+                    else {
+                        $form.find('#subscription-project-selector').parents('.panel-element').hide();
+                    }
+
                     Object.keys(eventServicePanel.events).forEach(function(event){
                         $form.find('#subscription-event-selector')
                             .append(spawn(
@@ -683,10 +699,10 @@ var XNAT = getObject(XNAT || {});
                     }
                 ]
             })
-        }
-        else {
-            errorHandler({}, 'Could not load projects');
-        }
+        // }
+        // else {
+        //     errorHandler({}, 'Could not load projects');
+        // }
     };
 
     eventServicePanel.editSubscription = function(action,subscriptionId) {

@@ -45,7 +45,7 @@ public class TmpWorkflowStatusTapListener implements Consumer<Event<WorkflowStat
     public void accept(Event<WorkflowStatusEvent> event) {
         final WorkflowStatusEvent wfsEvent = event.getData();
 
-        if (StringUtils.equals(wfsEvent.getEventId(), "Transferred") && wfsEvent.getEntityType().contains("SessionData")) {
+        if (StringUtils.equals(wfsEvent.getEventId(), "Transferred") && wfsEvent.getEntityType().contains("SessionData") && StringUtils.equals(wfsEvent.getStatus(), "Complete")) {
             try {
                 final UserI user = Users.getUser(wfsEvent.getUserId());
                 final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(wfsEvent.getEntityId(), user, true);
@@ -63,7 +63,7 @@ public class TmpWorkflowStatusTapListener implements Consumer<Event<WorkflowStat
             } catch (UserInitException e) {
                 log.error("An error occurred trying to retrieve the user for a workflow event: " + wfsEvent.getUserId(), e);
             }
-        } else if (StringUtils.equals(wfsEvent.getEventId(), "Created Resource") && wfsEvent.getEntityType().contains("ScanData")) {
+        } else if (StringUtils.equals(wfsEvent.getEventId(), "Created Resource") && wfsEvent.getEntityType().contains("ScanData") && StringUtils.equals(wfsEvent.getStatus(), "Complete")) {
             try {
                 final UserI user = Users.getUser(wfsEvent.getUserId());
                 final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(wfsEvent.getEntityId(), user, true);
@@ -78,7 +78,7 @@ public class TmpWorkflowStatusTapListener implements Consumer<Event<WorkflowStat
             } catch (UserInitException e) {
                 log.error("An error occurred trying to retrieve the user for a workflow event: " + wfsEvent.getUserId(), e);
             }
-        } else if (StringUtils.equals(wfsEvent.getEventId(), "Added Project") && wfsEvent.getEntityType().contains("projectData")) {
+        } else if (StringUtils.equals(wfsEvent.getEventId(), "Added Project") && wfsEvent.getEntityType().contains("projectData") && StringUtils.equals(wfsEvent.getStatus(), "Complete")) {
             try {
                 final UserI user = Users.getUser(wfsEvent.getUserId());
                 final String projectId = wfsEvent.getEntityId();
@@ -92,12 +92,12 @@ public class TmpWorkflowStatusTapListener implements Consumer<Event<WorkflowStat
                 log.error("An error occurred trying to retrieve the user for a workflow event: " + wfsEvent.getUserId(), e);
             }
 
-        } else if (StringUtils.equals(wfsEvent.getEventId(), "Added Subject") && wfsEvent.getEntityType().contains("SubjectData")) {
+        } else if (StringUtils.equals(wfsEvent.getEventId(), "Added Subject") && wfsEvent.getEntityType().contains("subjectData") && StringUtils.equals(wfsEvent.getStatus(), "Complete")) {
             try {
                 final UserI user = Users.getUser(wfsEvent.getUserId());
                 final String subjectId = wfsEvent.getEntityId();
                 final XnatSubjectdata subjectdata = XnatSubjectdata.getXnatSubjectdatasById(subjectId, user, false);
-                String projectId = subjectdata.getFirstProject().getId();
+                String projectId = subjectdata.getFirstProject() != null ? subjectdata.getFirstProject().getId() :  null;
 
                 // Trigger Session Archived Lifecycle event from here until we figure out where to launch the event.
                 eventService.triggerEvent(new SubjectCreatedEvent(subjectdata, user.getLogin()), projectId);

@@ -9,9 +9,6 @@
 
 package org.nrg.xdat.om.base.auto;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XdatElementAccess;
@@ -24,6 +21,13 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ResourceFile;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.List;
 
 /**
  * @author XDAT
@@ -321,33 +325,30 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
         return null;
     }
 
-    public static XdatUsergroup getXdatUsergroupsById(Object value, org.nrg.xft.security.UserI user, boolean preLoad) {
+    @Nullable
+    public static XdatUsergroup getXdatUsergroupsById(final Object value, final UserI user, boolean preLoad) {
         try {
-            ItemCollection items = ItemSearch.GetItems("xdat:userGroup/ID", value, user, preLoad);
-            ItemI          match = items.getFirst();
+            final ItemI match = ItemSearch.GetItem("xdat:userGroup/ID", value, user, preLoad);
             if (match != null) {
                 return (XdatUsergroup) BaseElement.GetGeneratedItem(match);
-            } else {
-                return null;
             }
         } catch (Exception e) {
-            log.error("", e);
+            log.error("An unexpected error occurred trying to retrieve a user group by ID '" + value + "'", e);
         }
 
         return null;
     }
 
-    public static ArrayList<XdatUsergroup> getXdatUsergroupsByTag(Object value, org.nrg.xft.security.UserI user, boolean preLoad) {
-        ArrayList<XdatUsergroup> al = new ArrayList<>();
+    @Nonnull
+    public static List<XdatUsergroup> getXdatUsergroupsByTag(Object value, org.nrg.xft.security.UserI user, boolean preLoad) {
         try {
-            org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems("xdat:userGroup/tag", value, user, preLoad);
-            al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
+            final ItemCollection items = ItemSearch.GetItems("xdat:userGroup/tag", value, user, preLoad);
+            return BaseElement.WrapItems(items.getItems());
         } catch (Exception e) {
             log.error("", e);
         }
 
-        al.trimToSize();
-        return al;
+        return Collections.emptyList();
     }
 
     public static ArrayList wrapItems(ArrayList items) {

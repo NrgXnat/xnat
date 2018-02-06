@@ -650,10 +650,10 @@ public class PoolDBUtils {
         String query = null;
         try {
             con = XDAT.getDataSource().getConnection();
-            int count =0;
-            String ids = "";
-            ArrayList keys = item.getGenericSchemaElement().getAllPrimaryKeys();
-            Iterator keyIter = keys.iterator();
+            int           count   =0;
+            StringBuilder ids     = new StringBuilder();
+            ArrayList     keys    = item.getGenericSchemaElement().getAllPrimaryKeys();
+            Iterator      keyIter = keys.iterator();
             while (keyIter.hasNext())
             {
                 GenericWrapperField sf = (GenericWrapperField)keyIter.next();
@@ -664,8 +664,10 @@ public class PoolDBUtils {
 	                	id=item.getProperty(sf.getXMLPathString(item.getGenericSchemaElement().getXSIType()));
 	                }
 
-	                if (count++>0)ids+=",";
-					ids+=DBAction.ValueParser(id, sf,true);
+	                if (count++>0) {
+	                	ids.append(",");
+					}
+					ids.append(DBAction.ValueParser(id, sf, true));
 				} catch (Exception e) {
 					logger.error("",e);
 				}
@@ -872,66 +874,84 @@ public class PoolDBUtils {
     }
 
     public ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException{
-    	ResultSet rs;
-
 		_statement = getStatement();
 		final Date start = Calendar.getInstance().getTime();
 
 		try {
-			rs = _statement.executeQuery(query);
+			return _statement.executeQuery(query);
 		} catch (SQLException e) {
-			final String message = e.getMessage();
-			if(message.contains("Connection reset")){
+			if (handleSqlException(query, userName, e)) {
 				closeConnection();
 				resetConnections();
 				_statement = getStatement();
-				rs = _statement.executeQuery(query);
-			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
-				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
-				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
-				return null;
-			} else {
-				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
-				throw e;
+				return _statement.executeQuery(query);
 			}
+		} finally {
+			logger.debug("{} ms ({}): {}", getTimeDiff(start,Calendar.getInstance().getTime()), userName, StringUtils.replace(query, "\n", " "));
 		}
+		return null;
+	}
 
-		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
+	/**
+	 * Handles the SQL exception. If the exception indicates that the connection was reset, this method returns true to indicate that the calling
+	 * code should retry the query. Otherwise this method returns false or throws an exception.
+	 *
+	 * @param query    The query that resulted in an exception.
+	 * @param userName The username of the user that attempted the query.
+	 * @param e        The exception object.
+	 *
+	 * @return Returns true if the query should be retried, false otherwise.
+	 *
+	 * @throws DBPoolException Indicates that an error occurred with the database connection pool/
+	 * @throws SQLException Indicates that an error occurred executing the SQL.
+	 */
+	private boolean handleSqlException(final String query, final String userName, final SQLException e) throws DBPoolException, SQLException {
+		final String  message         = e.getMessage();
+		final Matcher relationMatcher = PATTERN_RELATION_NOT_FOUND.matcher(message);
+		final Matcher columnMatcher   = PATTERN_COLUMN_NOT_FOUND.matcher(message);
+		if (relationMatcher.find()) {
+			final String relation = relationMatcher.group("relation");
+			if (StringUtils.startsWith(relation, "xdat_")) {
+				// Honestly, we don't care much about this. It goes away once the various tables are initialized,
+				// has no real effect beforehand, and is a pretty scary message with an enormous stacktrace.
+				logger.info("Relation \"{}\" not found. If this occurs during initialization of a new XNAT deployment, this usually just means that the XNAT data tables have not yet been created and can be ignored.", relation);
+			} else {
+				logger.error("An error occurred trying to execute the query: " + query, e);
+			}
+		} else if (columnMatcher.find()) {
+			final String column = columnMatcher.group("column");
+			logger.error("Got an exception indicating that the column \"{}\" does not exist. The attempted query is:\n\n{}", column, query);
+		} else if (message.contains("Connection reset")) {
+			return true;
+		} else {
+			logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+			throw e;
+		}
+		return false;
+	}
 
-		return rs;
-    }
-
-    private void execute(String db, String query, String userName) throws SQLException, DBPoolException{
+	private void execute(String db, String query, String userName) throws SQLException, DBPoolException{
 		_statement = getStatement();
 		final Date start = Calendar.getInstance().getTime();
 
 		try {
 			_statement.execute(query);
 		} catch (SQLException e) {
-			final String message = e.getMessage();
-			if (message.contains("relation \"xdat_meta_element_meta_data\" does not exist")) {
-				// Honestly, we don't care much about this. It goes away once the metadata table is initialized,
-				// has no real effect beforehand, and is a pretty scary message with an enormous stacktrace.
-				logger.info("Metadata error occurred: " + message);
-			} else if(message.contains("Connection reset")){
+			if (handleSqlException(query, "An error occurred trying to execute the user " + userName + " query: " + query, e)) {
 				closeConnection();
 				resetConnections();
 				_statement = getStatement();
 				_statement.execute(query);
-			}else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
-				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
-				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
-			}else{
-				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
-				throw e;
+			}
+		} finally {
+			if(getTimeDiff(start,Calendar.getInstance().getTime())>1000){
+				logger.error(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
+			} else {
+				logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 			}
 		}
 
-		if(getTimeDiff(start,Calendar.getInstance().getTime())>1000){
-			logger.error(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
-		}
 
-		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
     }
 
 	public void sendBatch(List<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
@@ -995,17 +1015,19 @@ public class PoolDBUtils {
 
 	private static final Logger logger = LoggerFactory.getLogger(PoolDBUtils.class);
 
-	private static final String     EXPR_COLUMN_NOT_FOUND    = "column \"([A-z0-9_-]+)\" does not exist";
-	private static final Pattern    PATTERN_COLUMN_NOT_FOUND = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
-	public static final  String     QUERY_ITEM_CACHE_EXISTS  = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_item_cache');";
-	public static final  String     QUERY_CREATE_ITEM_CACHE  = "CREATE TABLE xs_item_cache" +
-															   "\n(" +
-															   "\n  elementName varchar(255) NOT NULL," +
-															   "\n  ids varchar(255) NOT NULL," +
-															   "\n  create_date timestamp DEFAULT now()," +
-															   "\n  contents text" +
-															   "\n) " +
-															   "\nWITH OIDS;";
+	private static final String  EXPR_COLUMN_NOT_FOUND      = "column \"(?<column>[A-z0-9_-]+)\" does not exist";
+	private static final Pattern PATTERN_COLUMN_NOT_FOUND   = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
+	private static final String  EXPR_RELATION_NOT_FOUND    = "relation \"(?<relation>[a-z_]+)\" does not exist";
+	private static final Pattern PATTERN_RELATION_NOT_FOUND = Pattern.compile(EXPR_RELATION_NOT_FOUND);
+	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_item_cache');";
+	private static final String  QUERY_CREATE_ITEM_CACHE    = "CREATE TABLE xs_item_cache" +
+															  "\n(" +
+															  "\n  elementName varchar(255) NOT NULL," +
+															  "\n  ids varchar(255) NOT NULL," +
+															  "\n  create_date timestamp DEFAULT now()," +
+															  "\n  contents text" +
+															  "\n) " +
+															  "\nWITH OIDS;";
 
 	private Connection _connection = null;
 	private Statement  _statement  = null;

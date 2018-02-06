@@ -3,7 +3,7 @@ package org.nrg.xdat.services.cache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
-public interface UserProjectCache<T extends ItemI> {
+public interface UserProjectCache<T extends ItemI> extends XnatCache {
     /**
      * Indicates whether the specified project ID or alias is already cached.
      *

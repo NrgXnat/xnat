@@ -9,20 +9,9 @@
 
 package org.nrg.xft.search;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.nrg.xdat.display.Arc;
-import org.nrg.xdat.display.ArcDefinition;
-import org.nrg.xdat.display.DisplayField;
-import org.nrg.xdat.display.DisplayFieldElement;
-import org.nrg.xdat.display.DisplayManager;
+import org.nrg.xdat.display.*;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFT;
@@ -30,11 +19,7 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.references.XFTManyToManyReference;
-import org.nrg.xft.references.XFTMappingColumn;
-import org.nrg.xft.references.XFTReferenceI;
-import org.nrg.xft.references.XFTRelationSpecification;
-import org.nrg.xft.references.XFTSuperiorReference;
+import org.nrg.xft.references.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -42,17 +27,19 @@ import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
 
+import java.util.*;
+
 /**
  * @author Tim
  *
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
+@Slf4j
 public class QueryOrganizer implements QueryOrganizerI{
-	static org.apache.log4j.Logger logger = Logger.getLogger(QueryOrganizer.class);
-    protected SchemaElementI rootElement = null;
-    protected UserI user = null;
+    protected SchemaElementI       rootElement = null;
+    protected UserI                user;
 
-    protected String level = ViewManager.DEFAULT_LEVEL;
+    protected String level;
     protected ArrayList<String> fields = new ArrayList<>();
 	protected Hashtable tables = new Hashtable();
 
@@ -74,7 +61,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         try {
             rootElement = GenericWrapperElement.GetElement(elementName);
         } catch (XFTInitException e) {
-            logger.error("",e);
+            log.error("", e);
         }
         this.level=level;
         user = u;
@@ -103,7 +90,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                 addField(key);
             	this.keys.add(key);
             } catch (ElementNotFoundException e) {
-                logger.error("",e);
+                log.error("", e);
             }
         }
     }
@@ -113,7 +100,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         isMappingTable=isMap;
     }
 
-    protected void addDirectField(String xmlPath) throws ElementNotFoundException
+    protected void addDirectField(String xmlPath)
     {
         fields.add(xmlPath);
     }
@@ -182,7 +169,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         try {
             return GenericWrapperElement.GetElement(elementName).getFilterField();
         } catch (XFTInitException e) {
-            logger.error("",e);
+            log.error("", e);
             return null;
         }
     }
@@ -232,7 +219,7 @@ public class QueryOrganizer implements QueryOrganizerI{
             SchemaElement se = SchemaElement.GetElement(rootElement);
             viewColumnName = ViewManager.GetViewColumnName(se.getGenericXFTElement(),xmlPath,ViewManager.ACTIVE,true,true);
         } catch (XFTInitException | ElementNotFoundException e) {
-            logger.error("",e);
+            log.error("", e);
         }
         return tableAlias + "." + XftStringUtils.CreateAlias(tableName, viewColumnName);
     }
@@ -254,10 +241,8 @@ public class QueryOrganizer implements QueryOrganizerI{
                 String[] layers = GenericWrapperElement.TranslateXMLPathToTables(s);
                 addFieldToJoin(layers);
             } catch (FieldNotFoundException e) {
-            	e.printStackTrace();
-            	throw new FieldNotFoundException(s);
+            	throw e;
             } catch (Exception e) {
-                logger.error(e);
                 throw new FieldNotFoundException(s);
             }
         }
@@ -300,7 +285,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     String localSyntax = connection[0];
                     String xmlPath = connection[1];
 
-                    logger.info("JOINING: " + localSyntax + " to " + xmlPath);
+                    log.info("JOINING: " + localSyntax + " to " + xmlPath);
                     SchemaFieldI gwf;
                     SchemaElementI extension;
                     if (localSyntax.indexOf(XFT.PATH_SEPARATOR) == -1)
@@ -442,6 +427,7 @@ public class QueryOrganizer implements QueryOrganizerI{
        // SQLClause securityClause = null;
 		if (user != null)
 		{
+		    log.debug("Get user {}'s XFT read criteria for element {}", user.getUsername(), rootElement.getFormattedName());
 		    SQLClause coll = Permissions.getCriteriaForXFTRead(user,rootElement);
 			if (coll != null)
 			{
@@ -572,15 +558,14 @@ public class QueryOrganizer implements QueryOrganizerI{
 
         sb.append(join);
 
-        return sb.toString();
+        final String query = sb.toString();
+        log.trace("Composed query: {}", query);
+        return query;
     }
 
     public ArrayList getAllFields()
     {
-        ArrayList al = new ArrayList();
-        al.addAll(fields);
-        al.trimToSize();
-        return al;
+        return new ArrayList<>(fields);
     }
 
     protected void addFieldToJoin(String s) throws Exception
@@ -594,10 +579,10 @@ public class QueryOrganizer implements QueryOrganizerI{
             GenericWrapperElement e = GenericWrapperElement.GetElement(elementName);
             return getRootQuery(e,sql_name,level);
         } catch (XFTInitException e) {
-            logger.error("",e);
+            log.error("An error occurred accessing XFT", e);
             return null;
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            log.error("Couldn't find the element " + e.ELEMENT, e);
             return null;
         }
     }
@@ -623,7 +608,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                       }
                 }
             } catch (IllegalAccessException e1) {
-                logger.error("",e1);
+                log.error("", e1);
                 coll = new org.nrg.xdat.search.CriteriaCollection("AND");
             }
 
@@ -690,18 +675,18 @@ public class QueryOrganizer implements QueryOrganizerI{
                         keyXMLFields.add(key);
                         securityQO.addField(key);
                     }
-                    String subQuery = securityQO.buildQuery();
-                    String securityQuery = "SELECT DISTINCT ON (";
+                    String        subQuery      = securityQO.buildQuery();
+                    StringBuilder securityQuery = new StringBuilder("SELECT DISTINCT ON (");
 
                     for (int i=0;i<keyXMLFields.size();i++){
-                        if (i>0)securityQuery +=", ";
-                        securityQuery+=securityQO.getFieldAlias((String)keyXMLFields.get(i));
+                        if (i>0) securityQuery.append(", ");
+                        securityQuery.append(securityQO.getFieldAlias((String) keyXMLFields.get(i)));
                     }
 
-                    securityQuery +=") * FROM (" + subQuery + ") SECURITY WHERE ";
-                    securityQuery +=coll.getSQLClause(securityQO);
+                    securityQuery.append(") * FROM (").append(subQuery).append(") SECURITY WHERE ");
+                    securityQuery.append(coll.getSQLClause(securityQO));
 
-                    String query = "SELECT SEARCH.* FROM ("+ securityQuery +") SECURITY LEFT JOIN " + e.getSQLName() + " SEARCH ON ";
+                    StringBuilder query = new StringBuilder("SELECT SEARCH.* FROM (" + securityQuery + ") SECURITY LEFT JOIN " + e.getSQLName() + " SEARCH ON ");
 
                     keys = rootElement.getAllPrimaryKeys().iterator();
                     int keyCounter=0;
@@ -710,37 +695,37 @@ public class QueryOrganizer implements QueryOrganizerI{
                         SchemaFieldI sf = (SchemaFieldI)keys.next();
                         String key =sf.getXMLPathString(rootElement.getFullXMLName());
                         if (keyCounter++>0){
-                            query += " AND ";
+                            query.append(" AND ");
                         }
-                        query +="SECURITY." + securityQO.getFieldAlias(key) + "=SEARCH." + sf.getSQLName();
+                        query.append("SECURITY.").append(securityQO.getFieldAlias(key)).append("=SEARCH.").append(sf.getSQLName());
 
                     }
                     return "(" +query + ")";
                 }else{
-                    String query = "SELECT * FROM " + sql_name;
-                    Iterator keys = rootElement.getAllPrimaryKeys().iterator();
-                    int keyCount =0;
+                    StringBuilder query    = new StringBuilder("SELECT * FROM " + sql_name);
+                    Iterator      keys     = rootElement.getAllPrimaryKeys().iterator();
+                    int           keyCount =0;
                     while (keys.hasNext())
                     {
                         SchemaFieldI sf = (SchemaFieldI)keys.next();
 
                         if (keyCount++>0){
-                            query +=" AND ";
+                            query.append(" AND ");
                         }else{
-                            query +=" WHERE ";
+                            query.append(" WHERE ");
                         }
 
-                        query+= sf.getSQLName() + " IS NULL ";
+                        query.append(sf.getSQLName()).append(" IS NULL ");
                     }
                     return "(" +query + ")";
                     //throw new IllegalAccessException("No defined read privileges for " + rootElement.getFullXMLName());
                 }
             }
         } catch (IllegalAccessException e1) {
-            logger.error("",e1);
+            log.error("", e1);
             throw e1;
         } catch (Exception e1) {
-            logger.error("",e1);
+            log.error("", e1);
         }
 
         return sql_name;
@@ -892,15 +877,15 @@ public class QueryOrganizer implements QueryOrganizerI{
             throw new FieldNotFoundException("");
         }
 
-        String j = " ";
+        StringBuilder j = new StringBuilder(" ");
 
         XFTReferenceI ref = f.getXFTReference();
         if (ref.isManyToMany())
         {
             XFTManyToManyReference many = (XFTManyToManyReference)ref;
             String mapTableName = many.getMappingTable() + tableAliases.size();
-            j+= " LEFT JOIN " + many.getMappingTable() + " AS "+ mapTableName;
-            j+= " ON ";
+            j.append(" LEFT JOIN ").append(many.getMappingTable()).append(" AS ").append(mapTableName);
+            j.append(" ON ");
 
             Iterator iter =many.getMappingColumnsForElement(root).iterator();
 		    int counter = 0;
@@ -909,13 +894,13 @@ public class QueryOrganizer implements QueryOrganizerI{
 		        XFTMappingColumn map = (XFTMappingColumn)iter.next();
 		        if (counter++==0)
 	            {
-	                j += " " + rootAlias + "." + map.getForeignKey().getSQLName() + "=" + mapTableName +"." + map.getLocalSqlName();
+	                j.append(" ").append(rootAlias).append(".").append(map.getForeignKey().getSQLName()).append("=").append(mapTableName).append(".").append(map.getLocalSqlName());
 	            }else{
-	                j += " AND " + rootAlias + "." + map.getForeignKey().getSQLName() + "=" + mapTableName +"." + map.getLocalSqlName();
+	                j.append(" AND ").append(rootAlias).append(".").append(map.getForeignKey().getSQLName()).append("=").append(mapTableName).append(".").append(map.getLocalSqlName());
 	            }
 		    }
-            j+= " LEFT JOIN " + foreign.getSQLName() + " " + foreignAlias;
-            j+= " ON ";
+            j.append(" LEFT JOIN ").append(foreign.getSQLName()).append(" ").append(foreignAlias);
+            j.append(" ON ");
 		    iter =many.getMappingColumnsForElement(foreign).iterator();
 		    counter = 0;
 		    while(iter.hasNext())
@@ -923,14 +908,14 @@ public class QueryOrganizer implements QueryOrganizerI{
 		        XFTMappingColumn map = (XFTMappingColumn)iter.next();
 		        if (counter++==0)
 	            {
-	                j += " " + mapTableName +"." + map.getLocalSqlName() + "=" + foreignAlias + "." + map.getForeignKey().getSQLName();
+	                j.append(" ").append(mapTableName).append(".").append(map.getLocalSqlName()).append("=").append(foreignAlias).append(".").append(map.getForeignKey().getSQLName());
 	            }else{
-	                j += " AND " + mapTableName +"." + map.getLocalSqlName() + "=" + foreignAlias + "." + map.getForeignKey().getSQLName();
+	                j.append(" AND ").append(mapTableName).append(".").append(map.getLocalSqlName()).append("=").append(foreignAlias).append(".").append(map.getForeignKey().getSQLName());
 	            }
 		    }
         }else{
-            j+= " LEFT JOIN " + foreign.getSQLName() + " " + foreignAlias;
-            j+= " ON ";
+            j.append(" LEFT JOIN ").append(foreign.getSQLName()).append(" ").append(foreignAlias);
+            j.append(" ON ");
             XFTSuperiorReference sup = (XFTSuperiorReference)ref;
             Iterator iter = sup.getKeyRelations().iterator();
             int counter=0;
@@ -940,19 +925,19 @@ public class QueryOrganizer implements QueryOrganizerI{
                 if (spec.getLocalTable().equalsIgnoreCase(root.getSQLName()))
                 {
                     if (counter!=0)
-                        j += " AND ";
-                    j += rootAlias + "." + spec.getLocalCol();
-                    j+= "=" + foreignAlias + "." + spec.getForeignCol();
+                        j.append(" AND ");
+                    j.append(rootAlias).append(".").append(spec.getLocalCol());
+                    j.append("=").append(foreignAlias).append(".").append(spec.getForeignCol());
                 }else{
                     if (counter!=0)
-                        j += " AND ";
-                    j += rootAlias + "." + spec.getForeignCol();
-                    j+= "=" + foreignAlias + "." + spec.getLocalCol();
+                        j.append(" AND ");
+                    j.append(rootAlias).append(".").append(spec.getForeignCol());
+                    j.append("=").append(foreignAlias).append(".").append(spec.getLocalCol());
                 }
                 counter++;
             }
         }
-        return j;
+        return j.toString();
     }
 
     private GenericWrapperElement getGenericWrapperElement(String s) throws Exception
@@ -1059,7 +1044,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     }
                 }
             } catch (Exception e) {
-                logger.error("",e);
+                log.error("", e);
             }
         }
         //    org.nrg.xft.XFT.LogCurrentTime("translateXMLPath::3");
@@ -1071,7 +1056,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                 return temp;
             }
         } catch (XFTInitException | ElementNotFoundException e1) {
-            logger.error("",e1);
+            log.error("", e1);
         }
 
         //     org.nrg.xft.XFT.LogCurrentTime("translateXMLPath::5");
@@ -1113,7 +1098,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     }
                 }
             } catch (Exception e) {
-                logger.error("",e);
+                log.error("", e);
             }
         }
         if (tableAlias==null || tableAlias.equalsIgnoreCase(""))

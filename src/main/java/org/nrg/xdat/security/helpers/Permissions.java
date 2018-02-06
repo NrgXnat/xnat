@@ -39,6 +39,7 @@ import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -875,30 +876,25 @@ public class Permissions {
     }
 
     public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
-        final List<Map<String, Object>> locatedTypes = template.queryForList(QUERY_GET_XSI_TYPES_FROM_EXPTS, new HashMap<String, Object>() {{
-            put("sessionIds", sessionIds);
-        }});
-        HashSet<String> sessionsUserCanRead = new HashSet<>();
+        final List<Map<String, Object>> locatedTypes = template.queryForList(QUERY_GET_XSI_TYPES_FROM_EXPTS, new MapSqlParameterSource("sessionIds", sessionIds));
+        final Set<String> sessionsUserCanRead = new HashSet<>();
         for (final Map<String, Object> session : locatedTypes) {
             try{
+                final String sessionId = session.get("id").toString();
                 if(StringUtils.isBlank(scopedProjectId)){
-                    Set<String> sessionSet = new HashSet<>();
-                    sessionSet.add(session.get("id").toString());
-                    Multimap<String, String> projMap = getProjectsForSessions(template, sessionSet);
-                    Set<String> projectsSessionIsIn = projMap.keySet();
-                    boolean canReadOne = false;
-                    for(String pr : projectsSessionIsIn){
-                        if(canRead(user, session.get("xsi").toString()+"/project", pr)){
-                            canReadOne = true;
+                    final Set<String> sessionSet = new HashSet<>();
+                    sessionSet.add(sessionId);
+                    final Multimap<String, String> projMap = getProjectsForSessions(template, sessionSet);
+                    final Set<String> projectsSessionIsIn = projMap.keySet();
+                    for (final String projectId : projectsSessionIsIn) {
+                        if(canRead(user, session.get("xsi").toString()+"/project", projectId)){
+                            sessionsUserCanRead.add(sessionId);
+                            break;
                         }
                     }
-                    if(canReadOne){
-                        sessionsUserCanRead.add(session.get("id").toString());
-                    }
-                }
-                else {
+                } else {
                     if (canRead(user, session.get("xsi").toString() + "/project", scopedProjectId)) {
-                        sessionsUserCanRead.add(session.get("id").toString());
+                        sessionsUserCanRead.add(sessionId);
                     }
                 }
             }
@@ -970,9 +966,7 @@ public class Permissions {
             return projectSessionMap;
         }
 
-        final List<Map<String, Object>> located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new HashMap<String, Object>() {{
-            put("sessionIds", sessions);
-        }});
+        final List<Map<String, Object>> located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new MapSqlParameterSource("sessionIds", sessions));
         if (located.size() == 0) {
             throw new InvalidSearchException("The submitted sessions are not associated with any projects:\n * Sessions: " + Joiner.on(", ").join(sessions));
         }
@@ -996,7 +990,7 @@ public class Permissions {
     }
 
     public static Set<String> getAllProjectIds(final NamedParameterJdbcTemplate template) {
-        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", Collections.<String, Object>emptyMap(), String.class));
+        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", EmptySqlParameterSource.INSTANCE, String.class));
     }
 
     /**

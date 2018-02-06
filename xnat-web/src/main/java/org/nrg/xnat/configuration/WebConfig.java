@@ -52,6 +52,9 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     public void addResourceHandlers(final ResourceHandlerRegistry registry) {
         registry.addResourceHandler("**/swagger-ui.html").addResourceLocations("classpath:/META-INF/resources/");
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
+
+        // TODO: This is supposed to work to cache images, CSS, JS, etc., overriding the http.headers() settings in SecurityConfig (http://bit.ly/2E1i8SO),
+        // TODO: but it doesn't work. This should be working so we can turn cache control on there, but override it here.
         registry.addResourceHandler("/images/**", "/pdf/**", "/resources/**", "/scripts/**", "/style/**", "/themes/**", "/favicon.ico")
                 .addResourceLocations("/images/", "/pdf/", "/resources/", "/scripts/", "/style/", "/themes/", "/favicon.ico")
                 .setCachePeriod(31556926);

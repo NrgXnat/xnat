@@ -240,8 +240,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .maxSessionsPreventsLogin(true).expiredUrl("/app/template/Login.vm");
 
         http.headers().frameOptions().sameOrigin()
-            .httpStrictTransportSecurity().disable()
-            .contentSecurityPolicy("frame-ancestors 'self'");
+            .cacheControl().disable()
+            .contentSecurityPolicy("frame-ancestors 'self'").and()
+            .httpStrictTransportSecurity().disable();
 
         http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint).and()
             .csrf().disable()

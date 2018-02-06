@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.initialization.tasks;
 
+import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.servlet.XDATServlet;
@@ -16,19 +18,16 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xnat.services.XnatAppInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import com.google.common.collect.Lists;
-
 import java.sql.SQLException;
 import java.util.List;
 
 @Component
+@Slf4j
 public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
     @Autowired
     public CreateOrUpdateDatabaseViews(final XnatAppInfo appInfo, final JdbcTemplate template, @Qualifier("dbUsername") String dbUsername) {
@@ -45,7 +44,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
     @Override
     protected void callImpl() throws InitializingTaskException {
         if (_appInfo.isPrimaryNode()) {
-            _log.info("This service is the primary XNAT node, checking whether database updates are required.");
+            log.info("This service is the primary XNAT node, checking whether database updates are required.");
             final Boolean shouldUpdateViews = XDATServlet.shouldUpdateViews();
 
             try {
@@ -57,7 +56,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
             }
 
             if (!shouldUpdateViews) {
-                _log.info("XDATServlet indicates that views do not need to be updated, terminating task.");
+                log.info("XDATServlet indicates that views do not need to be updated, terminating task.");
             }
 
             final PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction();
@@ -69,17 +68,17 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
                 }
 
                 //create the views defined in the display documents
-                _log.info("Initializing database views...");
+                log.info("Initializing database views...");
                 try {
                     transaction.execute(DisplayManager.GetCreateViewsSQL());
-                	_log.info("View initialization complete.");
+                    log.info("View initialization complete.");
                 } catch (Exception e) {
-                	_log.info("View initialization threw exception (" + e.toString() + ").  We'll drop views and rebuild them.");
+                    log.info("View initialization threw exception ({}).  We'll drop views and rebuild them.", e.toString());
                     transaction.rollback();
                     transaction.execute(getViewDropSql(_dbUsername));//drop all
-                	_log.info("Drop views step complete.  Begin rebuilding views.");
+                    log.info("Drop views step complete.  Begin rebuilding views.");
                     transaction.execute(DisplayManager.GetCreateViewsSQL());//then try to create all
-                	_log.info("View rebuild complete.");
+                    log.info("View rebuild complete.");
                 }
                 try {
                     transaction.commit();
@@ -94,7 +93,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
             }
         }
     }
-    
+
     private List<String> getViewDropSql(String user) {
     	final List<String> dropSql = Lists.newArrayList();  
     	dropSql.add(
@@ -139,9 +138,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
     	return dropSql;
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(CreateOrUpdateDatabaseViews.class);
-
     private final XnatAppInfo    _appInfo;
     private final DatabaseHelper _helper;
-    private final String _dbUsername;
+    private final String         _dbUsername;
 }

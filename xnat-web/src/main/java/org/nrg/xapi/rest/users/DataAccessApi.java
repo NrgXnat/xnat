@@ -46,7 +46,6 @@ public class DataAccessApi extends AbstractXapiRestController {
     @Autowired
     public DataAccessApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
-        log.error("Now creating DataAccessApi");
     }
 
     @ApiOperation(value = "Gets a list of the available element displays.", notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")

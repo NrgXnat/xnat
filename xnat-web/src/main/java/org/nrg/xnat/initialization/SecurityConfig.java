@@ -9,10 +9,16 @@
 
 package org.nrg.xnat.initialization;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.configuration.ConfigPaths;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.UserGroupManager;
+import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xnat.security.*;
 import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
 import org.nrg.xnat.security.config.AuthenticationProviderAggregator;
@@ -52,11 +58,13 @@ import org.springframework.security.web.session.ConcurrentSessionFilter;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.util.*;
 
 @Configuration
 @EnableWebSecurity
 @ImportResource("WEB-INF/conf/xnat-security.xml")
+@Slf4j
 public class SecurityConfig {
     @Bean
     public UnanimousBased unanimousBased() {
@@ -211,5 +219,40 @@ public class SecurityConfig {
     @Bean
     public XnatDatabaseUserDetailsService customDatabaseService(final XdatUserAuthService userAuthService, final DataSource dataSource) {
         return new XnatDatabaseUserDetailsService(userAuthService, dataSource);
+    }
+
+    @Bean
+    public UserGroupServiceI userGroupService(final SiteConfigPreferences preferences, final GroupsAndPermissionsCache cache) {
+        final String         servicePackage = StringUtils.defaultIfBlank((String) preferences.get("security.userGroupService.package"), "org.nrg.xdat.groups.custom");
+        final List<Class<?>> classes        = new ArrayList<>();
+        try {
+            classes.addAll(Reflection.getClassesForPackage(servicePackage));
+        } catch (ClassNotFoundException | IOException e) {
+            log.warn("An error occurred trying to find classes in the specified user group service package: " + servicePackage);
+        }
+        if (!classes.isEmpty()) {
+            for (final Class<?> clazz : classes) {
+                if (UserGroupServiceI.class.isAssignableFrom(clazz)) {
+                    try {
+                        return (UserGroupServiceI) clazz.newInstance();
+                    } catch (InstantiationException | IllegalAccessException e) {
+                        log.error("An error occurred trying to instantiate the class " + clazz.getName(), e);
+                    }
+                }
+            }
+        }
+
+        // Use configured default implementation if provided
+        final String className = (String) preferences.get("security.userGroupService.default");
+        if (StringUtils.isNotBlank(className)) {
+            try {
+                return (UserGroupServiceI) Class.forName(className).newInstance();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                log.error("", e);
+            }
+        }
+
+        // OK use our provided default.
+        return new UserGroupManager(cache);
     }
 }

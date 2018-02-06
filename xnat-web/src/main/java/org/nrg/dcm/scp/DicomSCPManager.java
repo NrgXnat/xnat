@@ -44,6 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
@@ -272,29 +273,26 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     @SuppressWarnings("unused")
     public boolean hasDicomSCPInstance(final String aeTitle, final String port) {
         return _template.queryForObject(DOES_INSTANCE_AE_TITLE_AND_PORT_EXIST,
-                                        new HashMap<String, Object>() {{
-                                            put("aeTitle", aeTitle);
-                                            put("port", port);
-                                        }},
+                                        new MapSqlParameterSource("aeTitle", aeTitle).addValue("port", port),
                                         Boolean.class);
     }
 
     public DicomSCPInstance getDicomSCPInstance(final int id) {
-        return _template.queryForObject(GET_INSTANCE_BY_ID, new MapSqlParameterSource("id", id), DICOM_SCP_INSTANCE_ROW_MAPPER);
+        return _template.queryForObject(GET_INSTANCE_BY_ID,
+                                        new MapSqlParameterSource("id", id),
+                                        DICOM_SCP_INSTANCE_ROW_MAPPER);
     }
 
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle, final int port) {
-        return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE_AND_PORT, new HashMap<String, Object>() {{
-            put("aeTitle", aeTitle);
-            put("port", port);
-        }}, DICOM_SCP_INSTANCE_ROW_MAPPER);
+        return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE_AND_PORT,
+                                        new MapSqlParameterSource("aeTitle", aeTitle).addValue("port", port),
+                                        DICOM_SCP_INSTANCE_ROW_MAPPER);
     }
 
     public List<DicomSCPInstance> getEnabledDicomSCPInstancesByPort(final int port) {
-        return _template.query(GET_ENABLED_INSTANCES_BY_PORT, new HashMap<String, Object>() {{
-            put("enabled", true);
-            put("port", port);
-        }}, DICOM_SCP_INSTANCE_ROW_MAPPER);
+        return _template.query(GET_ENABLED_INSTANCES_BY_PORT,
+                               new MapSqlParameterSource("enabled", true).addValue("port", port),
+                               DICOM_SCP_INSTANCE_ROW_MAPPER);
     }
 
     public void enableDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException {
@@ -462,10 +460,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     private void toggleEnabled(final boolean enabled, final Collection<Integer> ids) throws DicomNetworkException, UnknownDicomHelperInstanceException {
-        final int updated = _template.update(ENABLE_OR_DISABLE_INSTANCES_BY_ID, new HashMap<String, Object>() {{
-            put("enabled", enabled);
-            put("ids", ids);
-        }});
+        final int updated = _template.update(ENABLE_OR_DISABLE_INSTANCES_BY_ID, new MapSqlParameterSource("enabled", enabled).addValue("ids", ids));
         if (updated > 0) {
             updateDicomSCPs(getPortsForIds(ids));
         }
@@ -476,7 +471,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     private Collection<Integer> getPortsWithEnabledInstances() {
-        return _template.queryForList(GET_PORTS_FOR_ENABLED_INSTANCES, Collections.<String, Object>emptyMap(), Integer.class);
+        return _template.queryForList(GET_PORTS_FOR_ENABLED_INSTANCES, EmptySqlParameterSource.INSTANCE, Integer.class);
     }
 
     private List<String> updateDicomSCPs(final Collection<Integer> ports) throws DicomNetworkException, UnknownDicomHelperInstanceException {

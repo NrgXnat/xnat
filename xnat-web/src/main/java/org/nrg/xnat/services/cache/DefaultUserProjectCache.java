@@ -60,12 +60,12 @@ import static reactor.bus.selector.Selectors.predicate;
 @Service
 @Slf4j
 public class DefaultUserProjectCache extends CacheEventListenerAdapter implements Consumer<Event<XftItemEvent>>, UserProjectCache<XnatProjectdata> {
-    public static final String NOT_A_PROJECT           = "NOT_A_PROJECT";
-    public static final String USER_PROJECT_CACHE_NAME = "UserProjectCacheManagerCache";
+    public static final String NOT_A_PROJECT = "NOT_A_PROJECT";
+    public static final String CACHE_NAME    = "UserProjectCacheManagerCache";
 
     @Autowired
     public DefaultUserProjectCache(final CacheManager cacheManager, final EventBus eventBus, final NamedParameterJdbcTemplate template) {
-        _cache = cacheManager.getCache(USER_PROJECT_CACHE_NAME);
+        _cache = cacheManager.getCache(CACHE_NAME);
         _template = template;
 
         registerCacheEventListener();
@@ -76,16 +76,6 @@ public class DefaultUserProjectCache extends CacheEventListenerAdapter implement
                 return object instanceof XftItemEvent && isGroupItem((XftItemEvent) object);
             }
         }), this);
-    }
-
-    private void registerCacheEventListener() {
-        final Object nativeCache = _cache.getNativeCache();
-        if (nativeCache instanceof net.sf.ehcache.Cache) {
-            ((net.sf.ehcache.Cache) nativeCache).getCacheEventNotificationService().registerListener(this);
-            log.debug("Registered user project cache as net.sf.ehcache.Cache listener");
-        } else {
-            log.warn("I don't know how to handle the native cache type {}", nativeCache.getClass().getName());
-        }
     }
 
     /**
@@ -173,6 +163,14 @@ public class DefaultUserProjectCache extends CacheEventListenerAdapter implement
             log.info("Found project cache for project {}, evicting the project cache.", projectId);
             _cache.evict(projectId);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getCacheName() {
+        return CACHE_NAME;
     }
 
     /**
@@ -284,6 +282,16 @@ public class DefaultUserProjectCache extends CacheEventListenerAdapter implement
 
         // If we made it here, the project is either inaccessible to the user or doesn't exist. In either case, return null.
         return null;
+    }
+
+    private void registerCacheEventListener() {
+        final Object nativeCache = _cache.getNativeCache();
+        if (nativeCache instanceof net.sf.ehcache.Cache) {
+            ((net.sf.ehcache.Cache) nativeCache).getCacheEventNotificationService().registerListener(this);
+            log.debug("Registered user project cache as net.sf.ehcache.Cache listener");
+        } else {
+            log.warn("I don't know how to handle the native cache type {}", nativeCache.getClass().getName());
+        }
     }
 
     private boolean hasAccess(final String userId, final String idOrAlias, final AccessLevel accessLevel) {
@@ -574,7 +582,7 @@ public class DefaultUserProjectCache extends CacheEventListenerAdapter implement
     }
 
     private static boolean isProjectCacheEvent(final Ehcache cache) {
-        return StringUtils.equals(USER_PROJECT_CACHE_NAME, cache.getName());
+        return StringUtils.equals(CACHE_NAME, cache.getName());
     }
 
     private static boolean isProjectCacheEvent(final Ehcache cache, final Element element) {

@@ -30,6 +30,7 @@
         <security:custom-filter position="LOGOUT_FILTER" ref="logoutFilter"/>
         <security:session-management session-authentication-strategy-ref="sas"/>
         <security:headers>
+            <security:cache-control disabled="true"/>
             <security:frame-options policy="SAMEORIGIN"/>
             <security:header name="Content-Security-Policy" value="frame-ancestors 'self'"/>
             <security:hsts disabled="true"/>

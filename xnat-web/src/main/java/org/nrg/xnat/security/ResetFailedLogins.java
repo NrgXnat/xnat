@@ -31,7 +31,7 @@ public class ResetFailedLogins extends AbstractXnatRunnable {
 
     @Override
     protected void runTask() {
-        if (_template.queryForObject("SELECT count(*) FROM xhbm_xdat_user_auth", NO_PARAMS, Integer.TYPE) > 0) {
+        if (_template.queryForObject("SELECT count(*) FROM xhbm_xdat_user_auth", EmptySqlParameterSource.INSTANCE, Integer.TYPE) > 0) {
             final int updated = _template.update(QUERY, getSqlParameterSource());
             log.info("Reset {} failed login attempts.", updated);
         } else {
@@ -39,8 +39,7 @@ public class ResetFailedLogins extends AbstractXnatRunnable {
         }
     }
 
-    private static final SqlParameterSource NO_PARAMS = new EmptySqlParameterSource();
-    private static final String             QUERY     = "UPDATE xhbm_xdat_user_auth SET failed_login_attempts = 0, lockout_time = NULL WHERE failed_login_attempts >= :maxFailedLogins AND lockout_time < NOW() - :duration::INTERVAL";
+    private static final String QUERY = "UPDATE xhbm_xdat_user_auth SET failed_login_attempts = 0, lockout_time = NULL WHERE failed_login_attempts >= :maxFailedLogins AND lockout_time < NOW() - :duration::INTERVAL";
 
     private final NamedParameterJdbcTemplate _template;
     private final SqlParameterSource         _sqlParameterSource;

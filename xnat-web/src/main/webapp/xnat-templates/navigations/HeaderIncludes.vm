@@ -1,3 +1,4 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="om" type="org.nrg.xdat.base.BaseElement" *#
 #* @vtlvariable name="project" type="java.lang.String" *#
@@ -7,6 +8,9 @@
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+#* @vtlvariable name="typeObjects" type="java.util.List" *#
+#* @vtlvariable name="typeObject" type="org.nrg.xdat.display.ElementDisplay" *#
 <!-- path: /xnat-templates/navigations/HeaderIncludes -->
 
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -111,11 +115,12 @@ $navigation.setTemplate("/BaseJS.vm")
 
     window.available_elements = [];
 
-    #if($data.getSession().getAttribute("userHelper"))
-        #set ($typeObjects = $data.getSession().getAttribute("userHelper").getBrowseableElementDisplays() )
-        #end
+    #set ($userHelper = $data.getSession().getAttribute("userHelper"))
+    #if($userHelper)
+        #set ($typeObjects = $userHelper.getBrowseableElementDisplays())
+    #end
 
-        #foreach ($typeObject in $typeObjects)
+    #foreach ($typeObject in $typeObjects)
         window.available_elements.push({
             singular: "$typeObject.getSchemaElement().getElementSecurity().getSingularDescription()",
             plural: "$typeObject.getSchemaElement().getElementSecurity().getPluralDescription()",
@@ -129,7 +134,7 @@ $navigation.setTemplate("/BaseJS.vm")
             "isImageSession": $typeObject.getSchemaElement().instanceOf("xnat:imageSessionData"),
             "isImageScan": $typeObject.getSchemaElement().instanceOf("xnat:imageScanData")
         });
-        #end
+    #end
 
     window.available_elements.getByName = function (name) {
         for (var aeC = 0; aeC < this.length; aeC++) {

@@ -923,9 +923,7 @@ public class DefaultCatalogService implements CatalogService {
             parameters.addValue("sessionId", session);
             parameters.addValue("scanTypes", scanTypes);
             parameters.addValue("scanFormats", scanFormats);
-            final String query = QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT;
-
-            final List<Map<String, Object>> scans = _parameterized.queryForList(query, parameters);
+            final List<Map<String, Object>> scans = _parameterized.queryForList(QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT, parameters);
             if (scans.isEmpty()) {
                 return null;
             }

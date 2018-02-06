@@ -51,8 +51,7 @@ public class RestApiConfig {
                                                       .apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class))
                                                       .paths(PathSelectors.any())
                                                       .build()
-                                                      .apiInfo(apiInfo(info, messageSource))
-                                                      .pathMapping("/xapi");
+                                                      .apiInfo(apiInfo(info, messageSource));
     }
 
     private ApiInfo apiInfo(final XnatAppInfo info, final MessageSource messageSource) {

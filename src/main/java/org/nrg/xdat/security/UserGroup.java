@@ -21,10 +21,10 @@ import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.GroupFeatureService;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.*;
 
@@ -96,26 +96,30 @@ public class UserGroup implements UserGroupI{
     	return xdatGroup;
     }
 
-    public synchronized void init(ItemI item) throws Exception
-    {
-    	tag = XftStringUtils.intern(item.getStringProperty("tag"));
+    public synchronized void init(ItemI item) throws Exception {
+    	tag = item.getStringProperty("tag");
 
-		for (final ItemI sub : item.getChildItems("xdat:userGroup.element_access")) {
-			final ElementAccessManager eam = new ElementAccessManager(sub);
-			accessManagers.put(eam.getElement(), eam);
+		final List<XFTItem> childItems = item.getChildItems("xdat:userGroup.element_access");
+		if (childItems != null) {
+			for (final ItemI childItem : childItems) {
+				final ElementAccessManager elementAccessManager = new ElementAccessManager(childItem);
+				accessManagers.put(elementAccessManager.getElement(), elementAccessManager);
+			}
 		}
 
-        for(GroupFeature feature:(XDAT.getContextService().getBean(GroupFeatureService.class).findFeaturesForGroup(this.getId()))){
-        	if(feature.isBlocked()){
-            	blocked.add(feature.getFeature());
-        	}else if(feature.isOnByDefault()){
-            	features.add(feature.getFeature());
-        	}
-        }
-    }
+		final List<GroupFeature> features = getGroupFeatureService().findFeaturesForGroup(getId());
+		if (features != null) {
+			for (final GroupFeature feature : features) {
+				if (feature.isBlocked()) {
+					blocked.add(feature.getFeature());
+				} else if (feature.isOnByDefault()) {
+					_features.add(feature.getFeature());
+				}
+			}
+		}
+	}
 
-
-    public String toString(){
+	public String toString(){
     	StringBuilder sb = new StringBuilder();
     	sb.append(getId()).append("\n");
     	sb.append(getTag()).append("\n");
@@ -338,12 +342,19 @@ public class UserGroup implements UserGroupI{
     }
     
     public List<String> getFeatures(){
-    	return ImmutableList.copyOf(features);
+    	return ImmutableList.copyOf(_features);
     }
     
     public List<String> getBlockedFeatures(){
     	return ImmutableList.copyOf(blocked);
     }
+
+	private GroupFeatureService getGroupFeatureService() {
+    	if (_groupFeatureService == null) {
+			_groupFeatureService = XDAT.getContextService().getBean(GroupFeatureService.class);
+    	}
+		return _groupFeatureService;
+	}
 
 	private static String formatTypeAndField(final String type, final String field) {
 		return type + "/" + field;
@@ -354,12 +365,13 @@ public class UserGroup implements UserGroupI{
 	private String        tag         = null;
 	private String        displayName = null;
 	private XdatUsergroup xdatGroup   = null;
+	private GroupFeatureService _groupFeatureService;
 
 	private final Map<String, ElementAccessManager>     accessManagers                        = new HashMap<>();
 	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataType         = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
 	private final Multimap<String, PermissionCriteriaI> _permissionCriteriaByDataTypeAndField = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, PermissionCriteriaI>create());
 	private final Multimap<String, List<Object>>        _permissionItemsByLogin               = Multimaps.synchronizedListMultimap(ArrayListMultimap.<String, List<Object>>create());
 	private final Map<String, XdatStoredSearch>         _storedSearches                       = new HashMap<>();
-	private final List<String>                          features                              = new ArrayList<>();
+	private final List<String>                          _features                             = new ArrayList<>();
 	private final List<String>                          blocked                               = new ArrayList<>();
 }

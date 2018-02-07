@@ -301,6 +301,9 @@ var XNAT = getObject(XNAT);
             //     ['span.switchbox-on', opts.onText||''],
             //     ['span.switchbox-off', opts.offText||'']
             // ]))
+            if(!hasValue){
+                XNAT.ui.input.setValue($element, false);
+            }
             inner.push(XNAT.ui.input.switchbox(opts, element));
         }
         else {

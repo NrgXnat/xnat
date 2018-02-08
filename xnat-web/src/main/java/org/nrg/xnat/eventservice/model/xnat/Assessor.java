@@ -21,6 +21,8 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessorURII;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptAssessorURI;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -35,6 +37,8 @@ public class Assessor extends XnatModelObject {
     @JsonProperty("project-id") private String projectId;
     @JsonProperty("session-id") private String sessionId;
     private String directory;
+
+    private static final Logger log = LoggerFactory.getLogger(Assessor.class);
 
     public Assessor() {}
 
@@ -70,7 +74,8 @@ public class Assessor extends XnatModelObject {
     private void populateProperties(final String rootArchivePath) {
         this.id = xnatImageassessordataI.getId();
         this.label = xnatImageassessordataI.getLabel();
-        this.xsiType = xnatImageassessordataI.getXSIType();
+        this.xsiType = null;
+        try { this.xsiType = xnatImageassessordataI.getXSIType();} catch(NullPointerException e){log.error("Assessor failed to detect xsiType");}
         this.projectId = xnatImageassessordataI.getProject();
         this.sessionId = parent == null ? xnatImageassessordataI.getImagesessionId() : parent.getId();
 

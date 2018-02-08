@@ -126,12 +126,16 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
         }
         else if(XnatImagescandata.class.isAssignableFrom(object.getClass())) {
             String imageSessionId = ((XnatImagescandataI) object).getImageSessionId();
-            Session session = new Session(imageSessionId, user);
-            if(session == null) {
-                log.error("User:" + (user != null ? user.getLogin() : "NULL") + " could not load Scan parent Session:" + imageSessionId);
+            if(imageSessionId != null) {
+                Session session = new Session(imageSessionId, user);
+                if (session != null) {
+                    String sessionUri = session.getUri();
+                    return new Scan((XnatImagescandataI) object, sessionUri, null);
+                }
             }
-            String sessionUri = session.getUri();
-            return new Scan((XnatImagescandataI) object, sessionUri, null);
+            log.error("User:" + (user != null ? user.getLogin() : "NULL") + " could not load Scan or parent Session:" + imageSessionId);
+            return null;
+
         }
         else if(XnatImagesessiondataI.class.isAssignableFrom(object.getClass())) {
             return new Session((XnatImagesessiondataI) object);

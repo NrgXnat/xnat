@@ -182,22 +182,22 @@ public class ActionManagerImpl implements ActionManager {
     //}
     @Override
     public PersistentWorkflowI generateWorkflowEntryIfAppropriate(SubscriptionEntity subscription, EventServiceEvent esEvent, UserI user) {
-        if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem()instanceof XFTItem) {
-            XFTItem eventXftItem = ((BaseElement)esEvent.getObject()).getItem();
-            log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.getName() + ".");
-            try {
+        try {
+            if(esEvent.getObject() instanceof BaseElement && ((BaseElement)esEvent.getObject()).getItem()instanceof XFTItem) {
+                XFTItem eventXftItem = ((BaseElement)esEvent.getObject()).getItem();
+                log.debug("Attempting to create workflow entry for " + esEvent.getObject().getClass().getSimpleName() + " in subscription" + subscription.getName() + ".");
                 final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(user, eventXftItem,
                         EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
                                 subscription.getName(), "Event Service Action Called", subscription.getActionProvider()));
                 WorkflowUtils.save(workflow, workflow.buildEvent());
                 log.debug("Created workflow " + workflow.getId());
                 return workflow;
-            }catch (Exception e){
-                log.error("Failed to create workflow entry for " + esEvent.getId() + "\n" + e.getMessage());
             }
-        }
-        else {
-            log.debug("Skipping workflow entry creation. Not available for non-XFTItem event object in subscription " + subscription.getName() + ".");
+            else {
+                log.debug("Skipping workflow entry creation. Not available for non-XFTItem event object in subscription " + subscription.getName() + ".");
+            }
+        }catch (Exception e){
+            log.error("Failed to create workflow entry for " + esEvent.getId() + "\n" + e.getMessage());
         }
         return null;
     }

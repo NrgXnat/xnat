@@ -16,6 +16,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ScanURII;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -43,6 +45,8 @@ public class Scan extends XnatModelObject {
     @JsonProperty("start-time") private Object startTime;
     private String uid;
 
+    private static final Logger log = LoggerFactory.getLogger(Scan.class);
+
     public Scan() {}
 
     public Scan(final ScanURII scanURII) {
@@ -64,7 +68,8 @@ public class Scan extends XnatModelObject {
     private void populateProperties(final String rootArchivePath) {
         this.integerId = xnatImagescandataI.getXnatImagescandataId();
         this.id = xnatImagescandataI.getId();
-        this.xsiType = xnatImagescandataI.getXSIType();
+        this.xsiType = "xnat:imageScanData";
+        try { this.xsiType = xnatImagescandataI.getXSIType();} catch(NullPointerException e){log.error("Scan failed to detect xsiType");}
         this.scanType = xnatImagescandataI.getType();
         this.label = String.format("%s - %s", this.id, this.scanType);
 

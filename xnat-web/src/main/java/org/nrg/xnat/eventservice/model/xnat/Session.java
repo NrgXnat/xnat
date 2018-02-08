@@ -23,6 +23,8 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessedURII;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -38,6 +40,8 @@ public class Session extends XnatModelObject {
     @JsonProperty("subject-id") private String subjectId;
     private String directory;
     @JsonProperty("modality") private String modality;
+
+    private static final Logger log = LoggerFactory.getLogger(Session.class);
 
     public Session() {}
 
@@ -74,7 +78,8 @@ public class Session extends XnatModelObject {
     private void populateProperties(final String rootArchivePath) {
         this.id = xnatImagesessiondataI.getId();
         this.label = xnatImagesessiondataI.getLabel();
-        this.xsiType = xnatImagesessiondataI.getXSIType();
+        this.xsiType = "xnat:imageSessionData";
+        try { this.xsiType = xnatImagesessiondataI.getXSIType();} catch(NullPointerException e){log.error("Session failed to detect xsiType");}
         this.projectId = xnatImagesessiondataI.getProject();
         this.subjectId = xnatImagesessiondataI.getSubjectId();
         this.modality = xnatImagesessiondataI.getModality();

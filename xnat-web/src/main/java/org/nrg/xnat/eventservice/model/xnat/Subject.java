@@ -19,6 +19,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.SubjectURII;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -31,6 +33,8 @@ public class Subject extends XnatModelObject {
     private List<Session> sessions;
     private List<Resource> resources;
     @JsonProperty("project-id") private String projectId;
+
+    private static final Logger log = LoggerFactory.getLogger(Subject.class);
 
     public Subject() {}
 
@@ -64,7 +68,8 @@ public class Subject extends XnatModelObject {
     private void populateProperties(final String rootArchivePath) {
         this.id = xnatSubjectdataI.getId();
         this.label = xnatSubjectdataI.getLabel();
-        this.xsiType = xnatSubjectdataI.getXSIType();
+        this.xsiType = "xnat:subjectData";
+        try { this.xsiType = xnatSubjectdataI.getXSIType();} catch(NullPointerException e){log.error("Subject failed to detect xsiType");}
         this.projectId = xnatSubjectdataI.getProject();
 
         this.sessions = Lists.newArrayList();

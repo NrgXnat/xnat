@@ -124,6 +124,7 @@ public class TimedEventStatusEntity implements Serializable {
         SUBSCRIPTION_TRIGGERED,
         SUBSCRIPTION_DISABLED_HALT,
         OBJECT_SERIALIZED,
+        OBJECT_SERIALIZATION_FAULT,
         OBJECT_FILTERED,
         OBJECT_FILTER_MISMATCH_HALT,
         ACTION_CALLED,

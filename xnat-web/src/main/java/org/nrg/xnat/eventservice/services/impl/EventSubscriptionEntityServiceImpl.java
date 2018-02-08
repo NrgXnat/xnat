@@ -366,10 +366,10 @@ public class EventSubscriptionEntityServiceImpl
                             log.debug("Serialized Object: " + objectSubString + "...");
                             subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Object Serialized: " + objectSubString + "...");
                         }
-                    }catch(JsonProcessingException e){
-                        log.error("Aborting Event Service processEvent. Exception serializing event object: " + esEvent.getObjectClass());
+                    }catch(NullPointerException | JsonProcessingException e){
+                        log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass());
                         log.error(e.getMessage());
-                        return;
+                        subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), e.getMessage());
                     }
                     //Filter on data object (if filter and object)
                     if( subscription.eventFilter() != null && subscription.eventFilter().jsonPathFilter() != null ) {

@@ -8,7 +8,14 @@ import java.util.UUID;
 @XnatEventServiceEvent(name="SampleEvent")
 public class SampleEvent implements EventServiceEvent {
 
+    Date eventDetectedTimestamp;
+
+    public SampleEvent() {
+        eventDetectedTimestamp = new Date();
+    }
+
     @Override
+
     public String getId() {
         return this.getClass().getCanonicalName();
     }
@@ -50,7 +57,7 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public Date getEventTimestamp() {
-        return null;
+        return eventDetectedTimestamp;
     }
 
     @Override

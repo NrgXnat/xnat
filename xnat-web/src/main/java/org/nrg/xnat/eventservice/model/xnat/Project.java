@@ -16,6 +16,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ProjectURII;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -27,6 +29,8 @@ public class Project extends XnatModelObject {
     private List<Resource> resources;
     private List<Subject> subjects;
     private String directory;
+
+    private static final Logger log = LoggerFactory.getLogger(Project.class);
 
     public Project() {}
 
@@ -64,7 +68,8 @@ public class Project extends XnatModelObject {
     private void populateProperties(final boolean preload) {
         this.id = xnatProjectdata.getId();
         this.label = xnatProjectdata.getName();
-        this.xsiType = xnatProjectdata.getXSIType();
+        this.xsiType = "xnat:projectData";
+        try { this.xsiType = xnatProjectdata.getXSIType();} catch(NullPointerException e){log.error("Project failed to detect xsiType");}
         this.directory = xnatProjectdata.getRootArchivePath() + "arc001";
 
         this.subjects = Lists.newArrayList();

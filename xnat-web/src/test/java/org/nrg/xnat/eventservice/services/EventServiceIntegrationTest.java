@@ -12,6 +12,9 @@ import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.om.XnatImagescandata;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.actions.EventServiceLoggingAction;
@@ -19,9 +22,7 @@ import org.nrg.xnat.eventservice.actions.SingleActionProvider;
 import org.nrg.xnat.eventservice.actions.TestAction;
 import org.nrg.xnat.eventservice.config.EventServiceTestConfig;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
-import org.nrg.xnat.eventservice.events.EventServiceEvent;
-import org.nrg.xnat.eventservice.events.SampleEvent;
-import org.nrg.xnat.eventservice.events.TestCombinedEvent;
+import org.nrg.xnat.eventservice.events.*;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.listeners.TestListener;
 import org.nrg.xnat.eventservice.model.*;
@@ -36,10 +37,12 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StopWatch;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.selector.Selector;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -471,6 +474,19 @@ public class EventServiceIntegrationTest {
 
     @Test
     @DirtiesContext
+    public void checkSubscriptionDeliveryEntry() throws Exception {
+        catchSubscribedEvent();
+        List<SubscriptionDelivery> subscriptionDeliveries = eventService.getSubscriptionDeliveries(null, null);
+        assertThat("subscriptionDeliveries table is null. Expected one entry.",subscriptionDeliveries, notNullValue());
+        assertThat("subscriptionDeliveries table is empty. Expected one entry.",subscriptionDeliveries.size(), is(1));
+
+        List<TimedEventStatus> eventStatuses = subscriptionDeliveries.get(0).timedEventStatuses();
+        assertThat("TimedEventStatus table is null. Expected entries.",eventStatuses, notNullValue());
+        assertThat("", eventStatuses.get(eventStatuses.size()-1).status(), is("ACTION_COMPLETE") );
+    }
+
+    @Test
+    @DirtiesContext
     public void registerMrSessionSubscription() throws Exception {
         EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.TestCombinedEvent");
         assertThat("Could not load TestCombinedEvent from componentManager", testCombinedEvent, notNullValue());
@@ -604,6 +620,443 @@ public class EventServiceIntegrationTest {
         assertThat("List of detected events should not be null.",actionProvider.getDetectedEvents(), notNullValue());
         assertThat("List of detected events should be empty.",actionProvider.getDetectedEvents().size(), is(0));
     }
+
+
+
+    @Test
+    @DirtiesContext
+    public void catchSubjectEventWithProjectSubscription() throws Exception {
+        // Create a user
+        String projectId1 = "PROJECTID_1";
+        String subjectID = "TestSubject";
+        XnatSubjectdata subject = new XnatSubjectdata(mockUser);
+        subject.setProject(projectId1);
+        subject.setId(subjectID);
+
+        // Subscribe to event
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name("Test Subscription")
+                                                                     .projectId(projectId1)
+                                                                     .active(true)
+                                                                     .eventId(new SubjectCreatedEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        assertThat("Subscription failed validation.",eventService.validateSubscription(subscription), notNullValue());
+        assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
+
+        // Trigger Subject Created Event
+        eventService.triggerEvent(new SubjectCreatedEvent(subject, mockUser.getLogin()), projectId1);
+
+        // wait for listener (max 1 sec.)
+        synchronized (testAction) {
+            testAction.wait(1000);
+        }
+        TestAction action = (TestAction) testAction;
+        assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
+        assertThat("Expected detected event to be of type SubjectCreated", action.getDetectedEvents().get(0).getId(), containsString("SubjectCreatedEvent"));
+        assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
+    }
+
+    @Test
+    @DirtiesContext
+    public void catchSubjectEventWithSiteSubscription() throws Exception {
+        // Create a user
+        String projectId1 = "";
+        String subjectID = "TestSubject";
+        XnatSubjectdata subject = new XnatSubjectdata(mockUser);
+        subject.setProject(projectId1);
+        subject.setId(subjectID);
+
+        // Subscribe to event
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name("Test Subscription")
+                                                                     .projectId(projectId1)
+                                                                     .active(true)
+                                                                     .eventId(new SubjectCreatedEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        assertThat("Subscription failed validation.",eventService.validateSubscription(subscription), notNullValue());
+        assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
+
+        // Trigger Subject Created Event
+        eventService.triggerEvent(new SubjectCreatedEvent(subject, mockUser.getLogin()), projectId1);
+
+        // wait for listener (max 1 sec.)
+        synchronized (testAction) {
+            testAction.wait(1000);
+        }
+        TestAction action = (TestAction) testAction;
+        assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
+        assertThat("Expected detected event to be of type SubjectCreated", action.getDetectedEvents().get(0).getId(), containsString("SubjectCreatedEvent"));
+        assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
+
+    }
+
+    @Test
+    @DirtiesContext
+    public void missSubjectEventWithDifferentProjectSubscription() throws Exception {
+        // Create a user
+        String projectId1 = "PROJECTID_1";
+        String projectId2 = "PROJECTID-2";
+        String subjectID = "TestSubject";
+        XnatSubjectdata subject = new XnatSubjectdata(mockUser);
+        subject.setProject(projectId1);
+        subject.setId(subjectID);
+
+        // Subscribe to event
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name("Test Subscription")
+                                                                     .projectId(projectId2)
+                                                                     .active(true)
+                                                                     .eventId(new SubjectCreatedEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        assertThat("Subscription failed validation.",eventService.validateSubscription(subscription), notNullValue());
+        assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
+
+        // Trigger Subject Created Event
+        eventService.triggerEvent(new SubjectCreatedEvent(subject, mockUser.getLogin()), projectId1);
+
+        // wait for listener (max 1 sec.)
+        synchronized (testAction) {
+            testAction.wait(1000);
+        }
+        TestAction action = (TestAction) testAction;
+        assertThat("Expected zero detected events.", action.getDetectedEvents().size(), is(0));
+    }
+
+    @Test
+    @DirtiesContext
+    public void catchSessionArchiveEventWithProjectId() throws Exception {
+        String projectId1 = "PROJECTID_1";
+
+        XnatImagesessiondata session = new XnatImagesessiondata();
+        session.setModality("MR");
+        session.setProject(projectId1);
+        session.setSessionType("xnat:imageSessionData");
+
+        // Subscribe to event
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name("Test Subscription")
+                                                                     .projectId(projectId1)
+                                                                     .active(true)
+                                                                     .eventId(new SessionArchiveEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        assertThat("Subscription failed validation.",eventService.validateSubscription(subscription), notNullValue());
+        assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
+
+        // Trigger SessionArchiveEvent
+        eventService.triggerEvent(new SessionArchiveEvent(session, mockUser.getLogin()), projectId1);
+
+        // wait for listener (max 1 sec.)
+        synchronized (testAction) {
+            testAction.wait(1000);
+        }
+        TestAction action = (TestAction) testAction;
+        assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
+        assertThat("Expected detected event to be of type SessionArchiveEvent", action.getDetectedEvents().get(0).getId(), containsString("SessionArchiveEvent"));
+        assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
+    }
+
+    @Test
+    @DirtiesContext
+    public void catchScanArchiveEventWithProjectId() throws Exception {
+        String projectId1 = "PROJECTID_1";
+
+        XnatImagesessiondata session = new XnatImagesessiondata();
+        session.setModality("MR");
+        session.setProject(projectId1);
+        session.setSessionType("xnat:imageSessionData");
+
+        XnatImagescandata scan = new XnatImagescandata();
+        scan.setImageSessionData(session);
+
+        // Subscribe to event
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name("Test Subscription")
+                                                                     .projectId(projectId1)
+                                                                     .active(true)
+                                                                     .eventId(new ScanArchiveEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        assertThat("Subscription failed validation.",eventService.validateSubscription(subscription), notNullValue());
+        assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
+
+        // Trigger ScanArchiveEvent
+        eventService.triggerEvent(new ScanArchiveEvent(scan, mockUser.getLogin()), projectId1);
+
+        // wait for listener (max 1 sec.)
+        synchronized (testAction) {
+            testAction.wait(1000);
+        }
+        TestAction action = (TestAction) testAction;
+        assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
+        assertThat("Expected detected event to be of type ScanArchiveEvent", action.getDetectedEvents().get(0).getId(), containsString("ScanArchiveEvent"));
+        assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
+    }
+
+
+    @Test
+    @DirtiesContext
+    public void create1000SubscriptionsCatchOneWithDifferentEventType() throws Exception {
+        StopWatch sw1 = new StopWatch();
+        sw1.start("CreateEvents");
+        String projectId = "Test";
+
+        for(Integer i=0; i<999; i++){
+            String name = projectId + i.toString();
+            createScanSubscription(name, projectId, null);
+
+        }
+        createSessionSubscription("SomethingDifferent", projectId, null);
+        sw1.stop();
+        System.out.print("\n" + Integer.toString(eventService.getSubscriptions().size()) + " Subscriptions created in : " + sw1.getTotalTimeSeconds() + "seconds\n");
+
+        XnatImagesessiondata session = new XnatImagesessiondata();
+        session.setModality("MR");
+        session.setProject(projectId);
+        session.setSessionType("xnat:imageSessionData");
+        eventService.triggerEvent(new SessionArchiveEvent(session, mockUser.getLogin()), projectId);
+
+        StopWatch sw2 = new StopWatch();
+        sw2.start("eventTriggerToAction");
+        synchronized (testAction) {
+            testAction.wait(100);
+        }
+        sw2.stop();
+        TestAction action = (TestAction) testAction;
+        assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
+        assertThat("Expected detected event to be of type SessionArchiveEvent", action.getDetectedEvents().get(0).getId(), containsString("SessionArchiveEvent"));
+        assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
+        System.out.print("Event caught in : " + sw2.getTotalTimeSeconds() + "seconds\n");
+
+    }
+
+
+
+    @Test
+    @DirtiesContext
+    public void create1000SubscriptionsCatchTwoWithDifferentProjectId() throws Exception {
+        StopWatch sw1 = new StopWatch();
+        sw1.start("CreateSubscriptions");
+        String projectId = "Test";
+
+        for(Integer i=0; i<1000; i++){
+            String name = projectId + i.toString();
+            createSessionSubscription(name, name, null);
+
+        }
+        sw1.stop();
+        System.out.print("\n" + Integer.toString(eventService.getSubscriptions().size()) + " Subscriptions created in : " + sw1.getTotalTimeSeconds() + "seconds\n");
+
+        XnatImagesessiondata session = new XnatImagesessiondata();
+        session.setModality("MR");
+        session.setProject(projectId);
+        session.setSessionType("xnat:imageSessionData");
+        eventService.triggerEvent(new SessionArchiveEvent(session, mockUser.getLogin()), projectId + "500");
+
+        eventService.triggerEvent(new SessionArchiveEvent(session, mockUser.getLogin()), projectId + "600");
+
+        StopWatch sw2 = new StopWatch();
+        sw2.start("eventTriggerToAction");
+        synchronized (testAction) {
+            testAction.wait(100);
+        }
+        sw2.stop();
+        TestAction action = (TestAction) testAction;
+        assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(2));
+        assertThat("Expected detected event to be of type SessionArchiveEvent", action.getDetectedEvents().get(0).getId(), containsString("SessionArchiveEvent"));
+        assertThat("Expected detected event to be of type SessionArchiveEvent", action.getDetectedEvents().get(1).getId(), containsString("SessionArchiveEvent"));
+        assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
+        System.out.print("Two event caught in : " + sw2.getTotalTimeSeconds() + "seconds\n");
+
+    }
+
+    @Test
+    @DirtiesContext
+    public void createManySubscriptionsTriggerManyEventsCatch1000() throws Exception {
+        String projectIdToIgnore = "ProjectIdToIgnore";
+        XnatImagesessiondata sessionToIgnore = new XnatImagesessiondata();
+        sessionToIgnore.setModality("MR");
+        sessionToIgnore.setProject(projectIdToIgnore);
+        sessionToIgnore.setSessionType("xnat:imageSessionData");
+
+        String projectIdToCatch = "ProjectIdToCatch";
+        XnatImagesessiondata sessionToCatch = new XnatImagesessiondata();
+        sessionToCatch.setModality("MR");
+        sessionToCatch.setProject(projectIdToCatch);
+        sessionToCatch.setSessionType("xnat:imageSessionData");
+
+        StopWatch sw1 = new StopWatch();
+        sw1.start("Subscriptions");
+        String projectId = "Test";
+
+        for(Integer i=0; i<1000; i++){
+            String name = projectId + i.toString();
+            assertThat(createSessionSubscription(name  + "_1", projectId + "_1", null), notNullValue());
+            assertThat(createSessionSubscription(name  + "_2", projectId + "_2", null), notNullValue());
+            assertThat(createScanSubscription(name  +    "_3", projectId + "_3", null), notNullValue());
+            assertThat(createScanSubscription(name  +    "_4", projectId + "_4", null), notNullValue());
+        }
+        for(Integer i=0; i<10; i++){
+            String name = projectIdToCatch + i.toString();
+            assertThat(createSessionSubscription(name, projectIdToCatch, null), notNullValue());
+        }
+        sw1.stop();
+        System.out.print("\n" + Integer.toString(eventService.getSubscriptions().size()) + " Subscriptions created in : " + sw1.getTotalTimeSeconds() + "seconds\n");
+
+        StopWatch sw2 = new StopWatch();
+        sw2.start("eventTriggersToActions");
+        for(Integer i=0; i<10000; i++){
+            eventService.triggerEvent(new SessionArchiveEvent(sessionToIgnore, mockUser.getLogin()));
+        }
+        sw2.stop();
+        System.out.print("Triggered 10000 ignored events in : " + sw2.getTotalTimeSeconds() + "seconds\n");
+
+        StopWatch sw3 = new StopWatch();
+        sw3.start("eventTriggersToActions");
+        for(Integer i=0; i<100; i++){
+            eventService.triggerEvent(new SessionArchiveEvent(sessionToCatch, mockUser.getLogin()), projectIdToCatch);
+        }
+        synchronized (testAction) {
+            testAction.wait(100);
+        }
+        sw3.stop();
+        TestAction action = (TestAction) testAction;
+        System.out.print("Triggered/Caught " + Integer.toString(action.getDetectedEvents().size())+ " detected events in : " + sw3.getTotalTimeSeconds() + "seconds\n");
+
+        List<EventServiceEvent> detectedEvents = action.getDetectedEvents();
+        assertThat("Expected 100 detected events.", action.getDetectedEvents().size(), is(1000));
+
+
+    }
+
+
+    @Test
+    @DirtiesContext
+    public void testSubscriptionDeliveryCreation() throws Exception {
+        String projectIdToCatch = "ProjectIdToCatch";
+        XnatImagesessiondata sessionToCatch = new XnatImagesessiondata();
+        sessionToCatch.setModality("MR");
+        sessionToCatch.setProject(projectIdToCatch);
+        sessionToCatch.setSessionType("xnat:imageSessionData");
+
+        assertThat(createSessionSubscription("TheOneAndOnly", projectIdToCatch, null), notNullValue());
+        StopWatch sw3 = new StopWatch();
+        sw3.start("eventTriggersToActions");
+        for(Integer i=0; i<10; i++){
+            eventService.triggerEvent(new SessionArchiveEvent(sessionToCatch, mockUser.getLogin()), projectIdToCatch);
+        }
+        synchronized (testAction) {
+            testAction.wait(100);
+        }
+        sw3.stop();
+
+        List<SubscriptionDelivery> deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null);
+        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L);
+        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l);
+        List<SubscriptionDelivery> deliveries = eventService.getSubscriptionDeliveries(null, null);
+
+        assertThat("Expected 10 deliveries.", deliveriesWithProjectId.size(), is(10));
+        assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionId.size(), is(10));
+        assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionIdAndProjectId.size(), is(10));
+        assertThat("Expected 10 deliveries.", deliveries.size(), is(10));
+
+    }
+
+    public Subscription createSessionSubscription(String name, String projectId, String filter) throws Exception {
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name(name)
+                                                                     .projectId(projectId)
+                                                                     .active(true)
+                                                                     .eventFilter(new EventFilter() {
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public Long id() {
+                                                                             return null;
+                                                                         }
+
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public String name() {
+                                                                             return "FilterTest";
+                                                                         }
+
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public String jsonPathFilter() {
+                                                                             return filter;
+                                                                         }
+                                                                     })
+                                                                     .eventId(new SessionArchiveEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        subscription = eventService.validateSubscription(subscription);
+        return eventService.createSubscription(subscription);
+    }
+
+    public Subscription createScanSubscription(String name, String projectId, String filter) throws Exception{
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name(name)
+                                                                     .projectId(projectId)
+                                                                     .active(true)
+                                                                     .eventFilter(new EventFilter() {
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public Long id() {
+                                                                             return null;
+                                                                         }
+
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public String name() {
+                                                                             return "FilterTest";
+                                                                         }
+
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public String jsonPathFilter() {
+                                                                             return filter;
+                                                                         }
+                                                                     })
+                                                                     .eventId(new ScanArchiveEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        subscription = eventService.validateSubscription(subscription);
+        return eventService.createSubscription(subscription);
+    }
+
+
 
     class MockSingleActionProvider extends SingleActionProvider {
 

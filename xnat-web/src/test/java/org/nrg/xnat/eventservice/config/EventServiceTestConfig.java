@@ -14,8 +14,7 @@ import org.nrg.xnat.eventservice.entities.EventServiceFilterEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
-import org.nrg.xnat.eventservice.events.ProjectCreatedEvent;
-import org.nrg.xnat.eventservice.events.TestCombinedEvent;
+import org.nrg.xnat.eventservice.events.*;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.listeners.TestListener;
 import org.nrg.xnat.eventservice.services.*;
@@ -94,7 +93,9 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public EventServiceActionProvider testAction() {return new TestAction(); }
+    public EventServiceActionProvider testAction(SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
+        return new TestAction(subscriptionDeliveryEntityService);
+    }
 
     @Bean
     public EventServiceActionProvider eventServiceLoggingAction() {return new EventServiceLoggingAction(); }
@@ -163,6 +164,10 @@ public class EventServiceTestConfig {
     //** Combined Events/Listener **//
     @Bean
     public ProjectCreatedEvent projectCreatedEvent() {return new ProjectCreatedEvent();}
-
-
+    @Bean
+    public SubjectCreatedEvent subjectCreatedEvent() {return new SubjectCreatedEvent();}
+    @Bean
+    public ScanArchiveEvent scanArchiveEvent() {return new ScanArchiveEvent();}
+    @Bean
+    public SessionArchiveEvent sessionArchiveEvent() {return new SessionArchiveEvent();}
 }

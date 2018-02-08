@@ -68,7 +68,8 @@ public class Resource extends XnatModelObject {
         this.integerId = xnatResourcecatalog.getXnatAbstractresourceId();
         this.id = xnatResourcecatalog.getLabel();
         this.label = xnatResourcecatalog.getLabel();
-        this.xsiType = xnatResourcecatalog.getXSIType();
+        this.xsiType = null;
+        try { this.xsiType = xnatResourcecatalog.getXSIType();} catch(NullPointerException e){log.error("Resource failed to detect xsiType");}
 
         final CatCatalogBean cat = xnatResourcecatalog.getCleanCatalog(rootArchivePath, true, null, null);
         this.directory = xnatResourcecatalog.getCatalogFile(rootArchivePath).getParent();

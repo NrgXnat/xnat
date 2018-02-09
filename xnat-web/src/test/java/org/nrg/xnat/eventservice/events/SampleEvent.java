@@ -5,10 +5,11 @@ import org.nrg.framework.event.XnatEventServiceEvent;
 import java.util.Date;
 import java.util.UUID;
 
-@XnatEventServiceEvent(name="SampleEvent")
+@XnatEventServiceEvent
 public class SampleEvent implements EventServiceEvent {
 
     Date eventDetectedTimestamp;
+    UUID eventUUID = UUID.randomUUID();
 
     public SampleEvent() {
         eventDetectedTimestamp = new Date();
@@ -22,23 +23,21 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public String getDisplayName() {
-        return null;
+        return "Sample Event";
     }
 
     @Override
     public String getDescription() {
-        return null;
+        return "Sample Event for Integration Testing";
     }
 
     @Override
     public Object getObject() {
-        return null;
+        return Object.class;
     }
 
     @Override
-    public String getObjectClass() {
-        return null;
-    }
+    public String getObjectClass() { return getObject().getClass().getName(); }
 
     @Override
     public String getPayloadXnatType() {
@@ -47,7 +46,7 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public Boolean isPayloadXsiType() {
-        return null;
+        return false;
     }
 
     @Override
@@ -62,6 +61,6 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public UUID getEventUUID() {
-        return null;
+        return eventUUID;
     }
 }

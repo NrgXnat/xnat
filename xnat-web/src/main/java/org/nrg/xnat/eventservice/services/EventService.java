@@ -39,7 +39,7 @@ public interface EventService {
     Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException;
     Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException;
     void deleteSubscription(Long id) throws Exception;
-    void throwExceptionIfExists(Subscription subscription) throws NrgServiceRuntimeException;
+    void throwExceptionIfNameExists(Subscription subscription) throws NrgServiceRuntimeException;
 
     void reactivateAllSubscriptions();
 

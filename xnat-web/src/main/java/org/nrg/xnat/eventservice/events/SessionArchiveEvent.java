@@ -7,12 +7,7 @@ import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
 @Service
-@XnatEventServiceEvent(
-        name="SessionArchiveEvent",
-        displayName = "Session Archived",
-        description="Session Archive Event",
-        object = "Session",
-        operation = "Archived")
+@XnatEventServiceEvent(name="SessionArchiveEvent")
 public class SessionArchiveEvent extends CombinedEventServiceEvent<SessionArchiveEvent, XnatImagesessiondata> {
 
 

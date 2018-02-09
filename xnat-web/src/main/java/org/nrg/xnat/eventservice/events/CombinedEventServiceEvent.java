@@ -26,7 +26,7 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     String eventUser;
     EventObjectT object;
     UUID eventUUID = UUID.randomUUID();
-    Date eventCreatedTimestamp = null;
+    Date eventCreatedTimestamp = new Date();
     UUID listenerId = UUID.randomUUID();
     Date eventDetectedTimestamp = null;
 

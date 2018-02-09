@@ -6,12 +6,7 @@ import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
 @Service
-@XnatEventServiceEvent(
-        name="SubjectCreatedEvent",
-        displayName = "Subject Created Event",
-        description="Subject Created Event",
-        object = "Subject",
-        operation = "Created")
+@XnatEventServiceEvent(name="SubjectCreatedEvent")
 public class SubjectCreatedEvent extends CombinedEventServiceEvent<SubjectCreatedEvent, XnatSubjectdata> {
 
     public SubjectCreatedEvent(){};

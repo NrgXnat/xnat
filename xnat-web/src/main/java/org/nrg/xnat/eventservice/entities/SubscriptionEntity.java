@@ -4,6 +4,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
+import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.model.Subscription;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,14 +101,21 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
 
     @Transactional
     @Nonnull
-    public SubscriptionEntity update(@Nonnull final Subscription subscription) {
+    public SubscriptionEntity update(@Nonnull final Subscription subscription) throws SubscriptionValidationException {
+        if(subscription.projectId() != null && !subscription.projectId().equals(this.projectId)){
+            throw new SubscriptionValidationException("Subscription Project ID cannot be changed.");
+        }
+        if(subscription.eventId() != null && !subscription.eventId().equals(this.eventType)){
+            throw new SubscriptionValidationException("Subscription Event ID cannot be changed.");
+        }
+        if(subscription.actionKey() != null && !subscription.actionKey().equals(this.actionKey)){
+            throw new SubscriptionValidationException("Subscription Action cannot be changed.");
+        }
+
         this.name = Strings.isNullOrEmpty(subscription.name()) ? this.name : subscription.name();
-        this.projectId = Strings.isNullOrEmpty(subscription.projectId()) ? this.projectId : subscription.projectId();
         this.active = subscription.active() == null ? this.active : subscription.active();
         this.listenerRegistrationKey = subscription.listenerRegistrationKey() == null ? this.listenerRegistrationKey : subscription.listenerRegistrationKey();
-        this.eventType = Strings.isNullOrEmpty(subscription.eventId()) ? this.eventType : subscription.eventId();
         this.customListenerId = Strings.isNullOrEmpty(subscription.customListenerId()) ? this.customListenerId : subscription.customListenerId();
-        this.actionKey = Strings.isNullOrEmpty(subscription.actionKey()) ? this.actionKey : subscription.actionKey();
         this.attributes = subscription.attributes() == null ? this.attributes : subscription.attributes();
         this.eventServiceFilterEntity = subscription.eventFilter() == null ? this.eventServiceFilterEntity : EventServiceFilterEntity.fromPojo(subscription.eventFilter());
         this.actAsEventUser = subscription.actAsEventUser() == null ? this.actAsEventUser : subscription.actAsEventUser();

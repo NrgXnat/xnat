@@ -67,7 +67,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         final UserI userI = XDAT.getUserDetails();
         checkCreateOrThrow(userI);
         Subscription toCreate = Subscription.create(subscription, userI.getLogin());
-        eventService.throwExceptionIfExists(toCreate);
+        eventService.throwExceptionIfNameExists(toCreate);
         Subscription created = eventService.createSubscription(toCreate);
         if(created == null){
             return new ResponseEntity<>("Failed to create subscription.",HttpStatus.FAILED_DEPENDENCY);
@@ -258,8 +258,8 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
     @ExceptionHandler(value = {SubscriptionValidationException.class})
-    public String handleFailedSubscriptionValidation() {
-        return "Subscription format failed to validate.";
+    public String handleFailedSubscriptionValidation(SubscriptionValidationException e) {
+        return "Subscription format failed to validate.\n" + e.getMessage();
     }
 
     @ResponseStatus(value = HttpStatus.UNAUTHORIZED)

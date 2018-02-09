@@ -21,9 +21,9 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
     Subscription deactivate(Subscription eventSubscription) throws NotFoundException, EntityNotFoundException;
     Subscription save(Subscription subscription);
 
-    void throwExceptionIfExists(final Subscription subscription) throws NrgServiceRuntimeException;
+    void throwExceptionIfNameExists(final Subscription subscription) throws NrgServiceRuntimeException;
 
-    Subscription update(Subscription subscription) throws NotFoundException;
+    Subscription update(Subscription subscription) throws NotFoundException, SubscriptionValidationException;
     void delete(Long subscriptionId) throws Exception;
 
     List<Subscription> getAllSubscriptions();

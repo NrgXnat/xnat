@@ -56,10 +56,6 @@ public abstract class SimpleEventServiceEvent<EventObjectT>
                 !Modifier.isAbstract(clazz.getModifiers())) {
             try {
                 event = (SimpleEventServiceEvent) clazz.getConstructor().newInstance();
-//                event.setDisplayName(properties.containsKey(XnatEventServiceEvent.EVENT_DISPLAY_NAME) ? properties.get(XnatEventServiceEvent.EVENT_DISPLAY_NAME).toString() : "");
-//                event.setDescription(properties.containsKey(XnatEventServiceEvent.EVENT_DESC) ? properties.get(XnatEventServiceEvent.EVENT_DESC).toString() : "");
-//                event.setEventObject(properties.containsKey(XnatEventServiceEvent.EVENT_OBJECT) ? properties.get(XnatEventServiceEvent.EVENT_OBJECT).toString() : "");
-//                event.setEventOperation(properties.containsKey(XnatEventServiceEvent.EVENT_OPERATION) ? properties.get(XnatEventServiceEvent.EVENT_OPERATION).toString() : "");
             } catch (NoSuchMethodException e){
               throw new NoSuchMethodException("Can't find default constructor for " + clazz.getName());
             }

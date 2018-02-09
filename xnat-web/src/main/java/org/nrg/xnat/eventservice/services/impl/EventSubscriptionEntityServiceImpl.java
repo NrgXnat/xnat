@@ -232,7 +232,7 @@ public class EventSubscriptionEntityServiceImpl
     }
 
     @Override
-    public void throwExceptionIfExists(Subscription subscription) throws NrgServiceRuntimeException {
+    public void throwExceptionIfNameExists(Subscription subscription) throws NrgServiceRuntimeException {
         String name = subscription.name();
         SubscriptionEntity existing = null;
         try {
@@ -282,8 +282,11 @@ public class EventSubscriptionEntityServiceImpl
     }
 
     @Override
-    public Subscription update(Subscription subscription) throws NotFoundException {
+    public Subscription update(Subscription subscription) throws NotFoundException, SubscriptionValidationException{
         SubscriptionEntity subscriptionEntity = retrieve(subscription.id());
+        if(subscription.name() != null && !subscription.name().equals(subscriptionEntity.getName())){
+            throwExceptionIfNameExists(subscription);
+        }
         subscriptionEntity.update(subscription);
         super.update(subscriptionEntity);
         return toPojo(subscriptionEntity);

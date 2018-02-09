@@ -67,8 +67,8 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public void throwExceptionIfExists(Subscription subscription) throws NrgServiceRuntimeException {
-        subscriptionService.throwExceptionIfExists(subscription);
+    public void throwExceptionIfNameExists(Subscription subscription) throws NrgServiceRuntimeException {
+        subscriptionService.throwExceptionIfNameExists(subscription);
     }
 
     @Override

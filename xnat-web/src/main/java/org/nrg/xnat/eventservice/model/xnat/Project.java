@@ -56,7 +56,7 @@ public class Project extends XnatModelObject {
     }
 
     public Project(final XnatProjectdata xnatProjectdata) {
-        new Project(xnatProjectdata, true);
+        this(xnatProjectdata, true);
     }
 
     public Project(final XnatProjectdata xnatProjectdata, final boolean preload) {

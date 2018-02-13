@@ -1,12 +1,9 @@
 {
-  "name": "Logging action for MR Scans",
-  "active": true,
-   "project-id": "ABC123",
-  "event-id": "org.nrg.xnat.eventservice.events.ScanArchiveEvent",
-  "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
-  "event-filter": {
-    "name": "MR Scans",
-    "json-path-filter": "$[?(@.xsiType == \"xnat:mrScanData\")]"
-  },
-  "act-as-event-user": false
+    "name": "MR Scan Archive on ABC123",
+    "project-id": "ABC123",
+    "active": true,
+    "event-id": "org.nrg.xnat.eventservice.events.ScanArchiveEvent",
+    "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
+    "event-filter": {"json-path-filter": "$[?(@.xsiType =~ /.*MRScanData/i && @.frames  > 100 && @.scanner-manufacturer =~ /siemens/i && @.scanner-model =~ /TRIOTIM/i )]"},
+    "act-as-event-user": false
 }

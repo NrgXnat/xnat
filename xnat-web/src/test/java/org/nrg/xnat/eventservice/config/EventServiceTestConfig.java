@@ -40,23 +40,25 @@ public class EventServiceTestConfig {
 
 
     @Bean
-    public EventService eventService(final EventSubscriptionEntityService subscriptionService,
-                                     final EventBus eventBus,
-                                     final ContextService contextService,
-                                     final EventServiceComponentManager componentManager,
-                                     final ActionManager actionManager,
-                                     final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService){
-        return new EventServiceImpl(subscriptionService, eventBus, contextService, componentManager, actionManager, subscriptionDeliveryEntityService);
+    public EventService eventService(ContextService contextService,
+                                     EventSubscriptionEntityService subscriptionService, EventBus eventBus,
+                                     EventServiceComponentManager componentManager,
+                                     ActionManager actionManager,
+                                     SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
+                                     UserManagementServiceI userManagementService,
+                                     ObjectMapper mapper){
+        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, mapper);
     }
 
     @Bean
-    public EventService mockEventService(final EventSubscriptionEntityService subscriptionService,
-                                     final EventBus eventBus,
-                                     final ContextService contextService,
-                                     final EventServiceComponentManager mockComponentManager,
-                                     final ActionManager mockActionManager,
-                                     final SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService){
-        return new EventServiceImpl(subscriptionService, eventBus, contextService, mockComponentManager, mockActionManager, mockSubscriptionDeliveryEntityService);
+    public EventService mockEventService(ContextService contextService,
+                                         EventSubscriptionEntityService subscriptionService, EventBus eventBus,
+                                         EventServiceComponentManager componentManager,
+                                         ActionManager actionManager,
+                                         SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService,
+                                         UserManagementServiceI userManagementService,
+                                         ObjectMapper mapper){
+        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, mapper);
     }
 
     @Bean
@@ -170,4 +172,5 @@ public class EventServiceTestConfig {
     public ScanArchiveEvent scanArchiveEvent() {return new ScanArchiveEvent();}
     @Bean
     public SessionArchiveEvent sessionArchiveEvent() {return new SessionArchiveEvent();}
+
 }

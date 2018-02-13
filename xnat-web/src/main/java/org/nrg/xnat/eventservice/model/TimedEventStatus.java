@@ -16,7 +16,7 @@ public abstract class TimedEventStatus {
             shape = JsonFormat.Shape.STRING,
             pattern = "dd-MM-yyyy hh:mm:ss")
     @Nullable @JsonProperty("timestamp")  public abstract Date   timestamp();
-    @JsonProperty("message")    public abstract String message();
+    @Nullable @JsonProperty("message")    public abstract String message();
 
     public static Builder builder() {return new AutoValue_TimedEventStatus.Builder();}
 

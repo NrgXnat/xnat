@@ -183,6 +183,9 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         if(template==null) {
             return fromPojo(subscription);
         }
+        if(subscription==null){
+            return null;
+        }
         template.name = subscription.name() != null ? subscription.name() : template.name;
         template.active = subscription.active() != null ? subscription.active() : (template.active == null ? true : template.active);
         template.listenerRegistrationKey = subscription.listenerRegistrationKey() != null ? subscription.listenerRegistrationKey() : template.listenerRegistrationKey;

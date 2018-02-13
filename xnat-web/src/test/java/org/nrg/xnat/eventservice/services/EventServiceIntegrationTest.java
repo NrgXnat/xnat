@@ -100,6 +100,7 @@ public class EventServiceIntegrationTest {
 
 
 
+
     @Before
     public void setUp() throws Exception {
 
@@ -1125,7 +1126,7 @@ public class EventServiceIntegrationTest {
                                                                          @Nullable
                                                                          @Override
                                                                          public String name() {
-                                                                             return "FilterTest";
+                                                                             return "SessionFilter";
                                                                          }
 
                                                                          @Nullable
@@ -1160,7 +1161,7 @@ public class EventServiceIntegrationTest {
                                                                          @Nullable
                                                                          @Override
                                                                          public String name() {
-                                                                             return "FilterTest";
+                                                                             return "ScanFilter";
                                                                          }
 
                                                                          @Nullable
@@ -1179,6 +1180,153 @@ public class EventServiceIntegrationTest {
         return eventService.createSubscription(subscription);
     }
 
+    public Subscription createProjectCreatedSubscription(String name, String projectId, EventFilter filter) throws Exception {
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name(name)
+                                                                     .projectId(projectId)
+                                                                     .active(true)
+                                                                     .eventFilter(filter)
+                                                                     .eventId(new ProjectCreatedEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        subscription = eventService.validateSubscription(subscription);
+        return eventService.createSubscription(subscription);
+    }
+
+    public Subscription createSubjectCreatedSubscription(String name, String projectId, String filter) throws Exception {
+        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        eventService.getAllActions();
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name(name)
+                                                                     .projectId(projectId)
+                                                                     .active(true)
+                                                                     .eventFilter(new EventFilter() {
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public Long id() {
+                                                                             return null;
+                                                                         }
+
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public String name() {
+                                                                             return "SubjectFilter";
+                                                                         }
+
+                                                                         @Nullable
+                                                                         @Override
+                                                                         public String jsonPathFilter() {
+                                                                             return filter;
+                                                                         }
+                                                                     })
+                                                                     .eventId(new SubjectCreatedEvent().getId())
+                                                                     .actionKey(testActionKey)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        subscription = eventService.validateSubscription(subscription);
+        return eventService.createSubscription(subscription);
+    }
+
+
+
+    // ** JSONPath Filter Tests ** //
+    final String projectJson = "{\n" +
+            "    \"type\": \"Project\",\n" +
+            "    \"id\": \"TheProjectID\",\n" +
+            "    \"label\": \"TheProjectTitle\",\n" +
+            "    \"xsiType\": \"xnat:projectData\",\n" +
+            "    \"uri\": \"/archive/projects/TheProjectID\",\n" +
+            "    \"resources\": [],\n" +
+            "    \"subjects\": [],\n" +
+            "    \"directory\": \"/data/xnat/archive/TheProjectID/arc001\"\n" +
+            "}";
+
+    final String subjectJson = "{\n" +
+            "    \"type\": \"Subject\",\n" +
+            "    \"id\": \"XNAT_S00003\",\n" +
+            "    \"label\": \"SubjectsID\",\n" +
+            "    \"xsiType\": \"xnat:subjectData\",\n" +
+            "    \"uri\": \"/archive/subjects/XNAT_S00003\",\n" +
+            "    \"sessions\": [],\n" +
+            "    \"resources\": [],\n" +
+            "    \"project-id\": \"TheProjectID\"\n" +
+            "}";
+
+    final String scanWoFilesJson = "{\n" +
+            "    \"type\": \"Scan\",\n" +
+            "    \"id\": \"4\",\n" +
+            "    \"label\": \"4 - t1_mpr_1mm_p2_pos50\",\n" +
+            "    \"xsiType\": \"xnat:mrScanData\",\n" +
+            "    \"uri\": \"/archive/experiments/XNAT_E00003/scans/4\",\n" +
+            "    \"resources\": [{\n" +
+            "        \"type\": \"Resource\",\n" +
+            "        \"id\": \"DICOM\",\n" +
+            "        \"label\": \"DICOM\",\n" +
+            "        \"xsiType\": \"xnat:resourceCatalog\",\n" +
+            "        \"uri\": \"/archive/experiments/XNAT_E00003/scans/4/resources/DICOM\",\n" +
+            "        \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4/DICOM\",\n" +
+            "        \"integer-id\": 4\n" +
+            "    }],\n" +
+            "    \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4\",\n" +
+            "    \"frames\": 176,\n" +
+            "    \"modality\": \"MR\",\n" +
+            "    \"quality\": \"usable\",\n" +
+            "    \"scanner\": \"MEDPC\",\n" +
+            "    \"uid\": \"1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0\",\n" +
+            "    \"integer-id\": 4,\n" +
+            "    \"scan-type\": \"t1_mpr_1mm_p2_pos50\",\n" +
+            "    \"scanner-manufacturer\": \"SIEMENS\",\n" +
+            "    \"scanner-model\": \"TrioTim\",\n" +
+            "    \"series-description\": \"t1_mpr_1mm_p2_pos50\",\n" +
+            "    \"start-time\": \"09:37:11\"\n" +
+            "}";
+
+    final String sessionWoFilesJson = "{\n" +
+            "    \"type\": \"Session\",\n" +
+            "    \"id\": \"XNAT_E00003\",\n" +
+            "    \"label\": \"TeamGo_MR3\",\n" +
+            "    \"xsiType\": \"xnat:mrSessionData\",\n" +
+            "    \"uri\": \"/archive/experiments/XNAT_E00003\",\n" +
+            "    \"scans\": [{\n" +
+            "        \"type\": \"Scan\",\n" +
+            "        \"id\": \"4\",\n" +
+            "        \"label\": \"4 - t1_mpr_1mm_p2_pos50\",\n" +
+            "        \"xsiType\": \"xnat:mrScanData\",\n" +
+            "        \"uri\": \"/archive/experiments/XNAT_E00003/scans/4\",\n" +
+            "        \"resources\": [{\n" +
+            "            \"type\": \"Resource\",\n" +
+            "            \"id\": \"DICOM\",\n" +
+            "            \"label\": \"DICOM\",\n" +
+            "            \"xsiType\": \"xnat:resourceCatalog\",\n" +
+            "            \"uri\": \"/archive/experiments/XNAT_E00003/scans/4/resources/DICOM\",\n" +
+            "            \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4/DICOM\",\n" +
+            "            \"integer-id\": 4\n" +
+            "        }],\n" +
+            "        \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4\",\n" +
+            "        \"frames\": 176,\n" +
+            "        \"modality\": \"MR\",\n" +
+            "        \"quality\": \"usable\",\n" +
+            "        \"scanner\": \"MEDPC\",\n" +
+            "        \"uid\": \"1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0\",\n" +
+            "        \"integer-id\": 4,\n" +
+            "        \"scan-type\": \"t1_mpr_1mm_p2_pos50\",\n" +
+            "        \"scanner-manufacturer\": \"SIEMENS\",\n" +
+            "        \"scanner-model\": \"TrioTim\",\n" +
+            "        \"series-description\": \"t1_mpr_1mm_p2_pos50\",\n" +
+            "        \"start-time\": \"09:37:11\"\n" +
+            "    }],\n" +
+            "    \"assessors\": [],\n" +
+            "    \"resources\": [],\n" +
+            "    \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/\",\n" +
+            "    \"project-id\": \"ABC123\",\n" +
+            "    \"subject-id\": \"XNAT_S00001\",\n" +
+            "    \"modality\": \"MR\"\n" +
+            "}";
 
 
     class MockSingleActionProvider extends SingleActionProvider {

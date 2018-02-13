@@ -69,24 +69,28 @@ public class Project extends XnatModelObject {
         this.id = xnatProjectdata.getId();
         this.label = xnatProjectdata.getName();
         this.xsiType = "xnat:projectData";
-        try { this.xsiType = xnatProjectdata.getXSIType();} catch(NullPointerException e){log.error("Project failed to detect xsiType");}
-        this.directory = xnatProjectdata.getRootArchivePath() + "arc001";
+        try { this.xsiType = xnatProjectdata.getXSIType();} catch(NullPointerException e){log.error("Project failed to detect xsiType. " + e.getMessage());}
+        try { this.directory = xnatProjectdata.getRootArchivePath() + "arc001";} catch (NullPointerException e){log.error("Project could not get root archive path " + e.getMessage());}
 
         this.subjects = Lists.newArrayList();
-        if (preload) {
-            for (final XnatSubjectdata subject : xnatProjectdata.getParticipants_participant()) {
-                subjects.add(new Subject(subject, this.uri, xnatProjectdata.getRootArchivePath()));
-            }
-        }
-
-        this.resources = Lists.newArrayList();
-        if (preload) {
-            for (final XnatAbstractresourceI xnatAbstractresourceI : xnatProjectdata.getResources_resource()) {
-                if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                    resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, xnatProjectdata.getRootArchivePath()));
+        try {
+            if (preload) {
+                for (final XnatSubjectdata subject : xnatProjectdata.getParticipants_participant()) {
+                    subjects.add(new Subject(subject, this.uri, xnatProjectdata.getRootArchivePath()));
                 }
             }
-        }
+        } catch (Exception e) { log.error("Exception trying to load participants. " + e.getMessage()); };
+
+        this.resources = Lists.newArrayList();
+        try {
+            if (preload) {
+                for (final XnatAbstractresourceI xnatAbstractresourceI : xnatProjectdata.getResources_resource()) {
+                    if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
+                        resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, xnatProjectdata.getRootArchivePath()));
+                    }
+                }
+            }
+        } catch (Exception e) { log.error("Exception trying to load project resources. " + e.getMessage()) ;}
     }
 
     public static Function<URIManager.ArchiveItemURI, Project> uriToModelObject() {

@@ -6,9 +6,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
-import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.Subscription;
-import reactor.bus.Event;
 
 import javax.persistence.EntityNotFoundException;
 import java.util.List;
@@ -29,6 +27,4 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
     List<Subscription> getAllSubscriptions();
     List<Subscription> getSubscriptionsByKey(String key) throws NotFoundException;
     Subscription getSubscription(Long id) throws NotFoundException;
-
-    void processEvent(EventServiceListener listener, Event event) throws NotFoundException;
 }

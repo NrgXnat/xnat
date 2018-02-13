@@ -85,8 +85,10 @@ public class SubscriptionDeliveryEntityServiceImpl
 
     private List<SubscriptionDelivery> toPojo(List<SubscriptionDeliveryEntity> entities){
         List<SubscriptionDelivery> deliveries = new ArrayList<>();
-        for(SubscriptionDeliveryEntity sde:entities){
-            deliveries.add(toPojo(sde));
+        if(entities != null) {
+            for (SubscriptionDeliveryEntity sde : entities) {
+                deliveries.add(toPojo(sde));
+            }
         }
         return deliveries;
     }

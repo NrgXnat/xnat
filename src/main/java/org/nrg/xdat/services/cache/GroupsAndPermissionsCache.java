@@ -2,9 +2,11 @@ package org.nrg.xdat.services.cache;
 
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xft.security.UserI;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -68,4 +70,23 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * @return The group with the associated tag and user.
      */
     UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException;
+
+    /**
+     * Returns the timestamp indicating when the specified group was last updated. If the group was only
+     * inserted and not updated, the insert time is returned.
+     *
+     * @param groupId The ID of the group to check.
+     *
+     * @return The date and time of the latest update to the specified group.
+     */
+    Date getLastUpdateTime(final String groupId);
+
+    /**
+     * Returns the timestamp for the most recently updated group associated with the indicated user.
+     *
+     * @param user The user to test.
+     *
+     * @return The date and time of the latest update to any groups associated with the specified user.
+     */
+    Date getLastUpdateTime(final UserI user);
 }

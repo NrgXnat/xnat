@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class XFT {
     private static String CONF_DIR=null;
@@ -67,16 +68,10 @@ public class XFT {
         try {
             XFTMetaManager.init();
 
-            Iterator schemas = XFTManager.GetSchemas().iterator();
-            while (schemas.hasNext())
-            {
-                XFTSchema s = (XFTSchema)schemas.next();
-                Iterator elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
-                while (elements.hasNext())
-                {
-                    GenericWrapperElement input = (GenericWrapperElement)elements.next();
-                    if (input.isExtension())
-                    {
+            for (final XFTSchema schema : XFTManager.GetSchemas()) {
+                for (final Object object : schema.getWrappedElementsSorted(GenericWrapperFactory.GetInstance())) {
+                    final GenericWrapperElement input = (GenericWrapperElement) object;
+                    if (input.isExtension()) {
                         GenericWrapperElement e = GenericWrapperElement.GetElement(input.getExtensionType());
                         e.initializeExtendedField();
                     }
@@ -85,14 +80,9 @@ public class XFT {
 
             XFTReferenceManager.init();
 
-            schemas = XFTManager.GetSchemas().iterator();
-            while (schemas.hasNext())
-            {
-                XFTSchema s = (XFTSchema)schemas.next();
-                Iterator elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
-                while (elements.hasNext())
-                {
-                    GenericWrapperElement input = (GenericWrapperElement)elements.next();
+            for (final XFTSchema schema : XFTManager.GetSchemas()) {
+                for (final Object object : schema.getWrappedElementsSorted(GenericWrapperFactory.GetInstance())) {
+                    final GenericWrapperElement input = (GenericWrapperElement) object;
                     if (!input.hasUniqueIdentifiers() && !input.ignoreWarnings())
                     {
                         if (XFT.VERBOSE) {
@@ -101,16 +91,12 @@ public class XFT {
                         logger.info("WARNING: Data Type:" + input.getFullXMLName() + " has no columns which uniquely identify it.");
                     }
 
-                    ArrayList sqlColumnNames= new ArrayList();
-                    Iterator iter = input.getAllFieldNames().iterator();
-                    while (iter.hasNext())
-                    {
-                        Object[] field = (Object[])iter.next();
-                        String sqlName = (String)field[0];
-                        if (!sqlColumnNames.contains(sqlName.toLowerCase()))
-                        {
+                    final List<String> sqlColumnNames = new ArrayList<>();
+                    for (final Object[] field : input.getAllFieldNames()) {
+                        final String sqlName = (String)field[0];
+                        if (!sqlColumnNames.contains(sqlName.toLowerCase())) {
                             sqlColumnNames.add(sqlName.toLowerCase());
-                        }else{
+                        } else {
                             System.out.println("ERROR: Duplicate SQL column names in data type:" + input.getFullXMLName() + " column:" + sqlName);
                             logger.info("ERROR: Duplicate SQL column names in data type:" + input.getFullXMLName() + " column:" + sqlName);
                         }
@@ -121,8 +107,7 @@ public class XFT {
         } catch (XFTInitException e) {
             logger.error("",e);
         }
-        if (XFT.VERBOSE)
-         {
+        if (XFT.VERBOSE) {
             System.out.print("");
         }
     }

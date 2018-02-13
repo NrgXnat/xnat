@@ -494,7 +494,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     }
 
-    private Set<String> loadRoleNames() throws Exception {
+    private Set<String> loadRoleNames() {
         final Set<String> r = Sets.newHashSet();
 
         try {
@@ -503,7 +503,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 r.add(sub.getStringProperty("role_name"));
             }
         } catch (Throwable e) {
-            logger.error("Error loading roles from old role store. Will use role service instead.", e);
+            logger.info("Error loading roles from old role store. Will use role service instead.");
         }
 
         try {

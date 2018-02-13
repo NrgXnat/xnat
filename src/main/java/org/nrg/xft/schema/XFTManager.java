@@ -15,6 +15,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -31,6 +32,7 @@ import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -46,12 +48,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.*;
 
 public class XFTManager {
     private static final Logger     logger  = LoggerFactory.getLogger(XFTManager.class);
     private static       XFTManager MANAGER = null;
+    private static       boolean    complete = false;
 
     private static XFTElement                      ELEMENT_TABLE = null;
     private static final Map<String, XFTDataModel> DATA_MODELS   = new Hashtable<>();
@@ -69,6 +71,14 @@ public class XFTManager {
      */
     public static boolean isInitialized() {
         return MANAGER != null;
+    }
+
+    /**
+     * Indicates whether the manager instance initialization has been completed.
+     * @return Returns true if the manager has completed all initialization and data load operations, false otherwise.
+     */
+    public static boolean isComplete() {
+        return complete;
     }
 
     /**
@@ -95,22 +105,23 @@ public class XFTManager {
      * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
     public static XFTManager init(String schemaLocation) throws ElementNotFoundException {
-        //XFT.LogCurrentTime("MANAGER INIT:1","ERROR");
+        final LapStopWatch stopWatch = LapStopWatch.createStarted(logger, Level.INFO);
         MANAGER = new XFTManager(schemaLocation);
+        stopWatch.lap("Created XFTManager instance");
 
-        //XFT.LogCurrentTime("MANAGER INIT:2","ERROR");
         try {
             MANAGER.manageAddins();
         } catch (Exception e) {
             logger.error("An error occurred initializing XFT", e);
         }
-        //XFT.LogCurrentTime("MANAGER INIT:3","ERROR");
-        //FileUtils.OutputToFile(MANAGER.toString(),MANAGER.getSourceDir() +"xdat.xml");
+        stopWatch.stop("Completed loading XFTManager add-ins");
+        logger.info(stopWatch.toTable());
         return MANAGER;
     }
 
     public static void clean() {
         MANAGER = null;
+        complete = false;
         ELEMENT_TABLE = null;
         DATA_MODELS.clear();
     }
@@ -602,6 +613,7 @@ public class XFTManager {
                 }
             }
         }
+        complete = true;
     }
 
     private ArrayList getAddInElements() {

@@ -44,7 +44,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	private ArrayList<Object[]> allFieldNames = null;
 	private ArrayList allFieldsWAddIns = null;
 	private ArrayList<GenericWrapperField> directFields = null;
-	private ArrayList superiorReferences = null;
+	private List<XFTSuperiorReference>  superiorReferences = null;
+	private List<XFTSuperiorReference>  subordinateReferences = null;
 	private ArrayList<GenericWrapperField> undefinedReferences = null;
 
 	private ArrayList<Object[]> possibleParents = null;
@@ -967,22 +968,13 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
-	public ArrayList getHiddenSuperiorReferences()
-		throws ElementNotFoundException, XFTInitException {
-		ArrayList hidden = new ArrayList();
-
-		ArrayList temp = getSuperiorReferences();
-		if (temp != null) {
-			Iterator tempIter = temp.iterator();
-			while (tempIter.hasNext()) {
-				XFTSuperiorReference ref =(XFTSuperiorReference) tempIter.next();
-				if (ref.getSubordinateField() == null) {
-					hidden.add(ref);
-				}
+	public List<XFTSuperiorReference> getHiddenSuperiorReferences() throws ElementNotFoundException, XFTInitException {
+		final List<XFTSuperiorReference> hidden = new ArrayList<>();
+		for (final XFTSuperiorReference ref : getSuperiorReferences()) {
+			if (ref.getSubordinateField() == null) {
+				hidden.add(ref);
 			}
 		}
-
-		hidden.trimToSize();
 		return hidden;
 	}
 	
@@ -994,7 +986,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	{
 	    if (possibleParents==null)
 	    {
-	        possibleParents = new ArrayList<Object[]>();
+	        possibleParents = new ArrayList<>();
 	        
 	        try {
                 Iterator iter = XFTManager.GetInstance().getAllElements().iterator();
@@ -1520,7 +1512,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
-	public ArrayList getSuperiorReferences()
+	public List<XFTSuperiorReference> getSuperiorReferences()
 		throws ElementNotFoundException, XFTInitException {
 		if (superiorReferences == null) {
 			superiorReferences = XFTReferenceManager.FindSuperiorsFor(this);
@@ -1534,12 +1526,12 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
-	public ArrayList getSubordinateReferences()
+	public List<XFTSuperiorReference> getSubordinateReferences()
 		throws ElementNotFoundException, XFTInitException {
-		if (superiorReferences == null) {
-			superiorReferences = XFTReferenceManager.FindSubordinatesFor(this);
+		if (subordinateReferences == null) {
+			subordinateReferences = XFTReferenceManager.FindSubordinatesFor(this);
 		}
-		return superiorReferences;
+		return subordinateReferences;
 	}
 	
 	/**
@@ -1547,8 +1539,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 */
-	public ArrayList getManyToManyReferences() throws ElementNotFoundException, XFTInitException
-	{
+	public List<XFTManyToManyReference> getManyToManyReferences() throws ElementNotFoundException, XFTInitException {
 		return XFTReferenceManager.FindManyToManysFor(this);
 	}
 
@@ -1899,7 +1890,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					while (hiddenSuperiors.hasNext()) {
 						GenericWrapperField foreignRef = (GenericWrapperField)hiddenSuperiors.next();
 						XFTReferenceI refI = foreignRef.getXFTReference();
-						if (! refI.isManyToMany())
+						if (refI != null && ! refI.isManyToMany())
 						{
 							XFTSuperiorReference xftRef = (XFTSuperiorReference)foreignRef.getXFTReference();
 

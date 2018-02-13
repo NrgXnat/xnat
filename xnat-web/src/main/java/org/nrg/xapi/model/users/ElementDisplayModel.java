@@ -24,8 +24,6 @@ public class ElementDisplayModel {
         _elementName = elementDisplay.getElementName();
         _singular = schemaElement.getElementSecurity().getSingularDescription();
         _plural = schemaElement.getElementSecurity().getPluralDescription();
-        _lbg = elementDisplay.getLightColor();
-        _dbg = elementDisplay.getDarkColor();
         _xsDescription = schemaElement.getGenericXFTElement().getWrapped().getXsDescription();
         _properName = elementDisplay.getProperName();
         _supportsBrief = elementDisplay.getVersions().containsKey("brief");
@@ -46,8 +44,6 @@ public class ElementDisplayModel {
     private final String              _properName;
     private final String              _singular;
     private final String              _plural;
-    private final String              _lbg;
-    private final String              _dbg;
     private final String              _xsDescription;
     private final boolean             _supportsBrief;
     private final boolean             _supportsDetailed;

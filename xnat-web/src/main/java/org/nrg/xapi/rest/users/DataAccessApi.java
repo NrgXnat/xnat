@@ -22,6 +22,7 @@ import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
@@ -44,8 +46,9 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 @Slf4j
 public class DataAccessApi extends AbstractXapiRestController {
     @Autowired
-    public DataAccessApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
+    public DataAccessApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final GroupsAndPermissionsCache cache) {
         super(userManagementService, roleHolder);
+        _cache = cache;
     }
 
     @ApiOperation(value = "Gets a list of the available element displays.", notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
@@ -58,6 +61,18 @@ public class DataAccessApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<List<String>> getAvailableElementDisplays() {
         return new ResponseEntity<>(AVAILABLE_ELEMENT_DISPLAYS, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Gets the last modified timestamp for the current user.", notes = "This indicates the time of the latest update to elements relevant to the user. An update to these elements can mean that permissions for the user have changed and the various displays should be refreshed if cached on the client side.", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "displays/modified", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @AuthDelegate(GuestUserAccessXapiAuthorization.class)
+    @ResponseBody
+    public ResponseEntity<Date> getLastModified() {
+        return new ResponseEntity<>(_cache.getLastUpdateTime(getSessionUser()), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Gets a list of the element displays of the specified type for the current user.", notes = "This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).", response = String.class, responseContainer = "List")
@@ -122,4 +137,6 @@ public class DataAccessApi extends AbstractXapiRestController {
     }
 
     private static final List<String> AVAILABLE_ELEMENT_DISPLAYS = Arrays.asList("browseable", "browseableCreateable", "createable", "searchable", "searchableByDesc", "searchableByPluralDesc");
+
+    private final GroupsAndPermissionsCache _cache;
 }

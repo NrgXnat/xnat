@@ -13,7 +13,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
@@ -21,6 +20,8 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.framework.utilities.LapStopWatch;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.UserGroup;
 import org.nrg.xdat.security.UserGroupI;
@@ -31,6 +32,8 @@ import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.services.cache.jms.InitializeGroupRequest;
+import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -38,6 +41,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
@@ -48,6 +52,7 @@ import reactor.fn.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.Future;
 
@@ -60,9 +65,10 @@ import static reactor.bus.selector.Selectors.predicate;
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter implements Consumer<Event<XftItemEvent>>, GroupsAndPermissionsCache, Initializing {
     @Autowired
-    public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final EventBus eventBus) {
+    public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final EventBus eventBus) {
         _cache = cacheManager.getCache(CACHE_NAME);
         _template = template;
+        _jmsTemplate = jmsTemplate;
         _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
         registerCacheEventListener();
         eventBus.on(predicate(IS_GROUP_XFTITEM_EVENT), this);
@@ -181,22 +187,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
             return _cache.get(groupId, UserGroupI.class);
         }
 
-        // Nothing cached for group ID, so let's try to retrieve it.
-        log.debug("Nothing cached for ID {}, so trying to retrieve it from the system", groupId);
-        final XdatUsergroup found = XdatUsergroup.getXdatUsergroupsById(groupId, Users.getAdminUser(), false);
-
-        // If we didn't find a group for that ID...
-        if (found == null) {
-            // Cache the ID as non-existent and return null.
-            cacheNonexistentId(groupId);
-            return null;
-        }
-
-        final UserGroupI group = createUserGroupFromXdatUsergroup(found);
-        cacheGroup(group);
-        final List<UserGroupI> groups = getGroupsForTag(group.getTag());
-        log.debug("Cached the group for the ID {} and cached it, also cached {} groups with the tag {}", groupId, groups.size(), group.getTag());
-        return group;
+        return initializeGroup(groupId);
     }
 
     /**
@@ -205,51 +196,33 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     @Nonnull
     @Override
     public List<UserGroupI> getGroupsForTag(final String tag) {
-        final String actual = getCacheIdForTag(tag);
+        log.info("Getting groups for tag {}", tag);
+        final String cacheId = getCacheIdForTag(tag);
 
         // Check whether this tag is already cached.
-        if (has(actual)) {
+        final List<String> groupIds;
+        if (has(cacheId)) {
             // If it's cached, see if it's cached as non-existent.
-            if (isCachedNonexistentId(actual)) {
+            if (isCachedNonexistentId(cacheId)) {
                 return Collections.emptyList();
             }
 
             // If it's cached and not marked as non-existent, we can just return the list.
-            return getUserGroupList(_cache.get(actual, List.class));
+            groupIds = getTagGroups(cacheId);
+            log.info("Found {} groups already cached for tag {}", groupIds.size(), tag);
+        } else {
+            groupIds = initializeTag(tag);
+            log.info("Initialized {} groups for tag {}: {}", groupIds.size(), tag, StringUtils.join(groupIds, ", "));
         }
 
-        // If nothing is already cached, then retrieve and cache the groups if found or cache NOT_A_GROUP if the tag isn't found.
-        final List<String> foundGroups = _template.queryForList(QUERY_GET_GROUPS_FOR_TAG, new MapSqlParameterSource("tag", actual), String.class);
-
-        // If this is empty, then the tag doesn't exist and we'll just put NOT_A_GROUP there.
-        if (foundGroups.isEmpty()) {
-            cacheNonexistentId(actual);
-            return Collections.emptyList();
-        }
-
-        // If the found groups weren't empty, transform that to a list of UserGroups, cache each group then the list, then return it.
-        final List<UserGroupI> groups = Lists.transform(foundGroups, USER_GROUP_FUNCTION);
-
-        final Set<String> groupIds = new HashSet<>();
-        for (final UserGroupI group : groups) {
-            // Only cache groups that aren't already cached.
-            final String groupId = group.getId();
-            groupIds.add(groupId);
-            if (!has(groupId)) {
-                _cache.put(groupId, group);
-            }
-        }
-        _cache.put(actual, groupIds);
-
-        return groups;
+        return getUserGroupList(groupIds);
     }
 
     @Nonnull
     @Override
     public Map<String, UserGroupI> getGroupsForUser(final String username) throws UserNotFoundException {
-        final MapSqlParameterSource   parameters = checkUser(username);
-        final List<String>            groupIds   = _template.queryForList(QUERY_GET_GROUPS_FOR_USER, parameters, String.class);
-        final Map<String, UserGroupI> groups     = new HashMap<>();
+        final List<String>            groupIds = getGroupIdsForUser(username);
+        final Map<String, UserGroupI> groups   = new HashMap<>();
         for (final String groupId : groupIds) {
             final UserGroupI group = get(groupId);
             if (group == null) {
@@ -271,9 +244,38 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     }
 
     @Override
+    public Date getLastUpdateTime(final String groupId) {
+        if (!has(groupId)) {
+            return null;
+        }
+        return new Date(getLatestOfCreationAndUpdateTime(groupId));
+    }
+
+    @Override
+    public Date getLastUpdateTime(final UserI user) {
+        try {
+            final List<String> groupIds  = getGroupIdsForUser(user.getUsername());
+            long               timestamp = 0;
+            for (final String groupId : groupIds) {
+                final Date lastUpdateTime = getLastUpdateTime(groupId);
+                if (lastUpdateTime != null) {
+                    timestamp = Math.max(timestamp, lastUpdateTime.getTime());
+                }
+            }
+            return new Date(timestamp);
+        } catch (UserNotFoundException ignored) {
+            // This doesn't happen because we've passed the user object in.
+            return new Date();
+        }
+    }
+
+    @Override
     public boolean canInitialize() {
         try {
-            return _helper.tableExists("xdat_usergroup") && XFTManager.isInitialized();
+            final boolean userGroupTableExists = _helper.tableExists("xdat_usergroup");
+            final boolean xftManagerComplete   = XFTManager.isComplete();
+            log.info("User group table {}, XFTManager initialization completed {}", userGroupTableExists, xftManagerComplete);
+            return userGroupTableExists && xftManagerComplete;
         } catch (SQLException e) {
             log.info("Got an SQL exception checking for xdat_usergroup table", e);
             return false;
@@ -283,23 +285,29 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     @Async
     @Override
     public Future<Boolean> initialize() {
-        final List<String> groupIds  = _template.queryForList(QUERY_ALL_GROUPS, EmptySqlParameterSource.INSTANCE, String.class);
-        final UserI        adminUser = Users.getAdminUser();
-        assert adminUser != null;
+        final LapStopWatch stopWatch = LapStopWatch.createStarted(log, Level.INFO);
 
-        log.info("Found {} group IDs to run through, initializing cache with these as user {}", groupIds.size(), adminUser.getUsername());
-        for (final String groupId : groupIds) {
-            log.debug("Initializing group {}", groupId);
-            final XdatUsergroup group = XdatUsergroup.getXdatUsergroupsById(groupId, adminUser, false);
-            if (group == null) {
-                log.warn("No group returned for ID {}", groupId);
-                continue;
+        final int tags = initializeTags();
+        stopWatch.lap("Processed {} tags", tags);
+
+        final List<String> groupIds = _template.queryForList(QUERY_ALL_GROUPS, EmptySqlParameterSource.INSTANCE, String.class);
+        try {
+            final UserI adminUser = Users.getAdminUser();
+            assert adminUser != null;
+
+            stopWatch.lap("Found {} group IDs to run through, initializing cache with these as user {}", groupIds.size(), adminUser.getUsername());
+            for (final String groupId : groupIds) {
+                stopWatch.lap("Creating queue entry for group {}", groupId);
+                XDAT.sendJmsRequest(_jmsTemplate, new InitializeGroupRequest(groupId));
             }
-            cacheGroup(createUserGroupFromXdatUsergroup(group));
-            final String      tag    = group.getTag();
-            final Set<String> groups = getGroupIdListForTag(tag);
-            groups.add(groupId);
-            cacheTag(group.getTag(), groups);
+        } finally {
+            if (stopWatch.isStarted()) {
+                stopWatch.stop();
+            }
+            log.info("Total time to queue {} groups was {} ms", groupIds.size(), FORMATTER.format(stopWatch.getTime()));
+            if (log.isInfoEnabled()) {
+                log.info(stopWatch.toTable());
+            }
         }
 
         return new AsyncResult<>(_initialized = true);
@@ -308,6 +316,92 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     @Override
     public boolean isInitialized() {
         return _initialized;
+    }
+
+    private synchronized UserGroupI initializeGroup(final String groupId) {
+        // We may have just checked before coming into this method, but since it's synchronized we may have waited while someone else was caching it so...
+        if (has(groupId)) {
+            log.info("Group {} was already initialized and in the cache, returning cached instance");
+            return _cache.get(groupId, UserGroupI.class);
+        }
+
+        // Nothing cached for group ID, so let's try to retrieve it.
+        log.debug("Initializing group {}", groupId);
+        final XdatUsergroup found = XdatUsergroup.getXdatUsergroupsById(groupId, Users.getAdminUser(), false);
+
+        // If we didn't find a group for that ID...
+        if (found == null) {
+            // Cache the ID as non-existent and return null.
+            log.warn("Someone tried to get the user group {}, but a group with that ID doesn't exist.", groupId);
+            cacheNonexistentId(groupId);
+            return null;
+        }
+
+        return cacheGroup(createUserGroupFromXdatUsergroup(found));
+    }
+
+    private synchronized UserGroupI cacheGroup(final UserGroupI group) {
+        final String groupId = group.getId();
+        _cache.put(groupId, group);
+        log.debug("Retrieved and cached the group for the ID {}", groupId);
+        return group;
+    }
+
+    private synchronized int initializeTags() {
+        final List<String> tags = _template.queryForList(QUERY_ALL_TAGS, EmptySqlParameterSource.INSTANCE, String.class);
+        for (final String tag : tags) {
+            final String cacheId = getCacheIdForTag(tag);
+            if (has(cacheId)) {
+                log.info("Found tag {} but that is already in the cache", tag);
+                continue;
+            }
+
+            log.debug("Initializing tag {}", tag);
+            initializeTag(tag);
+        }
+
+        final int size = tags.size();
+        log.info("Completed initialization of {} tags", size);
+        return size;
+    }
+
+    private synchronized List<String> initializeTag(final String tag) {
+        // If there's a blank tag...
+        if (StringUtils.isBlank(tag)) {
+            log.info("Requested to initialize a blank tag, but that's not a thing.");
+            return Collections.emptyList();
+        }
+
+        final String cacheId = getCacheIdForTag(tag);
+
+        // We may have just checked before coming into this method, but since it's synchronized we may have waited while someone else was caching it so...
+        if (has(cacheId)) {
+            log.info("Got a request to initialize the tag {} but that is already in the cache", tag);
+            return getTagGroups(cacheId);
+        }
+
+        // Then retrieve and cache the groups if found or cache DOES_NOT_EXIST if the tag isn't found.
+        final List<String> groups = _template.queryForList(QUERY_GET_GROUPS_FOR_TAG, new MapSqlParameterSource("tag", tag), String.class);
+
+        // If this is empty, then the tag doesn't exist and we'll just put DOES_NOT_EXIST there.
+        if (groups.isEmpty()) {
+            log.warn("Someone tried to get groups for the tag {}, but there are no groups with that tag.", tag);
+            cacheNonexistentId(cacheId);
+            return Collections.emptyList();
+        } else {
+            log.debug("Cached tag {} for {} groups: {}", tag, groups.size(), StringUtils.join(groups, ", "));
+            _cache.put(cacheId, groups);
+            return groups;
+        }
+    }
+
+    private List<String> getTagGroups(final String cacheId) {
+        return Lists.newArrayList(Iterables.filter(_cache.get(cacheId, List.class), String.class));
+    }
+
+    private List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {
+        final MapSqlParameterSource parameters = checkUser(username);
+        return _template.queryForList(QUERY_GET_GROUPS_FOR_USER, parameters, String.class);
     }
 
     /**
@@ -328,24 +422,6 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         return parameters;
     }
 
-    private void cacheGroup(final UserGroupI group) {
-        _cache.put(group.getId(), group);
-        log.debug("Cached group {}", group.getId());
-    }
-
-    private void cacheTag(final String tag, final Set<String> groupIds) {
-        _cache.put(getCacheIdForTag(tag), groupIds);
-        log.debug("Cached {} group IDs for tag {}: {}", groupIds.size(), tag, StringUtils.join(groupIds, ", "));
-    }
-
-    private Set<String> getGroupIdListForTag(final String tag) {
-        final Set groupIds = _cache.get(getCacheIdForTag(tag), Set.class);
-        if (groupIds == null) {
-            return new HashSet<>();
-        }
-        return Sets.newHashSet(Iterables.filter(groupIds, String.class));
-    }
-
     private List<UserGroupI> getUserGroupList(final List groupIds) {
         if (groupIds == null || groupIds.isEmpty()) {
             return new ArrayList<>();
@@ -360,13 +436,17 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         }), Predicates.notNull()));
     }
 
+    private long getLatestOfCreationAndUpdateTime(final String cacheId) {
+        return getEhCache().get(cacheId).getLatestOfCreationAndUpdateTime();
+    }
+
     private void registerCacheEventListener() {
-        final Object nativeCache = _cache.getNativeCache();
-        if (nativeCache instanceof net.sf.ehcache.Cache) {
-            ((net.sf.ehcache.Cache) nativeCache).getCacheEventNotificationService().registerListener(this);
-            log.debug("Registered user project cache as net.sf.ehcache.Cache listener");
-        } else {
-            log.warn("I don't know how to handle the native cache type {}", nativeCache.getClass().getName());
+        try {
+            final net.sf.ehcache.Cache cache = getEhCache();
+            cache.getCacheEventNotificationService().registerListener(this);
+            log.debug("Registered default groups and permissions cache as net.sf.ehcache.Cache listener");
+        } catch (RuntimeException e) {
+            log.warn("I don't know how to handle the native cache type {}", _cache.getNativeCache().getClass().getName());
         }
     }
 
@@ -403,7 +483,15 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     }
 
     private void cacheNonexistentId(final String cacheId) {
-        _cache.put(cacheId, NOT_A_GROUP);
+        _cache.put(cacheId, DOES_NOT_EXIST);
+    }
+
+    private net.sf.ehcache.Cache getEhCache() {
+        final Object nativeCache = _cache.getNativeCache();
+        if (nativeCache instanceof net.sf.ehcache.Cache) {
+            return ((net.sf.ehcache.Cache) nativeCache);
+        }
+        throw new RuntimeException("The native cache is not an ehcache instance, but instead is " + nativeCache.getClass().getName());
     }
 
     private static String getCacheIdForTag(final String tag) {
@@ -425,34 +513,29 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         return null;
     }
 
-    private static final Function<String, UserGroupI> USER_GROUP_FUNCTION = new Function<String, UserGroupI>() {
-        @Nullable
-        @Override
-        public UserGroupI apply(final String groupId) {
-            return createUserGroupFromXdatUsergroup(XdatUsergroup.getXdatUsergroupsById(groupId, Users.getAdminUser(), false));
-        }
-    };
-
-    private static final String NOT_A_GROUP                      = "NOT_A_GROUP";
+    private static final String DOES_NOT_EXIST                   = "DOES_NOT_EXIST";
     private static final String QUERY_GET_GROUPS_FOR_USER        = "SELECT groupid " +
                                                                    "FROM xdat_user_groupid xug " +
                                                                    "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
                                                                    "WHERE xu.login = :username " +
                                                                    "ORDER BY groupid";
-    private static final String QUERY_GET_GROUP_FOR_USER_AND_TAG = "SELECT id "
-                                                                   + "FROM xdat_usergroup xug "
-                                                                   + "  LEFT JOIN xdat_user_groupid xugid ON xug.id = xugid.groupid "
-                                                                   + "  LEFT JOIN xdat_user xu ON xugid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id "
-                                                                   + "WHERE xu.login = :username AND tag = :tag "
-                                                                   + "ORDER BY groupid";
+    private static final String QUERY_GET_GROUP_FOR_USER_AND_TAG = "SELECT id " +
+                                                                   "FROM xdat_usergroup xug " +
+                                                                   "  LEFT JOIN xdat_user_groupid xugid ON xug.id = xugid.groupid " +
+                                                                   "  LEFT JOIN xdat_user xu ON xugid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
+                                                                   "WHERE xu.login = :username AND tag = :tag " +
+                                                                   "ORDER BY groupid";
     private static final String QUERY_ALL_GROUPS                 = "SELECT id FROM xdat_usergroup";
-    private static final String QUERY_GET_GROUPS_FOR_TAG         = "SELECT * FROM xdat_usergroup WHERE tag = :tag";
+    private static final String QUERY_ALL_TAGS                   = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
+    private static final String QUERY_GET_GROUPS_FOR_TAG         = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
     private static final String QUERY_CHECK_USER_EXISTS          = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
-    public static final  String TAG_PREFIX                       = "tag:";
+    private static final String TAG_PREFIX                       = "tag:";
 
+    private static final NumberFormat FORMATTER = NumberFormat.getNumberInstance(Locale.getDefault());
 
     private final Cache                      _cache;
     private final NamedParameterJdbcTemplate _template;
+    private final JmsTemplate                _jmsTemplate;
     private final DatabaseHelper             _helper;
 
     private boolean _initialized;

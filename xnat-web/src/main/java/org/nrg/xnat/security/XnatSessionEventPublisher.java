@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -25,6 +24,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.session.HttpSessionCreatedEvent;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -59,7 +59,7 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         log.debug("Publishing event: {}", sessionCreatedEvent);
 
         session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-        session.setMaxInactiveInterval(convertPGIntervalToIntSeconds(getPreferences().getSessionTimeout())); // Preference is in PG Interval and setMaxInactiveInterval wants seconds.
+        session.setMaxInactiveInterval(getSessionTimeout()); // Preference is in PG Interval and setMaxInactiveInterval wants seconds.
         findWebApplicationContext(session.getServletContext()).publishEvent(sessionCreatedEvent);
     }
 
@@ -113,16 +113,18 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
     @Override
     public void contextInitialized(final ServletContextEvent event) {
         log.debug("Context initialized: {}", event.getServletContext().getContextPath());
+        _preferences = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(SiteConfigPreferences.class);
+        _template = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(NamedParameterJdbcTemplate.class);
     }
 
-    @Autowired
-    public void setPreferences(final SiteConfigPreferences preferences) {
-        _preferences = preferences;
-    }
-
-    @Autowired
-    public void setTemplate(final NamedParameterJdbcTemplate template) {
-        _template = template;
+    /**
+     * In some weird circumstances, mainly when the server is still starting up or is shutting down, if a user attempts to connect to the server the preferences
+     * object may be null. This provides a default timeout value of 900 seconds (15 minutes) in those cases to prevent NPEs.
+     *
+     * @return The configured session timeout value in seconds or a default value if the configured value isn't available.
+     */
+    private int getSessionTimeout() {
+        return _preferences != null && StringUtils.isNotBlank(_preferences.getSessionTimeout()) ? convertPGIntervalToIntSeconds(_preferences.getSessionTimeout()) : 900;
     }
 
     private static final String UPDATE_QUERY     = "UPDATE xdat_user_login SET logout_date = :timestamp WHERE logout_date IS NULL AND session_id = :sessionId AND user_xdat_user_id = :userId";

@@ -22,7 +22,6 @@ import org.hibernate.exception.DataException;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.preferences.SecurityPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Roles;
@@ -55,12 +54,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class XnatProviderManager extends ProviderManager {
     @Autowired
-    public XnatProviderManager(final SiteConfigPreferences siteConfigPreferences, final SecurityPreferences securityPreferences, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers) {
+    public XnatProviderManager(final SiteConfigPreferences preferences, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers) {
         super(providers);
 
-        _securityPreferences = securityPreferences;
+        _preferences = preferences;
         _userAuthService = userAuthService;
-        _eventPublisher = new AuthenticationAttemptEventPublisher(this, userAuthService, siteConfigPreferences);
+        _eventPublisher = new AuthenticationAttemptEventPublisher(this, userAuthService, preferences);
 
         _xnatAuthenticationProviders.putAll(Maps.uniqueIndex(Iterables.filter(providers, XnatAuthenticationProvider.class), new Function<XnatAuthenticationProvider, String>() {
             @Nullable
@@ -92,7 +91,7 @@ public class XnatProviderManager extends ProviderManager {
                 if (candidate instanceof XnatAuthenticationProvider) {
                     // Now check whether the provider is enabled and supports the token instance.
                     final XnatAuthenticationProvider xnatAuthenticationProvider = (XnatAuthenticationProvider) candidate;
-                    if (_securityPreferences.getEnabledProviders().contains(xnatAuthenticationProvider.getProviderId()) && xnatAuthenticationProvider.supports(authentication)) {
+                    if (_preferences.getEnabledProviders().contains(xnatAuthenticationProvider.getProviderId()) && xnatAuthenticationProvider.supports(authentication)) {
                         providers.add(candidate);
                     }
                 }
@@ -430,7 +429,7 @@ public class XnatProviderManager extends ProviderManager {
     private final MessageSourceAccessor                   _messageSource               = SpringSecurityMessageSource.getAccessor();
     private final Map<String, XnatAuthenticationProvider> _xnatAuthenticationProviders = new HashMap<>();
 
-    private final SecurityPreferences          _securityPreferences;
+    private final SiteConfigPreferences        _preferences;
     private final XdatUserAuthService          _userAuthService;
     private final AuthenticationEventPublisher _eventPublisher;
 }

@@ -14,14 +14,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.jetbrains.annotations.NotNull;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.preferences.SecurityPreferences;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 
 import java.util.*;
+
+import static org.nrg.xdat.services.XdatUserAuthService.LOCALDB;
 
 @Slf4j
 public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
@@ -46,9 +48,9 @@ public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
     }
 
     @NotNull
-    private Set<String> getVisibleEnabledProviders() {
+    private Set<String> getVisibleEnabledProviders() throws ConfigServiceException {
         final List<XnatAuthenticationProvider> providers        = getProviders();
-        final List<String>                     enabledProviders = XDAT.getContextService().getBean(SecurityPreferences.class).getEnabledProviders();
+        final List<String>                     enabledProviders = Arrays.asList(XDAT.getSiteConfigurationProperty("enabledProviders", LOCALDB).split("\\s*,\\s*"));
         final Set<String>                      providerNames    = new HashSet<>();
         for (final XnatAuthenticationProvider provider : providers) {
             if (provider.isVisible() && enabledProviders.contains(provider.getProviderId())) {

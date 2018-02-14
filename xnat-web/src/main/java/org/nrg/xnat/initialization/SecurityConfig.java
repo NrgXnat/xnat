@@ -11,7 +11,6 @@ package org.nrg.xnat.initialization;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xdat.preferences.SecurityPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
@@ -69,9 +68,8 @@ import static org.nrg.xnat.initialization.XnatWebAppInitializer.EMPTY_ARRAY;
 @Slf4j
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
-    public SecurityConfig(final SiteConfigPreferences siteConfigPreferences, final SecurityPreferences securityPreferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource, final NamedParameterJdbcTemplate template, final DataSource dataSource) {
-        _siteConfigPreferences = siteConfigPreferences;
-        _securityPreferences = securityPreferences;
+    public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource, final NamedParameterJdbcTemplate template, final DataSource dataSource) {
+        _preferences = preferences;
         _appInfo = appInfo;
         _aliasTokenService = aliasTokenService;
         _userAuthService = userAuthService;
@@ -97,8 +95,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public XnatProviderManager customAuthenticationManager() {
-        //     XnatProviderManager(final SiteConfigPreferences siteConfigPreferences, final SecurityPreferences securityPreferences, final NamedParameterJdbcTemplate template, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers)
-        return new XnatProviderManager(_siteConfigPreferences, _securityPreferences, _userAuthService, _providers);
+        return new XnatProviderManager(_preferences, _userAuthService, _providers);
     }
 
     @Bean
@@ -151,12 +148,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public XnatLogoutSuccessHandler logoutSuccessHandler() {
-        return new XnatLogoutSuccessHandler(_siteConfigPreferences.getRequireLogin(), "/", "/app/template/Login.vm");
+        return new XnatLogoutSuccessHandler(_preferences.getRequireLogin(), "/", "/app/template/Login.vm");
     }
 
     @Bean
     public ConfigurableSecurityMetadataSourceFactory metadataSourceFactory() {
-        return new ConfigurableSecurityMetadataSourceFactory(_siteConfigPreferences, _appInfo);
+        return new ConfigurableSecurityMetadataSourceFactory(_preferences, _appInfo);
     }
 
     @Bean
@@ -232,11 +229,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // This is basically what super.configure() does, minus httpBasic().
         http.authorizeRequests().anyRequest().authenticated().and().formLogin();
 
-        final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_siteConfigPreferences, interactiveAgentDetector(_siteConfigPreferences));
+        final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, interactiveAgentDetector(_preferences));
         http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint));
 
         http.sessionManagement().sessionAuthenticationStrategy(sessionAuthenticationStrategy())
-            .maximumSessions(_siteConfigPreferences.getConcurrentMaxSessions())
+            .maximumSessions(_preferences.getConcurrentMaxSessions())
             .maxSessionsPreventsLogin(true).expiredUrl("/app/template/Login.vm");
 
         http.headers().frameOptions().sameOrigin()
@@ -251,7 +248,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser")
             .addLogoutHandler(new XnatLogoutHandler(sessionRegistry()));
 
-        final String securityChannel = _siteConfigPreferences.getSecurityChannel();
+        final String securityChannel = _preferences.getSecurityChannel();
         if (!StringUtils.equals("any", securityChannel)) {
             http.requiresChannel().anyRequest().requires(securityChannel).withObjectPostProcessor(new ObjectPostProcessor<ChannelProcessingFilter>() {
                 @Override
@@ -267,7 +264,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // If we can get the default channel processing filter as a bean, we could remove this.
         http.addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
-            .addFilterAfter(expiredPasswordFilter(_siteConfigPreferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class);
+            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class);
 
         if (_extensions.size() > 0) {
             for (final XnatSecurityExtension extension : _extensions) {
@@ -286,8 +283,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return false;
     }
 
-    private final SiteConfigPreferences      _siteConfigPreferences;
-    private final SecurityPreferences        _securityPreferences;
+    private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;
     private final AliasTokenService          _aliasTokenService;
     private final XdatUserAuthService        _userAuthService;

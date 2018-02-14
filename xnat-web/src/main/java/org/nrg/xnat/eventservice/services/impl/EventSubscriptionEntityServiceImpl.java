@@ -253,6 +253,12 @@ public class EventSubscriptionEntityServiceImpl
         log.debug("Validating subscription: " + subscription.name());
         subscription = validate(subscription);
         try {
+            if(Strings.isNullOrEmpty(subscription.name())){
+                String generatedName = autoGenerateUniqueSubscriptionName(subscription);
+                if(!Strings.isNullOrEmpty(generatedName)) {
+                    subscription = subscription.toBuilder().name(generatedName).build();
+                }
+            }
             log.debug("Saving subscription: " + subscription.name());
             subscription = save(subscription);
             if (subscription.active()) {
@@ -311,6 +317,35 @@ public class EventSubscriptionEntityServiceImpl
         return subscription;
     }
 
+    // Generate descriptive subscription name
+    private String autoGenerateUniqueSubscriptionName(Subscription subscription){
+        String uniqueName = subscription.name();
+        try {
+            UserI actionUser = userManagementService.getUser(subscription.subscriptionOwner());
+            String actionName = actionManager.getActionByKey(subscription.actionKey(), actionUser) != null ?
+                    actionManager.getActionByKey(subscription.actionKey(), actionUser).displayName() : "Action";
+            String eventName = componentManager.getEvent(subscription.eventId()).getDisplayName();
+            String forProject = Strings.isNullOrEmpty(subscription.projectId()) ? "Site" : subscription.projectId();
+            uniqueName += Strings.isNullOrEmpty(actionName) ? "Action" : actionName;
+            uniqueName += " on ";
+            uniqueName += Strings.isNullOrEmpty(eventName) ? "Event" : eventName;
+            uniqueName += " for ";
+            uniqueName += forProject;
+
+            String trialUniqueName = uniqueName;
+            for(Integer indx = 2; indx < 10000; indx++) {
+                if(this.getDao().findByName(trialUniqueName) == null){
+                    return trialUniqueName;
+                }else {
+                    trialUniqueName = uniqueName + " v" + indx.toString();
+                }
+            }
+
+        } catch (Throwable e){
+            log.error("Exception attempting to auto generate subscription name.", e.getMessage(), e);
+        }
+        return uniqueName;
+    }
 
     private Subscription toPojo(final SubscriptionEntity eventSubscriptionEntity) {
         return eventSubscriptionEntity == null ? null : eventSubscriptionEntity.toPojo();

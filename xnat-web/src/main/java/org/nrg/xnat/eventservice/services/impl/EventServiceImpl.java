@@ -241,101 +241,97 @@ public class EventServiceImpl implements EventService {
     public void processEvent(EventServiceListener listener, Event event) {
         try {
             log.debug("Event noticed by EventService: " + event.getData().getClass().getSimpleName());
-            processSubscription(listener, event);
-        } catch (NotFoundException e) {
-            log.error("Failed to processEvent with subscription service.\n" + e.getMessage());
-            e.printStackTrace();
-        }
-    }
+            String jsonObject = null;
+            if(event.getData() instanceof EventServiceEvent) {
+                EventServiceEvent esEvent = (EventServiceEvent) event.getData();
+                for (Subscription subscription : subscriptionService.getSubscriptionsByKey(listener.getInstanceId().toString())) {
+                    log.debug("RegKey matched for " + subscription.listenerRegistrationKey() + "  " + subscription.name());
+                    // Create subscription delivery entry
+                    Long deliveryId = subscriptionDeliveryEntityService.create(
+                            SubscriptionEntity.fromPojoWithTemplate(subscription, subscriptionService.retrieve(subscription.id())),
+                            esEvent,
+                            listener,
+                            subscription.actAsEventUser() ? esEvent.getUser() : subscription.subscriptionOwner(),
+                            subscription.projectId() == null ? "" : subscription.projectId(),
+                            subscription.attributes() == null ? "" : subscription.attributes().toString());
+                    try {
+                        subscriptionDeliveryEntityService.addStatus(deliveryId, SUBSCRIPTION_TRIGGERED, new Date(), "Subscription Service process started.");
 
-    private void processSubscription(EventServiceListener listener, Event event) throws NotFoundException {
-        String jsonObject = null;
-        if(event.getData() instanceof EventServiceEvent) {
-            EventServiceEvent esEvent = (EventServiceEvent) event.getData();
-            for (Subscription subscription : subscriptionService.getSubscriptionsByKey(listener.getInstanceId().toString())) {
-                log.debug("RegKey matched for " + subscription.listenerRegistrationKey() + "  " + subscription.name());
-                // Create subscription delivery entry
-                Long deliveryId = subscriptionDeliveryEntityService.create(
-                        SubscriptionEntity.fromPojoWithTemplate(subscription, subscriptionService.retrieve(subscription.id())),
-                        esEvent,
-                        listener,
-                        subscription.actAsEventUser() ? esEvent.getUser() : subscription.subscriptionOwner(),
-                        subscription.projectId() == null ? "" : subscription.projectId(),
-                        subscription.attributes() == null ? "" : subscription.attributes().toString());
-                try {
-                    subscriptionDeliveryEntityService.addStatus(deliveryId, SUBSCRIPTION_TRIGGERED, new Date(), "Subscription Service process started.");
-
-                    // Is subscription enabled
-                    if (!subscription.active()) {
-                        subscriptionDeliveryEntityService.addStatus(deliveryId, SUBSCRIPTION_DISABLED_HALT, new Date(), "Inactive subscription skipped.");
-                        log.debug("Inactive subscription: " + subscription.name() != null ? subscription.name() : "" + " skipped.");
-                        return;
-                    }
-                    log.debug("Resolving action user (subscription owner or event user).");
-                    UserI actionUser = subscription.actAsEventUser() ?
-                            userManagementService.getUser(esEvent.getUser()) :
-                            userManagementService.getUser(subscription.subscriptionOwner());
-                    log.debug("Action User: " + actionUser.getUsername());
-
-                    //Filter on data object (if filter and object exist)
-                    if( subscription.eventFilter() != null && subscription.eventFilter().jsonPathFilter() != null ) {
-                        // ** Serialized event object ** //
-                        try {
-                            XnatModelObject modelObject = componentManager.getModelObject(esEvent.getObject(), actionUser);
-                            if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
-                                // Serialize data object
-                                log.debug("Serializing event object as known Model Object.");
-                                jsonObject = mapper.writeValueAsString(modelObject);
-                            } else if (esEvent.getObject() != null && mapper.canSerialize(esEvent.getObject().getClass())) {
-                                log.debug("Serializing event object as unknown object type.");
-                                jsonObject = mapper.writeValueAsString(esEvent.getObject());
-                            } else {
-                                log.debug("Could not serialize event object in: " + esEvent.toString());
-                            }
-                            if(!Strings.isNullOrEmpty(jsonObject)) {
-                                String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
-                                log.debug("Serialized Object: " + objectSubString + "...");
-                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Object Serialized: " + objectSubString + "...");
-                            }
-                        }catch(NullPointerException | JsonProcessingException e){
-                            log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass());
-                            log.error(e.getMessage());
-                            subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), e.getMessage());
-                        }
-                        // ** Attempt to filter event if serialization was successful ** //
-
-                        if(Strings.isNullOrEmpty(jsonObject)){
-                            log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getId());
-                            subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
+                        // Is subscription enabled
+                        if (!subscription.active()) {
+                            subscriptionDeliveryEntityService.addStatus(deliveryId, SUBSCRIPTION_DISABLED_HALT, new Date(), "Inactive subscription skipped.");
+                            log.debug("Inactive subscription: " + subscription.name() != null ? subscription.name() : "" + " skipped.");
                             return;
-                        } else {
-                            String jsonFilter = subscription.eventFilter().jsonPathFilter();
-                            Configuration conf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
-                            List<String> filterResult = JsonPath.using(conf).parse(jsonObject).read(jsonFilter);
-                            String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
-                            if (filterResult.isEmpty()) {
-                                log.debug("Aborting event pipeline - Serialized event:\n" + objectSubString + "..." + "\ndidn't match JSONPath Filter:\n" + jsonFilter);
-                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event objected failed filter test.");
+                        }
+                        log.debug("Resolving action user (subscription owner or event user).");
+                        UserI actionUser = subscription.actAsEventUser() ?
+                                userManagementService.getUser(esEvent.getUser()) :
+                                userManagementService.getUser(subscription.subscriptionOwner());
+                        log.debug("Action User: " + actionUser.getUsername());
+
+                        //Filter on data object (if filter and object exist)
+                        if( subscription.eventFilter() != null && subscription.eventFilter().jsonPathFilter() != null ) {
+                            // ** Serialized event object ** //
+                            try {
+                                XnatModelObject modelObject = componentManager.getModelObject(esEvent.getObject(), actionUser);
+                                if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
+                                    // Serialize data object
+                                    log.debug("Serializing event object as known Model Object.");
+                                    jsonObject = mapper.writeValueAsString(modelObject);
+                                } else if (esEvent.getObject() != null && mapper.canSerialize(esEvent.getObject().getClass())) {
+                                    log.debug("Serializing event object as unknown object type.");
+                                    jsonObject = mapper.writeValueAsString(esEvent.getObject());
+                                } else {
+                                    log.debug("Could not serialize event object in: " + esEvent.toString());
+                                }
+                                if(!Strings.isNullOrEmpty(jsonObject)) {
+                                    String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
+                                    log.debug("Serialized Object: " + objectSubString + "...");
+                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Object Serialized: " + objectSubString + "...");
+                                }
+                            }catch(NullPointerException | JsonProcessingException e){
+                                log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass());
+                                log.error(e.getMessage());
+                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), e.getMessage());
+                            }
+                            // ** Attempt to filter event if serialization was successful ** //
+
+                            if(Strings.isNullOrEmpty(jsonObject)){
+                                log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getId());
+                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
                                 return;
                             } else {
-                                log.debug("JSONPath Filter Match - Serialized event:\n" + objectSubString + "..." + "\nJSONPath Filter:\n" + jsonFilter);
-                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERED, new Date(), "Event objected passed filter test.");
+                                String jsonFilter = subscription.eventFilter().jsonPathFilter();
+                                Configuration conf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+                                List<String> filterResult = JsonPath.using(conf).parse(jsonObject).read(jsonFilter);
+                                String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
+                                if (filterResult.isEmpty()) {
+                                    log.debug("Aborting event pipeline - Serialized event:\n" + objectSubString + "..." + "\ndidn't match JSONPath Filter:\n" + jsonFilter);
+                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event objected failed filter test.");
+                                    return;
+                                } else {
+                                    log.debug("JSONPath Filter Match - Serialized event:\n" + objectSubString + "..." + "\nJSONPath Filter:\n" + jsonFilter);
+                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERED, new Date(), "Event objected passed filter test.");
+                                }
                             }
                         }
-                    }
-                    // call Action Manager with payload
-                    SubscriptionEntity subscriptionEntity = subscriptionService.get(subscription.id());
+                        // call Action Manager with payload
+                        SubscriptionEntity subscriptionEntity = subscriptionService.get(subscription.id());
 
-                    actionManager.processEvent(subscriptionEntity, esEvent, actionUser, deliveryId);
-                } catch (UserNotFoundException |UserInitException e) {
-                    log.error("Failed to process subscription:" + subscription.name());
-                    log.error(e.getMessage());
-                    e.printStackTrace();
-                    if(deliveryId != null){
-                        subscriptionDeliveryEntityService.addStatus(deliveryId, FAILED, new Date(), e.getMessage());
+                        actionManager.processEvent(subscriptionEntity, esEvent, actionUser, deliveryId);
+                    } catch (UserNotFoundException |UserInitException e) {
+                        log.error("Failed to process subscription:" + subscription.name());
+                        log.error(e.getMessage());
+                        e.printStackTrace();
+                        if(deliveryId != null){
+                            subscriptionDeliveryEntityService.addStatus(deliveryId, FAILED, new Date(), e.getMessage());
+                        }
                     }
                 }
             }
+        } catch (NotFoundException e) {
+            log.error("Failed to processEvent with subscription service.\n" + e.getMessage());
+            e.printStackTrace();
         }
     }
 

@@ -298,7 +298,7 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
-    implementation "com.jayway.jsonpath:json-path:2.2.0"
+    implementation "com.jayway.jsonpath:json-path:2.4.0"
     implementation "org.json:json"
     implementation "com.thoughtworks.xstream:xstream"
     implementation "xerces:xercesImpl"

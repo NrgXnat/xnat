@@ -46,6 +46,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
@@ -312,6 +313,41 @@ public class EventServiceIntegrationTest {
 
         assertThat("Subscriptions should have unique listener IDs", savedSubscription.listenerRegistrationKey(), not(secondSavedSubscription.listenerRegistrationKey()));
         assertThat("Subscriptions should have unique IDs", savedSubscription.id(), not(secondSavedSubscription.id()));
+    }
+
+    @Test
+    @DirtiesContext
+    public void createSubscriptionWithBlankName() throws Exception {
+        EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.TestCombinedEvent");
+        assertThat("Could not load TestCombinedEvent from componentManager", testCombinedEvent, notNullValue());
+
+        EventFilter eventServiceFilterWithJson = EventFilter.builder().jsonPathFilter("$[?(@.modality == \"MR\")]")
+                                                            .build();
+
+        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+                                                                     .name("")
+                                                                     .active(true)
+                                                                     .projectId("PROJECTID-1")
+                                                                     .eventId("org.nrg.xnat.eventservice.events.TestCombinedEvent")
+                                                                     .actionKey("org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction")
+                                                                     .eventFilter(eventServiceFilterWithJson)
+                                                                     .actAsEventUser(false)
+                                                                     .build();
+        assertThat("Json Filtered SubscriptionCreator builder failed :(", subscriptionCreator, notNullValue());
+
+        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+        assertThat("Json Filtered Subscription creation failed :(", subscription, notNullValue());
+
+        List<String> names = new ArrayList<>();
+        for(int i=1;i<1000;i++){
+            Subscription createdSubsciption = eventService.createSubscription(subscription);
+            assertThat("eventService.createSubscription() returned a null value", createdSubsciption, not(nullValue()));
+            assertThat("Expected subscription to have auto-generated name", createdSubsciption.name(), notNullValue());
+            assertThat("Expected subscription to have auto-generated name", createdSubsciption.name(), not(""));
+            assertThat("Expected subscription name to be unique", names, not(contains(createdSubsciption.name())));
+            names.add(createdSubsciption.name());
+        }
+
     }
 
     @Test
@@ -1232,101 +1268,6 @@ public class EventServiceIntegrationTest {
         return eventService.createSubscription(subscription);
     }
 
-
-
-    // ** JSONPath Filter Tests ** //
-    final String projectJson = "{\n" +
-            "    \"type\": \"Project\",\n" +
-            "    \"id\": \"TheProjectID\",\n" +
-            "    \"label\": \"TheProjectTitle\",\n" +
-            "    \"xsiType\": \"xnat:projectData\",\n" +
-            "    \"uri\": \"/archive/projects/TheProjectID\",\n" +
-            "    \"resources\": [],\n" +
-            "    \"subjects\": [],\n" +
-            "    \"directory\": \"/data/xnat/archive/TheProjectID/arc001\"\n" +
-            "}";
-
-    final String subjectJson = "{\n" +
-            "    \"type\": \"Subject\",\n" +
-            "    \"id\": \"XNAT_S00003\",\n" +
-            "    \"label\": \"SubjectsID\",\n" +
-            "    \"xsiType\": \"xnat:subjectData\",\n" +
-            "    \"uri\": \"/archive/subjects/XNAT_S00003\",\n" +
-            "    \"sessions\": [],\n" +
-            "    \"resources\": [],\n" +
-            "    \"project-id\": \"TheProjectID\"\n" +
-            "}";
-
-    final String scanWoFilesJson = "{\n" +
-            "    \"type\": \"Scan\",\n" +
-            "    \"id\": \"4\",\n" +
-            "    \"label\": \"4 - t1_mpr_1mm_p2_pos50\",\n" +
-            "    \"xsiType\": \"xnat:mrScanData\",\n" +
-            "    \"uri\": \"/archive/experiments/XNAT_E00003/scans/4\",\n" +
-            "    \"resources\": [{\n" +
-            "        \"type\": \"Resource\",\n" +
-            "        \"id\": \"DICOM\",\n" +
-            "        \"label\": \"DICOM\",\n" +
-            "        \"xsiType\": \"xnat:resourceCatalog\",\n" +
-            "        \"uri\": \"/archive/experiments/XNAT_E00003/scans/4/resources/DICOM\",\n" +
-            "        \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4/DICOM\",\n" +
-            "        \"integer-id\": 4\n" +
-            "    }],\n" +
-            "    \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4\",\n" +
-            "    \"frames\": 176,\n" +
-            "    \"modality\": \"MR\",\n" +
-            "    \"quality\": \"usable\",\n" +
-            "    \"scanner\": \"MEDPC\",\n" +
-            "    \"uid\": \"1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0\",\n" +
-            "    \"integer-id\": 4,\n" +
-            "    \"scan-type\": \"t1_mpr_1mm_p2_pos50\",\n" +
-            "    \"scanner-manufacturer\": \"SIEMENS\",\n" +
-            "    \"scanner-model\": \"TrioTim\",\n" +
-            "    \"series-description\": \"t1_mpr_1mm_p2_pos50\",\n" +
-            "    \"start-time\": \"09:37:11\"\n" +
-            "}";
-
-    final String sessionWoFilesJson = "{\n" +
-            "    \"type\": \"Session\",\n" +
-            "    \"id\": \"XNAT_E00003\",\n" +
-            "    \"label\": \"TeamGo_MR3\",\n" +
-            "    \"xsiType\": \"xnat:mrSessionData\",\n" +
-            "    \"uri\": \"/archive/experiments/XNAT_E00003\",\n" +
-            "    \"scans\": [{\n" +
-            "        \"type\": \"Scan\",\n" +
-            "        \"id\": \"4\",\n" +
-            "        \"label\": \"4 - t1_mpr_1mm_p2_pos50\",\n" +
-            "        \"xsiType\": \"xnat:mrScanData\",\n" +
-            "        \"uri\": \"/archive/experiments/XNAT_E00003/scans/4\",\n" +
-            "        \"resources\": [{\n" +
-            "            \"type\": \"Resource\",\n" +
-            "            \"id\": \"DICOM\",\n" +
-            "            \"label\": \"DICOM\",\n" +
-            "            \"xsiType\": \"xnat:resourceCatalog\",\n" +
-            "            \"uri\": \"/archive/experiments/XNAT_E00003/scans/4/resources/DICOM\",\n" +
-            "            \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4/DICOM\",\n" +
-            "            \"integer-id\": 4\n" +
-            "        }],\n" +
-            "        \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4\",\n" +
-            "        \"frames\": 176,\n" +
-            "        \"modality\": \"MR\",\n" +
-            "        \"quality\": \"usable\",\n" +
-            "        \"scanner\": \"MEDPC\",\n" +
-            "        \"uid\": \"1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0\",\n" +
-            "        \"integer-id\": 4,\n" +
-            "        \"scan-type\": \"t1_mpr_1mm_p2_pos50\",\n" +
-            "        \"scanner-manufacturer\": \"SIEMENS\",\n" +
-            "        \"scanner-model\": \"TrioTim\",\n" +
-            "        \"series-description\": \"t1_mpr_1mm_p2_pos50\",\n" +
-            "        \"start-time\": \"09:37:11\"\n" +
-            "    }],\n" +
-            "    \"assessors\": [],\n" +
-            "    \"resources\": [],\n" +
-            "    \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/\",\n" +
-            "    \"project-id\": \"ABC123\",\n" +
-            "    \"subject-id\": \"XNAT_S00001\",\n" +
-            "    \"modality\": \"MR\"\n" +
-            "}";
 
 
     class MockSingleActionProvider extends SingleActionProvider {

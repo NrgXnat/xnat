@@ -56,7 +56,7 @@ public class ActionManagerImpl implements ActionManager {
                 actionId = keyList.get(1);
             }
         }
-        List<Action> actions = getActionsByProvider(actionProvider, user);
+        List<Action> actions = getAllActions();
         for(Action action : actions) {
             if(action.actionKey().contentEquals(actionKey)) {
                 return action;

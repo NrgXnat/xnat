@@ -34,6 +34,7 @@ import org.nrg.xdat.security.services.RoleRepositoryServiceI;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.postgresql.util.PGInterval;
 import org.slf4j.Logger;
@@ -449,6 +450,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             setBooleanValue(csrfEmailAlert, "csrfEmailAlert");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'csrfEmailAlert': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "['" + XdatUserAuthService.LOCALDB + "']")
+    public List<String> getEnabledProviders() {
+        return getListValue("enabledProviders");
+    }
+
+    public void setEnabledProviders(final List<String> enabledProviders) {
+        try {
+            setListValue("enabledProviders", enabledProviders);
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name enabledProviders: something is very wrong here.", e);
         }
     }
 

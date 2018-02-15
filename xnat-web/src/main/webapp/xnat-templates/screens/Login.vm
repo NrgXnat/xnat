@@ -1,5 +1,5 @@
 <!-- BEGIN xnat-templates/screens/Login.vm -->
-#* @vtlvariable name="method" type="java.lang.String" *#
+#* @vtlvariable name="method" type="org.apache.commons.lang3.tuple.Pair" *#
 #* @vtlvariable name="login_methods" type="java.util.List" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
@@ -78,15 +78,17 @@ $page.setTitle("$siteId - Please Login")
         <div class="clear" style="margin:2em 0;"></div>
         <div id="login_box">
             <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-                #if($login_methods && $login_methods.size() == 0)
-                    <input type="hidden" id="login_method" name="login_method" value="Database">
-                #elseif($login_methods && $login_methods.size() > 1)
-                    <label for="login_method">Login</label>
-                    <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
-                        #foreach ($method in $login_methods)
-                            <option value="$method">$method</option>
-                        #end
-                    </select>
+                #if($login_methods)
+                    #if ($login_methods.size() == 0)
+                        <input type="hidden" id="login_method" name="login_method" value="Database">
+                    #elseif($login_methods.size() > 1)
+                        <label for="login_method">Login</label>
+                        <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
+                            #foreach ($method in $login_methods)
+                                <option value="$method.left">$method.right</option>
+                            #end
+                        </select>
+                    #end
                 #end
                 <p>
                     <label for="username">User</label>
@@ -164,15 +166,17 @@ $page.setTitle("$siteId - Please Login")
         #end
 
         <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-            #if($login_methods && $login_methods.size() == 0)
-                <input type="hidden" id="login_method" name="login_method" value="Database">
-            #elseif($login_methods && $login_methods.size() > 1)
-                <label for="login_method">Login</label>
-                <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
-                    #foreach ($method in $login_methods)
-                        <option value="$method">$method</option>
-                    #end
-                </select>
+            #if($login_methods)
+                #if($login_methods.size() == 0))
+                    <input type="hidden" id="login_method" name="login_method" value="Database">
+                #elseif($login_methods.size() > 1)
+                    <label for="login_method">Login</label>
+                    <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
+                        #foreach ($method in $login_methods)
+                            <option value="$method.left">$method.right</option>
+                        #end
+                    </select>
+                #end
             #end
             <p>
                 <label for="username">User</label>

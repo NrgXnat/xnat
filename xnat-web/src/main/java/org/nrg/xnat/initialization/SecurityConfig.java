@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.access.AccessDecisionVoter;
+import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.vote.AuthenticatedVoter;
 import org.springframework.security.access.vote.RoleVoter;
 import org.springframework.security.access.vote.UnanimousBased;
@@ -43,10 +44,15 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.ChannelAttributeFactory;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.access.channel.ChannelDecisionManagerImpl;
 import org.springframework.security.web.access.channel.ChannelProcessingFilter;
+import org.springframework.security.web.access.channel.InsecureChannelProcessor;
+import org.springframework.security.web.access.channel.SecureChannelProcessor;
+import org.springframework.security.web.access.intercept.DefaultFilterInvocationSecurityMetadataSource;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
@@ -54,12 +60,11 @@ import org.springframework.security.web.authentication.session.CompositeSessionA
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.sql.DataSource;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import static org.nrg.xnat.initialization.XnatWebAppInitializer.EMPTY_ARRAY;
 
@@ -182,6 +187,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
+    public ChannelProcessingFilter channelProcessingFilter() {
+        final ChannelDecisionManagerImpl decisionManager = new ChannelDecisionManagerImpl();
+        decisionManager.setChannelProcessors(Arrays.asList(new SecureChannelProcessor(), new InsecureChannelProcessor()));
+
+        final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
+        map.put(new AntPathRequestMatcher("/**"), ChannelAttributeFactory.createChannelAttributes(_preferences.getSecurityChannel()));
+
+        final ChannelProcessingFilter filter = new ChannelProcessingFilter();
+        filter.setChannelDecisionManager(decisionManager);
+        filter.setSecurityMetadataSource(new DefaultFilterInvocationSecurityMetadataSource(map));
+
+        return filter;
+    }
+
+
+    @Bean
     public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) {
         return new XnatInitCheckFilter(appInfo);
     }
@@ -262,7 +283,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         }
 
         // If we can get the default channel processing filter as a bean, we could remove this.
-        http.addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+        http.addFilter(channelProcessingFilter())
+            .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
             .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class);
 

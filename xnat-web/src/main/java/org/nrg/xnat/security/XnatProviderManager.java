@@ -262,7 +262,7 @@ public class XnatProviderManager extends ProviderManager {
         return findAuthenticationProvider(new XnatAuthenticationProviderMatcher() {
             @Override
             public boolean matches(XnatAuthenticationProvider provider) {
-                return provider.getName().equalsIgnoreCase(providerName);
+                return provider.getProviderId().equalsIgnoreCase(providerName);
             }
         });
     }

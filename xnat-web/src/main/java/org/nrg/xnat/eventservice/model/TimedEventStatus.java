@@ -14,7 +14,7 @@ public abstract class TimedEventStatus {
     @JsonProperty("status")     public abstract String status();
     @JsonFormat(
             shape = JsonFormat.Shape.STRING,
-            pattern = "dd-MM-yyyy hh:mm:ss")
+            pattern = "yyyy-mm-dd hh:mm:ss")
     @Nullable @JsonProperty("timestamp")  public abstract Date   timestamp();
     @Nullable @JsonProperty("message")    public abstract String message();
 

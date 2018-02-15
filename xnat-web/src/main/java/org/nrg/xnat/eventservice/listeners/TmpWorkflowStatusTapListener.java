@@ -98,6 +98,9 @@ public class TmpWorkflowStatusTapListener implements Consumer<Event<WorkflowStat
                 final String subjectId = wfsEvent.getEntityId();
                 final XnatSubjectdata subjectdata = XnatSubjectdata.getXnatSubjectdatasById(subjectId, user, false);
                 String projectId = subjectdata.getFirstProject() != null ? subjectdata.getFirstProject().getId() :  null;
+                if(projectId == null){
+                    projectId = wfsEvent.getExternalId();
+                }
 
                 // Trigger Session Archived Lifecycle event from here until we figure out where to launch the event.
                 eventService.triggerEvent(new SubjectCreatedEvent(subjectdata, user.getLogin()), projectId);

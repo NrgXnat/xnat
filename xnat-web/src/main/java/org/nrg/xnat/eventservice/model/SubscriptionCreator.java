@@ -37,7 +37,7 @@ public abstract class SubscriptionCreator {
 
     @JsonCreator
     public static SubscriptionCreator create(@Nonnull @JsonProperty("name") final String name,
-                                             @Nullable @JsonProperty("project-id") final String projectId,
+                                             @Nullable @JsonProperty("project-id")  String projectId,
                                              @JsonProperty("active") final Boolean active,
                                              @Nonnull @JsonProperty("event-id") final String eventId,
                                              @Nullable @JsonProperty("custom-listener-id") final String customListenerId,
@@ -45,6 +45,10 @@ public abstract class SubscriptionCreator {
                                              @JsonProperty("attributes") final Map<String, String> attributes,
                                              @JsonProperty("event-filter") final EventFilter eventFilter,
                                              @JsonProperty("act-as-event-user") final Boolean actAsEventUser) {
+        if(projectId != null && projectId.contentEquals("Any Project")){
+            projectId = "";
+        }
+
         return builder()
                 .name(name)
                 .projectId(projectId)

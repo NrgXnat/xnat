@@ -47,7 +47,7 @@ public abstract class Subscription {
 
     @JsonCreator
     public static Subscription create(@JsonProperty("id") final Long id,
-                                      @JsonProperty("name") final String name,
+                                      @Nullable @JsonProperty("name") final String name,
                                       @Nullable @JsonProperty("project-id") final String projectId,
                                       @JsonProperty("active") final Boolean active,
                                       @JsonProperty("registration-key") final String listenerRegistrationKey,

@@ -13,9 +13,9 @@ public abstract class SimpleEvent {
     @JsonProperty("listener") public abstract String listenerService();
     @JsonProperty("display-name") public abstract String displayName();
     @JsonProperty("description") public abstract String description();
+    @JsonIgnore
     @JsonProperty("payload") public abstract String payloadClass();
     @JsonProperty("xnat-type") public abstract String xnatType();
-    @JsonIgnore
     @JsonProperty("is-xsi-type") public abstract boolean isXsiType();
 
 

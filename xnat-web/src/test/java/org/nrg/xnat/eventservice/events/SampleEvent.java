@@ -5,18 +5,22 @@ import org.nrg.framework.event.XnatEventServiceEvent;
 import java.util.Date;
 import java.util.UUID;
 
-@XnatEventServiceEvent
+@XnatEventServiceEvent(name = "SomethingHappenedEvent")
 public class SampleEvent implements EventServiceEvent {
 
-    Date eventDetectedTimestamp;
+    private Class object;
+    private String eventUser;
+    Date eventDetectedTimestamp = new Date();
     UUID eventUUID = UUID.randomUUID();
 
-    public SampleEvent() {
-        eventDetectedTimestamp = new Date();
+    public SampleEvent(){};
+
+    public SampleEvent(final Class object, final String eventUser){
+        this.object = object;
+        this.eventUser = eventUser;
     }
 
     @Override
-
     public String getId() {
         return this.getClass().getCanonicalName();
     }
@@ -41,7 +45,7 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public String getPayloadXnatType() {
-        return null;
+        return "xnat:someXnatDataType";
     }
 
     @Override
@@ -51,7 +55,7 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public String getUser() {
-        return null;
+        return eventUser;
     }
 
     @Override

@@ -354,7 +354,7 @@ var XNAT = getObject(XNAT || {});
                 label: 'Select Project',
                 id: 'subscription-project-selector',
                 element: {
-                    html: '<option selected>Any Project</option>'
+                    html: '<option selected value="">Any Project</option>'
                 },
                 order: 30
             },

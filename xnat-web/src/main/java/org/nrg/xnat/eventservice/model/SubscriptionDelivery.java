@@ -16,9 +16,10 @@ public abstract class SubscriptionDelivery {
     @JsonProperty("user") public abstract String actionUser();
     @JsonProperty("project") public abstract String projectId();
     @JsonProperty("inputs") public abstract String actionInputs();
+    @JsonProperty("trigger") public abstract  TriggeringEvent triggeringEvent();
     @JsonProperty("status") public abstract List<TimedEventStatus> timedEventStatuses();
 
-    public static SubscriptionDelivery create(Long id, SimpleEvent event, Subscription subscription, String actionUser, String projectId, String actionInputs, List<TimedEventStatus> timedEventStatuses) {
+    public static SubscriptionDelivery create(Long id, SimpleEvent event, Subscription subscription, String actionUser, String projectId, String actionInputs, TriggeringEvent triggeringEvent, List<TimedEventStatus> timedEventStatuses) {
         return builder()
                 .id(id)
                 .event(event)
@@ -26,6 +27,7 @@ public abstract class SubscriptionDelivery {
                 .actionUser(actionUser)
                 .projectId(projectId)
                 .actionInputs(actionInputs)
+                .triggeringEvent(triggeringEvent)
                 .timedEventStatuses(timedEventStatuses)
                 .build();
     }
@@ -49,6 +51,8 @@ public abstract class SubscriptionDelivery {
         public abstract Builder projectId(String projectId);
 
         public abstract Builder actionInputs(String actionInputs);
+
+        public abstract Builder triggeringEvent(TriggeringEvent triggeringEvent);
 
         public abstract Builder timedEventStatuses(List<TimedEventStatus> timedEventStatuses);
 

@@ -15,6 +15,7 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
+import org.nrg.xnat.eventservice.entities.TriggeringEventEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
@@ -242,6 +243,7 @@ public class EventServiceImpl implements EventService {
         try {
             log.debug("Event noticed by EventService: " + event.getData().getClass().getSimpleName());
             String jsonObject = null;
+            XnatModelObject modelObject = null;
             if(event.getData() instanceof EventServiceEvent) {
                 EventServiceEvent esEvent = (EventServiceEvent) event.getData();
                 for (Subscription subscription : subscriptionService.getSubscriptionsByKey(listener.getInstanceId().toString())) {
@@ -256,7 +258,6 @@ public class EventServiceImpl implements EventService {
                             subscription.attributes() == null ? "" : subscription.attributes().toString());
                     try {
                         subscriptionDeliveryEntityService.addStatus(deliveryId, SUBSCRIPTION_TRIGGERED, new Date(), "Subscription Service process started.");
-
                         // Is subscription enabled
                         if (!subscription.active()) {
                             subscriptionDeliveryEntityService.addStatus(deliveryId, SUBSCRIPTION_DISABLED_HALT, new Date(), "Inactive subscription skipped.");
@@ -269,33 +270,33 @@ public class EventServiceImpl implements EventService {
                                 userManagementService.getUser(subscription.subscriptionOwner());
                         log.debug("Action User: " + actionUser.getUsername());
 
+                        // ** Serialized event object ** //
+                        try {
+                            modelObject = componentManager.getModelObject(esEvent.getObject(), actionUser);
+                            if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
+                                // Serialize data object
+                                log.debug("Serializing event object as known Model Object.");
+                                jsonObject = mapper.writeValueAsString(modelObject);
+                            } else if (esEvent.getObject() != null && mapper.canSerialize(esEvent.getObject().getClass())) {
+                                log.debug("Serializing event object as unknown object type.");
+                                jsonObject = mapper.writeValueAsString(esEvent.getObject());
+                            } else {
+                                log.debug("Could not serialize event object in: " + esEvent.toString());
+                            }
+                            if(!Strings.isNullOrEmpty(jsonObject)) {
+                                String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
+                                log.debug("Serialized Object: " + objectSubString + "...");
+                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Object Serialized: " + objectSubString + "...");
+                            }
+                        }catch(NullPointerException | JsonProcessingException e){
+                            log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass());
+                            log.error(e.getMessage());
+                            subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), e.getMessage());
+                        }
+
                         //Filter on data object (if filter and object exist)
                         if( subscription.eventFilter() != null && subscription.eventFilter().jsonPathFilter() != null ) {
-                            // ** Serialized event object ** //
-                            try {
-                                XnatModelObject modelObject = componentManager.getModelObject(esEvent.getObject(), actionUser);
-                                if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
-                                    // Serialize data object
-                                    log.debug("Serializing event object as known Model Object.");
-                                    jsonObject = mapper.writeValueAsString(modelObject);
-                                } else if (esEvent.getObject() != null && mapper.canSerialize(esEvent.getObject().getClass())) {
-                                    log.debug("Serializing event object as unknown object type.");
-                                    jsonObject = mapper.writeValueAsString(esEvent.getObject());
-                                } else {
-                                    log.debug("Could not serialize event object in: " + esEvent.toString());
-                                }
-                                if(!Strings.isNullOrEmpty(jsonObject)) {
-                                    String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
-                                    log.debug("Serialized Object: " + objectSubString + "...");
-                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Object Serialized: " + objectSubString + "...");
-                                }
-                            }catch(NullPointerException | JsonProcessingException e){
-                                log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass());
-                                log.error(e.getMessage());
-                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), e.getMessage());
-                            }
                             // ** Attempt to filter event if serialization was successful ** //
-
                             if(Strings.isNullOrEmpty(jsonObject)){
                                 log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getId());
                                 subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
@@ -314,6 +315,22 @@ public class EventServiceImpl implements EventService {
                                     subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERED, new Date(), "Event objected passed filter test.");
                                 }
                             }
+                        }
+                        try {
+                            // ** Extract triggering event details and save to delivery entity ** //
+                            String xsiUri = null;
+                            String objectLabel = null;
+                            if (modelObject != null) {
+                                xsiUri = modelObject.getUri();
+                                objectLabel = modelObject.getLabel();
+                            } else if (esEvent.getObject() != null) {
+                                Object object = esEvent.getObject();
+                                // TODO: Handle other object types
+                            }
+                            subscriptionDeliveryEntityService.setTriggeringEvent(deliveryId, new TriggeringEventEntity(
+                                    esEvent.getDisplayName(), esEvent.isPayloadXsiType(), esEvent.getPayloadXnatType(), xsiUri, objectLabel));
+                        } catch (Throwable e){
+                            log.error("Could not build TriggeringEventEntity ", e.getMessage(), e);
                         }
                         // call Action Manager with payload
                         SubscriptionEntity subscriptionEntity = subscriptionService.get(subscription.id());

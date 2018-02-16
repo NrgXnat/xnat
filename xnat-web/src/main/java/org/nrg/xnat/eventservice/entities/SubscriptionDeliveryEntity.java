@@ -19,6 +19,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private String actionUserLogin;
     private String projectId;
     private String actionInputs;
+    private TriggeringEventEntity triggeringEventEntity;
     private List<TimedEventStatusEntity> timedEventStatuses = Lists.newArrayList();
 
     public SubscriptionDeliveryEntity(SubscriptionEntity subscription, UUID eventUUID, String actionUserLogin,
@@ -69,6 +70,11 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         this.actionInputs = actionInputs;
     }
 
+    @OneToOne
+    public TriggeringEventEntity getTriggeringEventEntity() { return triggeringEventEntity; }
+
+    public void setTriggeringEventEntity(TriggeringEventEntity triggeringEventEntity) { this.triggeringEventEntity = triggeringEventEntity; }
+
     @OneToMany(mappedBy = "subscriptionDeliveryEntity", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     public List<TimedEventStatusEntity> getTimedEventStatuses() {
         return timedEventStatuses;
@@ -82,4 +88,5 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         TimedEventStatusEntity timedEventStatus = new TimedEventStatusEntity(status,statusTimestamp, message, this);
         this.timedEventStatuses.add(timedEventStatus);
     }
+
 }

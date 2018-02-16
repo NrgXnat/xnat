@@ -10,10 +10,7 @@ import org.nrg.xnat.eventservice.actions.EventServiceLoggingAction;
 import org.nrg.xnat.eventservice.actions.TestAction;
 import org.nrg.xnat.eventservice.daos.EventSubscriptionEntityDao;
 import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
-import org.nrg.xnat.eventservice.entities.EventServiceFilterEntity;
-import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
-import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
-import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
+import org.nrg.xnat.eventservice.entities.*;
 import org.nrg.xnat.eventservice.events.*;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.listeners.TestListener;
@@ -138,7 +135,8 @@ public class EventServiceTestConfig {
                 SubscriptionEntity.class,
                 EventServiceFilterEntity.class,
                 SubscriptionDeliveryEntity.class,
-                TimedEventStatusEntity.class);
+                TimedEventStatusEntity.class,
+                TriggeringEventEntity.class);
         return bean;
     }
 

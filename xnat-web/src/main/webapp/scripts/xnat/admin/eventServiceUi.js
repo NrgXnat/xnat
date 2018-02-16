@@ -881,7 +881,8 @@ var XNAT = getObject(XNAT || {});
     };
 
     historyTable.table = function(data){
-        var $datarows = [];
+
+        var $dataRows = [];
 
         return {
             kind: 'table.dataTable',
@@ -898,12 +899,48 @@ var XNAT = getObject(XNAT || {});
                 tr.id = data.id;
                 addDataAttrs(tr, {filter: '0' });
             },
-            sortable: '',
-            filter: '',
+            sortable: 'SUBSCRIPTION,EVENT,user,PROJECT,DATE',
+            filter: 'SUBSCRIPTION,EVENT,user,PROJECT',
             items: {
                 // by convention, name 'custom' columns with ALL CAPS
                 // 'custom' columns do not correspond directly with
                 // a data item
+                SUBSCRIPTION: {
+                    label: 'Event Subscription',
+                    th: { className: 'left' },
+                    td: { className: 'left' },
+                    apply: function(){
+                        var message = "Ran "+ this.subscription.name;
+                        if (this.trigger) {
+                            message += " on "+ this.trigger.label
+                        }
+                        return spawn('a.view-history',{ href: '#!', data: { id: this.id }, style: { 'font-weight': 'bold' }}, message);
+                    }
+                },
+                EVENT: {
+                    label: 'Event Type',
+                    th: { className: 'left' },
+                    td: { className: 'left' },
+                    apply: function(){
+                        return (this.trigger) ? this.trigger['event-name'] : 'Unknown';
+                    }
+                },
+                user: {
+                    label: 'Run As User',
+                    th: { className: 'left' },
+                    td: { className: 'left' },
+                    apply: function(){
+                        return this.user;
+                    }
+                },
+                PROJECT: {
+                    label: 'Project',
+                    th: { className: 'left' },
+                    td: { className: 'left' },
+                    apply: function(){
+                        return this.subscription['project-id'];
+                    }
+                },
                 DATE: {
                     label: 'Date',
                     th: { className: 'left' },
@@ -957,9 +994,9 @@ var XNAT = getObject(XNAT || {});
                                         }
                                         else {
                                             $dataRows.addClass(FILTERCLASS).filter(function(){
-                                                var timestamp = this.querySelector('input.container-timestamp');
-                                                var containerLaunch = +(timestamp.value);
-                                                return selectedValue === containerLaunch-1 || selectedValue > (currentTime - containerLaunch);
+                                                var timestamp = this.querySelector('input.subscription-timestamp');
+                                                var subscriptionLaunch = +(timestamp.value);
+                                                return selectedValue === subscriptionLaunch-1 || selectedValue > (currentTime - subscriptionLaunch);
                                             }).removeClass(FILTERCLASS);
                                         }
                                     }
@@ -970,9 +1007,9 @@ var XNAT = getObject(XNAT || {});
                     apply: function(){
                         var timestamp = 0, dateString;
                         if (this.status.length > 0){
-                            timestamp = status[0]['timestamp'];
-                            dateString = new Date(timestamp);
-                            dateString = dateString.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
+                            timestamp = this.status[0]['timestamp'];
+                            timestamp = new Date(timestamp);
+                            dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
 
                         } else {
                             dateString = 'N/A';
@@ -982,38 +1019,6 @@ var XNAT = getObject(XNAT || {});
                             spawn('input.hidden.subscription-timestamp.filtering|type=hidden', { value: timestamp } )
                         ])
                     }
-                },
-                SUBSCRIPTION: {
-                    label: 'Subscription',
-                    th: { className: 'left' },
-                    td: { className: 'left' },
-                    apply: function(){
-                        return this.subscription.name;
-                    }
-                },
-                ACTION: {
-                    label: 'Action',
-                    th: { className: 'left' },
-                    td: { className: 'left' },
-                    apply: function(){
-                        return eventServicePanel.actions[ this.subscription['action-key'] ];
-                    }
-                },
-                user: {
-                    label: 'Run As User',
-                    th: { className: 'left' },
-                    td: { className: 'left' },
-                    apply: function(){
-                        return this.user;
-                    }
-                },
-                PROJECT: {
-                    label: 'Project',
-                    th: { className: 'left' },
-                    td: { className: 'left' },
-                    apply: function(){
-                        return this.subscription['project-id'];
-                    }
                 }
             }
 
@@ -1021,8 +1026,8 @@ var XNAT = getObject(XNAT || {});
     };
 
     historyTable.viewHistory = function(id){
-        if (historyData[id]) {
-            var historyEntry = XNAT.admin.historyData[id];
+        if (XNAT.admin.eventServicePanel.historyData[id]) {
+            var historyEntry = XNAT.admin.eventServicePanel.historyData[id];
             var historyDialogButtons = [
                 {
                     label: 'OK',
@@ -1066,31 +1071,6 @@ var XNAT = getObject(XNAT || {});
                 pheTable.tr()
                     .td('<b>'+key+'</b>')
                     .td([ spawn('div',{ style: { 'word-break': 'break-all','max-width':'600px' }}, formattedVal) ]);
-
-                // check logs and populate buttons at bottom of modal
-                if (key === 'log-paths') {
-                    // returns an array of log paths
-                    historyEntry[key].forEach(function(logPath){
-                        if (logPath.indexOf('stdout.log') > 0) {
-                            historyDialogButtons.push({
-                                label: 'View StdOut.log',
-                                close: false,
-                                action: function(){
-                                    historyTable.viewLog(historyEntry['container-id'],'stdout')
-                                }
-                            });
-                        }
-                        if (logPath.indexOf('stderr.log') > 0) {
-                            historyDialogButtons.push({
-                                label: 'View StdErr.log',
-                                close: false,
-                                action: function(){
-                                    historyTable.viewLog(historyEntry['container-id'],'stderr')
-                                }
-                            })
-                        }
-                    });
-                }
             }
 
             // display history
@@ -1114,6 +1094,24 @@ var XNAT = getObject(XNAT || {});
                 ]
             });
         }
+    };
+
+    historyTable.init = historyTable.refresh = function(container){
+        var $container = $$(container || '#history-table-container'), _historyTable;
+
+        historyTable.getHistory().done(function(data){
+            if (data.length){
+                _historyTable = XNAT.spawner.spawn({
+                    historyTable: historyTable.table(data)
+                });
+                _historyTable.done(function(){
+                    $container.empty().append(
+                        spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Event Subscriptions Delivered On This Site')
+                    );
+                    this.render($container, 20);
+                });
+            }
+        })
     };
 
     /* ------------------------- *
@@ -1160,7 +1158,7 @@ var XNAT = getObject(XNAT || {});
             group: 'General',
             contents: {
                 eventHistoryContainer: {
-                    tag: 'div#historyTable'
+                    tag: 'div#history-table-container'
                 }
             }
         };
@@ -1206,6 +1204,9 @@ var XNAT = getObject(XNAT || {});
 
                 // Populate event subscription table
                 eventServicePanel.populateDisplay();
+
+                // initialize history table
+                eventServicePanel.historyTable.init();
             });
 
         });
@@ -1214,7 +1215,6 @@ var XNAT = getObject(XNAT || {});
         eventServicePanel.getProjects().done(function(data){
             eventServicePanel.projects = data.ResultSet.Result;
         });
-
     };
 
 }));

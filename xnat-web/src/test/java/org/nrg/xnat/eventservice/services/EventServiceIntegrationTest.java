@@ -977,6 +977,40 @@ public class EventServiceIntegrationTest {
         List<EventServiceEvent> detectedEvents = action.getDetectedEvents();
         assertThat("Expected 100 detected events.", action.getDetectedEvents().size(), is(1000));
 
+    }
+
+    @Test
+    @DirtiesContext
+    public void testDisabledSubscriptionHandlingSpeed() throws Exception {
+        String projectIdToCatch = "ProjectIdToCatch";
+        XnatImagesessiondata sessionToCatch = new XnatImagesessiondata();
+        sessionToCatch.setModality("MR");
+        sessionToCatch.setProject(projectIdToCatch);
+        sessionToCatch.setSessionType("xnat:imageSessionData");
+
+        StopWatch sw1 = new StopWatch();
+        sw1.start("Subscriptions");
+
+        Integer i;
+        for(i=0; i<1000; i++){
+            String name = projectIdToCatch + i.toString();
+            Long id = createSessionSubscription(name  + "_1", projectIdToCatch, null).id();
+            eventService.deactivateSubscription(id);
+        }
+        createSessionSubscription(projectIdToCatch, projectIdToCatch, null);
+
+        // time reaction to 1000 disabled subscriptions and 1 enabled
+        StopWatch sw3 = new StopWatch();
+        sw3.start("disabledEventTriggersToActions");
+        eventService.triggerEvent(new SessionArchiveEvent(sessionToCatch, mockUser.getLogin()), projectIdToCatch);
+
+        synchronized (testAction) {
+            testAction.wait(100);
+        }
+        sw3.stop();
+        TestAction action = (TestAction) testAction;
+        System.out.print("Triggered " + Integer.toString(action.getDetectedEvents().size())+ " enabled event and " + i.toString() + " disabled events  in : " + sw3.getTotalTimeSeconds() + "seconds\n");
+
 
     }
 

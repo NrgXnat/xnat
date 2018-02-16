@@ -36,9 +36,7 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
     public String getName() { return this.getClass().getName(); }
 
     @Override
-    public List<Action> getAllActions() {
-        return new ArrayList<>(Arrays.asList(getAction()));
-    }
+    public List<Action> getAllActions() { return new ArrayList<>(Arrays.asList(getAction())); }
 
     @Override
     public List<Action> getActions(UserI user) {

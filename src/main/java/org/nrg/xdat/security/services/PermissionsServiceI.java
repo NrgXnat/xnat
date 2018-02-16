@@ -379,4 +379,30 @@ public interface PermissionsServiceI {
      */
     String getUserPermissionsSQL(UserI user);
 
+    /**
+     * Gets a list of IDs of the projects that a user can read.
+     *
+     * @param user The user for which to retrieve permissions.
+     *
+     * @return A list of the IDs of the projects that the specified user can read.
+     */
+    List<String> getUserReadableProjects(UserI user);
+
+    /**
+     * Gets a list of IDs of the projects that a user can edit.
+     *
+     * @param user The user for which to retrieve permissions.
+     *
+     * @return A list of the IDs of the projects that the specified user can edit.
+     */
+    List<String> getUserEditableProjects(UserI user);
+
+    /**
+     * Gets a list of IDs of the projects that a user owns (i.e. which the user can delete)
+     *
+     * @param user The user for which to retrieve permissions.
+     *
+     * @return A list of the IDs of the projects that the specified user owns.
+     */
+    List<String> getUserOwnedProjects(UserI user);
 }

@@ -9,17 +9,11 @@
 
 package org.nrg.xdat.security;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.aspectj.util.Reflection;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
@@ -32,12 +26,7 @@ import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidItemException;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.MetaDataException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
@@ -45,34 +34,47 @@ import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Service;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 
 @SuppressWarnings({"unused", "DuplicateThrows"})
+@Service
+@Slf4j
 public class PermissionsServiceImpl implements PermissionsServiceI {
-	@Override
-    public List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType){
-        return ImmutableList.copyOf(((XDATUser)user).getPermissionsByDataType(dataType));
+    @Autowired
+    public PermissionsServiceImpl(final NamedParameterJdbcTemplate template) {
+        _template = template;
     }
 
-	@Override
-	public CriteriaCollection getCriteriaForXDATRead(UserI user,	SchemaElement root) throws IllegalAccessException, Exception {
+    @Override
+    public List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType) {
+        return ImmutableList.copyOf(((XDATUser) user).getPermissionsByDataType(dataType));
+    }
 
-		if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
+    @Override
+    public CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement root) throws IllegalAccessException, Exception {
+
+        if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
             return null;
         } else {
-        	List<PermissionCriteriaI> criteria =getPermissionsForUser(user, root.getFullXMLName());
+            List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
 
             CriteriaCollection cc = new CriteriaCollection("OR");
-            for(PermissionCriteriaI crit: criteria){
-            	if(crit.getRead()){
-            		cc.add(DisplayCriteria.buildCriteria(root,crit));
-            	}
+            for (PermissionCriteriaI crit : criteria) {
+                if (crit.getRead()) {
+                    cc.add(DisplayCriteria.buildCriteria(root, crit));
+                }
             }
 
             if (cc.numClauses() == 0) {
@@ -81,20 +83,20 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
             return cc;
         }
-	}
+    }
 
-	@Override
-	public CriteriaCollection getCriteriaForXFTRead(UserI user,	SchemaElementI root) throws Exception {
-		if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
+    @Override
+    public CriteriaCollection getCriteriaForXFTRead(UserI user, SchemaElementI root) throws Exception {
+        if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), SecurityManager.READ)) {
             return null;
         } else {
-        	List<PermissionCriteriaI> criteria =getPermissionsForUser(user, root.getFullXMLName());
+            List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
 
             CriteriaCollection cc = new CriteriaCollection("OR");
-            for(PermissionCriteriaI crit: criteria){
-            	if(crit.getRead()){
-            		cc.add(SearchCriteria.buildCriteria(crit));
-            	}
+            for (PermissionCriteriaI crit : criteria) {
+                if (crit.getRead()) {
+                    cc.add(SearchCriteria.buildCriteria(crit));
+                }
             }
 
             if (cc.numClauses() == 0) {
@@ -103,7 +105,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
             return cc;
         }
-	}
+    }
 
     private boolean securityCheck(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
         final String rootXmlName = root.getFullXMLName();
@@ -114,112 +116,98 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             final String                    username = user.getUsername();
             if (criteria.size() == 0) {
                 if (!user.isGuest()) {
-                    logger.error("{}: No permission criteria found for user {} with action {} on the schema element {} and the following security values: {}.",
-                                 (new Exception()).getStackTrace()[0].toString(),
-                                 username,
-                                 action,
-                                 root.getFormattedName(),
-                                 values.toString());
+                    log.error("{}: No permission criteria found for user {} with action {} on the schema element {} and the following security values: {}.",
+                              (new Exception()).getStackTrace()[0].toString(),
+                              username,
+                              action,
+                              root.getFormattedName(),
+                              values.toString());
                 }
                 return false;
             }
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Checking user {} access to action {} with security values {}", username, action, values.toString());
+            if (log.isInfoEnabled()) {
+                log.info("Checking user {} access to action {} with security values {}", username, action, values.toString());
             }
 
             for (final PermissionCriteriaI criterion : criteria) {
-                if (logger.isInfoEnabled()) {
-                    logger.info(" * Testing against criterion {}", criterion.toString());
+                if (log.isInfoEnabled()) {
+                    log.info(" * Testing against criterion {}", criterion.toString());
                 }
                 if (criterion.canAccess(action, values)) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("User {} has {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
+                    if (log.isDebugEnabled()) {
+                        log.debug("User {} has {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
                     }
                     return true;
                 } else {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
+                    if (log.isDebugEnabled()) {
+                        log.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
                     }
                 }
             }
 
             // If we've reached here, the security check has failed so let's provide some information on the context but
             // only if this isn't the guest user and the log level is INFO or below...
-            if (!user.isGuest() && logger.isInfoEnabled()) {
-                logger.info("User {} not able to {} the schema element {} with the security values: {}. {}",
-                            username,
-                            action,
-                            root.getFormattedName(),
-                            values.toString(),
-                            dumpCriteriaList(criteria));
+            if (!user.isGuest() && log.isInfoEnabled()) {
+                log.info("User {} not able to {} the schema element {} with the security values: {}. {}",
+                         username,
+                         action,
+                         root.getFormattedName(),
+                         values.toString(),
+                         dumpCriteriaList(criteria));
             }
         }
 
         return false;
     }
 
-	@Override
+    @Override
     public boolean canCreate(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user,SecurityManager.CREATE, root, values);
+        return securityCheck(user, SecurityManager.CREATE, root, values);
     }
 
-	@Override
+    @Override
     public boolean canRead(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user,SecurityManager.READ, root, values);
+        return securityCheck(user, SecurityManager.READ, root, values);
     }
 
-	@Override
+    @Override
     public boolean canEdit(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user,SecurityManager.EDIT, root, values);
+        return securityCheck(user, SecurityManager.EDIT, root, values);
     }
 
-	@Override
+    @Override
     public boolean canActivate(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user,SecurityManager.ACTIVATE, root, values);
+        return securityCheck(user, SecurityManager.ACTIVATE, root, values);
     }
 
-	@Override
+    @Override
     public boolean canDelete(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user,SecurityManager.DELETE, root, values);
+        return securityCheck(user, SecurityManager.DELETE, root, values);
     }
 
     @Override
     public String canStoreItem(UserI user, ItemI item, boolean allowDataDeletion) throws InvalidItemException, Exception {
         String invalidItemName;
         try {
-            if (!canCreate(user,item)) {
+            if (!canCreate(user, item)) {
                 return item.getXSIType();
             }
 
-            if (allowDataDeletion) {
-                //this should check items stored in db, rather then just local hash
-                Iterator iter = item.getChildItems().iterator();
-                while (iter.hasNext()) {
-                    ItemI child = (ItemI) iter.next();
-                    invalidItemName = canStoreItem(user, child, allowDataDeletion);
-                    if (invalidItemName != null) {
-                        return invalidItemName;
-                    }
-                }
-            } else {
-                Iterator iter = item.getChildItems().iterator();
-                while (iter.hasNext()) {
-                    ItemI child = (ItemI) iter.next();
-                    invalidItemName = canStoreItem(user, child, allowDataDeletion);
-                    if (invalidItemName != null) {
-                        return invalidItemName;
-                    }
+            for (final Object object : item.getChildItems()) {
+                ItemI child = (ItemI) object;
+                invalidItemName = canStoreItem(user, child, allowDataDeletion);
+                if (StringUtils.isNotBlank(invalidItemName)) {
+                    return invalidItemName;
                 }
             }
         } catch (XFTInitException e) {
-            logger.error("", e);
+            log.error("An error occurred initializing XFT", e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            log.error("Did not find the requested element on the item", e);
         } catch (FieldNotFoundException e) {
-            logger.error("", e);
+            log.error("Field not found {}: {}", e.FIELD, e.MESSAGE, e);
         }
-
         return null;
     }
 
@@ -228,9 +216,9 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         try {
             // Check readability
             if (!canRead(user, item)) {
-                final String itemId = getItemIId(item);
+                final String itemId  = getItemIId(item);
                 final String message = String.format("User '%s' does not have read access to the %s instance with ID %s", user.getUsername(), item.getXSIType(), itemId);
-                logger.error(message);
+                log.error(message);
                 throw new IllegalAccessException("Access Denied: " + message);
             }
 
@@ -239,9 +227,9 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             if (item.getProperty("meta") != null && !canActivate(user, item)) {
                 // Then check to see if it's not active. You can't access inactive things.
                 if (!item.isActive()) {
-                    final String itemId = getItemIId(item);
+                    final String itemId  = getItemIId(item);
                     final String message = String.format("The %s item with ID %s is in quarantine and the user %s does not have permission to activate this data type.", item.getXSIType(), itemId, user.getUsername());
-                    logger.error(message);
+                    log.error(message);
                     throw new IllegalAccessException("Access Denied: " + message);
                 }
             }
@@ -268,14 +256,14 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         } catch (MetaDataException | IllegalAccessException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return item;
     }
 
     private boolean securityCheckByXMLPath(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
-        return securityCheck(user,action, root, values);
+        return securityCheck(user, action, root, values);
     }
 
     private String getItemIId(final ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, IllegalAccessException, InvocationTargetException {
@@ -304,8 +292,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         List<ItemI> invalidItems = new ArrayList<>();
 
         for (final Object o : item.getChildItems()) {
-            ItemI child = (ItemI) o;
-            boolean b = canRead(user, child);
+            ItemI   child = (ItemI) o;
+            boolean b     = canRead(user, child);
 
             if (b) {
                 if (child.getProperty("meta") != null && !canActivate(user, child)) {
@@ -342,15 +330,15 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         } else {
             final ElementSecurity elementSecurity = ElementSecurity.GetElementSecurity(xsiType);
             if (elementSecurity.isSecure(action)) {
-                final SchemaElement schemaElement = SchemaElement.GetElement(xsiType);
+                final SchemaElement  schemaElement  = SchemaElement.GetElement(xsiType);
                 final SecurityValues securityValues = item.getItem().getSecurityValues();
                 if (!securityCheckByXMLPath(user, action, schemaElement, securityValues)) {
-                    logger.info("User {} doesn't have permission to {} the schema element {} for XSI type {}. The security values are: {}.",
-                                user.getUsername(),
-                                action,
-                                schemaElement.getFormattedName(),
-                                xsiType,
-                                securityValues.toString());
+                    log.info("User {} doesn't have permission to {} the schema element {} for XSI type {}. The security values are: {}.",
+                             user.getUsername(),
+                             action,
+                             schemaElement.getFormattedName(),
+                             xsiType,
+                             securityValues.toString());
                     return false;
                 }
             }
@@ -360,27 +348,27 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public boolean canRead(UserI user, ItemI item) throws InvalidItemException, Exception {
-    	return can(user,item,SecurityManager.READ);
+        return can(user, item, SecurityManager.READ);
     }
 
     @Override
     public boolean canEdit(UserI user, ItemI item) throws InvalidItemException, Exception {
-    	return can(user,item,SecurityManager.EDIT);
+        return can(user, item, SecurityManager.EDIT);
     }
 
     @Override
     public boolean canCreate(UserI user, ItemI item) throws Exception {
-    	return can(user,item,SecurityManager.CREATE);
+        return can(user, item, SecurityManager.CREATE);
     }
 
     @Override
     public boolean canActivate(UserI user, ItemI item) throws InvalidItemException, Exception {
-    	return can(user,item,SecurityManager.ACTIVATE);
+        return can(user, item, SecurityManager.ACTIVATE);
     }
 
     @Override
     public boolean canDelete(UserI user, ItemI item) throws InvalidItemException, Exception {
-    	return can(user,item,SecurityManager.DELETE);
+        return can(user, item, SecurityManager.DELETE);
     }
 
 
@@ -389,32 +377,26 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
             return false;
         }
-        String rootElement = XftStringUtils.GetRootElementName(xmlPath);
-        boolean isOK = false;
+        String  rootElement = XftStringUtils.GetRootElementName(xmlPath);
         if (!ElementSecurity.HasDefinedElementSecurity(rootElement)) {
-            isOK = true;
+            return true;
         } else if (ElementSecurity.IsInSecureElement(rootElement)) {
-            isOK = true;
+            return true;
         } else {
             SecurityValues sv = new SecurityValues();
             sv.put(xmlPath, value.toString());
-            if (securityCheckByXMLPath(user,action, SchemaElement.GetElement(rootElement), sv)) {
-                isOK = true;
-            } else {
-                isOK = false;
-            }
+            return securityCheckByXMLPath(user, action, SchemaElement.GetElement(rootElement), sv);
         }
-        return isOK;
     }
 
     @Override
     public boolean canRead(UserI user, String xmlPath, Object value) throws Exception {
-    	return can(user,xmlPath,value,SecurityManager.READ);
+        return can(user, xmlPath, value, SecurityManager.READ);
     }
 
     @Override
     public boolean canEdit(UserI user, String xmlPath, Object value) throws Exception {
-    	return can(user,xmlPath,value,SecurityManager.EDIT);
+        return can(user, xmlPath, value, SecurityManager.EDIT);
     }
 
     @Override
@@ -438,14 +420,15 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
-        List<Object> values = getAllowedValues(user,elementName, xmlPath, action);
+        List<Object> values = getAllowedValues(user, elementName, xmlPath, action);
         return values != null && values.size() > 0;
     }
 
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<Object> getAllowedValues(UserI user, String elementName, String xmlPath, String action) {
-        final List allowedValues = Lists.newArrayList();
+        final List allowedValues = new ArrayList();
 
         try {
             final String rootXmlName = SchemaElement.GetElement(elementName).getFullXMLName();
@@ -465,55 +448,53 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
             Collections.sort(allowedValues);
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return ImmutableList.copyOf(allowedValues);
     }
 
     @Override
-    public Map<String,Object> getAllowedValues(UserI user, String elementName, String action) {
-    	final Map<String,Object> allowedValues = Maps.newHashMap();
+    public Map<String, Object> getAllowedValues(UserI user, String elementName, String action) {
+        final Map<String, Object> allowedValues = Maps.newHashMap();
 
-    	try {
-			SchemaElement root=SchemaElement.GetElement(elementName);
+        try {
+            SchemaElement root = SchemaElement.GetElement(elementName);
 
-			if (ElementSecurity.IsSecureElement(root.getFullXMLName(), action)) {
-	        	List<PermissionCriteriaI> criteria =getPermissionsForUser(user, root.getFullXMLName());
+            if (ElementSecurity.IsSecureElement(root.getFullXMLName(), action)) {
+                List<PermissionCriteriaI> criteria = getPermissionsForUser(user, root.getFullXMLName());
 
-			    CriteriaCollection cc = new CriteriaCollection("OR");
-			    for(PermissionCriteriaI crit: criteria){
-			    	if(crit.getAction(action)){
-			    		allowedValues.put(crit.getField(),crit.getFieldValue());
-			    	}
-			    }
-			}
-		} catch (Exception e) {
-			logger.error("",e);
-		}
+                CriteriaCollection cc = new CriteriaCollection("OR");
+                for (PermissionCriteriaI crit : criteria) {
+                    if (crit.getAction(action)) {
+                        allowedValues.put(crit.getField(), crit.getFieldValue());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("", e);
+        }
 
         return ImmutableMap.copyOf(allowedValues);
     }
 
-	@Override
-	public boolean canAny(UserI user, String elementName, String action) {
-		if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+    @Override
+    public boolean canAny(UserI user, String elementName, String action) {
+        if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
             return false;
         }
         // consider caching, but this should not hit the database on every call anyways.
-        Map<String,Object> values = getAllowedValues(user,elementName, action);
+        Map<String, Object> values = getAllowedValues(user, elementName, action);
         return (values != null && values.size() > 0);
-	}
+    }
 
-	@Override
-	public void setPermissions(UserI effected, UserI authenticated,	String elementName, String psf, String value, Boolean create,Boolean read, Boolean delete, Boolean edit, Boolean activate,	boolean activateChanges, EventMetaI ci) {
+    @Override
+    public void setPermissions(UserI effected, UserI authenticated, String elementName, String psf, String value, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, EventMetaI ci) {
         try {
             ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
 
-            XdatElementAccess ea = null;
-            Iterator eams = ((XDATUser)effected).getElementAccess().iterator();
-            while (eams.hasNext()) {
-                XdatElementAccess temp = (XdatElementAccess) eams.next();
+            XdatElementAccess ea   = null;
+            for (final XdatElementAccess temp : ((XDATUser) effected).getElementAccess()) {
                 if (temp.getElementName().equals(elementName)) {
                     ea = temp;
                     break;
@@ -521,44 +502,41 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             }
 
             if (ea == null) {
-                ea = new XdatElementAccess((UserI) authenticated);
+                ea = new XdatElementAccess(authenticated);
                 ea.setElementName(elementName);
                 ea.setProperty("xdat_user_xdat_user_id", effected.getID());
             }
 
-            XdatFieldMappingSet fms = null;
-            ArrayList al = ea.getPermissions_allowSet();
+            XdatFieldMappingSet fms;
+            ArrayList           al  = ea.getPermissions_allowSet();
             if (al.size() > 0) {
-                fms = (XdatFieldMappingSet) ea.getPermissions_allowSet().get(0);
+                fms = ea.getPermissions_allowSet().get(0);
             } else {
-                fms = new XdatFieldMappingSet((UserI) authenticated);
+                fms = new XdatFieldMappingSet(authenticated);
                 fms.setMethod("OR");
                 ea.setPermissions_allowSet(fms);
             }
 
             XdatFieldMapping fm = null;
 
-            Iterator iter = fms.getAllow().iterator();
-            while (iter.hasNext()) {
-                Object o = iter.next();
-                if (o instanceof XdatFieldMapping) {
-                    if (((XdatFieldMapping) o).getFieldValue().equals(value) && ((XdatFieldMapping) o).getField().equals(psf)) {
-                        fm = (XdatFieldMapping) o;
-                    }
+            for (final XdatFieldMapping fieldMapping : fms.getAllow()) {
+                if (fieldMapping.getFieldValue().equals(value) && fieldMapping.getField().equals(psf)) {
+                    fm = fieldMapping;
                 }
             }
 
             if (fm == null) {
-                if (create || read || edit || delete || activate)
-                    fm = new XdatFieldMapping((UserI) authenticated);
-                else
+                if (create || read || edit || delete || activate) {
+                    fm = new XdatFieldMapping(authenticated);
+                } else {
                     return;
+                }
             } else if (!(create || read || edit || delete || activate)) {
                 if (fms.getAllow().size() == 1) {
-                    SaveItemHelper.authorizedDelete(fms.getItem(), authenticated,ci);
+                    SaveItemHelper.authorizedDelete(fms.getItem(), authenticated, ci);
                     return;
                 } else {
-                    SaveItemHelper.authorizedDelete(fm.getItem(), authenticated,ci);
+                    SaveItemHelper.authorizedDelete(fm.getItem(), authenticated, ci);
                     return;
                 }
             }
@@ -579,46 +557,46 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
 
                 if (activateChanges) {
-                    SaveItemHelper.authorizedSave(fm, authenticated, true, false, true, false,ci);
+                    SaveItemHelper.authorizedSave(fm, authenticated, true, false, true, false, ci);
                     fm.activate(authenticated);
                 } else {
-                    SaveItemHelper.authorizedSave(fm, authenticated, true, false, false, false,ci);
+                    SaveItemHelper.authorizedSave(fm, authenticated, true, false, false, false, ci);
                 }
             } else if (ea.getXdatElementAccessId() != null) {
                 fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
                 if (activateChanges) {
-                    SaveItemHelper.authorizedSave(fms, authenticated, true, false, true, false,ci);
+                    SaveItemHelper.authorizedSave(fms, authenticated, true, false, true, false, ci);
                     fms.activate(authenticated);
                 } else {
-                    SaveItemHelper.authorizedSave(fms, authenticated, true, false, false, false,ci);
+                    SaveItemHelper.authorizedSave(fms, authenticated, true, false, false, false, ci);
                 }
             } else {
                 if (activateChanges) {
-                    SaveItemHelper.authorizedSave(ea, authenticated, true, false, true, false,ci);
+                    SaveItemHelper.authorizedSave(ea, authenticated, true, false, true, false, ci);
                     ea.activate(authenticated);
                 } else {
-                    SaveItemHelper.authorizedSave(ea, authenticated, true, false, false, false,ci);
+                    SaveItemHelper.authorizedSave(ea, authenticated, true, false, false, false, ci);
                 }
-                ((XDATUser)effected).setElementAccess(ea);
+                ((XDATUser) effected).setElementAccess(ea);
             }
         } catch (XFTInitException e) {
-            logger.error("", e);
+            log.error("An error occurred initializing XFT", e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            log.error("Did not find the requested element on the item", e);
         } catch (FieldNotFoundException e) {
-            logger.error("", e);
+            log.error("Field not found {}: {}", e.FIELD, e.MESSAGE, e);
         } catch (InvalidValueException e) {
-            logger.error("", e);
+            log.error("Invalid value specified: {}", effected.getID(), e);
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
-	}
+    }
 
-	@Override
-	public boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, UserI authenticatedUser, EventMetaI ci) throws Exception {
-		ArrayList<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
+    @Override
+    public boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, UserI authenticatedUser, EventMetaI ci) throws Exception {
+        ArrayList<ElementSecurity> securedElements = ElementSecurity.GetSecureElements();
 
-        UserI guest=Users.getGuest();
+        UserI guest = Users.getGuest();
 
         switch (accessibility) {
             case "public":
@@ -651,32 +629,81 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 break;
         }
 
-        ((XDATUser)authenticatedUser).resetCriteria();
+        ((XDATUser) authenticatedUser).resetCriteria();
         Users.getGuest(true);
         return true;
-	}
+    }
 
-	@Override
-	public List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType) {
-		return ImmutableList.copyOf(((UserGroup)group).getPermissionsByDataType(dataType));
-	}
+    @Override
+    public List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType) {
+        return ImmutableList.copyOf(((UserGroup) group).getPermissionsByDataType(dataType));
+    }
 
-	@Override
-	public Map<String, List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group) {
-		return ImmutableMap.copyOf(((UserGroup)group).getAllPermissions());
-	}
+    @Override
+    public Map<String, List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group) {
+        return ImmutableMap.copyOf(((UserGroup) group).getAllPermissions());
+    }
 
-	@Override
-	public void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception {
-		for(PermissionCriteriaI crit:criteria){
-			((UserGroup)group).addPermission(crit.getElementName(), crit, authenticatedUser);
-		}
-	}
+    @Override
+    public void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception {
+        for (PermissionCriteriaI crit : criteria) {
+            ((UserGroup) group).addPermission(crit.getElementName(), crit, authenticatedUser);
+        }
+    }
 
-	@Override
-	public String getUserPermissionsSQL(UserI user) {
-		return String.format("SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user u JOIN xdat_user_groupID map ON u.xdat_user_id=map.groups_groupid_xdat_user_xdat_user_id JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE u.login='guest' UNION SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user_groupID map JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE map.groups_groupid_xdat_user_xdat_user_id=%s",user.getID());
-	}
+    @Override
+    public String getUserPermissionsSQL(UserI user) {
+        return String.format("SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user u JOIN xdat_user_groupID map ON u.xdat_user_id=map.groups_groupid_xdat_user_xdat_user_id JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE u.login='guest' UNION SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user_groupID map JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE map.groups_groupid_xdat_user_xdat_user_id=%s", user.getID());
+    }
 
-    private static final Logger logger = LoggerFactory.getLogger(PermissionsServiceImpl.class);
+    @Override
+    public List<String> getUserReadableProjects(final UserI user) {
+        return _template.queryForList(QUERY_READABLE_PROJECTS, new MapSqlParameterSource("username", user.getUsername()), String.class);
+    }
+
+    @Override
+    public List<String> getUserEditableProjects(final UserI user) {
+        return _template.queryForList(QUERY_EDITABLE_PROJECTS, new MapSqlParameterSource("username", user.getUsername()), String.class);
+    }
+
+    @Override
+    public List<String> getUserOwnedProjects(final UserI user) {
+        return _template.queryForList(QUERY_OWNED_PROJECTS, new MapSqlParameterSource("username", user.getUsername()), String.class);
+    }
+
+    private static final String QUERY_USER_PROJECTS     = "SELECT DISTINCT xfm.field_value AS project " +
+                                                          "FROM xdat_field_mapping xfm " +
+                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id " +
+                                                          "  LEFT JOIN xdat_element_access xea ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id " +
+                                                          "  LEFT JOIN xdat_usergroup usergroup ON xea.xdat_usergroup_xdat_usergroup_id = usergroup.xdat_usergroup_id " +
+                                                          "  LEFT JOIN xdat_user_groupid groupid ON usergroup.id = groupid.groupid " +
+                                                          "  LEFT JOIN xdat_user xu ON groupid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
+                                                          "WHERE " +
+                                                          "  xu.login = :username " +
+                                                          "  AND xea.element_name = 'xnat:projectData' " +
+                                                          "  AND xfm.%s = 1 " +
+                                                          "  AND xfm.comparison_type = 'equals' " +
+                                                          "  AND xfm.field_value != '*' " +
+                                                          "ORDER BY project";
+    private static final String QUERY_OWNED_PROJECTS    = String.format(QUERY_USER_PROJECTS, "delete_element");
+    private static final String QUERY_EDITABLE_PROJECTS = String.format(QUERY_USER_PROJECTS, "edit_element");
+    private static final String QUERY_READABLE_PROJECTS = "SELECT DISTINCT xfm.field_value AS project " +
+                                                          "FROM xdat_field_mapping xfm " +
+                                                          "  LEFT JOIN xdat_field_mapping_set xfms ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id " +
+                                                          "  LEFT JOIN xdat_element_access xea ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id " +
+                                                          "  LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id " +
+                                                          "  LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id " +
+                                                          "  LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id " +
+                                                          "WHERE " +
+                                                          "  xu.login = 'guest' " +
+                                                          "  AND xea.element_name = 'xnat:projectData' " +
+                                                          "  AND xfm.create_element = 0 " +
+                                                          "  AND xfm.read_element = 1 " +
+                                                          "  AND xfm.edit_element = 0 " +
+                                                          "  AND xfm.delete_element = 0 " +
+                                                          "  AND xfm.active_element = 0 " +
+                                                          "  AND xfm.comparison_type = 'equals' " +
+                                                          "UNION DISTINCT " + String.format(QUERY_USER_PROJECTS, "read_element");
+
+    private final NamedParameterJdbcTemplate _template;
 }

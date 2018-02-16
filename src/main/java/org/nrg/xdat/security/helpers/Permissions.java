@@ -35,15 +35,20 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
+import org.reflections.ReflectionUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.reflections.ReflectionUtils.*;
 
 public class Permissions {
     static Logger logger = Logger.getLogger(Permissions.class);
@@ -58,6 +63,7 @@ public class Permissions {
      *
      * @return The permissions service.
      */
+    @SuppressWarnings("unchecked")
     public static PermissionsServiceI getPermissionsService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
         if (singleton == null) {
@@ -87,9 +93,11 @@ public class Permissions {
             //default to PermissionsServiceImpl implementation (unless a different default is configured)
             if (singleton == null) {
                 try {
-                    String className = XDAT.safeSiteConfigProperty("security.permissionsService.default", "org.nrg.xdat.security.PermissionsServiceImpl");
-                    singleton = (PermissionsServiceI) Class.forName(className).newInstance();
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                    final String className = XDAT.safeSiteConfigProperty("security.permissionsService.default", "org.nrg.xdat.security.PermissionsServiceImpl");
+                    final Class<? extends PermissionsServiceI> aClass  = Class.forName(className).asSubclass(PermissionsServiceI.class);
+                    final Set<Constructor> constructors = getConstructors(aClass, withParameters(NamedParameterJdbcTemplate.class));
+                    singleton = constructors.size() == 0 ? aClass.newInstance() : ((Constructor<? extends PermissionsServiceI>) constructors.toArray()[0]).newInstance(XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class));
+                } catch (InvocationTargetException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                     logger.error("", e);
                 }
             }

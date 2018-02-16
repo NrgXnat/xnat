@@ -1,6 +1,6 @@
 <!-- BEGIN xnat-templates/screens/Login.vm -->
-#* @vtlvariable name="method" type="org.apache.commons.lang3.tuple.Pair" *#
-#* @vtlvariable name="login_methods" type="java.util.List" *#
+#* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+#* @vtlvariable name="login_methods" type="java.util.Collection" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
@@ -84,8 +84,8 @@ $page.setTitle("$siteId - Please Login")
                     #elseif($login_methods.size() > 1)
                         <label for="login_method">Login</label>
                         <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
-                            #foreach ($method in $login_methods)
-                                <option value="$method.left">$method.right</option>
+                            #foreach ($provider in $login_methods)
+                                <option value="$provider.providerId">$provider.name</option>
                             #end
                         </select>
                     #end

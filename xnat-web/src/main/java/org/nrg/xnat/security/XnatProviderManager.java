@@ -223,6 +223,23 @@ public class XnatProviderManager extends ProviderManager {
         }
     }
 
+    public Map<String, XnatAuthenticationProvider> getVisibleEnabledProviders() {
+        final Map<String, XnatAuthenticationProvider> visibleEnabledProviders = new HashMap<>();
+        for (final String providerId : _preferences.getEnabledProviders()) {
+            if (!_xnatAuthenticationProviders.containsKey(providerId)) {
+                log.warn("The provider ID {} is enabled, but there is no configured definition for that ID", providerId);
+                continue;
+            }
+            final XnatAuthenticationProvider provider = _xnatAuthenticationProviders.get(providerId);
+            if (!provider.isVisible()) {
+                log.warn("The provider ID {} is enabled, but the provider is not a visible provider", providerId);
+                continue;
+            }
+            visibleEnabledProviders.put(provider.getProviderId(), provider);
+        }
+        return visibleEnabledProviders;
+    }
+
     private Pair<AuthenticationProvider, AuthenticationException> getMostImportantException(final Map<AuthenticationProvider, AuthenticationException> exceptionMap) {
         final ArrayList<AuthenticationException> exceptions = new ArrayList<>(exceptionMap.values());
         Collections.sort(exceptions, new Comparator<AuthenticationException>() {

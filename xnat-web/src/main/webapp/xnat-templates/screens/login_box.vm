@@ -1,6 +1,6 @@
-#* @vtlvariable name="method" type="org.apache.commons.lang3.tuple.Pair" *#
+#* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+#* @vtlvariable name="login_methods" type="java.util.Collection" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
-#* @vtlvariable name="login_methods" type="java.util.List" *#
 <form name="form1" method="post" action="$content.getURI('')/login">
     #set($showLoginMethodRow = true)
     #if($login_methods.size() == 1)
@@ -18,9 +18,8 @@
                         #xdatTextBox("login_method" $item "" $vr)
                     #elseif($login_methods && $login_methods.size() > 1)
                         <select id="login_method" name="login_method">
-                            #foreach ($method in $login_methods)
-                                <!-- Left: $method.left Right $method.right -->
-                                <option value="$method.left">$method.right</option>
+                            #foreach ($provider in $login_methods)
+                                <option value="$provider.providerId">$provider.name</option>
                             #end
                         </select>
                     #end

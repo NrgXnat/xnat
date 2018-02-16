@@ -1,3 +1,4 @@
+#* @vtlvariable name="showImportEventHandlers" type="java.lang.Boolean" *#
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
@@ -478,7 +479,9 @@
         </div>
         <br>
         <button type="button" id="manage_event_handlers" class="btn1" style="font-size:12px;">Add Event Handlers</button>
-        <button type="button" id="import_event_handlers" class="btn1" style="font-size:12px;">Import Event Handlers</button>
+        #if ($showImportEventHandlers)
+            <button type="button" id="import_event_handlers" class="btn1" style="font-size:12px;">Import Event Handlers</button>
+        #end
     </div>
 
     #addCustomScreens($project.getXSIType() "report/manage_tab")

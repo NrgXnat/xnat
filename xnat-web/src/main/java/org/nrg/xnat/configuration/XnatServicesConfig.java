@@ -9,8 +9,12 @@
 
 package org.nrg.xnat.configuration;
 
+import org.nrg.xdat.security.PermissionsServiceImpl;
+import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
  * This configuration manages configuration and instantiation of core XNAT/XDAT/XFT services.
@@ -22,4 +26,8 @@ import org.springframework.context.annotation.Configuration;
                 "org.nrg.xnat.services.system.impl.hibernate",
                 "org.nrg.xnat.services.validation"})
 public class XnatServicesConfig {
+    @Bean
+    public PermissionsServiceI permissionsService(final NamedParameterJdbcTemplate template) {
+        return new PermissionsServiceImpl(template);
+    }
 }

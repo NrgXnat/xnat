@@ -762,44 +762,59 @@ $(function() {
 
     function initImportEventsMenu(events) {
         var projectName = document.getElementById('prjOptions').value;
-        var eventHandlers = new Object();
+        var eventHandlers = {};
         if (events.length > 0) {
-            var i = 0;
             var eventObjs = [];
-            while (i < events.length) {
-                if (events[i].className == 'item') {
+            for (var i = 0; i < events.length; i++) {
+                if (events[i].className === 'item') {
                     var event = events[i];
-                    var eventObj = new Object();
+                    var eventObj = {};
                     for (var j = 0; j < event.childNodes.length; j++) {
                         var rec = event.childNodes[j];
-                        if (event.childNodes[j].id == 'id')
-                            eventObj.id = rec.innerHTML;
-                        if (event.childNodes[j].id == 'event')
-                            eventObj.event = rec.innerText.replace('Executed script ', '');
-                        if (event.childNodes[j].id == 'scriptId')
-                            eventObj.scriptId = rec.innerText;
-                        if (event.childNodes[j].id == 'eventClass') {
-                            if (rec.innerText.replace('Event Class: ', '') == "ScriptLaunchRequestEvent")
-                                eventObj.eventClass = "org.nrg.xnat.event.entities." + rec.innerText.replace('Event Class: ', '');
-                            else if (rec.innerText.replace('Event Class: ', '') == "WorkflowStatusEvent")
-                                eventObj.eventClass = "org.nrg.xft.event.entities." + rec.innerText.replace('Event Class: ', '');
-                        }
-                        if (event.childNodes[j].id == 'description')
-                            eventObj.description = rec.innerText;
-                        if (event.childNodes[j].id == 'filters') {
-                            var obj = new Object();
-                            var val = [];
-                            if (rec.innerText.replace('Event Filters: ', '') != "{}") {
-                                var filt = rec.innerText.replace('Event Filters: ', '').replace('{', "").replace('[', "").replace(']', "").replace('}', "").split('=');
-                                val[val.length] = filt[1];
-                                obj.status = val;
-                            }
-                            eventObj.filters = obj;
+                        switch (rec.id) {
+                            case 'id':
+                                eventObj.id = rec.innerHTML;
+                                break;
+
+                            case 'event':
+                                eventObj.event = rec.innerText.replace('Executed script ', '').trim();
+                                break;
+
+                            case 'scriptId':
+                                eventObj.scriptId = rec.innerText;
+                                break;
+
+                            case 'eventClass':
+                                var eventClass = rec.innerText.replace('Event Class: ', '').trim();
+                                switch (eventClass) {
+                                    case "ScriptLaunchRequestEvent":
+                                        eventObj.eventClass = "org.nrg.xnat.event.entities." + eventClass;
+                                        break;
+
+                                    case "WorkflowStatusEvent":
+                                        eventObj.eventClass = "org.nrg.xft.event.entities." + eventClass;
+                                        break;
+                                }
+                                break;
+
+                            case 'description':
+                                eventObj.description = rec.innerText;
+                                break;
+
+                            case 'filters':
+                                var obj = {};
+                                var val = [];
+                                if (rec.innerText.replace('Event Filters: ', '').trim() !== "{}") {
+                                    var filt = rec.innerText.replace('Event Filters: ', '').replace('{', "").replace('[', "").replace(']', "").replace('}', "").split('=');
+                                    val[val.length] = filt[1];
+                                    obj.status = val;
+                                }
+                                eventObj.filters = obj;
+                                break;
                         }
                     }
                     eventObjs[eventObjs.length] = eventObj;
                 }
-                i++;
             }
             eventHandlers.import = true;
             eventHandlers.sourceProjectId = projectName;

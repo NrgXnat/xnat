@@ -11,6 +11,7 @@ package org.nrg.xapi.rest.users;
 
 import com.google.common.collect.Lists;
 import io.swagger.annotations.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.nrg.framework.annotations.XapiRestController;
@@ -25,13 +26,12 @@ import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xapi.rest.*;
-import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.AliasTokenService;
@@ -39,8 +39,6 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -63,6 +61,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.*;
 @Api(description = "User Management API")
 @XapiRestController
 @RequestMapping(value = "/users")
+@Slf4j
 public class UsersApi extends AbstractXapiRestController {
 
     public static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<User>() {
@@ -93,10 +92,12 @@ public class UsersApi extends AbstractXapiRestController {
                     final RoleHolder roleHolder,
                     final SessionRegistry sessionRegistry,
                     final AliasTokenService aliasTokenService,
+                    final PermissionsServiceI permissionsService,
                     final NamedParameterJdbcTemplate jdbcTemplate) {
         super(userManagementService, roleHolder);
         _sessionRegistry = sessionRegistry;
         _aliasTokenService = aliasTokenService;
+        _permissionsService = permissionsService;
         _factory = factory;
         _jdbcTemplate = jdbcTemplate;
     }
@@ -239,7 +240,7 @@ public class UsersApi extends AbstractXapiRestController {
             final UserI user = getUserManagementService().getUser(username);
             return user == null ? new ResponseEntity<User>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(_factory.getUser(user), HttpStatus.OK);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -253,7 +254,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
-    public ResponseEntity<User> createUser(@RequestBody final User model) throws NotFoundException, PasswordComplexityException, DataFormatException, UserInitException, ResourceAlreadyExistsException {
+    public ResponseEntity<User> createUser(@RequestBody final User model) {
         try {
             validateUser(model);
         } catch (Exception e) {
@@ -287,12 +288,12 @@ public class UsersApi extends AbstractXapiRestController {
                 try {
                     AdminUtils.sendNewUserEmailMessage(user.getUsername(), user.getEmail());
                 } catch (Exception e) {
-                    _log.error("", e);
+                    log.error("", e);
                 }
             }
             return new ResponseEntity<>(_factory.getUser(user), HttpStatus.CREATED);
         } catch (Exception e) {
-            _log.error("Error occurred modifying user " + user.getLogin());
+            log.error("Error occurred modifying user " + user.getLogin());
         }
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -305,7 +306,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = User)
-    public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") @Username final String username, @RequestBody final User model) throws NotFoundException, PasswordComplexityException, UserInitException {
+    public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") @Username final String username, @RequestBody final User model) throws NotFoundException, UserInitException {
         final UserI user;
         try {
             user = getUserManagementService().getUser(username);
@@ -322,8 +323,6 @@ public class UsersApi extends AbstractXapiRestController {
         boolean isDirty = false;
         if ((StringUtils.isNotBlank(model.getUsername())) && (!StringUtils.equals(user.getUsername(), model.getUsername()))) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//            user.setLogin(model.getUsername());
-//            isDirty = true;
         }
         if ((StringUtils.isNotBlank(model.getFirstName())) && (!StringUtils.equals(user.getFirstname(), model.getFirstName()))) {
             user.setFirstname(model.getFirstName());
@@ -354,7 +353,7 @@ public class UsersApi extends AbstractXapiRestController {
                 try {
                     _aliasTokenService.deactivateAllTokensForUser(user.getLogin());
                 } catch (Exception e) {
-                    _log.error("", e);
+                    log.error("", e);
                 }
             }
             isDirty = true;
@@ -376,12 +375,12 @@ public class UsersApi extends AbstractXapiRestController {
                 try {
                     AdminUtils.sendNewUserEmailMessage(user.getUsername(), user.getEmail());
                 } catch (Exception e) {
-                    _log.error("", e);
+                    log.error("", e);
                 }
             }
             return new ResponseEntity<>(_factory.getUser(user), HttpStatus.OK);
         } catch (Exception e) {
-            _log.error("Error occurred modifying user " + user.getLogin());
+            log.error("Error occurred modifying user " + user.getLogin());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -394,7 +393,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "active/{username}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = User)
-    public ResponseEntity<List<String>> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable("username") @Username final String username) throws NotFoundException {
+    public ResponseEntity<List<String>> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable("username") @Username final String username) {
         final UserI  user;
         final String currentSessionId;
         if (StringUtils.equals(getSessionUser().getUsername(), username)) {
@@ -408,7 +407,7 @@ public class UsersApi extends AbstractXapiRestController {
                 }
                 currentSessionId = null;
             } catch (UserInitException e) {
-                _log.error("An error occurred initializing the user " + username, e);
+                log.error("An error occurred initializing the user " + username, e);
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             } catch (UserNotFoundException e) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -448,7 +447,7 @@ public class UsersApi extends AbstractXapiRestController {
             }
             return new ResponseEntity<>(user.isEnabled(), HttpStatus.OK);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -474,16 +473,16 @@ public class UsersApi extends AbstractXapiRestController {
                     try {
                         AdminUtils.sendNewUserEmailMessage(username, user.getEmail());
                     } catch (Exception e) {
-                        _log.error("", e);
+                        log.error("", e);
                     }
                 }
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred " + (flag ? "enabling" : "disabling") + " user " + user.getLogin());
+                log.error("Error occurred " + (flag ? "enabling" : "disabling") + " user " + user.getLogin());
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -505,7 +504,7 @@ public class UsersApi extends AbstractXapiRestController {
             }
             return new ResponseEntity<>(user.isVerified(), HttpStatus.OK);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -534,16 +533,16 @@ public class UsersApi extends AbstractXapiRestController {
                     try {
                         AdminUtils.sendNewUserEmailMessage(username, user.getEmail());
                     } catch (Exception e) {
-                        _log.error("", e);
+                        log.error("", e);
                     }
                 }
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred " + (flag ? "enabling" : "disabling") + " user " + user.getLogin());
+                log.error("Error occurred " + (flag ? "enabling" : "disabling") + " user " + user.getLogin());
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -584,11 +583,11 @@ public class UsersApi extends AbstractXapiRestController {
                     getRoleHolder().addRole(getSessionUser(), user, role);
                 } catch (Exception e) {
                     failed.add(role);
-                    _log.error("Error occurred adding role " + role + " to user " + user.getLogin() + ".", e);
+                    log.error("Error occurred adding role " + role + " to user " + user.getLogin() + ".", e);
                 }
             }
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -623,11 +622,11 @@ public class UsersApi extends AbstractXapiRestController {
                     getRoleHolder().deleteRole(getSessionUser(), user, role);
                 } catch (Exception e) {
                     failed.add(role);
-                    _log.error("Error occurred remove role " + role + " from user " + user.getLogin() + ".", e);
+                    log.error("Error occurred remove role " + role + " from user " + user.getLogin() + ".", e);
                 }
             }
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -658,11 +657,11 @@ public class UsersApi extends AbstractXapiRestController {
                 getRoleHolder().addRole(getSessionUser(), user, role);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred adding role " + role + " to user " + user.getLogin() + ".");
+                log.error("Error occurred adding role " + role + " to user " + user.getLogin() + ".");
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -687,11 +686,11 @@ public class UsersApi extends AbstractXapiRestController {
                 getRoleHolder().deleteRole(getSessionUser(), user, role);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred removing role " + role + " from user " + user.getLogin() + ".");
+                log.error("Error occurred removing role " + role + " from user " + user.getLogin() + ".");
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -714,7 +713,7 @@ public class UsersApi extends AbstractXapiRestController {
             Map<String, UserGroupI> groups = Groups.getGroupsForUser(user);
             return new ResponseEntity<>(groups.keySet(), HttpStatus.OK);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -744,11 +743,11 @@ public class UsersApi extends AbstractXapiRestController {
                     Groups.addUserToGroup(group, user, getSessionUser(), EventUtils.ADMIN_EVENT(getSessionUser()));
                 } catch (Exception e) {
                     failed.add(group);
-                    _log.error("Error occurred adding user " + user.getLogin() + " to group " + group + ".", e);
+                    log.error("Error occurred adding user " + user.getLogin() + " to group " + group + ".", e);
                 }
             }
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -783,11 +782,11 @@ public class UsersApi extends AbstractXapiRestController {
                     Groups.removeUserFromGroup(user, getSessionUser(), group, EventUtils.ADMIN_EVENT(getSessionUser()));
                 } catch (Exception e) {
                     failed.add(group);
-                    _log.error("Error occurred removing group " + group + " from user " + user.getLogin() + ".", e);
+                    log.error("Error occurred removing group " + group + " from user " + user.getLogin() + ".", e);
                 }
             }
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -821,11 +820,11 @@ public class UsersApi extends AbstractXapiRestController {
                 Groups.addUserToGroup(group, user, getSessionUser(), null);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred adding user " + user.getLogin() + " to group " + group + ".");
+                log.error("Error occurred adding user " + user.getLogin() + " to group " + group + ".");
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -849,11 +848,11 @@ public class UsersApi extends AbstractXapiRestController {
                 Groups.removeUserFromGroup(user, getSessionUser(), group, null);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred removing user " + user.getLogin() + " from group " + group + ".");
+                log.error("Error occurred removing user " + user.getLogin() + " from group " + group + ".");
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
+            log.error("An error occurred initializing the user " + username, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -908,28 +907,9 @@ public class UsersApi extends AbstractXapiRestController {
     }
     
     @ApiOperation(value = "Returns list of projects that user has edit access.", notes = "Returns list of projects that user has edit access.", response = String.class, responseContainer = "List")
-    @XapiRequestMapping(value = "projects", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = User)
-    public ResponseEntity<Collection<String>> getProjectsByUser() {
-        final String username = getSessionUser().getUsername();
-        try {
-            final UserI user = getUserManagementService().getUser(username);
-            final Collection<String> projects = new ArrayList<>();
-            try {
-                for (final XnatProjectdata project : XnatProjectdata.getAllXnatProjectdatas(user, false)) {
-                    if(project.canEdit(user)) {
-                        projects.add(project.getProject());
-                    }
-                }
-            } catch (Exception e) {
-                _log.error("Error occurred while getting projects for  user {}.", username);
-            }
-            return new ResponseEntity<>(projects,HttpStatus.OK);
-        } catch (UserInitException e) {
-            _log.error("An error occurred initializing the user " + username, e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (UserNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    @XapiRequestMapping(value = "projects", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    public ResponseEntity<List<String>> getProjectsByUser() {
+        return new ResponseEntity<>(_permissionsService.getUserEditableProjects(getSessionUser()), HttpStatus.OK);
     }
 
     @SuppressWarnings("unused")
@@ -946,10 +926,9 @@ public class UsersApi extends AbstractXapiRestController {
         public static String VerifiedEmail         = "Verified User Email";
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(UsersApi.class);
-
     private final SessionRegistry            _sessionRegistry;
     private final AliasTokenService          _aliasTokenService;
+    private final PermissionsServiceI        _permissionsService;
     private final UserFactory                _factory;
     private final NamedParameterJdbcTemplate _jdbcTemplate;
 }

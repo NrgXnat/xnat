@@ -16,7 +16,7 @@ public abstract class SubscriptionDelivery {
     @JsonProperty("user") public abstract String actionUser();
     @JsonProperty("project") public abstract String projectId();
     @JsonProperty("inputs") public abstract String actionInputs();
-    @JsonProperty("trigger") public abstract  TriggeringEvent triggeringEvent();
+    @Nullable @JsonProperty("trigger") public abstract  TriggeringEvent triggeringEvent();
     @JsonProperty("status") public abstract List<TimedEventStatus> timedEventStatuses();
 
     public static SubscriptionDelivery create(Long id, SimpleEvent event, Subscription subscription, String actionUser, String projectId, String actionInputs, TriggeringEvent triggeringEvent, List<TimedEventStatus> timedEventStatuses) {

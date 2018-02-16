@@ -15,7 +15,6 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
-import org.nrg.xnat.eventservice.entities.TriggeringEventEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
@@ -327,8 +326,8 @@ public class EventServiceImpl implements EventService {
                                 Object object = esEvent.getObject();
                                 // TODO: Handle other object types
                             }
-                            subscriptionDeliveryEntityService.setTriggeringEvent(deliveryId, new TriggeringEventEntity(
-                                    esEvent.getDisplayName(), esEvent.isPayloadXsiType(), esEvent.getPayloadXnatType(), xsiUri, objectLabel));
+                            subscriptionDeliveryEntityService.setTriggeringEvent(
+                                    deliveryId, esEvent.getDisplayName(), esEvent.isPayloadXsiType(), esEvent.getPayloadXnatType(), xsiUri, objectLabel);
                         } catch (Throwable e){
                             log.error("Could not build TriggeringEventEntity ", e.getMessage(), e);
                         }

@@ -6,7 +6,6 @@ import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
-import org.nrg.xnat.eventservice.entities.TriggeringEventEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
@@ -40,7 +39,6 @@ public class SubscriptionDeliveryEntityServiceImpl
         this.eventService = eventService;
     }
 
-    @Transactional
     @Override
     public Long create(SubscriptionEntity subscription, EventServiceEvent event, EventServiceListener listener, String actionUserLogin, String projectId,
                        String actionInputs) {
@@ -74,12 +72,12 @@ public class SubscriptionDeliveryEntityServiceImpl
     }
 
     @Override
-    public void setTriggeringEvent(Long deliveryId, TriggeringEventEntity triggeringEvent){
+    public void setTriggeringEvent(Long deliveryId, String eventName, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel){
         SubscriptionDeliveryEntity subscriptionDeliveryEntity = retrieve(deliveryId);
         if(subscriptionDeliveryEntity != null) {
-            subscriptionDeliveryEntity.setTriggeringEventEntity(triggeringEvent);
+            subscriptionDeliveryEntity.addTriggeringEventEntity(eventName,isXsiType,xnatType,xsiUri,objectLabel);
             update(subscriptionDeliveryEntity);
-            log.debug("Updated SubscriptionDeliveryEntity: {} with triggering event object: {}", deliveryId, triggeringEvent.getEventName());
+            log.debug("Updated SubscriptionDeliveryEntity: {} with triggering event object: {}", deliveryId, eventName);
         } else{
             log.error("Could not find SubscriptionDeliveryEntity: {} to update with triggering event", deliveryId);
         }
@@ -112,7 +110,7 @@ public class SubscriptionDeliveryEntityServiceImpl
                 .actionUser(entity.getActionUserLogin())
                 .projectId(entity.getProjectId())
                 .actionInputs(entity.getActionInputs())
-                .triggeringEvent(entity.getTriggeringEventEntity().toPojo())
+                .triggeringEvent(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().toPojo() : null)
                 .timedEventStatuses(TimedEventStatusEntity.toPojo(entity.getTimedEventStatuses()))
                 .subscription(entity.getSubscription().toPojo())
                 .build();

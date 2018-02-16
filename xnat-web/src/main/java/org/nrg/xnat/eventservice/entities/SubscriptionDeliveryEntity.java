@@ -70,10 +70,14 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         this.actionInputs = actionInputs;
     }
 
-    @OneToOne
+    @OneToOne(cascade=CascadeType.ALL)
     public TriggeringEventEntity getTriggeringEventEntity() { return triggeringEventEntity; }
 
     public void setTriggeringEventEntity(TriggeringEventEntity triggeringEventEntity) { this.triggeringEventEntity = triggeringEventEntity; }
+
+    public void addTriggeringEventEntity(String eventName, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel) {
+        this.triggeringEventEntity = new TriggeringEventEntity(eventName, isXsiType, xnatType, xsiUri, objectLabel);
+    }
 
     @OneToMany(mappedBy = "subscriptionDeliveryEntity", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     public List<TimedEventStatusEntity> getTimedEventStatuses() {

@@ -7,29 +7,28 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
+import org.nrg.xnat.services.cache.DefaultGroupsAndPermissionsCache;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
 import java.text.NumberFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 @Component
 @Slf4j
 public class InitializeGroupRequestListener {
     @Autowired
-    public InitializeGroupRequestListener(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
+    public InitializeGroupRequestListener(final GroupsAndPermissionsCache cache) {
         _cache = cache;
-        _groupIds = new HashSet<>(template.queryForList(QUERY_ALL_GROUPS, EmptySqlParameterSource.INSTANCE, String.class));
-        _groupIdsCount = _groupIds.size();
+        _groupIds = new HashSet<>();
         _groupTimings = ArrayListMultimap.create();
         _start = new Date();
+
+        if (_cache instanceof DefaultGroupsAndPermissionsCache) {
+            ((DefaultGroupsAndPermissionsCache) _cache).registerListener(this);
+        }
     }
 
     @JmsListener(destination = "initializeGroup", containerFactory = "listenerContainerFactory")
@@ -48,12 +47,11 @@ public class InitializeGroupRequestListener {
             }
         } finally {
             _groupTimings.putAll(groupId, stopWatch.getLaps());
-            final int remaining = _groupIdsCount - _groupTimings.keySet().size();
+            final int remaining = _groupIds.size() - _groupTimings.keySet().size();
             if (remaining > 0) {
                 stopWatch.stop("Completed processing group '{}', there are {} groups remaining", groupId, remaining);
             } else {
-                final long elapsed = new Date().getTime() - _start.getTime();
-                stopWatch.stop("Completed processing group '{}', there are NO groups remaining! Total time elapsed {} ms", groupId, FORMATTER.format(elapsed));
+                stopWatch.stop("Completed processing group '{}', there are NO groups remaining! Total time elapsed {} ms", groupId, FORMATTER.format(new Date().getTime() - _start.getTime()));
             }
         }
     }
@@ -68,12 +66,14 @@ public class InitializeGroupRequestListener {
         return _groupTimings;
     }
 
-    private static final String       QUERY_ALL_GROUPS = "SELECT id FROM xdat_usergroup";
-    private static final NumberFormat FORMATTER        = NumberFormat.getNumberInstance(Locale.getDefault());
+    public void setGroupIds(final List<String> groupIds) {
+        _groupIds.addAll(groupIds);
+    }
+
+    private static final NumberFormat FORMATTER = NumberFormat.getNumberInstance(Locale.getDefault());
 
     private final Date                               _start;
     private final GroupsAndPermissionsCache          _cache;
     private final Set<String>                        _groupIds;
-    private final int                                _groupIdsCount;
     private final Multimap<String, LapStopWatch.Lap> _groupTimings;
 }

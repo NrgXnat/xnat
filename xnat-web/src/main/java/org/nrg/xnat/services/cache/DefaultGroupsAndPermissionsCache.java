@@ -33,6 +33,7 @@ import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.cache.jms.InitializeGroupRequest;
+import org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
@@ -291,6 +292,10 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         stopWatch.lap("Processed {} tags", tags);
 
         final List<String> groupIds = _template.queryForList(QUERY_ALL_GROUPS, EmptySqlParameterSource.INSTANCE, String.class);
+        if (_listener != null) {
+            _listener.setGroupIds(groupIds);
+        }
+
         try {
             final UserI adminUser = Users.getAdminUser();
             assert adminUser != null;
@@ -316,6 +321,10 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     @Override
     public boolean isInitialized() {
         return _initialized;
+    }
+
+    public void registerListener(final InitializeGroupRequestListener listener) {
+        _listener = listener;
     }
 
     private synchronized UserGroupI initializeGroup(final String groupId) {
@@ -538,5 +547,6 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     private final JmsTemplate                _jmsTemplate;
     private final DatabaseHelper             _helper;
 
-    private boolean _initialized;
+    private InitializeGroupRequestListener _listener;
+    private boolean                        _initialized;
 }

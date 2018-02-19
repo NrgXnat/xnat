@@ -14,6 +14,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -24,45 +25,63 @@ import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
 
+@Component
 @Slf4j
 public class AuthenticationProviderConfigurationLocator {
-    public AuthenticationProviderConfigurationLocator(final String providerType, final ConfigPaths configPaths, final MessageSource messageSource) {
-        final List<Properties> definitions = getProviderDefinitions(providerType, configPaths, messageSource);
+    public AuthenticationProviderConfigurationLocator(final ConfigPaths configPaths, final MessageSource messageSource) {
+        final List<Properties> definitions = getProviderDefinitions(configPaths, messageSource);
         for (final Properties definition : definitions) {
+            final String id   = definition.getProperty("id");
             final String type = definition.getProperty("type");
-            if (StringUtils.equals(providerType, type)) {
-                final String id = definition.getProperty("id");
-                if (_definitions.containsKey("id")) {
-                    throw new RuntimeException("There's already a provider definition with the ID {}, can't have duplicate IDs.");
-                }
-                _definitions.put(id, definition);
+
+            if (_definitionsById.containsKey(id)) {
+                throw new RuntimeException("There's already a provider definition of type '" + _definitionsById.get(id).getAuthMethod() + "' with the ID '" + id + "'. Provider IDs must be distinct even across different provider types.");
             }
+
+            final Map<String, ProviderAttributes> typeDefinitions;
+            if (_definitionsByType.containsKey(type)) {
+                typeDefinitions = _definitionsByType.get(type);
+            } else {
+                typeDefinitions = new HashMap<>();
+                _definitionsByType.put(type, typeDefinitions);
+            }
+
+            typeDefinitions.put(id, new ProviderAttributes(definition));
         }
     }
 
-    public Map<String, Properties> getProviderDefinitions() {
-        return _definitions;
+    public Map<String, ProviderAttributes> getProviderDefinitions() {
+        return _definitionsById;
     }
 
-    @SuppressWarnings("unused")
-    public Properties getProviderDefinition(final String providerId) {
-        if (StringUtils.isBlank(providerId) || !_definitions.containsKey(providerId)) {
+    public ProviderAttributes getProviderDefinition(final String id) {
+        return _definitionsById.get(id);
+    }
+
+    public Map<String, ProviderAttributes> getProviderDefinitionsByType(final String type) {
+        if (StringUtils.isBlank(type) || !_definitionsByType.containsKey(type)) {
             return null;
         }
-        return _definitions.get(providerId);
+        return _definitionsByType.get(type);
+    }
+
+    public ProviderAttributes getProviderDefinitionByType(final String type, final String id) {
+        if (StringUtils.isBlank(type) || !_definitionsByType.containsKey(type) || StringUtils.isBlank(id) || !_definitionsByType.get(type).containsKey(id)) {
+            return null;
+        }
+        return _definitionsByType.get(type).get(id);
     }
 
     /**
      * Finds all {@link XnatAuthenticationProvider XNAT authentication provider configurations} defined in properties files named <b>*-provider.properties</b>
      * and found in the configuration folder <b>auth</b> or on the classpath in <b>META-INF/xnat/security</b> or one of its subfolders.
      *
-     * @param providerType  The type of provider definition to be retrieved.
      * @param configPaths   The config paths locator.
      * @param messageSource The message source.
      *
      * @return A list of provider definitions.
      */
-    private List<Properties> getProviderDefinitions(final String providerType, final Iterable<? extends Path> configPaths, final MessageSource messageSource) {
+    private List<Properties> getProviderDefinitions(final Iterable<? extends Path> configPaths, final MessageSource messageSource) {
         final List<Properties> providers = new ArrayList<>();
 
         // Populate map of properties for each provider
@@ -115,7 +134,7 @@ public class AuthenticationProviderConfigurationLocator {
             log.warn("Tried to find plugin authentication provider definitions, but got an error trying to search {}", PROVIDER_CLASSPATH, e.getMessage());
         }
 
-        if (providers.isEmpty() && StringUtils.equals(providerType, XdatUserAuthService.LOCALDB)) {
+        if (providers.isEmpty()) {
             final Properties provider = new Properties();
             provider.put("name", messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_OBJECT_ARRAY, "Database", Locale.getDefault()));
             provider.put("id", "db");
@@ -202,5 +221,6 @@ public class AuthenticationProviderConfigurationLocator {
     private static final RegexFileFilter PROVIDER_FILENAME_FILTER    = new RegexFileFilter("^." + PROVIDER_FILENAME);
     private static final Pattern         PROPERTY_NAME_VALUE_PATTERN = Pattern.compile("^(?:provider\\.)?(?<providerId>[A-z0-9_-]+)\\.(?<property>.*)$");
 
-    private final Map<String, Properties> _definitions = new HashMap<>();
+    private final Map<String, Map<String, ProviderAttributes>> _definitionsByType = new HashMap<>();
+    private final Map<String, ProviderAttributes>              _definitionsById   = new HashMap<>();
 }

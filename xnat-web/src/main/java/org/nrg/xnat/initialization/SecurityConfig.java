@@ -11,6 +11,7 @@ package org.nrg.xnat.initialization;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
@@ -18,6 +19,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.*;
 import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
+import org.nrg.xnat.security.provider.AuthenticationProviderConfigurationLocator;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
@@ -72,12 +74,14 @@ import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
 @Slf4j
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
-    public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource, final NamedParameterJdbcTemplate template, final DataSource dataSource) {
+    public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService, final ConfigPaths configPaths, final DateValidation dateValidation, final MessageSource messageSource, final NamedParameterJdbcTemplate template, final DataSource dataSource) {
         _preferences = preferences;
         _appInfo = appInfo;
         _aliasTokenService = aliasTokenService;
         _userAuthService = userAuthService;
+        _configPaths = configPaths;
         _dateValidation = dateValidation;
+        _messageSource = messageSource;
         _template = template;
         _dataSource = dataSource;
 
@@ -218,6 +222,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
+    public AuthenticationProviderConfigurationLocator authenticationProviderConfigurationLocator() {
+        return new AuthenticationProviderConfigurationLocator(_configPaths, _messageSource);
+    }
+
+    @Bean
     @Override
     protected AuthenticationManager authenticationManager() throws Exception {
         return super.authenticationManager();
@@ -294,7 +303,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final XnatAppInfo                _appInfo;
     private final AliasTokenService          _aliasTokenService;
     private final XdatUserAuthService        _userAuthService;
+    private final ConfigPaths                _configPaths;
     private final DateValidation             _dateValidation;
+    private final MessageSource              _messageSource;
     private final NamedParameterJdbcTemplate _template;
     private final DataSource                 _dataSource;
     private final String                     _dbAuthProviderName;

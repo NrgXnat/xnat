@@ -1,14 +1,18 @@
 package org.nrg.xnat.security.provider;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 /**
  * Provides a convenient container for the attributes of an authentication provider stored in an instance of the {@link
  * XnatMulticonfigAuthenticationProvider} class.
  */
-public class ProviderAttributes {
+public class ProviderAttributes implements Comparable<ProviderAttributes> {
     public ProviderAttributes(final String providerId, final String authMethod, final String displayName, final Boolean visible, final Integer order, final Properties properties) {
         _providerId = providerId;
         _authMethod = authMethod;
@@ -18,17 +22,8 @@ public class ProviderAttributes {
         _properties = properties;
     }
 
-    public ProviderAttributes(final XnatAuthenticationProvider provider) {
-        _providerId = provider.getProviderId();
-        _authMethod = provider.getAuthMethod();
-        _displayName = provider.getName();
-        _visible = provider.isVisible();
-        _order = provider.getOrder();
-        _properties = new Properties();
-    }
-
     public ProviderAttributes(final Properties properties) {
-        this(properties.getProperty("id"), properties.getProperty("type"), properties.getProperty("name"), Boolean.parseBoolean(properties.getProperty("visible", "true")), Integer.parseInt(properties.getProperty("order", "-1")), properties);
+        this(properties.getProperty("id"), properties.getProperty("type"), properties.getProperty("name"), Boolean.parseBoolean(properties.getProperty("visible", "true")), Integer.parseInt(properties.getProperty("order", "-1")), getScrubbedProperties(properties));
     }
 
     /**
@@ -110,6 +105,36 @@ public class ProviderAttributes {
         return _properties;
     }
 
+    public String getProperty(final String property) {
+        return getProperty(property, null);
+    }
+
+    public String getProperty(final String property, final String defaultValue) {
+        return _properties.getProperty(property, defaultValue);
+    }
+
+    @Override
+    public int compareTo(@NotNull final ProviderAttributes that) {
+        final int     thisOrder     = getOrder();
+        final int     thatOrder     = that.getOrder();
+        final boolean isFirstBlank  = thisOrder == -1;
+        final boolean isSecondBlank = thatOrder == -1;
+        if (isFirstBlank || isSecondBlank) {
+            return isFirstBlank && isSecondBlank ? 0 : isFirstBlank ? -1 : 1;
+        }
+        return NumberUtils.compare(thisOrder, thatOrder);
+    }
+
+    private static Properties getScrubbedProperties(final Properties properties) {
+        final Properties scrubbed = new Properties(properties);
+        for (final String property : EXCLUDED_PROPERTIES) {
+            scrubbed.remove(property);
+        }
+        return scrubbed;
+    }
+
+    private static final List<String> EXCLUDED_PROPERTIES = Arrays.asList("id", "name", "type", "visible", "order");
+
     private final String     _providerId;
     private final String     _authMethod;
     private final String     _displayName;
@@ -118,3 +143,5 @@ public class ProviderAttributes {
     private boolean _visible;
     private int     _order;
 }
+
+

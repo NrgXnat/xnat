@@ -31,13 +31,12 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Locale;
 
 @Configuration
 @EnableSwagger2
-@ComponentScan(value = {"org.nrg.xapi.rest", "org.nrg.xnat.spawner.configuration"},
-               includeFilters = @Filter(ControllerAdvice.class))
+@ComponentScan(value = {"org.nrg.xapi.rest", "org.nrg.xnat.spawner.configuration"}, includeFilters = @Filter(ControllerAdvice.class))
 public class RestApiConfig {
     @Bean
     public UserFactory userFactory(final XdatUserAuthService service) {
@@ -53,7 +52,6 @@ public class RestApiConfig {
                                                       .paths(PathSelectors.any())
                                                       .build()
                                                       .apiInfo(apiInfo(info, messageSource));
-                                                      // .pathMapping("/xapi");
     }
 
     private ApiInfo apiInfo(final XnatAppInfo info, final MessageSource messageSource) {
@@ -66,7 +64,7 @@ public class RestApiConfig {
                                        getMessage(messageSource, "apiInfo.contactEmail")),
                            getMessage(messageSource, "apiInfo.license"),
                            getMessage(messageSource, "apiInfo.licenseUrl"),
-                           new ArrayList<VendorExtension>());
+                           Collections.<VendorExtension>emptyList());
     }
 
     private String getMessage(final MessageSource messageSource, final String messageId) {

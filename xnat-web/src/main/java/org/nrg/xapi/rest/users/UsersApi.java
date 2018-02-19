@@ -58,27 +58,27 @@ import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 @Api(description = "User Management API")
 @XapiRestController
 @RequestMapping(value = "/users")
 @Slf4j
 public class UsersApi extends AbstractXapiRestController {
-
     public static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<User>() {
         @Override
-        public User mapRow(final ResultSet resultSet, final int i) throws SQLException {
-            Timestamp lastSuccessfulLogin     = resultSet.getTimestamp("lastSuccessfulLogin");
-            Date      lastSuccessfulLoginDate = null;
-            if (lastSuccessfulLogin != null) {
-                lastSuccessfulLoginDate = new Date(lastSuccessfulLogin.getTime());
-            }
-            Timestamp lastModified     = resultSet.getTimestamp("last_modified");
-            Date      lastModifiedDate = null;
-            if (lastModified != null) {
-                lastModifiedDate = new Date(lastModified.getTime());
-            }
-
-            return new User(resultSet.getInt("id"), resultSet.getString("username"), resultSet.getString("firstName"), resultSet.getString("lastName"), resultSet.getString("email"), null, null, null, true, lastModifiedDate, null, resultSet.getInt("enabled") == 1, resultSet.getInt("verified") == 1, lastSuccessfulLoginDate);
+        public User mapRow(final ResultSet resultSet, final int index) throws SQLException {
+            final int       userId                  = resultSet.getInt("id");
+            final String    username                = resultSet.getString("username");
+            final String    firstName               = resultSet.getString("firstName");
+            final String    lastName                = resultSet.getString("lastName");
+            final String    email                   = resultSet.getString("email");
+            final Timestamp lastModified            = resultSet.getTimestamp("last_modified");
+            final Date      lastModifiedDate        = lastModified != null ? new Date(lastModified.getTime()) : null;
+            final boolean   enabled                 = resultSet.getInt("enabled") == 1;
+            final boolean   verified                = resultSet.getInt("verified") == 1;
+            final Timestamp lastSuccessfulLogin     = resultSet.getTimestamp("lastSuccessfulLogin");
+            final Date      lastSuccessfulLoginDate = lastSuccessfulLogin != null ? new Date(lastSuccessfulLogin.getTime()) : null;
+            return new User(userId, username, firstName, lastName, email, null, null, null, true, lastModifiedDate, null, enabled, verified, lastSuccessfulLoginDate);
         }
     };
 
@@ -905,7 +905,7 @@ public class UsersApi extends AbstractXapiRestController {
             throw exception;
         }
     }
-    
+
     @ApiOperation(value = "Returns list of projects that user has edit access.", notes = "Returns list of projects that user has edit access.", response = String.class, responseContainer = "List")
     @XapiRequestMapping(value = "projects", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<List<String>> getProjectsByUser() {

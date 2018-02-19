@@ -1,16 +1,18 @@
 package org.nrg.xapi.authorization;
 
-import com.google.common.collect.ImmutableList;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
 import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xnat.event.listeners.methods.AbstractScopedSiteConfigPreferenceHandlerMethod;
+import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Checks whether user can access the system user list.
@@ -27,15 +29,15 @@ public class UserResourceXapiAuthorization extends AbstractXapiAuthorization imp
      *
      * <ol>
      * <li>
-     * If user list access is not restricted to administrators, then any authenticated user can access the list.
+     *     If user list access is not restricted to administrators, then any authenticated user can access the list.
      * </li>
      * <li>
-     * If user list access is restricted to administrators, this method checks for any {@link Username}-
-     * annotated parameters for the {@link XapiRequestMapping}-annotated method. If the current user's name
-     * appears in that list, that user can access the method in spite of not being an administrator.
+     *     If user list access is restricted to administrators, this method checks for any {@link Username}-
+     *     annotated parameters for the {@link XapiRequestMapping}-annotated method. If the current user's name
+     *     appears in that list, that user can access the method in spite of not being an administrator.
      * </li>
      * <li>
-     * Otherwise, only users with administrator privileges can access the list.
+     *     Otherwise, only users with administrator privileges can access the list.
      * </li>
      * </ol>
      */
@@ -78,12 +80,9 @@ public class UserResourceXapiAuthorization extends AbstractXapiAuthorization imp
         _handlerProxy.handlePreference(preference, value);
     }
 
-    private static final String       RESTRICT_PREF = "restrictUserListAccessToAdmins";
-    private static final List<String> PREFERENCES   = ImmutableList.copyOf(Collections.singletonList(RESTRICT_PREF));
-
-    private final PreferenceHandlerMethod _handlerProxy = new AbstractScopedSiteConfigPreferenceHandlerMethod(PREFERENCES) {
+    private final PreferenceHandlerMethod _handlerProxy = new AbstractScopedXnatPreferenceHandlerMethod("restrictUserListAccessToAdmins") {
         @Override
-        public void handlePreference(final String preference, final String value) {
+        protected void handlePreferenceImpl(final String preference, final String value) {
             _restrictUserListAccessToAdmins = Boolean.parseBoolean(value);
         }
     };

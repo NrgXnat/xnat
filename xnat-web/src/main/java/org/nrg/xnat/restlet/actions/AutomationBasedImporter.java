@@ -74,7 +74,10 @@ import java.util.zip.ZipOutputStream;
 public class AutomationBasedImporter extends ImporterHandlerA implements Callable<List<String>> {
 
 	/** The Constant ZIP_EXT. */
-	static final String[] ZIP_EXT = { ".zip", ".jar", ".rar", ".ear", ".gar", ".xar" };
+	static final List<String> ZIP_EXT = Arrays.asList( ".zip", ".jar", ".rar", ".ear", ".gar", ".xar" );
+	
+	/** The Constant OTHER_COMPRESSION_EXT. */
+	static final List<String> OTHER_COMPRESSION_EXT = Arrays.asList( ".tgz", ".gz", ".tar" );
 	
 	/** The Constant STATUS_COMPLETE. */
 	private static final String STATUS_COMPLETE = "Complete";
@@ -850,6 +853,11 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 				return true;
 			}
 		}
+		for (final String ext : OTHER_COMPRESSION_EXT) {
+			if (fileName.toLowerCase().endsWith(ext)) {
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -870,7 +878,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 				return new ZipUtils();
 			} else if (file_extension.equalsIgnoreCase(".tar")) {
 				return new TarUtils();
-			} else if (file_extension.equalsIgnoreCase(".gz")) {
+			} else if (OTHER_COMPRESSION_EXT.contains(file_extension)) {
 				TarUtils zipper = new TarUtils();
 				zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
 				return zipper;

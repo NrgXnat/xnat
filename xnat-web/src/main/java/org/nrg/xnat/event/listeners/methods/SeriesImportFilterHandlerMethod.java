@@ -9,71 +9,62 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
-import org.nrg.dicomtools.filters.*;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xnat.utils.XnatUserProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.nrg.dicomtools.filters.DicomFilterService;
+import org.nrg.dicomtools.filters.ModalityMapSeriesImportFilter;
+import org.nrg.dicomtools.filters.SeriesImportFilter;
+import org.nrg.dicomtools.filters.SeriesImportFilterMode;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @Component
-public class SeriesImportFilterHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+public class SeriesImportFilterHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
-    public SeriesImportFilterHandlerMethod(final SiteConfigPreferences preferences, final DicomFilterService dicomFilterService, final XnatUserProvider primaryAdminUserProvider) {
-        super(primaryAdminUserProvider);
-        _preferences = preferences;
+    public SeriesImportFilterHandlerMethod(final DicomFilterService dicomFilterService, final XnatUserProvider primaryAdminUserProvider) {
+        super(primaryAdminUserProvider, ENABLE_SITEWIDE_FILTER, SITEWIDE_FILTER_MODE, SITEWIDE_FILTER);
         _dicomFilterService = dicomFilterService;
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        switch (preference) {
+            case ENABLE_SITEWIDE_FILTER:
+                setFilterEnabledFlag(value);
+                break;
 
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateSeriesImportFilter();
+            case SITEWIDE_FILTER:
+                setFilter(value);
+                break;
+
+            case SITEWIDE_FILTER_MODE:
+                final SeriesImportFilterMode mode = SeriesImportFilterMode.mode(value);
+                final SeriesImportFilter seriesImportFilter = _dicomFilterService.getSeriesImportFilter();
+                // It only makes sense to change mode for regex series import filter.
+                if (mode != SeriesImportFilterMode.ModalityMap && !(seriesImportFilter instanceof ModalityMapSeriesImportFilter)) {
+                    seriesImportFilter.setMode(mode);
+                }
+                _dicomFilterService.commit(seriesImportFilter, getAdminUsername(), "Updated site-wide series import filter mode from administrator UI.");
+                break;
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if (PREFERENCES.contains(preference)) {
-            updateSeriesImportFilter();
-        }
+    private void setFilter(final String value) {
+        final SeriesImportFilter filter = DicomFilterService.buildSeriesImportFilter(value);
+        _dicomFilterService.commit(filter, getAdminUsername(), "Updated site-wide series import filter from administrator UI.");
     }
 
-    private void updateSeriesImportFilter() {
-        try {
-            final boolean enabled = _preferences.getEnableSitewideSeriesImportFilter();
-            final SeriesImportFilterMode mode = SeriesImportFilterMode.mode(_preferences.getSitewideSeriesImportFilterMode());
-            final String filterContents = _preferences.getSitewideSeriesImportFilter();
-            final SeriesImportFilter seriesImportFilter;
-            if (mode == SeriesImportFilterMode.ModalityMap) {
-                seriesImportFilter = new ModalityMapSeriesImportFilter(filterContents, enabled);
-            } else {
-                seriesImportFilter = new RegExBasedSeriesImportFilter(filterContents, mode, enabled);
-            }
-            final SeriesImportFilter sitewide = _dicomFilterService.getSeriesImportFilter();
-            if (!seriesImportFilter.equals(sitewide)) {
-                _dicomFilterService.commit(seriesImportFilter, getAdminUsername(), "Updated site-wide series import filter from administrator UI.");
-            }
-        } catch (Exception e) {
-            _log.error("Failed to update Series Import Filter.", e);
-        }
+    private void setFilterEnabledFlag(final String value) {
+        final SeriesImportFilter filter  = _dicomFilterService.getSeriesImportFilter();
+        final boolean            enabled = Boolean.parseBoolean(value);
+        filter.setEnabled(enabled);
+        _dicomFilterService.commit(filter, getAdminUsername(), (enabled ? "Enabled" : "Disabled") + " site-wide series import filter from administrator UI.");
     }
 
-    private static final Logger       _log        = LoggerFactory.getLogger(SeriesImportFilterHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("enableSitewideSeriesImportFilter", "sitewideSeriesImportFilterMode", "sitewideSeriesImportFilter"));
+    private static final String SITEWIDE_FILTER        = "sitewideSeriesImportFilter";
+    private static final String SITEWIDE_FILTER_MODE   = "sitewideSeriesImportFilterMode";
+    private static final String ENABLE_SITEWIDE_FILTER = "enableSitewideSeriesImportFilter";
 
-    private final SiteConfigPreferences _preferences;
-    private final DicomFilterService    _dicomFilterService;
+    private final DicomFilterService _dicomFilterService;
 }

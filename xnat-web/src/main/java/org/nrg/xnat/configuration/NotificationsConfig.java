@@ -10,8 +10,8 @@
 package org.nrg.xnat.configuration;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
+import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.entities.ChannelRendererProvider;
 import org.nrg.notify.renderers.ChannelRenderer;
@@ -19,12 +19,14 @@ import org.nrg.notify.renderers.NrgMailChannelRenderer;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.preferences.SmtpServer;
+import org.nrg.xnat.security.ResetEmailRequests;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.scheduling.config.TriggerTask;
+import org.springframework.scheduling.support.PeriodicTrigger;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,9 +34,13 @@ import java.util.Map;
 @Configuration
 @ComponentScan({"org.nrg.mail.services", "org.nrg.notify.services.impl", "org.nrg.notify.daos"})
 public class NotificationsConfig {
+    @Bean
+    public TriggerTask resetEmailRequests(final EmailRequestLogService service) {
+        return new TriggerTask(new ResetEmailRequests(service), new PeriodicTrigger(900000));
+    }
 
     @Bean
-    public JavaMailSenderImpl mailSender(final NotificationsPreferences preferences) throws IOException, SiteConfigurationException {
+    public JavaMailSenderImpl mailSender(final NotificationsPreferences preferences) {
         final SmtpServer         smtp   = preferences.getSmtpServer();
         final JavaMailSenderImpl sender = new JavaMailSenderImpl();
         if(smtp!=null) {
@@ -56,7 +62,7 @@ public class NotificationsConfig {
     }
 
     @Bean
-    public NrgMailChannelRenderer mailChannelRenderer(final SiteConfigPreferences siteConfigPreferences, final NotificationsPreferences notificationsPreferences, final MailService mailService) throws SiteConfigurationException {
+    public NrgMailChannelRenderer mailChannelRenderer(final SiteConfigPreferences siteConfigPreferences, final NotificationsPreferences notificationsPreferences, final MailService mailService) {
         final NrgMailChannelRenderer renderer = new NrgMailChannelRenderer(mailService);
         renderer.setFromAddress(siteConfigPreferences.getAdminEmail());
         renderer.setSubjectPrefix(notificationsPreferences.getEmailPrefix());
@@ -64,7 +70,7 @@ public class NotificationsConfig {
     }
 
     @Bean
-    public ChannelRendererProvider rendererProvider(final NrgMailChannelRenderer renderer) throws SiteConfigurationException {
+    public ChannelRendererProvider rendererProvider(final NrgMailChannelRenderer renderer) {
         final ChannelRendererProvider provider = new ChannelRendererProvider();
         final Map<String, ChannelRenderer> renderers = new HashMap<>();
         renderers.put("htmlMail", renderer);

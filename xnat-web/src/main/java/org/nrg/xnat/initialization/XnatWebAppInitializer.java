@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.initialization;
 
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.axis.transport.http.AdminServlet;
 import org.apache.axis.transport.http.AxisHTTPSessionListener;
@@ -20,13 +21,12 @@ import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
-import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.nrg.xnat.servlet.ArchiveServlet;
 import org.nrg.xnat.servlet.Log4JServlet;
-import org.springframework.stereotype.Component;
+import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.*;
@@ -39,10 +39,14 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-@Component
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_CLASS_ARRAY;
+
+@SuppressWarnings("unused")
 @Slf4j
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
-    public static final Class<?>[] EMPTY_ARRAY = new Class<?>[0];
+    public static ServletContext getServletContext() {
+        return SERVLET_CONTEXT;
+    }
 
     @Override
     public void onStartup(final ServletContext context) throws ServletException {
@@ -57,7 +61,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         super.onStartup(context);
 
         // Now initialize everything else.
-        // context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
+        context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
         context.addFilter("updateExpirationCookie", UpdateExpirationCookie.class).addMappingForUrlPatterns(null, false, "/*");
 
         context.addListener(XnatSessionEventPublisher.class);
@@ -65,7 +69,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
         Turbine.setTurbineServletConfig(new XnatTurbineConfig(context));
 
-        _context = context;
+        SERVLET_CONTEXT = context;
 
         addServlet(XDATServlet.class, 1, "/xdat/*");
         addServlet(Turbine.class, 2, "/app/*");
@@ -88,12 +92,12 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         configClasses.add(RootConfig.class);
         configClasses.addAll(getPluginConfigs());
         configClasses.add(ControllerConfig.class);
-        return configClasses.toArray(new Class[configClasses.size()]);
+        return configClasses.toArray(new Class[0]);
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return EMPTY_ARRAY;
+        return EMPTY_CLASS_ARRAY;
     }
 
     @Override
@@ -114,7 +118,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final String prefix = "xnat_" + Long.toString(System.nanoTime());
         try {
             final Path path = Paths.get(root, subfolder);
-            //noinspection ResultOfMethodCallIgnored
             path.toFile().mkdirs();
             final Path tmpDir = Files.createTempDirectory(path, prefix);
             tmpDir.toFile().deleteOnExit();
@@ -123,12 +126,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
             throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder " + root);
         }
     }
-
-    private static final long MAX_FILE_SIZE = 1048576 * 20; // 20 MB max file size.
-
-    private static final long MAX_REQUEST_SIZE = 20971520;  // 20MB max request size.
-
-    private static final int FILE_SIZE_THRESHOLD = 0; // Threshold turned off.
 
     private List<Class<?>> getPluginConfigs() {
         final List<Class<?>> configs = new ArrayList<>();
@@ -148,8 +145,8 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     }
 
     private void addServlet(final Class<? extends Servlet> clazz, final int loadOnStartup, final String... mappings) {
-        final String name = StringUtils.uncapitalize(clazz.getSimpleName());
-        final ServletRegistration.Dynamic registration = _context.addServlet(name, clazz);
+        final String                      name         = StringUtils.uncapitalize(clazz.getSimpleName());
+        final ServletRegistration.Dynamic registration = SERVLET_CONTEXT.addServlet(name, clazz);
         registration.setLoadOnStartup(loadOnStartup);
         registration.addMapping(mappings);
     }
@@ -187,5 +184,9 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         private ServletContext _context;
     }
 
-    private ServletContext _context;
+    private static final long                         MAX_FILE_SIZE       = 1048576 * 20; // 20 MB max file size.
+    private static final long                         MAX_REQUEST_SIZE    = 20971520;  // 20MB max request size.
+    private static final int                          FILE_SIZE_THRESHOLD = 0; // Threshold turned off.
+    private static final ImmutableMap<String, String> LOG4J_INIT_PARAMS   = ImmutableMap.of("log4j-init-file", "WEB-INF/classes/log4j.properties");
+    private static       ServletContext               SERVLET_CONTEXT     = null;
 }

@@ -11,8 +11,8 @@ package org.nrg.xnat.helpers.prearchive;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
@@ -26,6 +26,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.XDAT;
@@ -45,12 +46,10 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.restlet.XNATApplication;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.services.Archiver;
-import org.nrg.xnat.utils.XnatUserProvider;
 import org.restlet.data.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -62,8 +61,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+@Slf4j
 public final class PrearcDatabase {
-    private static final Logger logger = LoggerFactory.getLogger(PrearcTableBuilder.class);
     public static Connection conn;
     final static String table = "prearchive";
     final static String tableWithSchema = PoolDBUtils.search_schema_name + "." + PrearcDatabase.table;
@@ -193,7 +192,7 @@ public final class PrearcDatabase {
         }
         // can't happen
         catch (SessionException e) {
-            logger.error("", e);
+            log.error("", e);
         }
         return true;
     }
@@ -216,7 +215,7 @@ public final class PrearcDatabase {
                 }
             }.run();
         } catch (SessionException e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -317,7 +316,7 @@ public final class PrearcDatabase {
                 }
             }.run();
         } catch (SessionException e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -541,7 +540,7 @@ public final class PrearcDatabase {
 
                             PrearcUtils.log(sessionData, new Exception(String.format("Moved from %1$s to %2$s", proj, destination)));
                         } catch (SyncFailedException e) {
-                            logger.error("Session sync operation failed", e);
+                            log.error("Session sync operation failed", e);
                             throw new IllegalStateException(e.getMessage());
                         }
                         return null;
@@ -559,7 +558,7 @@ public final class PrearcDatabase {
         try {
             ran = l.run();
         } catch (Exception _e) {
-            logger.error("", _e);
+            log.error("", _e);
             e = _e;
             ran = false;
         }
@@ -588,7 +587,7 @@ public final class PrearcDatabase {
         final SessionData sessionData = PrearcDatabase.getSession(session, timestamp, project);
 
         final XnatUserProvider provider = XDAT.getContextService().getBean("receivedFileUserProvider", XnatUserProvider.class);
-        final UserI importer = provider.get();
+        final UserI            importer = provider.get();
 
         final LockAndSync<Map<String, SessionData>> l = new LockAndSync<Map<String, SessionData>>(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), sessionData.getStatus()) {
             @Override
@@ -644,7 +643,7 @@ public final class PrearcDatabase {
                             PrearcUtils.resetStatus(importer, project, _petSessionTimestamp, petSessionDir.getName(), true);
                             PrearcUtils.log(petSessionData, String.format("Moved %d scans from %s to %s", _petScanIds.size(), sessionData.getName(), _petSession));
                         } catch (SyncFailedException e) {
-                            logger.error("Session sync failed", e);
+                            log.error("Session sync failed", e);
                             throw new IllegalStateException(e.getMessage());
                         } finally {
                             if (mrSessionData != null && petSessionData != null) {
@@ -700,7 +699,7 @@ public final class PrearcDatabase {
         try {
             ran = l.run();
         } catch (Exception _e) {
-            logger.error("", _e);
+            log.error("", _e);
             e = _e;
             ran = false;
         }
@@ -763,15 +762,15 @@ public final class PrearcDatabase {
         final SeriesImportFilter splitPetMrSessionFilter = getSplitPetMrSessionsFilter();
 
         final List<XnatImagescandataI> scans = petmrSession.getScans_scan();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Processing {} scans from the PET/MR session {} from the scanner {} in the project {}", scans.size(), petmrSession.getId(), petmrSession.getScanner(), petmrSession.getProject());
+        if (log.isDebugEnabled()) {
+            log.debug("Processing {} scans from the PET/MR session {} from the scanner {} in the project {}", scans.size(), petmrSession.getId(), petmrSession.getScanner(), petmrSession.getProject());
         }
         for (final XnatImagescandataI scan : scans) {
             final String index = scan.getId();
             final String modality = getScanModality(scan);
             final String description = scan.getSeriesDescription();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Processing scan {} with modality {} and description {}", index, modality, description);
+            if (log.isDebugEnabled()) {
+                log.debug("Processing scan {} with modality {} and description {}", index, modality, description);
             }
             final Map<String, String> headers = new HashMap<>();
             headers.put("SeriesNumber", index);
@@ -783,7 +782,7 @@ public final class PrearcDatabase {
                 if (foundScans != null) {
                     foundScans.add(index);
                 } else {
-                    logger.warn("Session " + petmrSession.getLabel() + " scan " + scan.getId() + "\"" + scan.getSeriesDescription() + "\" has a modality that didn't map to MR or PET according to the split PET/MR session series import filter: " + foundModality);
+                    log.warn("Session " + petmrSession.getLabel() + " scan " + scan.getId() + "\"" + scan.getSeriesDescription() + "\" has a modality that didn't map to MR or PET according to the split PET/MR session series import filter: " + foundModality);
                 }
             }
         }
@@ -812,9 +811,9 @@ public final class PrearcDatabase {
                     invokeSetter(method, mrSession, value);
                 } catch (IllegalAccessException e) {
                     // This shouldn't happen since we're checking for accessibility, but still...
-                    logger.warn("Illegal access of method " + method.getName(), e);
+                    log.warn("Illegal access of method " + method.getName(), e);
                 } catch (InvocationTargetException e) {
-                    logger.warn("An error occurred invoking method " + method.getName(), e);
+                    log.warn("An error occurred invoking method " + method.getName(), e);
                 }
             }
         }
@@ -829,14 +828,14 @@ public final class PrearcDatabase {
     private static void invokeSetter(final Method method, final Object target, final Object value) {
         try {
             final Method setter = target.getClass().getMethod(method.getName().replaceFirst("get", "set"), method.getReturnType());
-            setter.invoke(value);
+            setter.invoke(target, value);
         } catch (NoSuchMethodException ignored) {
             // This is totally OK: it just means that, e.g., the MR session bean doesn't have one of the PET properties or vice versa.
         } catch (IllegalAccessException e) {
             // This shouldn't happen since we're checking for accessibility, but still...
-            logger.warn("Illegal access of method " + method.getName(), e);
+            log.warn("Illegal access of method " + method.getName(), e);
         } catch (InvocationTargetException e) {
-            logger.warn("An error occurred invoking method " + method.getName(), e);
+            log.warn("An error occurred invoking method " + method.getName(), e);
         }
     }
 
@@ -909,7 +908,7 @@ public final class PrearcDatabase {
             return PrearcDatabase._separatePetMrSession(session, timestamp, project, petmrSession);
         } else {
             // Something weird happened...
-            logger.error("Couldn't separate the session {}, not sure what happened.", sessionData.getUrl());
+            log.error("Couldn't separate the session {}, not sure what happened.", sessionData.getUrl());
             markSession(sessionData.getSessionDataTriple(), PrearcStatus.READY);
             return null;
         }
@@ -947,7 +946,7 @@ public final class PrearcDatabase {
                     try {
                         PrearcDatabase._archive(session, overrideExceptions, allowSessionMerge, overwriteFiles, user, listeners, true);
                     } catch (SyncFailedException e) {
-                        logger.error("", e);
+                        log.error("", e);
                     }
                 }
             }
@@ -1011,7 +1010,7 @@ public final class PrearcDatabase {
             ran = l.run();
 
         } catch (Exception _e) {
-            logger.error("", _e);
+            log.error("", _e);
             PrearcUtils.log(sd, _e);
             e = _e;
             ran = false;
@@ -1131,9 +1130,9 @@ public final class PrearcDatabase {
                             PrearcDatabase.markSession(session, PrearcUtils.PrearcStatus.READY);
                         }
                     } catch (SyncFailedException e) {
-                        logger.error("Session sync failed", e);
+                        log.error("Session sync failed", e);
                     } catch (Exception e) {
-                        logger.error("An error occurred", e);
+                        log.error("An error occurred", e);
                     }
                 }
             }
@@ -1161,9 +1160,9 @@ public final class PrearcDatabase {
                     try {
                         PrearcDatabase._deleteSession(_s.getFolderName(), _s.getTimestamp(), _s.getProject());
                     } catch (SyncFailedException e) {
-                        logger.error("Session sync failed", e);
+                        log.error("Session sync failed", e);
                     } catch (Exception e) {
-                        logger.error("An error occurred trying to delete the session", e);
+                        log.error("An error occurred trying to delete the session", e);
                     }
                 }
             }
@@ -1396,7 +1395,7 @@ public final class PrearcDatabase {
             ran = l.run();
 
         } catch (Exception _e) {
-            logger.error("", _e);
+            log.error("", _e);
             e = _e;
             ran = false;
         }
@@ -1641,17 +1640,17 @@ public final class PrearcDatabase {
                 cacheSync();
                 return true;
             } catch (SQLException e) {
-                logger.error("", e);
+                log.error("", e);
                 PrearcDatabase.unLockSession(this.sess, this.timestamp, this.proj);
                 PrearcUtils.log(proj, timestamp, sess, e);
                 throw e;
             } catch (SessionException e) {
-                logger.error("", e);
+                log.error("", e);
                 PrearcDatabase.unLockSession(this.sess, this.timestamp, this.proj);
                 PrearcUtils.log(proj, timestamp, sess, e);
                 throw e;
             } catch (SyncFailedException e) {
-                logger.error("", e);
+                log.error("", e);
 
                 PrearcDatabase.unLockSession(this.sess, this.timestamp, this.proj);
                 if ((e.cause != null && (e.cause instanceof ClientException) && Status.CLIENT_ERROR_CONFLICT.equals(((ClientException) e.cause).getStatus()))) {
@@ -1664,7 +1663,7 @@ public final class PrearcDatabase {
                 }
                 throw e;
             } catch (Exception e) {
-                logger.error("", e);
+                log.error("", e);
                 PrearcDatabase.unLockSession(this.sess, this.timestamp, this.proj);
                 PrearcUtils.log(proj, timestamp, sess, e);
                 throw e;
@@ -1907,18 +1906,18 @@ public final class PrearcDatabase {
      * @throws SessionException
      * @throws SQLException
      */
-    public static List<SessionData> getAllSessions() throws Exception, SessionException, SQLException {
-        final List<SessionData> sds = new ArrayList<SessionData>();
-        new SessionOp<Void>() {
-            public Void op() throws SQLException, Exception {
-                ResultSet rs = pdb.executeQuery(null, DatabaseSession.getAllRows(), null);
-                while (rs.next()) {
-                    sds.add(DatabaseSession.fillSession(rs));
+    @Nonnull
+    public static List<SessionData> getAllSessions() throws Exception {
+        return new SessionOp<List<SessionData>>() {
+            public List<SessionData> op() throws Exception {
+                final List<SessionData> sessionData = new ArrayList<>();
+                final ResultSet results = pdb.executeQuery(null, DatabaseSession.getAllRows(), null);
+                while (results.next()) {
+                    sessionData.add(DatabaseSession.fillSession(results));
                 }
-                return null;
+                return sessionData;
             }
         }.run();
-        return sds;
     }
 
 
@@ -2052,8 +2051,8 @@ public final class PrearcDatabase {
 
                         final ResultSet rs = pdb.executeQuery(null, DatabaseSession.findSessionSql(constraints.toArray(new String[constraints.size()])), null);
                         if (!rs.next()) {
-                            if(logger.isDebugEnabled()) {
-                                logger.debug("Found no existing session for " + sessionData.getSessionDataTriple().toString() + ". A new session data object will be created for data reception.");
+                            if(log.isDebugEnabled()) {
+                                log.debug("Found no existing session for " + sessionData.getSessionDataTriple().toString() + ". A new session data object will be created for data reception.");
                             }
                             return false;
                         }
@@ -2063,8 +2062,8 @@ public final class PrearcDatabase {
                         final PrearcStatus status = sessionData.getStatus();
                         if (PrearcStatus.RECEIVING.equals(status)|| PrearcStatus.RECEIVING_INTERRUPT.equals(status)) {
                             // Obviously if we're receiving we're fine.
-                            if(logger.isDebugEnabled()) {
-                                logger.debug("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in " + status + " state, which is totally fine.");
+                            if(log.isDebugEnabled()) {
+                                log.debug("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in " + status + " state, which is totally fine.");
                             }
                             _sessionData = sessionData;
                             return true;
@@ -2073,8 +2072,8 @@ public final class PrearcDatabase {
                             // If the session is currently building, then set this session to RECEIVING_INTERRUPT,
                             // which will allow it to continue receiving but prevent autoarchiving or session
                             // splitting afterwards.
-                            if(logger.isWarnEnabled()) {
-                                logger.warn("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + " in BUILDING state, setting status to RECEIVING_INTERRUPT to block autoarchive and other operations and allow continuation of data reception.");
+                            if(log.isWarnEnabled()) {
+                                log.warn("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + " in BUILDING state, setting status to RECEIVING_INTERRUPT to block autoarchive and other operations and allow continuation of data reception.");
                             }
                             PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionStatusSQL(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcStatus.RECEIVING_INTERRUPT), null, null);
                             _sessionData = sessionData;
@@ -2084,8 +2083,8 @@ public final class PrearcDatabase {
                             // If the session is interruptable, which means it's not receiving but it's OK to set it to
                             // receiving (ready, in error, or in conflict), that's OK. Set to RECEIVING and return the
                             // session. Any other issues will be worked out (or re-occur) later.
-                            if (logger.isInfoEnabled()) {
-                                logger.info("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in the interruptable " + status + " state. Setting status to RECEIVING to allow continuation of data reception.");
+                            if (log.isInfoEnabled()) {
+                                log.info("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in the interruptable " + status + " state. Setting status to RECEIVING to allow continuation of data reception.");
                             }
                             PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionStatusSQL(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcStatus.RECEIVING), null, null);
                             _sessionData = sessionData;
@@ -2094,8 +2093,8 @@ public final class PrearcDatabase {
                         // If the status isn't interruptable, e.g. we're archiving or moving or deleting or whatever,
                         // then return false: we'll create a new session to receive the incoming data. This may require
                         // a merge later, but should prevent data loss.
-                        if (logger.isWarnEnabled()) {
-                            logger.warn("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in the non-interruptable " + status + " state. Creating a new RECEIVING session to allow continuation of data reception.");
+                        if (log.isWarnEnabled()) {
+                            log.warn("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in the non-interruptable " + status + " state. Creating a new RECEIVING session to allow continuation of data reception.");
                         }
                         return false;
                     }
@@ -2398,7 +2397,7 @@ public final class PrearcDatabase {
             try {
                 o = this.op();
             } catch (Exception e) {
-                logger.error("", e);
+                log.error("", e);
                 throw e;
             } finally {
                 closeConnection();

@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xapi.rest.aspects.XapiRequestMappingAspect;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -19,8 +18,6 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.SecurityConfig;
 import org.springframework.security.access.SecurityMetadataSource;
@@ -35,7 +32,9 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Handles changes to the {@link SiteConfigPreferences site configuration preferences} that affect the primary security filter. This
@@ -43,9 +42,10 @@ import java.util.*;
  */
 @Component
 @Slf4j
-public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod implements BeanPostProcessor, ApplicationContextAware {
+public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHandlerMethod implements BeanPostProcessor {
     @Autowired
     public UpdateSecurityFilterHandlerMethod(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final XnatLogoutSuccessHandler logoutSuccessHandler) {
+        super(SECURITY_CHANNEL, REQUIRE_LOGIN);
         _openUrls = appInfo.getOpenUrls();
         _adminUrls = appInfo.getAdminUrls();
         _logoutSuccessHandler = logoutSuccessHandler;
@@ -53,32 +53,8 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPrefere
         _securityChannel = preferences.getSecurityChannel();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        final Set<String> preferences = values.keySet();
-        if (!Collections.disjoint(PREFERENCES, preferences)) {
-            for (final String preference : preferences) {
-                handlePreference(preference, values.get(preference));
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void handlePreference(final String preference, final String value) {
+    protected void handlePreferenceImpl(final String preference, final String value) {
         switch (preference) {
             case REQUIRE_LOGIN:
                 _requireLogin = Boolean.parseBoolean(value);
@@ -133,15 +109,11 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPrefere
             aspect.setOpenUrls(_openUrls);
             aspect.setAdminUrls(_adminUrls);
         } else if (bean instanceof ChannelProcessingFilter) {
+            _channelProcessingFilter = (ChannelProcessingFilter) bean;
 
         }
 
         return bean;
-    }
-
-    @Override
-    public void setApplicationContext(final ApplicationContext context) throws BeansException {
-        _context = context;
     }
 
     private void updateSecurityFilter() {
@@ -161,12 +133,13 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPrefere
     }
 
     private void updateSecurityChannel() {
-        final ChannelProcessingFilter filter = _context.getBean(ChannelProcessingFilter.class);
-        log.debug("Setting the default pattern required channel to: {}", _securityChannel);
-        final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
-        map.put(new AntPathRequestMatcher("/**"), ChannelAttributeFactory.createChannelAttributes(_securityChannel));
-        final FilterInvocationSecurityMetadataSource metadataSource = new DefaultFilterInvocationSecurityMetadataSource(map);
-        filter.setSecurityMetadataSource(metadataSource);
+        if (_channelProcessingFilter != null) {
+            log.debug("Setting the default pattern required channel to: {}", _securityChannel);
+            final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
+            map.put(new AntPathRequestMatcher("/**"), ChannelAttributeFactory.createChannelAttributes(_securityChannel));
+            final FilterInvocationSecurityMetadataSource metadataSource = new DefaultFilterInvocationSecurityMetadataSource(map);
+            _channelProcessingFilter.setSecurityMetadataSource(metadataSource);
+        }
     }
 
     private ExpressionBasedFilterInvocationSecurityMetadataSource getMetadataSource() {
@@ -214,20 +187,19 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractSiteConfigPrefere
         return builder.toString();
     }
 
-    private static final String       PERMIT_ALL         = "permitAll";
-    private static final String       DEFAULT_PATTERN    = "/**";
-    private static final String       ADMIN_EXPRESSION   = "hasRole('ROLE_ADMIN')";
-    private static final String       DEFAULT_EXPRESSION = "hasRole('ROLE_USER')";
-    private static final String       SECURITY_CHANNEL   = "securityChannel";
-    private static final String       REQUIRE_LOGIN      = "requireLogin";
-    private static final List<String> PREFERENCES        = ImmutableList.copyOf(Arrays.asList(SECURITY_CHANNEL, REQUIRE_LOGIN));
+    private static final String PERMIT_ALL         = "permitAll";
+    private static final String DEFAULT_PATTERN    = "/**";
+    private static final String ADMIN_EXPRESSION   = "hasRole('ROLE_ADMIN')";
+    private static final String DEFAULT_EXPRESSION = "hasRole('ROLE_USER')";
+    private static final String SECURITY_CHANNEL   = "securityChannel";
+    private static final String REQUIRE_LOGIN      = "requireLogin";
 
     private final XnatLogoutSuccessHandler _logoutSuccessHandler;
     private final List<String>             _openUrls;
     private final List<String>             _adminUrls;
 
     private FilterSecurityInterceptor _interceptor;
-    private ApplicationContext        _context;
+    private ChannelProcessingFilter   _channelProcessingFilter;
 
     private boolean _requireLogin;
     private String  _securityChannel;

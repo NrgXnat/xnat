@@ -10,6 +10,7 @@
 package org.nrg.xnat.restlet.extensions;
 
 import com.google.common.base.Joiner;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.dcm.scp.DicomSCPManager;
@@ -27,8 +28,6 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,11 +35,11 @@ import java.util.Arrays;
 import java.util.List;
 
 @XnatRestlet({"/services/dicomscp", "/services/dicomscp/instance/{SCP_ID}", "/services/dicomscp/instance/{SCP_ID}/{ACTION}", "/services/dicomscp/{ACTION}"})
+@Slf4j
 public class DicomSCPRestlet extends SecureResource {
     private static final String       PARAM_SCP_ID    = "SCP_ID";
     private static final String       PARAM_ACTION    = "ACTION";
     private static final List<String> ALLOWED_ACTIONS = new ArrayList<>(Arrays.asList("status", "start", "stop", "enable", "disable"));
-    private static final Logger       _log            = LoggerFactory.getLogger(DicomSCPRestlet.class);
 
     private final DicomSCPManager _dicomSCPManager;
     private final Integer         _scpId;
@@ -75,8 +74,8 @@ public class DicomSCPRestlet extends SecureResource {
 
     @Override
     public Representation represent(Variant variant) throws ResourceException {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Getting the status of {}.", (_scpId == null ? "all configured DICOM SCP receivers" : "the DICOM SCP receiver with ID " + _scpId));
+        if (log.isDebugEnabled()) {
+            log.debug("Getting the status of {}.", (_scpId == null ? "all configured DICOM SCP receivers" : "the DICOM SCP receiver with ID " + _scpId));
         }
 
         // If this is a GET represent and not just a return from a PUT or other call, the only action we support is status.
@@ -166,8 +165,6 @@ public class DicomSCPRestlet extends SecureResource {
                 _dicomSCPManager.start();
                 returnDefaultRepresentation();
             }
-        } catch (DICOMReceiverWithDuplicateTitleAndPortException e) {
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "There is already another DICOM SCP instance enabled with the same AE title and port: " + e.getAeTitle() + ":" + e.getPort());
         } catch (UnknownDicomHelperInstanceException e) {
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "There was an error starting the DICOM SCP instance(s): " + e.getMessage());
         } catch (DicomNetworkException e) {

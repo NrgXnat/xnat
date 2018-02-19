@@ -9,62 +9,47 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.renderers.NrgMailChannelRenderer;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Component
-public class MailHandlerMethod extends AbstractSiteConfigNotificationsPreferenceHandlerMethod {
+@Slf4j
+public class MailHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
-    public MailHandlerMethod(final SiteConfigPreferences siteConfigPreferences, final NotificationsPreferences notificationsPreferences, final ChannelRenderer mailRenderer) {
-        _siteConfigPreferences = siteConfigPreferences;
-        _notificationsPreferences = notificationsPreferences;
+    public MailHandlerMethod(final ChannelRenderer mailRenderer) {
+        super("emailPrefix", "adminEmail");
         _mailRenderer = mailRenderer;
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return PREFERENCES;
+    public List<String> getToolIds() {
+        return TOOL_IDS;
     }
 
     @Override
-    public void handlePreferences(final Map<String, String> values) {
-        if (!Collections.disjoint(PREFERENCES, values.keySet())) {
-            updateMail();
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        switch (preference) {
+            case ADMIN_EMAIL:
+                ((NrgMailChannelRenderer) _mailRenderer).setFromAddress(value);
+                break;
+
+            case EMAIL_PREFIX:
+                ((NrgMailChannelRenderer) _mailRenderer).setSubjectPrefix(value);
+                break;
         }
     }
 
-    @Override
-    public void handlePreference(final String preference, final String value) {
-        if(PREFERENCES.contains(preference)){
-            updateMail();
-        }
-    }
+    private static final List<String> TOOL_IDS     = Arrays.asList(NotificationsPreferences.NOTIFICATIONS_TOOL_ID, SiteConfigPreferences.SITE_CONFIG_TOOL_ID);
+    private static final String       EMAIL_PREFIX = "emailPrefix";
+    private static final String       ADMIN_EMAIL  = "adminEmail";
 
-    private void updateMail(){
-		try {
-            ((NrgMailChannelRenderer)_mailRenderer).setFromAddress(_siteConfigPreferences.getAdminEmail());
-            ((NrgMailChannelRenderer)_mailRenderer).setSubjectPrefix(_notificationsPreferences.getEmailPrefix());
-		} catch (Exception e1) {
-			_log.error("", e1);
-		}
-	}
-
-    private static final Logger       _log        = LoggerFactory.getLogger(MailHandlerMethod.class);
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList("emailPrefix", "adminEmail"));
-
-    private final SiteConfigPreferences _siteConfigPreferences;
-    private final NotificationsPreferences _notificationsPreferences;
     private final ChannelRenderer _mailRenderer;
 }

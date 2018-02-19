@@ -9,38 +9,41 @@
 
 package org.nrg.xnat.security;
 
-import org.nrg.xdat.XDAT;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.services.cache.UserProjectCache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.session.HttpSessionCreatedEvent;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToIntSeconds;
+import static org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY;
+import static org.springframework.web.context.support.WebApplicationContextUtils.findWebApplicationContext;
+
 @Component
+@Getter(AccessLevel.PRIVATE)
+@Accessors(prefix = "_")
+@Slf4j
 public class XnatSessionEventPublisher implements HttpSessionListener, ServletContextListener {
     /**
      * Handles the HttpSessionEvent by publishing a {@link HttpSessionCreatedEvent} to the application
@@ -49,21 +52,15 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
      * @param event HttpSessionEvent passed in by the container
      */
     @Override
-    public void sessionCreated(HttpSessionEvent event) {
-        HttpSession             session = event.getSession();
-        HttpSessionCreatedEvent e       = new HttpSessionCreatedEvent(session);
+    public void sessionCreated(final HttpSessionEvent event) {
+        final HttpSession             session             = event.getSession();
+        final HttpSessionCreatedEvent sessionCreatedEvent = new HttpSessionCreatedEvent(session);
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("Publishing event: " + e);
-        }
+        log.debug("Publishing event: {}", sessionCreatedEvent);
 
         session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-        try {
-            session.setMaxInactiveInterval((new Long(SiteConfigPreferences.convertPGIntervalToSeconds(XDAT.getSiteConfigPreferences().getSessionTimeout()))).intValue());//Preference is in PG Interval and setMaxInactiveInterval wants seconds.
-        } catch (SQLException e1) {
-            _log.error("" + e);
-        }
-        getContext(session.getServletContext()).publishEvent(e);
+        session.setMaxInactiveInterval(getSessionTimeout()); // Preference is in PG Interval and setMaxInactiveInterval wants seconds.
+        findWebApplicationContext(session.getServletContext()).publishEvent(sessionCreatedEvent);
     }
 
     /**
@@ -78,64 +75,63 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         final Date   today     = Calendar.getInstance(TimeZone.getDefault()).getTime();
 
         try {
-            final Object contextCandidate = event.getSession().getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-            if (contextCandidate != null && contextCandidate instanceof SecurityContext) {
-                final SecurityContext context = (SecurityContext) contextCandidate;
-                final Authentication authentication = context.getAuthentication();
+            final Object contextCandidate = event.getSession().getAttribute(SPRING_SECURITY_CONTEXT_KEY);
+            if (contextCandidate instanceof SecurityContext) {
+                final SecurityContext context        = (SecurityContext) contextCandidate;
+                final Authentication  authentication = context.getAuthentication();
                 if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
                     final Object userCandidate = authentication.getPrincipal();
-                    if (userCandidate != null && userCandidate instanceof UserI) {
+                    if (userCandidate instanceof UserI) {
                         final String userId = ((UserI) userCandidate).getID().toString();
-                        final Timestamp stamp = new Timestamp(today.getTime());
-                        //sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
-                        //noinspection SqlDialectInspection,SqlNoDataSourceInspection,SqlResolve
-                        _template.execute("UPDATE xdat_user_login SET logout_date='" + stamp + "' WHERE logout_date is null and session_id='" + sessionId + "' and user_xdat_user_id='" + userId + "';");
-                        _cache.clearUserCache(userId);
+                        if (StringUtils.isBlank(userId)) {
+                            log.info("Got a session destroyed event for an empty user ID");
+                        } else if (StringUtils.equals("guest", userId)) {
+                            log.debug("Got a session destroyed event for the guest user");
+                        } else {
+                            //sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
+                            final int count = getTemplate().update(UPDATE_QUERY, new MapSqlParameterSource(PARAM_SESSION_ID, sessionId).addValue(PARAM_TIMESTAMP, today.getTime()).addValue(PARAM_USER_ID, userId));
+                            log.debug("Got a session destroyed event for user ID {}, updated {} rows in xdat_user_login to record this.", userId, count);
+                        }
                     }
                 }
             }
         } catch (Exception e) {
             //remember, anonymous gets a session, too. Those won't be in the table. Fail silently.
         }
-        HttpSessionDestroyedEvent e = new HttpSessionDestroyedEvent(event.getSession());
-        if (_log.isDebugEnabled()) {
-            _log.debug("Publishing event: " + e);
-        }
-        getContext(event.getSession().getServletContext()).publishEvent(e);
+
+        final HttpSessionDestroyedEvent sessionDestroyedEvent = new HttpSessionDestroyedEvent(event.getSession());
+        log.debug("Publishing event: {}", sessionDestroyedEvent);
+
+        findWebApplicationContext(event.getSession().getServletContext()).publishEvent(sessionDestroyedEvent);
     }
 
     @Override
     public void contextDestroyed(final ServletContextEvent event) {
-        if (_log.isDebugEnabled()) {
-            final ServletContext context   = event.getServletContext();
-            _log.debug("Context destroyed: {}", context.getContextPath());
-        }
+        log.debug("Context destroyed: {}", event.getServletContext().getContextPath());
     }
 
     @Override
     public void contextInitialized(final ServletContextEvent event) {
-        if (_log.isDebugEnabled()) {
-            final ServletContext context   = event.getServletContext();
-            _log.debug("Context initialized: {}", context.getContextPath());
-        }
+        log.debug("Context initialized: {}", event.getServletContext().getContextPath());
+        _preferences = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(SiteConfigPreferences.class);
+        _template = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(NamedParameterJdbcTemplate.class);
     }
 
-    @Autowired
-    public void setUserProjectCache(final UserProjectCache cache) {
-        _cache = cache;
+    /**
+     * In some weird circumstances, mainly when the server is still starting up or is shutting down, if a user attempts to connect to the server the preferences
+     * object may be null. This provides a default timeout value of 900 seconds (15 minutes) in those cases to prevent NPEs.
+     *
+     * @return The configured session timeout value in seconds or a default value if the configured value isn't available.
+     */
+    private int getSessionTimeout() {
+        return _preferences != null && StringUtils.isNotBlank(_preferences.getSessionTimeout()) ? convertPGIntervalToIntSeconds(_preferences.getSessionTimeout()) : 900;
     }
 
-    @Autowired
-    public void setJdbcTemplate(final JdbcTemplate template) {
-        _template = template;
-    }
+    private static final String UPDATE_QUERY     = "UPDATE xdat_user_login SET logout_date = :timestamp WHERE logout_date IS NULL AND session_id = :sessionId AND user_xdat_user_id = :userId";
+    private static final String PARAM_SESSION_ID = "sessionId";
+    private static final String PARAM_TIMESTAMP  = "timestamp";
+    private static final String PARAM_USER_ID    = "userId";
 
-    private ApplicationContext getContext(ServletContext servletContext) {
-        return WebApplicationContextUtils.findWebApplicationContext(servletContext);  // contextAttribute in xnat's case will always be "org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring-mvc");
-    }
-
-    private static final Logger _log = LoggerFactory.getLogger(XnatSessionEventPublisher.class);
-
-    private JdbcTemplate _template;
-    private UserProjectCache _cache;
+    private SiteConfigPreferences      _preferences;
+    private NamedParameterJdbcTemplate _template;
 }

@@ -9,55 +9,45 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.Maps;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.utils.XnatUserProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Component
-public class XnatUserProviderPreferenceHandlerMethod extends AbstractSiteConfigPreferenceHandlerMethod {
+@Slf4j
+public class XnatUserProviderPreferenceHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
     public XnatUserProviderPreferenceHandlerMethod(final List<XnatUserProvider> providers) {
+        super(getProviderKeys(providers));
         for (final XnatUserProvider provider : providers) {
             _providers.put(provider.getUserKey(), provider);
         }
     }
 
     @Override
-    public List<String> getHandledPreferences() {
-        return new ArrayList<>(_providers.keySet());
-    }
-
-    @Override
-    public void handlePreferences(final Map<String, String> values) {
-        for (final String key : values.keySet()) {
-            handlePreference(key, values.get(key));
-        }
-    }
-
-    @Override
-    public void handlePreference(final String preference, final String value) {
+    protected void handlePreferenceImpl(final String preference, final String value) {
         if (_providers.containsKey(preference)) {
             final XnatUserProvider provider = _providers.get(preference);
             if (!StringUtils.equals(value, provider.getLogin())) {
                 try {
                     final UserI user = Users.getUser(value);
                     if (!Roles.isSiteAdmin(user)) {
-                        _log.error("Can't set the {} user provider login name to {}, as that user is not a site administrator.", preference, value);
+                        log.error("Can't set the {} user provider login name to {}, as that user is not a site administrator.", preference, value);
                         throw new NrgServiceRuntimeException(NrgServiceError.PermissionsViolation, value);
                     }
                 } catch (UserNotFoundException e) {
@@ -65,18 +55,24 @@ public class XnatUserProviderPreferenceHandlerMethod extends AbstractSiteConfigP
                 } catch (UserInitException e) {
                     throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the user " + value, e);
                 }
-                _log.info("Setting the {} user provider login name to {}", preference, value);
+                log.info("Setting the {} user provider login name to {}", preference, value);
                 provider.setLogin(value);
-                provider.clearUserObject();//This clears out the old user object so that XnatUserProvider will update the user object based on the login we just set.
             } else {
-                _log.error("Not changing the {} user provider login name to {}, it's already set to that.", preference, value);
+                log.error("Not changing the {} user provider login name to {}, it's already set to that.", preference, value);
             }
         } else {
-            _log.error("Couldn't find a user provider with the name {}", preference);
+            log.error("Couldn't find a user provider with the name {}", preference);
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(XnatUserProviderPreferenceHandlerMethod.class);
+    private static String[] getProviderKeys(final List<XnatUserProvider> providers) {
+        return Lists.transform(providers, new Function<XnatUserProvider, String>() {
+            @Override
+            public String apply(final XnatUserProvider provider) {
+                return provider.getUserKey();
+            }
+        }).toArray(new String[0]);
+    }
 
-    private final Map<String, XnatUserProvider> _providers = Maps.newHashMap();
+    private final Map<String, XnatUserProvider> _providers = new HashMap<>();
 }

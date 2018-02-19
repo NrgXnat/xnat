@@ -78,7 +78,7 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
     @Override
     public Authentication attemptAuthentication(final HttpServletRequest request, final HttpServletResponse response) throws AuthenticationException {
         final Pair<String, String> credentials;
-        try {
+                try {
             credentials = getCredentials(request);
         } catch (ParseException e) {
             // This means that the basic authentication header wasn't properly formatted, so we can't find credentials.
@@ -118,15 +118,15 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
             }
 
             //Fixed XNAT-4409 by adding a check for a par parameter on login. If a PAR is present and valid, then grant the user that just logged in the appropriate project permissions.
-            if (StringUtils.isNotBlank(request.getParameter("par"))) {
+            if(StringUtils.isNotBlank(request.getParameter("par"))){
                 final String parId = request.getParameter("par");
                 request.getSession().setAttribute("par", parId);
 
                 final ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parId, null);
                 if (par.getApproved() != null || par.getApprovalDate() != null) {
-                    log.debug("PAR not approved or already accepted: " + par.getGuid());
+                    log.warn("User {} tried to access a PAR that is not approved or has already been accepted: {}", username, par.getGuid());
                 } else {
-                    XDATUser user = new XDATUser(username);
+                    final XDATUser user = new XDATUser(username);
                     par.process(user, true, EventUtils.TYPE.WEB_FORM, "", "");
                 }
             }
@@ -145,21 +145,21 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
         return null;
     }
 
-    public static void logFailedAttempt(String username, HttpServletRequest req) {
+    public static void logFailedAttempt(final String username, final HttpServletRequest request) {
         if (!StringUtils.isBlank(username)) {
             final Integer uid = retrieveUserId(username);
             if (uid != null) {
                 try {
-                    final XFTItem item = XFTItem.NewItem("xdat:userlogin", null);
-                    item.setProperty("xdat:userlogin.user_xdat_user_id", uid);
-                    item.setProperty("xdat:userlogin.ip_address", AccessLogger.GetRequestIp(req));
-                    item.setProperty("xdat:userlogin.login_date", Calendar.getInstance(java.util.TimeZone.getDefault()).getTime());
+                    final XFTItem item = XFTItem.NewItem("xdat:user_login", null);
+                    item.setProperty("xdat:user_login.user_xdat_user_id", uid);
+                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(request));
+                    item.setProperty("xdat:user_login.login_date", Calendar.getInstance(java.util.TimeZone.getDefault()).getTime());
                     SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
-                } catch (Exception e) {
-                    log.error("An unknown error occurred while trying to record a failed login attempt for the user '" + username + "'", e);
+                } catch (Exception exception) {
+                    log.error("An exception occurred trying to log a failed login attempt for the user " + username, exception);
                 }
             }
-            AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(req), "Authentication", "FAILED");
+            AccessLogger.LogServiceAccess(username, AccessLogger.GetRequestIp(request), "Authentication", "FAILED");
         }
     }
 
@@ -173,7 +173,7 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
                 return checked.get(username);
             }
 
-            final int userId = Users.getUserid(username);
+            final int userId = Users.getUserId(username);
             checked.put(username, userId);
 
             return userId;

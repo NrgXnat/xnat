@@ -6,11 +6,9 @@ import org.nrg.dcm.Extractor;
 import org.nrg.framework.utilities.SortedSets;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xnat.DicomObjectIdentifier;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.SortedSet;
 
@@ -18,7 +16,7 @@ import java.util.SortedSet;
  * Returns the next available session label for the given project, subject, and DICOM modality.
  */
 public class NextAvailableSessionLabelExtractor implements IdentifierReferencingExtractor, SubjectReferencingExtractor {
-    public NextAvailableSessionLabelExtractor(final JdbcTemplate template) {
+    public NextAvailableSessionLabelExtractor(final NamedParameterJdbcTemplate template) {
         _template = template;
     }
 
@@ -39,12 +37,7 @@ public class NextAvailableSessionLabelExtractor implements IdentifierReferencing
         final String          modality = object.getString(Tag.Modality);
         final String          stem     = subject + "_" + modality;
 
-        final List<String> labels = _template.query(String.format(EXPT_QUERY, project.getId(), stem), new RowMapper<String>() {
-            @Override
-            public String mapRow(final ResultSet results, final int rowNum) throws SQLException {
-                return results.getString("label");
-            }
-        });
+        final List<String> labels = _template.queryForList(EXPT_QUERY, new MapSqlParameterSource("projectId", project.getId()).addValue("label", stem + '%'), String.class);
 
         int index = 1;
         while (true) {
@@ -60,9 +53,9 @@ public class NextAvailableSessionLabelExtractor implements IdentifierReferencing
         return SortedSets.empty();
     }
 
-    private static final String EXPT_QUERY = "SELECT label FROM xnat_experimentdata WHERE project = '%s' AND label LIKE '%s%%'";
+    private static final String EXPT_QUERY = "SELECT label FROM xnat_experimentdata WHERE project = :projectId AND label LIKE :label";
 
-    private final JdbcTemplate _template;
+    private final NamedParameterJdbcTemplate _template;
 
     private DicomObjectIdentifier<XnatProjectdata> _identifier;
     private Extractor                              _subjectExtractor;

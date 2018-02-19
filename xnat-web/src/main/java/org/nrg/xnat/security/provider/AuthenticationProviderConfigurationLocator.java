@@ -22,7 +22,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.nrg.xnat.initialization.XnatWebAppInitializer.EMPTY_ARRAY;
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
 
 @Slf4j
 public class AuthenticationProviderConfigurationLocator {
@@ -117,7 +117,7 @@ public class AuthenticationProviderConfigurationLocator {
 
         if (providers.isEmpty() && StringUtils.equals(providerType, XdatUserAuthService.LOCALDB)) {
             final Properties provider = new Properties();
-            provider.put("name", messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_ARRAY, "Database", Locale.getDefault()));
+            provider.put("name", messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_OBJECT_ARRAY, "Database", Locale.getDefault()));
             provider.put("id", "db");
             provider.put("type", XdatUserAuthService.LOCALDB);
             providers.add(provider);

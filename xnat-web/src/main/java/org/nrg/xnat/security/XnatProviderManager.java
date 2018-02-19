@@ -49,6 +49,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToSeconds;
+
 @SuppressWarnings("SqlResolve")
 @Service
 @Slf4j
@@ -403,11 +405,11 @@ public class XnatProviderManager extends ProviderManager {
                 }
 
                 if (StringUtils.isNotEmpty(userAuth.getXdatUsername())) {
-                    final Integer uid = Users.getUserid(userAuth.getXdatUsername());
+                    final Integer uid = Users.getUserId(userAuth.getXdatUsername());
                     if (uid != null) {
                         try {
                             if (userAuth.getFailedLoginAttempts().equals(_preferences.getMaxFailedLogins())) {
-                                final String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), 1000 * (int) SiteConfigPreferences.convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration())));
+                                final String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), 1000 * (int) convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration())));
                                 log.info("Locked out {} user account until {}", userAuth.getXdatUsername(), expiration);
                                 if (Roles.isSiteAdmin(new XDATUser(userAuth.getXdatUsername()))) {
                                     AdminUtils.emailAllAdmins(userAuth.getXdatUsername() + " account temporarily disabled. This is an admin account.", "User " + userAuth.getXdatUsername() + " has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at " + expiration + ".");

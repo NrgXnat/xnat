@@ -10,8 +10,9 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.framework.services.NrgEventService;
-import org.nrg.xft.event.listeners.XftItemEventListener;
+import org.nrg.xft.event.listeners.XftItemEventHandler;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import reactor.Environment;
 import reactor.bus.EventBus;
@@ -20,6 +21,7 @@ import reactor.bus.EventBus;
  * The Class ReactorConfig.
  */
 @Configuration
+@ComponentScan("org.nrg.xft.event.methods")
 public class ReactorConfig {
     @Bean
     public NrgEventService eventService(final EventBus eventBus) {
@@ -27,8 +29,8 @@ public class ReactorConfig {
     }
 
     @Bean
-    public XftItemEventListener xftItemEventListener(final EventBus eventBus) {
-        return new XftItemEventListener(eventBus);
+    public XftItemEventHandler xftItemEventHandler(final EventBus eventBus) {
+        return new XftItemEventHandler(eventBus);
     }
 
     /**

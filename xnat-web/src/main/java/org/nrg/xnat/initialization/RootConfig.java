@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.beans.XnatPluginBeanManager;
@@ -28,6 +29,8 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.nrg.xnat.services.XnatAppInfo;
+import org.nrg.xnat.services.logging.LoggingService;
+import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +38,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean;
 import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import javax.servlet.ServletContext;
@@ -58,7 +62,14 @@ import java.util.Properties;
  */
 @Configuration
 @Import({PropertiesConfig.class, DatabaseConfig.class, SecurityConfig.class, ApplicationConfig.class, NodeConfig.class})
+@Slf4j
 public class RootConfig {
+    @Autowired
+    public void setJacksonModules(final Module[] jacksonModules) {
+        log.info("Setting {} Jackson modules", jacksonModules != null ? jacksonModules.length : 0);
+        _jacksonModules = jacksonModules;
+    }
+
     @Bean
     public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref) throws IOException {
         return new XnatAppInfo(preferences, context, environment, serializerService, template, openUrlsPref);
@@ -72,6 +83,11 @@ public class RootConfig {
     @Bean
     public XnatPluginBeanManager xnatPluginBeanManager() {
         return new XnatPluginBeanManager();
+    }
+
+    @Bean
+    public LoggingService loggingService() {
+        return new DefaultLoggingService(xnatPluginBeanManager());
     }
 
     @Bean
@@ -94,14 +110,21 @@ public class RootConfig {
         return bean;
     }
 
-	@Bean
-    @SuppressWarnings("serial")
+    @Bean
+    public ScheduledExecutorFactoryBean scheduledExecutorFactoryBean() {
+        final ScheduledExecutorFactoryBean bean = new ScheduledExecutorFactoryBean();
+        bean.setRemoveOnCancelPolicy(true);
+        bean.setContinueScheduledExecutionAfterException(true);
+        bean.setWaitForTasksToCompleteOnShutdown(true);
+        return bean;
+    }
+
+    @Bean
     public PrettyPrinter prettyPrinter() {
-        return new DefaultPrettyPrinter() {
-		{
-            final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
-            indentObjectsWith(indenter);
-            indentArraysWith(indenter);
+        return new DefaultPrettyPrinter() {{
+                final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
+                indentObjectsWith(indenter);
+                indentArraysWith(indenter);
         }};
     }
 
@@ -136,7 +159,5 @@ public class RootConfig {
         return new SerializerRegistry();
     }
 
-    @SuppressWarnings("SpringJavaAutowiredFieldsWarningInspection")
-    @Autowired
     private Module[] _jacksonModules;
 }

@@ -74,10 +74,12 @@
 
     </script>
 
+    <c:set var="js" value="${param.debug == true || param.jsdebug == true ? 'js' : 'min.js'}" />
+
     <!-- required libraries -->
-    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.${js}"></script>
     <script type="text/javascript">
         // use 'jq' to avoid _possible_ conflicts with Velocity
         var jq = jQuery;
@@ -85,8 +87,8 @@
 
     <!-- jQuery plugins -->
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.min.css?${versionString}">
-    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.maskedinput.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.jquery.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.maskedinput.${js}"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.hasClasses.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.js"></script>
@@ -97,6 +99,7 @@
     <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/ace/ace.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/localForage/localforage.${js}"></script>
 
     <!-- XNAT utility functions -->
     <script src="${SITE_ROOT}/scripts/utils.js"></script>
@@ -104,7 +107,7 @@
     <script type="text/javascript">
 
         if (window.loggedIn) {
-            Cookies.set('guest', 'false', { path: '/' });
+            Cookies.set('guest', 'false', { path: '${SITE_ROOT}' });
         }
 
         /*

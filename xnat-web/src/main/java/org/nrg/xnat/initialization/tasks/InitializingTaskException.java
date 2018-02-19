@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.initialization.tasks;
 
+import org.slf4j.helpers.MessageFormatter;
+
 public class InitializingTaskException extends Exception {
     public InitializingTaskException(final Level level) {
         _level = level;
@@ -16,6 +18,11 @@ public class InitializingTaskException extends Exception {
 
     public InitializingTaskException(final Level level, final String message) {
         super(message);
+        _level = level;
+    }
+
+    public InitializingTaskException(final Level level, final String message, final Object... parameters) {
+        super(formatMessage(message, parameters));
         _level = level;
     }
 
@@ -34,6 +41,10 @@ public class InitializingTaskException extends Exception {
         Info,
         Warn,
         Error
+    }
+
+    private static String formatMessage(final String message, final Object... parameters) {
+        return MessageFormatter.arrayFormat(message, parameters).getMessage();
     }
 
     private final Level _level;

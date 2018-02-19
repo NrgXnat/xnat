@@ -9,30 +9,28 @@
 
 package org.nrg.xnat.task.resolvers;
 
-import java.util.Arrays;
-import java.util.List;
+import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.task.XnatTaskExecutionResolver;
 import org.nrg.framework.task.XnatTaskExecutionResolverI;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
 import org.nrg.xnat.node.entities.XnatNodeInfo;
 import org.nrg.xnat.node.services.XnatNodeInfoService;
 import org.nrg.xnat.task.entities.XnatTaskInfo;
 import org.nrg.xnat.task.services.XnatTaskInfoService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.google.common.collect.Lists;
+
+import java.util.List;
 
 /**
  * The Class SingleNodeExecutionResolverWithFailover.  
  */
 @Component
-@XnatTaskExecutionResolver(resolverId = "SingleNodeExecutionResolverWithFailover",
-	description = "Single Node Execution Resolver With Failover")
+@XnatTaskExecutionResolver(resolverId = "SingleNodeExecutionResolverWithFailover", description = "Single Node Execution Resolver With Failover")
+@Slf4j
 public class SingleNodeExecutionResolverWithFailover implements XnatTaskExecutionResolverI {
 	
 	/** The _xnat node. */
@@ -49,9 +47,6 @@ public class SingleNodeExecutionResolverWithFailover implements XnatTaskExecutio
 	
 	/** The Constant DEFAULT_WAIT_MIN. */
 	private static final int DEFAULT_WAIT_MIN = 30;
-	
-    /** The Constant _log. */
-    private static final Logger _log = LoggerFactory.getLogger(SessionXMLRebuilder.class);
 	
 	/**
 	 * Instantiates a new single node execution resolver with failover.
@@ -87,30 +82,30 @@ public class SingleNodeExecutionResolverWithFailover implements XnatTaskExecutio
 		}	
 		if (nodeListPref == null) {
 			// If task not configured, we'll run.
-			_log.trace("ExecutionResolver:  No configuration found.  This node will run the task.");
+			log.trace("ExecutionResolver:  No configuration found.  This node will run the task.");
 			return true;
 		}	
-		final List<String> nodeList = Arrays.asList(nodeListPref.getValue().replaceAll(" ", "").split(","));
-		final int waitMin = (nodeWaitPref != null && nodeWaitPref.getValue() != null) ? Integer.valueOf(nodeWaitPref.getValue()) : DEFAULT_WAIT_MIN;
+		final String[]           nodeList     = nodeListPref.getValue().replaceAll(" ", "").split(",");
+		final int                waitMin      = (nodeWaitPref != null && nodeWaitPref.getValue() != null) ? Integer.valueOf(nodeWaitPref.getValue()) : DEFAULT_WAIT_MIN;
 		final List<XnatNodeInfo> nodeInfoList = _xnatNodeInfoService.getAll();
 		final List<XnatTaskInfo> taskInfoList = _xnatTaskInfoService.getXnatTaskInfoListByTaskIdAndNode(taskId);
-		final long currentTime = System.currentTimeMillis();
-		final List<String> upNodes = Lists.newArrayList();
-		final List<String> prefNodes = Lists.newArrayList();
+		final long               currentTime  = System.currentTimeMillis();
+		final List<String>       upNodes      = Lists.newArrayList();
+		final List<String>       prefNodes    = Lists.newArrayList();
 		for (final String node : nodeList) {
 			if (node.equals(_xnatNode.getNodeId())) {
 				if (upNodes.size()>0) {
-					_log.trace("ExecutionResolver:  Preferred node is up.  This node will not run task.");
+					log.trace("ExecutionResolver:  Preferred node is up.  This node will not run task.");
 					return false;
 				} else if (!hasBeenRunRecentlyByAPreferredNode(prefNodes, taskInfoList, currentTime, waitMin)) {
 					if (prefNodes.size() > 0) {
-						_log.trace("ExecutionResolver:  No preferred node is up, and the task hasn't recently been run by a preferred node.  This node will run the task.");
+						log.trace("ExecutionResolver:  No preferred node is up, and the task hasn't recently been run by a preferred node.  This node will run the task.");
 					} else {
-						_log.trace("ExecutionResolver:  Preferred node.  This node will run the task.");
+						log.trace("ExecutionResolver:  Preferred node.  This node will run the task.");
 					}
 					return true;
 				} else {
-					_log.trace("ExecutionResolver:  Preferred nodes are not up, but one of them has recently run this task.  Skipping for now.");
+					log.trace("ExecutionResolver:  Preferred nodes are not up, but one of them has recently run this task.  Skipping for now.");
 					return false;
 				}
 			} else {
@@ -120,7 +115,7 @@ public class SingleNodeExecutionResolverWithFailover implements XnatTaskExecutio
 				}
 			}
 		}
-		_log.trace("ExecutionResolver:  Resolver didn't match any criteria to run this task.  This node will not run task.");
+		log.trace("ExecutionResolver:  Resolver didn't match any criteria to run this task.  This node will not run task.");
 		return false;
 	}
 

@@ -16,7 +16,7 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
-import org.nrg.xnat.services.cache.UserProjectCache;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

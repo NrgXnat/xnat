@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventService;
@@ -18,6 +19,7 @@ import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
 import org.nrg.xnat.initialization.InitializingTask;
@@ -28,8 +30,8 @@ import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.services.PETTracerUtils;
-import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
 import org.springframework.context.annotation.*;
@@ -52,6 +54,8 @@ import java.util.List;
                 "org.nrg.xnat.node", "org.nrg.xnat.task"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
+@EnableCaching
+@Slf4j
 public class ApplicationConfig {
     @Bean
     public ThemeService themeService() {
@@ -74,22 +78,23 @@ public class ApplicationConfig {
 
     @Bean
     public InitializingTasksExecutor initializingTasksExecutor(final TaskScheduler scheduler, final List<InitializingTask> tasks) {
+        log.debug("Creating InitializingTasksExecutor bean with a scheduler of type {} and {} tasks", scheduler.getClass().getName(), tasks.size());
         return new InitializingTasksExecutor(scheduler, tasks);
     }
 
     @Bean
-    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
-        return new SiteConfigPreferences(preferenceService, eventService, configPaths, initPrefs);
+    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+        return new SiteConfigPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
     }
 
     @Bean
-    public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
-        return new NotificationsPreferences(preferenceService, eventService, configPaths, initPrefs);
+    public NotificationsPreferences notificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventService eventService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+        return new NotificationsPreferences(preferenceService, eventService, configFolderPaths, initPrefs);
     }
 
     @Bean
-    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final NrgEventService service, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
-        return new AutomationPreferences(preferenceService, service, configPaths, initPrefs);
+    public AutomationPreferences automationPreferences(final NrgPreferenceService preferenceService, final NrgEventService service, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+        return new AutomationPreferences(preferenceService, service, configFolderPaths, initPrefs);
     }
 
     @Bean

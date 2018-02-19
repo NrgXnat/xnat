@@ -16,7 +16,7 @@ import org.dcm4che2.data.DicomObject;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.services.cache.UserProjectCache;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
      *
      * @param cache The cache used to store retrieved project instances for
      */
-    public DbBackedProjectIdentifier(final UserProjectCache cache) {
+    public DbBackedProjectIdentifier(final UserProjectCache<XnatProjectdata> cache) {
         _log.debug("Creating DbBackedProjectIdentifier object with default constructor.");
         _cache = cache;
     }
@@ -113,7 +113,7 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
 
     private static final Logger _log = LoggerFactory.getLogger(DbBackedProjectIdentifier.class);
 
-    private final UserProjectCache _cache;
+    private final UserProjectCache<XnatProjectdata> _cache;
 
     private final List<DicomDerivedString> _extractors  = new ArrayList<>();
     private final SortedSet<Integer>       _tags        = new TreeSet<>();

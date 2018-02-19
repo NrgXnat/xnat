@@ -39,7 +39,6 @@ import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.ReflectionSaltSource;
-import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -66,7 +65,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import javax.sql.DataSource;
 import java.util.*;
 
-import static org.nrg.xnat.initialization.XnatWebAppInitializer.EMPTY_ARRAY;
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
 
 @Configuration
 @EnableWebSecurity
@@ -82,7 +81,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         _template = template;
         _dataSource = dataSource;
 
-        _dbAuthProviderName = messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_ARRAY, "Database", Locale.getDefault());
+        _dbAuthProviderName = messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_OBJECT_ARRAY, "Database", Locale.getDefault());
     }
 
     @Autowired
@@ -173,7 +172,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public XnatExpiredPasswordFilter expiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
-        return new XnatExpiredPasswordFilter(preferences, aliasTokenService, dateValidation, jdbcTemplate) {{
+        return new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService, dateValidation) {{
             setChangePasswordPath("/app/template/XDATScreen_UpdateUser.vm");
             setChangePasswordDestination("/app/action/ModifyPassword");
             setLogoutDestination("/app/action/LogoutUser");
@@ -200,7 +199,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         return filter;
     }
-
 
     @Bean
     public XnatInitCheckFilter xnatInitCheckFilter(final XnatAppInfo appInfo) {
@@ -268,19 +266,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http.logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser")
             .addLogoutHandler(new XnatLogoutHandler(sessionRegistry()));
-
-        final String securityChannel = _preferences.getSecurityChannel();
-        if (!StringUtils.equals("any", securityChannel)) {
-            http.requiresChannel().anyRequest().requires(securityChannel).withObjectPostProcessor(new ObjectPostProcessor<ChannelProcessingFilter>() {
-                @Override
-                public <O extends ChannelProcessingFilter> O postProcess(final O filter) {
-                    if (filter != null) {
-                        log.error("Found the damned filter!");
-                    }
-                    return null;
-                }
-            });
-        }
 
         // If we can get the default channel processing filter as a bean, we could remove this.
         http.addFilter(channelProcessingFilter())

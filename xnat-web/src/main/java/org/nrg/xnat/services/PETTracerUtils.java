@@ -30,6 +30,9 @@ import java.util.List;
 
 @Service
 public class PETTracerUtils {
+
+    public static final String SITE_WIDE_PATH = PETTracerUtils.buildScriptPath(ResourceScope.SITE_WIDE, "");
+
     @Autowired
     public PETTracerUtils(final ConfigService configService) {
         _configService = configService;
@@ -55,8 +58,12 @@ public class PETTracerUtils {
         }
     }
 
-    public void setSiteWideTracerList(String login, String path, String tracerList) throws ConfigServiceException {
-        _configService.replaceConfig(login, "", TOOL_NAME, path, tracerList);
+    public Configuration getSiteWideTracerList() {
+        return getTracerList(PETTracerUtils.buildScriptPath(PETTracerUtils.ResourceScope.SITE_WIDE, ""), null);
+    }
+
+    public void setSiteWideTracerList(String login, String tracerList) throws ConfigServiceException {
+        _configService.replaceConfig(login, "", TOOL_NAME, SITE_WIDE_PATH, tracerList);
     }
 
     public static String getDefaultTracerList() throws IOException {

@@ -14,8 +14,8 @@ import org.dcm4che2.data.Tag;
 import org.nrg.dcm.ContainedAssignmentExtractor;
 import org.nrg.dcm.Extractor;
 import org.nrg.dcm.TextExtractor;
-import org.nrg.xnat.services.cache.UserProjectCache;
-import org.nrg.xnat.utils.XnatUserProvider;
+import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xdat.services.cache.UserProjectCache;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -39,6 +39,8 @@ public class ClassicDicomObjectIdentifier extends CompositeDicomObjectIdentifier
     }
 
     public static List<Extractor> getAAExtractors() { return attributeExtractors; }
+    @SuppressWarnings("unused")
     public static List<Extractor> getSessionExtractors() { return sessionExtractors; }
+    @SuppressWarnings("unused")
     public static List<Extractor> getSubjectExtractors() { return subjectExtractors; }
 }

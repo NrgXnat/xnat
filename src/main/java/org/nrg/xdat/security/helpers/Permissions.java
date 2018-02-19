@@ -14,8 +14,9 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -26,6 +27,7 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.cache.UserProjectCache;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
@@ -35,26 +37,17 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
-import org.reflections.ReflectionUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.security.core.GrantedAuthority;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static org.reflections.ReflectionUtils.*;
-
+@Slf4j
 public class Permissions {
-    static Logger logger = Logger.getLogger(Permissions.class);
-
-    private static PermissionsServiceI singleton = null;
-
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a
      * new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured package). You
@@ -63,15 +56,14 @@ public class Permissions {
      *
      * @return The permissions service.
      */
-    @SuppressWarnings("unchecked")
     public static PermissionsServiceI getPermissionsService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
-        if (singleton == null) {
+        if (_service == null) {
             // First find out if it exists in the application context.
             final ContextService contextService = XDAT.getContextService();
             if (contextService != null) {
                 try {
-                    return singleton = contextService.getBean(PermissionsServiceI.class);
+                    return _service = contextService.getBean(PermissionsServiceI.class);
                 } catch (NoSuchBeanDefinitionException ignored) {
                     // This is OK, we'll just create it from the indicated class.
                 }
@@ -82,27 +74,46 @@ public class Permissions {
                 if (classes != null && classes.size() > 0) {
                     for (Class<?> clazz : classes) {
                         if (PermissionsServiceI.class.isAssignableFrom(clazz)) {
-                            singleton = (PermissionsServiceI) clazz.newInstance();
+                            _service = (PermissionsServiceI) clazz.newInstance();
                         }
                     }
                 }
             } catch (ClassNotFoundException | InstantiationException | IOException | IllegalAccessException e) {
-                logger.error("", e);
+                log.error("", e);
             }
 
             //default to PermissionsServiceImpl implementation (unless a different default is configured)
-            if (singleton == null) {
+            if (_service == null) {
                 try {
-                    final String className = XDAT.safeSiteConfigProperty("security.permissionsService.default", "org.nrg.xdat.security.PermissionsServiceImpl");
-                    final Class<? extends PermissionsServiceI> aClass  = Class.forName(className).asSubclass(PermissionsServiceI.class);
-                    final Set<Constructor> constructors = getConstructors(aClass, withParameters(NamedParameterJdbcTemplate.class));
-                    singleton = constructors.size() == 0 ? aClass.newInstance() : ((Constructor<? extends PermissionsServiceI>) constructors.toArray()[0]).newInstance(XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class));
-                } catch (InvocationTargetException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                    logger.error("", e);
+                    String className = XDAT.safeSiteConfigProperty("security.permissionsService.default", "org.nrg.xdat.security.PermissionsServiceImpl");
+                    _service = (PermissionsServiceI) Class.forName(className).newInstance();
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                    log.error("", e);
                 }
             }
         }
-        return singleton;
+        return _service;
+    }
+
+    /**
+     * Returns the {@link UserProjectCache user project cache}.
+     *
+     * @return The user project cache.
+     */
+    public static UserProjectCache getUserProjectCache() {
+        // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
+        if (_cache == null) {
+            // First find out if it exists in the application context.
+            final ContextService contextService = XDAT.getContextService();
+            if (contextService != null) {
+                try {
+                    return _cache = contextService.getBean(UserProjectCache.class);
+                } catch (NoSuchBeanDefinitionException ignored) {
+                    log.warn("Unable to find an instance of the UserProjectCache class.");
+                }
+            }
+        }
+        return _cache;
     }
 
     /**
@@ -734,7 +745,22 @@ public class Permissions {
     }
 
     public static boolean canReadProject(final UserI user, final String projectId) throws Exception {
-        return Roles.isSiteAdmin(user) || isProjectPublic(projectId) | StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
+        return canReadProject(null, user, projectId);
+    }
+
+    public static boolean canReadProject(final JdbcTemplate template, final UserI user, final String projectId) throws Exception {
+        if (template != null && user.isGuest()) {
+            return getAllPublicProjects(template).addAll(getAllProtectedProjects(template));
+        }
+        return Roles.isSiteAdmin(user) || isProjectPublic(projectId) || StringUtils.isNotBlank(getUserProjectAccess(user, projectId));
+    }
+
+    private static List<String> getAllProtectedProjects(final JdbcTemplate template) {
+        return template.queryForList(QUERY_GET_PROTECTED_PROJECTS, String.class);
+    }
+
+    private static List<String> getAllPublicProjects(final JdbcTemplate template) {
+        return template.queryForList(QUERY_GET_PUBLIC_PROJECTS, String.class);
     }
 
     public static boolean canEditProject(final UserI user, final String projectId) {
@@ -766,21 +792,19 @@ public class Permissions {
     }
 
     public static String getUserProjectAccess(final UserI user, final String projectId) {
-        final Pattern pattern = Pattern.compile(String.format(PROJECT_ROLE_TEMPLATE, projectId));
         try {
-            List<UserGroupI> groups = Groups.getGroupsByTag(projectId);
-            List<String> usersGroups = Groups.getGroupIdsForUser(user);
-            if(usersGroups!=null && groups!=null){
-                for(UserGroupI group: groups){
-                    String groupId = group.getId();
-                    if(groupId!= null && usersGroups.contains(groupId)){
-                        return groupId.substring(projectId.length()+1);
+            final List<UserGroupI> groups      = Groups.getGroupsByTag(projectId);
+            final List<String>     usersGroups = Groups.getGroupIdsForUser(user);
+            if (CollectionUtils.isNotEmpty(usersGroups) && CollectionUtils.isNotEmpty(groups)) {
+                for (final UserGroupI group : groups) {
+                    final String groupId = group.getId();
+                    if (groupId != null && usersGroups.contains(groupId)) {
+                        return groupId.substring(projectId.length() + 1);
                     }
                 }
             }
-        }
-        catch(Exception e){
-
+        } catch (Exception e) {
+            log.warn("An error occurred trying to find the access level to the project " + projectId + " for the user " + user.getUsername(), e);
         }
         return null;
     }
@@ -800,6 +824,19 @@ public class Permissions {
     }
 
     public static String getProjectAccess(final String projectId) throws Exception {
+        return getProjectAccess(null, projectId);
+    }
+
+    public static String getProjectAccess(final NamedParameterJdbcTemplate template, final String projectId) throws Exception {
+        final NamedParameterJdbcTemplate found;
+        if (template != null) {
+            found = template;
+        } else {
+            found = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
+        }
+        if (found != null) {
+            return getProjectAccessByQuery(found, projectId);
+        }
         final UserI guest = Users.getGuest();
         if (Permissions.canRead(guest, "xnat:subjectData/project", projectId)) {
             return "public";
@@ -808,6 +845,22 @@ public class Permissions {
         } else {
             return "private";
         }
+    }
+
+    private static String getProjectAccessByQuery(final NamedParameterJdbcTemplate template, final String projectId) {
+        final MapSqlParameterSource parameters = new MapSqlParameterSource("projectId", projectId);
+        final boolean exists = template.queryForObject(QUERY_PROJECT_EXISTS, parameters, Boolean.class);
+        if (!exists) {
+            return null;
+        }
+        final Integer access = template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, parameters, Integer.class);
+        if (access == null) {
+            return "private";
+        }
+        if (access == 0) {
+            return "protected";
+        }
+        return "public";
     }
 
     public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds) throws InsufficientPrivilegesException {
@@ -823,30 +876,25 @@ public class Permissions {
     }
 
     public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final Set<String> sessionIds, final String scopedProjectId) throws InsufficientPrivilegesException {
-        final List<Map<String, Object>> locatedTypes = template.queryForList(QUERY_GET_XSI_TYPES_FROM_EXPTS, new HashMap<String, Object>() {{
-            put("sessionIds", sessionIds);
-        }});
-        HashSet<String> sessionsUserCanRead = new HashSet<>();
+        final List<Map<String, Object>> locatedTypes = template.queryForList(QUERY_GET_XSI_TYPES_FROM_EXPTS, new MapSqlParameterSource("sessionIds", sessionIds));
+        final Set<String> sessionsUserCanRead = new HashSet<>();
         for (final Map<String, Object> session : locatedTypes) {
             try{
+                final String sessionId = session.get("id").toString();
                 if(StringUtils.isBlank(scopedProjectId)){
-                    Set<String> sessionSet = new HashSet<>();
-                    sessionSet.add(session.get("id").toString());
-                    Multimap<String, String> projMap = getProjectsForSessions(template, sessionSet);
-                    Set<String> projectsSessionIsIn = projMap.keySet();
-                    boolean canReadOne = false;
-                    for(String pr : projectsSessionIsIn){
-                        if(canRead(user, session.get("xsi").toString()+"/project", pr)){
-                            canReadOne = true;
+                    final Set<String> sessionSet = new HashSet<>();
+                    sessionSet.add(sessionId);
+                    final Multimap<String, String> projMap = getProjectsForSessions(template, sessionSet);
+                    final Set<String> projectsSessionIsIn = projMap.keySet();
+                    for (final String projectId : projectsSessionIsIn) {
+                        if(canRead(user, session.get("xsi").toString()+"/project", projectId)){
+                            sessionsUserCanRead.add(sessionId);
+                            break;
                         }
                     }
-                    if(canReadOne){
-                        sessionsUserCanRead.add(session.get("id").toString());
-                    }
-                }
-                else {
+                } else {
                     if (canRead(user, session.get("xsi").toString() + "/project", scopedProjectId)) {
-                        sessionsUserCanRead.add(session.get("id").toString());
+                        sessionsUserCanRead.add(sessionId);
                     }
                 }
             }
@@ -888,7 +936,7 @@ public class Permissions {
                     unauthorized.add(projectId);
                 }
             } catch (Exception e) {
-                logger.warn("An exception occurred trying to test read access for user " + user.getUsername() + " on project " + projectId + ". Adding project as unauthorized but this may be incorrect depending on the nature of the error.", e);
+                log.warn("An exception occurred trying to test read access for user " + user.getUsername() + " on project " + projectId + ". Adding project as unauthorized but this may be incorrect depending on the nature of the error.", e);
                 unauthorized.add(projectId);
             }
         }
@@ -918,9 +966,7 @@ public class Permissions {
             return projectSessionMap;
         }
 
-        final List<Map<String, Object>> located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new HashMap<String, Object>() {{
-            put("sessionIds", sessions);
-        }});
+        final List<Map<String, Object>> located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new MapSqlParameterSource("sessionIds", sessions));
         if (located.size() == 0) {
             throw new InvalidSearchException("The submitted sessions are not associated with any projects:\n * Sessions: " + Joiner.on(", ").join(sessions));
         }
@@ -944,7 +990,7 @@ public class Permissions {
     }
 
     public static Set<String> getAllProjectIds(final NamedParameterJdbcTemplate template) {
-        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", Collections.<String, Object>emptyMap(), String.class));
+        return new HashSet<>(template.queryForList("SELECT DISTINCT id from xnat_projectData", EmptySqlParameterSource.INSTANCE, String.class));
     }
 
     /**
@@ -982,7 +1028,75 @@ public class Permissions {
             + "ON xnat_experimentdata.extension=xdat_meta_element.xdat_meta_element_id "
             + "WHERE xnat_experimentdata.id IN (:sessionIds)";
 
+    /**
+     * Gets all protected project IDs from the database.
+     */
+    private static final String QUERY_GET_PROTECTED_PROJECTS = "SELECT "
+                                                               + "  xfm.field_value AS project "
+                                                               + "FROM xdat_field_mapping xfm "
+                                                               + "  LEFT JOIN xdat_field_mapping_set xfms "
+                                                               + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
+                                                               + "  LEFT JOIN xdat_element_access xea "
+                                                               + "    ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id "
+                                                               + "  LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id "
+                                                               + "  LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id "
+                                                               + "  LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id "
+                                                               + "WHERE xu.login = 'guest' "
+                                                               + "      AND xea.element_name = 'xnat:projectData' "
+                                                               + "      AND xfm.create_element = 0 "
+                                                               + "      AND xfm.read_element = 1 "
+                                                               + "      AND xfm.edit_element = 0 "
+                                                               + "      AND xfm.delete_element = 0 "
+                                                               + "      AND xfm.active_element = 0 "
+                                                               + "      AND xfm.comparison_type = 'equals' "
+                                                               + "ORDER BY project";
+
+    /**
+     * Gets all public project IDs from the database.
+     */
+    private static final String QUERY_GET_PUBLIC_PROJECTS = "SELECT "
+                                                            + "  xfm.field_value AS project "
+                                                            + "FROM xdat_field_mapping xfm "
+                                                            + "  LEFT JOIN xdat_field_mapping_set xfms "
+                                                            + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
+                                                            + "  LEFT JOIN xdat_element_access xea "
+                                                            + "    ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id "
+                                                            + "  LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id "
+                                                            + "  LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id "
+                                                            + "  LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id "
+                                                            + "WHERE xu.login = 'guest' "
+                                                            + "      AND xea.element_name = 'xnat:projectData' "
+                                                            + "      AND xfm.create_element = 0 "
+                                                            + "      AND xfm.read_element = 1 "
+                                                            + "      AND xfm.edit_element = 0 "
+                                                            + "      AND xfm.delete_element = 0 "
+                                                            + "      AND xfm.active_element = 0 "
+                                                            + "      AND xfm.comparison_type = 'equals' "
+                                                            + "ORDER BY project";
+
+    private static final String QUERY_PROJECT_EXISTS                 = "SELECT EXISTS (SELECT true FROM xnat_projectdata WHERE id = :projectId)";
+
+    private static final String QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED = "SELECT xfm.active_element AS is_public "
+                                                                       + "FROM xdat_field_mapping xfm "
+                                                                       + "  LEFT JOIN xdat_field_mapping_set xfms "
+                                                                       + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
+                                                                       + "  LEFT JOIN xdat_element_access xea "
+                                                                       + "    ON xfms.permissions_allow_set_xdat_elem_xdat_element_access_id = xea.xdat_element_access_id "
+                                                                       + "  LEFT JOIN xdat_user xu ON xea.xdat_user_xdat_user_id = xu.xdat_user_id "
+                                                                       + "  LEFT JOIN xdat_user_groupid xugid ON xu.xdat_user_id = xugid.groups_groupid_xdat_user_xdat_user_id "
+                                                                       + "  LEFT JOIN xdat_usergroup xug ON xugid.groupid = xug.id "
+                                                                       + "WHERE xu.login = 'guest' "
+                                                                       + "      AND xea.element_name = 'xnat:projectData' "
+                                                                       + "      AND xfm.create_element = 0 "
+                                                                       + "      AND xfm.read_element = 1 "
+                                                                       + "      AND xfm.edit_element = 0 "
+                                                                       + "      AND xfm.delete_element = 0 "
+                                                                       + "      AND xfm.comparison_type = 'equals' "
+                                                                       + "      AND xfm.field_value = :projectId";
+
     private static final List<String> PROJECT_GROUPS        = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();
-    private static final String       PROJECT_ROLE_TEMPLATE = "^%s_(?<access>" + Joiner.on("|").join(PROJECT_GROUPS) + ")$";
+
+    private static PermissionsServiceI _service = null;
+    private static UserProjectCache    _cache   = null;
 }

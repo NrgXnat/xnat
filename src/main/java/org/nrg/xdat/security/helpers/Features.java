@@ -10,26 +10,21 @@
 package org.nrg.xdat.security.helpers;
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import java.util.Collection;
 import java.util.List;
 
+@SuppressWarnings("RedundantThrows")
+@Slf4j
 public class Features {
-
-    private static final Logger logger = LoggerFactory.getLogger(Features.class);
-
-    private static FeatureServiceI singleton = null;
-    private static FeatureRepositoryServiceI repository = null;
-
     /**
      * Returns the currently configured features service. You can change the default implementation returned via the
      * security.featureService.default configuration parameter
@@ -46,12 +41,11 @@ public class Features {
     /**
      * Sets a new features service.
      */
-    public static void setFeatureServiceToSiteConfigPreference() {
+    public static void setFeatureServiceImplementation(final String featureServiceImplementation) {
         try {
-            singleton = Class.forName(XDAT.getSiteConfigPreferences().getFeatureService()).asSubclass(FeatureServiceI.class).newInstance();
-        }
-        catch(Exception e){
-            logger.error("Failed to set Feature Service.",e);
+            singleton = Class.forName(featureServiceImplementation).asSubclass(FeatureServiceI.class).newInstance();
+        } catch (Exception e) {
+            log.error("Failed to set Feature Service.", e);
         }
     }
 
@@ -71,12 +65,11 @@ public class Features {
     /**
      * Sets a new features repository service.
      */
-    public static void setFeatureRepositoryServiceToSiteConfigPreference() {
+    public static void setFeatureRepositoryServiceImplementation(final String featureRepositoryServiceImplementation) {
         try {
-            repository = Class.forName(XDAT.getSiteConfigPreferences().getFeatureRepositoryService()).asSubclass(FeatureRepositoryServiceI.class).newInstance();
-        }
-        catch(Exception e){
-            logger.error("Failed to set Feature Service.",e);
+            repository = Class.forName(featureRepositoryServiceImplementation).asSubclass(FeatureRepositoryServiceI.class).newInstance();
+        } catch (Exception e) {
+            log.error("Failed to set Feature Service.", e);
         }
     }
 
@@ -108,7 +101,6 @@ public class Features {
         return getFeatureService().getEnabledFeaturesForGroupType(type);
     }
 
-
     public static Collection<String> getBannedFeaturesForGroupType(String type) {
         return getFeatureService().getBannedFeaturesForGroupType(type);
     }
@@ -118,6 +110,7 @@ public class Features {
      *
      * @param user The user to search on.
      * @param tag  The tag to search for.
+     *
      * @return The features available to the user with the indicated tag.
      */
     @SuppressWarnings("unused")
@@ -130,6 +123,7 @@ public class Features {
      *
      * @param user The user to search on.
      * @param tags The tag sto search for.
+     *
      * @return The features available to the user with the indicated tags.
      */
     @SuppressWarnings("unused")
@@ -141,6 +135,7 @@ public class Features {
      * Get features for this group
      *
      * @param group The group to search on.
+     *
      * @return The features associated with the indicated group.
      */
     public static Collection<String> getFeaturesForGroup(UserGroupI group) {
@@ -241,6 +236,7 @@ public class Features {
      *
      * @param user    The user to check.
      * @param feature The feature to check for.
+     *
      * @return Returns true if the user is a member of a group with access to the indicated feature, false otherwise.
      */
     public static boolean checkFeatureForAnyTag(UserI user, String feature) {
@@ -253,8 +249,9 @@ public class Features {
      * @param user    The user to check.
      * @param tag     The tag to search for.
      * @param feature The feature to check for.
+     *
      * @return Returns true if the user is a member of a group with access to the indicated feature and tag, false
-     * otherwise.
+     *         otherwise.
      */
     @SuppressWarnings("unused")
     public static boolean checkFeature(UserI user, String tag, String feature) {
@@ -267,8 +264,9 @@ public class Features {
      * @param user    The user to check.
      * @param tags    The tags to search for.
      * @param feature The feature to check for.
+     *
      * @return Returns true if the user is a member of a group with access to the indicated feature and tags, false
-     * otherwise.
+     *         otherwise.
      */
     @SuppressWarnings("unused")
     public static boolean checkFeature(UserI user, Collection<String> tags, String feature) {
@@ -281,6 +279,7 @@ public class Features {
      * Checks whether the indicated feature is banned on the server.
      *
      * @param feature The feature to check for.
+     *
      * @return Returns true if the feature is banned, false otherwise.
      */
     public static Boolean isBanned(final String feature) {
@@ -293,6 +292,7 @@ public class Features {
      *
      * @param feature The feature to check for.
      * @param tag     The tag to search for.
+     *
      * @return Returns true if the feature and tag are blocked by default, false otherwise.
      */
     public static boolean isBlockedByGroupType(String feature, String tag) {
@@ -304,6 +304,7 @@ public class Features {
      *
      * @param group   The group to check for a feature.
      * @param feature The feature to check for.
+     *
      * @return Returns true if the feature is banned by the group, false otherwise.
      */
     public static boolean isBannedByGroup(UserGroupI group, String feature) {
@@ -314,6 +315,7 @@ public class Features {
      * Checks whether the indicated feature is on by default for all users and groups.
      *
      * @param feature The feature to check for.
+     *
      * @return Returns true if the feature is on by default, false otherwise.
      */
     public static Boolean isOnByDefault(String feature) {
@@ -327,6 +329,7 @@ public class Features {
      *
      * @param feature The feature to check for.
      * @param tag     The tag to search for.
+     *
      * @return Returns true if the feature is on by default for matching groups, false otherwise.
      */
     public static boolean isOnByDefaultByGroupType(String feature, String tag) {
@@ -338,6 +341,7 @@ public class Features {
      *
      * @param group   The group to search on.
      * @param feature The feature to search on.
+     *
      * @return Returns true if the feature is on by default for the indicated group, false otherwise.
      */
     public static boolean isOnByDefaultByGroup(UserGroupI group, String feature) {
@@ -428,6 +432,7 @@ public class Features {
      * Gets a list of all blocked features for groups that have the indicated tag.
      *
      * @param tag The tag to search for.
+     *
      * @return A list of the blocked features for groups with the indicated tag.
      */
     @SuppressWarnings("unused")
@@ -439,6 +444,7 @@ public class Features {
      * Gets a list of all blocked features for the indicated group.
      *
      * @param group The group to search on.
+     *
      * @return A list of the blocked features for the indicated group.
      */
     public static Collection<String> getBlockedFeaturesForGroup(UserGroupI group) {
@@ -449,6 +455,7 @@ public class Features {
      * Gets a list of all enabled features for groups that have the indicated tag.
      *
      * @param tag The tag to search for.
+     *
      * @return A list of the enabled features for groups with the indicated tag.
      */
     @SuppressWarnings("unused")
@@ -462,6 +469,7 @@ public class Features {
      *
      * @param feature The feature to check for.
      * @param role    The role to check for.
+     *
      * @return Returns true if the feature is on by default for the indicated role, false otherwise.
      */
     public static boolean isOnByDefaultBySiteRole(String feature, String role) {
@@ -473,6 +481,7 @@ public class Features {
      *
      * @param feature The feature to check for.
      * @param role    The role to check for.
+     *
      * @return Returns true if the feature is blocked for the indicated role, false otherwise.
      */
     @SuppressWarnings("unused")
@@ -501,8 +510,11 @@ public class Features {
             final String className = XDAT.safeSiteConfigProperty(preference, aDefault);
             return Class.forName(className).asSubclass(clazz).newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            logger.error("", e);
+            log.error("", e);
         }
         return null;
     }
+
+    private static FeatureServiceI           singleton  = null;
+    private static FeatureRepositoryServiceI repository = null;
 }

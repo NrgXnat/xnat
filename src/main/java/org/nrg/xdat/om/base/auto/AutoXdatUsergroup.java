@@ -9,25 +9,32 @@
 
 package org.nrg.xdat.om.base.auto;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XdatUsergroupI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ResourceFile;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.List;
 
 /**
  * @author XDAT
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
+@Slf4j
 public abstract class AutoXdatUsergroup extends BaseElement implements XdatUsergroupI {
-    public final static org.apache.log4j.Logger logger              = org.apache.log4j.Logger.getLogger(AutoXdatUsergroup.class);
     public final static String                  SCHEMA_ELEMENT_NAME = "xdat:userGroup";
 
     public AutoXdatUsergroup(ItemI item) {
@@ -87,7 +94,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
                 getItem().setChild(SCHEMA_ELEMENT_NAME + "/element_access", v.getItem(), true);
             }
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
             throw e1;
         }
     }
@@ -103,7 +110,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
         try {
             getItem().removeChild(SCHEMA_ELEMENT_NAME + "/element_access", index);
         } catch (FieldNotFoundException e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
         }
     }
 
@@ -123,7 +130,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
                 return _Id;
             }
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
             return null;
         }
     }
@@ -138,7 +145,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
             setProperty(SCHEMA_ELEMENT_NAME + "/ID", v);
             _Id = null;
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
         }
     }
 
@@ -158,7 +165,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
                 return _Displayname;
             }
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
             return null;
         }
     }
@@ -173,7 +180,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
             setProperty(SCHEMA_ELEMENT_NAME + "/displayName", v);
             _Displayname = null;
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
         }
     }
 
@@ -193,7 +200,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
                 return _Tag;
             }
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
             return null;
         }
     }
@@ -208,7 +215,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
             setProperty(SCHEMA_ELEMENT_NAME + "/tag", v);
             _Tag = null;
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
         }
     }
 
@@ -228,7 +235,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
                 return _XdatUsergroupId;
             }
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
             return null;
         }
     }
@@ -241,7 +248,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
             setProperty(SCHEMA_ELEMENT_NAME + "/xdat_userGroup_id", v);
             _XdatUsergroupId = null;
         } catch (Exception e1) {
-            logger.error(e1);
+            log.error("An exception occurred", e1);
         }
     }
 
@@ -253,7 +260,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
             org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetAllItems(SCHEMA_ELEMENT_NAME, user, preLoad);
             al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         al.trimToSize();
@@ -268,7 +275,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
             org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetAllItems(SCHEMA_ELEMENT_NAME, user, preLoad);
             al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems(sortBy));
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         al.trimToSize();
@@ -281,20 +288,21 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
             org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems(xmlPath, value, user, preLoad);
             al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         al.trimToSize();
         return al;
     }
 
+    @SuppressWarnings("unused")
     public static ArrayList<XdatUsergroup> getXdatUsergroupsByField(org.nrg.xft.search.CriteriaCollection criteria, org.nrg.xft.security.UserI user, boolean preLoad) {
         ArrayList<XdatUsergroup> al = new ArrayList<>();
         try {
             org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems(criteria, user, preLoad);
             al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         al.trimToSize();
@@ -311,39 +319,36 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
                 return null;
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return null;
     }
 
-    public static XdatUsergroup getXdatUsergroupsById(Object value, org.nrg.xft.security.UserI user, boolean preLoad) {
+    @Nullable
+    public static XdatUsergroup getXdatUsergroupsById(final Object value, final UserI user, boolean preLoad) {
         try {
-            org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems("xdat:userGroup/ID", value, user, preLoad);
-            ItemI                                  match = items.getFirst();
+            final ItemI match = ItemSearch.GetItem("xdat:userGroup/ID", value, user, preLoad);
             if (match != null) {
-                return (XdatUsergroup) org.nrg.xdat.base.BaseElement.GetGeneratedItem(match);
-            } else {
-                return null;
+                return (XdatUsergroup) BaseElement.GetGeneratedItem(match);
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("An unexpected error occurred trying to retrieve a user group by ID '" + value + "'", e);
         }
 
         return null;
     }
 
-    public static ArrayList<XdatUsergroup> getXdatUsergroupsByTag(Object value, org.nrg.xft.security.UserI user, boolean preLoad) {
-        ArrayList<XdatUsergroup> al = new ArrayList<>();
+    @Nonnull
+    public static List<XdatUsergroup> getXdatUsergroupsByTag(Object value, org.nrg.xft.security.UserI user, boolean preLoad) {
         try {
-            org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems("xdat:userGroup/tag", value, user, preLoad);
-            al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
+            final ItemCollection items = ItemSearch.GetItems("xdat:userGroup/tag", value, user, preLoad);
+            return BaseElement.WrapItems(items.getItems());
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
-        al.trimToSize();
-        return al;
+        return Collections.emptyList();
     }
 
     public static ArrayList wrapItems(ArrayList items) {

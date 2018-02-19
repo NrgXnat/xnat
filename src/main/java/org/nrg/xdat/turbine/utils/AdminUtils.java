@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -19,14 +20,12 @@ import org.nrg.mail.api.NotificationType;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserRegistrationData;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.mail.MessagingException;
 import java.io.StringWriter;
@@ -36,39 +35,25 @@ import java.util.*;
  * @author Tim
  *
  */
+@Slf4j
 public class AdminUtils {
-	private static final Logger  logger                 = LoggerFactory.getLogger(AdminUtils.class);
+    public static final String DEFAULT_LOGIN_FAILURE_MESSAGE = "Login attempt failed. Please try again.";
 
-	private static       String  login_failure_message  = null;
-
-	/**
+    /**
      *
      */
 	public AdminUtils() {
 		super();
 	}
 
-	public static String GetLoginFailureMessage(){
-		if(login_failure_message==null){
-			try {
-				login_failure_message=XDAT.getSiteConfigPreferences().getUiLoginFailureMessage();
-                if (!StringUtils.isBlank(login_failure_message) && login_failure_message.contains("%d")) {
-                    if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
-                        login_failure_message = String.format(login_failure_message, XDAT.getSiteConfigPreferences().getMaxFailedLogins());
-                    } else {
-                        logger.warn("Found login error message that contained a %d format placeholder, but the max failed login attempts is zero or less. Using the default login failure message instead.");
-                        login_failure_message = "Login attempt failed. Please try again.";
-                    }
-                }
-			} catch (Exception e) {
-				logger.error("",e);
-				login_failure_message="Login attempt failed. Please try again.";
-			}
-		}
-		return login_failure_message;
-	}
+    public static String GetLoginFailureMessage() {
+        if (StringUtils.isBlank(loginFailureMessage)) {
+            loginFailureMessage = resolveLoginFailureMessage();
+        }
+        return loginFailureMessage;
+    }
 
-	public static void sendDisabledUserVerificationNotification(final UserI user, final Context context) throws Exception {
+    public static void sendDisabledUserVerificationNotification(final UserI user, final Context context) throws Exception {
         context.put("time", Calendar.getInstance().getTime());
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("siteLogoPath", XDAT.getSiteLogoPath());
@@ -76,7 +61,7 @@ public class AdminUtils {
         context.put("user", user);
 
         final String body = populateVmTemplate(context, "/screens/email/DisabledUserVerification.vm");
-        final String subject = "Expired User Reverified: " + user.getFirstname() + " " + user.getLastname();
+        final String subject = "Expired User reverified: " + user.getFirstname() + " " + user.getLastname();
 
 		Map<String, Object> properties = new HashMap<>();
         properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
@@ -173,6 +158,7 @@ public class AdminUtils {
 		}
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
 	public static boolean sendUserHTMLEmail(final String subject, final String message, final boolean ccAdmin, final String[] addresses) {
 		if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
 			if (addresses.length > 0) {
@@ -181,14 +167,14 @@ public class AdminUtils {
 					XDAT.getMailService().sendHtmlMessage(from, addresses, ccAdmin ? new String[]{from} : null, null, subject, message);
 					return true;
 				} catch (MessagingException exception) {
-					logger.error("Unable to send mail", exception);
+					log.error("Unable to send mail", exception);
 				}
 			}
 		}
 		return false;
 	}
 
-	public static void sendErrorNotification(String message, Context context) throws Exception {
+	public static void sendErrorNotification(String message, Context context) {
 		UserI user = XDAT.getUserDetails();
 		assert user != null;
 		String email = user.getEmail();
@@ -212,7 +198,7 @@ public class AdminUtils {
                 XDAT.verifyNotificationType(NotificationType.Error);
                 XDAT.getNotificationService().createNotification(NotificationType.Error.toString(), properties);
             } catch (Exception e1) {
-				logger.error("Unable to send mail", e1);
+				log.error("Unable to send mail", e1);
 			}
 
 			sendAdminNotificationCopy(subject, body, NotificationType.Error);
@@ -234,7 +220,7 @@ public class AdminUtils {
 		try {
 			XDAT.getMailService().sendHtmlMessage(admin, admin, qualifiedSubject, formattedMessage.toString());
 		} catch (Exception exception) {
-			logger.error("Unable to send mail", exception);
+			log.error("Unable to send mail", exception);
 		}
 	}
 	}
@@ -258,15 +244,14 @@ public class AdminUtils {
 
 							StringBuilder formattedMessage = new StringBuilder();
 							formattedMessage.append("HOST: ").append(TurbineUtils.GetFullServerPath()).append("<BR>");
-							if (u != null)
-								formattedMessage.append("USER: ").append(u.getUsername()).append("(").append(u.getFirstname()).append(" ").append(u.getLastname()).append(")").append("<BR>");
+							formattedMessage.append("USER: ").append(u.getUsername()).append("(").append(u.getFirstname()).append(" ").append(u.getLastname()).append(")").append("<BR>");
 							formattedMessage.append("TIME: ").append(java.util.Calendar.getInstance().getTime()).append("<BR>");
 							formattedMessage.append("MESSAGE: ").append(message).append("<BR>");
 
 							try {
 								XDAT.getMailService().sendHtmlMessage(currEmail, currEmail, qualifiedSubject, formattedMessage.toString());
 							} catch (Exception exception) {
-								logger.error("Unable to send mail", exception);
+								log.error("Unable to send mail", exception);
 							}
 
 							alreadyEmailed.add(currEmail);
@@ -286,34 +271,24 @@ public class AdminUtils {
 		emailAllAdmins(null, subject, message);
 	}
 
-	public static String populateVmTemplate(Context context, String templatePath) throws Exception {
+	public static String populateVmTemplate(Context context, String templatePath) {
         StringWriter writer = new StringWriter();
         Template template = Velocity.getTemplate(templatePath);
         template.merge(context, writer);
         return writer.toString();
     }
 
+	/**
+	 * Gets the primary administrator user object.
+	 *
+	 * @return The primary administrator user object.
+	 * @deprecated Use the {@link Users#getAdminUser()} method instead. In Spring-based code, you should just autowire the
+	 * {@link XnatUserProvider} instance for "primaryAdminUserProvider".
+	 */
+	@SuppressWarnings("DeprecatedIsStillUsed")
+	@Deprecated
 	public static UserI getAdminUser() {
-		final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
-		final String adminEmail = preferences != null ? preferences.getAdminEmail() : null;
-		UserI fallback = null;
-		for (final String login : Users.getAllLogins()) {
-			try {
-				final UserI user = Users.getUser(login);
-				if (Roles.isSiteAdmin(user)) {
-					if (adminEmail == null) {
-						return user;
-					}
-					if (StringUtils.equalsIgnoreCase(user.getEmail(), adminEmail)) {
-						return user;
-					}
-					fallback = user;
-				}
-			} catch (Exception ignored){
-
-			}
-		}
-		return fallback;
+		return Users.getAdminUser();
 	}
 
 	private static void sendAdminNotificationCopy(final String subject, final String body, final NotificationType event) {
@@ -398,4 +373,22 @@ public class AdminUtils {
 
 		sendAdminNotificationCopy(subject, body, NotificationType.NewUser);
 	}
+
+    private static String resolveLoginFailureMessage() {
+        final String prefMessage = XDAT.getSiteConfigPreferences().getUiLoginFailureMessage();
+        if (!StringUtils.isBlank(prefMessage)) {
+            if (!prefMessage.contains("%d")) {
+                return prefMessage;
+            }
+            if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
+                return String.format(prefMessage, XDAT.getSiteConfigPreferences().getMaxFailedLogins());
+            }
+            log.warn("Found login error message that contained a %d format placeholder, but the max failed login attempts is zero or less. Using the default login failure message instead.");
+        } else {
+            log.info("No value was set for the login failure message. Using the default login failure message instead.");
+        }
+        return DEFAULT_LOGIN_FAILURE_MESSAGE;
+    }
+
+    private static String loginFailureMessage = null;
 }

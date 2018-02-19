@@ -565,12 +565,12 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                             mappingQO.addField(pKey.getXMLPathString(rootElement.getFullXMLName()));
                         }
 
-            			StringBuffer sb = new StringBuffer();
+            			StringBuilder sb = new StringBuilder();
 
             			//BUILD MAPPING TABLE
                         String mappingQuery = mappingQO.buildQuery();
                         sb.append(" LEFT JOIN (").append(mappingQuery);
-            			sb.append(") AS ").append("map_" + foreign.getSQLName()).append(" ON ");
+            			sb.append(") AS ").append("map_").append(foreign.getSQLName()).append(" ON ");
             			pKeys = rootElement.getAllPrimaryKeys().iterator();
             			int pkCount=0;
             			while (pKeys.hasNext())

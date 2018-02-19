@@ -138,5 +138,9 @@ public class XftItemEvent implements EventI {
 	public void setId(Object id) {
 		this.id = id;
 	}
-	
+
+	@Override
+	public String toString() {
+		return xsiType + " " + id + " " + action;
+	}
 }

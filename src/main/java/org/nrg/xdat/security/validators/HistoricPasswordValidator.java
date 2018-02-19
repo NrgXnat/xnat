@@ -9,29 +9,35 @@
 
 package org.nrg.xdat.security.validators;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xft.XFTTable;
-import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Hashtable;
+import java.util.List;
 import java.util.TimeZone;
 
+import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToSeconds;
+
 @Component
+@Slf4j
 public class HistoricPasswordValidator implements PasswordValidator {
     @Autowired
-    public HistoricPasswordValidator(final SiteConfigPreferences preferences) {
+    public HistoricPasswordValidator(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate template) {
         _preferences = preferences;
+        _template = template;
     }
 
     /**
@@ -40,40 +46,42 @@ public class HistoricPasswordValidator implements PasswordValidator {
      */
     HistoricPasswordValidator() {
         _preferences = null;
+        _template = null;
     }
 
     @Override
-    public String isValid(String password, UserI user) {
+    public String isValid(final String password, final UserI user) {
         //if there's no user, they're probably new so there's nothing to do here.
-        if (user != null) {
-            final String passwordReuseRestriction = getPasswordReuseRestriction();
-            if (StringUtils.equals(passwordReuseRestriction, "Historical")) {
-                try {
-                    final long      durationInSeconds        = SiteConfigPreferences.convertPGIntervalToSeconds(getPasswordHistoryDuration());
-                    final String    userId                   = user.getUsername();
-                    final String    dbName                   = user.getDBName();
-                    final Date      today                    = Calendar.getInstance(TimeZone.getDefault()).getTime();
-                    final Timestamp startOfDurationTimestamp = new Timestamp(today.getTime() - (durationInSeconds * 1000L));// Multiplying by 1000 to convert to milliseconds;
-                    final String    query                    = "SELECT primary_password AS hashed_password, salt AS salt FROM xdat_user_history WHERE login='" + userId + "' AND change_date > '" + startOfDurationTimestamp + "' UNION SELECT primary_password AS password, salt AS salt FROM xdat_user WHERE login='" + userId + "';";
-                    final XFTTable  table                    = TableSearch.Execute(query, dbName, userId);
-
-                    table.resetRowCursor();
-                    while (table.hasMoreRows()) {
-                        final Hashtable row            = table.nextRowHash();
-                        final String    hashedPassword = (String) row.get("hashed_password");
-                        final String    salt           = (String) row.get("salt");
-                        final String    encrypted      = Users.encode(password, salt);
-                        if (encrypted.equals(hashedPassword)) {
-                            return "Password has been used in the previous " + getPasswordHistoryDuration() + ".";
-                        }
-                    }
-                } catch (Exception e) {
-                    _log.error("An error occurred while trying to validate a password update for user " + user.getLogin(), e);
-                    return "An error occurred trying to update your password. Please contact your system administrator.";
-                }
-            }
+        if (user == null || _template == null) {
+            return "";
         }
 
+        final String restriction = getPasswordReuseRestriction();
+        if (StringUtils.equals(restriction, "Historical")) {
+            try {
+                final long durationInSeconds = convertPGIntervalToSeconds(getPasswordHistoryDuration());
+
+                final MapSqlParameterSource parameters = new MapSqlParameterSource("userId", user.getUsername());
+                parameters.addValue("startOfDurationTimestamp", new Timestamp(Calendar.getInstance(TimeZone.getDefault()).getTime().getTime() - (durationInSeconds * 1000L)));
+
+                final List<Pair<String, String>> rows = _template.query(QUERY, parameters, new RowMapper<Pair<String, String>>() {
+                    @Override
+                    public Pair<String, String> mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
+                        return new ImmutablePair<>(resultSet.getString("hashed_password"), resultSet.getString("salt"));
+                    }
+                });
+
+                for (final Pair<String, String> row : rows) {
+                    final String encrypted = Users.encode(password, row.getRight());
+                    if (encrypted.equals(row.getLeft())) {
+                        return "Password has been used in the previous " + getPasswordHistoryDuration() + ".";
+                    }
+                }
+            } catch (Exception e) {
+                log.error("An error occurred while trying to validate a password update for user " + user.getLogin(), e);
+                return "An error occurred trying to update your password. Please contact your system administrator.";
+            }
+        }
         return "";
     }
 
@@ -81,11 +89,12 @@ public class HistoricPasswordValidator implements PasswordValidator {
         return _preferences != null ? _preferences.getPasswordReuseRestriction() : "None";
     }
 
-    private String getPasswordHistoryDuration() throws SQLException {
+    private String getPasswordHistoryDuration() {
         return _preferences != null ? _preferences.getPasswordHistoryDuration() : "1 year";
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(HistoricPasswordValidator.class);
+    private static final String QUERY = "SELECT primary_password AS hashed_password, salt AS salt FROM xdat_user_history WHERE login = :userId  AND change_date > :startOfDurationTimestamp UNION SELECT primary_password AS password, salt AS salt FROM xdat_user WHERE login = :userId";
 
-    private final SiteConfigPreferences _preferences;
+    private final SiteConfigPreferences      _preferences;
+    private final NamedParameterJdbcTemplate _template;
 }

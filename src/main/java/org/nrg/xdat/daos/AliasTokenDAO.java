@@ -16,18 +16,18 @@
  */
 package org.nrg.xdat.daos;
 
-import org.apache.log4j.Logger;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Date;
-import java.sql.SQLException;
 import java.util.List;
 
+import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToSeconds;
+
+@SuppressWarnings("unchecked")
 @Repository
 public class AliasTokenDAO extends AbstractHibernateDAO<AliasToken> {
     public AliasToken findByAlias(String alias) {
@@ -50,7 +50,6 @@ public class AliasTokenDAO extends AbstractHibernateDAO<AliasToken> {
         return findByXdatUserId(xdatUserId, false);
     }
 
-    @SuppressWarnings("unchecked")
     public List<AliasToken> findByXdatUserId(String xdatUserId, boolean includeDisabled) {
         Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("xdatUserId", xdatUserId));
@@ -63,20 +62,12 @@ public class AliasTokenDAO extends AbstractHibernateDAO<AliasToken> {
         return criteria.list();
     }
 
-    @SuppressWarnings("unchecked")
     public List<AliasToken> findByExpired(String interval) {
-        Criteria criteria = getCriteriaForType();
-        try {
-            Date expirationTime = new Date(System.currentTimeMillis() - (1000L*SiteConfigPreferences.convertPGIntervalToSeconds(interval)));
-            criteria.add(Restrictions.lt("created", expirationTime));
-        } catch (SQLException e) {
-            _log.error("Failed to get list of expired tokens",e);
-        }
+        final Criteria criteria = getCriteriaForType();
+        criteria.add(Restrictions.lt("created", new Date(System.currentTimeMillis() - (1000L * convertPGIntervalToSeconds(interval)))));
         if (criteria.list().size() == 0) {
             return null;
         }
         return criteria.list();
     }
-
-    static Logger _log = Logger.getLogger(AliasTokenDAO.class);
 }

@@ -11,8 +11,8 @@
 package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.framework.beans.XnatDataModelBean;
 import org.nrg.framework.beans.XnatPluginBean;
 import org.nrg.framework.beans.XnatPluginBeanManager;
@@ -26,7 +26,6 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.*;
 import org.nrg.xft.cache.CacheManager;
@@ -66,9 +65,9 @@ import java.util.*;
  * @author Tim
  */
 @SuppressWarnings("serial")
+@Slf4j
 public class ElementSecurity extends ItemWrapper {
     private static final String                             XDAT_ELEMENT_SECURITY = "xdat:element_security";
-    static               Logger                             logger                = Logger.getLogger(ElementSecurity.class);
     public static final  String                             SCHEMA_ELEMENT_NAME   = XDAT_ELEMENT_SECURITY;
     public static        Hashtable<String, ElementSecurity> elements              = null;
     public static        Hashtable                          elementDistinctIds    = new Hashtable(); //Hashtable of Hashtables /level 1 key=elementName /level2 key=fieldName (or default if ref)/Level 3 key= pk value ,value=display name
@@ -115,10 +114,11 @@ public class ElementSecurity extends ItemWrapper {
      * @throws Exception When something goes wrong.
      */
     public static boolean registerNewTypes() throws Exception {
-        Map<String, ElementSecurity> elements = (Map<String, ElementSecurity>) GetElementSecurities().clone();
+        @SuppressWarnings("unchecked")
+        final Map<String, ElementSecurity> elements = (Map<String, ElementSecurity>) GetElementSecurities().clone();
 
         boolean _new = false;
-        UserI admin = AdminUtils.getAdminUser();
+        UserI admin = Users.getAdminUser();
         assert admin != null;
         for (DataModelDefinition def : XFTManager.discoverDataModelDefs()) {
             for (String s : def.getSecuredElements()) {
@@ -168,8 +168,8 @@ public class ElementSecurity extends ItemWrapper {
                             query.append(" where element_name = '").append(bean.getType()).append("'");
                             final JdbcTemplate template = XDAT.getContextService().getBean(JdbcTemplate.class);
                             final int results = template.update(query.toString());
-                            if (logger.isInfoEnabled()) {
-                                logger.info("Updated " + results + " rows with the query: " + query.toString());
+                            if (log.isInfoEnabled()) {
+                                log.info("Updated " + results + " rows with the query: " + query.toString());
                             }
                         }
                         _new = true;
@@ -186,12 +186,8 @@ public class ElementSecurity extends ItemWrapper {
     public String toString() {
         try {
             return this.getElementName();
-        } catch (XFTInitException e) {
-            logger.error("", e);
-        } catch (ElementNotFoundException e) {
-            logger.error("", e);
-        } catch (FieldNotFoundException e) {
-            logger.error("", e);
+        } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+            log.error("", e);
         }
         return null;
     }
@@ -272,7 +268,7 @@ public class ElementSecurity extends ItemWrapper {
             es.setProperty("xdat:element_security/element_actions/element_action[" + index + "]/grouping", grouping);
             es.setProperty("xdat:element_security/element_actions/element_action[" + index + "]/secureAccess", access);
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -282,30 +278,26 @@ public class ElementSecurity extends ItemWrapper {
      * @throws Exception When something goes wrong. 
      */
     public static ArrayList<ElementSecurity> GetInSecureElements() throws Exception {
-        ArrayList<ElementSecurity>  al  = new ArrayList<ElementSecurity>();
-        Collection<ElementSecurity> ess = GetElementSecurities().values();
-        for (ElementSecurity es : ess) {
-            if (!es.isSecure()) {
-                al.add(es);
+        final ArrayList<ElementSecurity> securityElements  = new ArrayList<>();
+        final Collection<ElementSecurity> values = GetElementSecurities().values();
+        for (final ElementSecurity value : values) {
+            if (!value.isSecure()) {
+                securityElements.add(value);
             }
         }
-        al.trimToSize();
-        return al;
+        return securityElements;
     }
 
     /**
-     * @param elementName
+     * Tests the specified element for element security configuration.
+     * @param elementName The name of the element to test.
      * @return Returns whether element security has been defined for this element
      */
     public static boolean HasDefinedElementSecurity(String elementName) {
         try {
-            if (GetElementSecurity(elementName) != null) {
-                return true;
-            } else {
-                return false;
-            }
+            return GetElementSecurity(elementName) != null;
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
             return true;
         }
     }
@@ -315,41 +307,33 @@ public class ElementSecurity extends ItemWrapper {
      * @throws Exception When something goes wrong. 
      */
     public static ArrayList<ElementSecurity> GetSecureElements() throws Exception {
-        final ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
-
-        final Collection<ElementSecurity> ess = GetElementSecurities().values();
-        for (ElementSecurity es : ess) {
-            if (es.isSecure()) {
-                al.add(es);
+        final ArrayList<ElementSecurity> elements = new ArrayList<>();
+        final Collection<ElementSecurity> values = GetElementSecurities().values();
+        for (final ElementSecurity value : values) {
+            if (value.isSecure()) {
+                elements.add(value);
             }
         }
-
-        al.trimToSize();
-
-        return al;
+        return elements;
     }
 
     public static ArrayList<String> GetSecurityElements() throws Exception {
-        ArrayList<String> se   = new ArrayList<String>();
-        Iterator          iter = GetSecureElements().iterator();
-        while (iter.hasNext()) {
-            ElementSecurity es    = (ElementSecurity) iter.next();
-            Iterator        iter2 = es.getPrimarySecurityFields().iterator();
-            while (iter2.hasNext()) {
-                String              psf = (String) iter2.next();
-                GenericWrapperField f   = GenericWrapperElement.GetFieldForXMLPath(psf);
-                if (f.isReference()) {
-                    if (!se.contains(f.getReferenceElementName().getFullForeignType())) {
-                        se.add(f.getReferenceElementName().getFullForeignType());
+        final ArrayList<String> elements   = new ArrayList<String>();
+        for (final ElementSecurity element : GetSecureElements()) {
+            for (final String fieldPath : element.getPrimarySecurityFields()) {
+                final GenericWrapperField field = GenericWrapperElement.GetFieldForXMLPath(fieldPath);
+                if (field != null && field.isReference()) {
+                    if (!elements.contains(field.getReferenceElementName().getFullForeignType())) {
+                        elements.add(field.getReferenceElementName().getFullForeignType());
                     }
-                } else {
-//			        if (! se.contains(f.getParentElement().getFullXMLName()))
-//			            se.add(f.getParentElement().getFullXMLName());
-                }
+                } // else {
+			        // if (! se.contains(f.getParentElement().getFullXMLName())) {
+			        //     se.add(f.getParentElement().getFullXMLName());
+                    // }
+                // }
             }
         }
-        se.trimToSize();
-        return se;
+        return elements;
     }
 
     public static ArrayList<ElementSecurity> GetQuarantinedElements() throws Exception {
@@ -362,7 +346,7 @@ public class ElementSecurity extends ItemWrapper {
                 }
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return al;
@@ -378,7 +362,7 @@ public class ElementSecurity extends ItemWrapper {
                 }
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return al;
@@ -520,13 +504,13 @@ public class ElementSecurity extends ItemWrapper {
                 this.addListingAction(ea);
             }
         } catch (XFTInitException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (FieldNotFoundException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
     }
@@ -541,7 +525,7 @@ public class ElementSecurity extends ItemWrapper {
         try {
             return (String) getProperty("element_name");
         } catch (FieldEmptyException e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         }
     }
@@ -556,7 +540,7 @@ public class ElementSecurity extends ItemWrapper {
         try {
             return (Integer) getProperty("sequence");
         } catch (FieldEmptyException e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         }
     }
@@ -731,7 +715,7 @@ public class ElementSecurity extends ItemWrapper {
                 return false;
             }
         } catch (Exception e) {
-            logger.error(e);
+            log.error("An exception occurred", e);
             return false;
         }
     }
@@ -1177,11 +1161,11 @@ public class ElementSecurity extends ItemWrapper {
                                 }
                             }
                         } catch (XFTInitException e) {
-                            logger.error("", e);
+                            log.error("", e);
                         } catch (ElementNotFoundException e) {
-                            logger.error("", e);
+                            log.error("", e);
                         } catch (FieldNotFoundException e) {
-                            logger.error("", e);
+                            log.error("", e);
                         }
                     }
 
@@ -1218,11 +1202,11 @@ public class ElementSecurity extends ItemWrapper {
                                                 o = sub.getPK();
                                             }
                                         } catch (DBPoolException e1) {
-                                            logger.error("", e1);
+                                            log.error("", e1);
                                         } catch (SQLException e1) {
-                                            logger.error("", e1);
+                                            log.error("", e1);
                                         } catch (Exception e1) {
-                                            logger.error("", e1);
+                                            log.error("", e1);
                                         }
                                     }
 
@@ -1230,19 +1214,19 @@ public class ElementSecurity extends ItemWrapper {
                                         if (XFT.VERBOSE) {
                                             System.out.println("\nUnknown value in " + s);
                                         }
-                                        logger.error("\nUnknown value in " + s);
+                                        log.error("\nUnknown value in " + s);
                                         if (XFT.VERBOSE) {
                                             System.out.println(sub.toXML_String(false));
                                         }
-                                        logger.error(sub.toXML_String(false));
+                                        log.error(sub.toXML_String(false));
                                         if (XFT.VERBOSE) {
                                             System.out.println("This field is a pre-defined security field and must match a pre-defined value.");
                                         }
-                                        logger.error("This field is a pre-defined security field and must match a pre-defined value.");
+                                        log.error("This field is a pre-defined security field and must match a pre-defined value.");
                                         if (XFT.VERBOSE) {
                                             System.out.println("This value is not currently in the database.");
                                         }
-                                        logger.error("This value is not currently in the database.");
+                                        log.error("This value is not currently in the database.");
                                     }
                                 }
                             }
@@ -1262,11 +1246,11 @@ public class ElementSecurity extends ItemWrapper {
                 }
             }
         } catch (XFTInitException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (FieldNotFoundException e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return sv;
@@ -1297,7 +1281,7 @@ public class ElementSecurity extends ItemWrapper {
 
             return al;
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
         return null;
     }
@@ -1354,11 +1338,11 @@ public class ElementSecurity extends ItemWrapper {
                 }
             }
         } catch (XFTInitException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            log.error("", e);
         } catch (FieldNotFoundException e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return s;
@@ -1386,7 +1370,7 @@ public class ElementSecurity extends ItemWrapper {
             try {
                 fields = this.getSchemaElement().getAllDefinedFields();
             } catch (Exception e) {
-                logger.error("", e);
+                log.error("", e);
                 return false;
             }
         }
@@ -1404,7 +1388,7 @@ public class ElementSecurity extends ItemWrapper {
                 SaveItemHelper.authorizedSave(psf, this.getUser(), true, true, meta);
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -1439,22 +1423,22 @@ public class ElementSecurity extends ItemWrapper {
             DBAction.InsertMetaDatas(XdatFieldMappingSet.SCHEMA_ELEMENT_NAME);
             DBAction.InsertMetaDatas(XdatFieldMapping.SCHEMA_ELEMENT_NAME);
         } catch (Exception e2) {
-            logger.error("", e2);
+            log.error("", e2);
         }
 
         try {
     		final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
             eventService.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
         } catch (NoSuchBeanDefinitionException e) {
-            logger.info("Didn't find the NrgEventService instance, it probably hasn't been initialized yet.");
+            log.info("Didn't find the NrgEventService instance, it probably hasn't been initialized yet.");
         } catch (Exception e1) {
-            logger.error("", e1);
+            log.error("", e1);
         }
 
         try {
             PoolDBUtils.ClearCache(this.getDBName(), userName, Groups.getGroupDatatype());
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 //    
@@ -1500,11 +1484,11 @@ public class ElementSecurity extends ItemWrapper {
 //                        }
 //                    }
 //                } catch (SQLException e) {
-//                    logger.error("",e);
+//                    log.error("",e);
 //                } catch (DBPoolException e) {
-//                    logger.error("",e);
+//                    log.error("",e);
 //                } catch (Exception e) {
-//                    logger.error("",e);
+//                    log.error("",e);
 //                }
 //                
 //                permissions=guestPermissions.get(elementName);
@@ -1702,13 +1686,13 @@ public class ElementSecurity extends ItemWrapper {
                     return _return;
                 }
             } catch (XFTInitException e) {
-                logger.error("", e);
+                log.error("", e);
                 return 0;
             } catch (ElementNotFoundException e) {
-                logger.error("", e);
+                log.error("", e);
                 return 0;
             } catch (FieldNotFoundException e) {
-                logger.error("", e);
+                log.error("", e);
                 return 0;
             }
         }
@@ -1727,8 +1711,8 @@ public class ElementSecurity extends ItemWrapper {
             } else {
                 return _Accessible;
             }
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
             return null;
         }
     }
@@ -1749,8 +1733,8 @@ public class ElementSecurity extends ItemWrapper {
             } else {
                 return _Usage;
             }
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
             return null;
         }
     }
@@ -1764,19 +1748,14 @@ public class ElementSecurity extends ItemWrapper {
         try {
             setProperty(SCHEMA_ELEMENT_NAME + "/usage", v);
             _Usage = null;
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
         }
     }
 
     public boolean matchesUsageEntry(String id) {
         String usage = getUsage();
-
-        if (usage != null) {
-            return Arrays.asList(usage.split("[\\s]*,[\\s]*")).contains(id);
-        }
-
-        return false;
+        return usage != null && Arrays.asList(usage.split("[\\s]*,[\\s]*")).contains(id);
     }
 
     //FIELD
@@ -1794,8 +1773,8 @@ public class ElementSecurity extends ItemWrapper {
             } else {
                 return _Singular;
             }
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
             return null;
         }
     }
@@ -1809,8 +1788,8 @@ public class ElementSecurity extends ItemWrapper {
         try {
             setProperty(SCHEMA_ELEMENT_NAME + "/singular", v);
             _Singular = null;
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
         }
     }
 
@@ -1829,8 +1808,8 @@ public class ElementSecurity extends ItemWrapper {
             } else {
                 return _Plural;
             }
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
             return null;
         }
     }
@@ -1844,8 +1823,8 @@ public class ElementSecurity extends ItemWrapper {
         try {
             setProperty(SCHEMA_ELEMENT_NAME + "/plural", v);
             _Plural = null;
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
         }
     }
 
@@ -1864,8 +1843,8 @@ public class ElementSecurity extends ItemWrapper {
             } else {
                 return _Code;
             }
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
             return null;
         }
     }
@@ -1879,8 +1858,8 @@ public class ElementSecurity extends ItemWrapper {
         try {
             setProperty(SCHEMA_ELEMENT_NAME + "/code", v);
             _Code = null;
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
         }
     }
 
@@ -1899,8 +1878,8 @@ public class ElementSecurity extends ItemWrapper {
             } else {
                 return _Category;
             }
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
             return null;
         }
     }
@@ -1914,8 +1893,8 @@ public class ElementSecurity extends ItemWrapper {
         try {
             setProperty(SCHEMA_ELEMENT_NAME + "/category", v);
             _Category = null;
-        } catch (Exception e1) {
-            logger.error(e1);
+        } catch (Exception e) {
+            log.error("An exception occurred", e);
         }
     }
 
@@ -1924,15 +1903,11 @@ public class ElementSecurity extends ItemWrapper {
             try {
                 return getSchemaElement().getDisplay().getDescription();
             } catch (Throwable e) {
-                logger.error("", e);
+                log.error("", e);
                 try {
                     return this.getElementName();
-                } catch (XFTInitException e1) {
-                    logger.error("", e1);
-                } catch (ElementNotFoundException e1) {
-                    logger.error("", e1);
-                } catch (FieldNotFoundException e1) {
-                    logger.error("", e1);
+                } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e1) {
+                    log.error("", e1);
                 }
             }
         } else {
@@ -1947,15 +1922,11 @@ public class ElementSecurity extends ItemWrapper {
             try {
                 return getSchemaElement().getDisplay().getDescription();
             } catch (Throwable e) {
-                logger.error("", e);
+                log.error("", e);
                 try {
                     return this.getElementName();
-                } catch (XFTInitException e1) {
-                    logger.error("", e1);
-                } catch (ElementNotFoundException e1) {
-                    logger.error("", e1);
-                } catch (FieldNotFoundException e1) {
-                    logger.error("", e1);
+                } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e1) {
+                    log.error("", e1);
                 }
             }
         } else {
@@ -1971,7 +1942,7 @@ public class ElementSecurity extends ItemWrapper {
             ElementSecurity es = GetElementSecurities().get(elementName);
             return (es != null && StringUtils.isNotBlank(es.getSingularDescription())) ? es.getSingularDescription() : GenericWrapperElement.GetElement(elementName).getProperName();
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return elementName;
@@ -1984,7 +1955,7 @@ public class ElementSecurity extends ItemWrapper {
                 return es.getPluralDescription();
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return elementName;
@@ -1997,7 +1968,7 @@ public class ElementSecurity extends ItemWrapper {
                 return es.getCode();
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return elementName;

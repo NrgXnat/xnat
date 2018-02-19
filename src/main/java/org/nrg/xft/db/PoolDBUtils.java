@@ -873,86 +873,64 @@ public class PoolDBUtils {
     	return getConnection().prepareStatement(sql);
     }
 
-    public ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException{
+	public ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException {
 		_statement = getStatement();
 		final Date start = Calendar.getInstance().getTime();
 
 		try {
 			return _statement.executeQuery(query);
 		} catch (SQLException e) {
-			if (handleSqlException(query, userName, e)) {
+			final String message = e.getMessage();
+			if (message.contains("Connection reset")) {
 				closeConnection();
 				resetConnections();
 				_statement = getStatement();
 				return _statement.executeQuery(query);
+			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
+				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
+				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+				return null;
+			} else {
+				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+				throw e;
 			}
 		} finally {
-			logger.debug("{} ms ({}): {}", getTimeDiff(start,Calendar.getInstance().getTime()), userName, StringUtils.replace(query, "\n", " "));
+			logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 		}
-		return null;
 	}
 
-	/**
-	 * Handles the SQL exception. If the exception indicates that the connection was reset, this method returns true to indicate that the calling
-	 * code should retry the query. Otherwise this method returns false or throws an exception.
-	 *
-	 * @param query    The query that resulted in an exception.
-	 * @param userName The username of the user that attempted the query.
-	 * @param e        The exception object.
-	 *
-	 * @return Returns true if the query should be retried, false otherwise.
-	 *
-	 * @throws DBPoolException Indicates that an error occurred with the database connection pool/
-	 * @throws SQLException Indicates that an error occurred executing the SQL.
-	 */
-	private boolean handleSqlException(final String query, final String userName, final SQLException e) throws DBPoolException, SQLException {
-		final String  message         = e.getMessage();
-		final Matcher relationMatcher = PATTERN_RELATION_NOT_FOUND.matcher(message);
-		final Matcher columnMatcher   = PATTERN_COLUMN_NOT_FOUND.matcher(message);
-		if (relationMatcher.find()) {
-			final String relation = relationMatcher.group("relation");
-			if (StringUtils.startsWith(relation, "xdat_")) {
-				// Honestly, we don't care much about this. It goes away once the various tables are initialized,
-				// has no real effect beforehand, and is a pretty scary message with an enormous stacktrace.
-				logger.info("Relation \"{}\" not found. If this occurs during initialization of a new XNAT deployment, this usually just means that the XNAT data tables have not yet been created and can be ignored.", relation);
-			} else {
-				logger.error("An error occurred trying to execute the query: " + query, e);
-			}
-		} else if (columnMatcher.find()) {
-			final String column = columnMatcher.group("column");
-			logger.error("Got an exception indicating that the column \"{}\" does not exist. The attempted query is:\n\n{}", column, query);
-		} else if (message.contains("Connection reset")) {
-			return true;
-		} else {
-			logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
-			throw e;
-		}
-		return false;
-	}
-
-	private void execute(String db, String query, String userName) throws SQLException, DBPoolException{
+	private void execute(String db, String query, String userName) throws SQLException, DBPoolException {
 		_statement = getStatement();
 		final Date start = Calendar.getInstance().getTime();
 
 		try {
 			_statement.execute(query);
 		} catch (SQLException e) {
-			if (handleSqlException(query, "An error occurred trying to execute the user " + userName + " query: " + query, e)) {
+			final String message = e.getMessage();
+			if (message.contains("relation \"xdat_meta_element_meta_data\" does not exist")) {
+				// Honestly, we don't care much about this. It goes away once the metadata table is initialized,
+				// has no real effect beforehand, and is a pretty scary message with an enormous stacktrace.
+				logger.info("Metadata error occurred: " + message);
+			} else if (message.contains("Connection reset")) {
 				closeConnection();
 				resetConnections();
 				_statement = getStatement();
 				_statement.execute(query);
+			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
+				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
+				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+			} else {
+				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+				throw e;
 			}
 		} finally {
-			if(getTimeDiff(start,Calendar.getInstance().getTime())>1000){
-				logger.error(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
-			} else {
-				logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
+			if (getTimeDiff(start, Calendar.getInstance().getTime()) > 1000) {
+				logger.error(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 			}
+
+			logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 		}
-
-
-    }
+	}
 
 	public void sendBatch(List<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
 		try{

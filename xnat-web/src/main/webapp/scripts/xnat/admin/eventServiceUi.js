@@ -424,7 +424,7 @@ var XNAT = getObject(XNAT || {});
                 kind: 'panel.input.text',
                 name: 'event-filter',
                 label: 'Event Filter',
-                description: 'Optional. Enter filter in JSON path notation, e.g. <pre style="margin-top:0">$[?(@.xsiType == \\"xnat:mrScanData\\")]</pre>',
+                description: 'Optional. Enter filter in JSON path notation, e.g. <pre style="margin-top:0">$[?(@.xsiType == "xnat:mrScanData")]</pre>',
                 order: 50
             },
             subUserProxy: {

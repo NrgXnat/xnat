@@ -2,6 +2,7 @@ package org.nrg.xnat.eventservice.services.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import com.jayway.jsonpath.JsonPath;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -76,6 +77,19 @@ public class EventSubscriptionEntityServiceImpl
 
     @Override
     public Subscription validate(Subscription subscription) throws SubscriptionValidationException {
+        if(subscription.eventFilter() != null && !Strings.isNullOrEmpty(subscription.eventFilter().jsonPathFilter())) {
+            String jsonPathFilter = subscription.eventFilter().jsonPathFilter();
+            try {
+                JsonPath compile = JsonPath.compile(jsonPathFilter);
+                if(compile == null) {
+                    log.error("Could not compile jsonPath filter: " + jsonPathFilter);
+                    throw new SubscriptionValidationException("Could not compile jsonPath filter: " + jsonPathFilter);
+                }
+                } catch (Throwable e) {
+                log.error("Could not compile jsonPath filter: " + jsonPathFilter, e.getMessage());
+                throw new SubscriptionValidationException("Could not compile jsonPath filter: " + jsonPathFilter + e.getMessage());
+            }
+        }
         UserI actionUser = null;
         try {
             actionUser = userManagementService.getUser(subscription.subscriptionOwner());

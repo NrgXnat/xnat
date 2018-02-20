@@ -849,18 +849,18 @@ public class Permissions {
 
     private static String getProjectAccessByQuery(final NamedParameterJdbcTemplate template, final String projectId) {
         final MapSqlParameterSource parameters = new MapSqlParameterSource("projectId", projectId);
-        final boolean exists = template.queryForObject(QUERY_PROJECT_EXISTS, parameters, Boolean.class);
+        final boolean               exists     = template.queryForObject(QUERY_PROJECT_EXISTS, parameters, Boolean.class);
         if (!exists) {
             return null;
         }
-        final Integer access = template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, parameters, Integer.class);
-        if (access == null) {
-            return "private";
+        switch (template.queryForObject(QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED, parameters, Integer.class)) {
+            case 1:
+                return "public";
+            case 0:
+                return "protected";
+            default:
+                return "private";
         }
-        if (access == 0) {
-            return "protected";
-        }
-        return "public";
     }
 
     public static Multimap<String, String> verifyAccessToSessions(final NamedParameterJdbcTemplate template, final UserI user, final List<String> sessionIds) throws InsufficientPrivilegesException {
@@ -1076,7 +1076,7 @@ public class Permissions {
 
     private static final String QUERY_PROJECT_EXISTS                 = "SELECT EXISTS (SELECT true FROM xnat_projectdata WHERE id = :projectId)";
 
-    private static final String QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED = "SELECT xfm.active_element AS is_public "
+    private static final String QUERY_IS_PROJECT_PUBLIC_OR_PROTECTED = "SELECT coalesce((SELECT xfm.active_element "
                                                                        + "FROM xdat_field_mapping xfm "
                                                                        + "  LEFT JOIN xdat_field_mapping_set xfms "
                                                                        + "    ON xfm.xdat_field_mapping_set_xdat_field_mapping_set_id = xfms.xdat_field_mapping_set_id "
@@ -1092,7 +1092,7 @@ public class Permissions {
                                                                        + "      AND xfm.edit_element = 0 "
                                                                        + "      AND xfm.delete_element = 0 "
                                                                        + "      AND xfm.comparison_type = 'equals' "
-                                                                       + "      AND xfm.field_value = :projectId";
+                                                                       + "      AND xfm.field_value = :projectId), -1)";
 
     private static final List<String> PROJECT_GROUPS        = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();

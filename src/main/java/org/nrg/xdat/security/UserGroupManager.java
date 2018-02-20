@@ -64,16 +64,12 @@ public class UserGroupManager implements UserGroupServiceI {
 
     @Override
     public UserGroupI getGroup(String groupId) {
-        if (StringUtils.isBlank(groupId)) {
-            return null;
-        }
-
         final UserGroup group = (UserGroup) getCache().get(groupId);
         if (group != null) {
             return group;
         }
 
-        log.warn("Couldn't find the group with ID {}", groupId);
+        log.info("Couldn't find the group with ID {}", groupId);
         return null;
     }
 
@@ -470,7 +466,7 @@ public class UserGroupManager implements UserGroupServiceI {
             validateGroupByTag(xdatGroup, firstValue);
 
             final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-            if (userHelperService != null && !userHelperService.isOwner(firstValue)) {
+            if (!userHelperService.isOwner(firstValue)) {
                 throw new InvalidValueException();
             }
         }

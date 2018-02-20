@@ -10,7 +10,6 @@
 package org.nrg.xdat.security.helpers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ecs.xhtml.meta;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -18,7 +17,6 @@ import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.UserGroupServiceI;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -34,6 +32,8 @@ import reactor.fn.Predicate;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 
@@ -75,7 +75,13 @@ public class Groups {
             //default to PermissionsServiceImpl implementation (unless a different default is configured)
             try {
                 final String className = XDAT.safeSiteConfigProperty("security.userGroupService.default", "org.nrg.xdat.security.UserGroupManager");
-                return _singleton = (UserGroupServiceI) Class.forName(className).newInstance();
+                final Class<? extends UserGroupServiceI> aClass = Class.forName(className).asSubclass(UserGroupServiceI.class);
+                try {
+                    final Constructor<? extends UserGroupServiceI> constructor = aClass.getConstructor(GroupsAndPermissionsCache.class);
+                    return _singleton = constructor.newInstance(getGroupsAndPermissionsCache());
+                } catch (NoSuchMethodException | InvocationTargetException e) {
+                    return _singleton = aClass.newInstance();
+                }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 log.error("", e);
             }
@@ -155,6 +161,7 @@ public class Groups {
         return Groups.isMember(user, "ALL_DATA_ADMIN");
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean hasAllDataAccess(final UserI user) {
         return isDataAdmin(user) || Groups.isMember(user, "ALL_DATA_ACCESS");
     }
@@ -224,7 +231,8 @@ public class Groups {
      * @param authenticatedUser The user requesting the removal.
      * @param groupId           The ID of the group from which the user should be removed.
      * @param ci                The event metadata.
-     * @throws Exception
+     *
+     * @throws Exception When an error occurs.
      */
     public static void removeUserFromGroup(UserI user, UserI authenticatedUser, String groupId, EventMetaI ci) throws Exception {
         getUserGroupService().removeUserFromGroup(user, authenticatedUser, groupId, ci);
@@ -256,7 +264,7 @@ public class Groups {
      *
      * @return A list of the groups with the indicated tag.
      *
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     public static List<UserGroupI> getGroupsByTag(String tag) throws Exception {
         return getUserGroupService().getGroupsByTag(tag);
@@ -283,7 +291,7 @@ public class Groups {
      * @return The group with the submitted tag that is also associated with the specified user.
      */
     public static UserGroupI getGroupsByUserAndTag(final UserI user, final String tag) {
-        return null;
+        return getUserGroupService().getGroupForUserAndTag(user, tag);
     }
 
     /**
@@ -335,6 +343,7 @@ public class Groups {
      *
      * @return The new or updated group.
      */
+    @SuppressWarnings("unused")
     public static UserGroupI createOrUpdateGroup(final String id, final String displayName, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, List<ElementSecurity> ess, String value, UserI authenticatedUser) throws Exception {
         return getUserGroupService().createOrUpdateGroup(id, displayName, create, read, delete, edit, activate, activateChanges, ess, value, authenticatedUser);
     }
@@ -348,7 +357,8 @@ public class Groups {
      * @param ci                   The event metadata.
      *
      * @return The group with the newly added user.
-     * @throws Exception
+     *
+     * @throws Exception When an error occurs.
      */
     public static UserGroupI addUserToGroup(String groupId, UserI user, UserI authenticatedUser, EventMetaI ci) throws Exception {
         return getUserGroupService().addUserToGroup(groupId, user, authenticatedUser, ci);
@@ -380,7 +390,8 @@ public class Groups {
      * @param tag     The tag to search on.
      * @param user    The user performing the delete.
      * @param ci      The event metadata.
-     * @throws Exception
+     *
+     * @throws Exception When an error occurs.
      */
     public static void deleteGroupsByTag(String tag, UserI user, EventMetaI ci) throws Exception {
         getUserGroupService().deleteGroupsByTag(tag, user, ci);
@@ -393,8 +404,9 @@ public class Groups {
      * @param user     The user performing the delete.
      * @param ci       The event metadata.
      *
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
+    @SuppressWarnings("RedundantThrows")
     public static void deleteGroup(UserGroupI group, UserI user, EventMetaI ci) throws Exception {
         getUserGroupService().deleteGroup(group, user, ci);
     }
@@ -406,8 +418,12 @@ public class Groups {
      * @param params    The parameters for group creation.
      *
      * @return The newly created group.
-     * @throws GroupFieldMappingException
+     *
+     * @throws GroupFieldMappingException When an error occurs creating the group.
+     * @throws UserFieldMappingException When an error occurs adding a user to the group.
+     * @throws UserInitException When an error occurs with the user management system.
      */
+    @SuppressWarnings("RedundantThrows")
     public static UserGroupI createGroup(Map<String, ?> params) throws UserFieldMappingException, UserInitException, GroupFieldMappingException {
         return getUserGroupService().createGroup(params);
     }

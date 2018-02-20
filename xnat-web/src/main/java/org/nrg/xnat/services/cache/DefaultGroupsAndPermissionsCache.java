@@ -23,7 +23,6 @@ import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatUsergroup;
-import org.nrg.xdat.security.UserGroup;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -33,7 +32,6 @@ import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.cache.jms.InitializeGroupRequest;
-import org.nrg.xnat.services.cache.jms.InitializeGroupRequestListener;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
@@ -57,14 +55,13 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.Future;
 
-import static org.nrg.xdat.security.helpers.Groups.IS_GROUP_XFTITEM_EVENT;
-import static org.nrg.xdat.security.helpers.Groups.isXdatUsergroupEvent;
+import static org.nrg.xdat.security.helpers.Groups.*;
 import static reactor.bus.selector.Selectors.predicate;
 
 @SuppressWarnings("Duplicates")
 @Service
 @Slf4j
-public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter implements Consumer<Event<XftItemEvent>>, GroupsAndPermissionsCache, Initializing {
+public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter implements Consumer<Event<XftItemEvent>>, GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
     @Autowired
     public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final EventBus eventBus) {
         _cache = cacheManager.getCache(CACHE_NAME);
@@ -267,6 +264,9 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     @Override
     public boolean canInitialize() {
         try {
+            if (_listener == null) {
+                return false;
+            }
             final boolean userGroupTableExists = _helper.tableExists("xdat_usergroup");
             final boolean xftManagerComplete   = XFTManager.isComplete();
             log.info("User group table {}, XFTManager initialization completed {}", userGroupTableExists, xftManagerComplete);
@@ -286,9 +286,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         stopWatch.lap("Processed {} tags", tags);
 
         final List<String> groupIds = _template.queryForList(QUERY_ALL_GROUPS, EmptySqlParameterSource.INSTANCE, String.class);
-        if (_listener != null) {
-            _listener.setGroupIds(groupIds);
-        }
+        _listener.setGroupIds(groupIds);
 
         try {
             final UserI adminUser = Users.getAdminUser();
@@ -317,17 +315,17 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         return _initialized;
     }
 
-    public void registerListener(final InitializeGroupRequestListener listener) {
-        _listener = listener;
-    }
-
-    private synchronized UserGroupI initializeGroup(final String groupId) {
-        // We may have just checked before coming into this method, but since it's synchronized we may have waited while someone else was caching it so...
-        if (has(groupId)) {
-            log.info("Group {} was already initialized and in the cache, returning cached instance");
-            return _cache.get(groupId, UserGroupI.class);
-        }
-
+    /**
+     * This method retrieves the group with the specified group ID and puts it in the cache. This method
+     * does <i>not</i> check to see if the group is already in the cache! This is primarily for use during
+     * cache initialization and shouldn't be used for routine access.
+     *
+     * @param groupId The ID or alias of the group to retrieve.
+     *
+     * @return The group object for the specified ID if it exists, null otherwise.
+     */
+    @Override
+    public UserGroupI cacheGroup(final String groupId) {
         // Nothing cached for group ID, so let's try to retrieve it.
         log.debug("Initializing group {}", groupId);
         final XdatUsergroup found = XdatUsergroup.getXdatUsergroupsById(groupId, Users.getAdminUser(), false);
@@ -339,17 +337,33 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
             return null;
         }
 
-        return cacheGroup(createUserGroupFromXdatUsergroup(found));
+        final UserGroupI group = createUserGroupFromXdatUsergroup(found);
+
+        return cacheGroup(group);
     }
 
-    private synchronized UserGroupI cacheGroup(final UserGroupI group) {
+    public void registerListener(final Listener listener) {
+        _listener = listener;
+    }
+
+    private synchronized UserGroupI initializeGroup(final String groupId) {
+        // We may have just checked before coming into this method, but since it's synchronized we may have waited while someone else was caching it so...
+        if (has(groupId)) {
+            log.info("Group {} was already initialized and in the cache, returning cached instance");
+            return _cache.get(groupId, UserGroupI.class);
+        }
+
+        return cacheGroup(groupId);
+    }
+
+    private UserGroupI cacheGroup(final UserGroupI group) {
         final String groupId = group.getId();
         _cache.put(groupId, group);
         log.debug("Retrieved and cached the group for the ID {}", groupId);
         return group;
     }
 
-    private synchronized int initializeTags() {
+    private int initializeTags() {
         final List<String> tags = _template.queryForList(QUERY_ALL_TAGS, EmptySqlParameterSource.INSTANCE, String.class);
         for (final String tag : tags) {
             final String cacheId = getCacheIdForTag(tag);
@@ -477,17 +491,6 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         return StringUtils.equals(CACHE_NAME, cache.getName());
     }
 
-    private static UserGroupI createUserGroupFromXdatUsergroup(final XdatUsergroup group) {
-        if (group != null) {
-            try {
-                return new UserGroup(group);
-            } catch (Exception e) {
-                log.error("An error occurred trying to create a UserGroup object from the XdatUsergroup object for group " + group.getId(), e);
-            }
-        }
-        return null;
-    }
-
     private static final String QUERY_GET_GROUPS_FOR_USER        = "SELECT groupid " +
                                                                    "FROM xdat_user_groupid xug " +
                                                                    "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +
@@ -512,6 +515,6 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     private final JmsTemplate                _jmsTemplate;
     private final DatabaseHelper             _helper;
 
-    private InitializeGroupRequestListener _listener;
-    private boolean                        _initialized;
+    private Listener _listener;
+    private boolean  _initialized;
 }

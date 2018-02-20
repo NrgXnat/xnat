@@ -1,13 +1,12 @@
 package org.nrg.xnat.services.cache.jms;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
-import org.nrg.xnat.services.cache.DefaultGroupsAndPermissionsCache;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
@@ -18,16 +17,16 @@ import java.util.*;
 
 @Component
 @Slf4j
-public class InitializeGroupRequestListener {
+public class InitializeGroupRequestListener implements GroupsAndPermissionsCache.Listener {
     @Autowired
     public InitializeGroupRequestListener(final GroupsAndPermissionsCache cache) {
         _cache = cache;
         _groupIds = new HashSet<>();
-        _groupTimings = ArrayListMultimap.create();
+        _completed = Sets.newConcurrentHashSet();
         _start = new Date();
 
-        if (_cache instanceof DefaultGroupsAndPermissionsCache) {
-            ((DefaultGroupsAndPermissionsCache) _cache).registerListener(this);
+        if (cache instanceof GroupsAndPermissionsCache.Provider) {
+            ((GroupsAndPermissionsCache.Provider) _cache).registerListener(this);
         }
     }
 
@@ -36,38 +35,39 @@ public class InitializeGroupRequestListener {
         final LapStopWatch stopWatch = LapStopWatch.createStarted(log, Level.INFO);
         final String       groupId   = request.getGroupId();
 
-        final UserGroupI group;
         try {
-            stopWatch.lap("Starting to process group '{}'", groupId);
-            group = _cache.get(groupId);
+            stopWatch.lap("Starting to process group '{}', there are {} groups: {}", groupId, _groupIds.size(), StringUtils.join(_groupIds, ", "));
+            final UserGroupI group = _cache.cacheGroup(groupId);
             if (group == null) {
-                stopWatch.lap("Skipping group '{}', no value found on initialization", groupId);
+                stopWatch.lap("Group '{}' not found on initialization, nothing cached", groupId);
             } else {
                 stopWatch.lap("Retrieved group '{}' successfully", groupId);
             }
+            _completed.add(groupId);
         } finally {
-            _groupTimings.putAll(groupId, stopWatch.getLaps());
-            final int remaining = _groupIds.size() - _groupTimings.keySet().size();
+            final int remaining = _totalGroupIds - _completed.size();
             if (remaining > 0) {
-                stopWatch.stop("Completed processing group '{}', there are {} groups remaining", groupId, remaining);
+                stopWatch.stop("Completed processing group '{}', there are {} groups remaining out of {}", groupId, remaining, _totalGroupIds);
             } else {
-                stopWatch.stop("Completed processing group '{}', there are NO groups remaining! Total time elapsed {} ms", groupId, FORMATTER.format(new Date().getTime() - _start.getTime()));
+                stopWatch.stop("Completed processing group '{}', there are NO groups remaining of the original {}! Total time elapsed {} ms", groupId, _totalGroupIds, FORMATTER.format(new Date().getTime() - _start.getTime()));
             }
         }
     }
 
     @SuppressWarnings("unused")
     public Set<String> getUnprocessedGroupIds() {
-        return Sets.difference(_groupIds, _groupTimings.keySet());
+        return Sets.difference(_groupIds, _completed);
     }
 
     @SuppressWarnings("unused")
-    public Multimap<String, LapStopWatch.Lap> getGroupTimings() {
-        return _groupTimings;
+    public Set<String> getCompleted() {
+        return ImmutableSet.copyOf(_completed);
     }
 
     public void setGroupIds(final List<String> groupIds) {
+        log.info("Adding {} group IDs to the listener: {}", _groupIds.size(), StringUtils.join(_groupIds, ", "));
         _groupIds.addAll(groupIds);
+        _totalGroupIds = _groupIds.size();
     }
 
     private static final NumberFormat FORMATTER = NumberFormat.getNumberInstance(Locale.getDefault());
@@ -75,5 +75,7 @@ public class InitializeGroupRequestListener {
     private final Date                               _start;
     private final GroupsAndPermissionsCache          _cache;
     private final Set<String>                        _groupIds;
-    private final Multimap<String, LapStopWatch.Lap> _groupTimings;
+    private final Set<String>                        _completed;
+
+    private int _totalGroupIds;
 }

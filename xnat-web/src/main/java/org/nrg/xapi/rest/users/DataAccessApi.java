@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.authorization.GuestUserAccessXapiAuthorization;
 import org.nrg.xapi.exceptions.DataFormatException;
-import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.model.users.ElementDisplayModel;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.AuthDelegate;
@@ -83,12 +82,9 @@ public class DataAccessApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "displays/{display}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public ResponseEntity<List<ElementDisplayModel>> getElementDisplays(@PathVariable final String display) throws DataFormatException, InitializationException {
+    public ResponseEntity<List<ElementDisplayModel>> getElementDisplays(@PathVariable final String display) throws DataFormatException {
         final UserI              user   = getSessionUser();
         final UserHelperServiceI helper = UserHelper.getUserHelperService(user);
-        if (helper == null) {
-            throw new InitializationException("Unable to create a user helper for the user " + user.getUsername());
-        }
 
         final List<ElementDisplay> displays;
         switch (display) {

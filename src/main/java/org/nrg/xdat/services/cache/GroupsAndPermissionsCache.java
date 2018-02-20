@@ -13,6 +13,14 @@ import java.util.Map;
 public interface GroupsAndPermissionsCache extends XnatCache {
     String CACHE_NAME = "GroupsAndPermissionsCache";
 
+    interface Listener {
+        void setGroupIds(final List<String> groupIds);
+    }
+
+    interface Provider {
+        void registerListener(final Listener listener);
+    }
+
     /**
      * Indicates whether a group with the specified ID is already cached. Note that this doesn't check whether the
      * group exists on the system, just whether it exists in the cache. Even calls for group IDs that don't exist
@@ -89,4 +97,15 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * @return The date and time of the latest update to any groups associated with the specified user.
      */
     Date getLastUpdateTime(final UserI user);
+
+    /**
+     * This method retrieves the group with the specified group ID and puts it in the cache. This method
+     * does <i>not</i> check to see if the group is already in the cache! This is primarily for use during
+     * cache initialization and shouldn't be used for routine access.
+     *
+     * @param groupId The ID or alias of the group to retrieve.
+     *
+     * @return The group object for the specified ID if it exists, null otherwise.
+     */
+    UserGroupI cacheGroup(String groupId);
 }

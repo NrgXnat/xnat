@@ -15,6 +15,7 @@ import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.UserGroup;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
@@ -430,6 +431,26 @@ public class Groups {
 
     public static void save(UserGroupI tempGroup, UserI user, EventMetaI meta) throws Exception {
         getUserGroupService().save(tempGroup, user, meta);
+    }
+
+    /**
+     * Creates a new {@link UserGroupI} object from the submitted {@link XdatUsergroup} object. This is a convenience method
+     * that handles and logs exceptions that might occur during the instantiation operation. If an error does occur, it's logged
+     * and this method returns null.
+     *
+     * @param group The group to convert.
+     *
+     * @return The corresponding user group object or null if an error occurred.
+     */
+    public static UserGroupI createUserGroupFromXdatUsergroup(final XdatUsergroup group) {
+        if (group != null) {
+            try {
+                return new UserGroup(group);
+            } catch (Exception e) {
+                log.error("An error occurred trying to create a UserGroup object from the XdatUsergroup object for group {}", group.getId(), e);
+            }
+        }
+        return null;
     }
 
     private static UserGroupServiceI         _singleton;

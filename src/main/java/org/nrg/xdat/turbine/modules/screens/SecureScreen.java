@@ -25,6 +25,7 @@ import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.ThemeService;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
@@ -78,7 +79,9 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     public static void loadAdditionalVariables(RunData data, Context context) {
         checkForPopup(data, context);
 
-        context.put("user", XDAT.getUserDetails());
+        final UserI user = XDAT.getUserDetails();
+        context.put("user", user);
+        context.put("cacheLastModified", XDAT.getContextService().getBean(GroupsAndPermissionsCache.class).getLastUpdateTime(user));
         context.put("turbineUtils", TurbineUtils.GetInstance());
         context.put("displayManager", DisplayManager.GetInstance());
         context.put("systemName", TurbineUtils.GetSystemName());

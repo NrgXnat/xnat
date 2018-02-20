@@ -10,7 +10,10 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.xdat.security.PermissionsServiceImpl;
+import org.nrg.xdat.security.UserGroupManager;
+import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -29,5 +32,10 @@ public class XnatServicesConfig {
     @Bean
     public PermissionsServiceI permissionsService(final NamedParameterJdbcTemplate template) {
         return new PermissionsServiceImpl(template);
+    }
+
+    @Bean
+    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache) {
+        return new UserGroupManager(cache);
     }
 }

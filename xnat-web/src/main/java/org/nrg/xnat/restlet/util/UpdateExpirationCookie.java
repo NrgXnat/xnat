@@ -9,38 +9,39 @@
 
 package org.nrg.xnat.restlet.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
 
+@Slf4j
 public class UpdateExpirationCookie extends GenericFilterBean {
-
     public static String name = "SESSION_EXPIRATION_TIME";
 
     @Override
-    public void doFilter(final ServletRequest req, final ServletResponse resp, final FilterChain chain) throws IOException, ServletException {
-        final HttpServletRequest  hq              = (HttpServletRequest) req;
-        final HttpServletResponse hr              = (HttpServletResponse) resp;
-        final int                 sessionIdleTime = hq.getSession().getMaxInactiveInterval();
+    public void doFilter(final ServletRequest servletRequest, final ServletResponse servletResponse, final FilterChain chain) throws IOException, ServletException {
+        final HttpServletRequest  request         = (HttpServletRequest) servletRequest;
+        final HttpServletResponse response        = (HttpServletResponse) servletResponse;
+        final int                 sessionIdleTime = request.getSession().getMaxInactiveInterval();
 
-        final Cookie c = new Cookie(name, "" + (new Date()).getTime() + "," + ((sessionIdleTime * 1000)));
-        c.setPath(hq.getContextPath() + "/");
-        hr.addCookie(c);
+        final Cookie cookie = new Cookie(name, new Date().getTime() + "," + sessionIdleTime * 1000);
+        cookie.setPath(request.getContextPath() + "/");
+        response.addCookie(cookie);
+        log.debug("Updated cookie {} to value {}.", cookie.getName(), cookie.getValue());
 
-        chain.doFilter(req, resp);
+        chain.doFilter(request, response);
     }
 
     @Override
-    protected void initFilterBean() throws ServletException {
-        _log.debug("Initializing the UpdateExpirationCookie filter bean.");
+    protected void initFilterBean() {
+        log.debug("Initializing the UpdateExpirationCookie filter bean.");
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(UpdateExpirationCookie.class);
 }

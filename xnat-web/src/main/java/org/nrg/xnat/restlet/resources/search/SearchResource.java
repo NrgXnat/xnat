@@ -129,10 +129,9 @@ public class SearchResource extends SecureResource {
                 }
             } else {
                 if (entity != null) {
-                    Reader sax = entity.getReader();
+                    final Reader sax = entity.getReader();
                     try {
-
-                        SAXReader reader = new SAXReader(user);
+                        final SAXReader reader = new SAXReader(user);
                         item = reader.parse(sax);
 
                         if (!reader.assertValid()) {
@@ -145,7 +144,6 @@ public class SearchResource extends SecureResource {
                         if (item != null) {
                             completeDocument = true;
                         }
-
                     } catch (SAXParseException e) {
                         logger.error("", e);
                         getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());

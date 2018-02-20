@@ -44,7 +44,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.nrg.xnat.utils.XnatHttpUtils.getCredentials;
+import static org.nrg.xnat.utils.XnatHttpUtils.getBasicAuthCredentials;
 
 @Component
 @Slf4j
@@ -69,37 +69,39 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws IOException, ServletException {
         final Pair<String, String> credentials;
         try {
-            credentials = getCredentials(request);
+            credentials = getBasicAuthCredentials(request);
         } catch (ParseException e) {
             // This means that the basic authentication header was found but wasn't properly formatted, so we can't find credentials.
             throw new ServletException(e.getMessage());
         }
 
-        final String username = credentials.getLeft();
-        final String password = credentials.getRight();
+        if (credentials != null) {
+            final String username = credentials.getLeft();
+            final String password = credentials.getRight();
 
-        if (StringUtils.isNotBlank(username) && authenticationIsRequired(username)) {
-            final UsernamePasswordAuthenticationToken authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);
-            authRequest.setDetails(_authenticationDetailsSource.buildDetails(request));
+            if (StringUtils.isNotBlank(username) && authenticationIsRequired(username)) {
+                final UsernamePasswordAuthenticationToken authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);
+                authRequest.setDetails(_authenticationDetailsSource.buildDetails(request));
 
-            try {
-                final Authentication authResult = getAuthenticationManager().authenticate(authRequest);
-                _authenticationStrategy.onAuthentication(authResult, request, response);
+                try {
+                    final Authentication authResult = getAuthenticationManager().authenticate(authRequest);
+                    _authenticationStrategy.onAuthentication(authResult, request, response);
 
-                log.debug("Authentication success: " + authResult.toString());
+                    log.debug("Authentication success: " + authResult.toString());
 
-                SecurityContextHolder.getContext().setAuthentication(authResult);
-                onSuccessfulAuthentication(request, response, authResult);
-            } catch (AuthenticationException failed) {
-                // Authentication failed
-                log.info("Authentication request for user: '{}' failed: {}", username, failed.getMessage());
+                    SecurityContextHolder.getContext().setAuthentication(authResult);
+                    onSuccessfulAuthentication(request, response, authResult);
+                } catch (AuthenticationException failed) {
+                    // Authentication failed
+                    log.info("Authentication request for user: '{}' failed: {}", username, failed.getMessage());
 
-                SecurityContextHolder.getContext().setAuthentication(null);
-                onUnsuccessfulAuthentication(request, response, failed);
+                    SecurityContextHolder.getContext().setAuthentication(null);
+                    onUnsuccessfulAuthentication(request, response, failed);
 
-                XnatAuthenticationFilter.logFailedAttempt(username, request); //originally I put this in the onUnsuccessfulAuthentication method, but that would force me to re-parse the username
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AdminUtils.GetLoginFailureMessage());
-                return;
+                    XnatAuthenticationFilter.logFailedAttempt(username, request); //originally I put this in the onUnsuccessfulAuthentication method, but that would force me to re-parse the username
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AdminUtils.GetLoginFailureMessage());
+                    return;
+                }
             }
         }
 

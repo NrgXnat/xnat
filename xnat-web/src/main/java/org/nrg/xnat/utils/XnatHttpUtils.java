@@ -10,7 +10,9 @@
 package org.nrg.xnat.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.entities.AliasToken;
@@ -18,6 +20,7 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.security.alias.AliasTokenException;
 import org.springframework.security.crypto.codec.Base64;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
@@ -73,20 +76,33 @@ public class XnatHttpUtils {
      * @throws AliasTokenException When the requested alias token can't be found.
      */
     public static Pair<String, String> getCredentials(final HttpServletRequest request, final AliasTokenService service) throws ParseException, AliasTokenException {
-        final String username = StringUtils.defaultIfBlank(request.getParameter("username"), request.getParameter("j_username"));
-        final String password = StringUtils.defaultIfBlank(request.getParameter("password"), request.getParameter("j_password"));
+        final Pair<String, String> credentials = ObjectUtils.defaultIfNull(getBasicAuthCredentials(request), getFormCredentials(request));
 
-        final MutablePair<String, String> credentials = new MutablePair<>();
+        if (credentials == null) {
+            return null;
+        }
 
-        // If we found a username...
-        if (StringUtils.isNotBlank(username)) {
-            // Then we'll return that.
-            credentials.setLeft(username);
-            credentials.setRight(password);
-            log.debug("Username parameter found for user '{}'", credentials.getLeft());
+        if (service == null) {
             return credentials;
         }
 
+        if (StringUtils.isNotBlank(credentials.getLeft()) && AliasToken.isAliasFormat(credentials.getLeft())) {
+            final AliasToken alias = service.locateToken(credentials.getLeft());
+            if (alias == null) {
+                throw new AliasTokenException(credentials.getLeft());
+            }
+            return new ImmutablePair<>(alias.getXdatUserId(), credentials.getRight());
+        }
+
+        if (StringUtils.isBlank(credentials.getLeft())) {
+            log.info("No username found");
+        }
+
+        return credentials;
+    }
+
+    @Nullable
+    public static Pair<String, String> getBasicAuthCredentials(final HttpServletRequest request) throws ParseException {
         // See if there's an authorization header.
         final String header = request.getHeader("Authorization");
         if (StringUtils.startsWith(header, "Basic ")) {
@@ -96,9 +112,8 @@ public class XnatHttpUtils {
 
                 if (token.contains(":")) {
                     final String[] tokens = token.split(":", 2);
-                    credentials.setLeft(tokens[0]);
-                    credentials.setRight(tokens[1]);
-                    log.debug("Basic authentication header found for user '{}'", credentials.getLeft());
+                    log.debug("Basic authentication header found for user '{}'", tokens[0]);
+                    return new ImmutablePair<>(tokens[0], tokens[1]);
                 } else {
                     throw new ParseException("A basic authentication header was found but appears to be improperly formatted (no ':' delimiter found): " + token, 0);
                 }
@@ -106,19 +121,21 @@ public class XnatHttpUtils {
                 log.error("Encoding exception on authentication attempt", exception);
             }
         }
+        return null;
+    }
 
-        if (service != null && StringUtils.isNotBlank(credentials.getLeft()) && AliasToken.isAliasFormat(credentials.getLeft())) {
-            final AliasToken alias = service.locateToken(credentials.getLeft());
-            if (alias == null) {
-                throw new AliasTokenException(credentials.getLeft());
-            }
-            credentials.setLeft(alias.getXdatUserId());
+    @Nullable
+    public static Pair<String, String> getFormCredentials(final HttpServletRequest request) {
+        final String username = StringUtils.defaultIfBlank(request.getParameter("username"), request.getParameter("j_username"));
+        final String password = StringUtils.defaultIfBlank(request.getParameter("password"), request.getParameter("j_password"));
+
+        // If we found a username...
+        if (StringUtils.isNotBlank(username)) {
+            // Then we'll return that.
+            log.debug("Username parameter found for user '{}'", username);
+            return new ImmutablePair<>(username, password);
         }
 
-        if (StringUtils.isBlank(credentials.getLeft())) {
-            log.info("No username found");
-        }
-
-        return credentials;
+        return null;
     }
 }

@@ -78,7 +78,7 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
     @Override
     public Authentication attemptAuthentication(final HttpServletRequest request, final HttpServletResponse response) throws AuthenticationException {
         final Pair<String, String> credentials;
-                try {
+        try {
             credentials = getCredentials(request);
         } catch (ParseException e) {
             // This means that the basic authentication header wasn't properly formatted, so we can't find credentials.

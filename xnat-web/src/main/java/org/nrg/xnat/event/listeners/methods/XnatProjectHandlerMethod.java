@@ -32,7 +32,7 @@ public class XnatProjectHandlerMethod extends AbstractXftItemEventHandlerMethod 
         try {
             final UserI  guest     = Users.getGuest(true);
             final String projectId = event.getId().toString();
-            final String access = Permissions.getProjectAccess(_template, projectId);
+            final String access    = Permissions.getProjectAccess(_template, projectId);
 
             log.info("Setting guest access to project {} to {}", projectId, access);
 
@@ -51,8 +51,8 @@ public class XnatProjectHandlerMethod extends AbstractXftItemEventHandlerMethod 
         if (StringUtils.equals(access, "private")) {
             return;
         }
-        final boolean activate = StringUtils.equals(access, "public");
-        final EventMetaI event = EventUtils.ADMIN_EVENT(guest);
+        final boolean    activate = StringUtils.equals(access, "public");
+        final EventMetaI event    = EventUtils.ADMIN_EVENT(guest);
         for (final ElementSecurity securedElement : ElementSecurity.GetSecureElements()) {
             if (securedElement != null && securedElement.hasField(securedElement.getElementName() + "/project") && securedElement.hasField(securedElement.getElementName() + "/sharing/share/project")) {
                 Permissions.setPermissions(guest, Users.getAdminUser(), securedElement.getElementName(), securedElement.getElementName() + "/project", projectId, false, true, false, false, activate, true, event);

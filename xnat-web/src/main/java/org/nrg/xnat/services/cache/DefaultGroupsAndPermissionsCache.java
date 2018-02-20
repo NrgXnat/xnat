@@ -175,13 +175,12 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
      */
     @Override
     public UserGroupI get(final String groupId) {
+        if (StringUtils.isBlank(groupId)) {
+            return null;
+        }
+
         // Check that the group is cached and, if so, return it.
         if (has(groupId)) {
-            if (isCachedNonexistentId(groupId)) {
-                log.debug("Found cached non-existent ID for group {}, returning null", groupId);
-                return null;
-            }
-
             // Here we can just return the value directly as a group, because we know there's something cached
             // and that what's cached is not a string.
             log.debug("Found a cache entry for group {}", groupId);
@@ -203,12 +202,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         // Check whether this tag is already cached.
         final List<String> groupIds;
         if (has(cacheId)) {
-            // If it's cached, see if it's cached as non-existent.
-            if (isCachedNonexistentId(cacheId)) {
-                return Collections.emptyList();
-            }
-
-            // If it's cached and not marked as non-existent, we can just return the list.
+            // If it's cached, we can just return the list.
             groupIds = getTagGroups(cacheId);
             log.info("Found {} groups already cached for tag {}", groupIds.size(), tag);
         } else {
@@ -340,9 +334,8 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
 
         // If we didn't find a group for that ID...
         if (found == null) {
-            // Cache the ID as non-existent and return null.
-            log.warn("Someone tried to get the user group {}, but a group with that ID doesn't exist.", groupId);
-            cacheNonexistentId(groupId);
+            // Return null.
+            log.info("Someone tried to get the user group {}, but a group with that ID doesn't exist.", groupId);
             return null;
         }
 
@@ -394,8 +387,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
 
         // If this is empty, then the tag doesn't exist and we'll just put DOES_NOT_EXIST there.
         if (groups.isEmpty()) {
-            log.warn("Someone tried to get groups for the tag {}, but there are no groups with that tag.", tag);
-            cacheNonexistentId(cacheId);
+            log.info("Someone tried to get groups for the tag {}, but there are no groups with that tag.", tag);
             return Collections.emptyList();
         } else {
             log.debug("Cached tag {} for {} groups: {}", tag, groups.size(), StringUtils.join(groups, ", "));
@@ -469,32 +461,6 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         }
     }
 
-    /**
-     * Indicates whether the specified cache ID stores a string. Since this cache implementation only stores strings to
-     * represent groups and tags that don't exist, there's no need to check the value of the string. Note that this doesn't
-     * indicate that the object indicated by the ID necessarily exists: it just indicates that we haven't checked for its
-     * existence and cached that.
-     *
-     * @param cacheId The ID to test for non-existent status.
-     *
-     * @return Returns true if the ID was cached as non-existent, false otherwise.
-     */
-    private boolean isCachedNonexistentId(final String cacheId) {
-        final Cache.ValueWrapper value = _cache.get(cacheId);
-
-        // This thing doesn't exist in the cache, so return false;
-        if (value == null) {
-            return false;
-        }
-
-        // Now just test whether the cached value is a string: if so, the thing indicated by the ID doesn't exist.
-        return value.get() instanceof String;
-    }
-
-    private void cacheNonexistentId(final String cacheId) {
-        _cache.put(cacheId, DOES_NOT_EXIST);
-    }
-
     private net.sf.ehcache.Cache getEhCache() {
         final Object nativeCache = _cache.getNativeCache();
         if (nativeCache instanceof net.sf.ehcache.Cache) {
@@ -522,7 +488,6 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         return null;
     }
 
-    private static final String DOES_NOT_EXIST                   = "DOES_NOT_EXIST";
     private static final String QUERY_GET_GROUPS_FOR_USER        = "SELECT groupid " +
                                                                    "FROM xdat_user_groupid xug " +
                                                                    "  LEFT JOIN xdat_user xu ON groups_groupid_xdat_user_xdat_user_id = xdat_user_id " +

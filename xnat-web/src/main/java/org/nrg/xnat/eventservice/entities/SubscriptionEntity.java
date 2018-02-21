@@ -117,7 +117,7 @@ public class SubscriptionEntity extends AbstractHibernateEntity {
         this.listenerRegistrationKey = subscription.listenerRegistrationKey() == null ? this.listenerRegistrationKey : subscription.listenerRegistrationKey();
         this.customListenerId = Strings.isNullOrEmpty(subscription.customListenerId()) ? this.customListenerId : subscription.customListenerId();
         this.attributes = subscription.attributes() == null ? this.attributes : subscription.attributes();
-        this.eventServiceFilterEntity = subscription.eventFilter() == null ? this.eventServiceFilterEntity : EventServiceFilterEntity.fromPojo(subscription.eventFilter());
+        this.eventServiceFilterEntity = subscription.eventFilter() == null ? null : EventServiceFilterEntity.fromPojo(subscription.eventFilter());
         this.actAsEventUser = subscription.actAsEventUser() == null ? this.actAsEventUser : subscription.actAsEventUser();
         this.subscriptionOwner = subscription.subscriptionOwner() == null ? this.subscriptionOwner : subscription.subscriptionOwner();
         return this;

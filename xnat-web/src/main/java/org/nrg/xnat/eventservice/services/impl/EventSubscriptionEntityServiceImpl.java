@@ -295,7 +295,7 @@ public class EventSubscriptionEntityServiceImpl
         if(subscription.name() != null && !subscription.name().equals(subscriptionEntity.getName())){
             throwExceptionIfNameExists(subscription);
         }
-        subscriptionEntity.update(subscription);
+        validate(toPojo(subscriptionEntity.update(subscription)));
         super.update(subscriptionEntity);
         return toPojo(subscriptionEntity);
     }

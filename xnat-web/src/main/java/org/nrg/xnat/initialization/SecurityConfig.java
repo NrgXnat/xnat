@@ -64,6 +64,7 @@ import org.springframework.security.web.authentication.session.SessionFixationPr
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.context.request.RequestContextListener;
 
 import javax.sql.DataSource;
 import java.util.*;
@@ -100,6 +101,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired(required = false)
     public void setXnatSecurityExtensions(final List<XnatSecurityExtension> extensions) {
         _extensions.addAll(extensions);
+    }
+
+    @Bean
+    public RequestContextListener requestContextListener() {
+        return new RequestContextListener();
     }
 
     @Bean

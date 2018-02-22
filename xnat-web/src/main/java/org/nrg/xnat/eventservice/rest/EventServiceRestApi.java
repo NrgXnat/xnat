@@ -30,7 +30,7 @@ import java.util.List;
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-@Api(description = "API for the XNAT Event Event Service")
+@Api(description = "API for the XNAT Event Service")
 @XapiRestController
 @RequestMapping(value = "/events")
 public class EventServiceRestApi extends AbstractXapiRestController {
@@ -52,20 +52,11 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         this.eventService = eventService;
     }
 
-//    @XapiRequestMapping(value = "/reactivate", method = POST)
-//    @ApiOperation(value = "Reactivate all active subscriptions", code = 201)
-//    public ResponseEntity<Void> reactivateSubscriptions() throws UnauthorizedException {
-//        checkCreateOrThrow();
-//        eventService.reactivateAllSubscriptions();
-//        return ResponseEntity.ok().build();
-//    }
-
-    @XapiRequestMapping(value = "/subscription", method = POST)
+    @XapiRequestMapping(restrictTo = Admin, value = "/subscription", method = POST)
     @ApiOperation(value = "Create a Subscription", code = 201)
     public ResponseEntity<String> createSubscription(final @RequestBody SubscriptionCreator subscription)
             throws NrgServiceRuntimeException, UnauthorizedException, SubscriptionValidationException, JsonProcessingException {
         final UserI userI = XDAT.getUserDetails();
-        checkCreateOrThrow(userI);
         Subscription toCreate = Subscription.create(subscription, userI.getLogin());
         eventService.throwExceptionIfNameExists(toCreate);
         Subscription created = eventService.createSubscription(toCreate);
@@ -76,12 +67,11 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     }
 
-    @XapiRequestMapping(value = "/subscription/{id}", method = PUT)
+    @XapiRequestMapping(restrictTo = Admin, value = "/subscription/{id}", method = PUT)
     @ApiOperation(value = "Update an existing Subscription")
     public ResponseEntity<Void> updateSubscription(final @PathVariable long id, final @RequestBody Subscription subscription)
             throws NrgServiceRuntimeException, UnauthorizedException, SubscriptionValidationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        checkCreateOrThrow(userI);
         final Subscription toUpdate =
                 subscription.id() != null && subscription.id() == id
                         ? subscription
@@ -90,47 +80,42 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(value = "/subscription/{id}/activate", method = POST)
+    @XapiRequestMapping(restrictTo = Admin, value = "/subscription/{id}/activate", method = POST)
     @ApiOperation(value = "Activate an existing Subscription")
     public ResponseEntity<Void> activateSubscription(final @PathVariable long id)
             throws NrgServiceRuntimeException, UnauthorizedException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        checkCreateOrThrow(userI);
         eventService.activateSubscription(id);
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(value = "/subscription/{id}/deactivate", method = POST)
+    @XapiRequestMapping(restrictTo = Admin, value = "/subscription/{id}/deactivate", method = POST)
     @ApiOperation(value = "deactivate an existing Subscription")
     public ResponseEntity<Void> deactivateSubscription(final @PathVariable long id)
             throws NrgServiceRuntimeException, UnauthorizedException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        checkCreateOrThrow(userI);
         eventService.deactivateSubscription(id);
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(value = "/subscriptions", method = GET, produces = JSON)
+    @XapiRequestMapping(restrictTo = Admin, value = "/subscriptions", method = GET, produces = JSON)
     @ResponseBody
     public List<Subscription> getAllSubscriptions()
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        checkCreateOrThrow(userI);
         return eventService.getSubscriptions();
     }
 
-    @XapiRequestMapping(value = {"/subscription/{id}"}, method = GET, produces = JSON)
+    @XapiRequestMapping(restrictTo = Admin, value = {"/subscription/{id}"}, method = GET, produces = JSON)
     @ApiOperation(value = "Get a Subscription by ID")
     @ResponseBody
     public Subscription retrieveSubscription(final @PathVariable long id) throws NotFoundException, UnauthorizedException {
-        checkCreateOrThrow();
         return eventService.getSubscription(id);
     }
 
-    @XapiRequestMapping(value = "/subscription/{id}", method = DELETE, restrictTo = Admin)
+    @XapiRequestMapping(restrictTo = Admin, value = "/subscription/{id}", method = DELETE)
     @ApiOperation(value="Deactivate and delete a subscription by ID", code = 204)
     public ResponseEntity<Void> delete(final @PathVariable long id) throws Exception {
-        checkCreateOrThrow();
         eventService.deleteSubscription(id);
         return ResponseEntity.noContent().build();
     }
@@ -147,112 +132,88 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 //                                                  @PathVariable("projectId")  @ProjectId final String projectId)
 //            throws NrgServiceRuntimeException, UnauthorizedException{
 //        final UserI userI = XDAT.getUserDetails();
-//        checkCreateOrThrow(userI);
 //        return  eventService.getSubscriptions(projectId, userI);
 //    }
 
 
 
-    @XapiRequestMapping(value = "/delivered", method = GET)
+    @XapiRequestMapping(restrictTo = Admin, value = "/delivered", method = GET)
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredSubscriptions(
             final @RequestParam(value = "projectid", required = false) String projectId,
             final @RequestParam(value = "subscriptionid", required = false) Long subscriptionId)
             throws Exception {
         final UserI userI = XDAT.getUserDetails();
-        checkCreateOrThrow(userI);
         return eventService.getSubscriptionDeliveries(projectId, subscriptionId);
     }
 
 
 
-    @XapiRequestMapping(value = "/events", method = GET)
+    @XapiRequestMapping(restrictTo = Admin, value = "/events", method = GET)
     @ResponseBody
     public List<SimpleEvent> getEvents() throws Exception {
         final UserI userI = XDAT.getUserDetails();
-        checkCreateOrThrow(userI);
         return eventService.getEvents();
     }
 
 
-    @XapiRequestMapping(value = "/actionproviders", method = GET)
+    @XapiRequestMapping(restrictTo = Admin, value = "/actionproviders", method = GET)
     @ApiOperation(value = "Get Action Providers and associated Actions")
     @ResponseBody
     public List<ActionProvider> getActionProviders()
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        checkCreateOrThrow(userI);
         return eventService.getActionProviders();
     }
 
 
-    @XapiRequestMapping(value = "/actions", method = GET, params = {"!event-id"})
+    @XapiRequestMapping(restrictTo = Admin, value = "/actions", method = GET, params = {"!event-id"})
     @ResponseBody
     public List<Action> getActions(final @RequestParam(value = "projectid", required = false) String projectId,
                                       final @RequestParam(value = "xnattype", required = false) String xnatType)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI user = XDAT.getUserDetails();
-        checkCreateOrThrow(user);
         if(projectId != null && xnatType != null)
             return eventService.getActions(projectId, xnatType, user);
         else
             return eventService.getActions(xnatType, user);
     }
 
-    @XapiRequestMapping(value = "/allactions", method = GET, params = {"!projectid", "!xnattype"})
+    @XapiRequestMapping(restrictTo = Admin, value = "/allactions", method = GET, params = {"!projectid", "!xnattype"})
     @ResponseBody
     public List<Action> getAllActions()
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI user = XDAT.getUserDetails();
-        checkCreateOrThrow(user);
         return eventService.getAllActions();
     }
 
 
-    @XapiRequestMapping(value = "/actionsbyevent", method = GET, params = {"!xnattype"})
+    @XapiRequestMapping(restrictTo = Admin, value = "/actionsbyevent", method = GET, params = {"!xnattype"})
     @ApiOperation(value="Get actions that can act on a particular Event type")
     public List<Action> getActionsByEvent(final @RequestParam(value = "event-id", required = true) String eventId,
                                           final @RequestParam(value = "projectid", required = false) String projectId)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI user = XDAT.getUserDetails();
-        checkCreateOrThrow(user);
         return eventService.getActionsByEvent(eventId, projectId, user);
     }
 
 
-    @XapiRequestMapping(value = "/actions/{provider}", method = GET)
+    @XapiRequestMapping(restrictTo = Admin, value = "/actions/{provider}", method = GET)
     @ApiOperation(value = "Get a actions by provider")
     @ResponseBody
     public List<Action> getActions(final @PathVariable String provider)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI user = XDAT.getUserDetails();
-        checkCreateOrThrow(user);
         return eventService.getActionsByProvider(provider, user);
     }
 
-    @XapiRequestMapping(value = {"/action"}, params = "actionkey", method = GET)
+    @XapiRequestMapping(restrictTo = Admin, value = {"/action"}, params = "actionkey", method = GET)
     @ApiOperation(value = "Get a actions by key in the form of \"ProviderID:ActionID\"")
     @ResponseBody
     public Action getAction(final @RequestParam String actionkey)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI user = XDAT.getUserDetails();
-        checkCreateOrThrow(user);
         return eventService.getActionByKey(actionkey, user);
-    }
-
-
-    private void checkCreateOrThrow() throws UnauthorizedException {
-        checkCreateOrThrow(XDAT.getUserDetails());
-    }
-
-    private void checkCreateOrThrow(final UserI userI) throws UnauthorizedException {
-        if (!isAdmin(userI)) {
-            throw new UnauthorizedException(String.format("User %s not authorize.", userI == null ? "" : userI.getLogin()));
-        }
-    }
-
-    private boolean isAdmin(final UserI userI) {
-        return getRoleHolder().isSiteAdmin(userI);
     }
 
 

@@ -104,6 +104,22 @@ public abstract class Subscription {
                 .build();
     }
 
+
+    public static Subscription createOnProject(final ProjectSubscriptionCreator creator, final String subscriptionOwner, final String project) {
+        return builder()
+                .name(creator.name())
+                .projectId(project)
+                .active(creator.active())
+                .eventId(creator.eventId())
+                .customListenerId(creator.customListenerId())
+                .actionKey(creator.actionKey())
+                .attributes(creator.attributes())
+                .eventFilter(creator.eventFilter())
+                .actAsEventUser(false)
+                .subscriptionOwner(subscriptionOwner)
+                .build();
+    }
+
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder id(Long id);

@@ -301,9 +301,24 @@ public class EventSubscriptionEntityServiceImpl
     }
 
     @Override
+    public List<Subscription> getSubscriptions(String projectId) {
+        List<Subscription> subscriptions = new ArrayList<>();
+        for (SubscriptionEntity se : super.getAll()) {
+            try {
+                if((!Strings.isNullOrEmpty(projectId) && projectId.contentEquals(se.getProjectId())) ||
+                        (Strings.isNullOrEmpty(projectId) && Strings.isNullOrEmpty(se.getProjectId()))){
+                       subscriptions.add(getSubscription(se.getId()));
+                }
+            } catch (NotFoundException e) {
+                log.error("Could not find subscription for ID: " + Long.toString(se.getId()) + "\n" + e.getMessage());
+            }
+        }
+        return subscriptions;
+    }
+
+    @Override
     public List<Subscription> getAllSubscriptions() {
         List<Subscription> subscriptions = new ArrayList<>();
-        //Registry<Object, Consumer<? extends Event<?>>> consumerRegistry = eventBus.getConsumerRegistry();
         for (SubscriptionEntity se : super.getAll()) {
             try {
                 subscriptions.add(getSubscription(se.getId()));

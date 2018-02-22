@@ -94,9 +94,8 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<Subscription> getSubscriptions(String projectId, UserI userI) {
-        //TODO: Get subscriptions authorized by project scope and userId
-        return null;
+    public List<Subscription> getSubscriptions(String projectId) {
+        return subscriptionService.getSubscriptions(projectId);
     }
 
     @Override

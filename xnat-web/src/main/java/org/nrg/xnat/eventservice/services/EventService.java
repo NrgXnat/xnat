@@ -34,7 +34,7 @@ public interface EventService {
 
     List<Subscription> getSubscriptions();
     Subscription getSubscription(Long id) throws NotFoundException;
-    List<Subscription> getSubscriptions(String projectId, UserI userI);
+    List<Subscription> getSubscriptions(String projectId);
     Subscription validateSubscription(Subscription subscription) throws SubscriptionValidationException;
     Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException;
     Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException;

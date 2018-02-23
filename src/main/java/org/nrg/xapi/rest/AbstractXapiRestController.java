@@ -9,7 +9,9 @@
 
 package org.nrg.xapi.rest;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.ListUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -18,8 +20,6 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -29,15 +29,36 @@ import java.util.*;
 
 /**
  * Provides basic functions for integrating Spring REST controllers with XNAT.
- *
+ * <p>
  * This replaces the {@link org.nrg.xdat.rest.AbstractXapiRestController} implementation.
  */
 // TODO: This is because IntelliJ refuses to make module associations between Gradle and Maven projects, so these show as unused.
 @SuppressWarnings({"unused", "deprecation", "Duplicates"})
+@Slf4j
 public abstract class AbstractXapiRestController {
     protected AbstractXapiRestController(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
         _userManagementService = userManagementService;
         _roleHolder = roleHolder;
+    }
+
+    /**
+     * Gets the attachment disposition for the specified filename. This is a standard format that looks like:
+     *
+     * <pre>attachment; filename="filename.txt"</pre>
+     * <p>
+     * This method accepts multiple strings, which it just concatenates until the last string, which is appended
+     * to the previously concatenated strings after a dot (".") is appended. For example, if you called this method
+     * with the strings "foo", "bar", and "txt", the resulting filename would be "foobar.txt". If you specify a
+     * single string, no dot is added.
+     *
+     * @param parts The filename parts to concatenate and format.
+     *
+     * @return The filename formatted as an attachment disposition.
+     */
+    protected static String getAttachmentDisposition(final String... parts) {
+        final int    maxIndex = parts.length - 1;
+        final String filename   = maxIndex == 0 ? parts[0] : StringUtils.join(ArrayUtils.subarray(parts, 0, maxIndex)) + "." + parts[maxIndex];
+        return String.format(ATTACHMENT_DISPOSITION, filename);
     }
 
     protected UserManagementServiceI getUserManagementService() {
@@ -56,8 +77,8 @@ public abstract class AbstractXapiRestController {
     protected UserI getSessionUser() {
         final Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if ((principal instanceof UserI)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Found principal for user: " + ((UserI) principal).getLogin());
+            if (log.isDebugEnabled()) {
+                log.debug("Found principal for user: " + ((UserI) principal).getLogin());
             }
             return (UserI) principal;
         }
@@ -103,7 +124,7 @@ public abstract class AbstractXapiRestController {
         } catch (UserInitException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to access the user " + username, e);
         } catch (UserNotFoundException e) {
-            _log.info("User {} requested by {}, but not found", username, user.getUsername());
+            log.info("User {} requested by {}, but not found", username, user.getUsername());
             return null;
         }
     }
@@ -155,22 +176,22 @@ public abstract class AbstractXapiRestController {
     protected HttpStatus isPermitted(final String... idsAndRoles) {
         final UserI user = getSessionUser();
         if (user == null) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("No user principal found, returning unauthorized.");
+            if (log.isDebugEnabled()) {
+                log.debug("No user principal found, returning unauthorized.");
             }
             return HttpStatus.UNAUTHORIZED;
         }
         final List<String> idsAndRolesList = Arrays.asList(idsAndRoles);
         if (_roleHolder.isSiteAdmin(user)) {
-            _log.debug("User {} is a site administrator, permitted.", user.getUsername());
+            log.debug("User {} is a site administrator, permitted.", user.getUsername());
             return null;
         }
         if (idsAndRolesList.contains(user.getUsername())) {
-            _log.debug("User {} appeared in the list of permitted users, permitted.", user.getUsername());
+            log.debug("User {} appeared in the list of permitted users, permitted.", user.getUsername());
             return null;
         }
         if (!Collections.disjoint(idsAndRolesList, _roleHolder.getRoles(user))) {
-            _log.debug("User {} has a role included in the list of permitted roles.", user.getUsername());
+            log.debug("User {} has a role included in the list of permitted roles.", user.getUsername());
             return null;
         }
         return HttpStatus.FORBIDDEN;
@@ -206,12 +227,12 @@ public abstract class AbstractXapiRestController {
      * @param properties The properties and values being set.
      */
     protected void logSetProperties(final Map<String, String> properties) {
-        if (_log.isInfoEnabled()) {
+        if (log.isInfoEnabled()) {
             final StringBuilder message = new StringBuilder("User ").append(getSessionUser().getUsername()).append(" is setting the values for the following properties:\n");
             for (final String name : properties.keySet()) {
                 message.append(" * ").append(name).append(": ").append(properties.get(name)).append("\n");
             }
-            _log.info(message.toString());
+            log.info(message.toString());
         }
     }
 
@@ -221,16 +242,16 @@ public abstract class AbstractXapiRestController {
      * @param properties The properties and values being set.
      */
     protected void logSetProperties(final Properties properties) {
-        if (_log.isInfoEnabled()) {
+        if (log.isInfoEnabled()) {
             final StringBuilder message = new StringBuilder("User ").append(getSessionUser().getUsername()).append(" is setting the values for the following properties:\n");
             for (final String name : properties.stringPropertyNames()) {
                 message.append(" * ").append(name).append(": ").append(properties.get(name)).append("\n");
             }
-            _log.info(message.toString());
+            log.info(message.toString());
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(AbstractXapiRestController.class);
+    private static final String ATTACHMENT_DISPOSITION = "attachment; filename=\"%s\"";
 
     private final UserManagementServiceI _userManagementService;
     private final RoleHolder             _roleHolder;

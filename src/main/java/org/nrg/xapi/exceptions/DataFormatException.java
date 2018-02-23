@@ -10,6 +10,7 @@
 package org.nrg.xapi.exceptions;
 
 import com.google.common.base.Joiner;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 public class DataFormatException extends XapiException {
@@ -76,7 +78,15 @@ public class DataFormatException extends XapiException {
     }
 
     public boolean hasDataFormatErrors() {
-        return !_missing.isEmpty() && !_unknown.isEmpty() && !_invalid.isEmpty();
+        return !_missing.isEmpty() || !_unknown.isEmpty() || !_invalid.isEmpty();
+    }
+
+    public void validateBlankAndRegex(final String property, final String value, final Pattern regex) {
+        if (StringUtils.isBlank(value)) {
+            addMissing(property);
+        } else if (!regex.matcher(value).matches()) {
+            addInvalid(property);
+        }
     }
 
     @Override

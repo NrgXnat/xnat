@@ -18,7 +18,7 @@
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
-    <version>1.7.5-auth-B2</version>
+    <version>1.7.5-auth-B3</version>
 
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>

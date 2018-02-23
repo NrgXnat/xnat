@@ -28,13 +28,13 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.security.validators.PasswordValidatorChain;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
@@ -46,7 +46,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -353,7 +352,7 @@ public class Users {
      * @return Returns the username for a given user ID
      */
     public static String getUsername(final Object xdatUserId) {
-        return xdatUserId != null && xdatUserId instanceof Integer
+        return xdatUserId instanceof Integer
                ? getUsername((Integer) xdatUserId)
                : null;
     }
@@ -370,20 +369,17 @@ public class Users {
             return null;
         }
 
-        String username = getCachedUserIds().get(xdatUserId);
-        if (username == null) {
-            //check if it was added since init
-            try {
-                username = (String) PoolDBUtils.ReturnStatisticQuery("select login FROM xdat_user WHERE xdat_user_id=" + xdatUserId, "login", null, null);
-                if (username != null) {
-                    getCachedUserIds().put(xdatUserId, username);
-                }
-            } catch (Exception e) {
-                log.error("", e);
-            }
+        final String username = getCachedUserIds().get(xdatUserId);
+        if (username != null) {
+            return username;
         }
 
-        return username;
+        //check if it was added since init
+        final String queried = XDAT.getNamedParameterJdbcTemplate().queryForObject("SELECT login FROM xdat_user WHERE xdat_user_id = :xdatUserId", new MapSqlParameterSource("xdatUserId", xdatUserId), String.class);
+        if (StringUtils.isNotBlank(queried)) {
+            getCachedUserIds().put(xdatUserId, queried);
+        }
+        return queried;
     }
 
     /**
@@ -398,26 +394,23 @@ public class Users {
             return null;
         }
 
-        //retrieve cached id
-        for (Entry<Integer, String> entry : getCachedUserIds().entrySet()) {
-            if (username.equals(entry.getValue())) {
-                return entry.getKey();
+        // Retrieve cached ID if stored
+        final Map<Integer, String> cache = getCachedUserIds();
+        if (cache.containsValue(username)) {
+            for (final int userId : cache.keySet()) {
+                if (StringUtils.equalsIgnoreCase(username, cache.get(userId))) {
+                    return userId;
+                }
             }
         }
 
-        //check if it was added since init
-        Integer u;
-        try {
-            u = (Integer) PoolDBUtils.ReturnStatisticQuery("select xdat_user_id FROM xdat_user WHERE login='" + username + "'", "xdat_user_id", null, null);
-            if (u != null) {
-                getCachedUserIds().put(u, username);
-            }
-        } catch (Exception e) {
-            log.error("", e);
-            u = null;
+        // Check if it was added since init
+        final Integer userId = XDAT.getNamedParameterJdbcTemplate().queryForObject("select xdat_user_id FROM xdat_user WHERE login = :username", new MapSqlParameterSource("username", username), Integer.class);
+        if (userId != null) {
+            cache.put(userId, username);
         }
+        return userId;
 
-        return u;
     }
 
     /**
@@ -431,7 +424,7 @@ public class Users {
             return ElementSecurity.GetDistinctIdValuesFor("xdat:user", "xdat:user.login", null).values();
         } catch (Exception e) {
             log.error("", e);
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
     }
 
@@ -464,9 +457,9 @@ public class Users {
      *
      * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("RedundantThrows")
     public static Date getLastLogin(UserI user) throws Exception {
-        String query = "SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id=" + user.getID() + " ORDER BY login_date DESC LIMIT 1";
-        return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", user.getDBName(), user.getUsername());
+        return XDAT.getNamedParameterJdbcTemplate().queryForObject("SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id = :xdatUserId ORDER BY login_date DESC LIMIT 1", new MapSqlParameterSource("xdatUserId", user.getID()), Date.class);
     }
 
     /**

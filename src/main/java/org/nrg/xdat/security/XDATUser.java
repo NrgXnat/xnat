@@ -73,8 +73,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private       boolean                                 rolesNotUpdatedFromService = true;
     private       ArrayList<XdatStoredSearch>             stored_searches            = null;
 
-    private final List<ElementDisplay> browseable      = new ArrayList<>();
-    private final Map<Object, Object>  _readableCounts = new HashMap<>();
+    private final List<ElementDisplay>             _browseable            = new ArrayList<>();
+    private final Multimap<String, ElementDisplay> _actionElementDisplays = MultimapBuilder.hashKeys().treeSetValues(ElementDisplay.SequenceComparator).build();
+    private final Map<Object, Object>              _readableCounts        = new HashMap<>();
 
     private long startTime = Calendar.getInstance().getTimeInMillis();
 
@@ -229,10 +230,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return (String) getProperty("login");
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            logger.error("Element '{}' not found", e.ELEMENT, e);
             return null;
         } catch (FieldNotFoundException e) {
-            logger.error("", e);
+            logger.error("Field '{}' not found", e.FIELD, e);
             return null;
         }
     }
@@ -246,7 +247,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return super.getFirstname();
         } catch (Exception e) {
-            logger.error("", e);
+            logger.error("An unknown error occurred", e);
             return null;
         }
     }
@@ -260,7 +261,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return super.getLastname();
         } catch (Exception e) {
-            logger.error("", e);
+            logger.error("An unknown error occurred", e);
             return null;
         }
     }
@@ -274,7 +275,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
             return super.getEmail();
         } catch (Exception e) {
-            logger.error("", e);
+            logger.error("An unknown error occurred", e);
             return null;
         }
     }
@@ -288,8 +289,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public Integer getID() {
         try {
             return super.getIntegerProperty("xdat_user_id");
-        } catch (FieldNotFoundException | ElementNotFoundException e) {
-            logger.error("", e);
+        } catch (ElementNotFoundException e) {
+            logger.error("Element '{}' not found", e.ELEMENT, e);
+        } catch (FieldNotFoundException e) {
+            logger.error("Field '{}' not found", e.FIELD, e);
         }
         return null;
     }
@@ -526,7 +529,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 logger.warn("Unable to update roles for user " + getUsername() + " due to not finding the user role service. Will mark as incomplete.");
             }
         } catch (Throwable e) {
-            logger.error("", e);
+            logger.error("An unknown error occurred", e);
         }
 
         return r;
@@ -542,7 +545,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             try {
                 roleNames.addAll(loadRoleNames());
             } catch (Exception e) {
-                logger.error("", e);
+                logger.error("An unknown error occurred", e);
             }
         }
         return ImmutableList.copyOf(roleNames);
@@ -562,12 +565,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public void clearBrowseableElementDisplays() {
-        browseable.clear();
+        _browseable.clear();
         _readableCounts.clear();
     }
 
     protected List<ElementDisplay> getBrowseableElementDisplays() {
-        if (browseable.size() == 0) {
+        if (_browseable.size() == 0) {
             final Map counts = getReadableCounts();
 
             try {
@@ -575,20 +578,20 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     final String elementName = ed.getElementName();
                     if (ElementSecurity.IsBrowseableElement(elementName)) {
                         if (counts.containsKey(elementName) && ((Long) counts.get(elementName) > 0)) {
-                            browseable.add(ed);
+                            _browseable.add(ed);
                         }
                     }
                 }
             } catch (ElementNotFoundException e) {
-                logger.error(XDAT.getElementNotFoundMessage(e));
+                logger.error("Element '{}' not found", e.ELEMENT, e);
             } catch (XFTInitException e) {
-                logger.error("There was an error initializing XFT", e);
+                logger.error("There was an error initializing or accessing XFT", e);
             } catch (Exception e) {
                 logger.error("An unknown error occurred", e);
             }
         }
 
-        return browseable;
+        return _browseable;
     }
 
     protected ElementDisplay getBrowseableElementDisplay(String elementName) {
@@ -610,11 +613,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 }
             }
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            logger.error("Element '{}' not found", e.ELEMENT, e);
         } catch (XFTInitException e) {
-            logger.error("", e);
+            logger.error("There was an error initializing or accessing XFT", e);
         } catch (Exception e) {
-            logger.error("", e);
+            logger.error("An unknown error occurred", e);
         }
 
         Collections.sort(elementDisplays, new Comparator<ElementDisplay>() {
@@ -667,11 +670,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     }
                 }
             } catch (ElementNotFoundException e) {
-                logger.error("", e);
+                logger.error("Element '{}' not found", e.ELEMENT, e);
             } catch (XFTInitException e) {
-                logger.error("", e);
+                logger.error("There was an error initializing or accessing XFT", e);
             } catch (Exception e) {
-                logger.error("", e);
+                logger.error("An unknown error occurred", e);
             }
             searchable.trimToSize();
 
@@ -692,7 +695,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 stored_searches = XdatStoredSearch.GetPreLoadedSearchesByAllowedUser(this.getLogin());
 
             } catch (Exception e) {
-                logger.error("", e);
+                logger.error("An unknown error occurred", e);
             }
         }
         return stored_searches;
@@ -705,10 +708,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 stored_searches.remove(old);
             }
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            logger.error("Element '{}' not found", e.ELEMENT, e);
         } catch (FieldNotFoundException e) {
-            logger.error("", e);
-        }
+            logger.error("Field '{}' not found", e.FIELD, e);        }
         stored_searches.add(i);
     }
 
@@ -728,11 +730,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 }
             }
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            logger.error("Element '{}' not found", e.ELEMENT, e);
         } catch (FieldNotFoundException e) {
-            logger.error("", e);
+            logger.error("Field '{}' not found", e.FIELD, e);
         } catch (Exception e) {
-            logger.error("", e);
+            logger.error("An unknown error occurred", e);
         }
         return null;
     }
@@ -844,7 +846,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
 
         } catch (Exception e) {
-            logger.error("", e);
+            logger.error("An unknown error occurred", e);
         }
         return results;
     }
@@ -888,13 +890,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
                 userSessionCache.put(elementName + security_permission + preLoad, items);
             } catch (ElementNotFoundException e) {
-                logger.error("", e);
+                logger.error("Element '{}' not found", e.ELEMENT, e);
             } catch (IllegalAccessException e) {
-                logger.error("", e);
+                logger.error("An error occurred trying to access an object", e);
             } catch (MetaDataException e) {
-                logger.error("", e);
+                logger.error("An error occurred trying to read XFT metadata", e);
             } catch (Throwable e) {
-                logger.error("", e);
+                logger.error("An unknown error occurred", e);
             }
         }
 
@@ -975,11 +977,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
                 total_counts.putAll(t.convertToHashtable("element_name", "count"));
             } catch (SQLException e) {
-                logger.error("", e);
+                logger.error("An error occurred running an SQL query: [{}] {}", e.getErrorCode(), e.getSQLState(), e);
             } catch (DBPoolException e) {
-                logger.error("", e);
+                logger.error("An error occurred accessing the database", e);
             } catch (Exception e) {
-                logger.error("", e);
+                logger.error("An unknown error occurred", e);
             }
         }
 
@@ -999,11 +1001,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                         }
                     }
                 } catch (XFTInitException e) {
-                    logger.error("", e);
+                    logger.error("There was an error initializing or accessing XFT", e);
                 } catch (ElementNotFoundException e) {
-                    logger.error("", e);
+                    logger.error("Element '{}' not found", e.ELEMENT, e);
                 } catch (FieldNotFoundException e) {
-                    logger.error("", e);
+                    logger.error("Field '{}' not found", e.FIELD, e);
                 }
             }
         }
@@ -1026,11 +1028,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
                     hash.put(id, value);
                 } catch (XFTInitException e) {
-                    logger.error("", e);
+                    logger.error("There was an error initializing or accessing XFT", e);
                 } catch (ElementNotFoundException e) {
-                    logger.error("", e);
+                    logger.error("Element '{}' not found", e.ELEMENT, e);
                 } catch (FieldNotFoundException e) {
-                    logger.error("", e);
+                    logger.error("Field '{}' not found", e.FIELD, e);
                 }
             }
         }
@@ -1063,7 +1065,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     return null;
                 }
             } catch (Exception e) {
-                logger.error("", e);
+                logger.error("An unknown error occurred", e);
             }
 
             final Map<String, UserGroupI> userGroups = Groups.getGroupsForUser(this);
@@ -1205,7 +1207,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 }
             }
         } catch (Exception e) {
-            logger.error("", e);
+            logger.error("An unknown error occurred", e);
         }
 
         return false;
@@ -1319,42 +1321,40 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     private List<ElementDisplay> getActionElementDisplays(final String action) throws ElementNotFoundException, XFTInitException, Exception {
-        final Map<String, ElementDisplay> hash = new Hashtable<>();
-
-        for (ElementSecurity es : ElementSecurity.GetSecureElements()) {
-            try {
-                final SchemaElement schemaElement = es.getSchemaElement();
-                if (schemaElement != null) {
-                    if (schemaElement.hasDisplay()) {
-                        if (Permissions.canAny(this, es.getElementName(), action)) {
-                            ElementDisplay ed = schemaElement.getDisplay();
-                            if (ed != null) {
-                                hash.put(ed.getElementName(), ed);
+        if (!_actionElementDisplays.containsKey(action)) {
+            for (final ElementSecurity elementSecurity : ElementSecurity.GetSecureElements()) {
+                try {
+                    final SchemaElement schemaElement = elementSecurity.getSchemaElement();
+                    if (schemaElement != null) {
+                        if (schemaElement.hasDisplay()) {
+                            if (Permissions.canAny(this, elementSecurity.getElementName(), action)) {
+                                final ElementDisplay elementDisplay = schemaElement.getDisplay();
+                                if (elementDisplay != null) {
+                                    _actionElementDisplays.put(action, elementDisplay);
+                                }
                             }
                         }
+                    } else {
+                        throw new ElementNotFoundException(elementSecurity.getElementName());
                     }
-                } else {
-                    throw new ElementNotFoundException(es.getElementName());
+                } catch (ElementNotFoundException e) {
+                    logger.error("Element '{}' not found", e.ELEMENT, e);
                 }
-            } catch (ElementNotFoundException e) {
-                logger.error(XDAT.getElementNotFoundMessage(e));
+            }
+
+            for (final ElementSecurity elementSecurity : ElementSecurity.GetInSecureElements()) {
+                try {
+                    final SchemaElement schemaElement = elementSecurity.getSchemaElement();
+                    if (schemaElement.hasDisplay()) {
+                        _actionElementDisplays.put(action, schemaElement.getDisplay());
+                    }
+                } catch (ElementNotFoundException e) {
+                    logger.error("Element '{}' not found", e.ELEMENT, e);
+                }
             }
         }
 
-        for (ElementSecurity es : ElementSecurity.GetInSecureElements()) {
-            try {
-                final SchemaElement schemaElement = es.getSchemaElement();
-                if (schemaElement.hasDisplay()) {
-                    hash.put(es.getElementName(), schemaElement.getDisplay());
-                }
-            } catch (ElementNotFoundException e) {
-                logger.error(XDAT.getElementNotFoundMessage(e));
-            }
-        }
-
-        final ArrayList<ElementDisplay> al = Lists.newArrayList(hash.values());
-        Collections.sort(al, ElementDisplay.SequenceComparator);
-        return al;
+        return ImmutableList.copyOf(_actionElementDisplays.get(action));
     }
 
     private boolean canModify(final String projectId) throws Exception {

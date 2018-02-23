@@ -61,6 +61,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.cache.CacheManager;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -86,27 +88,31 @@ import static org.nrg.xft.security.UserI.AUTHORITIES_ANONYMOUS;
 @SuppressWarnings("unused")
 public class XDAT implements Initializable, Configurable{
 
-    public static final String IP_WHITELIST_TOOL = "ipWhitelist";
-    public static final String IP_WHITELIST_PATH = "/system/ipWhitelist";
+	public static final String IP_WHITELIST_TOOL               = "ipWhitelist";
+	public static final String IP_WHITELIST_PATH               = "/system/ipWhitelist";
+	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
 
 	private static final Logger logger                    = Logger.getLogger(XDAT.class);
 	private static final String ELEMENT_NOT_FOUND_MESSAGE = "Element not found: %s. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
 
-	private static ContextService           _contextService;
-    private static DataSource               _dataSource;
-	private static MailService              _mailService;
-	private static ThemeService             _themeService;
-    private static NotificationService      _notificationService;
-	private static XdatUserAuthService      _xdatUserAuthService;
-    private static ConfigService            _configurationService;
-	private static SiteConfigPreferences    _siteConfigPreferences;
-	private static CacheManager             _cacheManager;
-	private static NotificationsPreferences _notificationsPreferences;
-	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-	private static String _configFilesLocation = null;
+	private static ContextService             _contextService;
+	private static DataSource                 _dataSource;
+	private static NamedParameterJdbcTemplate _namedParameterJdbcTemplate;
+	private static JdbcTemplate               _jdbcTemplate;
+	private static MailService                _mailService;
+	private static ThemeService               _themeService;
+	private static NotificationService        _notificationService;
+	private static XdatUserAuthService        _xdatUserAuthService;
+	private static ConfigService              _configurationService;
+	private static SiteConfigPreferences      _siteConfigPreferences;
+	private static CacheManager               _cacheManager;
+	private static NotificationsPreferences   _notificationsPreferences;
+	private static File                       _screenTemplatesFolder;
+
+	private static String            _configFilesLocation    = null;
+	private static Map<String, File> _screenTemplatesFolders = new HashMap<>();
+
 	private String instanceSettingsLocation = null;
-    private static File _screenTemplatesFolder;
-    private static Map<String, File> _screenTemplatesFolders= new HashMap<>();
 
     public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
         return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
@@ -124,6 +130,7 @@ public class XDAT implements Initializable, Configurable{
     	return getSiteConfigurationProperty(property, null);
 	}
 
+	@SuppressWarnings("RedundantThrows")
 	public static String getSiteConfigurationProperty(final String property, final String _default) throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
 		final String value = preferences.getValue(property);
@@ -575,7 +582,8 @@ public class XDAT implements Initializable, Configurable{
 	    return _configurationService;
 	}
 
-    public static Properties getSiteConfiguration() throws ConfigServiceException {
+    @SuppressWarnings("RedundantThrows")
+	public static Properties getSiteConfiguration() throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
 		if (preferences == null) {
 			throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "The site configuration preferences aren't available for some reason.");
@@ -594,7 +602,31 @@ public class XDAT implements Initializable, Configurable{
 	    return _dataSource;
 	}
 
-    /**
+	/**
+	 * Returns an instance of the shared NamedParameterJdbcTemplate bean.
+	 *
+	 * @return An instance of the {@link NamedParameterJdbcTemplate} bean.
+	 */
+	public static NamedParameterJdbcTemplate getNamedParameterJdbcTemplate() {
+		if (_namedParameterJdbcTemplate == null) {
+			_namedParameterJdbcTemplate = getContextService().getBean(NamedParameterJdbcTemplate.class);
+		}
+		return _namedParameterJdbcTemplate;
+	}
+
+	/**
+	 * Returns an instance of the shared JdbcTemplate bean.
+	 *
+	 * @return An instance of the {@link NamedParameterJdbcTemplate} bean.
+	 */
+	public static JdbcTemplate getJdbcTemplate() {
+		if (_jdbcTemplate == null) {
+			_jdbcTemplate = getContextService().getBean(JdbcTemplate.class);
+		}
+		return _jdbcTemplate;
+	}
+
+	/**
 	 * Returns an instance of the site configuration preferences bean.
 	 * @return An instance of the {@link SiteConfigPreferences} bean.
 	 */

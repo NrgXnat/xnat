@@ -121,8 +121,8 @@ public class EventServiceRestApiTest {
 
 
     @Test
-    @Ignore
     @DirtiesContext
+    @Ignore
     public void createSubscription() throws Exception {
         final String path = "/events/subscription";
 

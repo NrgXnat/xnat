@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -80,6 +81,17 @@ public class Resource extends XnatModelObject {
             // See CatalogUtils.getEntryDetails to see where all these "entry" elements come from
             files.add(new XnatFile(this.uri, (String) entry[0], (String) entry[2], (String) entry[4], (String) entry[5], (String) entry[6], (File) entry[8]));
         }
+    }
+
+    public static Resource populateSample(){
+        Resource resource = new Resource();
+        resource.setId("DICOM");
+        resource.setLabel("DICOM");
+        resource.setXsiType("xnat:resourceCatalog");
+        resource.setUri("/archive/experiments/XNAT_E00003/scans/4/resources/DICOM");
+        resource.setDirectory("/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4/DICOM");
+        resource.setFiles(Arrays.asList(XnatFile.populateSample()));
+        return resource;
     }
 
     public static Function<URIManager.ArchiveItemURI, Resource> uriToModelObject() {

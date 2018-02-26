@@ -40,7 +40,6 @@ public class EventServiceLoggingAction extends SingleActionProvider {
                                             .description("Sample description of attribute.")
                                             .type("string")
                                             .defaultValue("default-value")
-                                            .userSettable(true)
                                             .required(false)
                                             .build());
 
@@ -49,7 +48,6 @@ public class EventServiceLoggingAction extends SingleActionProvider {
                                             .description("Another description of attribute.")
                                             .type("string")
                                             .defaultValue("default-value")
-                                            .userSettable(true)
                                             .required(false)
                                             .build());
         return attributeConfigurationMap;

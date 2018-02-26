@@ -87,6 +87,16 @@ public class Subject extends XnatModelObject {
         }
     }
 
+    public static Subject populateSample() {
+        Subject subject = new Subject();
+        subject.setId("XNAT_S00003");
+        subject.setLabel("SubjectsID");
+        subject.setXsiType("xnat:subjectData");
+        subject.setUri("/archive/subjects/XNAT_S00003");
+        subject.setProjectId("SampleProjectID");
+        return subject;
+    }
+
     public static Function<URIManager.ArchiveItemURI, Subject> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Subject>() {
             @Nullable

@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -107,6 +108,22 @@ public class Session extends XnatModelObject {
         for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondataI.getAssessors_assessor()) {
             assessors.add(new Assessor(xnatImageassessordataI, this.uri, rootArchivePath));
         }
+    }
+
+    public static Session populateSample() {
+        Session session = new Session();
+        session.setId("XNAT_E00003");
+        session.setLabel("Sample_MR3");
+        session.setXsiType("xnat:mrSessionData");
+        session.setUri("/archive/experiments/XNAT_E00003");
+        session.setScans(Arrays.asList(Scan.populateSample()));
+        session.setDirectory("/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/");
+        session.setProjectId("SampleProjectID");
+        session.setSubjectId("XNAT_S00001");
+        session.setModality("MR");
+
+
+        return session;
     }
 
     public static Function<URIManager.ArchiveItemURI, Session> uriToModelObject() {
@@ -230,6 +247,14 @@ public class Session extends XnatModelObject {
     public XFTItem getXftItem(final UserI userI) {
         loadXnatImagesessiondata(userI);
         return xnatImagesessiondataI == null ? null : ((XnatImagesessiondata)xnatImagesessiondataI).getItem();
+    }
+
+    public String getModality() {
+        return modality;
+    }
+
+    public void setModality(String modality) {
+        this.modality = modality;
     }
 
     @Override

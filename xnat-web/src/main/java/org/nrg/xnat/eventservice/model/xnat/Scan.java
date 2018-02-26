@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -96,6 +97,27 @@ public class Scan extends XnatModelObject {
             }
         }
 
+    }
+
+    public static Scan populateSample(){
+        Scan scan = new Scan();
+        scan.setId("4");
+        scan.setLabel("4 - t1_mpr_1mm_p2_pos50");
+        scan.setXsiType("xnat:mrScanData");
+        scan.setUri("/archive/experiments/XNAT_E00003/scans/4");
+        scan.setResources(Arrays.asList(Resource.populateSample()));
+        scan.setDirectory("/data/xnat/archive/SampleProjectID/arc001/Sample_MR3/SCANS/4");
+        scan.setFrames(176);
+        scan.setModality("MR");
+        scan.setQuality("usable");
+        scan.setScanner("MEDPC");
+        scan.setUid("1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0");
+        scan.setScanType("t1_mpr_1mm_p2_pos50");
+        scan.setScannerManufacturer("SIEMENS");
+        scan.setScannerModel("TrioTim");
+        scan.setSeriesDescription("t1_mpr_1mm_p2_pos50");
+        scan.setStartTime("09:37:11");
+        return scan;
     }
 
     public static Function<URIManager.ArchiveItemURI, Scan> uriToModelObject() {

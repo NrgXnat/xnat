@@ -11,19 +11,16 @@ public abstract class ActionAttributeConfiguration {
     @Nullable @JsonProperty("description")   public abstract String description();
     @Nullable @JsonProperty("type")          public abstract String type();
     @Nullable @JsonProperty("default-value") public abstract String defaultValue();
-    @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
     @Nullable @JsonProperty("required")      public abstract Boolean required();
 
     public static ActionAttributeConfiguration create(@JsonProperty("description")   String description,
                                                       @JsonProperty("type")          String type,
                                                       @JsonProperty("default-value") String defaultValue,
-                                                      @JsonProperty("user-settable") Boolean userSettable,
                                                       @JsonProperty("required")      Boolean required) {
         return builder()
                 .description(description)
                 .type(type)
                 .defaultValue(defaultValue)
-                .userSettable(userSettable)
                 .required(required)
                 .build();
     }
@@ -37,8 +34,6 @@ public abstract class ActionAttributeConfiguration {
         public abstract Builder type(String type);
 
         public abstract Builder defaultValue(String defaultValue);
-
-        public abstract Builder userSettable(Boolean userSettable);
 
         public abstract Builder required(Boolean required);
 

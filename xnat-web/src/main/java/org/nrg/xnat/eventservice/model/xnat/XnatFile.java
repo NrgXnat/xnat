@@ -44,6 +44,12 @@ public class XnatFile extends XnatModelObject {
         this.file = file;
     }
 
+    public static XnatFile populateSample() {
+        XnatFile xnatFile = new XnatFile();
+        xnatFile.setFormat("DICOM");
+        return xnatFile;
+    }
+
     public Project getProject(final UserI userI) {
         // I don't think there is any way to get the project from this.
         return null;

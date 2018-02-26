@@ -93,6 +93,16 @@ public class Project extends XnatModelObject {
         } catch (Exception e) { log.error("Exception trying to load project resources. " + e.getMessage()) ;}
     }
 
+    public static Project populateSample() {
+        Project project = new Project();
+        project.setId("SampleProjectID");
+        project.setLabel("SampleProjectLabel");
+        project.setXsiType("xnat:projectData");
+        project.setUri("/archive/projects/SampleProjectID");
+        project.setDirectory("/data/xnat/archive/SampleProjectID/arc001");
+        return project;
+    }
+
     public static Function<URIManager.ArchiveItemURI, Project> uriToModelObject() {
         return uriToModelObject(true);
     }

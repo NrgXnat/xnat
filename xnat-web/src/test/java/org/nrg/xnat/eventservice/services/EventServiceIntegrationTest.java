@@ -1,7 +1,11 @@
 package org.nrg.xnat.eventservice.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
+import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +46,6 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.selector.Selector;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -441,6 +444,57 @@ public class EventServiceIntegrationTest {
         List<Action> allActions = eventService.getAllActions();
         assertThat("eventService.getAllActions() should not return a null list", allActions, notNullValue());
         assertThat("eventService.getAllActions() should not return an empty list", allActions, is(not(empty())));
+
+
+    }
+
+    @Test
+    public void buildJSONPathFilters() throws Exception {
+        String sessionJSONPathFilter = "$[?(@.modality == \"CT\")]";
+        Session session = Session.populateSample();
+        String jsonObject = objectMapper.writeValueAsString(session);
+        JsonNode jsonNode = objectMapper.valueToTree(session);
+        Iterator<String> fieldNames = jsonNode.fieldNames();
+
+        Map<String, JsonPathFilterNode> filterNodes = new HashMap<>();
+        Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
+        while(fields.hasNext()){
+            Map.Entry<String, JsonNode> next = fields.next();
+            JsonNode value = next.getValue();
+            if(value.isValueNode()) {
+                JsonPathFilterNode filterNode = null;
+                String key = next.getKey();
+                switch(value.getNodeType()) {
+                    case STRING:
+                        filterNode = JsonPathFilterNode.builder()
+                                                       .type("string")
+                                                       .sampleValue(value.asText())
+                                                       .build();
+                        break;
+                    case BOOLEAN:
+                        filterNode = JsonPathFilterNode.builder()
+                                                       .type("boolean")
+                                                       .sampleValue(value.asText())
+                                                       .build();
+                        break;
+                    case NUMBER:
+                        filterNode = JsonPathFilterNode.builder()
+                                                       .type("number")
+                                                       .sampleValue(value.asText())
+                                                       .build();
+                        break;
+                }
+                if(!Strings.isNullOrEmpty(key) && filterNode != null){
+                    filterNodes.put(key, filterNode);
+                }
+
+            }
+        }
+
+        String jsonFilter = sessionJSONPathFilter;
+        Configuration conf = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+        List<String> filterResult = JsonPath.using(conf).parse(jsonObject).read(jsonFilter);
+
 
 
     }
@@ -1186,25 +1240,7 @@ public class EventServiceIntegrationTest {
                                                                      .name(name)
                                                                      .projectId(projectId)
                                                                      .active(true)
-                                                                     .eventFilter(new EventFilter() {
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public Long id() {
-                                                                             return null;
-                                                                         }
-
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public String name() {
-                                                                             return "SessionFilter";
-                                                                         }
-
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public String jsonPathFilter() {
-                                                                             return filter;
-                                                                         }
-                                                                     })
+                                                                     .eventFilter(null)
                                                                      .eventId(new SessionArchiveEvent().getId())
                                                                      .actionKey(testActionKey)
                                                                      .actAsEventUser(false)
@@ -1221,25 +1257,7 @@ public class EventServiceIntegrationTest {
                                                                      .name(name)
                                                                      .projectId(projectId)
                                                                      .active(true)
-                                                                     .eventFilter(new EventFilter() {
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public Long id() {
-                                                                             return null;
-                                                                         }
-
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public String name() {
-                                                                             return "ScanFilter";
-                                                                         }
-
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public String jsonPathFilter() {
-                                                                             return filter;
-                                                                         }
-                                                                     })
+                                                                     .eventFilter(null)
                                                                      .eventId(new ScanArchiveEvent().getId())
                                                                      .actionKey(testActionKey)
                                                                      .actAsEventUser(false)
@@ -1274,25 +1292,7 @@ public class EventServiceIntegrationTest {
                                                                      .name(name)
                                                                      .projectId(projectId)
                                                                      .active(true)
-                                                                     .eventFilter(new EventFilter() {
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public Long id() {
-                                                                             return null;
-                                                                         }
-
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public String name() {
-                                                                             return "SubjectFilter";
-                                                                         }
-
-                                                                         @Nullable
-                                                                         @Override
-                                                                         public String jsonPathFilter() {
-                                                                             return filter;
-                                                                         }
-                                                                     })
+                                                                     .eventFilter(null)
                                                                      .eventId(new SubjectCreatedEvent().getId())
                                                                      .actionKey(testActionKey)
                                                                      .actAsEventUser(false)

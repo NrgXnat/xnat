@@ -254,12 +254,9 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
-    public ResponseEntity<User> createUser(@RequestBody final User model) {
-        try {
-            validateUser(model);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<User> createUser(@RequestBody final User model) throws DataFormatException, ResourceAlreadyExistsException {
+        validateUser(model);
+
         final UserI user = getUserManagementService().createUser();
 
         if (user == null) {
@@ -270,15 +267,15 @@ public class UsersApi extends AbstractXapiRestController {
         user.setFirstname(model.getFirstName());
         user.setLastname(model.getLastName());
         user.setEmail(model.getEmail());
+        user.setPassword(model.getPassword());
+        user.setAuthorization(model.getAuthorization());
+
         if (model.isEnabled() != null) {
             user.setEnabled(model.isEnabled());
         }
         if (model.isVerified() != null) {
             user.setVerified(model.isVerified());
         }
-
-        user.setPassword(model.getPassword());
-        user.setAuthorization(model.getAuthorization());
 
         try {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
@@ -288,7 +285,7 @@ public class UsersApi extends AbstractXapiRestController {
                 try {
                     AdminUtils.sendNewUserEmailMessage(user.getUsername(), user.getEmail());
                 } catch (Exception e) {
-                    log.error("", e);
+                    log.error("An error occurred trying to send email to the admin: new user '{}' created with email '{}'", user.getUsername(), user.getEmail(), e);
                 }
             }
             return new ResponseEntity<>(_factory.getUser(user), HttpStatus.CREATED);
@@ -859,6 +856,27 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
+    @ApiOperation(value = "Returns list of projects that user has edit access.", notes = "Returns list of projects that user has edit access.", response = String.class, responseContainer = "List")
+    @XapiRequestMapping(value = "projects", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    public ResponseEntity<List<String>> getProjectsByUser() {
+        return new ResponseEntity<>(_permissionsService.getUserEditableProjects(getSessionUser()), HttpStatus.OK);
+    }
+
+    @SuppressWarnings("unused")
+    public static class Event {
+
+        public static String Added                 = "Added User";
+        public static String Disabled              = "Disabled User";
+        public static String Enabled               = "Enabled User";
+        public static String DisabledForInactivity = "Disabled User Due To Inactivity";
+        public static String Modified              = "Modified User";
+        public static String ModifiedEmail         = "Modified User Email";
+        public static String ModifiedPassword      = "Modified User Password";
+        public static String ModifiedPermissions   = "Modified User Permissions";
+        public static String ModifiedSettings      = "Modified User Settings";
+        public static String VerifiedEmail         = "Verified User Email";
+    }
+
     @Nullable
     private Object locatePrincipalByUsername(final String username) {
         Object located = null;
@@ -877,53 +895,27 @@ public class UsersApi extends AbstractXapiRestController {
         return located;
     }
 
-    private void validateUser(final User model) throws DataFormatException, UserInitException, ResourceAlreadyExistsException {
+    private void validateUser(final User model) throws DataFormatException, ResourceAlreadyExistsException {
         final DataFormatException exception = new DataFormatException();
-
-        if (StringUtils.isBlank(model.getUsername())) {
-            exception.addMissing("username");
-        } else if (!Patterns.USERNAME.matcher(model.getUsername()).matches()) {
-            exception.addInvalid("username");
-        }
-
-        try {
-            final UserI user = getUserManagementService().getUser(model.getUsername());
-            if (user != null) {
-                throw new ResourceAlreadyExistsException("user", model.getUsername());
-            }
-        } catch (UserNotFoundException ignored) {
-            // This is actually what we want.
-        }
-
-        if (StringUtils.isBlank(model.getEmail())) {
-            exception.addMissing("email");
-        } else if (!Patterns.EMAIL.matcher(model.getEmail()).matches()) {
-            exception.addInvalid("email");
-        }
-
+        exception.validateBlankAndRegex("username", model.getUsername(), Patterns.USERNAME);
+        exception.validateBlankAndRegex("email", model.getEmail(), Patterns.EMAIL);
+        exception.validateBlankAndRegex("firstName", model.getFirstName(), Patterns.LIMIT_XSS_CHARS);
+        exception.validateBlankAndRegex("lastName", model.getLastName(), Patterns.LIMIT_XSS_CHARS);
         if (exception.hasDataFormatErrors()) {
             throw exception;
         }
-    }
 
-    @ApiOperation(value = "Returns list of projects that user has edit access.", notes = "Returns list of projects that user has edit access.", response = String.class, responseContainer = "List")
-    @XapiRequestMapping(value = "projects", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<List<String>> getProjectsByUser() {
-        return new ResponseEntity<>(_permissionsService.getUserEditableProjects(getSessionUser()), HttpStatus.OK);
-    }
-
-    @SuppressWarnings("unused")
-    public static class Event {
-        public static String Added                 = "Added User";
-        public static String Disabled              = "Disabled User";
-        public static String Enabled               = "Enabled User";
-        public static String DisabledForInactivity = "Disabled User Due To Inactivity";
-        public static String Modified              = "Modified User";
-        public static String ModifiedEmail         = "Modified User Email";
-        public static String ModifiedPassword      = "Modified User Password";
-        public static String ModifiedPermissions   = "Modified User Permissions";
-        public static String ModifiedSettings      = "Modified User Settings";
-        public static String VerifiedEmail         = "Verified User Email";
+        final String username = model.getUsername();
+        try {
+            final UserI user = getUserManagementService().getUser(username);
+            if (user != null) {
+                throw new ResourceAlreadyExistsException("user", username);
+            }
+        } catch (UserNotFoundException ignored) {
+            // This is actually what we want.
+        } catch (UserInitException e) {
+            log.error("An error occurred trying to check for duplicate username", e);
+        }
     }
 
     private final SessionRegistry            _sessionRegistry;

@@ -12,7 +12,6 @@ package org.nrg.xnat.event.listeners.methods;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xapi.rest.aspects.XapiRequestMappingAspect;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xnat.security.ConfigurableSecurityMetadataSourceFactory;
 import org.nrg.xnat.security.XnatLogoutSuccessHandler;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.BeansException;
@@ -78,9 +77,9 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
 
     /**
      * Processes the submitted bean. This implementation is only interested in two particular beans:
-     * <p>
+     *
      * <ul>
-     * <li>It sets the {@link ConfigurableSecurityMetadataSourceFactory security metadata source} on Spring's <b>FilterSecurityInterceptor</b></li>
+     * <li>It sets the {@link #getMetadataSource() security metadata source} on Spring's <b>FilterSecurityInterceptor</b></li>
      * <li>
      * It also sets the {@link XnatAppInfo#getOpenUrls() open (i.e. unrestricted)} and {@link XnatAppInfo#getAdminUrls() administrative URLs}
      * on the {@link XapiRequestMappingAspect XAPI security manager object}.
@@ -97,9 +96,7 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
      */
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String name) {
-        if (log.isDebugEnabled()) {
-            log.debug("Post-processing bean: " + name);
-        }
+        log.debug("Post-processing bean: {}", name);
 
         if (bean instanceof FilterSecurityInterceptor) {
             _interceptor = (FilterSecurityInterceptor) bean;
@@ -119,10 +116,8 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
     private void updateSecurityFilter() {
         if (_interceptor != null) {
             final ExpressionBasedFilterInvocationSecurityMetadataSource metadataSource = getMetadataSource();
-            if (log.isDebugEnabled()) {
-                log.debug("Found a FilterSecurityInterceptor bean with the following metadata configuration:\n{}", displayMetadataSource(_interceptor.getSecurityMetadataSource()));
-                log.debug("Updating the bean with the following metadata configuration:\n{}", displayMetadataSource(metadataSource));
-            }
+            log.debug("Found a FilterSecurityInterceptor bean with the following metadata configuration:\n{}", displayMetadataSource(_interceptor.getSecurityMetadataSource()));
+            log.debug("Updating the bean with the following metadata configuration:\n{}", displayMetadataSource(metadataSource));
             _interceptor.setSecurityMetadataSource(metadataSource);
         }
     }
@@ -146,16 +141,12 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
         final LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> map = new LinkedHashMap<>();
 
         for (final String url : _openUrls) {
-            if (log.isDebugEnabled()) {
-                log.debug("Setting permitAll on the open URL: " + url);
-            }
+            log.debug("Setting permitAll on the open URL: {}", url);
             map.put(new AntPathRequestMatcher(url), SecurityConfig.createList(PERMIT_ALL));
         }
 
         for (final String adminUrl : _adminUrls) {
-            if (log.isDebugEnabled()) {
-                log.debug("Setting permissions on the admin URL: " + adminUrl);
-            }
+            log.debug("Setting permissions on the admin URL: {}", adminUrl);
             String tempAdminUrl = adminUrl;
             if (tempAdminUrl.endsWith("/*")) {
                 tempAdminUrl += "*";
@@ -168,9 +159,7 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
         }
 
         final String secure = _requireLogin ? DEFAULT_EXPRESSION : PERMIT_ALL;
-        if (log.isDebugEnabled()) {
-            log.debug("Setting " + secure + " on the default pattern: " + DEFAULT_PATTERN);
-        }
+        log.debug("Setting {} on the default pattern: {}", secure, DEFAULT_PATTERN);
         map.put(new AntPathRequestMatcher(DEFAULT_PATTERN), SecurityConfig.createList(secure));
         return new ExpressionBasedFilterInvocationSecurityMetadataSource(map, new DefaultWebSecurityExpressionHandler());
     }
@@ -200,7 +189,6 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
 
     private FilterSecurityInterceptor _interceptor;
     private ChannelProcessingFilter   _channelProcessingFilter;
-
-    private boolean _requireLogin;
-    private String  _securityChannel;
+    private boolean                   _requireLogin;
+    private String                    _securityChannel;
 }

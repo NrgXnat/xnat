@@ -5,7 +5,7 @@ import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
+import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -80,7 +80,7 @@ public class UserResourceXapiAuthorization extends AbstractXapiAuthorization imp
         _handlerProxy.handlePreference(preference, value);
     }
 
-    private final PreferenceHandlerMethod _handlerProxy = new AbstractScopedXnatPreferenceHandlerMethod("restrictUserListAccessToAdmins") {
+    private final PreferenceHandlerMethod _handlerProxy = new AbstractXnatPreferenceHandlerMethod("restrictUserListAccessToAdmins") {
         @Override
         protected void handlePreferenceImpl(final String preference, final String value) {
             _restrictUserListAccessToAdmins = Boolean.parseBoolean(value);

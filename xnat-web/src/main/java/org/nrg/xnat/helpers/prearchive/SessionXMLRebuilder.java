@@ -83,9 +83,11 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
                             final File   sessionDir = PrearcUtils.getPrearcSessionDir(user, sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), false);
                             final long   then       = sessionData.getLastBuiltDate().getTime();
                             final double diff       = diffInMinutes(then, now);
+                            log.debug("Prearchive session {} is {} minutes old", sessionData.toString(), diff);
                             if (diff >= _interval && !PrearcUtils.isSessionReceiving(sessionData.getSessionDataTriple())) {
                                 updated++;
                                 try {
+                                    log.info("Prearchive session {} is {} minutes old, greater than configured interval {}, setting status to QUEUED_BUILDING", sessionData.toString(), diff, _interval);
                                     if (PrearcDatabase.setStatus(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcUtils.PrearcStatus.QUEUED_BUILDING)) {
                                         log.debug("Creating JMS queue entry for {} to archive {}", user.getUsername(), sessionData.getExternalUrl());
                                         final PrearchiveOperationRequest request = new PrearchiveOperationRequest(user, sessionData, sessionDir, "Rebuild");
@@ -96,6 +98,8 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
                                 }
                             } else if (diff >= (_interval * 10)) {
                                 log.error(String.format("Prearchive session locked for an abnormally large time within CACHE_DIR/prearc_locks/%1$s/%2$s/%3$s", sessionData.getProject(), sessionData.getTimestamp(), sessionData.getName()));
+                            } else if (diff < _interval) {
+                                log.debug("Prearchive session {} is {} minutes old, less than configured interval {}, remaining in RECEIVING status", sessionData.toString(), diff, _interval);
                             }
                         } catch (IOException e) {
                             final String message = String.format("An error occurred trying to write the session %s %s %s.", sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());

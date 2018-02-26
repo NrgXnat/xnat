@@ -43,7 +43,7 @@ public class DicomSCPPreferenceHandler extends AbstractPreferenceHandler<Prefere
     }
 
     @Override
-    public void addMethod(PreferenceHandlerMethod method) {
+    public void addMethod(final PreferenceHandlerMethod method) {
         _methods.add(method);
     }
 

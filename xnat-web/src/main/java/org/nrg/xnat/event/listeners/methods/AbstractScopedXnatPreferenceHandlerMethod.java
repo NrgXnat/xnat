@@ -9,14 +9,35 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
+import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.nrg.xdat.security.user.XnatUserProvider;
 
+import java.util.Collections;
+import java.util.List;
+
+@SuppressWarnings("unused")
 public abstract class AbstractScopedXnatPreferenceHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
-    protected AbstractScopedXnatPreferenceHandlerMethod(final String... preferences) {
-        this(null, preferences);
+    protected AbstractScopedXnatPreferenceHandlerMethod(final String... handledPreferences) {
+        super(handledPreferences);
     }
 
-    protected AbstractScopedXnatPreferenceHandlerMethod(final XnatUserProvider userProvider, final String... preferences) {
-        super(userProvider, preferences);
+    protected AbstractScopedXnatPreferenceHandlerMethod(final XnatUserProvider userProvider, final String... handledPreferences) {
+        super(userProvider, handledPreferences);
+    }
+
+    protected AbstractScopedXnatPreferenceHandlerMethod(final Class<? extends EventTriggeringAbstractPreferenceBean> beanClass, final String... handledPreferences) {
+        this(Collections.<Class<? extends EventTriggeringAbstractPreferenceBean>>singletonList(beanClass), null, handledPreferences);
+    }
+
+    protected AbstractScopedXnatPreferenceHandlerMethod(final List<Class<? extends EventTriggeringAbstractPreferenceBean>> beanClasses, final String... handledPreferences) {
+        this(beanClasses, null, handledPreferences);
+    }
+
+    protected AbstractScopedXnatPreferenceHandlerMethod(final Class<? extends EventTriggeringAbstractPreferenceBean> beanClass, final XnatUserProvider userProvider, final String... handledPreferences) {
+        this(Collections.<Class<? extends EventTriggeringAbstractPreferenceBean>>singletonList(beanClass), userProvider, handledPreferences);
+    }
+
+    protected AbstractScopedXnatPreferenceHandlerMethod(final List<Class<? extends EventTriggeringAbstractPreferenceBean>> beanClass, final XnatUserProvider userProvider, final String... handledPreferences) {
+        super(beanClass, userProvider, handledPreferences);
     }
 }

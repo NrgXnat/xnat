@@ -9,6 +9,11 @@
 
 package org.nrg.xnat.configuration;
 
+import com.fasterxml.jackson.core.SerializableString;
+import com.fasterxml.jackson.core.io.CharacterEscapes;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.primitives.Chars;
+import org.apache.commons.lang3.ArrayUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.web.converters.XftBeanHttpMessageConverter;
 import org.nrg.xnat.web.converters.XftObjectHttpMessageConverter;
@@ -108,7 +113,9 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public HttpMessageConverter<?> mappingJackson2HttpMessageConverter() {
-        return new MappingJackson2HttpMessageConverter(_objectMapperBuilder.build());
+        final ObjectMapper objectMapper = _objectMapperBuilder.build();
+        objectMapper.getFactory().setCharacterEscapes(CHARACTER_ESCAPES);
+        return new MappingJackson2HttpMessageConverter(objectMapper);
     }
 
     @Bean
@@ -135,10 +142,27 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         put(Marshaller.JAXB_FORMATTED_OUTPUT, true);
     }};
 
-    private Jackson2ObjectMapperBuilder _objectMapperBuilder;
+    private static final CharacterEscapes CHARACTER_ESCAPES = new CharacterEscapes() {
+        @Override
+        public int[] getEscapeCodesForAscii() {
+            final char[] allChars     = new char[]{'<', '>', '&', '\''};
+            final int[]  asciiEscapes = new int[Chars.max(allChars) + 1];
+            for (final char current : allChars) {
+                asciiEscapes[current] = CharacterEscapes.ESCAPE_STANDARD;
+            }
+            return ArrayUtils.addAll(CharacterEscapes.standardAsciiEscapesForJSON(), asciiEscapes);
+        }
+
+        @Override
+        public SerializableString getEscapeSequence(int ch) {
+            return null;
+        }
+    };
 
     private final Jaxb2Marshaller _marshaller = new Jaxb2Marshaller() {{
         setClassesToBeBound(SiteConfigPreferences.class);
         setMarshallerProperties(MARSHALLER_PROPERTIES);
     }};
+
+    private Jackson2ObjectMapperBuilder _objectMapperBuilder;
 }

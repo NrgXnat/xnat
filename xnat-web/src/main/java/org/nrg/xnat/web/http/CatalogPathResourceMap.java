@@ -14,10 +14,10 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
@@ -26,8 +26,6 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.services.archive.PathResourceMap;
 import org.nrg.xnat.utils.CatalogUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
@@ -38,22 +36,26 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.EmptyStackException;
+import java.util.List;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Creates path-to-resource mappings from the entries in a {@link CatCatalogI resource catalog}.
  */
+@Slf4j
 public class CatalogPathResourceMap implements PathResourceMap<String, Resource> {
     public CatalogPathResourceMap(final CatCatalogI catalog, final String archiveRoot, final boolean testMode) {
         _archiveRoot = archiveRoot;
         _catalogId = catalog.getId();
 
-        _log.debug("{}: Added catalog: {}", _catalogId, StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)"));
+        log.debug("{}: Added catalog: {}", _catalogId, StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)"));
         for (final CatCatalogI entrySet : catalog.getSets_entryset()) {
             _sessions.push(entrySet);
-            _log.debug("{}: Added entry set {}: {}", _catalogId, entrySet.getId(), StringUtils.defaultIfBlank(entrySet.getDescription(), "(no description)"));
+            log.debug("{}: Added entry set {}: {}", _catalogId, entrySet.getId(), StringUtils.defaultIfBlank(entrySet.getDescription(), "(no description)"));
         }
         if (!testMode) {
             _testFile = null;
@@ -64,7 +66,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                 try (final PrintWriter writer = new PrintWriter(_testFile)) {
                     writer.println("Temporary file for catalog test.");
                 }
-                _log.debug("{}: Wrote out temporary file to use for catalog test: {}", _catalogId, _testFile.getAbsolutePath());
+                log.debug("{}: Wrote out temporary file to use for catalog test: {}", _catalogId, _testFile.getAbsolutePath());
             } catch (IOException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to create a download test file.", e);
             }
@@ -84,19 +86,19 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         }
         // If we don't have any available resources AND the entries and catalog stack are empty, we're done here.
         if (_entries.isEmpty() && _sessions.isEmpty()) {
-            _log.info("{}: No entries or sets left in resource map, processed {} total resources", _catalogId, _resourceCount);
+            log.info("{}: No entries or sets left in resource map, processed {} total resources", _catalogId, _resourceCount);
             return false;
         }
         try {
             // If the resources are empty, that's OK as long as we have more entries or catalogs to burn through.
             if (!refresh()) {
-                _log.info("{}: No entries left in resource map, processed {} total resources", _catalogId, _resourceCount);
+                log.info("{}: No entries left in resource map, processed {} total resources", _catalogId, _resourceCount);
                 return false;
             }
             return true;
         } catch (EmptyStackException e) {
             // This is OK: it just means we're done.
-            _log.info("{}: No entries left in resource map, processed {} total resources", _catalogId, _resourceCount);
+            log.info("{}: No entries left in resource map, processed {} total resources", _catalogId, _resourceCount);
             return false;
         }
     }
@@ -105,7 +107,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
     public Mapping<String, Resource> next() {
         if (hasNext()) {
             final Mapping<String, Resource> mapping = _resources.pop();
-            _log.debug("{}: Just popped resource with path {}, resource location: {}", _catalogId, mapping.getPath(), ((CatalogPathResourceMapping) mapping).getFile().getAbsolutePath());
+            log.debug("{}: Just popped resource with path {}, resource location: {}", _catalogId, mapping.getPath(), ((CatalogPathResourceMapping) mapping).getFile().getAbsolutePath());
             return mapping;
         }
 
@@ -129,14 +131,14 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
             while (_entries.isEmpty() && !_sessions.isEmpty()) {
                 final CatCatalogI catalog = _sessions.pop();
                 final String catalogId = catalog.getId();
-                _log.debug("{}: Just popped a fresh catalog {}: {}", _catalogId, catalogId, StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)"));
+                log.debug("{}: Just popped a fresh catalog {}: {}", _catalogId, catalogId, StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)"));
                 for (final CatCatalogI entrySet : catalog.getSets_entryset()) {
                     _sessions.push(entrySet);
-                    _log.debug("{}: Added catalog {} entry to stack, {}: {}", _catalogId, catalogId, entrySet.getId(), StringUtils.defaultIfBlank(entrySet.getDescription(), "(no description)"));
+                    log.debug("{}: Added catalog {} entry to stack, {}: {}", _catalogId, catalogId, entrySet.getId(), StringUtils.defaultIfBlank(entrySet.getDescription(), "(no description)"));
                 }
                 final List<CatEntryI> entries = catalog.getEntries_entry();
                 _entries.addAll(entries);
-                _log.debug("{}: Added {} entries from catalog {}", _catalogId, entries.size(), catalogId);
+                log.debug("{}: Added {} entries from catalog {}", _catalogId, entries.size(), catalogId);
             }
 
             // We will only get here if we have no resources, no entries, and have exhausted the catalog stack, which means
@@ -158,18 +160,22 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
 
     private void processEntry(final CatEntryI currentEntry) {
         try {
-            _log.info("{}: Primary entry: {}, {}", _catalogId, currentEntry.getName(), currentEntry.getUri());
+            log.info("{}: Primary entry: {}, {}", _catalogId, currentEntry.getName(), currentEntry.getUri());
 
             // Create a data URI from the entry URI.
             final URIManager.DataURIA raw = UriParserUtils.parseURI(currentEntry.getUri());
-            _log.info("{}: Got a DataURIA of type {}", _catalogId, raw.getClass());
+            log.info("{}: Got a DataURIA of type {}", _catalogId, raw.getClass());
 
             if (raw instanceof ResourceURII) {
                 final String resourceName = currentEntry.getName();
                 final String resourceUri = currentEntry.getUri();
                 final ResourceURII uri = (ResourceURII) raw;
                 final File catalogFile = CatalogUtils.getCatalogFile(_archiveRoot, (XnatResourcecatalogI) uri.getXnatResource());
-                final CatCatalogBean catalog = CatalogUtils.getCatalog(catalogFile);
+                final CatCatalogI catalog = CatalogUtils.getCatalog(catalogFile);
+                if (catalog == null) {
+                    log.warn("The catalog entry {} references the file {}, but that doesn't appear to be a valid catalog. The associated resource file path was {}.", currentEntry.getName(), catalogFile.getAbsolutePath(), uri.getResourceFilePath());
+                    return;
+                }
                 final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogFile.getParent()), new Function<File, Mapping<String, Resource>>() {
                     @Nullable
                     @Override
@@ -178,13 +184,13 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                             return null;
                         }
 
-                        _log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
+                        log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
                         return new CatalogPathResourceMapping(resourceName, file);
                     }
                 });
                 _resources.addAll(entries);
             } else {
-                _log.warn("{}: Got a DataURIA of type {}, I'm not really sure what to do with it.", _catalogId);
+                log.warn("{}: Got a DataURIA of type {}, I'm not really sure what to do with it.", _catalogId);
             }
         } catch (MalformedURLException e) {
             // TODO: We created these, they should be good for now. Add checks later.
@@ -204,7 +210,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         CatalogPathResourceMapping(final String resource, final File file) {
             _path = Paths.get(resource, getResourceName(resource, file)).toString();
             _file = file;
-            _log.info("Created resource mapping to path {} for file {}", _path, _file);
+            log.info("Created resource mapping to path {} for file {}", _path, _file);
         }
 
         @Override
@@ -233,8 +239,6 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
 
         private final List<String> _ignored = Arrays.asList("assessors", "resources", "scans");
     };
-
-    private static final Logger _log = LoggerFactory.getLogger(CatalogPathResourceMap.class);
 
     private final Stack<CatCatalogI>               _sessions  = new Stack<>();
     private final Stack<CatEntryI>                 _entries   = new Stack<>();

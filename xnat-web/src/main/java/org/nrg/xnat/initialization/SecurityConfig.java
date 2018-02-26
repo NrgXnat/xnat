@@ -167,11 +167,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public ConfigurableSecurityMetadataSourceFactory metadataSourceFactory() {
-        return new ConfigurableSecurityMetadataSourceFactory(_preferences, _appInfo);
-    }
-
-    @Bean
     public AliasTokenAuthenticationProvider aliasTokenAuthenticationProvider(final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService) {
         return new AliasTokenAuthenticationProvider(aliasTokenService, userAuthService);
     }

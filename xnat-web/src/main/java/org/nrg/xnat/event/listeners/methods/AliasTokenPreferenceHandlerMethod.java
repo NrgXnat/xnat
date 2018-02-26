@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -23,9 +22,6 @@ import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
-import java.util.List;
 
 import static lombok.AccessLevel.PRIVATE;
 import static lombok.AccessLevel.PROTECTED;
@@ -59,8 +55,8 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractScheduledXnatPref
     /**
      * Updates the value for the specified preference according to the preference type.
      *
-     * @param preference     The preference to set.
-     * @param value          The value to set.
+     * @param preference The preference to set.
+     * @param value      The value to set.
      */
     @Override
     protected void handlePreferenceImpl(final String preference, final String value) {
@@ -76,9 +72,8 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractScheduledXnatPref
         }
     }
 
-    public static final  String       TIMEOUT     = "aliasTokenTimeout";
-    public static final  String       SCHEDULE    = "aliasTokenTimeoutSchedule";
-    private static final List<String> PREFERENCES = ImmutableList.copyOf(Arrays.asList(TIMEOUT, SCHEDULE));
+    public static final String TIMEOUT  = "aliasTokenTimeout";
+    public static final String SCHEDULE = "aliasTokenTimeoutSchedule";
 
     private final AliasTokenService _service;
 

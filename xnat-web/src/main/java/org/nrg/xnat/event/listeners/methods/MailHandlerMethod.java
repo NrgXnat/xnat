@@ -18,20 +18,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Component
 @Slf4j
 public class MailHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
     public MailHandlerMethod(final ChannelRenderer mailRenderer) {
-        super("emailPrefix", "adminEmail");
+        super(Arrays.asList(NotificationsPreferences.class, SiteConfigPreferences.class), "emailPrefix", "adminEmail");
         _mailRenderer = mailRenderer;
-    }
-
-    @Override
-    public List<String> getToolIds() {
-        return TOOL_IDS;
     }
 
     @Override
@@ -47,9 +41,8 @@ public class MailHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
         }
     }
 
-    private static final List<String> TOOL_IDS     = Arrays.asList(NotificationsPreferences.NOTIFICATIONS_TOOL_ID, SiteConfigPreferences.SITE_CONFIG_TOOL_ID);
-    private static final String       EMAIL_PREFIX = "emailPrefix";
-    private static final String       ADMIN_EMAIL  = "adminEmail";
+    private static final String EMAIL_PREFIX = "emailPrefix";
+    private static final String ADMIN_EMAIL  = "adminEmail";
 
     private final ChannelRenderer _mailRenderer;
 }

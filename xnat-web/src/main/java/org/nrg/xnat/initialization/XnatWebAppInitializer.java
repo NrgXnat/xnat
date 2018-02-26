@@ -22,11 +22,9 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
-import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.nrg.xnat.servlet.ArchiveServlet;
 import org.nrg.xnat.servlet.Log4JServlet;
-import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.*;

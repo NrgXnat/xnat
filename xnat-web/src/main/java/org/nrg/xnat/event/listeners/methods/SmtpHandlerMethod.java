@@ -26,18 +26,8 @@ import java.util.regex.Pattern;
 public class SmtpHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
     @Autowired
     public SmtpHandlerMethod(final SpringBasedMailServiceImpl mailService) {
-        super(SMTP_ENABLED, SMTP_HOSTNAME, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROTOCOL, SMTP_AUTH, SMTP_START_TLS, SMTP_SSL_TRUST);
+        super(NotificationsPreferences.class, SMTP_ENABLED, SMTP_HOSTNAME, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROTOCOL, SMTP_AUTH, SMTP_START_TLS, SMTP_SSL_TRUST);
         _mailService = mailService;
-    }
-
-    /**
-     * This overrides the default site config implementation to specify the tool ID for the {@link NotificationsPreferences} tool.
-     *
-     * @return The tool IDs supported by this handler.
-     */
-    @Override
-    public List<String> getToolIds() {
-        return TOOL_IDS;
     }
 
     /**
@@ -120,7 +110,6 @@ public class SmtpHandlerMethod extends AbstractXnatPreferenceHandlerMethod {
         }
     }
 
-    private static final List<String>  TOOL_IDS       = Collections.singletonList(NotificationsPreferences.NOTIFICATIONS_TOOL_ID);
     private static final List<Pattern> PREFS_PATTERNS = ImmutableList.copyOf(Collections.singletonList(Pattern.compile("^smtp[A-Z].*$")));
     private static final String        SMTP_ENABLED   = "smtpEnabled";
     private static final String        SMTP_HOSTNAME  = "smtpHostname";

@@ -9,21 +9,23 @@
 
 package org.nrg.xnat.event.listeners.methods;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.events.AbstractPreferenceHandlerMethod;
+import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.security.UserI;
-import org.reflections.ReflectionUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -33,18 +35,41 @@ import java.util.*;
 @Accessors(prefix = "_")
 public abstract class AbstractXnatPreferenceHandlerMethod extends AbstractPreferenceHandlerMethod {
     protected AbstractXnatPreferenceHandlerMethod(final String... handledPreferences) {
-        this(null, handledPreferences);
+        this(Collections.<Class<? extends EventTriggeringAbstractPreferenceBean>>singletonList(SiteConfigPreferences.class), null, handledPreferences);
     }
 
     protected AbstractXnatPreferenceHandlerMethod(final XnatUserProvider userProvider, final String... handledPreferences) {
-        _userProvider = userProvider;
-        _handlerName = getClass().getName();
+        this(Collections.<Class<? extends EventTriggeringAbstractPreferenceBean>>singletonList(SiteConfigPreferences.class), userProvider, handledPreferences);
+    }
 
+    protected AbstractXnatPreferenceHandlerMethod(final Class<? extends EventTriggeringAbstractPreferenceBean> beanClass, final String... handledPreferences) {
+        this(Collections.<Class<? extends EventTriggeringAbstractPreferenceBean>>singletonList(beanClass), null, handledPreferences);
+    }
+
+    protected AbstractXnatPreferenceHandlerMethod(final List<Class<? extends EventTriggeringAbstractPreferenceBean>> beanClasses, final String... handledPreferences) {
+        this(beanClasses, null, handledPreferences);
+    }
+
+    protected AbstractXnatPreferenceHandlerMethod(final Class<? extends EventTriggeringAbstractPreferenceBean> beanClass, final XnatUserProvider userProvider, final String... handledPreferences) {
+        this(Collections.<Class<? extends EventTriggeringAbstractPreferenceBean>>singletonList(beanClass), userProvider, handledPreferences);
+    }
+
+    protected AbstractXnatPreferenceHandlerMethod(final List<Class<? extends EventTriggeringAbstractPreferenceBean>> beanClass, final XnatUserProvider userProvider, final String... handledPreferences) {
         if (handledPreferences.length == 0) {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You must provide at least one preference to be handled by this method.");
         }
 
-        initializePreferences(handledPreferences);
+        _toolIds = Lists.transform(beanClass, new Function<Class<? extends EventTriggeringAbstractPreferenceBean>, String>() {
+            @Override
+            public String apply(final Class<? extends EventTriggeringAbstractPreferenceBean> beanClass) {
+                final NrgPreferenceBean annotation = AnnotationUtils.findAnnotation(beanClass, NrgPreferenceBean.class);
+                return annotation == null || StringUtils.isBlank(annotation.toolId()) ? SiteConfigPreferences.SITE_CONFIG_TOOL_ID : annotation.toolId();
+            }
+        });
+        _userProvider = userProvider;
+        _handlerName = getClass().getName();
+        _preferences = Arrays.asList(handledPreferences);
+        _preferenceMethods = findPreferenceMethods();
     }
 
     /**
@@ -87,7 +112,7 @@ public abstract class AbstractXnatPreferenceHandlerMethod extends AbstractPrefer
 
     @Override
     public List<String> getToolIds() {
-        return Collections.singletonList(SiteConfigPreferences.SITE_CONFIG_TOOL_ID);
+        return _toolIds;
     }
 
     protected UserI getAdminUser() {
@@ -102,32 +127,28 @@ public abstract class AbstractXnatPreferenceHandlerMethod extends AbstractPrefer
      * Gets all of the handled preferences and finds corresponding get methods on the subclass. For now this is only used
      * to log values when something's updated, but set methods could be cached as well and even remove need to have {@link #handlePreferenceImpl(String, String)}
      * method implementation.
-     *
-     * @param handledPreferences The array of handled preference names.
      */
-    protected void initializePreferences(final String[] handledPreferences) {
-        final List<String> preferences = new ArrayList<>(Arrays.asList(handledPreferences));
+    protected Map<String, Method> findPreferenceMethods() {
+        final Map<String, Method> methods = new HashMap<>();
 
-        //noinspection unchecked
-        final Set<? extends Method> methods = ReflectionUtils.getMethods(getClass(), new Predicate<Method>() {
-            @Override
-            public boolean apply(final Method method) {
-                final String name = method.getName();
-                return StringUtils.startsWith(name, "get") && preferences.contains(StringUtils.uncapitalize(StringUtils.stripStart(name, "get")));
+        for (final String preference : getPreferences()) {
+            final String methodName = "get" + StringUtils.capitalize(preference);
+            try {
+                final Method method = getClass().getMethod(methodName);
+                getPreferenceMethods().put(preference, method);
+                log.debug("Found {}() method found for preference {}", methodName, preference);
+            } catch (NoSuchMethodException e) {
+                log.debug("No {}() method found for preference {}", methodName, preference);
             }
-        });
-
-        for (final Method method : methods) {
-            final String preference = StringUtils.uncapitalize(StringUtils.stripStart(method.getName(), "get"));
-            getPreferenceMethods().put(preference, method);
         }
 
-        getPreferences().addAll(getPreferenceMethods().keySet());
-
-        final List leftovers = ListUtils.removeAll(preferences, getPreferences());
+        final List<String> leftovers = new ArrayList<>(getPreferences());
+        leftovers.removeAll(methods.keySet());
         if (!leftovers.isEmpty()) {
             log.info("Preferences were specified for the handler class {} with no corresponding getter. This isn't a big deal, but prevents diagnostic logging of stored values: {}", getHandlerName(), Joiner.on(", ").join(leftovers));
         }
+
+        return methods;
     }
 
     /*
@@ -138,12 +159,12 @@ public abstract class AbstractXnatPreferenceHandlerMethod extends AbstractPrefer
             _groupedPreferences.put(preference, groupList);
         }
     }
+    private final Map<String, List<String>> _groupedPreferences = new HashMap<>();
     */
 
-    private final List<String>              _preferences        = new ArrayList<>();
-    private final Map<String, Method>       _preferenceMethods  = new HashMap<>();
-    private final Map<String, List<String>> _groupedPreferences = new HashMap<>();
-
-    private final XnatUserProvider _userProvider;
-    private final String           _handlerName;
+    private final List<String>        _toolIds;
+    private final List<String>        _preferences;
+    private final Map<String, Method> _preferenceMethods;
+    private final XnatUserProvider    _userProvider;
+    private final String              _handlerName;
 }

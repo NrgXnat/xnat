@@ -39,7 +39,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
-import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
+import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
@@ -537,7 +537,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final String ENABLE_OR_DISABLE_INSTANCES_BY_ID = "UPDATE dicom_scp_instance SET enabled = :enabled WHERE id IN (:ids)";
     private static final String DELETE_INSTANCES_BY_ID            = "DELETE FROM dicom_scp_instance WHERE id IN (:ids)";
 
-    private final PreferenceHandlerMethod _handlerProxy = new AbstractScopedXnatPreferenceHandlerMethod("enableDicomReceiver") {
+    private final PreferenceHandlerMethod _handlerProxy = new AbstractXnatPreferenceHandlerMethod("enableDicomReceiver") {
         @Override
         protected void handlePreferenceImpl(final String preference, final String value) {
             _isEnableDicomReceiver = Boolean.parseBoolean(value);

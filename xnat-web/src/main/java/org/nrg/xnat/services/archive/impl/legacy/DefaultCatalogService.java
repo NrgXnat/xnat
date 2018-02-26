@@ -12,6 +12,7 @@ package org.nrg.xnat.services.archive.impl.legacy;
 import com.google.common.base.Joiner;
 import com.google.common.collect.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
@@ -29,6 +30,8 @@ import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
@@ -80,15 +83,14 @@ public class DefaultCatalogService implements CatalogService {
     @Override
     public String buildCatalogForResources(final UserI user, final Map<String, List<String>> resourceMap) throws InsufficientPrivilegesException {
         final CatCatalogBean catalog = new CatCatalogBean();
-        UserI tempUser = user;
-        if(tempUser==null){
-            try{
-                tempUser=Users.getGuest();
-            }catch(Exception e){
-                _log.error("Cannot build catalog for null user.",e);
-            }
+        final UserI resolvedUser;
+        try {
+            resolvedUser = ObjectUtils.defaultIfNull(user, Users.getGuest());
+        } catch (UserNotFoundException | UserInitException e) {
+            throw new InsufficientPrivilegesException(user == null ? "No user found" : user.getUsername());
         }
-        catalog.setId(String.format(CATALOG_FORMAT, tempUser.getLogin(), getPrearchiveTimestamp()));
+
+        catalog.setId(String.format(CATALOG_FORMAT, resolvedUser.getLogin(), getPrearchiveTimestamp()));
 
         final DownloadArchiveOptions options = DownloadArchiveOptions.getOptions(resourceMap.get("options"));
         catalog.setDescription(options.getDescription());
@@ -125,7 +127,7 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
 
-        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(tempUser, sessions, unescapedScanTypes, unescapedScanFormats);
+        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(resolvedUser, sessions, unescapedScanTypes, unescapedScanFormats);
 
         for (final String project : projects.keySet()) {
             final Map<String, Map<String, String>> subjects = projects.get(project);
@@ -154,7 +156,7 @@ public class DefaultCatalogService implements CatalogService {
                         addSafeEntrySet(sessionCatalog, reconstructionsCatalog);
                     }
 
-                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options, tempUser);
+                    final CatCatalogI assessorsCatalog = getSessionAssessors(project, subject, sessionId, assessors, options, resolvedUser);
                     if (assessorsCatalog != null) {
                         addSafeEntrySet(sessionCatalog, assessorsCatalog);
                     }
@@ -164,7 +166,7 @@ public class DefaultCatalogService implements CatalogService {
             }
         }
 
-        storeToCache(tempUser, catalog);
+        storeToCache(resolvedUser, catalog);
 
         return catalog.getId();
     }
@@ -777,8 +779,12 @@ public class DefaultCatalogService implements CatalogService {
             final File cacheFile = Users.getUserCacheFile(user, "catalogs", catalogId + ".xml");
             if (cacheFile.exists()) {
                 final CatCatalogBean catalog = CatalogUtils.getCatalog(cacheFile);
-                storeToCache(user, catalog);
-                return catalog;
+                if (catalog != null) {
+                    storeToCache(user, catalog);
+                    return catalog;
+                } else {
+                    _log.info("User {} requested catalog {} but that doesn't exist", user.getUsername(), catalogId);
+                }
             }
         } else {
             final File file = (File) cached.get();

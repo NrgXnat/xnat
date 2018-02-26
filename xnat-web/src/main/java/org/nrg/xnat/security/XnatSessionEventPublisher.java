@@ -31,10 +31,10 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.*;
 
 import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToIntSeconds;
 import static org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY;
@@ -106,15 +106,34 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
     }
 
     @Override
-    public void contextDestroyed(final ServletContextEvent event) {
-        log.debug("Context destroyed: {}", event.getServletContext().getContextPath());
+    public void contextInitialized(final ServletContextEvent event) {
+        log.debug("Servlet context initialized: {}", event.getServletContext().getContextPath());
+        _preferences = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(SiteConfigPreferences.class);
+        _template = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(NamedParameterJdbcTemplate.class);
     }
 
     @Override
-    public void contextInitialized(final ServletContextEvent event) {
-        log.debug("Context initialized: {}", event.getServletContext().getContextPath());
-        _preferences = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(SiteConfigPreferences.class);
-        _template = WebApplicationContextUtils.getRequiredWebApplicationContext(event.getServletContext()).getBean(NamedParameterJdbcTemplate.class);
+    public void contextDestroyed(final ServletContextEvent event) {
+        log.debug("Servlet context destroyed: {}", event.getServletContext().getContextPath());
+
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+        log.info("Preparing to de-register JDBC drivers for this application.");
+        final Enumeration<Driver> drivers = DriverManager.getDrivers();
+        while (drivers.hasMoreElements()) {
+            final Driver driver = drivers.nextElement();
+            if (driver.getClass().getClassLoader() == classLoader) {
+                try {
+                    DriverManager.deregisterDriver(driver);
+                    log.info("De-registering JDBC driver '{}'", driver);
+                } catch (SQLException e) {
+                    log.error("Error de-registering JDBC driver '{}'", driver, e);
+                }
+            } else {
+                // driver was not registered by the webapp's ClassLoader and may be in use elsewhere
+                log.info("Not de-registering JDBC driver {} as it does not belong to this webapp's ClassLoader", driver);
+            }
+        }
     }
 
     /**

@@ -17,7 +17,7 @@
 			http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms.xsd">
 
     <!-- embedded ActiveMQ Broker -->
-    <amq:broker id="activeMQBroker" brokerName="activeMQBroker" useJmx="false" persistent="true" schedulerSupport="false" useShutdownHook="false">
+    <amq:broker id="activeMQBroker" brokerName="activeMQBroker" useJmx="false" persistent="true" schedulerSupport="false" useShutdownHook="true">
         <amq:persistenceAdapter>
             <!-- We'll use XNAT's data source, make sure the Spring ID matches. (For unit testing it's provided by the Spring test
                 context) Also, turning off locking, as we've no need for it with a single broker, and it was causing errors in the ActiveMQ
@@ -34,21 +34,17 @@
     </amq:broker>
 
     <!-- ActiveMQ ConnectionFactory for JMS to use. Spring will find and use the broker we've declared above. -->
-    <amq:connectionFactory id="activeMQConnectionFactory" brokerURL="vm://localhost" redeliveryPolicyMap="#activeMQRedeliveryPolicyMap" />
+    <amq:connectionFactory id="activeMQConnectionFactory" brokerURL="${spring.activemq.broker-url:vm://localhost}" redeliveryPolicyMap="#activeMQRedeliveryPolicyMap" userName="${spring.activemq.user}" password="${spring.activemq.password}"/>
 
     <amq:redeliveryPolicyMap id="activeMQRedeliveryPolicyMap">
         <amq:defaultEntry>
-            <amq:redeliveryPolicy useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000"
-                                  backOffMultiplier="3" destination="#defaultRequest"/>
+            <amq:redeliveryPolicy useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#defaultRequest"/>
         </amq:defaultEntry>
         <amq:redeliveryPolicyEntries>
             <amq:redeliveryPolicy queue="automatedScriptRequest" maximumRedeliveries="0" destination="#automatedScriptRequest"/>
-            <amq:redeliveryPolicy queue="moveStoredFileRequest" useExponentialBackOff="true" maximumRedeliveries="4"
-                                  initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#moveStoredFileRequest"/>
-            <amq:redeliveryPolicy queue="prearchiveOperationRequest" useExponentialBackOff="true" maximumRedeliveries="4"
-                                  initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#prearchiveOperationRequest"/>
-            <amq:redeliveryPolicy queue="initializeGroupRequest" useExponentialBackOff="true" maximumRedeliveries="4"
-                                  initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#initializeGroupRequest"/>
+            <amq:redeliveryPolicy queue="moveStoredFileRequest" useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#moveStoredFileRequest"/>
+            <amq:redeliveryPolicy queue="prearchiveOperationRequest" useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#prearchiveOperationRequest"/>
+            <amq:redeliveryPolicy queue="initializeGroupRequest" useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#initializeGroupRequest"/>
             <!-- Additional redelivery policies go here; otherwise default is used. The destination attribute is not apparently used, but is required. -->
         </amq:redeliveryPolicyEntries>
     </amq:redeliveryPolicyMap>

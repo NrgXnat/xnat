@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.task.AbstractXnatRunnable;
 import org.springframework.scheduling.Trigger;
@@ -20,6 +21,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
@@ -59,11 +62,28 @@ public abstract class AbstractScheduledXnatPreferenceHandlerMethod extends Abstr
         _scheduler = scheduler;
     }
 
-    /**
-     * Gets the task for the {@link #scheduleTask()} method.
-     *
-     * @return A runnable implementation with the handler method's implementation.
-     */
+    protected AbstractScheduledXnatPreferenceHandlerMethod(final Class<? extends EventTriggeringAbstractPreferenceBean> beanClass, final ThreadPoolTaskScheduler scheduler, final String... handledPreferences) {
+        this(Collections.<Class<? extends EventTriggeringAbstractPreferenceBean>>singletonList(beanClass), null, handledPreferences);
+    }
+
+    protected AbstractScheduledXnatPreferenceHandlerMethod(final List<Class<? extends EventTriggeringAbstractPreferenceBean>> beanClasses, final ThreadPoolTaskScheduler scheduler, final String... handledPreferences) {
+        this(beanClasses, scheduler, null, handledPreferences);
+    }
+
+    protected AbstractScheduledXnatPreferenceHandlerMethod(final Class<? extends EventTriggeringAbstractPreferenceBean> beanClass, final ThreadPoolTaskScheduler scheduler, final XnatUserProvider userProvider, final String... handledPreferences) {
+        this(Collections.<Class<? extends EventTriggeringAbstractPreferenceBean>>singletonList(beanClass), scheduler, userProvider, handledPreferences);
+    }
+
+    protected AbstractScheduledXnatPreferenceHandlerMethod(final List<Class<? extends EventTriggeringAbstractPreferenceBean>> beanClasses, final ThreadPoolTaskScheduler scheduler, final XnatUserProvider userProvider, final String... handledPreferences) {
+        super(beanClasses, userProvider, handledPreferences);
+        _scheduler = scheduler;
+    }
+
+        /**
+         * Gets the task for the {@link #scheduleTask()} method.
+         *
+         * @return A runnable implementation with the handler method's implementation.
+         */
     protected abstract AbstractXnatRunnable getTask();
 
     /**

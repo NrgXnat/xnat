@@ -6,6 +6,7 @@ import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xnat.event.listeners.methods.AbstractScopedXnatPreferenceHandlerMethod;
+import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -65,7 +66,7 @@ public class GuestUserAccessXapiAuthorization extends AbstractXapiAuthorization 
         _handlerProxy.handlePreference(preference, value);
     }
 
-    private final PreferenceHandlerMethod _handlerProxy = new AbstractScopedXnatPreferenceHandlerMethod("requireLogin") {
+    private final PreferenceHandlerMethod _handlerProxy = new AbstractXnatPreferenceHandlerMethod(SiteConfigPreferences.SITE_CONFIG_TOOL_ID, "requireLogin") {
         @Override
         protected void handlePreferenceImpl(final String preference, final String value) {
             _requireLogin = Boolean.parseBoolean(value);

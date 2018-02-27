@@ -18,7 +18,7 @@
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
-    <version>1.7.5-auth-B3</version>
+    <version>1.7.5-auth-B3-SNAPSHOT</version>
 
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>
@@ -31,6 +31,19 @@
         <name>Neuroinformatics Research Group</name>
         <url>http://nrg.wustl.edu</url>
     </organization>
+
+    <distributionManagement>
+        <repository>
+            <id>XNAT Artifactory</id>
+            <name>XNAT Maven Release Library</name>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>XNAT Artifactory</id>
+            <name>XNAT Maven Snapshot Library</name>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <build>
         <finalName>xdat-${project.version}</finalName>

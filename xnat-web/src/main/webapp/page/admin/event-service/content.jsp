@@ -18,6 +18,8 @@
 
 <pg:restricted msg="${redirect}">
 
+    <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
+
     <div id="page-body">
         <div class="pad">
 
@@ -29,8 +31,8 @@
 
                 <!-- Task Settings tab container -->
                 <div id="event-service-admin-tabs" class="xnat-tab-container"></div>
-                <script src="/scripts/xnat/admin/eventServiceUi.js"></script>
-                <link type="text/css" rel="stylesheet" href="/scripts/xnat/admin/eventServicesUi.css" />
+                <script src="${SITE_ROOT}/scripts/xnat/admin/eventServiceUi.js"></script>
+                <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/admin/eventServiceUi.css?v=event-service-1.0" />
                 <script>
                     XNAT.admin.eventServicePanel.init();
                 </script>

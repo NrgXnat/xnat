@@ -91,58 +91,29 @@
 
     <repositories>
         <repository>
-            <id>jcenter</id>
-            <name>JCenter</name>
-            <url>http://jcenter.bintray.com</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>dcm4che</id>
-            <name>dcm4che</name>
-            <url>http://www.dcm4che.org/maven2</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>imagej</id>
-            <name>imagej</name>
-            <url>http://maven.imagej.net/content/groups/public</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>org.nrg.xnat.maven.libraries.release</id>
-            <name>XNAT Maven Release Libraries</name>
+            <id>org.nrg.maven.artifacts.release</id>
+            <name>XNAT Release Maven Repo</name>
             <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release</url>
             <releases>
                 <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
             </releases>
             <snapshots>
-                <enabled>true</enabled>
+                <enabled>false</enabled>
             </snapshots>
         </repository>
         <repository>
-            <id>org.nrg.xnat.maven.libraries.snapshot</id>
-            <name>XNAT Maven Snapshot Libraries</name>
+            <id>org.nrg.maven.artifacts.snapshot</id>
+            <name>xnat snapshot maven repo</name>
             <url>https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
             <snapshots>
                 <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
             </snapshots>
         </repository>
     </repositories>

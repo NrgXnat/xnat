@@ -35,7 +35,7 @@ public class XnatServicesConfig {
     }
 
     @Bean
-    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache) {
-        return new UserGroupManager(cache);
+    public UserGroupServiceI userGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
+        return new UserGroupManager(cache, template);
     }
 }

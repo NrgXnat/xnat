@@ -796,7 +796,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public UserGroupI getGroupByTag(String tag) {
-        return Groups.getGroupsByUserAndTag(this, tag);
+        return Groups.getGroupForUserAndTag(this, tag);
     }
 
 

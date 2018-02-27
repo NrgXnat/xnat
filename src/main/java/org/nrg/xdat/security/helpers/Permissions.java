@@ -15,7 +15,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
@@ -792,21 +792,8 @@ public class Permissions {
     }
 
     public static String getUserProjectAccess(final UserI user, final String projectId) {
-        try {
-            final List<UserGroupI> groups      = Groups.getGroupsByTag(projectId);
-            final List<String>     usersGroups = Groups.getGroupIdsForUser(user);
-            if (CollectionUtils.isNotEmpty(usersGroups) && CollectionUtils.isNotEmpty(groups)) {
-                for (final UserGroupI group : groups) {
-                    final String groupId = group.getId();
-                    if (groupId != null && usersGroups.contains(groupId)) {
-                        return groupId.substring(projectId.length() + 1);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.warn("An error occurred trying to find the access level to the project " + projectId + " for the user " + user.getUsername(), e);
-        }
-        return null;
+        final UserGroupI group = Groups.getGroupForUserAndTag(user, projectId);
+        return group == null ? null : group.getId().substring(projectId.length() + 1);
     }
 
     public static boolean isProjectPublic(final String projectId) throws Exception {
@@ -828,12 +815,7 @@ public class Permissions {
     }
 
     public static String getProjectAccess(final NamedParameterJdbcTemplate template, final String projectId) throws Exception {
-        final NamedParameterJdbcTemplate found;
-        if (template != null) {
-            found = template;
-        } else {
-            found = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
-        }
+        final NamedParameterJdbcTemplate found = getTemplate(template);
         if (found != null) {
             return getProjectAccessByQuery(found, projectId);
         }
@@ -845,6 +827,17 @@ public class Permissions {
         } else {
             return "private";
         }
+    }
+
+    private static NamedParameterJdbcTemplate getTemplate(final NamedParameterJdbcTemplate template) {
+        return ObjectUtils.defaultIfNull(template, getTemplate());
+    }
+
+    private static NamedParameterJdbcTemplate getTemplate() {
+        if (_template == null) {
+            _template = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
+        }
+        return _template;
     }
 
     private static String getProjectAccessByQuery(final NamedParameterJdbcTemplate template, final String projectId) {
@@ -1097,6 +1090,7 @@ public class Permissions {
     private static final List<String> PROJECT_GROUPS        = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int          PROJECT_GROUP_COUNT   = PROJECT_GROUPS.size();
 
-    private static PermissionsServiceI _service = null;
-    private static UserProjectCache    _cache   = null;
+    private static PermissionsServiceI        _service;
+    private static UserProjectCache           _cache;
+    private static NamedParameterJdbcTemplate _template;
 }

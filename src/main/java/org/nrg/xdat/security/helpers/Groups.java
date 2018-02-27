@@ -291,7 +291,7 @@ public class Groups {
      *
      * @return The group with the submitted tag that is also associated with the specified user.
      */
-    public static UserGroupI getGroupsByUserAndTag(final UserI user, final String tag) {
+    public static UserGroupI getGroupForUserAndTag(final UserI user, final String tag) {
         return getUserGroupService().getGroupForUserAndTag(user, tag);
     }
 

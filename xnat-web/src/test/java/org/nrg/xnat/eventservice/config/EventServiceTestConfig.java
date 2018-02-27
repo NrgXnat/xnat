@@ -43,8 +43,9 @@ public class EventServiceTestConfig {
                                      ActionManager actionManager,
                                      SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
                                      UserManagementServiceI userManagementService,
+                                     EventFilterService eventFilterService,
                                      ObjectMapper mapper){
-        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, mapper);
+        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventFilterService, mapper);
     }
 
     @Bean
@@ -54,8 +55,9 @@ public class EventServiceTestConfig {
                                          ActionManager actionManager,
                                          SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService,
                                          UserManagementServiceI userManagementService,
+                                         EventFilterService eventFilterService,
                                          ObjectMapper mapper){
-        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, mapper);
+        return new EventServiceImpl(contextService, subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventFilterService, mapper);
     }
 
     @Bean
@@ -159,7 +161,8 @@ public class EventServiceTestConfig {
         return Mockito.mock(UserManagementServiceI.class);
     }
 
-
+    @Bean
+    public EventFilterService eventFilterService(EventServiceComponentManager componentManager, ObjectMapper mapper){return new EventFilterServiceImpl(componentManager, mapper);}
 
     //** Combined Events/Listener **//
     @Bean

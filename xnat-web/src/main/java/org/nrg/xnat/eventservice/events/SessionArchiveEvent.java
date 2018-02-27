@@ -2,18 +2,18 @@ package org.nrg.xnat.eventservice.events;
 
 
 import org.nrg.framework.event.XnatEventServiceEvent;
-import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
 @Service
 @XnatEventServiceEvent(name="SessionArchiveEvent")
-public class SessionArchiveEvent extends CombinedEventServiceEvent<SessionArchiveEvent, XnatImagesessiondata> {
+public class SessionArchiveEvent extends CombinedEventServiceEvent<SessionArchiveEvent, XnatImagesessiondataI> {
 
 
     public SessionArchiveEvent(){};
 
-    public SessionArchiveEvent(XnatImagesessiondata payload, String eventUser) {
+    public SessionArchiveEvent(XnatImagesessiondataI payload, String eventUser) {
         super(payload, eventUser);
     }
 

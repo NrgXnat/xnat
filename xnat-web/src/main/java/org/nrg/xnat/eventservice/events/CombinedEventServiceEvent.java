@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.events;
 
+import com.google.common.reflect.TypeToken;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.services.EventService;
@@ -31,6 +32,7 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
     Date eventDetectedTimestamp = null;
 
     private static final Logger log = LoggerFactory.getLogger(CombinedEventServiceEvent.class);
+    private final TypeToken<EventObjectT> eventObjectTTypeToken = new TypeToken<EventObjectT>(getClass()) { };
 
 
     @Autowired @Lazy
@@ -62,9 +64,7 @@ public abstract class CombinedEventServiceEvent<EventT extends EventServiceEvent
 
 
     @Override
-    public String getObjectClass() {
-        return getObject() == null ? null : getObject().getClass().getCanonicalName();
-    }
+    public Class getObjectClass() { return eventObjectTTypeToken.getRawType(); }
 
     @Override
     public String getUser() {

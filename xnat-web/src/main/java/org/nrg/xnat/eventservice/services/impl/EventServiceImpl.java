@@ -1,6 +1,5 @@
 package org.nrg.xnat.eventservice.services.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.jayway.jsonpath.Configuration;
@@ -47,6 +46,7 @@ public class EventServiceImpl implements EventService {
     private ActionManager actionManager;
     private SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
     private UserManagementServiceI userManagementService;
+    private EventFilterService eventFilterService;
     private ObjectMapper mapper;
 
     @Autowired
@@ -56,6 +56,7 @@ public class EventServiceImpl implements EventService {
                             ActionManager actionManager,
                             SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
                             UserManagementServiceI userManagementService,
+                            EventFilterService eventFilterService,
                             ObjectMapper mapper) {
         this.contextService = contextService;
         this.subscriptionService = subscriptionService;
@@ -64,6 +65,7 @@ public class EventServiceImpl implements EventService {
         this.actionManager = actionManager;
         this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
         this.userManagementService = userManagementService;
+        this.eventFilterService = eventFilterService;
         this.mapper = mapper;
     }
 
@@ -270,24 +272,25 @@ public class EventServiceImpl implements EventService {
 
                         // ** Serialized event object ** //
                         try {
-                            modelObject = componentManager.getModelObject(esEvent.getObject(), actionUser);
-                            if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
-                                // Serialize data object
-                                log.debug("Serializing event object as known Model Object.");
-                                jsonObject = mapper.writeValueAsString(modelObject);
-                            } else if (esEvent.getObject() != null && mapper.canSerialize(esEvent.getObject().getClass())) {
-                                log.debug("Serializing event object as unknown object type.");
-                                jsonObject = mapper.writeValueAsString(esEvent.getObject());
-                            } else {
-                                log.debug("Could not serialize event object in: " + esEvent.toString());
-                            }
+                            jsonObject = eventFilterService.serializePayloadObject(esEvent.getObject(), actionUser);
+                            //modelObject = componentManager.getModelObject(esEvent.getObject(), actionUser);
+                            //if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
+                            //    // Serialize data object
+                            //    log.debug("Serializing event object as known Model Object.");
+                            //    jsonObject = mapper.writeValueAsString(modelObject);
+                            //} else if (esEvent.getObject() != null && mapper.canSerialize(esEvent.getObject().getClass())) {
+                            //    log.debug("Serializing event object as unknown object type.");
+                            //    jsonObject = mapper.writeValueAsString(esEvent.getObject());
+                            //} else {
+                            //    log.debug("Could not serialize event object in: " + esEvent.toString());
+                            //}
                             if(!Strings.isNullOrEmpty(jsonObject)) {
                                 String objectSubString = org.apache.commons.lang.StringUtils.substring(jsonObject, 0, 60);
                                 log.debug("Serialized Object: " + objectSubString + "...");
                                 subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Object Serialized: " + objectSubString + "...");
                             }
-                        }catch(NullPointerException | JsonProcessingException e){
-                            log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass());
+                        }catch(NullPointerException e){
+                            log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass().getName());
                             log.error(e.getMessage());
                             subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), e.getMessage());
                         }
@@ -377,7 +380,7 @@ public class EventServiceImpl implements EventService {
                         : "")
                 .displayName(event.getDisplayName() == null ? "" : event.getDisplayName())
                 .description(event.getDescription() == null ? "" : event.getDescription())
-                .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass())
+                .payloadClass(event.getObjectClass() == null ? "" : event.getObjectClass().getName())
                 .xnatType(event.getPayloadXnatType() == null ? "" : event.getPayloadXnatType())
                 .isXsiType(event.isPayloadXsiType() == null ? false : event.isPayloadXsiType())
                 .build();

@@ -16,12 +16,11 @@ import org.gradle.internal.jvm.Jvm
 
 buildscript {
     ext {
-        vXnatDev = "1.7.5-auth-B3"
+        vXnatDev = "1.7.5-auth-B3-SNAPSHOT"
         vXnat = "1.7.5-SNAPSHOT"
     }
     repositories {
         mavenLocal()
-        jcenter()
         mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
@@ -69,16 +68,11 @@ apply plugin: "war"
 
 repositories {
     mavenLocal()
-    jcenter()
-    mavenCentral()
-    maven {
-        url "http://dcm4che.org/maven2"
-        name "dcm4che Maven Repository"
-    }
     maven {
         url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
         name "XNAT Release Repository"
     }
+    mavenCentral()
     maven {
         url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
         name "XNAT Snapshot Repository"
@@ -109,7 +103,7 @@ if (javaVersion.java8Compatible || javaVersion.java9Compatible) {
             tasks.withType(JavaCompile) {
                 options.fork = true
                 options.compilerArgs << "-XDignore.symbol.file"
-                options.bootClasspath = rt17jar as String
+                options.bootstrapClasspath = files(rt17jar as String)
             }
         }
     } else {

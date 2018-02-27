@@ -113,6 +113,18 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
         return _properties.getProperty(property, defaultValue);
     }
 
+    public Properties asProperties() {
+        final Properties properties = new Properties(_properties);
+        properties.setProperty("id", _providerId);
+        properties.setProperty("type", _authMethod);
+        properties.setProperty("name", _displayName);
+        properties.setProperty("visible", Boolean.toString(_visible));
+        if (_order != -1) {
+            properties.setProperty("order", Integer.toString(_order));
+        }
+        return properties;
+    }
+
     @Override
     public int compareTo(@NotNull final ProviderAttributes that) {
         final int     thisOrder     = getOrder();

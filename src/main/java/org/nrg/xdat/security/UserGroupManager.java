@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.security;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -31,7 +32,6 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
@@ -39,14 +39,17 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.StringWriter;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -58,8 +61,9 @@ import static lombok.AccessLevel.PRIVATE;
 @Slf4j
 public class UserGroupManager implements UserGroupServiceI {
     @Autowired
-    public UserGroupManager(final GroupsAndPermissionsCache cache) {
+    public UserGroupManager(final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
         _cache = cache;
+        _template = template;
     }
 
     @Override
@@ -285,29 +289,24 @@ public class UserGroupManager implements UserGroupServiceI {
         return new UserGroup(group);
     }
 
+    @SuppressWarnings("RedundantThrows")
     @Override
     public List<UserGroupI> getGroupsByTag(String tag) throws Exception {
-        List<UserGroupI> ug = Lists.newArrayList();
-
-        for (XdatUsergroup gp : XdatUsergroup.getXdatUsergroupsByTag(tag, null, false)) {
-            ug.add(new UserGroup(gp));
-        }
-
-        return ug;
+        return ImmutableList.copyOf(_cache.getGroupsForTag(tag));
     }
 
     @Override
-    public UserGroupI addUserToGroup(String group_id, UserI newUser, UserI currentUser, EventMetaI ci) throws Exception {
-        UserGroupI gp = Groups.getGroup(group_id);
+    public UserGroupI addUserToGroup(final String groupId, UserI newUser, UserI currentUser, EventMetaI ci) throws Exception {
+        final UserGroupI userGroup = Groups.getGroup(groupId);
 
-        if (gp.getTag() != null) {
+        if (userGroup.getTag() != null) {
             //remove from existing groups
             final List<String> groupIdsToRemove = new ArrayList<>();
             for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(newUser).entrySet()) {
-                if (entry.getValue().getTag() != null && entry.getValue().getTag().equals(gp.getTag())) {
+                if (entry.getValue().getTag() != null && entry.getValue().getTag().equals(userGroup.getTag())) {
                     final String userGroupId = entry.getValue().getId();
-                    if (userGroupId.equals(group_id)) {
-                        return gp;
+                    if (userGroupId.equals(groupId)) {
+                        return userGroup;
                     }
 
                     //find mapping object to delete
@@ -317,45 +316,35 @@ public class UserGroupManager implements UserGroupServiceI {
                 }
             }
             if (groupIdsToRemove.size() > 0) {
-                for (final String groupId : groupIdsToRemove) {
-                    Groups.removeUserFromGroup(newUser, currentUser, groupId, ci);
+                for (final String removedGroupId : groupIdsToRemove) {
+                    Groups.removeUserFromGroup(newUser, currentUser, removedGroupId, ci);
                 }
             }
         }
 
-        final String confirmquery = "SELECT * FROM xdat_user_groupid WHERE groupid='" + group_id + "' AND groups_groupid_xdat_user_xdat_user_id=" + newUser.getID() + ";";
-
-        XFTTable t = XFTTable.Execute(confirmquery, newUser.getDBName(), newUser.getUsername());
-        if (t.size() == 0) {
+        if (_template.queryForObject(CONFIRM_QUERY, new MapSqlParameterSource("groupId", groupId).addValue("userId", newUser.getID()), Boolean.class)) {
             final XdatUserGroupid map = new XdatUserGroupid(currentUser);
             map.setProperty(map.getXSIType() + ".groups_groupid_xdat_user_xdat_user_id", newUser.getID());
-            map.setGroupid(group_id);
+            map.setGroupid(groupId);
             SaveItemHelper.authorizedSave(map, currentUser, false, false, ci);
         }
 
-        return gp;
+        return userGroup;
     }
 
     @Override
     public List<UserGroupI> getAllGroups() {
-        List<UserGroupI> groups = Lists.newArrayList();
-
-        try {
-            XFTTable t = XFTTable.Execute("SELECT xdat_userGroup_id, ID, displayname, tag FROM xdat_userGroup;", null, null);
-            t.resetRowCursor();
-            while (t.hasMoreRows()) {
-                Object[]  row = t.nextRow();
-                UserGroup g   = new UserGroup();
-                g.setPK((Integer) row[0]);
-                g.setId((String) row[1]);
-                g.setDisplayname((String) row[2]);
-                g.setTag((String) row[3]);
-                groups.add(g);
+        return _template.query(ALL_GROUPS_QUERY, new RowMapper<UserGroupI>() {
+            @Override
+            public UserGroupI mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
+                final UserGroup group = new UserGroup();
+                group.setPK(resultSet.getInt(0));
+                group.setId(resultSet.getString(1));
+                group.setDisplayname(resultSet.getString(2));
+                group.setTag(resultSet.getString(3));
+                return group;
             }
-        } catch (SQLException | DBPoolException e) {
-            log.error("", e);
-        }
-        return groups;
+        });
     }
 
     @Override
@@ -645,5 +634,9 @@ public class UserGroupManager implements UserGroupServiceI {
         }
     }
 
-    private final GroupsAndPermissionsCache _cache;
+    private static final String ALL_GROUPS_QUERY = "SELECT xdat_userGroup_id, ID, displayname, tag FROM xdat_userGroup";
+    private static final String CONFIRM_QUERY    = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
+
+    private final GroupsAndPermissionsCache  _cache;
+    private final NamedParameterJdbcTemplate _template;
 }

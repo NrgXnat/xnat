@@ -131,25 +131,29 @@
 
     <repositories>
         <repository>
-            <id>org.nrg.xnat.maven.libraries.release</id>
-            <name>XNAT Maven Release Libraries</name>
+            <id>org.nrg.maven.artifacts.release</id>
+            <name>XNAT Release Maven Repo</name>
             <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release</url>
             <releases>
                 <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
         </repository>
         <repository>
-            <id>org.nrg.xnat.maven.libraries.snapshot</id>
-            <name>XNAT Maven Snapshot Libraries</name>
+            <id>org.nrg.maven.artifacts.snapshot</id>
+            <name>xnat snapshot maven repo</name>
             <url>https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
             <snapshots>
                 <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
             </snapshots>
         </repository>
     </repositories>

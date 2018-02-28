@@ -70,8 +70,8 @@ apply plugin: "war"
 repositories {
     mavenLocal()
     maven {
-        url "http://dcm4che.org/maven2"
-        name "dcm4che Maven Repository"
+        url "http://maven.imagej.net/content/groups/public"
+        name "ImageJ Maven Repository"
     }
     jcenter()
     mavenCentral()
@@ -82,10 +82,6 @@ repositories {
     maven {
         url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
         name "XNAT Snapshot Repository"
-    }
-    maven {
-        url "https://nrgxnat.jfrog.io/nrgxnat/ext-release"
-        name "XNAT External Release Repository"
     }
 }
 
@@ -229,7 +225,7 @@ dependencies {
     implementation "org.nrg:PrearcImporter"
     implementation "org.nrg:SessionBuilders"
 
-    compile("org.nrg.xnat:plexiviewer") {
+    implementation("org.nrg.xnat:plexiviewer") {
         transitive = false
     }
 
@@ -313,7 +309,6 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
 
     implementation "org.codehaus.groovy:groovy-all"
-    implementation "org.python:jython-standalone"
 
     implementation "net.sourceforge.saxon:saxon"
     implementation "xalan:xalan"

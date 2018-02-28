@@ -32,7 +32,7 @@
                 <!-- Task Settings tab container -->
                 <div id="event-service-admin-tabs" class="xnat-tab-container"></div>
                 <script src="${SITE_ROOT}/scripts/xnat/admin/eventServiceUi.js"></script>
-                <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/admin/eventServiceUi.css?v=event-service-1.0" />
+                <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/admin/eventServiceAdmin.css?v=event-service-1.0" />
                 <script>
                     XNAT.admin.eventServicePanel.init();
                 </script>

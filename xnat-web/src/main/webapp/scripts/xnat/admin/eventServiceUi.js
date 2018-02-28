@@ -11,7 +11,7 @@
  * Site-wide Admin UI functions for the Event Service
  */
 
-console.log('xnat/admin/eventService.js');
+console.log('xnat/admin/eventServiceUi.js');
 
 var XNAT = getObject(XNAT || {});
 
@@ -859,6 +859,7 @@ var XNAT = getObject(XNAT || {});
     }
 
     historyTable.getHistory = function(opts,callback){
+        callback = isFunction(callback) ? callback : function(){};
         var project = (opts) ? opts.project : false;
         var subscription = (opts) ? opts.subscription : false;
 
@@ -1007,7 +1008,7 @@ var XNAT = getObject(XNAT || {});
                     apply: function(){
                         var timestamp = 0, dateString;
                         if (this.status.length > 0){
-                            timestamp = this.status[0]['timestamp'];
+                            timestamp = this.status[0]['timestamp'].replace(/-/g,'/'); // include date format hack for Safari
                             timestamp = new Date(timestamp);
                             dateString = timestamp.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
 
@@ -1110,6 +1111,8 @@ var XNAT = getObject(XNAT || {});
                     );
                     this.render($container, 20);
                 });
+            } else {
+                $container.empty().append(spawn('p','No event history to display'));
             }
         })
     };
@@ -1157,8 +1160,15 @@ var XNAT = getObject(XNAT || {});
             label: 'Event Service History',
             group: 'General',
             contents: {
-                eventHistoryContainer: {
-                    tag: 'div#history-table-container'
+                eventHistoryPanel: {
+                    kind: 'panel',
+                    label: 'Event Subscription History',
+                    footer: false,
+                    contents: {
+                        eventHistoryContainer: {
+                            tag: 'div#history-table-container'
+                        }
+                    }
                 }
             }
         };

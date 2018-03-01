@@ -49,7 +49,7 @@
                     </div>
                 </div>
 
-                <%--<c:import url="/xapi/users/profiles" var="userProfiles"/>--%>
+                <c:import url="/xapi/users/profiles" var="userProfiles"/>
                 <c:import url="/xapi/users/active" var="activeUsers"/>
                 <c:import url="/xapi/siteConfig" var="siteConfig"/>
 
@@ -57,26 +57,29 @@
                     (function(){
 
                         XNAT.xapi =
-                                getObject(XNAT.xapi);
+                            getObject(XNAT.xapi);
 
                         XNAT.xapi.users =
-                                getObject(XNAT.xapi.users);
+                            getObject(XNAT.xapi.users);
 
                         <c:if test="${not empty activeUsers}">
-                            XNAT.xapi.users.active =
-                                XNAT.data['/xapi/users/active'] =
+                        XNAT.xapi.users.active =
+                            XNAT.data['/xapi/users/active'] =
+                                XNAT.data['${SITE_ROOT}/xapi/users/active'] =
                                     XNAT.data.activeUsers = ${activeUsers};
                         </c:if>
 
-                        <%--<c:if test="${not empty userProfiles}">--%>
-//                            XNAT.xapi.users.profiles =
-//                                XNAT.data['/xapi/users/profiles'] =
-                                    <%--XNAT.data.userProfiles = ${userProfiles};--%>
-                        <%--</c:if>--%>
+                        <c:if test="${not empty userProfiles}">
+                        XNAT.xapi.users.profiles =
+                            XNAT.data['/xapi/users/profiles'] =
+                                XNAT.data['${SITE_ROOT}/xapi/users/profiles'] =
+                                    XNAT.data.userProfiles = ${userProfiles};
+                        </c:if>
 
                         <c:if test="${not empty siteConfig}">
-                            XNAT.data.siteConfig =
-                                XNAT.data['/xapi/siteConfig'] = ${siteConfig};
+                        XNAT.data.siteConfig =
+                            XNAT.data['/xapi/siteConfig'] =
+                                XNAT.data['${SITE_ROOT}/xapi/siteConfig'] = ${siteConfig};
                         </c:if>
 
                         // these properties MUST be set before spawning 'tabs' widgets

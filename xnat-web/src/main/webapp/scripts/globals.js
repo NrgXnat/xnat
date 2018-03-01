@@ -16,44 +16,18 @@
  * Is that a good idea? Maybe, maybe not.
  */
 
-// Avoid console errors in browsers that lack a console.
-(function(){
-    var method;
-    var noop = function(){};
-    var methods = [
-        'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
-        'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
-        'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
-        'timeStamp', 'trace', 'warn'
-    ];
-    var length = methods.length;
-    var console = (window.console = window.console || {});
-    var i = 0;
-    while ( length-- ) {
-        method = methods[i++];
-        // Only stub undefined methods.
-        if ( !console[method] ) {
-            console[method] = noop;
-        }
-    }
-}());
-
 function diddly(){}
 
 // utility for getting URL query string value
-function getQueryStringValue( param ){
+function getQueryStringValue(param){
     var search = window.location.search;
     if (!param || !search) { return '' }
     if (search.indexOf(param) === -1) { return '' }
-    var val = search.
-        split(param+'=')[1].
-        split('&')[0].
-        split('#')[0].
-        replace(/\/*$/,''); // remove any 'bonus' trailing slashes
+    var val = search.split(param+'=')[1].split('&')[0].split('#')[0].replace(/\/*$/,''); // remove any 'bonus' trailing slashes
     return decodeURIComponent(val);
 }
 
-function getParameterByName( name ){
+function getParameterByName(name){
     return getQueryStringValue(name)
 }
 
@@ -72,6 +46,92 @@ function getUrlHashValue(start, end){
     part = part.split(end||/\/#|#/)[0]||'';
     return part;
 }
+
+window.debug = window.debug ||
+    getQueryStringValue('debug') ||
+    window.jsdebug ||
+    false;
+
+window.jsdebug = window.jsdebug ||
+    getQueryStringValue('jsdebug') ||
+    window.debug ||
+    false;
+
+// Avoid console errors in browsers that lack a console.
+(function(){
+    var method, debugMethod;
+    var noop = function(){};
+    var methods = [
+        'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
+        'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+        'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
+        'timeStamp', 'trace', 'warn'
+    ];
+    var length = methods.length;
+    var console = (window.console = window.console || {});
+    var i = 0;
+    while ( length-- ) {
+        method = methods[i++];
+        // Only stub undefined methods.
+        if ( !console[method] ) {
+            console[method] = noop;
+        }
+        // Create aliases to use only when debugging
+        debugMethod = 'debug' + method.charAt(0).toUpperCase() + method.slice(1);
+        window[debugMethod] = window.jsdebug || window.debug ? console[method] : noop;
+        // explicitly define functions to make IDEs happy
+        window.debugLog = window['debugLog'] || noop;
+        window.debugWarn = window['debugWarn'] || noop;
+        window.debugError = window['debugError'] || noop;
+    }
+}());
+
+(function(){
+
+    function escapeHtml(str, regex) {
+        return (str + '').replace(regex || /[&<>"']/g, function(s){
+            var entityMap = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+                // '/': '&#x2F;',
+                '---': '---'
+            };
+            return entityMap[s] || s;
+        });
+    }
+    window.escapeHtml = escapeHtml;
+    window.escapeHTML = escapeHtml;
+
+    function unescapeHtml(str) {
+        return (str + '').replace(/(&(amp|lt|gt|quot|apos|#39|#x2F);)/g, function(s){
+            var entityMap = {
+                '&amp;': '&',
+                '&lt;': '<',
+                '&gt;': '>',
+                '&quot;': '"',
+                '&apos;': "'",
+                '&#39;': "'",
+                '&#x2F;': '/',
+                '---': '---'
+            };
+            return entityMap[s] || s;
+        });
+    }
+    window.unescapeHtml = unescapeHtml;
+    window.unescapeHTML = unescapeHtml;
+
+    // fix double-escaped strings
+    function unescapeAllHtml(str){
+        return unescapeHtml(unescapeHtml(str));
+    }
+    window.unescapeAllHtml = unescapeAllHtml;
+    window.unescapeAllHTML = unescapeAllHtml;
+
+})();
+
 
 function firstDefined() {
     var undef, i = -1, val;

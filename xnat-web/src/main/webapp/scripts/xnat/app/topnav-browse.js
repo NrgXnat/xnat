@@ -18,16 +18,16 @@
     var $browseData = $('#browse-data');
     var $favoriteProjects = $('#favorite-projects');
     var $myProjects = $('#my-projects');
-    var undefined;
+    var undef;
 
     var displayProjectList = function($parent, projectData){
         if (!projectData.length) return;
         function projectListItem(val, len){
             var URL = XNAT.url.rootUrl('/data/projects/' + this.id);
             // var TEXT = truncateText(val || '<i><i>&ndash;</i></i>', len || 30);
-            var TEXT = (val || '<i><i>&ndash;</i></i>');
+            var TEXT = (val ? escapeHtml(val) : '<i><i>&ndash;</i></i>');
             var linkText = spawn('a.truncate', {
-                title: val,
+                title: escapeHtml(val),
                 // style: { width: len },
                 href: URL
             }, TEXT);
@@ -172,7 +172,7 @@
                         href: URL,
                         title: item.name,
                         style: { width: '100%' }
-                    }, item.secondary_id)
+                    }, escapeHtml(item.secondary_id))
                 }
             });
             displaySimpleList($favoriteProjects, FAVORITES)
@@ -193,19 +193,19 @@
                 href: dataTypeUrl(type.element_name),
                 title: type.element_name,
                 style: { width: '100%' }
-            }, type.plural)
+            }, escapeHtml(type.plural))
         }
     }
 
     // populate data list
-    if (window.available_elements !== undefined && window.available_elements.length) {
+    if (window.available_elements !== undef && window.available_elements.length) {
         var DATATYPES = [dataTypeItem({
             element_name: 'xnat:subjectData',
             plural: 'Subjects'
         })];
         var sortedTypes = sortObjects(window.available_elements, 'plural');
         forEach(sortedTypes, function(type){
-            if (type.plural === undefined) return;
+            if (type.plural === undef) return;
             if (/workflowData|subjectData/i.test(type.element_name)) return;
             DATATYPES.push(dataTypeItem(type));
         });

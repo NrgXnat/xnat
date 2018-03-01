@@ -12,56 +12,6 @@
  * depend on jQuery. (load AFTER jQuery)
  */
 
-(function(){
-
-    function escapeHtml(str) {
-        return (str + '').replace(/[&<>"'\/]/g, function(s){
-            var entityMap = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;',
-                '/': '&#x2F;',
-                '---': '---'
-            };
-            return entityMap[s];
-        });
-    }
-    window.escapeHtml = escapeHtml;
-    window.escapeHTML = escapeHtml;
-
-
-    function unescapeHtml(str) {
-        return (str + '').replace(/(&(amp|lt|gt|quot|apos|#39|#x2F);)/g, function(s){
-            var entityMap = {
-                '&amp;': '&',
-                '&lt;': '<',
-                '&gt;': '>',
-                '&quot;': '"',
-                '&apos;': "'",
-                '&#39;': "'",
-                '&#x2F;': '/',
-                '---': '---'
-            };
-            return entityMap[s];
-        });
-    }
-    window.unescapeHtml = unescapeHtml;
-    window.unescapeHTML = unescapeHtml;
-
-
-    // fix double-escaped strings
-    function unescapeAllHtml(str){
-        return unescapeHtml(unescapeHtml(str));
-    }
-    window.unescapeAllHtml = unescapeAllHtml;
-    window.unescapeAllHTML = unescapeAllHtml;
-
-    
-})();
-
-
 /**
  * Test function timing after iterating [count] number of times
  * @param fn {Function} REQUIRED - function we're testing
@@ -268,11 +218,12 @@ function hasAllClasses(el, classes){
 
 // add new element class without destroying existing class
 function addClassName(el, newClasses){
-    var hasClassList = useClassList && el.classList,
-        elClasses    = (el.className||'').split(/\s+/);
+    var hasClassList = useClassList && el.classList;
+    var elClasses    = (el.className||'').split(/\s+/);
     // make sure 'newClasses' is an array
     newClasses = [].concat(newClasses||[]).join(' ').split(/\s+/);
     newClasses.forEach(function(cls){
+        if (!cls) return;
         if (hasClassList) {
             el.classList.add(cls);
         }
@@ -284,12 +235,12 @@ function addClassName(el, newClasses){
         }
     });
     // create new className string
-    elClasses = elClasses.join(' ').trim();
+    var className = elClasses.join(' ').trim();
     if (!hasClassList){
         // set the new className and return the string
-        el.className = elClasses;
+        el.className = className;
     }
-    return elClasses;
+    return className;
 
 }
 
@@ -312,7 +263,7 @@ function removeClasses(el, classes){
 
 /**
  * Build an object to be used for [data-*] attributes.
- * NOTE: this function does not
+ * NOTE: this function does not SET the element attributes.
  * @param elConfig {Object} - config object to be used for a spawned element
  * @param attrs {Object} - object map of attribute name (key) and value to set (value)
  * @returns {Object} - returns modified elConfig object w/new properties
@@ -387,7 +338,7 @@ jQuery.fn.only = function(eventName, selectorOrCallback, callback){
 
     function modifiedCallback(e, fn){
         e.preventDefault();
-        e.stopImmediatePropagation();
+        // e.stopImmediatePropagation();
         return fn.call(this, e);
     }
 
@@ -411,11 +362,24 @@ jQuery.fn.only = function(eventName, selectorOrCallback, callback){
 
 // create new case-insensitive :contains selector
 // usage - jq('.this_selector:containsNC("hello")').click(function() { ... });
-jQuery.extend(jQuery.expr[":"], {
+jQuery.extend((jQuery.expr.pseudos || jQuery.expr)[":"], {
     "containsNC": function (elem, i, match, array) {
         return (elem.textContent || elem.innerText || "").toLowerCase().indexOf((match[3] || "").toLowerCase()) >= 0;
     }
 });
+
+
+jQuery.fn.containsNC = function(str, selector){
+    if (!str) return this;
+    var el$ = this;
+    if (selector) {
+        el$ = this.filter(selector);
+    }
+    return el$.filter(function(){
+        return (this.textContent || this.innerText || '').toLowerCase().indexOf(str.toLowerCase()) > -1;
+    })
+};
+
 
 jQuery.loadScript = function (url, arg1, arg2) {
     var cache = false, callback = null;
@@ -470,7 +434,7 @@ jQuery.loadScript = function (url, arg1, arg2) {
             if (attr.specified) {
                 obj[attr.name] =
                     obj[toCamelCase(attr.name)] =
-                        attr;
+                        attr.value;
             }
         }
         return obj;
@@ -528,14 +492,30 @@ jQuery.loadScript = function (url, arg1, arg2) {
 // $('#element').changeVal('foo');
 // sets '#element' to 'foo' then triggers
 // 'onchange' event if it's different than before
-$.fn.changeVal = function(){
-    var prev;
-    if ( arguments.length > 0 ){
-        prev = this.val();
+$.fn.changeVal = function(newVal){
+    // if (jsdebug) console.log('$.fn.changeVal');
+    if (this.length && typeof newVal !== 'undefined') {
+        var prev = this.val();
+        if (prev + '' !== newVal + '') {
+            this.val(newVal).trigger('change');
+            if (jsdebug) console.log('value changed');
+        }
     }
-    var result = $.fn.val.apply(this, arguments).val();
-    if ( arguments.length > 0 && prev !== result ){
-        this.trigger('change');
+    return this;
+};
+
+
+// sets attribute AND property to 'checked'
+$.fn.checked = function(bool){
+    if (this.length && 'checked' in this[0]) {
+        if (bool == null) {
+            return this[0].checked;
+        }
+        if (bool === false) {
+            this.removeAttr('checked').prop('checked', false);
+            return this;
+        }
+        this.attr('checked', 'checked').prop('checked', true);
     }
     return this;
 };
@@ -552,8 +532,86 @@ $.fn.hidden = function(bool, speed){
     }
     else {
         method = speed ? 'fadeIn' : 'show';
-        this.removeClass('hidden')[method](speed);
+        this.removeClass('hidden invisible')[method](speed);
     }
+    return this;
+};
+
+
+// show or hide an element then execute optional callback
+$.fn.hiddenToo = function(bool, duration, callback){
+
+    var undef;
+    var argLen = arguments.length;
+    var speed = 0;
+    var method = 'hide';
+    var modClass = 'addClass';
+    var className = 'hidden';
+    var fn = function(){};
+
+    if (argLen === 0 || bool === undef) {
+        this.hide().addClass('hidden');
+        return this;
+    }
+
+    if (argLen >= 1) {
+        if (!bool) {
+            method = 'show';
+            modClass = 'removeClass';
+            className = 'hidden invisible';
+        }
+    }
+
+    if (argLen >= 2) {
+        // second arg *could* be a callback function
+        if ($.isFunction(duration)) {
+            fn = duration;
+            speed = 0;
+        }
+        else {
+            speed = duration + 0;
+            fn = callback || fn;
+        }
+    }
+
+    // put it all together
+    this[method](speed, function(){
+        $(this)[modClass](className);
+        try {
+            fn.call(this);
+        }
+        catch (e) {
+            // callback failed
+        }
+    });
+
+    return this;
+};
+
+
+// add or remove 'disabled' class
+// and set 'disabled' attribute and property
+$.fn.disabled = function(bool){
+    var $this = this;
+    if (bool || bool == null) {
+        $this.addClass('disabled');
+        $this.each(function(i, element){
+            element.disabled = true;
+            element.setAttribute('disabled', 'disabled');
+        });
+    }
+    else {
+        $this.removeClass('disabled');
+        $this.each(function(i, element){
+            element.disabled = false;
+            element.removeAttribute('disabled');
+        });
+    }
+    return $this;
+};
+
+$.fn.enabled = function(bool){
+    this.disabled(!firstDefined(bool, true));
     return this;
 };
 
@@ -566,38 +624,42 @@ $.fn.drags = function (opt) {
 
     opt = $.extend({handle: '', cursor: 'move'}, opt);
 
-    var $el;
+    var $el = (!opt.handle) ? this : this.find(opt.handle);
 
-    if (opt.handle === '') {
-        $el = this;
-    }
-    else {
-        $el = this.find(opt.handle);
-    }
+    $el.css('cursor', opt.cursor).on('mousedown', function (e) {
 
-    return $el.css('cursor', opt.cursor).on('mousedown', function (e) {
-        var $drag;
-        if (opt.handle === '') {
-            $drag = $(this).addClass('draggable');
+        var $drag = $(this);
+
+        if (!opt.handle) {
+            $drag.addClass('draggable');
         }
         else {
-            $drag = $(this).addClass('active-handle').parent().addClass('draggable');
+            $drag.addClass('active-handle');
+            $drag.parent().addClass('draggable');
         }
+
         var z_idx = $drag.css('z-index')-0,
             drg_h = $drag.outerHeight(),
             drg_w = $drag.outerWidth(),
             pos_y = $drag.offset().top + drg_h - e.pageY,
             pos_x = $drag.offset().left + drg_w - e.pageX;
-        $drag.parents().on('mousemove', function (e) {
-            $('.draggable').css({ 'right': 'auto', 'bottom': 'auto' }).offset({
+
+        $(document.body).off('mousemove.drags').on('mousemove.drags', function (e) {
+            var $dragged = $(this).find('.draggable');
+            $dragged.css({ 'right': 'auto', 'bottom': 'auto' }).offset({
                 top: e.pageY + pos_y - drg_h,
                 left: e.pageX + pos_x - drg_w
-            }).on('mouseup', function () {
+            });
+            $dragged.on('mouseup', function () {
                 $(this).removeClass('draggable')/*.css('z-index', z_idx)*/;
             });
         });
+
         e.preventDefault(); // disable selection
-    }).on('mouseup', function () {
+
+    });
+
+    $el.on('mouseup', function () {
         if (opt.handle === "") {
             $(this).removeClass('draggable');
         }
@@ -605,6 +667,9 @@ $.fn.drags = function (opt) {
             $(this).removeClass('active-handle').parent().removeClass('draggable');
         }
     });
+
+    return $el;
+
 };
 // end draggable
 
@@ -646,9 +711,9 @@ jQuery.fn.sortElements = (function(){
             var sortElement = getSortable.call(this),
                 parentNode = sortElement.parentNode,
 
-            // Since the element itself will change position, we have
-            // to have some way of storing it's original position in
-            // the DOM. The easiest way is to have a 'flag' node:
+                // Since the element itself will change position, we have
+                // to have some way of storing it's original position in
+                // the DOM. The easiest way is to have a 'flag' node:
                 nextSibling = parentNode.insertBefore(
                     document.createTextNode(''),
                     sortElement.nextSibling
@@ -737,17 +802,17 @@ function sortTableToo($tbody, col, reverse){
         window.setTimeout(function(){
             // chunk rows into groups of 200
             var trChunks = chunkArray(trs, 200);
-                forEach(trChunks, function(chunk, i){
-                    window.setTimeout(function(){
-                        // $tbody.append(chunk);
-                        forEach(chunk, function(row){
-                            _tbody.appendChild(row);
-                        });
-                    }, 0);
-                });
+            forEach(trChunks, function(chunk, i){
                 window.setTimeout(function(){
-                    loader.fadeOut(100);
+                    // $tbody.append(chunk);
+                    forEach(chunk, function(row){
+                        _tbody.appendChild(row);
+                    });
                 }, 0);
+            });
+            window.setTimeout(function(){
+                loader.fadeOut(100);
+            }, 0);
             endTime = (Date.now() - startTime);
             console.log(endTime);
 
@@ -887,47 +952,161 @@ function sortElements( _parent, _child ){
     $.each(listitems, function( idx, itm ) { $mylist.append(itm) });
 }
 
+function numericSort(a,b) {
+    return (a*1) - (b*1);
+}
+
+function matchCellWidths(widths, table1, table2 /* etc... */){
+
+    var argi = -1;
+    var args = toArray(arguments);
+    var cellWidths = args.shift() || [];
+    var argLen = args.length;
+    var colLength = 0;
+    var tmpTable = 0;
+
+    // first check
+    while (++argi < argLen) {
+        args[argi] = isString(args[argi]) ? document.querySelector(args[argi]) : args[argi];
+        tmpTable = args[argi];
+        // first table decides how many columns we're working with
+        if (argi === 0) {
+            // we only need to check the first row (index 0)
+            colLength = tmpTable.rows[0].cells.length;
+            if (tmpTable.rows[0].cells[0].style.width) {
+                forEach(tmpTable.rows[0].cells, function(cell){
+                    cellWidths.push(cell.clientWidth)
+                });
+            }
+            continue;
+        }
+        if (colLength !== tmpTable.rows[0].cells.length) {
+            console.error('Cannot modify tables with different numbers of columns.');
+            return false;
+        }
+    }
+
+    if (!cellWidths.length) {
+        // iterate tables to collect widths
+        forEach(args, function(table, t){
+            // iterate rows for each table
+            forEach(table.rows[0].cells, function(cell, r){
+                // create a 2-D array of possible widths for each cell
+                cellWidths[r] = [].concat(cellWidths[r], cell.clientWidth);
+            });
+        });
+    }
+
+    // iterate collection of widths to find the largest value for each column
+    cellWidths = cellWidths.map(function(widths, c){
+        return [].concat(widths).sort(numericSort).reverse()[0];
+    });
+
+    // iterate tables again to SET widths
+    forEach(args, function(table, t){
+        table.style.tableLayout = 'fixed';
+        // kill explicit widths for all cells
+        forEach(table.querySelectorAll('th, td'), function(cell){
+            // cell.appendChild(spawn('span.truncate', {
+            //     style: { width: cell.style.width }
+            // }, toArray(cell.children)));
+            cell.style.width = null;
+            // cell.style.overflow = 'hidden';
+            // cell.classList.add('truncate');
+        });
+        forEach(cellWidths, function(width, w){
+            table.rows[0].cells[w].style.width = width + 'px';
+        });
+    });
+
+    return cellWidths;
+
+}
 
 // force a jQuery object and allow use of
 // non-standard id names with special prefix:
-// $$('@#weird:id/that.XNAT.will[create]').addClass('cray-cray');
-function $$( el, id_prefix ){
-    // can't decide on a prefix for selection by id
-    // use ONE of these:
-    // id= | id: | @id= | @# | @= | @: | @ | #= | #: | #/
-    var ALL_PREFIX = /^!\*/,  // $$('!*div.foo') --> return raw 'div.foo' elements as an array
-        RAW_ID     = /^!#/,   // $$('!#foo')     --> return (one) raw element with id 'foo'
-        NAME_RAW   = /^!\?/,  // $$('!?foo')     --> return raw elements with [name="foo"]
-        NAME_$     = /^\?/,   // $$('?foo')      --> return wrapped elements with [name="foo"]
-        RAW_PREFIX = /^!/,    // $$('!div.foo')  --> return FIRST raw 'div.foo' element
-        ID_PREFIX  = /^(id=|id:|@id=|@#|@=|@:|@|#=|#:|#\/)/;
-    if (!el || el.jquery){
+// $$('id=weird:id/that.XNAT.will[create]').addClass('cray-cray');
+function $$(el, id_prefix){
+    // use ONE of these to get element by id:
+    // id= | id: | @id= | #= | #: | #/ | #|
+    var QUERY     = /^!/,                // $$('!div.foo')  --> return FIRST raw 'div.foo' element
+        QUERY_ALL = /^![!*]/,            // $$('!*div.foo') --> return 'div.foo' element collection
+        BY_NAME   = /^!*\?/,             // $$('!?foo')     --> return raw elements with [name="foo"]
+        TAGNAME   = /^!*~/,              // $$('~div')      --> return wrapped <DIV> elements
+        ATTR      = /^!*@/,              // $$('@disabled') --> return wrapped elements with [disabled] attribute
+        CLASSNAME = /^(!\.+|\.\.|\.\|)/, // $$('!.foo bar') --> return elements with [class="foo bar"]
+        // $$('!#:foo.bar/baz') --> return (one) element with id 'foo.bar/baz'
+        // $$('#|foo.bar/baz')  --> return wrapped element with id 'foo:bar.baz'
+        BY_ID     = id_prefix || /^!*(id=|id:|@id=|#=|#:|#\/|#\|)/;
+
+    var SPECIAL = /^((!*[*?@~])|!\.|\.\.)/;
+    var selector = '';
+    var use$ = true;
+    var selected = null;
+
+    if (!el || el.jquery) {
         return el;
     }
-    if (typeof el == 'string'){
-        if (el.search(ALL_PREFIX) === 0){
-            return document.querySelectorAll(el.replace(ALL_PREFIX, ''));
+
+    if (typeof el === 'string') {
+
+        selector = el.trim();
+
+        if (QUERY_ALL.test(selector)) {
+            return document.querySelectorAll(selector.replace(QUERY_ALL, ''));
         }
+
+        // get raw or jQuery-wrapped element?
+        if (selector.charAt(0) === '!') {
+            // strip '!' prefix
+            selector = selector.slice(1);
+            use$ = false;
+        }
+
+        // getElementById
         // pass empty string or null as the second argument
         // to get the bare element by id (no jQuery)
-        if (id_prefix === '' || id_prefix === null || el.search(RAW_ID) === 0){
-            return document.getElementById(el.replace(RAW_ID,''));
+        if (id_prefix === '' || id_prefix === null || selector.search(BY_ID) === 0){
+            selector = selector.replace(BY_ID, '').trim();
+            selected = document.getElementById(selector)
         }
-        if (el.search(NAME_RAW) === 0){
-            return document.getElementsByName(el.replace(NAME_RAW, ''));
+        // getElementsByName
+        else if (BY_NAME.test(selector)) {
+            selector = selector.replace(BY_NAME, '').trim();
+            selected = document.getElementsByName(selector);
         }
-        if (el.search(NAME_$) === 0){
-            return $(document.getElementsByName(el.replace(NAME_$, '')));
+        // getElementsByTagName
+        else if (TAGNAME.test(selector)) {
+            selector = selector.replace(TAGNAME, '').trim();
+            selected = document.getElementsByTagName(selector);
         }
-        if (el.search(RAW_PREFIX) === 0){
-            return document.querySelector(el.replace(RAW_PREFIX,''));
+        // getElementsByClassName
+        else if (CLASSNAME.test(selector)) {
+            selector = selector.replace(CLASSNAME, '').replace(/\s*\.\s*/g, ' ').trim();
+            selected = document.getElementsByClassName(selector);
         }
-        id_prefix = id_prefix || ID_PREFIX;
-        if (el.search(id_prefix) === 0){
-            return $(document.getElementById(el.replace(id_prefix,'')));
+        // querySelector
+        else if (QUERY.test(selector)) {
+            selector = selector.replace(QUERY, '').trim();
+            selected = document.querySelector(selector);
         }
+        // querySelectorAll using attribute name/value
+        else if (ATTR.test(selector)) {
+            selector = '[' + selector.replace(ATTR, '').trim() + ']';
+            selected = document.querySelectorAll(selector);
+        }
+        // querySelectorAll -- last resort
+        else {
+            selected = document.querySelectorAll(selector);
+        }
+
+        // return jQuery-wrapped or raw element/collection
+        return use$ ? $(selected) : selected;
+
     }
+
     return $(el);
+
 }
 
 

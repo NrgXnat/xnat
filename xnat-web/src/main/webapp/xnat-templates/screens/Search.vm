@@ -1,4 +1,7 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+
+<!-- BEGIN xnat-templates/screens/Search.vm -->
+
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_stored_search.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_search_field.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_criteria.js")"></script>
@@ -75,3 +78,5 @@
         window.newSearch();
         #end
 </script>
+
+<!-- END xnat-templates/screens/Search.vm -->

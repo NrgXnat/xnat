@@ -165,6 +165,13 @@ var XNAT = getObject(XNAT || {});
 
     function groupsMenu(login, selected){
         selected = selected || '';
+        // set to empty array if something is selected
+        // this prevents the empty option from being rendered
+        // since an empty array would get concatenated below
+        var options = selected ? [] : [{
+            value: "",
+            html: "Select..."
+        }];
         return XNAT.ui.select.menu({
             value: selected,
             element: {
@@ -172,12 +179,12 @@ var XNAT = getObject(XNAT || {});
                 title: login,
                 style: { width: '100%' }
             },
-            options: XNAT.projectAccess.groups.map(function(group){
+            options: options.concat(XNAT.projectAccess.groups.map(function(group){
                 return {
                     value: group.id,
                     html: group.displayname
                 }
-            })
+            }))
         }).get();
     }
 

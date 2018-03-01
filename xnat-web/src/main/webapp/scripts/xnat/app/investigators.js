@@ -279,19 +279,20 @@ var XNAT = getObject(XNAT);
                 investigatorForm: {
                     kind: 'panel.form',
                     name: 'editInvestigator',
-                    url: setupUrl(id),
+                    load: id ? setupUrl(id) : '!?',
+                    action: setupUrl(id),
                     method: id ? 'PUT' : 'POST',
                     contentType: 'json',
                     header: false,
                     footer: false,
                     contents: {
                         title: createInput('Title', 'title'),
-                        first: createInput('First Name', 'firstname', 'required'),
-                        last: createInput('Last Name', 'lastname', 'required'),
-                        institution: createInput('Institution', 'institution'),
-                        department: createInput('Department', 'department'),
-                        email: createInput('Email', 'email', 'email'),
-                        phone: createInput('Phone', 'phone', 'numeric-dash'),
+                        first: createInput('First Name', 'firstname', 'name-safe required'),
+                        last: createInput('Last Name', 'lastname', 'name-safe required'),
+                        institution: createInput('Institution', 'allow-empty institution'),
+                        department: createInput('Department', 'allow-empty department'),
+                        email: createInput('Email', 'email', 'allow-empty email'),
+                        phone: createInput('Phone', 'phone', 'allow-empty numeric-dash'),
                         primary: self.menu ? {
                             kind: 'panel.element',
                             label: false,
@@ -315,14 +316,15 @@ var XNAT = getObject(XNAT);
             }
         }
 
-        var invForm = XNAT.spawner.spawn(investigatorForm());
-
         var dialog =
                 xmodal.open({
                     title: (id ? 'Edit' : 'Create') + ' Investigator',
                     content: '<div class="add-edit-investigator"></div>',
+                    // content: invForm.get(),
                     beforeShow: function(obj){
-                        invForm.render(obj.$modal.find('div.add-edit-investigator'));
+                        XNAT.spawner
+                            .spawn(investigatorForm())
+                            .render(obj.$modal.find('div.add-edit-investigator'));
                     },
                     afterShow: function(obj){
                         if (self.menu) {
@@ -355,7 +357,13 @@ var XNAT = getObject(XNAT);
                                 return errors === 0;
                             },
                             success: function(data, status, xhrObj){
-                                var selected = data.xnatInvestigatordataId;
+                                var selected;
+                                // just close the dialog if saved but not modified
+                                if (status === "notmodified") {
+                                    dialog.close();
+                                    return;
+                                }
+                                selected = data.xnatInvestigatordataId;
                                 ui.banner.top(2000, 'Investigator data saved.', 'success');
                                 // update other menus, if specified
                                 if (self.menu) {
@@ -398,10 +406,11 @@ var XNAT = getObject(XNAT);
         this.tableContainer = $$(container || '#investigators-list-container');
 
         function investigatorFieldValue(val){
-            if(val){
-                return "<span class='truncate truncateCellNarrow' title='"+ val + "'>"+ val +"</span>";
+            var escVal = escapeHtml(val + '');
+            if (escVal) {
+                return "<span class='truncate truncateCellNarrow' title='" + escVal + "'>" + escVal + "</span>";
             }
-            else{
+            else {
                 return '<div class="center">&mdash;</div>';
             }
             //return val || '<div class="center">&mdash;</div>'
@@ -457,7 +466,7 @@ var XNAT = getObject(XNAT);
                         label: 'Name',
                         sort: true,
                         call: function(){
-                            return this.lastname + ', ' + this.firstname
+                            return escapeHtml(this.lastname + ', ' + this.firstname)
                         }
                     },
                     // firstname: {
@@ -493,7 +502,7 @@ var XNAT = getObject(XNAT);
                         className: 'center',
                         call: function(){
                             var ID = this.xnatInvestigatordataId;
-                            var NAME = this.firstname + ' ' + this.lastname;
+                            var NAME = escapeHtml(this.firstname + ' ' + this.lastname);
                             return spawn('button.delete-investigator.btn2.btn-sm.center|type=button', {
                                 on: { click: function(){
                                     self.deleteInvestigator(ID, NAME);

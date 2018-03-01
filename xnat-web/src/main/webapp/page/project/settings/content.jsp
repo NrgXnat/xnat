@@ -1,13 +1,15 @@
-<%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
 <pg:init/>
 <pg:jsvars/>
+
 <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
 
 <c:if test="${not empty param.id}">
-    <c:set var="id" value="${param.id}"/>
+    <c:set var="id" value="${fn:escapeXml(param.id)}"/>
 </c:if>
 
 

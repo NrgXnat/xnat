@@ -1,4 +1,4 @@
-<%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
@@ -17,6 +17,8 @@
 </c:set>
 
 <pg:restricted msg="${redirect}">
+
+    <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
 
     <div id="page-body">
         <div class="pad">
@@ -78,29 +80,32 @@
                         XNAT.tabs.container = $('#admin-config-tabs').find('div.content-tabs');
                         XNAT.tabs.layout = 'left';
 
-                        var adminTabs =
-                                XNAT.spawner
-                                    .resolve('siteAdmin/adminPage')
-                                    .ok(function(){
-                                        this.render(XNAT.tabs.container, 200, function(){
-                                            //initInfoLinks();
-                                            // SAVE THE UI JSON
-                                            XNAT.app.adminTabs = adminTabs;
-                                        });
-                                        this.done(function(){
-                                            XNAT.tab.activate(XNAT.tab.active, XNAT.tabs.container);
-                                        })
+                        var gotTabs = false;
+                        var spawnerIds = ['root', 'adminPage'];
+
+                        function findAdminTabs(idIndex){
+                            if (gotTabs || idIndex >= spawnerIds.length) return;
+                            var spawnerNS = 'siteAdmin/' + spawnerIds[idIndex];
+                            XNAT.spawner
+                                .resolve(spawnerNS)
+                                .ok(function(){
+                                    gotTabs = true;
+                                    this.render(XNAT.tabs.container, 200, function(){
+                                        //initInfoLinks();
                                     });
+                                    this.done(function(){
+                                        XNAT.tab.activate(XNAT.tab.active, XNAT.tabs.container);
+                                    })
+                                })
+                                .fail(function(){
+                                    findAdminTabs(idIndex += 1)
+                                })
+                        }
+
+                        findAdminTabs(0);
 
                     })();
 
-//                    function initInfoLinks(){
-//                        $('.infolink').click(function(e){
-//                            var idx = this.id.substr(9);
-//                            var help = infoContent[idx];
-//                            xmodal.message(help.title, help.content);
-//                        });
-//                    }
                 </script>
 
             </div>

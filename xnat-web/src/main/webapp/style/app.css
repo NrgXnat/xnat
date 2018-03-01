@@ -2315,7 +2315,7 @@ div.submit-right button[type="submit"]{
 
 #add_experiment #form1 #expt_list #expt_list_filter input {
     font-size: 12px !important;
-    color: #b0b0b0;
+    color: #222;
 }
 
 #add_experiment #form1 #expt_list #expt_list_filter #filter_clear {

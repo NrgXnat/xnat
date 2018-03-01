@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 <!--[if lt IE 9]><html class="ie ie8 ltie9 ltie10"><![endif]-->
 <!--[if IE 9]><html class="ie ie9 ltie10"><![endif]-->
@@ -10,6 +11,15 @@
     <!-- start xnat-templates/navigations/htmlOpen -->
 
     #set ($SITE_ROOT = $content.getURI(""))
+    #set ($isLoginPage = $data.request.requestURI.contains('/Login.vm'))
+
+    <!-- isLoginPage? $!isLoginPage -->
+    <script>
+        window.isLoginPage = (function(){
+            console.log('isLoginPage = $!isLoginPage')
+            return $!isLoginPage
+        })();
+    </script>
 
     ## <!-- Reload the appropriate page if a global theme style specifies a redirect -->
     #if ($themedRedirect)

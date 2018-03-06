@@ -17,7 +17,6 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.*;
 import org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider;
 import org.nrg.xnat.security.provider.AuthenticationProviderConfigurationLocator;
@@ -61,7 +60,7 @@ import org.springframework.security.web.authentication.rememberme.RememberMeAuth
 import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
-import org.springframework.security.web.context.SecurityContextPersistenceFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.context.request.RequestContextListener;
@@ -192,11 +191,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public UpdateExpirationCookie updateExpirationCookie() {
-        return new UpdateExpirationCookie();
-    }
-
-    @Bean
     public ChannelProcessingFilter channelProcessingFilter() {
         final ChannelDecisionManagerImpl decisionManager = new ChannelDecisionManagerImpl();
         decisionManager.setChannelProcessors(Arrays.asList(new SecureChannelProcessor(), new InsecureChannelProcessor()));
@@ -285,10 +279,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // If we can get the default channel processing filter as a bean, we could remove this.
         http.addFilter(channelProcessingFilter())
-            .addFilterBefore(updateExpirationCookie(), ChannelProcessingFilter.class)
             .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
-            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), SecurityContextPersistenceFilter.class);
+            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), BasicAuthenticationFilter.class);
 
         if (_extensions.size() > 0) {
             for (final XnatSecurityExtension extension : _extensions) {

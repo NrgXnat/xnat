@@ -29,12 +29,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.crypto.codec.Base64;
-import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import javax.annotation.Nonnull;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -46,7 +46,8 @@ import java.util.Date;
 
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection", "unused", "SameParameterValue"})
 @Slf4j
-public class XnatExpiredPasswordFilter extends GenericFilterBean {
+public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
+    public static final String COOKIE_SESSION_EXPIRATION_TIME = "SESSION_EXPIRATION_TIME";
 
     @Autowired
     public XnatExpiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
@@ -61,41 +62,33 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
     }
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-        final HttpServletRequest  request         = (HttpServletRequest) req;
-        final HttpServletResponse response        = (HttpServletResponse) res;
-        final UserI               user            = XDAT.getUserDetails();
-        final HttpSession         session         = request.getSession();
-        final Object              passwordExpired = session.getAttribute("expired");
-        // MIGRATION: Need to remove arcspec.
-        final ArcArchivespecification _arcSpec = ArcSpecManager.GetInstance();
+    protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws ServletException, IOException {
+        final HttpSession session = request.getSession();
 
-        final String referer = request.getHeader("Referer");
+        // Regardless of why you're here, we're going to do this.
+        final Cookie cookie = new Cookie(COOKIE_SESSION_EXPIRATION_TIME, new Date().getTime() + "," + session.getMaxInactiveInterval() * 1000);
+        cookie.setPath(request.getContextPath() + "/");
+        response.addCookie(cookie);
+        log.debug("Updated session expiration time cookie '{}' to value '{}'.", cookie.getName(), cookie.getValue());
+
+        // MIGRATION: Need to remove arcspec.
+        final ArcArchivespecification arcSpec         = ArcSpecManager.GetInstance();
+        final String                  referer         = request.getHeader("Referer");
+        final Object                  passwordExpired = session.getAttribute("expired");
+
         if (BooleanUtils.toBooleanDefaultIfNull((Boolean) session.getAttribute("forcePasswordChange"), false)) {
             try {
-                String refererPath = null;
-                String uri         = new URI(request.getRequestURI()).getPath();
-                String shortUri    = uri;
-                try {
-                    shortUri = uri.substring(0, uri.indexOf("?"));
-                } catch (Exception ignored) {
+                final String refererPath      = !StringUtils.isBlank(referer) ? new URI(referer).getPath() : null;
+                final String uri              = getRequestUriPath(request);
+                final String shortUri         = uri.contains("?") ? uri.substring(0, uri.indexOf("?")) : uri;
+                final String shortRefererPath = refererPath != null ? (refererPath.contains("?") ? refererPath.substring(0, refererPath.indexOf("?")) : refererPath) : null;
 
-                }
-
-                String shortRefererPath = null;
-                if (!StringUtils.isBlank(referer)) {
-                    refererPath = new URI(referer).getPath();
-                    shortRefererPath = refererPath;
-                    if (refererPath.contains("?")) {
-                        shortRefererPath = refererPath.substring(0, refererPath.indexOf("?"));
-                    }
-                }
                 if (shortUri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination) || uri.endsWith(logoutDestination) || uri.endsWith(loginPath) || uri.endsWith(loginDestination)) {
                     //If you're already on the change password page, continue on without redirect.
-                    chain.doFilter(req, res);
+                    chain.doFilter(request, response);
                 } else if (!StringUtils.isBlank(refererPath) && (shortRefererPath.endsWith(changePasswordPath) || refererPath.endsWith(changePasswordDestination) || refererPath.endsWith(logoutDestination))) {
                     //If you're on a request within the change password page, continue on without redirect.
-                    chain.doFilter(req, res);
+                    chain.doFilter(request, response);
                 } else {
                     response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
                 }
@@ -105,10 +98,11 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         } else if (passwordExpired != null && !(Boolean) passwordExpired) {
             //If the date of password change was checked earlier in the session and found to be not expired, do not send them to the expired password page.
             chain.doFilter(request, response);
-        } else if (_arcSpec == null || !_arcSpec.isComplete()) {
+        } else if (arcSpec == null || !arcSpec.isComplete()) {
             //If the arc spec has not yet been set, have the user configure the arc spec before changing their password. This prevents a negative interaction with the arc spec filter.
             chain.doFilter(request, response);
         } else {
+            final UserI user = XDAT.getUserDetails();
             if (user == null || user.isGuest()) {
                 //If the user is not logged in, do not send them to the expired password page.
                 final String header = request.getHeader("Authorization");
@@ -155,54 +149,50 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 } else {
                     checkUserChangePassword(request, response);
                     //User is not authenticated through basic authentication either.
-                    chain.doFilter(req, res);
+                    chain.doFilter(request, response);
                 }
             } else {
-                String uri      = request.getRequestURI();
-                String shortUri = uri;
                 try {
-                    shortUri = uri.substring(0, uri.indexOf("?"));
-                } catch (Exception ignored) {
+                    final String  refererPath      = !StringUtils.isBlank(referer) ? new URI(referer).getPath() : null;
+                    final String  uri              = getRequestUriPath(request);
+                    final String  shortUri         = uri.contains("?") ? uri.substring(0, uri.indexOf("?")) : uri;
+                    final String  shortRefererPath = refererPath != null ? (refererPath.contains("?") ? refererPath.substring(0, refererPath.indexOf("?")) : refererPath) : null;
+                    final boolean isEnabled        = user.isEnabled();
 
-                }
-                String shortRefererPath = referer;
-                if (!StringUtils.isBlank(referer) && referer.contains("?")) {
-                    shortRefererPath = referer.substring(0, referer.indexOf("?"));
-                }
-
-                if (user.isGuest()) {
-                    //If you're a guest and you try to access the change password page, you get sent to the login page since there's no password on the guest account to change.
-                    checkUserChangePassword(request, response);
-                }
-                if (user.isGuest() ||
+                    // Each of the following variables is exclusive: once one is found true, the remaining will be found false.
                     //If you're logging in or out, or going to the login page itself
-                    (uri.endsWith(logoutDestination) || uri.endsWith(loginPath) || uri.endsWith(loginDestination)) ||
+                    final boolean isLoginLogoutRequest = StringUtils.endsWithAny(uri, logoutDestination, loginPath, loginDestination);
                     //If you're already on the change password page, continue on without redirect.
-                    (user.isEnabled() && (shortUri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination))) ||
+                    final boolean isChangePassword = !isLoginLogoutRequest && isEnabled && (shortUri.endsWith(changePasswordPath) || uri.endsWith(changePasswordDestination));
                     //If you're already on the inactive account page or reactivating an account, continue on without redirect.
-                    (!user.isEnabled() && (uri.endsWith(inactiveAccountPath) || uri.endsWith(inactiveAccountDestination) ||
-                                           uri.endsWith(emailVerificationPath) || uri.endsWith(emailVerificationDestination) ||
-                                           (referer != null && (referer.endsWith(inactiveAccountPath) || referer.endsWith(inactiveAccountDestination))))) ||
+                    final boolean isInactiveOrReactivating = !isLoginLogoutRequest && !isChangePassword && !isEnabled &&
+                                                             (StringUtils.endsWithAny(uri, inactiveAccountPath, inactiveAccountDestination, emailVerificationPath, emailVerificationDestination) ||
+                                                              StringUtils.endsWithAny(referer, inactiveAccountPath, inactiveAccountDestination));
                     //If you're on a request within the change password page, continue on without redirect.
-                    (referer != null && (shortRefererPath.endsWith(changePasswordPath) || referer.endsWith(changePasswordDestination) ||
-                                         referer.endsWith(logoutDestination)))) {
-                    chain.doFilter(req, res);
-                } else {
-                    if (user.getAuthorization() != null && user.getAuthorization().getAuthMethod().equals(XdatUserAuthService.LDAP)) {
-                        // Shouldn't check for a localdb expired password if user is coming in through LDAP
-                        chain.doFilter(req, res);
-                    } else if (user.isEnabled()) {
-                        boolean isExpired     = checkForExpiredPassword(user);
-                        boolean requireSalted = _preferences.getRequireSaltedPasswords();
-                        if ((!isUserNonExpiring(user) && isExpired) || (requireSalted && user.getSalt() == null)) {
-                            session.setAttribute("expired", true);
-                            response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
-                        } else {
-                            chain.doFilter(request, response);
-                        }
+                    final boolean isOnChangePassword = !isLoginLogoutRequest && !isChangePassword && !isInactiveOrReactivating &&
+                                                       (StringUtils.endsWith(shortRefererPath, changePasswordPath) || StringUtils.endsWithAny(referer, changePasswordDestination, logoutDestination));
+
+                    if (isLoginLogoutRequest || isChangePassword || isInactiveOrReactivating || isOnChangePassword) {
+                        chain.doFilter(request, response);
                     } else {
-                        response.sendRedirect(TurbineUtils.GetFullServerPath() + inactiveAccountPath);
+                        if (user.getAuthorization() != null && user.getAuthorization().getAuthMethod().equals(XdatUserAuthService.LDAP)) {
+                            // Shouldn't check for a localdb expired password if user is coming in through a non-localdb provider.
+                            chain.doFilter(request, response);
+                        } else if (isEnabled) {
+                            final boolean isExpired     = checkForExpiredPassword(user);
+                            final boolean requireSalted = _preferences.getRequireSaltedPasswords();
+                            if ((!isUserNonExpiring(user) && isExpired) || (requireSalted && user.getSalt() == null)) {
+                                session.setAttribute("expired", true);
+                                response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
+                            } else {
+                                chain.doFilter(request, response);
+                            }
+                        } else {
+                            response.sendRedirect(TurbineUtils.GetFullServerPath() + inactiveAccountPath);
+                        }
                     }
+                } catch (URISyntaxException ignored) {
+                    // the URI
                 }
             }
         }
@@ -325,12 +315,21 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
     }
 
     private void checkUserChangePassword(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        final String uri = getRequestUriPath(request);
+        if (uri.endsWith("XDATScreen_UpdateUser.vm") && request.getParameterMap().isEmpty()) {
+            response.sendRedirect(TurbineUtils.GetFullServerPath() + "/app/template/Login.vm");
+        }
+    }
+
+    @Nonnull
+    private static String getRequestUriPath(final HttpServletRequest request) {
         try {
-            String uri = new URI(request.getRequestURI()).getPath();
-            if (uri.endsWith("XDATScreen_UpdateUser.vm") && request.getParameterMap().isEmpty()) {
-                response.sendRedirect(TurbineUtils.GetFullServerPath() + "/app/template/Login.vm");
-            }
-        } catch (URISyntaxException ignored) {
+            return new URI(request.getRequestURI()).getPath();
+        } catch (URISyntaxException e) {
+            // Because the URI is coming from an incoming request, it should be valid syntax. Log it,
+            // return a null, and everything should fall apart quite nicely.
+            log.warn("The request URI is invalid for some reason, which makes literally no sense so you figure it out: {}", request.getRequestURI());
+            return "";
         }
     }
 

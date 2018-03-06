@@ -27,6 +27,7 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
 
         if (cache instanceof GroupsAndPermissionsCache.Provider) {
             ((GroupsAndPermissionsCache.Provider) _cache).registerListener(this);
+            log.info("Registered with cache provider of type: {}", _cache.getClass().getName());
         }
     }
 
@@ -35,8 +36,9 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
         final LapStopWatch stopWatch = LapStopWatch.createStarted(log, Level.INFO);
         final String       groupId   = request.getGroupId();
 
+        final int totalNumberOfGroups = _groupIds.size();
         try {
-            stopWatch.lap("Starting to process group '{}', there are {} groups: {}", groupId, _groupIds.size(), StringUtils.join(_groupIds, ", "));
+            stopWatch.lap("Starting to process group '{}', this is #{} of {} total", groupId, _completed.size() + 1, totalNumberOfGroups);
             final UserGroupI group = _cache.cacheGroup(groupId);
             if (group == null) {
                 stopWatch.lap("Group '{}' not found on initialization, nothing cached", groupId);
@@ -45,11 +47,11 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
             }
             _completed.add(groupId);
         } finally {
-            final int remaining = _totalGroupIds - _completed.size();
+            final int remaining = totalNumberOfGroups - _completed.size();
             if (remaining > 0) {
-                stopWatch.stop("Completed processing group '{}', there are {} groups remaining out of {}", groupId, remaining, _totalGroupIds);
+                stopWatch.stop("Completed processing group '{}', there are {} groups remaining out of {}", groupId, remaining, totalNumberOfGroups);
             } else {
-                stopWatch.stop("Completed processing group '{}', there are NO groups remaining of the original {}! Total time elapsed {} ms", groupId, _totalGroupIds, FORMATTER.format(new Date().getTime() - _start.getTime()));
+                stopWatch.stop("Completed processing group '{}', there are NO groups remaining of the original {}! Total time elapsed {} ms", groupId, totalNumberOfGroups, FORMATTER.format(new Date().getTime() - _start.getTime()));
             }
         }
     }
@@ -65,17 +67,14 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
     }
 
     public void setGroupIds(final List<String> groupIds) {
-        log.info("Adding {} group IDs to the listener: {}", _groupIds.size(), StringUtils.join(_groupIds, ", "));
         _groupIds.addAll(groupIds);
-        _totalGroupIds = _groupIds.size();
+        log.info("Added {} group IDs to the listener: {}", _groupIds.size(), StringUtils.join(_groupIds, ", "));
     }
 
     private static final NumberFormat FORMATTER = NumberFormat.getNumberInstance(Locale.getDefault());
 
-    private final Date                               _start;
-    private final GroupsAndPermissionsCache          _cache;
-    private final Set<String>                        _groupIds;
-    private final Set<String>                        _completed;
-
-    private int _totalGroupIds;
+    private final Date                      _start;
+    private final GroupsAndPermissionsCache _cache;
+    private final Set<String>               _groupIds;
+    private final Set<String>               _completed;
 }

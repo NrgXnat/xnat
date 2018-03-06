@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.automation.entities.Script;
@@ -26,9 +27,6 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xdat.security.user.XnatUserProvider;
-import org.nrg.xnat.restlet.util.RequestUtil;
-import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
 import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
@@ -37,6 +35,7 @@ import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatPetscandataI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
@@ -46,6 +45,8 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.restlet.XNATApplication;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.services.Archiver;
+import org.nrg.xnat.restlet.util.RequestUtil;
+import org.nrg.xnat.status.ListenerUtils;
 import org.restlet.data.Status;
 import org.xml.sax.SAXException;
 
@@ -1036,7 +1037,7 @@ public final class PrearcDatabase {
         try {
             new LockAndSync<Void>(session, timestamp, project, sd.getStatus()) {
                 Void extSync() throws SyncFailedException {
-                    final Map<String, String> params = Maps.newLinkedHashMap();
+                    final Map<String, String> params = new LinkedHashMap<>();
                     if (!Strings.isNullOrEmpty(project) && !PrearcUtils.COMMON.equals(project)) {
                         params.put("project", project);
                         params.put("separatePetMr", PrearcUtils.getSeparatePetMr(project));
@@ -1064,16 +1065,17 @@ public final class PrearcDatabase {
                     PrearcUtils.cleanLockDirs(sd.getSessionDataTriple());
 
                     try {
-                        final Boolean r = new XNATSessionBuilder(sessionDir, new File(sessionDir.getPath() + ".xml"), true, params).call();
-                        if (!r) {
+                        final File sessionXmlFile = new File(sessionDir.getPath() + ".xml");
+                        log.info("Attempting to build prearchive session in folder '{}' into the session XML file '{}'", sessionDir.getPath(), sessionXmlFile.getPath());
+
+                        final Boolean success = new XNATSessionBuilder(sessionDir, sessionXmlFile, true, params).call();
+                        if (BooleanUtils.isNotTrue(success)) {
                             throw new SyncFailedException("Error building session");
                         }
                     } catch (SyncFailedException e) {
                         throw e;
                     } catch (Throwable t) {
-                        final SyncFailedException e = new SyncFailedException("Error building session");
-                        e.initCause(t);
-                        throw e;
+                        throw new SyncFailedException("Error building session", t);
                     }
                     return null;
                 }
@@ -1206,9 +1208,9 @@ public final class PrearcDatabase {
     /**
      * Set the status of an existing session. All arguments must be non-null and non-empty. Allows the user to set an inprocess status (i.e a status that begins with '_')
      *
-     * @param sess          Session label.
+     * @param sessionFolder          Session label.
      * @param timestamp     The session timestamp.
-     * @param proj          Project name.
+     * @param project          Project name.
      * @param status        Status to be set.
      *
      * @return True if the status was set properly, false otherwise.
@@ -1216,11 +1218,12 @@ public final class PrearcDatabase {
      * @throws SQLException
      * @throws SessionException
      */
-    public static boolean setStatus(final String sess, final String timestamp, final String proj, final PrearcUtils.PrearcStatus status, boolean overrideLock) throws Exception {
-        if (!overrideLock && PrearcDatabase.isLocked(sess, timestamp, proj)) {
+    public static boolean setStatus(final String sessionFolder, final String timestamp, final String project, final PrearcUtils.PrearcStatus status, final boolean overrideLock) throws Exception {
+        if (!overrideLock && PrearcDatabase.isLocked(sessionFolder, timestamp, project)) {
+            log.info("The prearc session {}/{}/{} is locked and the override lock flag is set to false. Can't set the status to {} as requested.", project, timestamp, sessionFolder, status);
             return false;
         }
-        PrearcDatabase.unsafeSetStatus(sess, timestamp, proj, status);
+        PrearcDatabase.unsafeSetStatus(sessionFolder, timestamp, project, status);
         return true;
     }
 
@@ -1247,22 +1250,23 @@ public final class PrearcDatabase {
     /**
      * Set the status of an existing session. No check is performed to see if the database is locked. Allows the user to set an inprocess status (i.e a status that begins with '_')
      *
-     * @param sess          Session label.
+     * @param sessionFolder          Session label.
      * @param timestamp     The session timestamp.
-     * @param proj          Project name.
+     * @param project          Project name.
      * @param status        Status to be set.
      *
      * @throws Exception
      * @throws SQLException
      * @throws SessionException
      */
-    public static void unsafeSetStatus(final String sess, final String timestamp, final String proj, final PrearcUtils.PrearcStatus status) throws Exception {
+    public static void unsafeSetStatus(final String sessionFolder, final String timestamp, final String project, final PrearcUtils.PrearcStatus status) throws Exception {
         if (null == status) {
             throw new SessionException("Status argument is null or empty");
         }
-        PrearcDatabase.modifySession(sess, timestamp, proj, new SessionOp<Void>() {
+        log.debug("Attempting to set the status of prearchive session {}/{}/{} to status {}", project, timestamp, sessionFolder, status);
+        PrearcDatabase.modifySession(sessionFolder, timestamp, project, new SessionOp<Void>() {
             public Void op() throws Exception {
-                PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.STATUS.updateSessionSql(sess, timestamp, proj, status), null, null);
+                PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.STATUS.updateSessionSql(sessionFolder, timestamp, project, status), null, null);
                 return null;
             }
         });

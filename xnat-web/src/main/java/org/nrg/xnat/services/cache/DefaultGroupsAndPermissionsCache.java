@@ -36,7 +36,9 @@ import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -50,6 +52,7 @@ import reactor.fn.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.*;
@@ -231,7 +234,12 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     public UserGroupI getGroupForUserAndTag(final String username, final String tag) throws UserNotFoundException {
         final MapSqlParameterSource parameters = checkUser(username);
         parameters.addValue("tag", tag);
-        final String groupId = _template.queryForObject(QUERY_GET_GROUP_FOR_USER_AND_TAG, parameters, String.class);
+        final String groupId = _template.query(QUERY_GET_GROUP_FOR_USER_AND_TAG, parameters, new ResultSetExtractor<String>() {
+            @Override
+            public String extractData(final ResultSet results) throws DataAccessException, SQLException {
+                return results.next() ? results.getString("id") : null;
+            }
+        });
         return StringUtils.isNotBlank(groupId) ? get(groupId) : null;
     }
 
@@ -287,6 +295,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
 
         final List<String> groupIds = _template.queryForList(QUERY_ALL_GROUPS, EmptySqlParameterSource.INSTANCE, String.class);
         _listener.setGroupIds(groupIds);
+        stopWatch.lap("Initialized listener of type {} with {} tags", _listener.getClass().getName(), tags);
 
         try {
             final UserI adminUser = Users.getAdminUser();

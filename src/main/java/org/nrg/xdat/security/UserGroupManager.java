@@ -322,7 +322,7 @@ public class UserGroupManager implements UserGroupServiceI {
             }
         }
 
-        if (_template.queryForObject(CONFIRM_QUERY, new MapSqlParameterSource("groupId", groupId).addValue("userId", newUser.getID()), Boolean.class)) {
+        if (!_template.queryForObject(CONFIRM_QUERY, new MapSqlParameterSource("groupId", groupId).addValue("userId", newUser.getID()), Boolean.class)) {
             final XdatUserGroupid map = new XdatUserGroupid(currentUser);
             map.setProperty(map.getXSIType() + ".groups_groupid_xdat_user_xdat_user_id", newUser.getID());
             map.setGroupid(groupId);
@@ -338,10 +338,10 @@ public class UserGroupManager implements UserGroupServiceI {
             @Override
             public UserGroupI mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
                 final UserGroup group = new UserGroup();
-                group.setPK(resultSet.getInt(0));
-                group.setId(resultSet.getString(1));
-                group.setDisplayname(resultSet.getString(2));
-                group.setTag(resultSet.getString(3));
+                group.setPK(resultSet.getInt("xdat_usergroup_id"));
+                group.setId(resultSet.getString("id"));
+                group.setDisplayname(resultSet.getString("displayname"));
+                group.setTag(resultSet.getString("tag"));
                 return group;
             }
         });
@@ -634,7 +634,7 @@ public class UserGroupManager implements UserGroupServiceI {
         }
     }
 
-    private static final String ALL_GROUPS_QUERY = "SELECT xdat_userGroup_id, ID, displayname, tag FROM xdat_userGroup";
+    private static final String ALL_GROUPS_QUERY = "SELECT xdat_usergroup_id, id, displayname, tag FROM xdat_usergroup";
     private static final String CONFIRM_QUERY    = "SELECT EXISTS (SELECT 1 FROM xdat_user_groupid WHERE groupid = :groupId AND groups_groupid_xdat_user_xdat_user_id = :userId)";
 
     private final GroupsAndPermissionsCache  _cache;

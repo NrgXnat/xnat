@@ -40,23 +40,28 @@ public class XFTValidator {
 	 * returned in a ValidationResults object.
 	 * @param item
 	 * @return Returns ValidationResults object
-	 * @throws org.nrg.xft.exception.XFTInitException
+	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
 
-	public static ValidationResults Validate(ItemI item) throws org.nrg.xft.exception.XFTInitException,ElementNotFoundException,FieldNotFoundException
+	public static ValidationResults Validate(ItemI item) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 	    return Validate(item,null);
 	}
 
-	private static ValidationResults Validate(ItemI item, String xmlPath) throws org.nrg.xft.exception.XFTInitException,ElementNotFoundException,FieldNotFoundException
-	{
-	    if (xmlPath == null || xmlPath.equalsIgnoreCase(EMPTY))
-	    {
-	        xmlPath = item.getXSIType();
-	    }
-		ValidationResults vr = new ValidationResults();
-		GenericWrapperElement element = GenericWrapperElement.GetElement(item.getXSIType());
+	private static ValidationResults Validate(final ItemI item, final String requestedXmlPath) throws XFTInitException,ElementNotFoundException,FieldNotFoundException {
+		final String xsiType = item.getXSIType();
+		final String xmlPath = StringUtils.defaultIfBlank(requestedXmlPath, xsiType);
+
+		final ValidationResults     results = new ValidationResults();
+		final GenericWrapperElement element = GenericWrapperElement.GetElement(xsiType);
+
+		if (((XFTItem) item).instanceOf("xnat:projectData")) {
+			checkReservedPropertyValue(results, element, item, "xnat:projectData/ID", "Unassigned");
+			checkReservedPropertyValue(results, element, item, "xnat:projectData/secondary_ID", "Unassigned");
+			checkReservedPropertyValue(results, element, item, "xnat:projectData/name", "Unassigned");
+		}
+
 		String prefix = element.getWrapped().getSchema().getXMLNS();
 		Iterator fields = element.getRules().iterator();
 		ArrayList checkd = new ArrayList();
@@ -64,7 +69,7 @@ public class XFTValidator {
 		{
 			Object [] field = (Object [])fields.next();
 			GenericWrapperField vField = (GenericWrapperField)field[0];
-			logger.debug(item.getXSIType() + " -> " + vField.getName());
+			logger.debug(xsiType + " -> " + vField.getName());
 			if (vField.isReference())
 			{
 				if (vField.isMultiple())
@@ -83,7 +88,7 @@ public class XFTValidator {
 							while (iter.hasNext())
 							{
 								Object [] sub = (Object [])iter.next();
-								vr.addResult((GenericWrapperField)sub[0],(String)sub[1],(String)sub[2],(String)sub[3]);
+								results.addResult((GenericWrapperField)sub[0],(String)sub[1],(String)sub[2],(String)sub[3]);
 							}
 						}
 						counter++;
@@ -100,7 +105,7 @@ public class XFTValidator {
 							while (iter.hasNext())
 							{
 								Object [] sub = (Object [])iter.next();
-								vr.addResult((GenericWrapperField)sub[0],(String)sub[1],(String)sub[2],(String)sub[3]);
+								results.addResult((GenericWrapperField)sub[0],(String)sub[1],(String)sub[2],(String)sub[3]);
 							}
 						}
 					}
@@ -119,7 +124,7 @@ public class XFTValidator {
 								ArrayList al = new ArrayList();
 								al.add(rule);
 								checkd.add(refMapping.get(0).toString().toLowerCase());
-								vr = ValidateValue(value,al,prefix,vField,vr, vField.getXMLPathString(xmlPath),element);
+								results.addResults(ValidateValue(value,al,prefix,vField,results, vField.getXMLPathString(xmlPath),element));
 							}
 						}
 					}
@@ -127,8 +132,7 @@ public class XFTValidator {
 			}else{
 				Object value = item.getProperty(vField.getId());
 				checkd.add(vField.getId());
-
-				vr = ValidateValue(value,(ArrayList)field[1],prefix,vField,vr, vField.getXMLPathString(xmlPath),element);
+				results.addResults(ValidateValue(value,(ArrayList)field[1],prefix,vField,results, vField.getXMLPathString(xmlPath),element));
 			}
 		}
 
@@ -139,11 +143,21 @@ public class XFTValidator {
 			String key = (String)keys.nextElement();
 			if (! checkd.contains(key))
 			{
-				vr.addResult(null,"Unknown field:"+ item.getXSIType() + " -> " + key,EMPTY,element);
+				results.addResult(null, "Unknown field:" + xsiType + " -> " + key, EMPTY, element);
 			}
 		}
 
-		return vr;
+		return results;
+	}
+
+	private static void checkReservedPropertyValue(final ValidationResults results, final GenericWrapperElement element, final ItemI item, final String property, final String reservedValue) throws ElementNotFoundException, FieldNotFoundException, XFTInitException {
+		final String actualValue = item.getStringProperty(property);
+		if (StringUtils.equalsIgnoreCase(reservedValue, actualValue)) {
+			results.addResult(element.getWrappedField(property),
+							  "Can't use the reserved value '" + reservedValue + "' for the '" + property + "' property",
+							  property,
+							  "The value '" + reservedValue + "' is reserved for system usage and can't be assigned to an item of type '" + item.getXSIType() + "' in XNAT.");
+		}
 	}
 
 	public static ValidationResults ValidateValue(Object value, ArrayList ruleArrayList, String prefix, GenericWrapperField vField, ValidationResults vr, String xmlPath,GenericWrapperElement element)

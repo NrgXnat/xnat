@@ -16,5 +16,4 @@ public interface ValidationResultsI {
 	 * @return Returns whether there were any errors
 	 */
 	public abstract boolean isValid();
-
 }

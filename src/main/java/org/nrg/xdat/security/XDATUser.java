@@ -73,7 +73,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private       boolean                                 rolesNotUpdatedFromService = true;
     private       ArrayList<XdatStoredSearch>             stored_searches            = null;
 
-    private final List<ElementDisplay>             _browseable            = new ArrayList<>();
+    private final Map<String, ElementDisplay>      _browseable            = new HashMap<>();
     private final Multimap<String, ElementDisplay> _actionElementDisplays = MultimapBuilder.hashKeys().treeSetValues(ElementDisplay.SequenceComparator).build();
     private final Map<Object, Object>              _readableCounts        = new HashMap<>();
 
@@ -570,18 +570,30 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected List<ElementDisplay> getBrowseableElementDisplays() {
-        if (_browseable.size() == 0) {
+        return new ArrayList<>(getBrowseableElementDisplayMap().values());
+    }
+
+    protected Map<String, ElementDisplay> getBrowseableElementDisplayMap() {
+        if (_browseable.isEmpty()) {
+            final Map<String, ElementDisplay> cached = getCache().getBrowseableElementDisplays(getUsername());
+            if (!cached.isEmpty()) {
+                _browseable.putAll(cached);
+                return _browseable;
+            }
+
             final Map counts = getReadableCounts();
 
             try {
-                for (final ElementDisplay ed : getReadableElementDisplays()) {
-                    final String elementName = ed.getElementName();
+                for (final ElementDisplay elementDisplay : getReadableElementDisplays()) {
+                    final String elementName = elementDisplay.getElementName();
                     if (ElementSecurity.IsBrowseableElement(elementName)) {
                         if (counts.containsKey(elementName) && ((Long) counts.get(elementName) > 0)) {
-                            _browseable.add(ed);
+                            _browseable.put(elementDisplay.getElementName(), elementDisplay);
                         }
                     }
                 }
+
+                getCache()
             } catch (ElementNotFoundException e) {
                 logger.error("Element '{}' not found", e.ELEMENT, e);
             } catch (XFTInitException e) {
@@ -591,21 +603,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
         }
 
-        return _browseable;
+        return ImmutableMap.copyOf(_browseable);
     }
 
-    protected ElementDisplay getBrowseableElementDisplay(String elementName) {
-        for (ElementDisplay ed : getBrowseableElementDisplays()) {
-            if (ed.getElementName().equals(elementName)) {
-                return ed;
-            }
-        }
-
-        return null;
+    protected ElementDisplay getBrowseableElementDisplay(final String elementName) {
+        return getBrowseableElementDisplayMap().get(elementName);
     }
 
-    protected ArrayList<ElementDisplay> getBrowseableCreateableElementDisplays() {
-        ArrayList<ElementDisplay> elementDisplays = new ArrayList<>();
+    protected List<ElementDisplay> getBrowseableCreateableElementDisplays() {
+        final List<ElementDisplay> elementDisplays = new ArrayList<>();
         try {
             for (final ElementDisplay ed : getCreateableElementDisplays()) {
                 if (ElementSecurity.IsBrowseableElement(ed.getElementName())) {

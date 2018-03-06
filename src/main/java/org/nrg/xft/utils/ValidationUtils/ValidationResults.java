@@ -21,7 +21,13 @@ import org.nrg.xft.utils.XftStringUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
 public class ValidationResults implements ValidationResultsI{
-	private ArrayList results = new ArrayList(); // FIELD (VWrapperField), MESSAGE (String)
+	public void addResults(final ValidationResults results) {
+		for (final Object[] result : results.getResults()) {
+			addResult(result);
+		}
+	}
+
+    private ArrayList results = new ArrayList(); // FIELD (VWrapperField), MESSAGE (String)
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.utils.ValidationUtils.ValidationResultsI#isValid()
 	 */
@@ -189,5 +195,9 @@ public class ValidationResults implements ValidationResultsI{
     public static GenericWrapperField GetField(String xmlPath) throws XFTInitException,FieldNotFoundException,ElementNotFoundException{
         return GenericWrapperElement.GetFieldForXMLPath(xmlPath);
     }
+
+	private void addResult(final Object[] result) {
+		results.add(result);
+	}
 }
 

@@ -1,5 +1,6 @@
 package org.nrg.xdat.services;
 
+import java.util.Map;
 import java.util.concurrent.Future;
 
 /**
@@ -26,4 +27,10 @@ public interface Initializing {
      * @return Returns true if the object is initialized, false otherwise.
      */
     boolean isInitialized();
+
+    /**
+     * Returns a message indicating the current status of initialization. The contents of this
+     * string are completely dependent on the implementation.
+     */
+    Map<String, String> getInitializationStatus();
 }

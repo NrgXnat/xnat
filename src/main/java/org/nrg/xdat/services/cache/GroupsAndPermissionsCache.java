@@ -1,5 +1,6 @@
 package org.nrg.xdat.services.cache;
 
+import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
@@ -9,16 +10,55 @@ import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface GroupsAndPermissionsCache extends XnatCache {
     String CACHE_NAME = "GroupsAndPermissionsCache";
 
+    Map<String, ElementDisplay> getBrowseableElementDisplays(final String username);
+
     interface Listener {
+        /**
+         * Returns a set containing the IDs of the groups that have not yet been cached.
+         *
+         * @return A set of group IDs for groups that have not yet been cached.
+         */
+        Set<String> getUnprocessed();
+
+        /**
+         * Returns a set containing the IDs of the groups that have been cached.
+         *
+         * @return A set of group IDs for groups that have been cached.
+         */
+        Set<String> getProcessed();
+
+        /**
+         * Accessor for time/date cache initialization was started.
+         *
+         * @return The start time/date.
+         */
+        Date getStart();
+
+        /**
+         * Accessor for time/date cache initialization was completed.
+         *
+         * @return The completion time/date.
+         */
+        Date getCompleted();
+
+        /**
+         * Sets the list of group IDs to be processed. This should only be called by the cache
+         * with which the listener is registered.
+         *
+         * @param groupIds The list of group IDs to be processed.
+         */
         void setGroupIds(final List<String> groupIds);
     }
 
     interface Provider {
         void registerListener(final Listener listener);
+
+        Listener getListener();
     }
 
     /**

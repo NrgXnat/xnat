@@ -21,6 +21,7 @@ import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.services.Initializing;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,9 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 
 @Api(description = "Data Access API")
@@ -130,6 +133,22 @@ public class DataAccessApi extends AbstractXapiRestController {
         }), Predicates.<ElementDisplayModel>notNull()));
 
         return new ResponseEntity<>(models, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns a map indicating the status of the cache initialization.", response = String.class, responseContainer = "Map")
+    @ApiResponses({@ApiResponse(code = 200, message = "A map with information on the status of cache initialization."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(code = 404, message = "Indicates that the cache implementation doesn't have the ability to report its status."),
+                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "cache/status", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> getCacheStatus() {
+        if (Initializing.class.isAssignableFrom(_cache.getClass())) {
+            final Initializing initializing = (Initializing) _cache;
+            return new ResponseEntity<>(initializing.getInitializationStatus(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     private static final List<String> AVAILABLE_ELEMENT_DISPLAYS = Arrays.asList("browseable", "browseableCreateable", "createable", "searchable", "searchableByDesc", "searchableByPluralDesc");

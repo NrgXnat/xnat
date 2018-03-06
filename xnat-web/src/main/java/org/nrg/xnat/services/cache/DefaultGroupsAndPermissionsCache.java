@@ -19,6 +19,7 @@ import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.xdat.XDAT;
@@ -54,6 +55,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -324,6 +326,45 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         return _initialized;
     }
 
+    @Override
+    public Map<String, String> getInitializationStatus() {
+        final Map<String, String> status = new HashMap<>();
+        if (_listener == null) {
+            status.put("message", "No listener registered, so no status to report.");
+            return status;
+        }
+
+        final Set<String> processed      = _listener.getProcessed();
+        final int         processedCount = processed.size();
+        final Set<String> unprocessed    = _listener.getUnprocessed();
+        final Date        start          = _listener.getStart();
+
+        status.put("start", DATE_FORMAT.format(start));
+        status.put("processedCount", Integer.toString(processedCount));
+        status.put("processed", StringUtils.join(processed, ", "));
+
+        if (unprocessed.isEmpty()) {
+            final Date   completed = _listener.getCompleted();
+            final String duration  = DurationFormatUtils.formatPeriodISO(start.getTime(), completed.getTime());
+
+            status.put("completed", DATE_FORMAT.format(completed));
+            status.put("duration", duration);
+            status.put("message", "Cache initialization is complete. Processed " + processedCount + " groups in " + duration);
+            return status;
+        }
+
+        final Date   now              = new Date();
+        final String duration         = DurationFormatUtils.formatPeriodISO(start.getTime(), now.getTime());
+        final int    unprocessedCount = unprocessed.size();
+
+        status.put("unprocessedCount", Integer.toString(unprocessedCount));
+        status.put("unprocessed", StringUtils.join(unprocessed, ", "));
+        status.put("current", DATE_FORMAT.format(now));
+        status.put("duration", duration);
+        status.put("message", "Cache initialization is on-going, with " + processedCount + " groups processed and " + unprocessedCount + " groups remaining, time elapsed so far is " + duration);
+        return status;
+    }
+
     /**
      * This method retrieves the group with the specified group ID and puts it in the cache. This method
      * does <i>not</i> check to see if the group is already in the cache! This is primarily for use during
@@ -351,8 +392,14 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         return cacheGroup(group);
     }
 
+    @Override
     public void registerListener(final Listener listener) {
         _listener = listener;
+    }
+
+    @Override
+    public Listener getListener() {
+        return _listener;
     }
 
     private synchronized UserGroupI initializeGroup(final String groupId) {
@@ -499,6 +546,8 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     private static boolean isGroupsAndPermissionsCacheEvent(final Ehcache cache) {
         return StringUtils.equals(CACHE_NAME, cache.getName());
     }
+
+    private static final DateFormat DATE_FORMAT = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
 
     private static final String QUERY_GET_GROUPS_FOR_USER        = "SELECT groupid " +
                                                                    "FROM xdat_user_groupid xug " +

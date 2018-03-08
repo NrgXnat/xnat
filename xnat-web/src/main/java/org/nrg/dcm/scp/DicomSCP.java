@@ -204,7 +204,7 @@ public class DicomSCP {
                                                                           _manager.getUserProvider(),
                                                                           _manager.getImporter(),
                                                                           _manager.getDicomObjectIdentifier(instance.getIdentifier()),
-                                                                          _manager.getDicomFileNamer(instance.getFileNamer()))
+                                                                          _manager.getDicomFileNamer(instance.getFileNamer()), _manager)
                                                       .build());
     }
 

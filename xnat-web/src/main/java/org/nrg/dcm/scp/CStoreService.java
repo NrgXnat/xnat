@@ -158,21 +158,23 @@ public class CStoreService extends DicomService implements CStoreSCP {
     private final Provider<UserI> userProvider;
     private final ProcessorGradualDicomImporter importer;
     private DicomFileNamer namer = null;
+    private final DicomSCPManager _manager;
 
 
     public CStoreService(final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> identifier,
-                         final Provider<UserI> userProvider) {
+                         final Provider<UserI> userProvider, final DicomSCPManager manager) {
         super(CUIDS);
         this.importer = importer;
         this.identifier = identifier;
         this.userProvider = userProvider;
+        this._manager = manager;
     }
 
     public CStoreService(final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> identifier,
-            final UserI user) {
+            final UserI user, final DicomSCPManager manager) {
         this(importer, identifier, new Provider<UserI>() {
             public UserI get() { return user; }
-        });
+        }, manager);
     }
 
     /*
@@ -225,8 +227,16 @@ public class CStoreService extends DicomService implements CStoreSCP {
         final FileWriterWrapperI fw = new StreamWrapper(dataStream);
         try {
             try {
+                boolean useDefaultImporter = true;
+                try {
+                    DicomSCPInstance instance = _manager.getDicomSCPInstance(as.getLocalAET());
+                    useDefaultImporter = !instance.getCustomProcessing();
+                }
+                catch(Throwable t){
+                    logger.error("Failed to get whether the SCP receiver is set up to do custom processing. Default importer will be used.",t);
+                }
 
-                if(true) {//TODO: make this get a property from the AE to determine which version of GradualDicomImporter to use
+                if(useDefaultImporter) {
 
 
                     final GradualDicomImporter importer = new GradualDicomImporter(this,
@@ -302,28 +312,31 @@ public class CStoreService extends DicomService implements CStoreSCP {
         private final ProcessorGradualDicomImporter importer;
         private final DicomObjectIdentifier<XnatProjectdata> identifier;
         private final DicomFileNamer namer;
+        private final DicomSCPManager manager;
         
         public Specifier(final String aeTitle,
                 final Provider<UserI> userProvider,
                 final ProcessorGradualDicomImporter importer,
                 final DicomObjectIdentifier<XnatProjectdata> identifier,
-                final DicomFileNamer namer) {
+                final DicomFileNamer namer, final DicomSCPManager manager) {
             this.aeTitle = aeTitle;
             this.userProvider = userProvider;
             this.importer = importer;
             this.identifier = identifier;
             this.namer = namer;
+            this.manager = manager;
         }
         
         public Specifier(final String aeTitle,
                 final Provider<UserI> userProvider,
                 final ProcessorGradualDicomImporter importer,
-                final DicomObjectIdentifier<XnatProjectdata> identifier) {
-            this(aeTitle, userProvider, importer, identifier, null);
+                final DicomObjectIdentifier<XnatProjectdata> identifier,
+                final DicomSCPManager manager) {
+            this(aeTitle, userProvider, importer, identifier, null, manager);
         }
         
         public CStoreService build() {
-            final CStoreService cstore = new CStoreService(importer, identifier, userProvider);
+            final CStoreService cstore = new CStoreService(importer, identifier, userProvider, manager);
             if (null != namer) {
                 cstore.setNamer(namer);
             }

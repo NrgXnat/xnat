@@ -298,6 +298,12 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     }
 
+    public DicomSCPInstance getDicomSCPInstance(final String aeTitle) {
+        return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE, new HashMap<String, Object>() {{
+            put("aeTitle", aeTitle);
+        }}, DICOM_SCP_INSTANCE_ROW_MAPPER);
+    }
+
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle, final int port) {
         try {
         return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE_AND_PORT,
@@ -555,6 +561,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final String GET_INSTANCE_BY_ID                    = "SELECT * FROM dicom_scp_instance WHERE id = :id";
     private static final String GET_ENABLED_INSTANCES_BY_PORT         = "SELECT * FROM dicom_scp_instance WHERE enabled = :enabled AND port = :port";
     private static final String DOES_INSTANCE_ID_EXIST                = "SELECT EXISTS(" + GET_INSTANCE_BY_ID + ")";
+    private static final String GET_INSTANCE_BY_AE_TITLE              = "SELECT * FROM dicom_scp_instance WHERE ae_title = :aeTitle";
     private static final String GET_INSTANCE_BY_AE_TITLE_AND_PORT     = "SELECT * FROM dicom_scp_instance WHERE ae_title = :aeTitle AND port = :port";
     private static final String DOES_INSTANCE_AE_TITLE_AND_PORT_EXIST = "SELECT EXISTS(" + GET_INSTANCE_BY_AE_TITLE_AND_PORT + ")";
     private static final String GET_PORTS_BY_IDS                      = "SELECT DISTINCT port FROM dicom_scp_instance WHERE id IN (:ids)";
@@ -580,7 +587,8 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
                                         resultSet.getInt("port"),
                                         resultSet.getString("identifier"),
                                         resultSet.getString("file_namer"),
-                                        resultSet.getBoolean("enabled"));
+                                        resultSet.getBoolean("enabled"),
+                                        resultSet.getBoolean("custom_processing"));
         }
     };
 

@@ -27,13 +27,14 @@ public class DicomSCPInstance {
         // Default constructor
     }
 
-    public DicomSCPInstance(final int id, final String aeTitle, final int port, final String identifier, final String fileNamer, final boolean enabled) {
+    public DicomSCPInstance(final int id, final String aeTitle, final int port, final String identifier, final String fileNamer, final boolean enabled, final boolean customProcessing) {
         setId(id);
         setPort(port);
         setAeTitle(aeTitle);
         setIdentifier(identifier);
         setFileNamer(fileNamer);
         setEnabled(enabled);
+        setCustomProcessing(customProcessing);
     }
 
     public int getId() {
@@ -84,6 +85,14 @@ public class DicomSCPInstance {
         _enabled = enabled;
     }
 
+    public boolean getCustomProcessing() {
+        return _customProcessing;
+    }
+
+    public void setCustomProcessing(final boolean customProcessing) {
+        _customProcessing = customProcessing;
+    }
+
     @Override
     public String toString() {
         return formatDicomSCPInstanceKey(_aeTitle, _port);
@@ -108,6 +117,7 @@ public class DicomSCPInstance {
                 .append(getAeTitle(), instance.getAeTitle())
                 .append(getIdentifier(), instance.getIdentifier())
                 .append(getFileNamer(), instance.getFileNamer())
+                .append(getCustomProcessing(), instance.getCustomProcessing())
                 .isEquals();
     }
 
@@ -120,6 +130,7 @@ public class DicomSCPInstance {
                 .append(getIdentifier())
                 .append(getFileNamer())
                 .append(isEnabled())
+                .append(getCustomProcessing())
                 .toHashCode();
     }
 
@@ -131,6 +142,7 @@ public class DicomSCPInstance {
             put("identifier", _identifier);
             put("fileNamer", _fileNamer);
             put("enabled", _enabled);
+            put("customProcessing", _customProcessing);
         }};
     }
 
@@ -140,4 +152,5 @@ public class DicomSCPInstance {
     private String _identifier;
     private String _fileNamer;
     private boolean _enabled = true;
+    private boolean _customProcessing = false;
 }

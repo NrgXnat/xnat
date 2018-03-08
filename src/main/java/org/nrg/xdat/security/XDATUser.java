@@ -10,6 +10,7 @@
 package org.nrg.xdat.security;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.collect.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -48,11 +49,13 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
+import static org.nrg.xdat.security.SecurityManager.*;
 
 /**
  * @author Tim
@@ -65,7 +68,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
     private static final SimpleGrantedAuthority AUTHORITY_ADMIN     = new SimpleGrantedAuthority("ROLE_ADMIN");
     private static final SimpleGrantedAuthority AUTHORITY_USER      = new SimpleGrantedAuthority("ROLE_USER");
-    private static final String[]               REPLACEMENT_LIST    = {"id", "xnat_experimentData", "xnat_experimentData_share", "sharing_share_xnat_experimentda_id"};
 
     private       Hashtable<String, ElementAccessManager> accessManagers             = null;
     private       boolean                                 extended                   = false;
@@ -73,9 +75,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private       boolean                                 rolesNotUpdatedFromService = true;
     private       ArrayList<XdatStoredSearch>             stored_searches            = null;
 
-    private final Map<String, ElementDisplay>      _browseable            = new HashMap<>();
-    private final Multimap<String, ElementDisplay> _actionElementDisplays = MultimapBuilder.hashKeys().treeSetValues(ElementDisplay.SequenceComparator).build();
-    private final Map<Object, Object>              _readableCounts        = new HashMap<>();
+    private final List<ElementDisplay> _searchableElementDisplays = new ArrayList<>();
 
     private long startTime = Calendar.getInstance().getTimeInMillis();
 
@@ -345,7 +345,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getCreateableElementDisplays() throws Exception {
-        return getActionElementDisplays(SecurityManager.CREATE);
+        return getCache().getActionElementDisplays(this, CREATE);
     }
 
     /**
@@ -356,7 +356,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getEditableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
-        return getActionElementDisplays(SecurityManager.EDIT);
+        return getCache().getActionElementDisplays(this, EDIT);
     }
 
     /**
@@ -367,7 +367,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception When an error occurs.
      */
     protected List<ElementDisplay> getReadableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
-        return getActionElementDisplays(SecurityManager.READ);
+        return getCache().getActionElementDisplays(this, READ);
     }
 
     /**
@@ -564,46 +564,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return getRoleNames().contains(role);
     }
 
-    public void clearBrowseableElementDisplays() {
-        _browseable.clear();
-        _readableCounts.clear();
-    }
-
     protected List<ElementDisplay> getBrowseableElementDisplays() {
         return new ArrayList<>(getBrowseableElementDisplayMap().values());
     }
 
     protected Map<String, ElementDisplay> getBrowseableElementDisplayMap() {
-        if (_browseable.isEmpty()) {
-            final Map<String, ElementDisplay> cached = getCache().getBrowseableElementDisplays(getUsername());
-            if (!cached.isEmpty()) {
-                _browseable.putAll(cached);
-                return _browseable;
-            }
-
-            final Map counts = getReadableCounts();
-
-            try {
-                for (final ElementDisplay elementDisplay : getReadableElementDisplays()) {
-                    final String elementName = elementDisplay.getElementName();
-                    if (ElementSecurity.IsBrowseableElement(elementName)) {
-                        if (counts.containsKey(elementName) && ((Long) counts.get(elementName) > 0)) {
-                            _browseable.put(elementDisplay.getElementName(), elementDisplay);
-                        }
-                    }
-                }
-
-                getCache()
-            } catch (ElementNotFoundException e) {
-                logger.error("Element '{}' not found", e.ELEMENT, e);
-            } catch (XFTInitException e) {
-                logger.error("There was an error initializing or accessing XFT", e);
-            } catch (Exception e) {
-                logger.error("An unknown error occurred", e);
-            }
-        }
-
-        return ImmutableMap.copyOf(_browseable);
+        return getCache().getBrowseableElementDisplays(this);
     }
 
     protected ElementDisplay getBrowseableElementDisplay(final String elementName) {
@@ -611,13 +577,36 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected List<ElementDisplay> getBrowseableCreateableElementDisplays() {
-        final List<ElementDisplay> elementDisplays = new ArrayList<>();
         try {
-            for (final ElementDisplay ed : getCreateableElementDisplays()) {
-                if (ElementSecurity.IsBrowseableElement(ed.getElementName())) {
-                    elementDisplays.add(ed);
+            final List<ElementDisplay> elementDisplays = Lists.newArrayList(Iterables.filter(getCreateableElementDisplays(), new Predicate<ElementDisplay>() {
+                @Override
+                public boolean apply(@Nullable final ElementDisplay elementDisplay) {
+                    try {
+                        return elementDisplay != null && ElementSecurity.IsBrowseableElement(elementDisplay.getElementName());
+                    } catch (Exception e) {
+                        return false;
+                    }
                 }
-            }
+            }));
+            Collections.sort(elementDisplays, new Comparator<ElementDisplay>() {
+                @Override
+                public int compare(ElementDisplay elementDisplay1, ElementDisplay elementDisplay2) {
+                    int sequence1 = 1000;
+                    try {
+                        sequence1 = elementDisplay1.getElementSecurity().getSequence();
+                    } catch (Exception ignored) {
+                        // Just ignore it.
+                    }
+                    int sequence2 = 1000;
+                    try {
+                        sequence2 = elementDisplay2.getElementSecurity().getSequence();
+                    } catch (Exception ignored) {
+                        // Just ignore it.
+                    }
+                    return Integer.compare(sequence1, sequence2);
+                }
+            });
+            return elementDisplays;
         } catch (ElementNotFoundException e) {
             logger.error("Element '{}' not found", e.ELEMENT, e);
         } catch (XFTInitException e) {
@@ -625,53 +614,29 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         } catch (Exception e) {
             logger.error("An unknown error occurred", e);
         }
-
-        Collections.sort(elementDisplays, new Comparator<ElementDisplay>() {
-            @Override
-            public int compare(ElementDisplay elementDisplay1, ElementDisplay elementDisplay2) {
-                int sequence1 = 1000;
-                try {
-                    sequence1 = elementDisplay1.getElementSecurity().getSequence();
-                } catch (Exception ignored) {
-                    // Just ignore it.
-                }
-                int sequence2 = 1000;
-                try {
-                    sequence2 = elementDisplay2.getElementSecurity().getSequence();
-                } catch (Exception ignored) {
-                    // Just ignore it.
-                }
-                return Integer.compare(sequence1, sequence2);
-            }
-        });
-
-        return elementDisplays;
+        return Collections.emptyList();
     }
 
-
-    ArrayList<ElementDisplay> searchable = null;
-
-    protected ArrayList<ElementDisplay> getSearchableElementDisplays() {
+    protected List<ElementDisplay> getSearchableElementDisplays() {
         return getSearchableElementDisplays(NameComparator);
     }
 
-    protected ArrayList<ElementDisplay> getSearchableElementDisplaysByDesc() {
+    protected List<ElementDisplay> getSearchableElementDisplaysByDesc() {
         return getSearchableElementDisplays(DescriptionComparator);
     }
 
-    protected ArrayList<ElementDisplay> getSearchableElementDisplaysByPluralDesc() {
+    protected List<ElementDisplay> getSearchableElementDisplaysByPluralDesc() {
         return getSearchableElementDisplays(PluralDescriptionComparator);
     }
 
-    protected ArrayList<ElementDisplay> getSearchableElementDisplays(Comparator comp) {
-        if (searchable == null) {
-            searchable = new ArrayList<>();
-            Map counts = this.getReadableCounts();
+    protected List<ElementDisplay> getSearchableElementDisplays(Comparator comp) {
+        if (_searchableElementDisplays.isEmpty()) {
+            final Map<Object, Object> counts = getReadableCounts();
             try {
                 for (final ElementDisplay ed : getReadableElementDisplays()) {
                     if (ElementSecurity.IsSearchable(ed.getElementName())) {
                         if (counts.containsKey(ed.getElementName()) && ((Long) counts.get(ed.getElementName()) > 0)) {
-                            searchable.add(ed);
+                            _searchableElementDisplays.add(ed);
                         }
                     }
                 }
@@ -682,12 +647,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             } catch (Exception e) {
                 logger.error("An unknown error occurred", e);
             }
-            searchable.trimToSize();
-
-            Collections.sort(searchable, comp);
+            Collections.sort(_searchableElementDisplays, comp);
         }
 
-        return searchable;
+        return _searchableElementDisplays;
     }
 
     /**
@@ -716,7 +679,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         } catch (ElementNotFoundException e) {
             logger.error("Element '{}' not found", e.ELEMENT, e);
         } catch (FieldNotFoundException e) {
-            logger.error("Field '{}' not found", e.FIELD, e);        }
+            logger.error("Field '{}' not found", e.FIELD, e);
+        }
         stored_searches.add(i);
     }
 
@@ -757,9 +721,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
 
         try {
-            final Map<String, UserGroupI> groups = new HashMap<>();
-            final XFTTable     table    = XFTTable.Execute("SELECT groupid FROM xdat_user_groupid WHERE groups_groupid_xdat_user_xdat_user_id = " + getXdatUserId(), getDBName(), getLogin());
-            final List<String> groupIds = table.convertColumnToArrayList("groupid");
+            final Map<String, UserGroupI> groups   = new HashMap<>();
+            final XFTTable                table    = XFTTable.Execute("SELECT groupid FROM xdat_user_groupid WHERE groups_groupid_xdat_user_xdat_user_id = " + getXdatUserId(), getDBName(), getLogin());
+            final List<String>            groupIds = table.convertColumnToArrayList("groupid");
 
             for (final String groupId : groupIds) {
                 final UserGroupI group = Groups.getGroup(groupId);
@@ -874,13 +838,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             ArrayList<ItemI> items  = new ArrayList<>();
             try {
                 search.setElement(elementName);
-                if (security_permission != null && security_permission.equals(SecurityManager.READ)) {
+                if (security_permission != null && security_permission.equals(READ)) {
                     search.setUser(this);
                 }
                 search.setAllowMultiples(preLoad);
                 ArrayList<ItemI> al = search.exec().getItems();
 
-                if (security_permission != null && !security_permission.equals(SecurityManager.READ)) {
+                if (security_permission != null && !security_permission.equals(READ)) {
                     for (ItemI item : al) {
                         if (Permissions.can(this, item, security_permission)) {
                             item.getItem().setUser(this);
@@ -912,58 +876,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     protected void clearLocalCache() {
         userSessionCache = new Hashtable<>();
         total_counts = null;
-        _readableCounts.clear();
         _permissionCriteria.clear();
         _editableProjects = null;
         _isSiteAdmin = null;
     }
 
     protected Map<Object, Object> getReadableCounts() {
-        if (_readableCounts.size() == 0) {
-            try {
-                try {
-                    //projects
-                    final org.nrg.xft.search.QueryOrganizer projects = new org.nrg.xft.search.QueryOrganizer("xnat:projectData", this, ViewManager.ALL);
-                    projects.addField("xnat:projectData/ID");
-
-                    final Long projectCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + projects.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
-                    _readableCounts.put("xnat:projectData", projectCount);
-
-                    //workflows
-                    final org.nrg.xft.search.QueryOrganizer workflows = new org.nrg.xft.search.QueryOrganizer("wrk:workflowData", this, ViewManager.ALL);
-                    workflows.addField("wrk:workflowData/ID");
-
-                    final Long workflowCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + workflows.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
-                    _readableCounts.put("wrk:workflowData", workflowCount);
-
-                    //subjects
-                    final org.nrg.xft.search.QueryOrganizer subjects = new org.nrg.xft.search.QueryOrganizer("xnat:subjectData", this, ViewManager.ALL);
-                    subjects.addField("xnat:subjectData/ID");
-
-                    final Long subjectCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + subjects.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
-                    _readableCounts.put("xnat:subjectData", subjectCount);
-
-                    //experiments
-                    final String query = StringUtils.replaceEach(subjects.buildQuery(),
-                                                                 new String[]{subjects.translateXMLPath("xnat:subjectData/ID"), "xnat_subjectData", "xnat_projectParticipant", "subject_id"},
-                                                                 REPLACEMENT_LIST);
-
-                    final XFTTable table = XFTTable.Execute("SELECT element_name, COUNT(*) FROM (" + query + ") SEARCH  LEFT JOIN xnat_experimentData expt ON search.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", this.getDBName(), this.getUsername());
-                    _readableCounts.putAll(table.convertToHashtable("element_name", "count"));
-                } catch (org.nrg.xdat.exceptions.IllegalAccessException e) {
-                    //not a member of anything
-                    logger.info("USER:" + this.getUsername() + " doesn't have access to any project data.");
-                }
-            } catch (SQLException e) {
-                logger.error("An error occurred in the SQL for retrieving readable counts for the user " + getUsername(), e);
-            } catch (DBPoolException e) {
-                logger.error("A database error occurred when trying to retrieve readable counts for the user " + getUsername(), e);
-            } catch (Exception e) {
-                logger.error("An unknown error occurred when trying to retrieve readable counts for the user " + getUsername(), e);
-            }
-        }
-
-        return _readableCounts;
+        return getCache().getReadableCounts(this);
     }
 
     Map total_counts = null;
@@ -1083,7 +1002,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             for (final String groupId : groupIds) {
                 final UserGroupI group = userGroups.get(groupId);
                 if (group != null) {
-                    final List<PermissionCriteriaI> permissions = ((UserGroup) group).getPermissionsByDataType(type);
+                    final List<PermissionCriteriaI> permissions = group.getPermissionsByDataType(type);
                     if (permissions != null) {
                         if (logger.isInfoEnabled()) {
                             logger.info("Searched for permission criteria for user {} on type {} in group {}: {}", getUsername(), type, groupId, dumpCriteriaList(permissions));
@@ -1319,50 +1238,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return _editableProjects;
     }
 
-    /**
-     * List of {@link ElementDisplay element displays} that this user can invoke.
-     *
-     * @return A list of all {@link ElementDisplay element displays} that this user can invoke.
-     *
-     * @throws Exception When an error occurs.
-     */
-    private List<ElementDisplay> getActionElementDisplays(final String action) throws ElementNotFoundException, XFTInitException, Exception {
-        if (!_actionElementDisplays.containsKey(action)) {
-            for (final ElementSecurity elementSecurity : ElementSecurity.GetSecureElements()) {
-                try {
-                    final SchemaElement schemaElement = elementSecurity.getSchemaElement();
-                    if (schemaElement != null) {
-                        if (schemaElement.hasDisplay()) {
-                            if (Permissions.canAny(this, elementSecurity.getElementName(), action)) {
-                                final ElementDisplay elementDisplay = schemaElement.getDisplay();
-                                if (elementDisplay != null) {
-                                    _actionElementDisplays.put(action, elementDisplay);
-                                }
-                            }
-                        }
-                    } else {
-                        throw new ElementNotFoundException(elementSecurity.getElementName());
-                    }
-                } catch (ElementNotFoundException e) {
-                    logger.error("Element '{}' not found", e.ELEMENT, e);
-                }
-            }
-
-            for (final ElementSecurity elementSecurity : ElementSecurity.GetInSecureElements()) {
-                try {
-                    final SchemaElement schemaElement = elementSecurity.getSchemaElement();
-                    if (schemaElement.hasDisplay()) {
-                        _actionElementDisplays.put(action, schemaElement.getDisplay());
-                    }
-                } catch (ElementNotFoundException e) {
-                    logger.error("Element '{}' not found", e.ELEMENT, e);
-                }
-            }
-        }
-
-        return ImmutableList.copyOf(_actionElementDisplays.get(action));
-    }
-
     private boolean canModify(final String projectId) throws Exception {
         if (Roles.isSiteAdmin(this)) {
             return true;
@@ -1373,7 +1248,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         final List<ElementSecurity> secureElements = ElementSecurity.GetSecureElements();
         for (ElementSecurity secureElement : secureElements) {
             if (secureElement.getSchemaElement().instanceOf("xnat:imageSessionData")) {
-                if (Permissions.can(this, secureElement.getElementName() + "/project", projectId, SecurityManager.EDIT)) {
+                if (Permissions.can(this, secureElement.getElementName() + "/project", projectId, EDIT)) {
                     return true;
                 }
             }

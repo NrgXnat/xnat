@@ -7,15 +7,19 @@ import org.nrg.xft.security.UserI;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import static org.nrg.xdat.security.SecurityManager.*;
 
 public interface GroupsAndPermissionsCache extends XnatCache {
-    String CACHE_NAME = "GroupsAndPermissionsCache";
+    String       CACHE_NAME = "GroupsAndPermissionsCache";
+    List<String> ACTIONS    = Arrays.asList(READ, EDIT, CREATE);
 
-    Map<String, ElementDisplay> getBrowseableElementDisplays(final String username);
+    Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user);
+
+    Map getReadableCounts(final UserI user);
+
+    List<ElementDisplay> getActionElementDisplays(final UserI user, final String action) throws Exception;
 
     interface Listener {
         /**

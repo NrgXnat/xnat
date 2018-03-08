@@ -40,6 +40,11 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
+import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
+import org.nrg.xnat.event.listeners.methods.AbstractScopedSiteConfigPreferenceHandlerMethod;
+import org.nrg.xnat.utils.XnatUserProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
@@ -72,13 +77,14 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     public static final String PREF_ID = "dicomSCPInstances";
 
     @Autowired
-    public DicomSCPManager(final NrgPreferenceService preferenceService, final NrgEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
-        super(preferenceService, eventService);
+    public DicomSCPManager(final NrgPreferenceService preferenceService, final NrgEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {        super(preferenceService, eventService);
 
         _provider = receivedFileUserProvider;
         _context = context;
 
         _isEnableDicomReceiver = siteConfigPreferences.isEnableDicomReceiver();
+
+        _importer = importer;
 
         String primaryBeanId = null;
 
@@ -389,6 +395,10 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         return getDicomObjectIdentifiers().get(_primaryDicomObjectIdentifierBeanId);
     }
 
+    public ProcessorGradualDicomImporter getImporter() {
+        return _importer;
+    }
+
     public void resetDicomObjectIdentifier() {
         final DicomObjectIdentifier<XnatProjectdata> objectIdentifier = getDefaultDicomObjectIdentifier();
         if (objectIdentifier instanceof CompositeDicomObjectIdentifier) {
@@ -581,6 +591,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private final IdentifiersToMapFunction   _identifiersToMapFunction;
     private final EmbeddedDatabase           _database;
     private final NamedParameterJdbcTemplate _template;
+    private final ProcessorGradualDicomImporter       _importer;
 
     private boolean _isEnableDicomReceiver;
 

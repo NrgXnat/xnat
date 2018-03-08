@@ -202,6 +202,7 @@ public class DicomSCP {
         _dicomServicesByApplicationEntity.put(_applicationEntities.get(aeTitle),
                                               new CStoreService.Specifier(aeTitle,
                                                                           _manager.getUserProvider(),
+                                                                          _manager.getImporter(),
                                                                           _manager.getDicomObjectIdentifier(instance.getIdentifier()),
                                                                           _manager.getDicomFileNamer(instance.getFileNamer()))
                                                       .build());

@@ -27,11 +27,10 @@ public class DicomSCPInstance {
         // Default constructor
     }
 
-    public DicomSCPInstance(final int id, final String aeTitle, final int port, final boolean customProcessing, final String identifier, final String fileNamer, final boolean enabled) {
+    public DicomSCPInstance(final int id, final String aeTitle, final int port, final String identifier, final String fileNamer, final boolean enabled) {
         setId(id);
         setPort(port);
         setAeTitle(aeTitle);
-        setCustomProcessing(customProcessing);
         setIdentifier(identifier);
         setFileNamer(fileNamer);
         setEnabled(enabled);
@@ -59,14 +58,6 @@ public class DicomSCPInstance {
 
     public void setAeTitle(final String aeTitle) {
         _aeTitle = aeTitle;
-    }
-
-    public boolean getCustomProcessing() {
-        return _customProcessing;
-    }
-
-    public void setCustomProcessing(final boolean customProcessing) {
-        _customProcessing = customProcessing;
     }
 
     public String getIdentifier() {
@@ -115,7 +106,6 @@ public class DicomSCPInstance {
                 .append(getPort(), instance.getPort())
                 .append(isEnabled(), instance.isEnabled())
                 .append(getAeTitle(), instance.getAeTitle())
-                .append(getCustomProcessing(), instance.getCustomProcessing())
                 .append(getIdentifier(), instance.getIdentifier())
                 .append(getFileNamer(), instance.getFileNamer())
                 .isEquals();
@@ -127,7 +117,6 @@ public class DicomSCPInstance {
                 .append(getId())
                 .append(getPort())
                 .append(getAeTitle())
-                .append(getCustomProcessing())
                 .append(getIdentifier())
                 .append(getFileNamer())
                 .append(isEnabled())
@@ -139,7 +128,6 @@ public class DicomSCPInstance {
             put("id", _id == 0 ? null : _id);
             put("aeTitle", _aeTitle);
             put("port", _port);
-            put("customProcessing", _customProcessing);
             put("identifier", _identifier);
             put("fileNamer", _fileNamer);
             put("enabled", _enabled);
@@ -149,7 +137,6 @@ public class DicomSCPInstance {
     private int    _id;
     private int    _port;
     private String _aeTitle;
-    private boolean _customProcessing = false;
     private String _identifier;
     private String _fileNamer;
     private boolean _enabled = true;

@@ -9,7 +9,16 @@
   -->
 
 <Context>
+    <!-- For Tomcat 8 compatibility, uncomment the <Resources> and <CookieProcessor> elements below and
+         comment out the <Loader> element below that. -->
+    <!-- Resources>
+        <PostResources className="org.apache.catalina.webresources.DirResourceSet" base="${xnat.home}/plugins" webAppMount="/WEB-INF/lib" />
+    </Resources>
+    <CookieProcessor className="org.apache.tomcat.util.http.LegacyCookieProcessor" / -->
+    <!-- For Tomcat 7 compatibility, uncomment the <Loader> element below and comment out the <Resources>
+         and <CookieProcessor> elements above. -->
     <Loader className="org.apache.catalina.loader.VirtualWebappLoader" searchVirtualFirst="true" virtualClasspath="${xnat.home}/plugins/*.jar"/>
     <JarScanner scanAllDirectories="true" />
     <Parameter name="xnatHome" value="${xnat.home}"/>
+    <Manager pathname="" />
 </Context>

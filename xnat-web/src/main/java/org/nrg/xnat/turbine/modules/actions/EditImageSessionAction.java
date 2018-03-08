@@ -33,7 +33,7 @@ public class EditImageSessionAction extends ModifySubjectAssessorData {
         try {
 
             // Migration: Is there a UserI-friendly version of XDATUser.clearBrowseableElementDisplays() and its kin?
-            ((XDATUser) XDAT.getUserDetails()).clearBrowseableElementDisplays();
+            // ((XDATUser) XDAT.getUserDetails()).clearBrowseableElementDisplays();
 
             if (item.getProperty("note") == null) {
                 item.setProperty("note", "NULL");

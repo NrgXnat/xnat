@@ -11,8 +11,7 @@ package org.nrg.xnat.services.cache;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicates;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
@@ -20,17 +19,30 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.UserGroupI;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.Initializing;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
+import org.nrg.xft.XFTTable;
+import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.cache.jms.InitializeGroupRequest;
 import org.slf4j.event.Level;
@@ -60,6 +72,7 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.Future;
 
+import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xdat.security.helpers.Groups.*;
 import static reactor.bus.selector.Selectors.predicate;
 
@@ -67,6 +80,7 @@ import static reactor.bus.selector.Selectors.predicate;
 @Service
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter implements Consumer<Event<XftItemEvent>>, GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
+
     @Autowired
     public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final EventBus eventBus) {
         _cache = cacheManager.getCache(CACHE_NAME);
@@ -154,6 +168,176 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     @Override
     public String getCacheName() {
         return CACHE_NAME;
+    }
+
+    @Override
+    public Map<String, ElementDisplay> getBrowseableElementDisplays(final UserI user) {
+        if (user == null) {
+            return Collections.emptyMap();
+        }
+
+        final String username = user.getUsername();
+        final String cacheId  = getCacheIdForUserElements(username, BROWSEABLE_ELEMENTS);
+
+        // Check whether the element types are cached and, if so, return that.
+        if (has(cacheId)) {
+            // Here we can just return the value directly as a map, because we know there's something cached
+            // and that what's cached is not a string.
+            log.debug("Found a cache entry for user '{}' readable counts by ID '{}'", username, cacheId);
+            //noinspection unchecked
+            return (Map<String, ElementDisplay>) _cache.get(cacheId, Map.class);
+        }
+
+        final Map<Object, Object>         counts     = getReadableCounts(user);
+        final Map<String, ElementDisplay> browseable = new HashMap<>();
+
+        try {
+            for (final ElementDisplay elementDisplay : getActionElementDisplays(user, SecurityManager.READ)) {
+                final String elementName = elementDisplay.getElementName();
+                if (ElementSecurity.IsBrowseableElement(elementName)) {
+                    if (counts.containsKey(elementName) && ((Long) counts.get(elementName) > 0)) {
+                        browseable.put(elementDisplay.getElementName(), elementDisplay);
+                    }
+                }
+            }
+
+            _cache.put(cacheId, browseable);
+            return browseable;
+        } catch (ElementNotFoundException e) {
+            log.error("Element '{}' not found", e.ELEMENT, e);
+        } catch (XFTInitException e) {
+            log.error("There was an error initializing or accessing XFT", e);
+        } catch (Exception e) {
+            log.error("An unknown error occurred", e);
+        }
+
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<Object, Object> getReadableCounts(final UserI user) {
+        if (user == null) {
+            return Collections.emptyMap();
+        }
+
+        final String username = user.getUsername();
+        final String cacheId  = getCacheIdForUserElements(username, READABLE_ELEMENTS);
+
+        // Check whether the element types are cached and, if so, return that.
+        if (has(cacheId)) {
+            // Here we can just return the value directly as a map, because we know there's something cached
+            // and that what's cached is not a string.
+            log.debug("Found a cache entry for user '{}' readable counts by ID '{}'", username, cacheId);
+            //noinspection unchecked
+            return Maps.newHashMap(_cache.get(cacheId, Map.class));
+        }
+
+        try {
+            final Map<Object, Object> readableCounts = new HashMap<>();
+            try {
+                //projects
+                final QueryOrganizer projects = new QueryOrganizer("xnat:projectData", user, ViewManager.ALL);
+                projects.addField("xnat:projectData/ID");
+
+                final String dbName       = user.getDBName();
+                final Long   projectCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + projects.buildQuery() + ") SEARCH;", "count", dbName, username);
+                readableCounts.put("xnat:projectData", projectCount);
+
+                //workflows
+                final QueryOrganizer workflows = new QueryOrganizer("wrk:workflowData", user, ViewManager.ALL);
+                workflows.addField("wrk:workflowData/ID");
+
+                final Long workflowCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + workflows.buildQuery() + ") SEARCH;", "count", dbName, username);
+                readableCounts.put("wrk:workflowData", workflowCount);
+
+                //subjects
+                final QueryOrganizer subjects = new QueryOrganizer("xnat:subjectData", user, ViewManager.ALL);
+                subjects.addField("xnat:subjectData/ID");
+
+                final Long subjectCount = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + subjects.buildQuery() + ") SEARCH;", "count", dbName, username);
+                readableCounts.put("xnat:subjectData", subjectCount);
+
+                //experiments
+                final String query = StringUtils.replaceEach(subjects.buildQuery(),
+                                                             new String[]{subjects.translateXMLPath("xnat:subjectData/ID"), "xnat_subjectData", "xnat_projectParticipant", "subject_id"},
+                                                             REPLACEMENT_LIST);
+
+                final XFTTable table = XFTTable.Execute("SELECT element_name, COUNT(*) FROM (" + query + ") SEARCH  LEFT JOIN xnat_experimentData expt ON search.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", dbName, username);
+                readableCounts.putAll(table.convertToHashtable("element_name", "count"));
+
+                _cache.put(cacheId, readableCounts);
+                return readableCounts;
+            } catch (org.nrg.xdat.exceptions.IllegalAccessException e) {
+                //not a member of anything
+                log.info("USER: {} doesn't have access to any project data.", username);
+            }
+        } catch (SQLException e) {
+            log.error("An error occurred in the SQL for retrieving readable counts for the  user {}", username, e);
+        } catch (DBPoolException e) {
+            log.error("A database error occurred when trying to retrieve readable counts for the  user {}", username, e);
+        } catch (Exception e) {
+            log.error("An unknown error occurred when trying to retrieve readable counts for the  user {}", username, e);
+        }
+        return Collections.emptyMap();
+    }
+
+    /**
+     * List of {@link ElementDisplay element displays} that this user can invoke.
+     *
+     * @return A list of all {@link ElementDisplay element displays} that this user can invoke.
+     *
+     * @throws Exception When an error occurs.
+     */
+    @Override
+    public List<ElementDisplay> getActionElementDisplays(final UserI user, final String action) throws Exception {
+        if (!ACTIONS.contains(action)) {
+            throw new NrgServiceRuntimeException(ConfigurationError, "The action '" + action + "' is invalid, must be one of: " + StringUtils.join(ACTIONS, ", "));
+        }
+
+        final String username = user.getUsername();
+        final String cacheId  = getCacheIdForActionElements(username, action);
+
+        // Check whether the action elements are cached and, if so, return that.
+        if (has(cacheId)) {
+            // Here we can just return the value directly as a list, because we know there's something cached
+            // and that what's cached is not a string.
+            log.debug("Found a cache entry for user '{}' action '{}' elements by ID '{}'", username, action, cacheId);
+            return safeCastCacheList(_cache.get(cacheId, List.class), ElementDisplay.class);
+        }
+
+        final Multimap<String, ElementDisplay> elementDisplays = ArrayListMultimap.create();
+        for (final ElementSecurity elementSecurity : ElementSecurity.GetSecureElements()) {
+            final SchemaElement schemaElement = elementSecurity.getSchemaElement();
+            if (schemaElement != null) {
+                if (schemaElement.hasDisplay()) {
+                    if (Permissions.canAny(user, elementSecurity.getElementName(), action)) {
+                        final ElementDisplay elementDisplay = schemaElement.getDisplay();
+                        if (elementDisplay != null) {
+                            elementDisplays.put(action, elementDisplay);
+                        }
+                    }
+                }
+            } else {
+                log.error("Element '{}' not found", elementSecurity.getElementName());
+                // throw new ElementNotFoundException(elementSecurity.getElementName());
+            }
+
+        }
+        for (final ElementSecurity elementSecurity : ElementSecurity.GetInSecureElements()) {
+            try {
+                final SchemaElement schemaElement = elementSecurity.getSchemaElement();
+                if (schemaElement.hasDisplay()) {
+                    elementDisplays.put(action, schemaElement.getDisplay());
+                }
+            } catch (ElementNotFoundException e) {
+                log.error("Element '{}' not found", e.ELEMENT, e);
+            }
+        }
+        for (final String foundAction : elementDisplays.keySet()) {
+            _cache.put(getCacheIdForActionElements(username, foundAction), new ArrayList<>(elementDisplays.get(foundAction)));
+        }
+
+        return ImmutableList.copyOf(elementDisplays.get(action));
     }
 
     /**
@@ -467,7 +651,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     }
 
     private List<String> getTagGroups(final String cacheId) {
-        return Lists.newArrayList(Iterables.filter(_cache.get(cacheId, List.class), String.class));
+        return safeCastCacheList(_cache.get(cacheId, List.class), String.class);
     }
 
     private List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {
@@ -539,15 +723,28 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         throw new RuntimeException("The native cache is not an ehcache instance, but instead is " + nativeCache.getClass().getName());
     }
 
+    private static <T> List<T> safeCastCacheList(final List list, final Class<T> desiredType) {
+        return Lists.newArrayList(Iterables.filter(list, desiredType));
+    }
+
     private static String getCacheIdForTag(final String tag) {
         return StringUtils.startsWith(tag, TAG_PREFIX) ? tag : TAG_PREFIX + tag;
+    }
+
+    private static String getCacheIdForUserElements(final String username, final String elementType) {
+        return USER_ELEMENT_PREFIX + username + ":" + elementType + ":";
+    }
+
+    private static String getCacheIdForActionElements(final String username, final String action) {
+        return ACTION_PREFIX + username + ":" + action + ":";
     }
 
     private static boolean isGroupsAndPermissionsCacheEvent(final Ehcache cache) {
         return StringUtils.equals(CACHE_NAME, cache.getName());
     }
 
-    private static final DateFormat DATE_FORMAT = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+    private static final DateFormat DATE_FORMAT      = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+    private static final String[]   REPLACEMENT_LIST = {"id", "xnat_experimentData", "xnat_experimentData_share", "sharing_share_xnat_experimentda_id"};
 
     private static final String QUERY_GET_GROUPS_FOR_USER        = "SELECT groupid " +
                                                                    "FROM xdat_user_groupid xug " +
@@ -564,7 +761,11 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     private static final String QUERY_ALL_TAGS                   = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
     private static final String QUERY_GET_GROUPS_FOR_TAG         = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
     private static final String QUERY_CHECK_USER_EXISTS          = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
+    private static final String ACTION_PREFIX                    = "action:";
     private static final String TAG_PREFIX                       = "tag:";
+    private static final String USER_ELEMENT_PREFIX              = "user:";
+    private static final String READABLE_ELEMENTS                = "readable";
+    private static final String BROWSEABLE_ELEMENTS              = "browsable";
 
     private static final NumberFormat FORMATTER = NumberFormat.getNumberInstance(Locale.getDefault());
 

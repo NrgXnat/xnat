@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.xdat.security.UserGroupI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Component;
 
 import java.text.NumberFormat;
 import java.util.*;
+
+import static org.nrg.framework.exceptions.NrgServiceError.UserServiceError;
 
 @Component
 @Slf4j
@@ -46,12 +50,19 @@ public class InitializeGroupRequestListener implements GroupsAndPermissionsCache
                 stopWatch.lap("Retrieved group '{}' successfully", groupId);
             }
             _processed.add(groupId);
+        } catch (NrgServiceRuntimeException e) {
+            if (e.getServiceError() == UserServiceError && e.getCause() instanceof UserInitException) {
+                log.warn("A UserInitException happened while trying to process a group with ID '{}'. This probably means the system hasn't initialized yet and the processing request was left over from a previous run.");
+            } else {
+                throw e;
+            }
         } finally {
             final int remaining = totalNumberOfGroups - _processed.size();
             if (remaining > 0) {
                 stopWatch.stop("Completed processing group '{}', there are {} groups remaining out of {}", groupId, remaining, totalNumberOfGroups);
             } else {
-                stopWatch.stop("Completed processing group '{}', there are NO groups remaining of the original {}! Total time elapsed {} ms", groupId, totalNumberOfGroups, FORMATTER.format(new Date().getTime() - _start.getTime()));
+                _completed = new Date();
+                stopWatch.stop("Completed processing group '{}', there are NO groups remaining of the original {}! Total time elapsed {} ms", groupId, totalNumberOfGroups, FORMATTER.format(_completed.getTime() - _start.getTime()));
             }
         }
     }

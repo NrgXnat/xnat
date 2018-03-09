@@ -178,39 +178,44 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
 
         final String username = user.getUsername();
         final String cacheId  = getCacheIdForUserElements(username, BROWSEABLE_ELEMENTS);
+        log.debug("Retrieving browseable element displays for user {} thru cache ID {}", username, cacheId);
 
         // Check whether the element types are cached and, if so, return that.
         if (has(cacheId)) {
             // Here we can just return the value directly as a map, because we know there's something cached
             // and that what's cached is not a string.
-            log.debug("Found a cache entry for user '{}' readable counts by ID '{}'", username, cacheId);
+            log.info("Found a cache entry for user '{}' readable counts by ID '{}'", username, cacheId);
             //noinspection unchecked
             return (Map<String, ElementDisplay>) _cache.get(cacheId, Map.class);
         }
 
+        log.debug("No cache entry found for user '{}' readable counts by ID '{}', initializing entry", username, cacheId);
         final Map<Object, Object>         counts     = getReadableCounts(user);
         final Map<String, ElementDisplay> browseable = new HashMap<>();
 
         try {
-            for (final ElementDisplay elementDisplay : getActionElementDisplays(user, SecurityManager.READ)) {
+            final List<ElementDisplay> actionElementDisplays = getActionElementDisplays(user, SecurityManager.READ);
+            log.debug("Found {} action element displays for user {}", actionElementDisplays.size(), username);
+            for (final ElementDisplay elementDisplay : actionElementDisplays) {
                 final String elementName = elementDisplay.getElementName();
-                if (ElementSecurity.IsBrowseableElement(elementName)) {
-                    if (counts.containsKey(elementName) && ((Long) counts.get(elementName) > 0)) {
-                        browseable.put(elementDisplay.getElementName(), elementDisplay);
-                    }
+                if (ElementSecurity.IsBrowseableElement(elementName) && counts.containsKey(elementName) && (Long) counts.get(elementName) > 0) {
+                    log.debug("Adding element display {} to cache entry {}", elementName, cacheId);
+                    browseable.put(elementName, elementDisplay);
                 }
             }
 
+            log.info("Adding {} element displays to cache entry {}", browseable.size(), cacheId);
             _cache.put(cacheId, browseable);
             return browseable;
         } catch (ElementNotFoundException e) {
-            log.error("Element '{}' not found", e.ELEMENT, e);
+            log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", e.ELEMENT);
         } catch (XFTInitException e) {
             log.error("There was an error initializing or accessing XFT", e);
         } catch (Exception e) {
             log.error("An unknown error occurred", e);
         }
 
+        log.info("No browseable element displays found for user {}", username);
         return Collections.emptyMap();
     }
 
@@ -222,6 +227,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
 
         final String username = user.getUsername();
         final String cacheId  = getCacheIdForUserElements(username, READABLE_ELEMENTS);
+        log.debug("Retrieving readable counts for user {} thru cache ID {}", username, cacheId);
 
         // Check whether the element types are cached and, if so, return that.
         if (has(cacheId)) {
@@ -265,6 +271,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
                 final XFTTable table = XFTTable.Execute("SELECT element_name, COUNT(*) FROM (" + query + ") SEARCH  LEFT JOIN xnat_experimentData expt ON search.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", dbName, username);
                 readableCounts.putAll(table.convertToHashtable("element_name", "count"));
 
+                log.debug("Found {} readable elements for user {}, caching with ID {}", readableCounts.size(), username, cacheId);
                 _cache.put(cacheId, readableCounts);
                 return readableCounts;
             } catch (org.nrg.xdat.exceptions.IllegalAccessException e) {
@@ -278,6 +285,8 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         } catch (Exception e) {
             log.error("An unknown error occurred when trying to retrieve readable counts for the  user {}", username, e);
         }
+
+        log.info("No readable elements found for user {}", username);
         return Collections.emptyMap();
     }
 
@@ -307,21 +316,25 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
 
         final Multimap<String, ElementDisplay> elementDisplays = ArrayListMultimap.create();
         for (final ElementSecurity elementSecurity : ElementSecurity.GetSecureElements()) {
-            final SchemaElement schemaElement = elementSecurity.getSchemaElement();
-            if (schemaElement != null) {
-                if (schemaElement.hasDisplay()) {
-                    if (Permissions.canAny(user, elementSecurity.getElementName(), action)) {
-                        final ElementDisplay elementDisplay = schemaElement.getDisplay();
-                        if (elementDisplay != null) {
-                            elementDisplays.put(action, elementDisplay);
+            try {
+                final SchemaElement schemaElement = elementSecurity.getSchemaElement();
+                if (schemaElement != null) {
+                    if (schemaElement.hasDisplay()) {
+                        if (Permissions.canAny(user, elementSecurity.getElementName(), action)) {
+                            final ElementDisplay elementDisplay = schemaElement.getDisplay();
+                            if (elementDisplay != null) {
+                                elementDisplays.put(action, elementDisplay);
+                            }
                         }
                     }
+                } else {
+                    log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", elementSecurity.getElementName());
                 }
-            } else {
-                log.error("Element '{}' not found", elementSecurity.getElementName());
-                // throw new ElementNotFoundException(elementSecurity.getElementName());
+            } catch (ElementNotFoundException e) {
+                log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", e.ELEMENT);
+            } catch (Exception e) {
+                log.error("An exception occurred trying to retrieve a secure element schema", e);
             }
-
         }
         for (final ElementSecurity elementSecurity : ElementSecurity.GetInSecureElements()) {
             try {
@@ -330,11 +343,16 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
                     elementDisplays.put(action, schemaElement.getDisplay());
                 }
             } catch (ElementNotFoundException e) {
-                log.error("Element '{}' not found", e.ELEMENT, e);
+                log.warn("Element '{}' not found. This may be a data type that was installed previously but can't be located now.", e.ELEMENT);
+            } catch (Exception e) {
+                log.error("An exception occurred trying to retrieve an insecure element schema", e);
             }
         }
         for (final String foundAction : elementDisplays.keySet()) {
-            _cache.put(getCacheIdForActionElements(username, foundAction), new ArrayList<>(elementDisplays.get(foundAction)));
+            final String actionCacheId = getCacheIdForActionElements(username, foundAction);
+            final List<ElementDisplay> actionElementDisplays = new ArrayList<>(elementDisplays.get(foundAction));
+            log.info("Caching {} elements for action {} for user {} with cache ID {}", actionElementDisplays.size(), action, username, actionCacheId);
+            _cache.put(actionCacheId, actionElementDisplays);
         }
 
         return ImmutableList.copyOf(elementDisplays.get(action));
@@ -475,6 +493,9 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     @Override
     public Future<Boolean> initialize() {
         final LapStopWatch stopWatch = LapStopWatch.createStarted(log, Level.INFO);
+
+        // This clears out any group initialization requests that may be left in the database from earlier starts.
+        _template.update("DELETE FROM activemq_msgs WHERE container LIKE '%initializeGroupRequest'", EmptySqlParameterSource.INSTANCE);
 
         final int tags = initializeTags();
         stopWatch.lap("Processed {} tags", tags);

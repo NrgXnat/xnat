@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xft.XFTTable;
@@ -52,7 +53,8 @@ public final class DicomEdit extends SecureResource {
      */
     public enum ResourceScope {
         SITE_WIDE,
-        PROJECT
+        PROJECT,
+        STUDY
     }
 
     /**
@@ -72,10 +74,12 @@ public final class DicomEdit extends SecureResource {
      * @param project Must be String, XnatProjectdata or null
      * @return The path for the script storage.
      */
-    public static String buildScriptPath(ResourceScope scope, Object project) {
+    public static String buildScriptPath(ResourceScope scope, Object identifier) {
         switch (scope) {
             case PROJECT:
-                return getProjectScriptPath(project);
+                return getProjectScriptPath(identifier);
+            case STUDY:
+                return getStudyScriptPath(identifier);
             case SITE_WIDE:
                 return "script";
             default:
@@ -97,10 +101,25 @@ public final class DicomEdit extends SecureResource {
         }
     }
 
+    public static String getStudyScriptPath(final Object study) {
+        if (study == null) {
+            return "/studies";
+        }
+        final Class<?> clazz = study.getClass();
+        if (clazz == String.class) {
+            return "/studies/" + study;
+        } else {
+            return "/studies";
+        }
+    }
+
     public DicomEdit(Context context, Request request, Response response) {
         super(context, request, response);
 
         _service = DefaultAnonUtils.getService();
+
+        _studyId = (String) request.getAttributes().get(DicomEdit.STUDY_ID);
+
         _projectId = (String) request.getAttributes().get(DicomEdit.PROJECT_ID);
         this.project = XnatProjectdata.getXnatProjectdatasById(_projectId, null, false);
 
@@ -219,7 +238,7 @@ public final class DicomEdit extends SecureResource {
                                         if (scope == ResourceScope.SITE_WIDE) {
                                             _service.setSiteWideScript(user.getLogin(),
                                                                                             script);
-                                        } else { // project specific
+                                        } else if (scope == ResourceScope.PROJECT) {
                                             _service.setProjectScript(user.getLogin(),
                                                                                            script,
                                                                                     project.getId());
@@ -242,7 +261,7 @@ public final class DicomEdit extends SecureResource {
                                                 } else {
                                                     _service.disableSiteWide(user.getLogin());
                                                 }
-                                            } else { // project -specific
+                                            } else if (scope == ResourceScope.PROJECT){ // project -specific
                                                 if (activate) {
                                                     _service.enableProjectSpecific(user.getLogin(), project.getId());
                                                 } else {
@@ -274,6 +293,7 @@ public final class DicomEdit extends SecureResource {
 
     /**
      * Determine what level of access this resource has.
+     * Only admins have access to study remapping scripts.
      * Everyone has access to GET the site-wide script and site-wide status,
      * all other access requires the user to have the appropriate privileges.
      *
@@ -283,7 +303,10 @@ public final class DicomEdit extends SecureResource {
      * @return Indicates the script access level.
      */
     private Access determineAccess(ResourceType type, ResourceScope scope, Method method) {
-        if (method == Method.GET && type == ResourceType.SCRIPT && scope == ResourceScope.SITE_WIDE) {
+        if (scope == ResourceScope.STUDY){
+            return Access.ADMIN;
+        }
+        else if(method == Method.GET && type == ResourceType.SCRIPT && scope == ResourceScope.SITE_WIDE) {
             return Access.ALL;
         } else if (method == Method.GET && type == ResourceType.STATUS && scope == ResourceScope.SITE_WIDE) {
             return Access.ALL;
@@ -303,6 +326,8 @@ public final class DicomEdit extends SecureResource {
     private ResourceScope determineResourceScope(Request request) {
         if (request.getOriginalRef().getSegments().contains("projects")) {
             return ResourceScope.PROJECT;
+        }else if (request.getOriginalRef().getSegments().contains("studies")) {//TODO: Figure out how to code this better remapping of study with ID equal to "projects" will still work.
+            return ResourceScope.STUDY;
         } else {
             return ResourceScope.SITE_WIDE;
         }
@@ -416,11 +441,11 @@ public final class DicomEdit extends SecureResource {
                 } else {
                     String projectId = this.d == null ? null : this.d.getId();
                     final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
-                    if (a == Access.ALL || (userHelperService != null && userHelperService.hasEditAccessToSessionDataByTag(projectId))) {
+                    if (a == Access.ALL || (a == Access.PROJECT && userHelperService != null && userHelperService.hasEditAccessToSessionDataByTag(projectId)) || (a==Access.ADMIN && Roles.isSiteAdmin(user))) {
                         return c.call();
                     } else {
-                        logger.warn("User {} does not have privileges to access this project", user.getUsername());
-                        resp.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User does not have privileges to access this project");
+                        logger.warn("User {} does not have privileges to access this project or study", user.getUsername());
+                        resp.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User does not have privileges to access this project or study");
                         return null;
                     }
                 }
@@ -440,6 +465,7 @@ public final class DicomEdit extends SecureResource {
     /**
      * URI template variables
      */
+    private static final String STUDY_ID = "STUDY_ID";
     private static final String PROJECT_ID = "PROJECT_ID";
     private static final String RESOURCE = "RESOURCE";
 
@@ -455,7 +481,12 @@ public final class DicomEdit extends SecureResource {
     private static final String[] editColumns = {"project", "edit", "create_date", "user", "id"};
 
     private final AnonUtils _service;
-    
+
+    /**
+     * Study for this operation.
+     */
+    private final String _studyId;
+
     /**
      * Project for this operation.
      */
@@ -484,12 +515,14 @@ public final class DicomEdit extends SecureResource {
 
     /**
      * ALL - Everyone has access to this resource
+     * ADMIN - Only admins have access to this resource
      * PROJECT - Only project owners have access to this resource
      *
      * @author aditya
      */
     private enum Access {
         ALL,
+        ADMIN,
         PROJECT
     }
 }

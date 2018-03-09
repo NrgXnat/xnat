@@ -154,6 +154,28 @@ public class DefaultAnonUtils implements AnonUtils {
     }
 
     @Override
+    public String getStudyScript(String studyId) throws ConfigServiceException{
+        if (logger.isDebugEnabled()) {
+            logger.debug("Getting {} script for study: {}", DicomEdit.ToolName, studyId);
+        }
+        final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
+        return _configService.getConfigContents(DicomEdit.ToolName, path, Scope.Site, studyId);
+    }
+
+    public static void setStudyScript(String login, String script, String studyId) throws ConfigServiceException{
+        final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("User {} is setting {} script for project {}", login, DicomEdit.ToolName, studyId);
+        }
+        if (studyId == null) {
+            XDAT.getConfigService().replaceConfig(login, "", DicomEdit.ToolName, path, script);
+        } else {
+            XDAT.getConfigService().replaceConfig(login, "", DicomEdit.ToolName, path, script, Scope.Site, studyId);
+        }
+
+    }
+
+    @Override
     public String getProjectScript(final String projectId) throws ConfigServiceException {
         if (logger.isDebugEnabled()) {
             logger.debug("Getting {} script for project: {}", DicomEdit.ToolName, projectId);

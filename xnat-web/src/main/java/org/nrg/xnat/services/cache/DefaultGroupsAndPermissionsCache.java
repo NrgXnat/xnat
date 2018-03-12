@@ -73,6 +73,8 @@ import java.util.*;
 import java.util.concurrent.Future;
 
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
+import static org.nrg.xapi.rest.users.DataAccessApi.BROWSEABLE;
+import static org.nrg.xapi.rest.users.DataAccessApi.READABLE;
 import static org.nrg.xdat.security.helpers.Groups.*;
 import static reactor.bus.selector.Selectors.predicate;
 
@@ -177,7 +179,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         }
 
         final String username = user.getUsername();
-        final String cacheId  = getCacheIdForUserElements(username, BROWSEABLE_ELEMENTS);
+        final String cacheId  = getCacheIdForUserElements(username, BROWSEABLE);
         log.debug("Retrieving browseable element displays for user {} thru cache ID {}", username, cacheId);
 
         // Check whether the element types are cached and, if so, return that.
@@ -226,7 +228,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         }
 
         final String username = user.getUsername();
-        final String cacheId  = getCacheIdForUserElements(username, READABLE_ELEMENTS);
+        final String cacheId  = getCacheIdForUserElements(username, READABLE);
         log.debug("Retrieving readable counts for user {} thru cache ID {}", username, cacheId);
 
         // Check whether the element types are cached and, if so, return that.
@@ -349,7 +351,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
             }
         }
         for (final String foundAction : elementDisplays.keySet()) {
-            final String actionCacheId = getCacheIdForActionElements(username, foundAction);
+            final String               actionCacheId         = getCacheIdForActionElements(username, foundAction);
             final List<ElementDisplay> actionElementDisplays = new ArrayList<>(elementDisplays.get(foundAction));
             log.info("Caching {} elements for action {} for user {} with cache ID {}", actionElementDisplays.size(), action, username, actionCacheId);
             _cache.put(actionCacheId, actionElementDisplays);
@@ -749,15 +751,19 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     }
 
     private static String getCacheIdForTag(final String tag) {
-        return StringUtils.startsWith(tag, TAG_PREFIX) ? tag : TAG_PREFIX + tag;
+        return StringUtils.startsWith(tag, TAG_PREFIX) ? tag : createCacheIdFromElements(TAG_PREFIX, tag);
     }
 
     private static String getCacheIdForUserElements(final String username, final String elementType) {
-        return USER_ELEMENT_PREFIX + username + ":" + elementType + ":";
+        return createCacheIdFromElements(USER_ELEMENT_PREFIX, username, elementType);
     }
 
     private static String getCacheIdForActionElements(final String username, final String action) {
-        return ACTION_PREFIX + username + ":" + action + ":";
+        return createCacheIdFromElements(ACTION_PREFIX, username, action);
+    }
+
+    private static String createCacheIdFromElements(final String... elements) {
+        return StringUtils.join(elements, ":");
     }
 
     private static boolean isGroupsAndPermissionsCacheEvent(final Ehcache cache) {
@@ -782,11 +788,10 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     private static final String QUERY_ALL_TAGS                   = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
     private static final String QUERY_GET_GROUPS_FOR_TAG         = "SELECT id FROM xdat_usergroup WHERE tag = :tag";
     private static final String QUERY_CHECK_USER_EXISTS          = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
-    private static final String ACTION_PREFIX                    = "action:";
-    private static final String TAG_PREFIX                       = "tag:";
-    private static final String USER_ELEMENT_PREFIX              = "user:";
-    private static final String READABLE_ELEMENTS                = "readable";
-    private static final String BROWSEABLE_ELEMENTS              = "browsable";
+
+    private static final String ACTION_PREFIX       = "action";
+    private static final String TAG_PREFIX          = "tag";
+    private static final String USER_ELEMENT_PREFIX = "user";
 
     private static final NumberFormat FORMATTER = NumberFormat.getNumberInstance(Locale.getDefault());
 

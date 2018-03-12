@@ -47,6 +47,14 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 @RequestMapping(value = "/access")
 @Slf4j
 public class DataAccessApi extends AbstractXapiRestController {
+    public static final String BROWSEABLE                = "browseable";
+    public static final String BROWSEABLE_CREATEABLE     = "browseableCreateable";
+    public static final String CREATEABLE                = "createable";
+    public static final String READABLE                  = "readable";
+    public static final String SEARCHABLE                = "searchable";
+    public static final String SEARCHABLE_BY_DESC        = "searchableByDesc";
+    public static final String SEARCHABLE_BY_PLURAL_DESC = "searchableByPluralDesc";
+
     @Autowired
     public DataAccessApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final GroupsAndPermissionsCache cache) {
         super(userManagementService, roleHolder);
@@ -151,7 +159,7 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    private static final List<String> AVAILABLE_ELEMENT_DISPLAYS = Arrays.asList("browseable", "browseableCreateable", "createable", "searchable", "searchableByDesc", "searchableByPluralDesc");
+    private static final List<String> AVAILABLE_ELEMENT_DISPLAYS = Arrays.asList(BROWSEABLE, BROWSEABLE_CREATEABLE, CREATEABLE, SEARCHABLE, SEARCHABLE_BY_DESC, SEARCHABLE_BY_PLURAL_DESC);
 
     private final GroupsAndPermissionsCache _cache;
 }

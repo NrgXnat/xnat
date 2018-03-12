@@ -1247,10 +1247,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
         final List<ElementSecurity> secureElements = ElementSecurity.GetSecureElements();
         for (ElementSecurity secureElement : secureElements) {
-            if (secureElement.getSchemaElement().instanceOf("xnat:imageSessionData")) {
-                if (Permissions.can(this, secureElement.getElementName() + "/project", projectId, EDIT)) {
-                    return true;
+            try {
+                if (secureElement.getSchemaElement().instanceOf("xnat:imageSessionData")) {
+                    if (Permissions.can(this, secureElement.getElementName() + "/project", projectId, EDIT)) {
+                        return true;
+                    }
                 }
+            } catch (ElementNotFoundException e) {
+                logger.warn("Couldn't find schema element '{}' for secure element '{}', was it removed from the system?", e.ELEMENT, secureElement.getElementName());
             }
         }
         return false;

@@ -679,7 +679,7 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return  Returns whether the element is browsable.
+     * @return  Returns whether the element is browseable.
      */
     public boolean isBrowseable() {
         try {

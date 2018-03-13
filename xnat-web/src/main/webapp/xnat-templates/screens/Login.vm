@@ -1,13 +1,14 @@
-<!-- BEGIN xnat-templates/screens/Login.vm -->
-#* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
-#* @vtlvariable name="login_methods" type="java.util.Collection" *#
-#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
-#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
-#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
-#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="login_methods" type="java.util.Collection" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="systemName" type="java.lang.String" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+<!-- BEGIN xnat-templates/screens/Login.vm -->
 #set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Please Login")
     $page.setBgColor($ui.bgcolor)
@@ -172,8 +173,8 @@ $page.setTitle("$siteId - Please Login")
                 #elseif($login_methods.size() > 1)
                     <label for="login_method">Login</label>
                     <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
-                        #foreach ($method in $login_methods)
-                            <option value="$method.left">$method.right</option>
+                        #foreach ($provider in $login_methods)
+                            <option value="$provider.providerId">$provider.name</option>
                         #end
                     </select>
                 #end

@@ -362,6 +362,7 @@ dependencies {
     testCompile "org.nrg:test"
     testCompile "junit:junit"
     testCompile "org.springframework:spring-test"
+    testCompile "org.assertj:assertj-core"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

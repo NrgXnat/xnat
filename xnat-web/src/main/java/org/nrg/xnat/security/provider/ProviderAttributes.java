@@ -1,12 +1,15 @@
 package org.nrg.xnat.security.provider;
 
+import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Provides a convenient container for the attributes of an authentication provider stored in an instance of the {@link
@@ -138,9 +141,11 @@ public class ProviderAttributes implements Comparable<ProviderAttributes> {
     }
 
     private static Properties getScrubbedProperties(final Properties properties) {
-        final Properties scrubbed = new Properties(properties);
-        for (final String property : EXCLUDED_PROPERTIES) {
-            scrubbed.remove(property);
+        final Properties scrubbed = new Properties();
+        final Set<String> propertyNames = properties.stringPropertyNames();
+        propertyNames.removeAll(EXCLUDED_PROPERTIES);
+        for (final String property : propertyNames) {
+            scrubbed.setProperty(property, properties.getProperty(property));
         }
         return scrubbed;
     }

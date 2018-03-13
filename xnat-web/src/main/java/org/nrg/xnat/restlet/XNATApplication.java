@@ -17,6 +17,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.helpers.dicom.DicomDump;
+import org.nrg.xnat.helpers.ecat.EcatDump;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.restlet.actions.UserSessionId;
 import org.nrg.xnat.restlet.guard.XnatSecureGuard;
@@ -320,6 +321,7 @@ public class XNATApplication extends Application {
         attachURI(router, "/services/prearchive/rebuild", PrearchiveBatchRebuild.class);
         attachURI(router, "/services/move-files", MoveFiles.class);
         attachURI(router, "/services/dicomdump", DicomDump.class);
+        attachURI(router, "/services/ecatdump", EcatDump.class);
         // attachURI(router, "/services/logging/{" + Analytics.EVENT_KEY + "}", RemoteLoggingRestlet.class);
         attachURI(router, "/services/mail/send", MailRestlet.class);
         attachURI(router, "/services/tokens/{OPERATION}", AliasTokenRestlet.class);

@@ -41,8 +41,8 @@ passwordExpirationInterval:
     label: Password Expiration (Interval)
     validation: interval onblur
     after: >
-      <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
-      Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
+        <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
+        Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
 
 passwordExpirationDate:
     kind: input.text
@@ -50,14 +50,12 @@ passwordExpirationDate:
     name: passwordExpirationDate
     label: Password Expiration (Date)
     validation: allow-empty date-iso onblur
-    after:
-        datePicker:
-            tag: span#datePicker
-            content: >
-              &nbsp;&nbsp;<span id='openCal-passwordExpirationDate' class='fa fa-calendar'></span>
-              <br>
-              <p class='description'>Expire passwords that were last changed before this date and
-              require those users to change them.</p>
+    after: >
+        <span id="datePicker">&nbsp;&nbsp;
+        <span id="openCal-passwordExpirationDate" class="fa fa-calendar"></span>
+        <br>
+        <p class="description">Expire passwords that were last changed before this date and require those users to change them.</p>
+        </span>
 
 siteDescriptionType:
     kind: panel.element
@@ -80,19 +78,15 @@ siteDescriptionType:
             name: siteDescriptionType
             id: siteDescriptionTypePage
             value: Page
-            after:
-                label:
-                    tag: label.pad5h|for=siteDescriptionTypePage
-                    content: Page
+            after: >
+                <label class="pad5h" for="siteDescriptionTypePage">Page</label>
         siteDescriptionTypeText:
             kind: input.radio
             name: siteDescriptionType
             id: siteDescriptionTypeText
             value: Text
-            after:
-                label:
-                    tag: label.pad5h|for=siteDescriptionTypeText
-                    content: Text (Markdown)
+            after: >
+                <label class="pad5h" for="siteDescriptionTypeText">Text (Markdown)</label>
         pagePath:
             tag: div.input-bundle.page
             contents:
@@ -118,7 +112,8 @@ siteLogo:
             kind: input.text
             placeholder: /images/logo.png
             validation: uri onblur
-            description: "The path to the file to be used as the site logo."
+            after: >
+                <p class="description">The path to the file to be used as the site logo.</p>
 
 siteLoginLanding:
     kind: panel.input.text
@@ -518,8 +513,10 @@ userLoginsSessionControls:
               How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
               <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
         interactiveAgentIds:
-            kind: panel.input.text
+            kind: panel.input.textList
+            size: 60
             name: interactiveAgentIds
+            delim: ","
             label: Interactive Agent IDs
             placeholder: .*MSIE.*, .*Mozilla.*, .*AppleWebKit.*, .*Opera.*
             description: >
@@ -527,8 +524,10 @@ userLoginsSessionControls:
               request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
               scriptable or automatable client. Separate multiple agent IDs with commas.
         dataPaths:
-            kind: panel.input.text
+            kind: panel.input.textList
+            size: 60
             name: dataPaths
+            delim: ","
             label: Data Paths
             placeholder: /xapi/**, /data/**, /REST/**, /fs/**
             description: >
@@ -576,28 +575,22 @@ passwords:
                     id: passwordExpirationTypeDisabled
                     name: passwordExpirationType
                     value: Disabled
-                    after:
-                        label:
-                            tag: label.pad5h|for=passwordExpirationTypeDisabled
-                            content: Disabled
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeDisabled">Disabled</label>
                 passwordExpirationTypeInterval:
                     kind: input.radio
                     id: passwordExpirationTypeInterval
                     name: passwordExpirationType
                     value: Interval
-                    after:
-                        label:
-                            tag: label.pad5h|for=passwordExpirationTypeInterval
-                            content: Interval
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeInterval">Interval</label>
                 passwordExpirationTypeDate:
                     kind: input.radio
                     id: passwordExpirationTypeDate
                     name: passwordExpirationType
                     value: Date
-                    after:
-                        label:
-                            tag: label.pad5h|for=passwordExpirationTypeDate
-                            content: Date
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeDate">Date</label>
                 passwordExpirationInterval:
                     tag: div.input-bundle.interval
                     contents:
@@ -621,8 +614,7 @@ passwords:
             label: Password History
             validation: interval onblur
             description: >
-              Interval for which users cannot reuse an old password of theirs. Uses
-              <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+                Interval for which users cannot reuse an old password of theirs. Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
         requireSaltedPasswords:
             kind: panel.input.switchbox
             id: require-salted-passwords
@@ -871,6 +863,7 @@ notifications:
 themeManagement:
     kind: panel
     name: themeManagement
+    id: theme-management-panel
     label: Theme Management
     footer: false
     contents:
@@ -908,50 +901,9 @@ themeManagement:
         themeScript:
             tag: script|src=/scripts/xnat/admin/themeManagement.js
 
+# create a container for the plugin table to be spawned into
 pluginTable:
-    kind: table.dataTable
-    id: xnat-plugin-list
-    name: pluginList
-    load: /xapi/plugins
-    # specify which properties to show in the table
-    columns:
-        id: ~data-id  # '~data' adds this item as a [data-] attribute to each <tr>
-        beanName: ~data-bean
-        pluginInfo:
-            label: Plugin Info
-            filter: true
-            apply: >
-                !? function(){
-                       var item = this;
-                       var itemTable = XNAT.table({
-                           className: 'xnat-table clean compact borderless'
-                       });
-                       itemTable.tbody();
-                       function itemRow(TH, TD){
-                           var _TH = spawn('b', TH);
-                           itemTable.tr().td({ className: 'text-right' }, _TH).td({}, TD);
-                       }
-                       itemRow('Plugin Name:', spawn('b', item.name));
-                       itemRow('Plugin ID:', item.id);
-                       itemRow('Plugin Version:', item.version);
-                       itemRow('Plugin Class:', item.pluginClass);
-                       itemRow('Description:', item.description);
-                       return itemTable.table;
-                   }
-        viewPluginInfo:
-            label: Plugin JSON
-            value: "&ndash;" # this gets overwritten with 'html' below
-            className: center
-            # function that accepts current item as sole argument and parent object as 'this'
-            # returned value will be new value - if nothing's returned, value is passed through
-            # apply: "{(  function(){ return formatJSON(this) }  )}"
-            html: >
-                <a href="#!" class="view-plugin-info link">View Plugin Info</a>
-    messages:
-        noData: >
-            There are no plugins installed in this XNAT. Try searching for plugins on <a href="http://marketplace.xnat.org/plugins/" title="XNAT Marketplace" target="_blank">XNAT Marketplace</a>.
-        error: >
-            An error occurred retrieving information for installed plugins.
+    tag: "div#plugin-table-container"
 
 pluginTableScript:
     tag: script|src=/scripts/xnat/admin/pluginManager.js
@@ -1476,7 +1428,7 @@ investigatorsOld:
                     label: ~!
                     call: XNAT.admin.investigatorProjectList
 
-scanTypeMapping:
+setScanTypeMapping:
     kind: panel.form
     label: Scan Type Mapping
     method: POST
@@ -1532,7 +1484,7 @@ developmentUtilities:
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
 #################################################
-adminPage:
+root:
     kind: tabs
     name: adminPage
     label: Administer XNAT
@@ -1575,10 +1527,10 @@ adminPage:
             group: xnatSetup
             contents:
                 ${notifications}
-        themesAndFeatures:
+        manageThemes:
             kind: tab
-            name: themesAndFeatures
-            label: Themes & Features
+            name: manageThemes
+            label: Themes
             group: xnatSetup
             contents:
                 ${themeManagement}
@@ -1680,7 +1632,7 @@ adminPage:
             kind: tab
             label: Miscellaneous
             contents:
-                ${scanTypeMapping}
+                ${setScanTypeMapping}
                 ${developmentUtilities}
 
 

@@ -63,7 +63,7 @@ import org.springframework.security.web.authentication.session.SessionFixationPr
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.context.request.RequestContextListener;
+import org.springframework.web.filter.RequestContextFilter;
 
 import javax.sql.DataSource;
 import java.util.*;
@@ -100,11 +100,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired(required = false)
     public void setXnatSecurityExtensions(final List<XnatSecurityExtension> extensions) {
         _extensions.addAll(extensions);
-    }
-
-    @Bean
-    public RequestContextListener requestContextListener() {
-        return new RequestContextListener();
     }
 
     @Bean
@@ -279,6 +274,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // If we can get the default channel processing filter as a bean, we could remove this.
         http.addFilter(channelProcessingFilter())
+            .addFilterAfter(new RequestContextFilter(), ChannelProcessingFilter.class)
             .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
             .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), BasicAuthenticationFilter.class);

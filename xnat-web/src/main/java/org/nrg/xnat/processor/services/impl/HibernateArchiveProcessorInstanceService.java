@@ -44,7 +44,7 @@ public class HibernateArchiveProcessorInstanceService extends AbstractHibernateE
 
     @Override
     @Transactional
-    public ArchiveProcessorInstance findSiteProcessorById(final int processorId){
+    public ArchiveProcessorInstance findSiteProcessorById(final long processorId){
         return _dao.getSiteArchiveProcessorInstanceByProcessorId(processorId);
     }
     @Inject

@@ -71,7 +71,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
     @XapiRequestMapping(value = "site/id/{processorId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
     @ResponseBody
-    public ResponseEntity<ArchiveProcessorInstance> updateSiteProcessor(@PathVariable("processorId") final int processorId, @RequestBody final ArchiveProcessorInstance processor) throws Exception {
+    public ResponseEntity<ArchiveProcessorInstance> updateSiteProcessor(@PathVariable("processorId") final long processorId, @RequestBody final ArchiveProcessorInstance processor) throws Exception {
         ArchiveProcessorInstance existingProcessor = _service.findSiteProcessorById(processorId);
         if (existingProcessor == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -119,7 +119,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
     @XapiRequestMapping(value = "site/id/{processorId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = Admin)
     @ResponseBody
-    public ResponseEntity<Boolean> deleteSiteProcessor(@PathVariable("processorId") final int processorId) throws Exception {
+    public ResponseEntity<Boolean> deleteSiteProcessor(@PathVariable("processorId") final long processorId) throws Exception {
         ArchiveProcessorInstance existingProcessor = _service.findSiteProcessorById(processorId);
         if (existingProcessor == null) {
             return new ResponseEntity<>(false, HttpStatus.NOT_FOUND);
@@ -158,7 +158,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
     @XapiRequestMapping(value = "site/id/{processorId}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
-    public ResponseEntity<ArchiveProcessorInstance> getSiteProcessor(@PathVariable("processorId") final int processorId) {
+    public ResponseEntity<ArchiveProcessorInstance> getSiteProcessor(@PathVariable("processorId") final long processorId) {
         ArchiveProcessorInstance processor = _service.findSiteProcessorById(processorId);
 
         if (processor!=null) {

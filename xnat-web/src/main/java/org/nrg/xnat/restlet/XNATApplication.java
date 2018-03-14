@@ -146,7 +146,7 @@ public class XNATApplication extends Application {
         //END ---- Pipelines section
         attachArchiveURI(router, "/config/edit/image/dicom/{RESOURCE}", DicomEdit.class);
         attachArchiveURI(router, "/config/edit/projects/{PROJECT_ID}/image/dicom/{RESOURCE}", DicomEdit.class);
-        attachArchiveURI(router, "/config/edit/studies/{STUDY_ID}/image/dicom/{RESOURCE}", DicomEdit.class);
+        //attachArchiveURI(router, "/config/edit/studies/{STUDY_ID}/image/dicom/{RESOURCE}", DicomEdit.class); //Not yet supported
         attachArchiveURI(router, "/config/{PROJECT_ID}/archive_spec", ProjectArchive.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/archive_spec", ProjectArchive.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/experiments", ProjSubExptList.class);

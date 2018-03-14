@@ -21,5 +21,5 @@ public interface ArchiveProcessorInstanceService extends BaseHibernateService<Ar
     List<ArchiveProcessorInstance> getAllSiteProcessors();
     List<ArchiveProcessorInstance> getAllEnabledSiteProcessors();
     List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrder();
-    ArchiveProcessorInstance findSiteProcessorById(final int processorId);
+    ArchiveProcessorInstance findSiteProcessorById(final long processorId);
 }

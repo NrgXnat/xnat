@@ -71,7 +71,7 @@ public final class DicomEdit extends SecureResource {
      * XnatProjectdata or String. This breaks all readability but allows me to pass in a null project.
      *
      * @param scope   The request scope.
-     * @param project Must be String, XnatProjectdata or null
+     * @param identifier Must be String, XnatProjectdata or null
      * @return The path for the script storage.
      */
     public static String buildScriptPath(ResourceScope scope, Object identifier) {

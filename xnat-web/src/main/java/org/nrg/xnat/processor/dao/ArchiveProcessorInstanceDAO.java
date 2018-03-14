@@ -54,7 +54,7 @@ public class ArchiveProcessorInstanceDAO extends AbstractHibernateDAO<ArchivePro
 
     @SuppressWarnings("unchecked")
     @Transactional
-    public ArchiveProcessorInstance getSiteArchiveProcessorInstanceByProcessorId(final int processorId) {
+    public ArchiveProcessorInstance getSiteArchiveProcessorInstanceByProcessorId(final long processorId) {
         final Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("id", processorId));
         criteria.add(Restrictions.eq("scope", ArchiveProcessorInstance.SITE_SCOPE));

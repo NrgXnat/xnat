@@ -54,7 +54,7 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
         this.priority = priority;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="parameterName")
     @Column(name="value")
     public Map<String, String> getParameters() {

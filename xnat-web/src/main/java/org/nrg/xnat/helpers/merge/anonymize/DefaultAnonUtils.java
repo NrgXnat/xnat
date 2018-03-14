@@ -159,7 +159,13 @@ public class DefaultAnonUtils implements AnonUtils {
             logger.debug("Getting {} script for study: {}", DicomEdit.ToolName, studyId);
         }
         final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
-        return _configService.getConfigContents(DicomEdit.ToolName, path, Scope.Site, studyId);
+        final boolean enabled = StringUtils.equals(_configService.getStatus(DicomEdit.ToolName, path, Scope.Site, studyId),Configuration.ENABLED_STRING);
+        if(enabled) {
+            return _configService.getConfigContents(DicomEdit.ToolName, path, Scope.Site, studyId);
+        }
+        else{
+            return null;
+        }
     }
 
     public static void setStudyScript(String login, String script, String studyId) throws ConfigServiceException{
@@ -243,6 +249,14 @@ public class DefaultAnonUtils implements AnonUtils {
         } else {
             final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
             _configService.disable(login, "", DicomEdit.ToolName, path, Scope.Project, projectId);
+        }
+    }
+
+    @Override
+    public void disableStudy(String login, final String studyId) throws ConfigServiceException {
+        if (StringUtils.isNotBlank(studyId)) {
+            final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
+            _configService.disable(login, "", DicomEdit.ToolName, path, Scope.Site, studyId);
         }
     }
 

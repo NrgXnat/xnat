@@ -1,4 +1,4 @@
-<%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
@@ -29,7 +29,9 @@
 
             <c:if test="${not empty userProfiles}">
             XNAT.xapi.users.profiles = ${userProfiles};
-            XNAT.data['/xapi/users/profiles'] = XNAT.xapi.users.profiles;
+            XNAT.data['/xapi/users/profiles'] =
+                XNAT.data['${SITE_ROOT}/xapi/users/profiles'] =
+                    XNAT.xapi.users.profiles;
             </c:if>
 
             <c:if test="${not empty activeUsers}">
@@ -44,7 +46,9 @@
 
             <c:if test="${not empty siteConfig}">
             XNAT.data.siteConfig = ${siteConfig};
-            XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
+            XNAT.data['/xapi/siteConfig'] =
+                XNAT.data['${SITE_ROOT}/xapi/siteConfig'] =
+                    XNAT.data.siteConfig;
             </c:if>
 
             // these properties MUST be set before spawning 'tabs' widgets
@@ -58,7 +62,6 @@
     <script src="${SITE_ROOT}/scripts/xnat/admin/usersGroups.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/misc/filler.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/misc/namer.js"></script>
-    <%--<script src="${SITE_ROOT}/scripts/xnat/admin/usersGroupsGenerator.js"></script>--%>
 
     <div id="page-body" style="width:600px;margin:20px auto;">
         <div class="pad">

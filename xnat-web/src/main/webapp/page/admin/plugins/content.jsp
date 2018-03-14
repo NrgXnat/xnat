@@ -51,11 +51,8 @@
 
                 </div>
 
-                <c:set var="pluginsUrl" value="/xapi/plugins"/>
-                <c:set var="spawnerNamespacesUrl" value="/xapi/spawner/namespaces"/>
-
-                <c:import url="${pluginsUrl}" var="plugins"/>
-                <c:import url="${spawnerNamespacesUrl}" var="spawnerNamespaces"/>
+                <c:import url="/xapi/plugins" var="plugins"/>
+                <c:import url="/xapi/spawner/namespaces" var="spawnerNamespaces"/>
 
                 <%--<script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>--%>
 
@@ -66,12 +63,16 @@
 
                         <c:if test="${not empty plugins}">
                             XNAT.xapi.plugins = ${plugins};
-                            XNAT.data['${pluginsUrl}'] = XNAT.xapi.plugins;
+                            XNAT.data['/xapi/plugins'] =
+                                XNAT.data['${SITE_ROOT}/xapi/plugins'] =
+                                    XNAT.xapi.plugins;
                         </c:if>
 
                         <c:if test="${not empty spawnerNamespaces}">
                             XNAT.xapi.spawnerNamespaces = ${spawnerNamespaces};
-                            XNAT.data['${spawnerNamespacesUrl}'] = XNAT.xapi.spawnerNamespaces;
+                            XNAT.data['/xapi/spawner/namespaces'] =
+                                XNAT.data['${SITE_ROOT}/xapi/spawner/namespaces'] =
+                                    XNAT.xapi.spawnerNamespaces;
                         </c:if>
 
                         XNAT.data = extend(true, {

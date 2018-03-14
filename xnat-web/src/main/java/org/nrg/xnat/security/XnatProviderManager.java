@@ -146,7 +146,7 @@ public class XnatProviderManager extends ProviderManager {
             provider = pair.getLeft();
             cause = pair.getRight();
         }
-        log.info("Provider " + (provider != null ? provider.toString() : "<unknown>") + " failed to validate user " + authentication.getPrincipal(), cause);
+        log.info("Provider '{}' failed to validate user {}: {}", provider != null ? provider.toString() : "<unknown>", authentication.getPrincipal(), cause.getMessage());
         _eventPublisher.publishAuthenticationFailure(cause, authentication);
         throw cause;
     }

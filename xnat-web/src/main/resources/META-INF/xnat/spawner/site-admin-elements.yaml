@@ -1516,6 +1516,17 @@ developmentUtilities:
                         href: ~/xapi/swagger-ui.html
                         target: _blank
                         html: View the Swagger page
+        monitoring:
+            kind: panel.element
+            label: Monitoring
+#            description: View the Swagger page.
+            contents:
+                link:
+                    tag: a.link
+                    element:
+                        href: ~/monitoring
+                        target: _blank
+                        html: View the JavaMelody application monitoring page
 
 
 #################################################

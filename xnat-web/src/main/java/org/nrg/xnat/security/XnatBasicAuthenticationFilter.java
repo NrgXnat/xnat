@@ -87,7 +87,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
                     final Authentication authResult = getAuthenticationManager().authenticate(authRequest);
                     _authenticationStrategy.onAuthentication(authResult, request, response);
 
-                    log.debug("Authentication success: " + authResult.toString());
+                    log.debug("Authentication success, got principal of type {}", authResult.getClass().getName());
 
                     SecurityContextHolder.getContext().setAuthentication(authResult);
                     onSuccessfulAuthentication(request, response, authResult);

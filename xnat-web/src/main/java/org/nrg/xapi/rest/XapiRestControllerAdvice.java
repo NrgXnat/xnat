@@ -95,19 +95,24 @@ public class XapiRestControllerAdvice {
         return getExceptionResponseEntity(request, HttpStatus.NOT_FOUND, exception, "Unable to find requested file or resource");
     }
 
+    @ExceptionHandler(NoContentException.class)
+    public ResponseEntity<?> handleNoContentException(final HttpServletRequest request, final HttpServletResponse response, final NoContentException exception) {
+        return getExceptionResponseEntity(request, HttpStatus.NO_CONTENT, exception, "Unable to find requested file or resource");
+    }
+
     @ExceptionHandler(ConfigServiceException.class)
     public ResponseEntity<?> handleConfigServiceException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
         return getExceptionResponseEntity(request, HttpStatus.INTERNAL_SERVER_ERROR, exception, "An error occurred when accessing the configuration service: " + exception.getMessage());
     }
 
     @ExceptionHandler(ServerException.class)
-    public ResponseEntity<?> handleServerException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
-        return getExceptionResponseEntity(request, HttpStatus.INTERNAL_SERVER_ERROR, exception, "An error occurred on the server during the request: " + exception.getMessage());
+    public ResponseEntity<?> handleServerException(final HttpServletRequest request, final HttpServletResponse response, final ServerException exception) {
+        return getExceptionResponseEntity(request, HttpStatus.valueOf(exception.getStatus().getCode()), exception, "An error occurred on the server during the request: " + exception.getMessage());
     }
 
     @ExceptionHandler(ClientException.class)
-    public ResponseEntity<?> handleClientException(final HttpServletRequest request, final HttpServletResponse response, final ConfigServiceException exception) {
-        return getExceptionResponseEntity(request, HttpStatus.BAD_REQUEST, "There was an error in the request: " + exception.getMessage());
+    public ResponseEntity<?> handleClientException(final HttpServletRequest request, final HttpServletResponse response, final ClientException exception) {
+        return getExceptionResponseEntity(request, HttpStatus.valueOf(exception.getStatus().getCode()), "There was an error in the request: " + exception.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

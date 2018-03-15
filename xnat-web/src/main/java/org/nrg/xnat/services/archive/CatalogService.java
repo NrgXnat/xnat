@@ -15,10 +15,12 @@ import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -300,4 +302,6 @@ public interface CatalogService {
      * @throws ServerException When an error occurs in the system during the refresh operation.
      */
     void refreshResourceCatalogs(final UserI user, final List<String> resources, final Collection<Operation> operations) throws ServerException, ClientException;
+
+    XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDeletion, final Map<String, ?> parameters) throws Exception;
 }

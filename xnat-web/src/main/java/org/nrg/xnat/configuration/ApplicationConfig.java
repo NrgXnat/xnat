@@ -70,9 +70,7 @@ public class ApplicationConfig {
     @Bean
     public EhCacheManagerFactoryBean ehCacheManagerFactory() {
         return new EhCacheManagerFactoryBean() {{
-            setConfigLocation(new ClassPathResource("ehcache.xml"));
-            setAcceptExisting(true);
-            setShared(true);
+            setConfigLocation(new ClassPathResource("xnat-cache.xml"));
         }};
     }
 

@@ -16,7 +16,7 @@
     <!-- isLoginPage? $!isLoginPage -->
     <script>
         window.isLoginPage = (function(){
-            console.log('isLoginPage = $!isLoginPage')
+            console.log('isLoginPage: $!isLoginPage')
             return $!isLoginPage
         })();
     </script>

@@ -24,6 +24,7 @@ $page.setBgColor($ui.bgcolor)
                     <span id="user_info">Logged in as: &nbsp;<i>$!username</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
                     <script>
                         window.loggedIn = true;
+                        window.isGuest = realValue('$!user.isGuest()');
                     </script>
                 #end
             #end

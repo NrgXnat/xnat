@@ -1,8 +1,10 @@
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+
 ## Base JavaScript files
 
 <!-- START BaseJS.vm -->
 
-#set ($versionString = "v=1.7.3c")
+#set ($versionString = "v=1.7.5a")
 #set ($SITE_ROOT = $content.getURI(""))
 #set ($debugParam = $data.getParameters().getString('debug'))
 #set ($jsDebugParam = $data.getParameters().getString('jsdebug'))
@@ -31,9 +33,27 @@
         var csrfToken = '$!data.getSession().getAttribute("XNAT_CSRF")';
         var showReason = realValue('$!showReason');
         var requireReason = realValue('$!requireReason');
+        var cacheLastModified = realValue('$!cacheLastModified.getTime()');
+
+        XNAT.cacheLastModified = cacheLastModified;
 
     </script>
     ## separate script tags so not everything breaks if showReason or requireReason blows up
+
+    <!-- store username globally -->
+    <script>
+        #if($!user != "" && $user.isGuest())
+            window.username = 'guest';
+        #else
+            #set($username = $!user.getUsername())
+            #if($username != "" && $username != "guest")
+                window.username = '$!username';
+            #else
+                window.username = '';
+            #end
+        #end
+        console.log('username: ' + window.username);
+    </script>
 
     <!-- set theme js vars -->
     #if ($theme)
@@ -67,7 +87,6 @@
     <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/ace/ace.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/localForage/localforage.${js}"></script>
 
     <!-- XNAT utility functions -->
     <script src="${SITE_ROOT}/scripts/utils.js"></script>

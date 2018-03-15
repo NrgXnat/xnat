@@ -1,8 +1,9 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 ## Main JavaScript and CSS files for XNAT
 
 <!-- START AppJS.vm -->
 
-#set($versionString = "v=1.7.3c")
+#set($versionString = "v=1.7.5a")
 #set($SITE_ROOT = $content.getURI(""))
 
 ## only load once

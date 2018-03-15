@@ -106,7 +106,6 @@
         #if($!user != "" && $user.isGuest())
             <span id="user_info">Logged in as: <span style="color:red;">Guest</span> <b>|</b> <a href="$link.setPage("Login.vm")">Login</a> <b>|</b> <a href="$link.setPage("Register.vm")">Register</a></span>
             <script type="text/javascript">
-                window.username = '';
                 XNAT.cookie.set('guest', 'true');
             </script>
         #else
@@ -119,7 +118,6 @@
                 ## some kind of default text needs to be there so stuff doesn't shift around before the timer functions kick in
                 Auto-logout in: <b id="timeLeft">-:--:--</b> - <a id="timeLeftRenew" href="javascript:" onClick="XNAT.app.timeout.handleOk()">renew</a> <b>|</b> <a id="logout_user" href="$link.setAction("LogoutUser")">Logout</a></span>
                 <script type="text/javascript">
-                    window.username = '$!username';
                     XNAT.cookie.set('guest', 'false');
                 </script>
             #end
@@ -374,8 +372,8 @@
 </script>
 <script>
     window.loggedIn = true;
+    window.isGuest = realValue('$!user.isGuest()');
 </script>
-##<script src="$content.getURI("scripts/xnat/app/timeout.js")"></script>
 <script src="${SITE_ROOT}/scripts/xnat/app/sessionTimer.js"></script>
 
 

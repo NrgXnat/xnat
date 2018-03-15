@@ -20,41 +20,35 @@ import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+
 public class ValidationResults implements ValidationResultsI{
-	public void addResults(final ValidationResults results) {
-		for (final Object[] result : results.getResults()) {
-			addResult(result);
-		}
+	public void addResults(final ValidationResults added) {
+		results.addAll(added.getResults());
 	}
 
-    private ArrayList results = new ArrayList(); // FIELD (VWrapperField), MESSAGE (String)
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.utils.ValidationUtils.ValidationResultsI#isValid()
 	 */
 	@Override
 	public boolean isValid() {
-		if (results.size() > 0)
-		{
-			return false;
-		}else
-		{
-			return true;
-		}
+		return results.isEmpty();
 	}
 
 	/**
 	 * Gets results collection Object[VWrapperField,String(message)]
 	 * @return Returns an ArrayList of the results
 	 */
-	public ArrayList<Object[]> getResults() {
+	public List<Object[]> getResults() {
 		return results;
 	}
 
 	/**
-	 * @param list
+	 * @param list The list of results to set.
 	 */
-	public void setResults(ArrayList list) {
-		results = list;
+	public void setResults(final List<Object[]> list) {
+		results.clear();
+		results.addAll(list);
 	}
 	
 	/**
@@ -64,7 +58,7 @@ public class ValidationResults implements ValidationResultsI{
      * @param xmlPath         The XML path of the field.
      * @param e               The element with the error result.
 	 */
-	public void addResult(XFTFieldWrapper field,String briefMessage,String xmlPath,GenericWrapperElement e)
+	public void addResult(XFTFieldWrapper field, String briefMessage, String xmlPath, GenericWrapperElement e)
 	{
 	    String s;
 	    if (e != null && field != null)
@@ -86,14 +80,25 @@ public class ValidationResults implements ValidationResultsI{
 	 * @param xmlPath         The XML path of the field.
      * @param fullMessage     The full message.
 	 */
-	public void addResult(XFTFieldWrapper field,String briefMessage,String xmlPath,String fullMessage)
+	public void addResult(XFTFieldWrapper field, String briefMessage, String xmlPath, String fullMessage)
 	{
 
 	    Object [] result= {field,briefMessage,xmlPath,fullMessage};
 	    
 		results.add(result);
 	}
-	
+
+	/**
+	 * Removes validation results for the indicated field name.
+	 *
+	 * @param fieldName The name of the field to check for.
+	 *
+	 * @return The validation result that was removed.
+	 */
+	public Object[] removeResult(final String fieldName) {
+		final int index = getFieldIndex(fieldName);
+		return index > -1 ? getResults().remove(index) : null;
+	}
 	
 	/**
 	 * basic iterator for the results collection.
@@ -105,52 +110,41 @@ public class ValidationResults implements ValidationResultsI{
 	}
 	
 	/**
-	 * If there is a message for this field (sql_name) in the results, its message
-	 * is returned.
-	 * @param s
-	 * @return Returns the String message
+	 * Indicates whether there is a message for this field (sql_name) in the results.
+	 *
+	 * @param fieldName The name of the field to check for.
+	 *
+	 * @return Returns true if there's a validation failure for the indicated field.
 	 */
-	public String getField(String s)
-	{
-        String original = s;
-	    s = XftStringUtils.StandardizeXMLPath(s);
-		Iterator iter = getResultsIterator();
-		while(iter.hasNext())
-		{
-			Object [] messages = (Object [])iter.next();
-			if (messages[0]!=null)
-			{
-				if (((GenericWrapperField)messages[0]).getSQLName().equalsIgnoreCase(s))
-				{
-					return (String)messages[1];
-				}
-			}
-			if(((String)messages[2]).equalsIgnoreCase(s))
-			{
-			    return (String)messages[1];
-			}
-            if(((String)messages[2]).equalsIgnoreCase(original))
-            {
-                return (String)messages[1];
-            }
-		}
-		
-		return null;
+	public boolean hasField(final String fieldName) {
+		final int index = getFieldIndex(fieldName);
+		return index > -1;
 	}
 	
+	/**
+	 * If there is a message for this field (sql_name) in the results, its message
+	 * is returned.
+	 * @param fieldName The name of the field to get.
+	 * @return Returns the String message
+	 */
+	public String getField(final String fieldName) {
+		final int index = getFieldIndex(fieldName);
+		return index > -1 ? (String) getResults().get(index)[1] : null;
+	}
+
 	/**
 	 * Outputs the results collection as an Unordered List with HTML Tags.
 	 * @return Returns a String containing the unordered list HTML
 	 */
 	public String toHTML()
 	{
-		StringBuffer sb = new StringBuffer();
-		Iterator iter = getResultsIterator();
+		final StringBuilder sb   = new StringBuilder();
+		Iterator      iter = getResultsIterator();
 		sb.append("<UL>");
 		while (iter.hasNext())
 		{
 			Object [] messages = (Object [])iter.next();
-			sb.append("<li>" + messages[2] + " : " + StringUtils.replace((String)messages[1], "'bad'", "") + "</li>");
+			sb.append("<li>").append(messages[2]).append(" : ").append(StringUtils.replace((String) messages[1], "'bad'", "")).append("</li>");
 		}
 		sb.append("</UL>");
 		return sb.toString();	
@@ -161,20 +155,19 @@ public class ValidationResults implements ValidationResultsI{
 	 */
 	public String toString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("\nValidationResults\n\n");
-		sb.append("IsValid:" + isValid() + "\n");
+		sb.append("IsValid:").append(isValid()).append("\n");
 		Iterator iter = getResultsIterator();
 		while (iter.hasNext())
 		{
 			Object [] messages = (Object [])iter.next();
 			if (messages[0] != null)
 			{
-				GenericWrapperField field = ((GenericWrapperField)messages[0]);
-				sb.append(messages[2] + " : " + messages[1] + "\n");
+				sb.append(messages[2]).append(" : ").append(messages[1]).append("\n");
 			}else
 			{
-				sb.append(messages[1] + "\n");
+				sb.append(messages[1]).append("\n");
 			}
 		}
 		return sb.toString();
@@ -182,22 +175,32 @@ public class ValidationResults implements ValidationResultsI{
 
 	public String toFullString()
 	{
-	    StringBuffer sb = new StringBuffer();
-		Iterator iter = getResultsIterator();
+	    StringBuilder sb   = new StringBuilder();
+		Iterator      iter = getResultsIterator();
 		while (iter.hasNext())
 		{
 			Object [] messages = (Object [])iter.next();
-			sb.append(messages[3].toString() + "\n");
+			sb.append(messages[3].toString()).append("\n");
 		}
 		return sb.toString();
 	}
     
-    public static GenericWrapperField GetField(String xmlPath) throws XFTInitException,FieldNotFoundException,ElementNotFoundException{
+    @SuppressWarnings("unused")
+	public static GenericWrapperField GetField(String xmlPath) throws XFTInitException, FieldNotFoundException, ElementNotFoundException{
         return GenericWrapperElement.GetFieldForXMLPath(xmlPath);
     }
 
-	private void addResult(final Object[] result) {
-		results.add(result);
+    private int getFieldIndex(final String fieldName) {
+		final String standardized = XftStringUtils.StandardizeXMLPath(fieldName);
+		for (int index = 0; index < results.size(); index++) {
+			final Object[] messages = results.get(index);
+			if ((messages[0] != null && StringUtils.equalsIgnoreCase(((GenericWrapperField) messages[0]).getSQLName(), standardized)) || StringUtils.equalsAnyIgnoreCase((String) messages[2], standardized, fieldName)) {
+				return index;
+			}
+		}
+		return -1;
 	}
+
+	private final List<Object[]> results = new ArrayList<>();
 }
 

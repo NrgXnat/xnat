@@ -8,16 +8,9 @@
  */
 
 
-package org.nrg.xdat.turbine.modules.actions; 
+package org.nrg.xdat.turbine.modules.actions;
 
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
@@ -36,11 +29,7 @@ import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.search.CriteriaCollection;
@@ -49,12 +38,20 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FieldMapping;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.nrg.xft.utils.XftStringUtils;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+@Slf4j
+@SuppressWarnings("unused")
 public class CSVUpload2 extends SecureAction {
 
     @Override
@@ -71,7 +68,7 @@ public class CSVUpload2 extends SecureAction {
 
 
         String fm_id=TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data)));
-        File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
+        File f = Users.getUserCacheFile(XDAT.getUserDetails(),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);
@@ -100,11 +97,10 @@ public class CSVUpload2 extends SecureAction {
 
     public void doStore(RunData data,Context context) throws Exception{
         preserveVariables(data,context);
-        ArrayList rows = new ArrayList();
-        rows = (ArrayList)data.getSession().getAttribute("rows");
+        ArrayList rows = (ArrayList)data.getSession().getAttribute("rows");
 
         String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
-        File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
+        File f = Users.getUserCacheFile(XDAT.getUserDetails(),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);
@@ -118,7 +114,7 @@ public class CSVUpload2 extends SecureAction {
             String rootElementName = fm.getElementName();
             GenericWrapperElement.GetElement(rootElementName);
 
-            UserI user = TurbineUtils.getUser(data);
+            UserI user = XDAT.getUserDetails();
             Iterator iter = rows.iterator();
             while(iter.hasNext())
             {
@@ -138,7 +134,7 @@ public class CSVUpload2 extends SecureAction {
                         GenericWrapperField gwf = null;
                         try {
                             gwf = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
-                        } catch (FieldNotFoundException e) {
+                        } catch (FieldNotFoundException ignored) {
                         }
 
 
@@ -172,7 +168,7 @@ public class CSVUpload2 extends SecureAction {
                                     columnIndex++;
                                     continue;
                                 }
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
 
                         }
@@ -180,9 +176,9 @@ public class CSVUpload2 extends SecureAction {
                         try {
                             item.setProperty(xmlPath, column);
                         } catch (FieldNotFoundException e) {
-                            logger.error("",e);
+                            log.error("", e);
                         } catch (InvalidValueException e) {
-                            logger.error("",e);
+                            log.error("", e);
                         }
                     }
                     columnIndex++;
@@ -245,18 +241,18 @@ public class CSVUpload2 extends SecureAction {
                                                 try {
                                                 	newID =(String)m.invoke(null,intArgs);
                                                 } catch (RuntimeException e3) {
-                                                    logger.error("",e3);
+                                                    log.error("", e3);
                                                 }
                                             } catch (IllegalArgumentException e2) {
-                                                logger.error("",e2);
+                                                log.error("", e2);
                                             } catch (InvocationTargetException e2) {
-                                                logger.error("",e2);
+                                                log.error("", e2);
                                             }
                                         }
                                     } catch (SecurityException e1) {
-                                        logger.error("",e1);
+                                        log.error("", e1);
                                     } catch (NoSuchMethodException e1) {
-                                        logger.error("",e1);
+                                        log.error("", e1);
                                     }
                                     
                                     if(newID!=null){
@@ -267,11 +263,11 @@ public class CSVUpload2 extends SecureAction {
                             	}
                             }
                         } catch (FieldNotFoundException e) {
-                            logger.error("",e);
+                            log.error("", e);
                         } catch (InvalidValueException e) {
-                            logger.error("",e);
+                            log.error("", e);
                         } catch (Exception e) {
-                            logger.error("",e);
+                            log.error("", e);
                         }
                     }
                 }
@@ -283,7 +279,7 @@ public class CSVUpload2 extends SecureAction {
                 	PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
                     rowSummary.add("<font color='black'><b>Successful</b></font>");
                 } catch (Throwable e1) {
-                    logger.error("",e1);
+                    log.error("", e1);
                 	PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
                     rowSummary.add("<font color='red'><b>Error</b>&nbsp;"+ e1.getMessage() + "</font>");
                 }
@@ -301,17 +297,17 @@ public class CSVUpload2 extends SecureAction {
 			try {
 				MaterializedView.deleteByUser(user);
 			} catch (DBPoolException e) {
-	            logger.error("",e);
+	            log.error("", e);
 			} catch (SQLException e) {
-	            logger.error("",e);
+	            log.error("", e);
 			} catch (Exception e) {
-	            logger.error("",e);
+	            log.error("", e);
 			}
         } catch (XFTInitException e) {
-            logger.error("",e);
+            log.error("", e);
             data.setScreenTemplate("XDATScreen_uploadCSV3.vm");
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            log.error("", e);
             data.setScreenTemplate("XDATScreen_uploadCSV3.vm");
         }
     }
@@ -333,7 +329,7 @@ public class CSVUpload2 extends SecureAction {
         String project = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
 
         String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
-        File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
+        File f = Users.getUserCacheFile(XDAT.getUserDetails(),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);
@@ -343,7 +339,7 @@ public class CSVUpload2 extends SecureAction {
         try {
             String rootElementName = fm.getElementName();
 
-            UserI user = TurbineUtils.getUser(data);
+            UserI user = XDAT.getUserDetails();
             Iterator iter = rows.iterator();
             while(iter.hasNext())
             {
@@ -359,9 +355,9 @@ public class CSVUpload2 extends SecureAction {
                         try {
                             item.setProperty(xmlPath, column);
                         } catch (FieldNotFoundException e) {
-                            logger.error("",e);
+                            log.error("", e);
                         } catch (InvalidValueException e) {
-                            logger.error("",e);
+                            log.error("", e);
                         }
                     }
                     columnIndex++;
@@ -397,11 +393,11 @@ public class CSVUpload2 extends SecureAction {
                                 matchedPK=true;
                             }
                         } catch (FieldNotFoundException e) {
-                            logger.error("",e);
+                            log.error("", e);
                         } catch (InvalidValueException e) {
-                            logger.error("",e);
+                            log.error("", e);
                         } catch (Exception e) {
-                            logger.error("",e);
+                            log.error("", e);
                         }
                     }else{
                         dbVersion = item.getCurrentDBVersion(false);
@@ -458,14 +454,14 @@ public class CSVUpload2 extends SecureAction {
                                         rowSummary.add(sb.toString());
                                     }
                                 } catch (Exception e) {
-                                    logger.error("",e);
+                                    log.error("", e);
                                     sb.append("<A TITLE='Unknown exception.'><FONT COLOR='red'><b>"+ nValue + "<</b></FONT></A>");
                                     rowSummary.add(sb.toString());
                                 }
 
                             }else{
                                 if (gwf!=null){
-                                    ValidationResults vr = XFTValidator.ValidateValue(nValue,gwf.getRules(),"xs",gwf,new ValidationResults(), xmlPath,gwf.getParentElement().getGenericXFTElement());
+                                    ValidationResults vr = XFTValidator.ValidateValue(nValue, gwf.getRules(), "xs", gwf, xmlPath, gwf.getParentElement().getGenericXFTElement());
                                     if (!vr.isValid()){
                                         sb.append("<A TITLE='" + vr.getResults().get(0)[1] +"'><FONT COLOR='red'><b>"+ nValue + "<</b></FONT></A>");
                                         rowSummary.add(sb.toString());
@@ -477,7 +473,7 @@ public class CSVUpload2 extends SecureAction {
                                 rowSummary.add(sb.toString());
                             }
                         } catch (FieldNotFoundException e) {
-                            logger.error("",e);
+                            log.error("", e);
                             sb.append("<A TITLE='Unknown field: " + xmlPath +"'><FONT COLOR='red'><b>ERROR</b></FONT></A>");
                             rowSummary.add(sb.toString());
                         }
@@ -502,7 +498,7 @@ public class CSVUpload2 extends SecureAction {
                             oValue = dbVersion.getProperty(xmlPath);
                             nValue = item.getProperty(xmlPath);
                         } catch (FieldNotFoundException e) {
-                            logger.error("",e);
+                            log.error("", e);
                             sb.append("<A  TITLE='Unknown field: " + xmlPath +"'><FONT COLOR='red'><b>"+ nValue + "<</b></FONT></A>");
                             rowSummary.add(sb.toString());
                             continue;
@@ -510,9 +506,9 @@ public class CSVUpload2 extends SecureAction {
 
 
                         if (gwf!=null){
-                            ValidationResults vr = XFTValidator.ValidateValue(nValue,gwf.getRules(),"xs",gwf,new ValidationResults(), xmlPath,gwf.getParentElement().getGenericXFTElement());
+                            ValidationResults vr = XFTValidator.ValidateValue(nValue, gwf.getRules(), "xs", gwf, xmlPath, gwf.getParentElement().getGenericXFTElement());
                             if (!vr.isValid()){
-                                sb.append("<A TITLE='" + vr.getResults().get(0)[1] +"'><FONT COLOR='red'><b>"+ nValue + "</b></FONT></A>");
+                                sb.append("<A TITLE='").append(vr.getResults().get(0)[1]).append("'><FONT COLOR='red'><b>").append(nValue).append("</b></FONT></A>");
                                 rowSummary.add(sb.toString());
                                 continue;
                             }
@@ -532,7 +528,7 @@ public class CSVUpload2 extends SecureAction {
                         }else if (nValue == null || nValue.equals("")){
                             if (oValue !=null && !oValue.equals(""))
                             {
-                                sb.append("<FONT COLOR='black'><b>NULL</b></FONT><FONT COLOR='#999999'>(" + oValue + ")</font>");
+                                sb.append("<FONT COLOR='black'><b>NULL</b></FONT><FONT COLOR='#999999'>(").append(oValue).append(")</font>");
                                 modified=true;
                                 rowSummary.add(sb.toString());
                                 continue;
@@ -550,17 +546,17 @@ public class CSVUpload2 extends SecureAction {
 
 							if (!matchedPK || !xmlPath.equals(rootElementName +"/ID")){
 							    if (DBAction.IsNewValue(type, oldValue, newValue)){
-							        sb.append("<FONT COLOR='black'><b>").append(nValue + "</b></font> <FONT COLOR='#999999'>(" + oValue + ")</font>");
+							        sb.append("<FONT COLOR='black'><b>").append(nValue).append("</b></font> <FONT COLOR='#999999'>(").append(oValue).append(")</font>");
 							        modified=true;
 							    }else{
 							        sb.append("<FONT COLOR='#999999'>").append(nValue).append("</FONT>");
 							    }
 							}else{
-							    sb.append("<FONT COLOR='#999999'><b>").append(nValue + "</b></font> <FONT COLOR='#999999'>(" + oValue + ")</font>");
+							    sb.append("<FONT COLOR='#999999'><b>").append(nValue).append("</b></font> <FONT COLOR='#999999'>(").append(oValue).append(")</font>");
 							}
 							rowSummary.add(sb.toString());
 						} catch (InvalidValueException e) {
-							logger.error("",e);
+							log.error("", e);
 						}
                     }
                     if (modified)
@@ -576,13 +572,11 @@ public class CSVUpload2 extends SecureAction {
 
             data.setScreenTemplate("XDATScreen_uploadCSV3.vm");
         } catch (XFTInitException e) {
-            logger.error("",e);
+            log.error("", e);
             data.setScreenTemplate("XDATScreen_uploadCSV2.vm");
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            log.error("", e);
             data.setScreenTemplate("XDATScreen_uploadCSV2.vm");
         }
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(CSVUpload2.class);
 }

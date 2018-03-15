@@ -10,8 +10,8 @@
 
 package org.nrg.xft.utils.ValidationUtils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -22,16 +22,19 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.DateUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+@Slf4j
 public class XFTValidator {
 	private static final String EMPTY = "";
 	private static final String TRUE = "true";
 	private static final String REQUIRED = "required";
 	private static final String MIN_LENGTH = "minLength";
 	private static final String MAX_LENGTH = "maxLength";
-	static org.apache.log4j.Logger logger = Logger.getLogger(XFTValidator.class);
 
 	/**
 	 * Validates the content of this item and its sub-items using the specifications in
@@ -44,8 +47,7 @@ public class XFTValidator {
 	 * @throws ElementNotFoundException
 	 */
 
-	public static ValidationResults Validate(ItemI item) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
-	{
+	public static ValidationResults Validate(ItemI item) throws XFTInitException,ElementNotFoundException,FieldNotFoundException {
 	    return Validate(item,null);
 	}
 
@@ -62,56 +64,50 @@ public class XFTValidator {
 			checkReservedPropertyValue(results, element, item, "xnat:projectData/name", "Unassigned");
 		}
 
-		String prefix = element.getWrapped().getSchema().getXMLNS();
-		Iterator fields = element.getRules().iterator();
-		ArrayList checkd = new ArrayList();
-		while(fields.hasNext())
-		{
-			Object [] field = (Object [])fields.next();
-			GenericWrapperField vField = (GenericWrapperField)field[0];
-			logger.debug(xsiType + " -> " + vField.getName());
-			if (vField.isReference())
+        final String       prefix  = element.getWrapped().getSchema().getXMLNS();
+        final List<String> checked = new ArrayList<>();
+		
+        for (final Object ruleObject : element.getRules()) {
+            final Object[]            rule    = (Object[]) ruleObject;
+            final GenericWrapperField field   = (GenericWrapperField) rule[0];
+            final String              fieldId = field.getId();
+
+            log.debug("{} -> {} {}", xsiType, field.getName(), fieldId);
+
+            if (field.isReference())
 			{
-				if (vField.isMultiple())
+				if (field.isMultiple())
 				{
 					int counter = 0;
-					Iterator children = item.getChildItems(vField).iterator();
-					  while (children.hasNext())
-					  {
-						  Object o = children.next();
-
-						if (o.getClass().getName().equalsIgnoreCase("org.nrg.xft.XFTItem"))
-						{
-							ValidationResults temp = Validate((XFTItem)o, vField.getXMLPathString(xmlPath) +"[" + counter + "]");
-							checkd.add(vField.getId() + counter);
-							Iterator iter = temp.getResultsIterator();
-							while (iter.hasNext())
-							{
-								Object [] sub = (Object [])iter.next();
-								results.addResult((GenericWrapperField)sub[0],(String)sub[1],(String)sub[2],(String)sub[3]);
+					for (final Object childItem : item.getChildItems(field)) {
+						if (childItem.getClass().getName().equalsIgnoreCase("org.nrg.xft.XFTItem")) {
+							ValidationResults temp = Validate((XFTItem)childItem, field.getXMLPathString(xmlPath) +"[" + counter + "]");
+							checked.add(fieldId + counter);
+							for (final Object subObject : temp.getResults()) {
+								final Object[] sub = (Object[]) subObject;
+                                results.addResult((GenericWrapperField) sub[0], (String) sub[1], (String) sub[2], (String) sub[3]);
 							}
 						}
 						counter++;
 					}
-				}else
-				{
-					if (item.getProperty(vField.getId()) != null)
+				}else {
+					if (item.getProperty(fieldId) != null)
 					{
-						if (item.getProperty(vField.getId()).getClass().getName().equalsIgnoreCase("org.nrg.xft.XFTItem"))
+						if (item.getProperty(fieldId).getClass().getName().equalsIgnoreCase("org.nrg.xft.XFTItem"))
 						{
-							ValidationResults temp = Validate((XFTItem)item.getProperty(vField.getId()), vField.getXMLPathString(xmlPath));
-							checkd.add(vField.getId());
+							ValidationResults temp = Validate((XFTItem)item.getProperty(fieldId), field.getXMLPathString(xmlPath));
+							checked.add(fieldId);
 							Iterator iter = temp.getResultsIterator();
 							while (iter.hasNext())
 							{
-								Object [] sub = (Object [])iter.next();
+								Object[] sub = (Object[])iter.next();
 								results.addResult((GenericWrapperField)sub[0],(String)sub[1],(String)sub[2],(String)sub[3]);
 							}
 						}
 					}
 
 					//CHECK local SQL fields
-					Iterator iter = vField.getLocalRefNames().iterator();
+					Iterator iter = field.getLocalRefNames().iterator();
 					while (iter.hasNext())
 					{
 						ArrayList refMapping = (ArrayList)iter.next();
@@ -120,29 +116,23 @@ public class XFTValidator {
 							Object value = item.getProperty(refMapping.get(0).toString().toLowerCase());
 							if (! (value instanceof XFTItem))
 							{
-								String [] rule = {REQUIRED,"false",((GenericWrapperField)refMapping.get(1)).getXMLType().getFullLocalType()};
-								ArrayList al = new ArrayList();
-								al.add(rule);
-								checkd.add(refMapping.get(0).toString().toLowerCase());
-								results.addResults(ValidateValue(value,al,prefix,vField,results, vField.getXMLPathString(xmlPath),element));
+								checked.add(refMapping.get(0).toString().toLowerCase());
+                                results.addResults(ValidateValue(value, Collections.singletonList(new String[]{REQUIRED, "false", ((GenericWrapperField) refMapping.get(1)).getXMLType().getFullLocalType()}), prefix, field, field.getXMLPathString(xmlPath), element));
 							}
 						}
 					}
 				}
 			}else{
-				Object value = item.getProperty(vField.getId());
-				checkd.add(vField.getId());
-				results.addResults(ValidateValue(value,(ArrayList)field[1],prefix,vField,results, vField.getXMLPathString(xmlPath),element));
+				final Object value = item.getProperty(fieldId);
+				checked.add(fieldId);
+				results.addResults(ValidateValue(value, (ArrayList) rule[1], prefix, field, field.getXMLPathString(xmlPath), element));
 			}
 		}
 
 
-		java.util.Enumeration keys = item.getProps().keys();
-		while (keys.hasMoreElements())
-		{
-			String key = (String)keys.nextElement();
-			if (! checkd.contains(key))
-			{
+		for (final Object object : item.getProps().keySet()) {
+			final String key = (String) object;
+			if (!checked.contains(key)) {
 				results.addResult(null, "Unknown field:" + xsiType + " -> " + key, EMPTY, element);
 			}
 		}
@@ -160,8 +150,15 @@ public class XFTValidator {
 		}
 	}
 
-	public static ValidationResults ValidateValue(Object value, ArrayList ruleArrayList, String prefix, GenericWrapperField vField, ValidationResults vr, String xmlPath,GenericWrapperElement element)
-	{
+	public static ValidationResults ValidateValue(Object value, List ruleArrayList, String prefix, GenericWrapperField vField, ValidationResults results, String xmlPath, GenericWrapperElement element) {
+		final ValidationResults newResults = ValidateValue(value, ruleArrayList, prefix, vField, xmlPath, element);
+		results.addResults(newResults);
+		return results;
+	}
+
+	public static ValidationResults ValidateValue(Object value, List ruleArrayList, String prefix, GenericWrapperField vField, String xmlPath, GenericWrapperElement element) {
+		final ValidationResults vr = new ValidationResults();
+
 		Iterator rules = ruleArrayList.iterator();
 		boolean hasComparison = false;
 		boolean meetsComparison = false;
@@ -1175,33 +1172,29 @@ public class XFTValidator {
 
 				}catch(Exception ex)
 				{
-					logger.error(EMPTY,ex);
+					log.error("An error occurred while validating a value",ex);
 				}
 			}
 		}
 		if (hasComparison && (!meetsComparison))
 		{
-			String message = "'" + value + "' Must Match Pre-Defined Values...(";
-			int count = 0;
-			Iterator comps = vField.getWrapped().getRule().getPossibleValues().iterator();
+			final StringBuilder message = new StringBuilder();
+			message.append("'").append(value).append("' Must Match Pre-Defined Values...(");
+			int           count   = 0;
+			Iterator      comps   = vField.getWrapped().getRule().getPossibleValues().iterator();
 			while (comps.hasNext())
 			{
 				if ((count++)==0)
 				{
-					message +=comps.next().toString();
+					message.append(comps.next().toString());
 				}else
 				{
-					message +="," + comps.next().toString();
+					message.append(",").append(comps.next().toString());
 				}
 			}
 			vr.addResult(vField,message + ")", xmlPath,element);
 		}
 		return vr;
-	}
-
-	private String getFullMessage(GenericWrapperElement e, GenericWrapperField f)
-	{
-	    return "The content of element '" + e.getFullXMLName() + "' is not complete. '{\"" + e.getSchemaTargetNamespaceURI() + "\":" + f.getXMLName() +  "}'";
 	}
 
 	/**
@@ -1220,18 +1213,15 @@ public class XFTValidator {
 		boolean foundField = false;
 		if (p.getWrapped() != null)
 		{
-			Iterator fields = p.getRules().iterator();
-			while(fields.hasNext())
-			{
-				Object [] f = (Object [])fields.next();
+			for (final Object object : p.getRules()) {
+				final Object[] f = (Object[]) object;
 				GenericWrapperField vField = (GenericWrapperField)f[0];
 				if (field.toLowerCase().equalsIgnoreCase(vField.getSQLName().toLowerCase()))
 				{
 					foundField = true;
-					Iterator rules = ((ArrayList)f[1]).iterator();
-					while (rules.hasNext())
+					for (final Object ruleObject : ((ArrayList)f[1]))
 					{
-						String [] rule = (String[])rules.next();
+						final String [] rule = (String[]) ruleObject;
 						if (rule[0].equalsIgnoreCase("comparison"))
 						{
 							al.add(rule[1].trim());
@@ -1256,7 +1246,6 @@ public class XFTValidator {
 		    }
 		}
 
-		al.trimToSize();
 		return al;
 	}
 

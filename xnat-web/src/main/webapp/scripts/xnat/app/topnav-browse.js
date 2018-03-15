@@ -99,7 +99,7 @@
                 }
             }
         });
-        $parent.append(_menuItem).parents('li').removeClass('hidden');
+        $parent.html('').append(_menuItem).parents('li').removeClass('hidden');
     };
 
     function displayProjectNavFail(){
@@ -131,7 +131,7 @@
                 item: 'list-item'
             }
         });
-        $container.append(_menuItem).parents('li').removeClass('hidden');
+        $container.html('').append(_menuItem).parents('li').removeClass('hidden');
     }
 
     var xnatJSON = XNAT.xhr.getJSON;

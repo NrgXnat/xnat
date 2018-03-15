@@ -61,6 +61,7 @@
     <script src="${SITE_ROOT}/scripts/xnat/cookie.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/event.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/element.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/storage.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/templates.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/input.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/ui/select.js"></script>
@@ -74,9 +75,52 @@
     <!-- The Spawner! -->
     <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>
 
-    <!-- XNAT app scripts -->
+    <!-- XNAT app scripts (do not load on login page) -->
+    #if (!$isLoginPage)
+
     <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
+##    <script src="${SITE_ROOT}/scripts/xnat/app/dataTypeAccess.js"></script>
+
+    <!-- window.available_elements -->
+    <script>
+
+        window.available_elements = [];
+        window.browseableElements = {};
+
+        if (!window.isLoginPage) {
+            window.getBrowseableElements = XNAT.xhr.get({
+                url: serverRoot + '/xapi/access/displays/browseable',
+                // TODO: change 'async' property after UI is refactored for async rendering
+                async: false,
+                success: function(elements){
+                    var sortedElements = sortObjects(elements, 'plural');
+                    forEach(sortedElements, function(elementObj){
+                        elementObj.element_name = elementObj.elementName;
+                        elementObj.isExperiment = elementObj.experiment;
+                        elementObj.isSubjectAssessor = elementObj.subjectAssessor;
+                        elementObj.isImageAssessor = elementObj.imageAssessor;
+                        elementObj.isImageSession = elementObj.imageSession;
+                        elementObj.isImageScan = elementObj.imageScan;
+                        elementObj.lbg = '#f0f0f0';
+                        elementObj.dbg = '#505050';
+                        window.available_elements.push(elementObj);
+                        window.browseableElements[elementObj.element_name] = elementObj;
+                    });
+                }
+            });
+        }
+
+        window.available_elements.getByName = function (name) {
+            // return empty object if not found
+            return window.browseableElements[name] || {}
+        };
+
+    </script>
+
+    #else
+    <!-- login page -->
+    #end
 
     #if ($theme && $theme != "none")
         <!-- Theme JS -->

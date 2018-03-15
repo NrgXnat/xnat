@@ -14,19 +14,41 @@
 <!-- path: /xnat-templates/navigations/HeaderIncludes -->
 
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+#set ($debugParam = $data.getParameters().getString('debug'))
+#set ($jsDebugParam = $data.getParameters().getString('jsdebug'))
+#set ($DEBUG = ($debugParam == 'true' || $jsDebugParam == 'true'))
+
+#if ($DEBUG)
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="cache-control" content="max-age=0">
 <meta http-equiv="cache-control" content="no-cache">
 <meta http-equiv="expires" content="-1">
 <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
+#end
 
+#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$s").trim()).trim()#end
 
 ## pull in the base JavaScript files
 $navigation.setTemplate("/BaseJS.vm")
 
-#set($versionString = "v=1.7.3c")
-#set($SITE_ROOT = $content.getURI(""))
+#set ($versionString = "v=1.7.5a")
+#set ($SITE_ROOT = $content.getURI(""))
 
+#set ($projectName = $turbineUtils.getProjectName($om, $project))
+#if (!$projectName)
+    #set($projectName = $project.getName())
+#end
+#define ($projectNameEsc)
+    #escapeAll("$!projectName")
+#end
+
+#set ($projectId = $turbineUtils.getProjectDisplayID($om, $project))
+#define ($projectIdEsc)
+    #escapeAll("$!projectId")
+#end
+
+<!-- setup XNAT namespace -->
 <script>
 
     /*
@@ -57,55 +79,73 @@ $navigation.setTemplate("/BaseJS.vm")
         },
         data: {
             context: {
-                #set($projectName = $turbineUtils.getProjectName($om, $project))
-                #if (!$projectName)
-                    #set ($projectName = $project.getName())
-                #end
-                #set($projectID = $turbineUtils.getProjectDisplayID($om, $project))
-                siteName: "$!systemName",
-                projectName: "$!projectName",
-                #if ($!projectID)
-                    projectID: "$!projectID",
-                    project: "$!projectID",
+                siteName: '$!systemName',
+                projectName: '$!projectNameEsc.trim()',
+
+                #if ($!projectId)
+                    projectID: '$!projectIdEsc.trim()',
+                    project: '$!projectIdEsc.trim()',
                     ## if the user is viewing a shared data object, display the ID of the project that owns that object
-                    #if ($!projectID == $!om.getProject())
+                    #if ($!projectId == $!om.getProject())
                     #else
-                        parentProjectID: "$!om.getProject()",
+                        parentProjectID: '#escapeAll("$!om.getProject()")',
                     #end
                 #else
-                    projectID: "$!om.getProject()",
-                    project: "$!om.getProject()",
+                    projectID: '#escapeAll("$!om.getProject()")',
+                    project: '#escapeAll("$!om.getProject()")',
                 #end
+
                 xsiType: "$!om.getXSIType()",
-                #if($om)
+
+                #if ($om)
                     isSubject: $!om.getItem().instanceOf("xnat:subjectData"),
                     isExperiment: $!om.getItem().instanceOf("xnat:experimentData"),
                     isSubjectAssessor: $!om.getItem().instanceOf("xnat:subjectAssessorData"),
                     isImageSession: $!om.getItem().instanceOf("xnat:imageSessionData"),
                     isImageAssessor: $!om.getItem().instanceOf("xnat:imageAssessorData"),
                 #end
-            ##                        //projectID: #if ($project) #if ($project.getId()) "$!project.getId()" #else "$!project" #end #end ,
-            ##                        #if ($om.getSubjectId())
-            ##                            subjectID: "$!om.getSubjectId()",
-            ##                        #end
-            ##                        subjectLabel: "#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end",
-                subjectLabel: "#if($!subject.getIdentifier($project,true))$!subject.getIdentifier($project,true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subject.getId()#end",
-                subjectID: "$!subject.getId()",
-                label: "#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end",
-                ID: "$!om.getId()"
-            ##                    subjectLabel: "$!item.getStringProperty("xnat:subjectData/name")",
+
+                #define ($subjectLabelEsc)
+                    #if ($!subject.getIdentifier($project,true))
+                        #escapeAll("$!subject.getIdentifier($project,true)")
+                    #elseif ($subject.getLabel())
+                        #escapeAll("$!subject.getLabel()")
+                    #else
+                        #escapeAll("$!subject.getId()")
+                    #end
+                #end
+                subjectLabel: '$!subjectLabelEsc.trim()',
+                subjectID: '#escapeAll("$!subject.getId()")',
+
+                #define ($labelEsc)
+                    #if ($!om.getIdentifier($project,true))
+                        #escapeAll("$!om.getIdentifier($project,true)")
+                    #elseif ($om.getLabel())
+                        #escapeAll("$!om.getLabel()")
+                    #else
+                        #escapeAll("$!om.getId()")
+                    #end
+                #end
+                label: '$!labelEsc.trim()',
+
+                ID: '#escapeAll("$!om.getId()")'
+                ## subjectLabel: "$!item.getStringProperty("xnat:subjectData/name")"
             },
             timestamp: jq.now() // timestamp for the page when it loads
         }
     });
 
     if (XNAT.data.context.projectName === "") {
-        #set ($projectName = $turbineUtils.getProjectName($om, $project))
-        XNAT.data.context.projectName = "$!projectName";
+        #define ($projectName)
+            #escapeAll("$turbineUtils.getProjectName($om, $project)")
+        #end
+        XNAT.data.context.projectName = '$!projectName.trim()';
     }
 
     // 'page' object is same as 'context' - easier to remember?
     XNAT.data.page = XNAT.data.context;
+
+    XNAT.data.siteConfig = getObject(XNAT.data.siteConfig || {});
 
     XNAT.app.showLeftBar = realValue($!siteConfig.uiShowLeftBarBrowse);
     XNAT.app.showLeftBarProjects = realValue($!siteConfig.uiShowLeftBarProjects);
@@ -113,56 +153,27 @@ $navigation.setTemplate("/BaseJS.vm")
     XNAT.app.showLeftBarSearch =  realValue($!siteConfig.uiShowLeftBarSearch);
     XNAT.app.showLeftBarBrowse = realValue($!siteConfig.uiShowLeftBarBrowse);
 
-    window.available_elements = [];
-
-    #set ($userHelper = $data.getSession().getAttribute("userHelper"))
-    #if($userHelper)
-        #set ($typeObjects = $userHelper.getBrowseableElementDisplays())
+    #if ($project)
+        #if ($project.getId())
+        window.projectScope = "$!project.getId()";
+        #else
+        window.projectScope = "$!project";
+        #end
     #end
 
-    #foreach ($typeObject in $typeObjects)
-        window.available_elements.push({
-            singular: "$typeObject.getSchemaElement().getElementSecurity().getSingularDescription()",
-            plural: "$typeObject.getSchemaElement().getElementSecurity().getPluralDescription()",
-            element_name: "$typeObject.getElementName()",
-            actions: $typeObject.getElementSecurity().getListingActionsJSON(),
-            "lbg": "$!typeObject.getLightColor()",
-            "dbg": "$!typeObject.getDarkColor()",
-            "isExperiment": $typeObject.getSchemaElement().instanceOf("xnat:experimentData"),
-            "isSubjectAssessor": $typeObject.getSchemaElement().instanceOf("xnat:subjectAssessorData"),
-            "isImageAssessor": $typeObject.getSchemaElement().instanceOf("xnat:imageAssessorData"),
-            "isImageSession": $typeObject.getSchemaElement().instanceOf("xnat:imageSessionData"),
-            "isImageScan": $typeObject.getSchemaElement().instanceOf("xnat:imageScanData")
-        });
+    if (window.projectScope) {
+        XNAT.data.context.project = XNAT.data.context.projectID = window.projectScope
+    }
+
+    #if ($item)
+        #if ($item.instanceOf("xnat:subjectData"))
+            XNAT.app.current_uri = serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getId()";
+        #elseif($item.instanceOf("xnat:derivedData"))
+            XNAT.app.current_uri = serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()/assessors/$om.getId()";
+        #else
+            XNAT.app.current_uri = serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getSubjectId()/experiments/$om.getId()";
+        #end
     #end
-
-    window.available_elements.getByName = function (name) {
-        for (var aeC = 0; aeC < this.length; aeC++) {
-            if (this[aeC].element_name == name) {
-                return this[aeC];
-            }
-        }
-        // return empty object if not found
-        return {}
-    };
-
-        #if($project)
-            #if($project.getId())
-            window.projectScope = "$!project.getId()";
-            #else
-            window.projectScope = "$!project";
-            #end
-        #end
-
-        #if($item)
-            #if($item.instanceOf("xnat:subjectData"))
-              XNAT.app.current_uri=serverRoot+"/REST/projects/$om.getProject()/subjects/$om.getId()";
-            #elseif($item.instanceOf("xnat:derivedData"))
-              XNAT.app.current_uri=serverRoot+"/REST/projects/$om.getProject()/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()/assessors/$om.getId()";
-            #else
-              XNAT.app.current_uri=serverRoot+"/REST/projects/$om.getProject()/subjects/$om.getSubjectId()/experiments/$om.getId()";
-            #end
-        #end
 
     // quickly reference today's date
     XNAT.data.todaysDate = {};

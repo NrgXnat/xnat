@@ -31,6 +31,7 @@
 </li>
 <li class="hidden"><a href="#!" class="nolink">Data</a>
     <ul id="browse-data">
+        <li class="loading-access-browse"><a href="#!">Loading...</a></li>
         <!-- Sequence: 30 -->
     </ul>
 </li>

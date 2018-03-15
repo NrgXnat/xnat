@@ -26,7 +26,7 @@ var XNAT = getObject(XNAT);
     }
 }(function(){
 
-    var undefined, undef, validate;
+    var undef, validate;
 
     XNAT.validation = getObject(XNAT.validation || {});
 
@@ -112,7 +112,7 @@ var XNAT = getObject(XNAT);
         alphaNumSafeSpace: /^[a-z0-9_ ]+$/i,   // ONLY letters, numbers, underscore, and space
         alphaNumDash: /^[a-z0-9_\-]+$/i,       // ONLY letters, numbers, underscore, and dash
         alphaNumDashSpace: /^[a-z0-9 _\-]+$/i, // ONLY letters, numbers, underscore, dash, and space
-        nameSafe: /^[a-z \-]+$/i,              // safe to use for names - letters, spaces, and hyphens
+        nameSafe: /^([a-z][a-z0-9 .,_-]*)$/i,  // safe to use for names - letters, numbers spaces, periods, commas, underscores and hyphens
         // safe to use for usernames - starts with a letter or number and contains letters, numbers, underscores, hyphens and periods
         username: /^([a-z0-9]+[a-z0-9._-]*)$/i,
         idSafe: /^([a-z][a-z0-9_\-]*)$/i,      // safe to use as an ID - alphasafe and must start with a letter
@@ -568,6 +568,10 @@ var XNAT = getObject(XNAT);
                 obj.value = obj.element.value || '';
             }
         }
+        else if (/^(false|null)$/i.test(element)) {
+            obj.element = { value: '' };
+            obj.element$ = $(obj.element);
+        }
         else {
             obj.element$ = $.spawn('input.tmp|type=hidden');
             obj.element = obj.element$[0];
@@ -622,7 +626,7 @@ var XNAT = getObject(XNAT);
     // continue validating even after failed validation
     // break a chain by calling .chain(false)
     Validator.fn.chain = function(bool){
-        this.chained = bool !== undefined ? bool : true;
+        this.chained = bool !== undef ? bool : true;
         return this;
     };
 
@@ -641,10 +645,13 @@ var XNAT = getObject(XNAT);
         // - explicity set a 'value' if argument is passed and doesn't match existing this.value
         // - attempt to retrieve a value from an element if value arg is falsey
         // - fallback to this.value if 'value' arg is falsey
-        this.value =
-                !value || this.value !== value ?
-                        value || this.element.value :
-                        this.element.value || this.value ;
+        if (value !== undef) {
+            this.value = this.value+'' || value+'';
+            return this;
+        }
+        if (this.element !== undef && this.element.value !== undef) {
+            this.value = this.value+'' || this.element.value+'';
+        }
         return this;
     };
 
@@ -905,7 +912,7 @@ var XNAT = getObject(XNAT);
     // .valid() must be called LAST
     // XNAT.validate('#email').trim().is('email').valid(true);
     Validator.fn.valid = function(bool){
-        bool = (bool === undefined) ? true : bool;
+        bool = (bool === undef) ? true : bool;
         this.validated = bool ? this.validated : !this.validated;
         this.errors += (!this.validated ? 1 : 0);
         return this.validated;
@@ -934,6 +941,9 @@ var XNAT = getObject(XNAT);
         else if (type !== false) {
             if (this.element$.dataAttr('validate')) {
                 types = this.element$.dataAttr('validate').split(/\s+/);
+                if (types.indexOf('allow-empty') > -1) {
+                    this.allowEmpty = true;
+                }
                 $.each(types, function(idx, item){
                     // stop if validation has already failed
                     if (!self.validated) {
@@ -1009,6 +1019,21 @@ var XNAT = getObject(XNAT);
         return new Validator(element);
     };
 
+    validate.form = function(form){
+        var errors = 0;
+        $$(form).find(':input.validate').each(function(){
+            var type = $(this).dataAttr('validate');
+            if (validate(this).not(type).check()) {
+                errors += 1
+            }
+        });
+        return errors === 0;
+    };
+
+    // validate a value on its ow
+    validate.value = function(val){
+        return new Validator(false).val(val);
+    };
 
     // TODO: move the date methods below to {test} object: test['greaterThanDate']() etc...
     validate.check = {
@@ -1054,13 +1079,13 @@ var XNAT = getObject(XNAT);
     // add event listeners for validation
     $(function(){
 
-        var $body = $(document.body);
+        var $doc = $(document);
 
-        $body.on('focus', ':input[data-validate]', function(){
+        $doc.on('focus', ':input[data-validate]', function(){
             $(this).removeClass('valid invalid');
         });
 
-        $body.on('blur', ':input[data-validate].onblur', function(){
+        $doc.on('blur', ':input[data-validate].onblur', function(){
             validate(this).check();
         });
 

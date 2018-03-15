@@ -253,8 +253,8 @@ if (typeof jQuery == 'undefined') {
         // add 'loading_bar.gif' to the page (but off-canvas) to preload it
         // so it's displayed immediately when opening a loading dialog
         $body.append('' +
-            '<div id="xmodal-loading" style="position:fixed;left:-9999px;top:-9999px;">' +
-            '<img src="' + xmodal.path + 'loading_bar.gif" alt="loading">' +
+            '<div id="loading-bar" style="position:fixed;left:-9999px;top:-9999px;">' +
+            '<div class="center"><img src="' + xmodal.path + 'loading_bar.gif" alt="loading"></div>' +
             '</div>' +
             '');
 
@@ -1360,7 +1360,7 @@ if (typeof jQuery == 'undefined') {
             opts.width = 260;
             opts.height = 90;
             opts.scroll = false;
-            opts.content = $('#xmodal-loading').html();
+            opts.content = $('#loading-bar').html();
             opts.animation = false;
             opts.closeBtn = false;
             opts.footer = false;

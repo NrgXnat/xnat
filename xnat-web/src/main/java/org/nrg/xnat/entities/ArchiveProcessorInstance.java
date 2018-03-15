@@ -74,7 +74,10 @@ public class ArchiveProcessorInstance extends AbstractHibernateEntity {
     }
 
     private String scope;
+
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> projectIdsList;
+
     private int priority;
     private Map<String, String> parameters;
     private String processorClass;

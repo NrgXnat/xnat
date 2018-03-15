@@ -1300,7 +1300,7 @@
   #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
   #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
   #set ($scanSnapshotId = "scan${scan.id}snapshot")
-  <a target="_blank" href="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")">
+  <a target="_blank" class="scan-original-link" href="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")">
     <img id="$scanSnapshotId" class="scan-snapshot" data-xnat-src="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=THUMBNAIL&index=0")">
   </a>
 #end
@@ -1578,13 +1578,10 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
  #end
 #end
 
-#macro(escapeHTML $s)
-$!turbineUtils.escapeHTML($s)
-#end
-
-#macro(escapeJS $s)
-$!turbineUtils.escapeJS($s)
-#end
+#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$s").trim()#end
+#macro(escapeJS $s)$!turbineUtils.escapeJS("$s").trim()#end
+#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$s").trim()).trim()#end
+#macro(escapeParam $s)$!turbineUtils.escapeParam("$s").trim()#end
 
 #macro(selectEmployment $value $item $vr)
     #if ($vr)

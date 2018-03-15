@@ -8,69 +8,87 @@
 ## this "spacer" thing is not good
 ## let's make it go away
 <style>
-    span.spacer{ display:none !important; }
+    span.spacer { display:none !important; }
+    div.quick-search-tab { min-height: 160px; }
 </style>
 
 <div id="front_search" class="yui-navset"></div>
 
 <script type="text/javascript">
 
-    // add 'xnat-home' class to <body> on home page
-    $('body').addClass('xnat-home');
+    (function(){
 
-    // only show the header logo on the 'home' page
-    $('#header_logo').show();
-    XNAT.app.adjustHeaderAndNavForLogoSize();
+        // add 'xnat-home' class to <body> on home page
+        $('body').addClass('xnat-home');
 
-    var frontTabs = new YAHOO.widget.TabView('front_search');
+        // only show the header logo on the 'home' page
+        $('#header_logo').show();
+        XNAT.app.adjustHeaderAndNavForLogoSize();
 
-    frontTabs.addTab(new YAHOO.widget.Tab({
-        active: true,
-        label: '$displayManager.getPluralDisplayNameForProject()',
-        content: '<div id="quick-search-project" data-type="projectData" class="quick-search-tab"></div>'
-    }));
+        var frontTabs = new YAHOO.widget.TabView('front_search');
 
-    frontTabs.addTab(new YAHOO.widget.Tab({
-        label: '$displayManager.getPluralDisplayNameForSubject()',
-        content: '<div id="quick-search-subject" data-type="subjectData" class="quick-search-tab"></div>'
-    }));
+        frontTabs.addTab(new YAHOO.widget.Tab({
+            active: true,
+            label: '<span data-tab="quick-search-project">$displayManager.getPluralDisplayNameForProject()</span>',
+            content: '<div id="quick-search-project" data-type="projectData" class="quick-search-tab"></div>'
+        }));
 
-    frontTabs.addTab(new YAHOO.widget.Tab({
-        label: 'MR',
-        content: '<div id="quick-search-mr" data-type="mrSessionData" class="quick-search-tab"></div>'
-    }));
+        frontTabs.addTab(new YAHOO.widget.Tab({
+            label: '<span data-tab="quick-search-subject">$displayManager.getPluralDisplayNameForSubject()</span>',
+            content: '<div id="quick-search-subject" data-type="subjectData" class="quick-search-tab"></div>'
+        }));
 
-    frontTabs.addTab(new YAHOO.widget.Tab({
-        label: 'PET',
-        content: '<div id="quick-search-pet" data-type="petSessionData" class="quick-search-tab"></div>'
-    }));
+        frontTabs.addTab(new YAHOO.widget.Tab({
+            label: '<span data-tab="quick-search-mr">MR</span>',
+            content: '<div id="quick-search-mr" data-type="mrSessionData" class="quick-search-tab"></div>'
+        }));
 
-    frontTabs.addTab(new YAHOO.widget.Tab({
-        label: 'CT',
-        content: '<div id="quick-search-ct" data-type="ctSessionData" class="quick-search-tab"></div>'
-    }));
+        frontTabs.addTab(new YAHOO.widget.Tab({
+            label: '<span data-tab="quick-search-pet">PET</span>',
+            content: '<div id="quick-search-pet" data-type="petSessionData" class="quick-search-tab"></div>'
+        }));
+
+        frontTabs.addTab(new YAHOO.widget.Tab({
+            label: '<span data-tab="quick-search-ct">CT</span>',
+            content: '<div id="quick-search-ct" data-type="ctSessionData" class="quick-search-tab"></div>'
+        }));
 
 
-    // get the tab contents with jQuery's $().load() method
-    // instead of loading on tab click with YUI
-    // (loads the HTML returned via AJAX into the <div>)
+        // get the tab contents with jQuery's $().load() method
+        // instead of loading on tab click with YUI
+        // (loads the HTML returned via AJAX into the <div>)
 
-    $('div.quick-search-tab').each(function(){
+        function loadDataTypeSearch(tabId){
 
-        var container = $(this),
-            dataType = container.data('type'),
-            url = XNAT.url.restUrl('/app/template/DataTypeSearch.vm/dataType/xnat:' + dataType, '', true, false);
+            var container = $('#' + tabId);
 
-        // get JUST the <form> from the returned HTML
-        url += ' form.data-type-search'
+            if (container[0].hasAttribute('data-loaded')) return;
 
-        container.load(url, function(){
-            // callbacks
-            menuInit();
-            XNAT.app.searchMethodToggler(container);
+            var dataType = container.data('type');
+            var url = XNAT.url.rootUrl('/app/template/DataTypeSearch.vm/dataType/xnat:' + dataType, '', true, false);
+
+            // get JUST the <form> from the returned HTML
+            url += ' form.data-type-search'
+
+            container.load(url, function(){
+                // callbacks
+                menuInit();
+                XNAT.app.searchMethodToggler(container);
+                container[0].setAttribute('data-loaded', '');
+            });
+
+        }
+
+        // don't load the search tab contents until clicking the tab
+        $(document).on('click', '#front_search .yui-nav > li', function(){
+            var tabId = $(this).find('span[data-tab]').data('tab');
+            loadDataTypeSearch(tabId)
         });
 
-    });
+        // load the project search on page load
+        loadDataTypeSearch('quick-search-project');
+
+    })()
 
 </script>
 

@@ -3,12 +3,6 @@
     <tr>
         <td valign="top">
             <!--BEGIN EXPT SUMMARY TABS -->
-        ##<STYLE>
-        ##span.spacer{
-        ##height:12px;
-        ##width:1px;
-        ##}
-        ##</STYLE>
             <div ID="expt_summary_module" style="display:none">
                 <div id="exptSummary" class="yui-navset">
                     <ul class="yui-nav" style="">
@@ -53,7 +47,8 @@
             <script type="text/javascript">
                 function summaryIndexChanged(){
                     var activeIndex=this.get("activeIndex");
-                    YAHOO.util.Cookie.set("${project.getId()}.summary.index",activeIndex);
+                    #define($projectIdEsc)#escapeJS("$!project.getId()")#end
+                    YAHOO.util.Cookie.set("${projectIdEsc.trim()}.summary.index",activeIndex);
                 }
                 function toggleLI(_name){
                     var elements = document.getElementsByName("li_"+_name);
@@ -74,8 +69,8 @@
                     #addCustomScreenJS($om.getXSIType() "report/tabs_js")
 
                     window.expt_summary_module.show();
-
-                    var tabIndex=YAHOO.util.Cookie.get("${om.getId()}.summary.index");
+                    #define($omIdEsc)#escapeJS("$!om.getId()")#end
+                    var tabIndex=YAHOO.util.Cookie.get("${omIdEsc.trim()}.summary.index}");
                     window.summaryTabView.set('activeIndex',tabIndex||0);
 
                     window.summaryTabView.subscribe("activeTabChange",summaryIndexChanged);
@@ -94,7 +89,7 @@
 <table>
     <tr>
         <th align="left" valign="top">Notes: </th>
-        <td valign="top">$!item.getStringProperty("note")</td>
+        <td valign="top">#escapeAll($!item.getStringProperty("note"))</td>
     </tr>
 </table>
 #end

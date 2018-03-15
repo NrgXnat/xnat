@@ -4,6 +4,13 @@
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #set($showUserList = !$siteConfig.restrictUserListAccessToAdmins || $turbineUtils.isSiteAdmin($user))
 
+#define ($projectIdEsc)
+    #escapeAll($!project.getId())
+#end
+
+#define ($projectDisplayNameSingular)
+    #escapeAll($displayManager.getSingularDisplayNameForProject())
+#end
 
 <p style="margin-bottom: 3px;"><label><input id="showDeactivatedUsersCheck" type="checkbox" onclick="XNAT.projectAccess.renderUsersTable();">Show Deactivated Users</label></p>
 <div id="user_mgmt_div" class="panel-table-container"></div>
@@ -26,7 +33,7 @@
         <div class="inline-thirds" id="user_invite_list">
             <h4 id="user_list_header" style="margin-bottom:3px">Add Users from List</h4>
             <p>
-                <input type="button" id="popup_all_users_button" disabled="true" value="Show List" onclick="XNAT.projectAccess.inviteUserFromList();"/>
+                <input type="button" id="popup_all_users_button" disabled value="Show List" onclick="XNAT.projectAccess.inviteUserFromList();"/>
             </p>
         </div>
         <script type="text/javascript">
@@ -39,7 +46,7 @@
         <h4 style="margin-bottom: 3px;">Project Access Settings</h4>
         <p>
             <button class="btn" onclick="XNAT.projectAccess.showGroups();" style="margin-bottom: 6px">Manage Groups</button><br>
-            <button class="btn" onclick="window.location.assign('$content.getURI("/app/template/ManageProjectFeatures.vm/project/$project.getId()")')">Manage Features</button>
+            <button class="btn" onclick="window.location.assign('$content.getURI("/app/template/ManageProjectFeatures.vm/project/${projectIdEsc.toString().trim()}")')">Manage Features</button>
         </p>
     </div>
 </div>
@@ -52,7 +59,7 @@
         #set($guest="private")
     #end
     <input type="hidden" id="current_accessibility" value="$guest"/>
-    <h4 style="margin: 0 0 3px;">Define Default $displayManager.getSingularDisplayNameForProject() Accessibility</h4>
+    <h4 style="margin: 0 0 3px;">Define Default ${projectDisplayNameSingular.toString().trim()} Accessibility</h4>
     <table class="xnat-table clean">
         <tr>
             <td nowrap>
@@ -82,7 +89,7 @@
 <div class="clearfix clear pad10v"></div>
 
 <div>
-    <h4 style="margin: 0 0 3px;">$displayManager.getSingularDisplayNameForProject() Invitations</h4>
+    <h4 style="margin: 0 0 3px;">${projectDisplayNameSingular.toString().trim()} Invitations</h4>
     <div id="invite_container"></div>
     <script type="text/javascript" src="$content.getURI("scripts/project/parManager.js")"></script>
     <script>
@@ -97,7 +104,7 @@
     function summaryUserTabChange(obj){
         if (obj.newValue.get("href") == "#tab3") {
             if (window.userManager == undefined) {
-                window.userManager = new UserManager("user_mgmt_div", "$project.getId()", $showUserList);
+                window.userManager = new UserManager("user_mgmt_div", "${projectIdEsc.toString().trim()}", $showUserList);
             }
         }
     }
@@ -105,7 +112,7 @@
     function addUserMgmtMonitor(){
         if (window.summaryTabView.get("activeTab").get("href") == "#tab3") {
             if (window.userManager == undefined) {
-                window.userManager = new UserManager("user_mgmt_div", "$project.getId()", $showUserList);
+                window.userManager = new UserManager("user_mgmt_div", "${projectIdEsc.toString().trim()}", $showUserList);
             }
         }
         else {

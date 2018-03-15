@@ -1,64 +1,41 @@
-#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/education"))
-<tr>
-    #formLabel("Education")
-    <td>
-        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/education")
-    </td>
-</tr>
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+<!-- start /xnat-templates/screens/xnat_subjectData/xnat_subjectData_addtl_demographics.vm -->
+
+#set ($demoDataStr = "xnat:subjectData/demographics[@xsi:type=xnat:demographicData]")
+
+## ["fieldname", "Field Label"]
+#set ($demographicProps = [
+    ["${demoDataStr}/education", "Education"],
+    ["${demoDataStr}/employment", "Employment"],
+    ["${demoDataStr}/race", "Race"],
+    ["${demoDataStr}/ethnicity", "Ethnicity"],
+    ["${demoDataStr}/height", "Height (inches)"],
+    ["${demoDataStr}/weight", "Weight (lbs)"],
+    ["xnat:subjectData/src", "Recruitment Source"],
+    ["xnat:subjectData/group", "Group"]
+])
+
+#foreach ($demoProp in $demographicProps)
+
+    #set ($fieldName = $demoProp[0])
+    #set ($fieldLabel = $demoProp[1])
+
+    #if ($subject.getProperty($fieldName))
+    <tr>
+        ## #formLabel($fieldLabel))
+        <th class="formLabel">$fieldLabel</th>
+        <td>
+        ## special handling of employment field
+        #if ($fieldLabel == "Employment")
+            #renderEmployment($!turbineUtils.escapeHTML("$subject.getProperty($fieldName)"))
+        #else
+            $!turbineUtils.escapeHTML("$subject.getProperty($fieldName)")
+        #end
+        </td>
+    </tr>
+    #end
+
 #end
-#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/employment"))
-<tr>
-    #formLabel("Employment")
-    <td>
-        #renderEmployment($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/employment"))
-    </td>
-</tr>
-#end
-#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/race"))
-<tr>
-    #formLabel("Race")
-    <td>
-        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/race")
-    </td>
-</tr>
-#end
-#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/ethnicity"))
-<tr>
-    #formLabel("Ethnicity")
-    <td>
-        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/ethnicity")
-    </td>
-</tr>
-#end
-#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/height"))
-<tr>
-    #formLabel("Height (inches)")
-    <td>
-        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/height")
-    </td>
-</tr>
-#end
-#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/weight"))
-<tr>
-    #formLabel("Weight (lbs)")
-    <td>
-        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/weight")
-    </td>
-</tr>
-#end
-#if($subject.getProperty("xnat:subjectData/src"))
-<tr>
-    #formLabel("Recruitment Source")
-    <td>
-        $subject.getProperty("xnat:subjectData/src")
-    </td>
-</tr>
-#end
-#if($subject.getProperty("xnat:subjectData/group"))
-<tr>
-    #formLabel("Group")
-    <td>
-        $subject.getProperty("xnat:subjectData/group")
-    </td>
-</tr>
-#end
+
+<!-- end /xnat-templates/screens/xnat_subjectData/xnat_subjectData_addtl_demographics.vm -->

@@ -164,19 +164,19 @@
     </tr>
     <tr>
         <td align=left>Username: </td>
-        <td>$!item.getProperty("login")</td>
+        <td>#escapeHTML($!item.getProperty("login"))</td>
     </tr>
     <tr>
         <td align=left>First Name: </td>
-        <td>$!item.getProperty("firstname")</td>
+        <td>#escapeHTML($!item.getProperty("firstname"))</td>
     </tr>
     <tr>
         <td align=left>Last Name: </td>
-        <td>$!item.getProperty("lastname")</td>
+        <td>#escapeHTML($!item.getProperty("lastname"))</td>
     </tr>
     <tr>
         <td align=left>Email: </td>
-        <td>$!item.getProperty("email")</td>
+        <td>#escapeHTML($!item.getProperty("email"))</td>
     </tr>
     <tr>
         <td align=left>Verified: </td>
@@ -194,9 +194,9 @@
 
     (function(){
 
-        var usersGroups;
         var topXNAT = window.top.XNAT;
-        var USERNAME = '$!item.getProperty("login")';
+        var usersGroups = topXNAT.usersGroups;
+        var USERNAME = '#escapeAll($!item.getProperty("login"))';
         var isVerified = #if ($item.getBooleanProperty("verified")) true #else false #end;
         var isEnabled = #if ($item.getBooleanProperty("enabled")) true #else false #end;
 
@@ -206,10 +206,10 @@
         function setupSwitches(){
 
             var verifiedSwitch = usersGroups.userSwitchElement(USERNAME, 'verified', isVerified);
-            userVerifiedSwitch.append(verifiedSwitch);
+            verifiedSwitch.render(userVerifiedSwitch);
 
             var enabledSwitch = usersGroups.userSwitchElement(USERNAME, 'enabled', isEnabled);
-            userEnabledSwitch.append(enabledSwitch);
+            enabledSwitch.render(userEnabledSwitch);
 
             var userAccountDetailsTable = $('#user-account-details');
             userAccountDetailsTable.on('change', 'input.user-verified', usersGroups.setVerified);

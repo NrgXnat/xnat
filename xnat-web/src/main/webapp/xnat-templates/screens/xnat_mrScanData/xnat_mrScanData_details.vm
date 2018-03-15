@@ -1,206 +1,190 @@
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
 #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+#macro(escapeProperty $prop)#escapeHTML("$!scan.getProperty($prop)")#end
+#macro(escapeStringProperty $propStr)#escapeHTML("$!scan.getStringProperty($propStr)")#end
+
 <!-- START /xnat-templates/screens/xnat_mrScanData/xnat_mrScanData_details.vm -->
-<table>
+<table class="xnat-table clean compact scan-details" style="border: none;">
     <tr>
-        <td></td>
-        <td>Image</td>
-        <td align="left">
+        <th>Image</th>
+        <td>
             #scanSnapshotImage($content $om $scan)
         </td>
     </tr>
-    #if($scan.getProperty("quality"))
+    #if($scan.getProperty('quality'))
         <tr>
-            <td></td>
-            <td>Quality</td>
-            <td align="left">$!scan.getProperty("quality")</td>
+            <th>Quality</th>
+            <td align="left">#escapeProperty('quality')</td>
         </tr>
     #end
-    #if($scan.getProperty("condition"))
+    #if($scan.getProperty('condition'))
         <tr>
-            <td></td>
-            <td>Condition</td>
-            <td align="left">$!scan.getProperty("condition")</td>
+            <th>Condition</th>
+            <td align="left">#escapeProperty('condition')</td>
         </tr>
     #end
-    #if($scan.getProperty("series_description"))
+    #if($scan.getProperty('series_description'))
         <tr>
-            <td></td>
-            <td>Series Desc</td>
-            <td align="left">$!scan.getProperty("series_description")</td>
+            <th>Series Desc</th>
+            <td align="left">#escapeProperty('series_description')</td>
         </tr>
     #end
-    #if($scan.getProperty("modality"))
+    #if($scan.getProperty('modality'))
         <tr>
-            <td></td>
-            <td>Modality</td>
-            <td align="left">$!scan.getProperty("modality")</td>
+            <th>Modality</th>
+            <td align="left">#escapeProperty('modality')</td>
         </tr>
     #end
-    #if($scan.getProperty("frames"))
+    #if($scan.getProperty('frames'))
         <tr>
-            <td></td>
-            <td>Frames</td>
-            <td align="left">$!scan.getProperty("frames")</td>
+            <th>Frames</th>
+            <td align="left">#escapeProperty('frames')</td>
         </tr>
     #end
-    #if($scan.getProperty("parameters.imageType"))
+    #if($scan.getProperty('parameters.imageType'))
         <tr>
-            <td></td>
-            <td>Image Type</td>
-            <td align="left">$!scan.getProperty("parameters.imageType")</td>
+            <th>Image Type</th>
+            <td align="left">#escapeProperty('parameters.imageType')</td>
         </tr>
     #end
-    #if($scan.getProperty("coil"))
+    #if($scan.getProperty('coil'))
         <tr>
-            <td></td>
-            <td>Coil</td>
-            <td align="left">$!scan.getProperty("coil")</td>
+            <th>Coil</th>
+            <td align="left">#escapeProperty('coil')</td>
         </tr>
     #end
-    #if($scan.getProperty("fieldStrength"))
+    #if($scan.getProperty('fieldStrength'))
         <tr>
-            <td></td>
-            <td>Field Strength</td>
-            <td align="left">$!scan.getProperty("fieldStrength")</td>
+            <th>Field Strength</th>
+            <td align="left">#escapeProperty('fieldStrength')</td>
         </tr>
     #end
-    #if($!scan.getProperty("parameters.voxelRes.x") || $!scan.getProperty("parameters.voxelRes.y") || $!scan.getProperty("parameters.voxelRes.z"))
+    #if($!scan.getProperty('parameters.voxelRes.x') || $!scan.getProperty('parameters.voxelRes.y') || $!scan.getProperty('parameters.voxelRes.z'))
         <tr>
-            <td></td>
-            <td>Vox. Res.</td>
-            <td align="left">$!scan.getProperty("parameters.voxelRes.x"), $!scan.getProperty("parameters.voxelRes.y"), $!scan.getProperty("parameters.voxelRes.z")</td>
+            <th>Vox. Res.</th>
+            <td align="left">#escapeProperty('parameters.voxelRes.x'), #escapeProperty('parameters.voxelRes.y'), #escapeProperty('parameters.voxelRes.z')</td>
         </tr>
     #end
-    #if($!scan.getProperty("parameters.fov.x") || $!scan.getProperty("parameters.fov.y"))
+    #if($!scan.getProperty('parameters.fov.x') || $!scan.getProperty('parameters.fov.y'))
         <tr>
-            <td></td>
-            <td>FOV</td>
-            <td align="left">$!scan.getProperty("parameters.fov.x") x $!scan.getProperty("parameters.fov.y")</td>
+            <th>FOV</th>
+            <td align="left">#escapeProperty('parameters.fov.x') x #escapeProperty('parameters.fov.y')</td>
         </tr>
     #end
-    #if($!scan.getProperty("parameters.matrix.x") || $!scan.getProperty("parameters.matrix.y"))
+    #if($!scan.getProperty('parameters.matrix.x') || $!scan.getProperty('parameters.matrix.y'))
         <tr>
-            <td></td>
-            <td>Matrix</td>
-            <td align="left">$!scan.getProperty("parameters.matrix.x") x $!scan.getProperty("parameters.matrix.y")</td>
+            <th>Matrix</th>
+            <td align="left">#escapeProperty('parameters.matrix.x') x #escapeProperty('parameters.matrix.y')</td>
         </tr>
     #end
-    #if($scan.getProperty("parameters.partitions"))
+    #if($scan.getProperty('parameters.partitions'))
         <tr>
-            <td></td>
-            <td>Part.</td>
-            <td align="left">$!scan.getProperty("parameters.partitions")</td>
+            <th>Part.</th>
+            <td align="left">#escapeProperty('parameters.partitions')</td>
         </tr>
     #end
-    #if($scan.getProperty("parameters.tr"))
+    #if($scan.getProperty('parameters.tr'))
         <tr>
-            <td></td>
-            <td>TR</td>
-            <td align="left">$!scan.getProperty("parameters.tr")</td>
+            <th>TR</th>
+            <td align="left">#escapeProperty('parameters.tr')</td>
         </tr>
     #end
-    #if($scan.getProperty("parameters.te"))
+    #if($scan.getProperty('parameters.te'))
         <tr>
-            <td></td>
-            <td>TE</td>
-            <td align="left">$!scan.getProperty("parameters.te")</td>
+            <th>TE</th>
+            <td align="left">#escapeProperty('parameters.te')</td>
         </tr>
     #end
-    #if($scan.getProperty("parameters.ti"))
+    #if($scan.getProperty('parameters.ti'))
         <tr>
-            <td></td>
-            <td>TI</td>
-            <td align="left">$!scan.getProperty("parameters.ti")</td>
+            <th>TI</th>
+            <td align="left">#escapeProperty('parameters.ti')</td>
         </tr>
     #end
-    #if($scan.getProperty("parameters.flip"))
+    #if($scan.getProperty('parameters.flip'))
         <tr>
-            <td></td>
-            <td>Flip</td>
-            <td align="left">$!scan.getProperty("parameters.flip")</td>
+            <th>Flip</th>
+            <td align="left">#escapeProperty('parameters.flip')</td>
         </tr>
     #end
-    #if($scan.getProperty("parameters.sequence"))
+    #if($scan.getProperty('parameters.sequence'))
         <tr>
-            <td></td>
-            <td>Sequence</td>
-            <td align="left">$!scan.getProperty("parameters.sequence")</td>
+            <th>Sequence</th>
+            <td align="left">#escapeProperty('parameters.sequence')</td>
         </tr>
     #end
-    #if($scan.getProperty("parameters.origin"))
+    #if($scan.getProperty('parameters.origin'))
         <tr>
-            <td></td>
-            <td>Origin</td>
-            <td align="left">$!scan.getProperty("parameters.origin")</td>
+            <th>Origin</th>
+            <td align="left">#escapeProperty('parameters.origin')</td>
         </tr>
     #end
-    #if($scan.getProperty("note"))
+    #if($scan.getProperty('note'))
         <tr>
-            <td></td>
-            <td>Note</td>
-            <td align="left">$!scan.getProperty("note")</td>
+            <th>Note</th>
+            <td align="left">#escapeProperty('note')</td>
         </tr>
     #end
-    #if($scan.getProperty("validation.status"))
+    #if($scan.getProperty('validation.status'))
         <tr>
-            <td></td>
-            <td>Validity</td>
-            <td align="left">$!scan.getStringProperty("validation.status")</td>
+            <th>Validity</th>
+            <td align="left">#escapeStringProperty('validation.status')</td>
         </tr>
     #end
-    #if($scan.getProperty("validation.method"))
+    #if($scan.getProperty('validation.method'))
         <tr>
-            <td></td>
-            <td>Validation Method</td>
-            <td align="left">$!scan.getStringProperty("validation.method")</td>
+            <th>Validation Method</th>
+            <td align="left">#escapeStringProperty('validation.method')</td>
         </tr>
     #end
-    #if($scan.getProperty("validation.date"))
+    #if($scan.getProperty('validation.date'))
         <tr>
-            <td></td>
-            <td>Validation Date</td>
-            <td align="left">$!scan.getStringProperty("validation.date")</td>
+            <th>Validation Date</th>
+            <td align="left">#escapeStringProperty('validation.date')</td>
         </tr>
     #end
-    #if($scan.getProperty("validation.notes"))
+    #if($scan.getProperty('validation.notes'))
         <tr>
-            <td></td>
-            <td>Validation Notes</td>
-            <td align="left">$!scan.getStringProperty("validation.notes")</td>
+            <th>Validation Notes</th>
+            <td align="left">#escapeStringProperty('validation.notes')</td>
         </tr>
     #end
 
     #if($scan.getUid())
         <tr>
             <td></td>
-            <td colspan="2">
-                <a target="_blank" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">View DICOM Headers</a>
+            <td>
+                <br>
+                <a target="_blank" class="view-dicom-headers" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">
+                    <u>View DICOM Headers</u>
+                </a>
             </td>
         </tr>
     #end
 
     #foreach($addP in $scan.getParameters_addparam())
         <tr>
-            <td></td>
-            <td>$!addP.getName()</td>
-            <td align="left">$!addP.getAddfield()</td>
+            <th>#escapeHtml("$!addP.getName()")</th>
+            <td align="left">#escapeHtml("$!addP.getAddfield()")</td>
         </tr>
     #end
 
     #foreach($scanAssessor in $scanAssessors)
         #if($scanAssessor.canRead($user))
-            #set($scanById=$!scanAssessor.getScanById($scanID))
-            #set($scanId=$!scanAssessor.getId())
-            #set($scanType=$!scanAssessor.getXSIType())
-            #set($scanField="${scanAssessor.getXSIType()}.ID")
+
+            #set($scanById = $!scanAssessor.getScanById($scanID))
+            #set($scanId = $!scanAssessor.getId())
+            #set($scanType = $!scanAssessor.getXSIType())
+            #set($scanField = "$!scanAssessor.getXSIType().ID")
+
             #set($url=$link.setAction('DisplayItemAction').addPathInfo('search_element',$scanType).addPathInfo('search_field',$scanField).addPathInfo('search_value',$scanId).addPathInfo('popup',$popup).addPathInfo('project',$project))
-            #if($scanById)
+
+                #if($scanById)
                 <tr>
-                    <td></td>
-                    <td><a href="$url" title="$scanAssessor.getIdentifier($project)">$!scanAssessor.getHeader():</a>
-                    </td>
+                    <td><a href="$url" title="$scanAssessor.getIdentifier($project)">$!scanAssessor.getHeader():</a></td>
                     <td border=0 style="font-weight:bold; text-align:left;" NOWRAP>
                         $!scanAssessor.getScanById($scanID).getSummary()
                     </td>
@@ -208,6 +192,6 @@
             #end
         #end
     #end
-    #parse("screens/defacing_qc.vm")
+    #parse('screens/defacing_qc.vm')
 </table>
 <!-- END /xnat-templates/screens/xnat_mrScanData/xnat_mrScanData_details.vm -->

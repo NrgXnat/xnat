@@ -1,18 +1,24 @@
-												#if($subject.DOBDisplay)
-							<tr>
-						            	<TH align="left">Birth year</TH>
-										<TD>$!subject.DOBDisplay</TD>
-							</tr>
-						#end						
-												#if($subject.GenderText)
-							<tr>
-						            	<TH align="left">Gender</TH>
-						            	<TD>$!subject.GenderText</TD>
-							</tr>
-						#end						
-						#if($subject.HandedText)
-							<tr>
-						            	<TH align="left">Handedness</TH>
-								   		<TD>$!subject.HandedText</TD>
-							</tr>
-						#end 
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+<!-- start /xnat-templates/screens/xnat_subjectData/xnat_subjectData_core_demographics.vm -->
+
+#if($subject.DOBDisplay)
+<tr>
+    <th align="left">Birth year</th>
+    <td>$turbineUtils.escapeHTML($!subject.DOBDisplay)</td>
+</tr>
+#end
+#if($subject.GenderText)
+<tr>
+    <th align="left">Gender</th>
+    <td>$turbineUtils.escapeHTML($!subject.GenderText)</td>
+</tr>
+#end
+#if($subject.HandedText)
+<tr>
+    <th align="left">Handedness</th>
+    <td>$turbineUtils.escapeHTML($!subject.HandedText)</td>
+</tr>
+#end
+
+<!-- end /xnat-templates/screens/xnat_subjectData/xnat_subjectData_core_demographics.vm -->

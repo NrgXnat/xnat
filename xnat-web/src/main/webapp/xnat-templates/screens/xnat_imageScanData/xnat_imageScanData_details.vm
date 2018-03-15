@@ -1,65 +1,67 @@
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
 #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
-<!-- START /xnat-templates/screens/xnat_mrScanData/xnat_imageScanData_details.vm -->
-<table>
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+<!-- BEGIN /xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->
+
+#macro(escapeProperty $prop)#escapeHTML("$!scan.getProperty($prop)")#end
+
+<table class="xnat-table clean compact scan-details" style="border: none;">
     <tr>
-        <td> </td>
-        <td>Image </td>
-        <td align="left">
+        <th>Image</th>
+        <td>
             #scanSnapshotImage($content $om $scan)
         </td>
-
     </tr>
 	#if($scan.getProperty("quality"))
         <tr>
-            <td></td>
-            <td>Quality</td>
-            <td align="left">$!scan.getProperty("quality")</td>
+            <th>Quality</th>
+            <td align="left">#escapeProperty("quality")</td>
         </tr>
 	#end
 	#if($scan.getProperty("startTime"))
         <tr>
-            <td></td>
-            <td>Start Time</td>
-            <td align="left">$!scan.getProperty("startTime")</td>
+            <th>Start Time</th>
+            <td align="left">#escapeProperty("startTime")</td>
         </tr>
 	#end
 	#if($scan.getProperty("condition"))
         <tr>
-            <td></td>
-            <td>Condition</td>
-            <td align="left">$!scan.getProperty("condition")</td>
+            <th>Condition</th>
+            <td align="left">#escapeProperty("condition")</td>
         </tr>
 	#end
 	#if($scan.getProperty("series_description"))
         <tr>
-            <td></td>
-            <td>Series Desc</td>
-            <td align="left">$!scan.getProperty("series_description")</td>
+            <th>Series Desc</th>
+            <td align="left">#escapeProperty("series_description")</td>
         </tr>
 	#end
 	#if($scan.getProperty("modality"))
         <tr>
-            <td></td>
-            <td>Modality</td>
-            <td align="left">$!scan.getProperty("modality")</td>
+            <th>Modality</th>
+            <td align="left">#escapeProperty("modality")</td>
         </tr>
 	#end
 	#if($scan.getProperty("frames"))
         <tr>
-            <td></td>
-            <td>Frames</td>
-            <td align="left">$!scan.getProperty("frames")</td>
+            <th>Frames</th>
+            <td align="left">#escapeProperty("frames")</td>
         </tr>
 	#end
 
 	#if($scan.getUid())
     <tr>
-        <td> </td>
-        <td colspan="2">
-			<a target="_blank" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">View DICOM Headers</a>
+        <td></td>
+        <td>
+            <br>
+			<a target="_blank" class="view-dicom-headers" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">
+                <u>View DICOM Headers</u>
+            </a>
 		</td>
 	#end
 </table>
-<!-- END /xnat-templates/screens/xnat_mrScanData/xnat_imageScanData_details.vm -->
+
+<!-- END /xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->
+

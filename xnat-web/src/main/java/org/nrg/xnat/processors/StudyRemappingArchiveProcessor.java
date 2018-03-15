@@ -28,7 +28,6 @@ public class StudyRemappingArchiveProcessor extends AbstractArchiveProcessor {
 
             if(StringUtils.isNotBlank(script)){
                 mizer.anonymize(metadata, sessionData.getProject(), sessionData.getSubject(), sessionData.getFolderName(), script);
-                DefaultAnonUtils.getService().disableStudy(AdminUtils.getAdminUser().getLogin(), studyInstanceUID);
             }
         } catch (Throwable e) {
             log.debug("Dicom anonymization failed: " + metadata, e);

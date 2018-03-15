@@ -9,10 +9,10 @@
 #else
     #set($validatePassword = "false")
 #end
-<p><b>hidePassword:</b> $hidePassword</p>
-<p><b>validatePassword:</b> $validatePassword</p>
 <script type="text/javascript">
     console.log('userValidationJs.vm');
+    console.log('hidePassword','$hidePassword');
+    console.log('validatePassword','$validatePassword');
 
     $(document).ready(function(){
         $('#register_form').off('submit').on('submit',function(e){

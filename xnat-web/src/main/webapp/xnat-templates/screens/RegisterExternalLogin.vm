@@ -5,34 +5,157 @@
 #set ($template = $data.getTemplateInfo())
 $!template.setLayoutTemplate("Login.vm")
 
-<div id="layout_content">
-    <div id="login_area">
-        <div id="login_box">
-            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="friendlyForm" id="merge_form">
-                <p>You've successfully logged in with your account ${userInfo.username}, but this doesn't correspond</p>
-                <p>with an existing XNAT user account. If you already have an XNAT account, enter your login credentials</p>
-                <p>below and click <b>Submit</b>.</p>
-                <p><label for="username">Username</label><input type="text" name="username"></p>
-                <p><label for="password">Password</label><input type="password" name="password"></p>
-                <p class="form-submit"><input type="submit" value="Submit"></p>
-                <input type="hidden" name="operation" value="merge">
-                <input type="hidden" name="authUsername" value="$userInfo.username">
-                <input type="hidden" name="authMethod" value="$userInfo.authMethod">
-                <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
-                <input type="hidden" name="authEmail" value="$userInfo.email">
-                <input type="hidden" name="authLastName" value="$userInfo.lastName">
-                <input type="hidden" name="authFirstName" value="$userInfo.firstName">
-            </form>
+
+<div class="clear" style="margin:2em 0;"></div>
+
+<div id="login_welcome">
+    <h2>Connect Your LDAP Account With An XNAT Account</h2>
+    #if($turbineUtils.GetPassedParameter("par",$data))
+        <div class="note">
+            <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.
         </div>
-        <div id="login_box">
-            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="friendlyForm" id="register_form">
-                <p>You've successfully logged in with your account ${userInfo.username}, but this doesn't correspond</p>
-                <p>with an existing XNAT user account. If you already have an XNAT account, enter your login credentials</p>
-                <p>below and click <b>Submit</b>.</p>
-                <div id="register_box">
-                    #parse("/screens/register_box.vm")
-                </div>
-            </form>
-        </div>
+    #end
+    <p>You've successfully logged in with your account <strong>${userInfo.username}</strong>, but this doesn't correspond with an existing $siteConfig.siteId user account. Please choose one of the options below to connect an $siteConfig.siteId account with your login. You will only have to do this once.</p>
+    <p><strong>Merge Your LDAP account With:</strong></p>
+    <p>
+        <button class="btn btn-sm show-registration primary" title="Register a new account and merge your LDAP account with it">A New $siteConfig.siteId Account</button>
+        <button class="btn btn-sm show-login" title="Log in to an existing account and merge your LDAP account with it">An Existing $siteConfig.siteId Account</button>
+    </p>
+</div>
+
+<div id="register_box_container">
+    <h3><span>Register A New Account</span></h3>
+    <p>If you do not have an account on $siteConfig.siteId, register a new account with the form below and click <b>Submit</b>.</p>
+    <div class="clear" style="margin:2em 0;"></div>
+    <div id="register_box">
+        #if($data.getMessage())
+            <div class="warning" style="border-bottom: 0">
+                <p><strong>Note: </strong><br />$data.getMessage()</p>
+            </div>
+        #end
+
+        #set ($hidePassword = true)
+        #parse("/screens/register_box.vm")
     </div>
 </div>
+
+<div id="login_box_container" class="hidden">
+    <h3><span>Login To An Existing Account</span></h3>
+    <p>If you already have an account on $siteConfig.siteId, enter your login credentials below and click <b>Submit</b>.</p>
+    <div class="clear" style="margin:2em 0;"></div>
+
+    <div id="login_box">
+        #if($data.getMessage())
+            <div class="message" style="border-bottom: 0">
+                <strong>Note: </strong> $data.getMessage()
+            </div>
+
+        #end
+        <form method="post" action="$link.setAction("RegisterExternalLogin")" class="noHide friendlyForm validate" id="merge_form">
+            <input type="hidden" name="operation" value="merge">
+            <input type="hidden" name="authUsername" value="$userInfo.username">
+            <input type="hidden" name="authMethod" value="$userInfo.authMethod">
+            <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
+            <input type="hidden" name="authEmail" value="$userInfo.email">
+            <input type="hidden" name="authLastName" value="$userInfo.lastName">
+            <input type="hidden" name="authFirstName" value="$userInfo.firstName">
+            <p>
+                <label for="username">User</label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       title="User"
+                       class="validate onblur"
+                       data-validate="not-empty"
+                       data-message="Username cannot be blank.">
+            </p>
+            <p>
+                <label for="password">Password</label>
+                <input type="password"
+                       name="password"
+                       autocomplete="off"
+                       title="Password"
+                       class="validate onblur"
+                       data-validate="not-empty"
+                       data-message="Password cannot be blank.">
+            </p>
+
+            <p class="form-submit">
+                <span id="register_forgot">
+                    <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+                </span>
+                <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
+            </p>
+
+            #if($turbineUtils.GetPassedParameter("par",$data))
+                #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+                    #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception" &&$key!="username" &&$key!="exception")
+                        <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+                    #end
+                #end
+            #end
+        </form>
+    </div>
+</div>
+
+<div class="clear"></div>
+
+<script>
+    function showRegisterBox(){
+        jq('#register_box_container').removeClass('hidden');
+        jq('#login_box_container').addClass('hidden');
+    }
+    jq(document).on('click','.show-registration',function(){
+        jq(this).addClass('primary')
+        jq('.show-login').removeClass('primary');
+        showRegisterBox();
+    });
+
+    function showLoginBox(){
+        jq('#register_box_container').addClass('hidden');
+        jq('#login_box_container').removeClass('hidden');
+    }
+    jq(document).on('click','.show-login',function(){
+        jq(this).addClass('primary');
+        jq('.show-registration').removeClass('primary');
+        showLoginBox();
+    });
+
+    jq(document).ready(function(){
+        // toggle login box if user attempted and failed to login and server returned an error message.
+        var errorMsg = '$data.getMessage()';
+        if (errorMsg.indexOf('login attempt failed') >= 0) {
+            showLoginBox();
+        }
+
+        // append merge inputs to register form
+        var registerForm = jq('#register_form');
+    })
+</script>
+
+
+##    <div id="login_area">
+##        <div id="login_box">
+##            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="friendlyForm" id="merge_form">
+##                <p>You've successfully logged in with your account ${userInfo.username}, but this doesn't correspond with an existing XNAT user account. .</p>
+##                <p><label for="username">Username</label><input type="text" name="username"></p>
+##                <p><label for="password">Password</label><input type="password" name="password"></p>
+##                <p class="form-submit"><input type="submit" value="Submit"></p>
+##                <input type="hidden" name="operation" value="merge">
+##                <input type="hidden" name="authUsername" value="$userInfo.username">
+##                <input type="hidden" name="authMethod" value="$userInfo.authMethod">
+##                <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
+##                <input type="hidden" name="authEmail" value="$userInfo.email">
+##                <input type="hidden" name="authLastName" value="$userInfo.lastName">
+##                <input type="hidden" name="authFirstName" value="$userInfo.firstName">
+##            </form>
+##        </div>
+##        <div id="login_box">
+##            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="friendlyForm" id="register_form">
+##                <p>You've successfully logged in with your account ${userInfo.username}, but this doesn't correspond with an existing XNAT user account. If you already have an XNAT account, enter your login credentials below and click <b>Submit</b>.</p>
+##                <div id="register_box">
+##                    #parse("/screens/register_box.vm")
+##                </div>
+##            </form>
+##        </div>
+##    </div>

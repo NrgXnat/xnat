@@ -14,15 +14,20 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xnat.helpers.uri.URIManager.DataURIA;
+import org.nrg.xnat.services.uri.ManageableURIContainerService;
 import org.restlet.util.Template;
 import org.restlet.util.Variable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.*;
 
@@ -74,6 +79,30 @@ public final class UriParserUtils {
                 }
             }
 
+        }else {
+        	// Parse Custom Plugin URIs
+        	List<ManageableXnatURIContainer> containers = XDAT.getContextService().getBean(ManageableURIContainerService.class).getManageableURIs();
+        	for (ManageableXnatURIContainer uriContainer : containers) {
+        		if(s.matches(uriContainer.getBaseTemplate())) {
+        			if(s.equals(uriContainer.getBaseTemplate())) {
+        				try {
+        					final Map<String,Object> t=Collections.emptyMap();
+        					Constructor<? extends DataURIA> uriConstructor = uriContainer.getUri().getConstructor(Map.class,String.class);
+        					return uriConstructor.newInstance(t,s);
+        				} catch (Exception e) {
+        					logger.error("Unable to create URI Class " + uriContainer.getClass().getName(),e);
+        					throw new MalformedURLException();
+        				}
+        			}
+        			
+        			for(final URIManager.TemplateInfo template: URIManager.getTemplates(URIManager.TEMPLATE_TYPE.TRIAGE)){
+        				Map<String,Object> map=new UriParser(template.key,template.MODE).readUri(s);
+        				if(map.size()>0){
+        					return template.wrap(map,s);
+        				}
+        			}
+        		}
+        	}
         }
 
         throw new MalformedURLException();

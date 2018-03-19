@@ -206,10 +206,10 @@
         function setupSwitches(){
 
             var verifiedSwitch = usersGroups.userSwitchElement(USERNAME, 'verified', isVerified);
-            verifiedSwitch.render(userVerifiedSwitch);
+            userVerifiedSwitch.append(verifiedSwitch);
 
             var enabledSwitch = usersGroups.userSwitchElement(USERNAME, 'enabled', isEnabled);
-            enabledSwitch.render(userEnabledSwitch);
+            userEnabledSwitch.append(enabledSwitch);
 
             var userAccountDetailsTable = $('#user-account-details');
             userAccountDetailsTable.on('change', 'input.user-verified', usersGroups.setVerified);

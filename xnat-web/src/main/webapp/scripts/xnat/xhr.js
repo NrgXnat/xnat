@@ -168,7 +168,8 @@ var XNAT = getObject(XNAT||{}),
         }
 
         this.method = method;
-        this.url = url;
+        // XNAT-specific parsing of root URL with ~/ or */ syntax
+        this.url = /^([~*]\/)/.test(url) ? XNAT.url.rootUrl(url) : url;
         this.data = data;
         this.success = callback;
 

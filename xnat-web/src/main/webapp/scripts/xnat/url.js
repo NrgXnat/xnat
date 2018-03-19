@@ -55,8 +55,8 @@ var XNAT = getObject(XNAT||{});
     function fixRoot(root, url){
         // remove slashes from both sides of 'root'
         var rootTemp = trimSlashes(root) + '/';
-        // remove slash from beginning of 'url'
-        var urlTemp  = chopSlashes(url);
+        // remove slash and 'root' chars from beginning of 'url'
+        var urlTemp  = chopSlashes(url.replace(/^[~*]/, ''));
         // uh...
         var newUrl = ((root ? rootTemp : '') + (url ? urlTemp : ''));
         var rootRegex = new RegExp('^(' + rootTemp + ')+', 'g');

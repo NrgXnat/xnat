@@ -9,7 +9,7 @@
 
 #set ($SITE_ROOT = $content.getURI(""))
 #set ($template = $data.getTemplateInfo())
-#set ($pg = $turbineUtils.escapeHTML($turbineUtils.escapeJS("$!data.getParameters().getString('view')")))
+#set ($pg = $turbineUtils.escapeHTML($!data.getParameters().getString('view')))
 #set ($pg_path = "/screens/pages/${pg}.vm")
 #set ($theme_pg = "")
 

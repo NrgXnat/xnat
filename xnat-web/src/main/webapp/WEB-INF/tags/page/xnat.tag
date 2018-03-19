@@ -77,7 +77,7 @@
     <c:set var="js" value="${param.debug == true || param.jsdebug == true ? 'js' : 'min.js'}" />
 
     <!-- required libraries -->
-    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.${js}"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.${js}"></script>
     <script type="text/javascript">
@@ -99,7 +99,6 @@
     <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.js"></script>
     <script src="${SITE_ROOT}/scripts/lib/ace/ace.js"></script>
-    <script src="${SITE_ROOT}/scripts/lib/localForage/localforage.${js}"></script>
 
     <!-- XNAT utility functions -->
     <script src="${SITE_ROOT}/scripts/utils.js"></script>

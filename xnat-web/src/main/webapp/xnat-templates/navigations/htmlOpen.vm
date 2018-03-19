@@ -20,6 +20,10 @@
             return $!isLoginPage
         })();
     </script>
+    <!-- save url hash from page load -->
+    <script>
+        window.urlHash = window.location.hash;
+    </script>
 
     ## <!-- Reload the appropriate page if a global theme style specifies a redirect -->
     #if ($themedRedirect)

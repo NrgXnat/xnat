@@ -8,8 +8,6 @@ $navigation.setTemplate("/bodyOpen.vm")
 <div id="xnat-login">
     <script>
         window.isLoginPage = true;
-        // save hash from page load before resetting it
-        window.urlHash = window.location.hash;
         window.location.hash = '#!';
     </script>
     $navigation.setTemplate("/NoMenuTop.vm")

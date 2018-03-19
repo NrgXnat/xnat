@@ -42,7 +42,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 
 @Api(description = "XNAT DICOM SCP management API")
 @XapiRestController
-@RequestMapping(value = "/dicomscp")
+    @RequestMapping(value = "/dicomscp")
 public class DicomSCPApi extends AbstractXapiRestController {
     @Autowired
     public DicomSCPApi(final DicomSCPManager manager, final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {

@@ -42,6 +42,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.web.http.AbstractZipStreamingResponseBody;
 import org.nrg.xnat.web.http.CatalogZipStreamingResponseBody;
+import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -50,6 +51,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.xml.sax.SAXParseException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -355,6 +357,8 @@ public class CatalogApi extends AbstractXapiRestController {
             return new ResponseEntity<>((String) item.getProperty("ID"), HttpStatus.OK);
         } catch (UserNotFoundException | UserInitException e) {
             throw new ServerException("Couldn't find a valid session user. See nested exception for more information.", e);
+        } catch (SAXParseException e) {
+            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "An error occurred processing the submitted XML: " + e.getMessage());
         } catch (ClientException e) {
             // Just rethrow this: this is a way to work around the Exception catch below and allow ClientExceptions to propagate out to the controller advice.
             throw e;

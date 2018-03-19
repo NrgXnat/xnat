@@ -525,7 +525,7 @@ public class DefaultCatalogService implements CatalogService {
                         } catch (ClientException e) {
                             final Status status = e.getStatus();
                             final String message = e.getMessage();
-                            log.error("Bad things afoot, kemosabe! {}: {}", status, message);
+                            log.error("Error occurred while saving submitted item. Status {}: '{}'", status, message);
                             throw e;
                         }
                     }
@@ -1221,8 +1221,8 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id "
                                                                          + "WHERE expt.id IN (:sessionIds) AND "
                                                                          + "      (share.project = :projectId OR expt.project = :projectId) AND "
-                                                                         + "      scan.type IN (:scanTypes) "
-                                                                         + "      AND res.label IN (:scanFormats);";
+                                                                         + "      scan.type IN (:scanTypes) AND "
+                                                                         + "      res.label IN (:scanFormats)";
     @SuppressWarnings("unused")
     private static final String QUERY_FIND_SCANS_BY_TYPE               = "SELECT "
                                                                          + "  scan.id   AS scan_id, "

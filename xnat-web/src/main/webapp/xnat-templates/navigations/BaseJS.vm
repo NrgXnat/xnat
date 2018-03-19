@@ -33,6 +33,7 @@
         var csrfToken = '$!data.getSession().getAttribute("XNAT_CSRF")';
         var showReason = realValue('$!showReason');
         var requireReason = realValue('$!requireReason');
+        var logoutUrl = '$link.setAction("LogoutUser")';
         var cacheLastModified = realValue('$!cacheLastModified.getTime()');
 
         XNAT.cacheLastModified = cacheLastModified;

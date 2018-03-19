@@ -80,7 +80,8 @@
 
     <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.js"></script>
     <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.js"></script>
-##    <script src="${SITE_ROOT}/scripts/xnat/app/dataTypeAccess.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/customPage.js"></script>
+    ##    <script src="${SITE_ROOT}/scripts/xnat/app/dataTypeAccess.js"></script>
 
     <!-- window.available_elements -->
     <script>

@@ -214,6 +214,7 @@
         <wizard.version>1.1</wizard.version>
         <xalan.version>2.7.2</xalan.version>
         <xbean.version>3.17</xbean.version>
+        <xml-apis.version>1.4.01</xml-apis.version>
         <xerces-impl.version>2.11.0</xerces-impl.version>
         <xmlbeans.version>2.6.0</xmlbeans.version>
         <xstream.version>1.4.9</xstream.version>
@@ -976,6 +977,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>xml-apis</groupId>
+                <artifactId>xml-apis</artifactId>
+                <version>${xml-apis.version}</version>
             </dependency>
             <dependency>
                 <groupId>xalan</groupId>

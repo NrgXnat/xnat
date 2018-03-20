@@ -28,8 +28,7 @@ var XNAT = getObject(XNAT);
     var undef, investigators,
         BASE_URL = '/xapi/investigators',
         ui       = XNAT.ui,
-        xhr      = XNAT.xhr,
-        xurl     = XNAT.url;
+        xhr      = XNAT.xhr;
 
     XNAT.app = getObject(XNAT.app||{});
     XNAT.xapi = getObject(XNAT.xapi||{});
@@ -38,7 +37,7 @@ var XNAT = getObject(XNAT);
 
     function setupUrl(part){
         part = part ? '/' + part : '';
-        return xurl.rootUrl(BASE_URL + part);
+        return XNAT.url.rootUrl(BASE_URL + part);
     }
 
     investigators = getObject(XNAT.app.investigators || XNAT.xapi.investigators || {});
@@ -180,7 +179,7 @@ var XNAT = getObject(XNAT);
                 var id = item.xnatInvestigatordataId+'';
                 var menuOption = spawn('option', {
                     value: id,
-                    html: item.lastname + ', ' + item.firstname
+                    html: escapeHtml(item.lastname + ', ' + item.firstname)
                 });
                 if (selected.indexOf(id) > -1) {
                     _selected.push(id);
@@ -289,8 +288,8 @@ var XNAT = getObject(XNAT);
                         title: createInput('Title', 'title'),
                         first: createInput('First Name', 'firstname', 'name-safe required'),
                         last: createInput('Last Name', 'lastname', 'name-safe required'),
-                        institution: createInput('Institution', 'allow-empty institution'),
-                        department: createInput('Department', 'allow-empty department'),
+                        institution: createInput('Institution', 'institution', 'allow-empty'),
+                        department: createInput('Department', 'department', 'allow-empty'),
                         email: createInput('Email', 'email', 'allow-empty email'),
                         phone: createInput('Phone', 'phone', 'allow-empty numeric-dash'),
                         primary: self.menu ? {
@@ -422,11 +421,12 @@ var XNAT = getObject(XNAT);
             return '' +
                 '<div class="primaryProjects center">' +
                     (isArray(projects) && projects.length ? projects.map(function(proj){
-                        return '<a title="Go to project page for ' + proj + '" class="link" href="/data/projects/' + proj + '">' + proj + '</a>'
+                        var escProj = escapeHtml(proj);
+                        return '<a title="Go to project page for ' + escProj + '" class="link" href="/data/projects/' + escProj + '">' + escProj + '</a>'
                     }).join(', ') : '&mdash;') +
                 '</div>' +
                 '<div title="investigatorProjects" class="hidden">' +
-                    [].concat(_data.investigatorProjects).join(', ') +
+                    escapeHtml([].concat(_data.investigatorProjects).join(', ')) +
                 '</div>';
         }
 

@@ -24,10 +24,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 @Configuration
 @ComponentScan({"org.nrg.dcm.scp", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl"})
@@ -40,13 +37,13 @@ public class DicomImportConfig {
     }
 
     @Bean
-    public DicomFileNamer dicomFileNamer(final SiteConfigPreferences preferences) throws ParseException {
+    public DicomFileNamer dicomFileNamer(final SiteConfigPreferences preferences) {
         return new TemplatizedDicomFileNamer(preferences.getDicomFileNameTemplate());
     }
 
     @Bean
     public List<String> sessionDataFactoryClasses() {
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     @Bean

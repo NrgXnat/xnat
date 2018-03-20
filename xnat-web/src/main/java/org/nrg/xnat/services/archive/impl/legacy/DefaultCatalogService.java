@@ -118,27 +118,8 @@ public class DefaultCatalogService implements CatalogService {
         final List<String> assessors       = resourceMap.get("assessors");
 
         //Unescape scan types and formats so that special characters will not lead to 403s (for example if there is a degree sign in a scan type)
-        ArrayList<String> unescapedScanTypes   = new ArrayList<>();
-        ArrayList<String> unescapedScanFormats = new ArrayList<>();
-
-        if (scanTypes == null) {
-            unescapedScanTypes.add("");
-        } else {
-            for (String type : scanTypes) {
-                if (type != null) {
-                    unescapedScanTypes.add(StringEscapeUtils.unescapeHtml4(type));
-                }
-            }
-        }
-        if (scanFormats == null) {
-            unescapedScanFormats.add("");
-        } else {
-            for (String format : scanFormats) {
-                if (format != null) {
-                    unescapedScanFormats.add(StringEscapeUtils.unescapeHtml4(format));
-                }
-            }
-        }
+        final List<String> unescapedScanTypes   = unescapeList(scanTypes);
+        final List<String> unescapedScanFormats = unescapeList(scanFormats);
 
         final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(resolvedUser, sessions, unescapedScanTypes, unescapedScanFormats);
 
@@ -455,8 +436,11 @@ public class DefaultCatalogService implements CatalogService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDeletion, final Map<String, ?> parameters) throws Exception {
+    public XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDataDeletion, final Map<String, ?> parameters) throws Exception {
         final File temporary = File.createTempFile("xml-import", ".xml");
         try {
             try (final FileWriter writer = new FileWriter(temporary)) {
@@ -509,7 +493,7 @@ public class DefaultCatalogService implements CatalogService {
                             if (parent != null) {
                                 final XnatImagesessiondata session = (XnatImagesessiondata) parent;
                                 session.addScans_scan(new XnatImagescandata(item));
-                                SaveItemHelper.authorizedSave(session, user, false, quarantine, false, allowDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
+                                SaveItemHelper.authorizedSave(session, user, false, quarantine, false, allowDataDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
                             }
                         }
                     } else {
@@ -521,11 +505,9 @@ public class DefaultCatalogService implements CatalogService {
                             }
                         }
                         try {
-                            SaveItemHelper.unauthorizedSave(item, user, false, quarantine, false, allowDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
+                            SaveItemHelper.unauthorizedSave(item, user, false, quarantine, false, allowDataDeletion, newEventInstance(CATEGORY.SIDE_ADMIN, STORE_XML, parameters));
                         } catch (ClientException e) {
-                            final Status status = e.getStatus();
-                            final String message = e.getMessage();
-                            log.error("Error occurred while saving submitted item. Status {}: '{}'", status, message);
+                            log.error("Error occurred while saving submitted item. Status {}: '{}'", e.getStatus(), e.getMessage());
                             throw e;
                         }
                     }
@@ -571,6 +553,26 @@ public class DefaultCatalogService implements CatalogService {
                 log.debug("Something failed when trying to delete temporary file at {}", temporary.getPath());
             }
         }
+    }
+
+    /**
+     * Returns a list with all non-blank items unescaped from HTML 4 encoding.
+     *
+     * @param list The list of strings to be unescaped.
+     *
+     * @return The list of unescaped strings.
+     */
+    private List<String> unescapeList(final List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return Collections.singletonList("");
+        }
+        final List<String> unescaped = new ArrayList<>();
+        for (final String item : list) {
+            if (StringUtils.isNotBlank(item)) {
+                unescaped.add(StringEscapeUtils.unescapeHtml4(item));
+            }
+        }
+        return unescaped;
     }
 
     @SuppressWarnings("SameParameterValue")

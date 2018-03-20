@@ -303,5 +303,29 @@ public interface CatalogService {
      */
     void refreshResourceCatalogs(final UserI user, final List<String> resources, final Collection<Operation> operations) throws ServerException, ClientException;
 
-    XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDeletion, final Map<String, ?> parameters) throws Exception;
+    /**
+     * Inserts the XML object into the XNAT data store. The submitted XML is validated and inserted (created or updated as appropriate). The contents of the parameters map
+     * can contain the following parameters:
+     *
+     * <ul>
+     *     <li>event_reason</li>
+     * 	   <li>event_type</li>
+     * 	   <li>event_action</li>
+     * 	   <li>event_comment</li>
+     * </ul>
+     *
+     * These values are used when creating the audit entries in XNAT for the object creation or update operation. If values aren't provided for these parameters, default
+     * values are set in their place. In addition, the parameter map can include property values to set on the resulting XFTItem, with the map key corresponding to the
+     * property's XML path and map value to the property value. Generally however, property values should just be set directly in the XML.
+     *
+     * @param user              The user inserting the XML object.
+     * @param input             An input stream from which the XML object can be read.
+     * @param allowDataDeletion Indicates whether values on an existing XML object should be overwritten by values in the inserted XML.
+     * @param parameters        A map of parameters.
+     *
+     * @return The resulting {@link XFTItem} object.
+     *
+     * @throws Exception When an error occurs during object creation or update.
+     */
+    XFTItem insertXmlObject(final UserI user, final InputStream input, final boolean allowDataDeletion, final Map<String, ?> parameters) throws Exception;
 }

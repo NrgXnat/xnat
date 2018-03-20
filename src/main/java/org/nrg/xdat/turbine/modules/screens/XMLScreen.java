@@ -9,10 +9,12 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
-import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.XFTItem;
+import org.restlet.data.Status;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -24,6 +26,7 @@ public class XMLScreen extends XDATRawScreen {
      * Set the content type to Xml. (see RawScreen)
      *
      * @param data Turbine information.
+     *
      * @return content type.
      */
     public String getContentType(final RunData data) {
@@ -34,20 +37,24 @@ public class XMLScreen extends XDATRawScreen {
      * {@inheritDoc}
      */
     protected final void doOutput(final RunData data) throws Exception {
-        ItemI item = TurbineUtils.getDataItem(data);
+        try {
+            final ItemI item = ObjectUtils.defaultIfNull(TurbineUtils.getDataItem(data), TurbineUtils.GetItemBySearch(data));
 
-        if (item == null) {
-            item = TurbineUtils.GetItemBySearch(data);
-        }
-
-        if (item == null) {
-            data.setMessage("No Item found for XML display.");
-            data.setScreenTemplate("Index.vm");
-        } else {
+            if (item == null) {
+                data.setMessage("No Item found for XML display.");
+                data.setScreenTemplate("Index.vm");
+            } else {
+                if (item instanceof XFTItem && ((XFTItem) item).instanceOf("xdat:user")) {
+                    item.setProperty("primary_password", "");
+                    item.setProperty("salt", "");
+                }
+                final HttpServletResponse response = data.getResponse();
+                response.setContentType("text/xml");
+                writeToXml(item, response);
+            }
+        } catch (IllegalAccessException e) {
             final HttpServletResponse response = data.getResponse();
-            response.setContentType("text/xml");
-            writeToXml(item, response);
+            response.setStatus(Status.CLIENT_ERROR_FORBIDDEN.getCode());
         }
     }
 }
-

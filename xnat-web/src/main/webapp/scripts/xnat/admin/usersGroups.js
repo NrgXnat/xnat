@@ -205,8 +205,10 @@ var XNAT = getObject(XNAT);
 
     function saveUserData(form, opts){
         var $form = $$(form);
-        var username = $form.find('input#username').val();
+        // var username = $form.find('input#username').val();
+
         opts = cloneObject(opts);
+
         var doSubmit = $form.submitJSON(opts);
 
         if (doSubmit.done) {
@@ -373,7 +375,7 @@ var XNAT = getObject(XNAT);
                     close: false,
                     isDefault: true,
                     action: function(obj){
-                        var $form = obj.$modal.find('form#user-account-form');
+                        var $form = obj.$modal.find('form');
                         if (XNAT.validate.form($form)){
                             var doSave = saveUserData($form);
                             doSave.done(function(){
@@ -529,14 +531,14 @@ var XNAT = getObject(XNAT);
         var username = escapeHtml(this.username || '');
         var status = realValue(this[type]);
         var SORTER = status ? 1 : 0;
-        var iconClass = status ? 'fa-check' : '';
+        var iconClass = status ? '.fa-check' : '';
         return spawn('!', [
             ['i.hidden.sorting.filtering.' + type, SORTER+''],
             ['a.user-' + type + '-status.edit-user', {
                 title: username + ': ' + (status ? type : off),
                 href: '#!',
                 style: { display: 'block', padding: '2px' }
-            }, [['i', { className: 'fa '+iconClass }]]]
+            }, [['i.fa' + iconClass ]]]
         ]);
     }
 
@@ -556,12 +558,9 @@ var XNAT = getObject(XNAT);
                     title: username + ': kill ' + sessionCount + ' active session(s)',
                     href: '#!',
                     style: { display: 'block', padding: '2px' }
-                }, [['i', { className: 'fa fa-user-circle' }]]]
+                }, [['i.fa.fa-user-circle']]]
             ])
         }
-        // else {
-        //     return '<i class="hidden">-1</i>&mdash;'
-        // }
     }
 
 
@@ -645,8 +644,6 @@ var XNAT = getObject(XNAT);
 
     function userAccountForm(data){
 
-        var _load = data ? serverRoot + '/xapi/users/profile/' + data.username : false;
-
         data = data || {};
 
         data.username = escapeHtml(data.username || '');
@@ -654,8 +651,12 @@ var XNAT = getObject(XNAT);
         data.lastName = escapeHtml(data.lastName || '');
         data.email = escapeHtml(data.email || '');
 
+        var _load = data ? serverRoot + '/xapi/users/profile/' + data.username : false;
+
+        var doEdit = _load && data.username;
+
         // username could be text or input element
-        function usernameField(){
+        function usernameField(username){
             var obj = {
                 label: 'Username'
             };
@@ -682,21 +683,22 @@ var XNAT = getObject(XNAT);
             return obj;
         }
 
-        var username = data.username || '*';
         var userVerified = data.verified || 'false';
         var userEnabled = data.enabled || 'false';
 
         var form = {
             kind: 'panel.form',
+            name: 'userAccountForm',
+            id: 'user-account-form',
             label: 'Account Information',
             footer: false,
             validate: true,
-            method: _load ? 'PUT' : 'POST',
+            method: doEdit ? 'PUT' : 'POST',
             contentType: 'json',
-            load: _load,
+            load: doEdit ? _load : '',
             refresh: false,
             reload: true,
-            action: '~/xapi/users' + (_load ? '/' + username : ''),
+            action: '~/xapi/users' + (doEdit ? ('/' + data.username) : ''),
             contents: {
                 // details: {
                 //     kind: 'panel.subhead',
@@ -707,10 +709,9 @@ var XNAT = getObject(XNAT);
                 //     validate: _load ? 'number required' : 'allow-empty',
                 //     value: data.id || ''
                 // },
-                pad: {
-                    kind: 'html',
-                    content: '<br>'
-                },
+                // pad: {
+                //     html: '<br>'
+                // },
                 usernameField: usernameField(),
                 password: {
                     kind: 'panel.input.password',
@@ -745,11 +746,12 @@ var XNAT = getObject(XNAT);
                     label: 'Verified',
                     options: 'true|false',
                     value: userVerified,
+                    // checked: !/false/i.test(userVerified)//,
                     element: {
-                        //disabled: !!_load,
+                        // disabled: !!_load,
                         checked: !/false/i.test(userVerified)//,
-                        //title: username + ':verified'//,
-                        //on: { click: _load ? setVerified : diddly }
+                        // title: username + ':verified'//,
+                        // on: { click: _load ? setVerified : diddly }
                     }
                 },
                 enabled: {
@@ -757,6 +759,7 @@ var XNAT = getObject(XNAT);
                     label: 'Enabled',
                     options: 'true|false',
                     value: userEnabled,
+                    // checked: !/false/i.test(userEnabled)//,
                     element: {
                         //disabled: !!_load,
                         checked: !/false/i.test(userEnabled)//,
@@ -768,7 +771,7 @@ var XNAT = getObject(XNAT);
         };
 
         // add 'Advanced Settings' when editing existing user
-        if (_load && usersGroups.showAdvanced) {
+        if (doEdit && usersGroups.showAdvanced) {
             form.contents.advancedSettings = {
                 kind: 'panel.element',
                 label: 'Advanced',
@@ -896,15 +899,20 @@ var XNAT = getObject(XNAT);
     // open a dialog for creating a new user
     function newUserDialog(){
         var updated = false;
+        var formContainer$ = null;
+        var userForm$ = null;
         return XNAT.dialog.open({
             width: 600,
             // height: 500,
             speed: 200,
             title: 'Create New User',
             content: '<div class="new-user-form"></div>',
-            beforeShow: function(){
-                var _container = this.$modal.find('div.new-user-form');
-                renderUserAccountForm(null, _container);
+            beforeShow: function(obj){
+                formContainer$ = obj.dialog$.find('div.new-user-form');
+                renderUserAccountForm(null, formContainer$);
+            },
+            afterShow: function(){
+                userForm$ = formContainer$.find('form')
             },
             buttons: [
                 {
@@ -912,8 +920,7 @@ var XNAT = getObject(XNAT);
                     close: false,
                     isDefault: true,
                     action: function(obj){
-                        var $form = obj.$modal.find('form#user-account-form');
-                        var _username = $form.find('input[name="username"]').val();
+                        var _username = userForm$.find('input[name="username"]').val();
                         // make sure new username is not a duplicate
                         var getUserList = usersGroups.userData().usernames();
                         getUserList.done(function(users){
@@ -925,7 +932,7 @@ var XNAT = getObject(XNAT);
                                 return false;
                             }
 
-                            var doSave = saveUserData($form);
+                            var doSave = saveUserData(userForm$);
                             doSave.done(function(){
                                 updated = true;
                                 obj.close();
@@ -1297,7 +1304,7 @@ var XNAT = getObject(XNAT);
                         '    #user-profiles td.fullName .truncate { width: 100px; } \n' +
                         '    #user-profiles td.email .truncate { width: 140px; } \n' +
                         '} \n' +
-                        '#user-account-form { border: none; margin: 0; }'
+                        '#user-account-form, #user-account-form-panel { border: none; margin: 0; }'
                     }
                 },
                 onRender: showUsersTable,

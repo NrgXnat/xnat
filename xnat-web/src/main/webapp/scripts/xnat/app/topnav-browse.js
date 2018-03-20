@@ -18,6 +18,7 @@
     var $browseData = $('#browse-data');
     var $favoriteProjects = $('#favorite-projects');
     var $myProjects = $('#my-projects');
+    var $storedSearches = $('#stored-search-menu');
     var undef;
 
     var displayProjectList = function($parent, projectData){
@@ -197,6 +198,11 @@
         }
     }
 
+    function compareSearches(a,b) {
+        // sort alphabetically by the brief_description field, accounting for accented characters if necessary.
+        return a.brief_description.localeCompare(b.brief_description);
+    }
+
     // populate data list
     if (window.available_elements !== undef && window.available_elements.length) {
         var DATATYPES = [dataTypeItem({
@@ -214,5 +220,29 @@
     else {
         $browseData.parent('li').addClass('disabled');
     }
+
+    // populate stored search list
+    xnatJSON({
+        url: restUrl('/data/search/saved',['format=json']),
+        success: function(data){
+            if (data.ResultSet.Result.length){
+                data.ResultSet.Result.sort(compareSearches);
+                STORED = data.ResultSet.Result.map(function(item){
+                    var URL = XNAT.url.rootUrl('/app/template/Search.vm/node/ss.'+item.id);
+                    return {
+                        name: item.brief_description,
+                        item: spawn('a',{
+                            href: URL,
+                            style: { width: '100%' }
+                        }, escapeHtml(item.brief_description) )
+                    }
+                });
+                displaySimpleList($storedSearches, STORED);
+            }
+        },
+        error: function(e){
+            console.log(e);
+        }
+    })
 
 })();

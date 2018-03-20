@@ -1,12 +1,19 @@
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 <!-- search script -->
 <script type="text/javascript">
-function submitQuickSearch(){
-  concealContent();
-  if($('#searchValue').val()!="") {
-    $('#quickSearchForm').submit();
-  }
-}
+    function submitQuickSearch(){
+        if($('#searchValue').val().length > 0) {
+            concealContent();
+            $('#quickSearchForm').submit();
+        }
+        else {
+            return false;
+        }
+    }
+    $(document).on('click','#search_btn',function(e){
+        e.preventDefault();
+        submitQuickSearch();
+    });
 </script>
 <!-- end search script -->
 
@@ -27,80 +34,23 @@ function submitQuickSearch(){
         padding: 0;
 		overflow: hidden;
 	}
+    #advanced-search-topnav {
+        margin: 0 0.25em;
+        font-size: 12px;
+    }
+    #advanced-search-topnav a {
+        color: #66c7ff;
+        text-decoration: underline;
+    }
 </style>
 
 <form id="quickSearchForm" method="post" action="$link.setAction("QuickSearchAction")">
-    <select id="stored-searches" data-placeholder="Stored Searches">
-		<option></option>
-		<optgroup>
-            <option value="$link.setPage("XDATScreen_search_wizard1.vm")">Advanced Search&hellip;</option>
-		</optgroup>
-##		<option disabled class="divider">&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</option>
-        <optgroup class="stored-search-list">
-			<option disabled>(no stored searches)</option>
-			<!-- stored searches will show up here -->
-		</optgroup>
-	</select>
-	<input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="$!field"/>
-    <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
-#if($siteConfig.uiAllowAdvancedSearch)
+    #if($siteConfig.uiAllowAdvancedSearch)
+        <span id="advanced-search-topnav">
+        <a href="$link.setPage("XDATScreen_search_wizard1.vm")">Advanced</a>
+    </span>
+    #end
+    <input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="$!field" placeholder="Search" />
+    <button type="button" id="search_btn" class="btn2"><i class="fa fa-search" title="Submit Search"></i></button>
 
-    <script>
-
-        (function(){
-            var searchField = $('#searchValue');
-            searchField.keyup(function( event ) {
-              if (event.which == 13) {
-                submitQuickSearch();
-              }
-            });
-            
-            searchField.each(function(){
-                this.value = this.value || 'search';
-                $(this).focus(function(){
-                    $(this).removeClass('clean');
-                    if (!this.value || this.value === 'search'){
-                        this.value = '';
-                    }
-                })
-            });
-
-            var storedSearchMenu = $('#stored-searches');
-
-            function compareSearches(a,b) {
-                // sort alphabetically by the brief_description field, accounting for accented characters if necessary.
-                return a.brief_description.localeCompare(b.brief_description);
-            }
-
-            XNAT.xhr.getJSON(XNAT.url.rootUrl('/data/search/saved'), function(data){
-
-                var storedSearchesList = data.ResultSet.Result;
-                storedSearchesList.sort(compareSearches);
-
-                storedSearchMenu.find('optgroup.stored-search-list')
-                        .empty()
-                        .append(storedSearchesList.map(function(opt){
-                            var val = serverRoot + '/app/template/Search.vm/node/ss.' + opt.id;
-                            return '<option value="' + val + '">' + opt.brief_description + '</option>'
-                        }).join(''));
-
-                storedSearchMenu.on('change', function(){
-                    window.location.href = this.value
-                });
-
-                storedSearchMenu.chosen({
-                    width: '150px',
-                    disable_search_threshold: 9,
-                    inherit_select_classes: true,
-                    placeholder_text_single: 'Stored Searches',
-                    search_contains: true
-                });
-
-            });
-
-        })();
-
-    </script>
-##    <button type="button" id="advanced_btn" class="btn2" onclick="advancedSearch();">Advanced</button>
-#end
 </form>

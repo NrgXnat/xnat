@@ -16,7 +16,7 @@ width:1px;
       <li><a href="#tab2"><em>$displayManager.getPluralDisplayNameForProject()<span class="spacer"></span></em></a></li>
   </ul>
  <div class="yui-content">   
-  <div id="tab1"><p>
+  <div id="tab1">
  <table>
  <tr>
  <td valign="top">
@@ -31,11 +31,11 @@ width:1px;
   </td>
   </tr>
  </table>
-</p></div>  
+</div>
  
-  <div id="tab2"><p>
+  <div id="tab2">
 #parse($turbineUtils.getTemplateName("sharing",$om.getXSIType(),$!project))
-</p></div> 
+</div>
   </div> 
  </DIV>
 </div>

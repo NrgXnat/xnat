@@ -19,7 +19,7 @@ width:1px;
         #end
   </ul>
  <div class="yui-content">   
-  <div id="tab1"><p>
+  <div id="tab1">
  <table>
  <tr>
  <td valign="top">
@@ -34,16 +34,16 @@ width:1px;
   </td>
   </tr>
  </table>
-</p></div>  
+</div>
  
-  <div id="tab2"><p>
+  <div id="tab2">
 #parse($turbineUtils.getTemplateName("sharing",$om.getXSIType(),$!project))
-</p></div> 
+</div>
 
             #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
                 <div id="$tab.getProperty("divName")">
                     #set($path = "screens/${tab.getProperty('path')}")
-                    <p>#parse($path)</p>
+                    #parse($path)
                 </div>
             #end
 

@@ -28,7 +28,7 @@ $page.setVlinkColor($ui.vlink)
 	<div class="alert">$data.message</div>
 #end
 
-<p>
+
 <form ID="form1" name="form1" method="post" action="$link.setAction("ModifyManualQC")">
 <input type="hidden" name="project" value="$!{project}" >
 <input type="hidden" name="$item.getXSIType()/ID" id="$item.getXSIType()/ID" value=""/> 

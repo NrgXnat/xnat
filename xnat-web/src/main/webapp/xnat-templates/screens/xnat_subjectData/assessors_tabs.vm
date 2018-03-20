@@ -10,13 +10,11 @@
             #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/assessor_tabs"))
                 <div id="$tab.getProperty("divName")">
                     #set($path = "screens/${tab.getProperty('path')}")
-                    <p>#parse($path)</p>
+                    #parse($path)
                 </div>
             #end
             <div id="tab1">
-                <p>
-                    #parse($turbineUtils.getTemplateName("_assessors","xnat:subjectData",$project))
-                </p>
+                #parse($turbineUtils.getTemplateName("_assessors","xnat:subjectData",$project))
             </div>
         </div>
     </div>

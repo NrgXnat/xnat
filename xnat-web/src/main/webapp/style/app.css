@@ -1758,6 +1758,10 @@ div.edit_title {
     border-color: #ccc;
 }
 
+.yui-content p:first-child {
+    margin-top: 0;
+}
+
 .yui-skin-sam #actionsMenu {
     height: auto !important;
     overflow: visible !important;

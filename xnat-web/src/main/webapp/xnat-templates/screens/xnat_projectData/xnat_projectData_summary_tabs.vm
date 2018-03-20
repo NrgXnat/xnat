@@ -18,24 +18,24 @@
         </ul>
         <div class="yui-content">
             <div id="tab1" class="pad10">
-                <p>#parse($turbineUtils.getTemplateName("_summary_details","xnat:projectData",$project.getId()))</p>
+                #parse($turbineUtils.getTemplateName("_summary_details","xnat:projectData",$project.getId()))
             </div>
 
             #if($data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user))
                     <div id="tab3" class="pad10">
-                        <p>#parse($turbineUtils.getTemplateName("_summary_management","xnat:projectData",$project.getId()))</p>
+                        #parse($turbineUtils.getTemplateName("_summary_management","xnat:projectData",$project.getId()))
                     </div>
                     <div id="othermgmt" class="pad10">
-                        <p>#parse($turbineUtils.getTemplateName("_summary_manage","xnat:projectData",$project.getId()))</p>
+                        #parse($turbineUtils.getTemplateName("_summary_manage","xnat:projectData",$project.getId()))
                     </div>
                     <div id="tab4">
-                        <p>#parse($turbineUtils.getTemplateName("_summary_pipeline","xnat:projectData",$project.getId()))</p>
+                        #parse($turbineUtils.getTemplateName("_summary_pipeline","xnat:projectData",$project.getId()))
                     </div>
             #end
             #foreach($tab in $tabs)
                 <div id="$tab.getProperty("divName")">
                     #set($path = "screens/xnat_projectData/tabs/${tab.getProperty('fileName')}")
-                    <p>#parse($path)</p>
+                    #parse($path)
                 </div>
             #end
 

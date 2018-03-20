@@ -208,7 +208,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
     };
 
     this.completeInit = function(o){
-        this.initResults = eval("(" + o.responseText + ")");
+        this.initResults = JSON.parse(o.responseText);
         this.onTableInit.fire();
         this.render();
         var that = this;
@@ -428,7 +428,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
         //xmodal.loading.close();
         this.startTime = (new Date()).getTime();
         var dt = document.getElementById(this.div_table_id);
-        dt.innerHTML = obj.responseText;
+        dt.innerHTML = obj.responseText.replace('<img', '&lt;img').replace('<script', '&lt;script');
         //alert(dt.innerHTML);
         var tbl = dt.getElementsByTagName("TABLE")[0];
         var sprite = serverRoot + "/scripts/yui/build/assets/skins/images/xnat-sprite.png";

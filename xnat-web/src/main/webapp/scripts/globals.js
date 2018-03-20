@@ -132,6 +132,15 @@ window.jsdebug = window.jsdebug ||
 
 })();
 
+// sanitize a few specific HTML tags
+function sanitizeTags(html, tags){
+    var TAGS = tags || 'audio|canvas|embed|frame|frameset|iframe|img|input|link|object|script|style|video';
+    var reTAGS = new RegExp('<(' + TAGS + ')[^>]+>', 'gi');
+    // reTAGS = /<(iframe|img|input|script)[^>]+>/gi;
+    return html.replace(reTAGS, function(tag){
+        return tag.replace(/</, '&lt;').replace(/>/, '&gt;')
+    });
+}
 
 function firstDefined() {
     var undef, i = -1, val;

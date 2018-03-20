@@ -428,7 +428,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
         //xmodal.loading.close();
         this.startTime = (new Date()).getTime();
         var dt = document.getElementById(this.div_table_id);
-        dt.innerHTML = obj.responseText.replace('<img', '&lt;img').replace('<script', '&lt;script');
+        dt.innerHTML = sanitizeTags(obj.responseText);
         //alert(dt.innerHTML);
         var tbl = dt.getElementsByTagName("TABLE")[0];
         var sprite = serverRoot + "/scripts/yui/build/assets/skins/images/xnat-sprite.png";

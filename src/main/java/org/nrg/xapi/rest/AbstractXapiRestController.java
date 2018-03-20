@@ -9,11 +9,12 @@
 
 package org.nrg.xapi.rest;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -27,6 +28,11 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
+import static lombok.AccessLevel.PROTECTED;
+import static org.nrg.framework.exceptions.NrgServiceError.Unknown;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+
 /**
  * Provides basic functions for integrating Spring REST controllers with XNAT.
  * <p>
@@ -34,6 +40,8 @@ import java.util.*;
  */
 // TODO: This is because IntelliJ refuses to make module associations between Gradle and Maven projects, so these show as unused.
 @SuppressWarnings({"unused", "deprecation", "Duplicates"})
+@Getter(PROTECTED)
+@Accessors(prefix = "_")
 @Slf4j
 public abstract class AbstractXapiRestController {
     protected AbstractXapiRestController(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
@@ -57,16 +65,8 @@ public abstract class AbstractXapiRestController {
      */
     protected static String getAttachmentDisposition(final String... parts) {
         final int    maxIndex = parts.length - 1;
-        final String filename   = maxIndex == 0 ? parts[0] : StringUtils.join(ArrayUtils.subarray(parts, 0, maxIndex)) + "." + parts[maxIndex];
+        final String filename = maxIndex == 0 ? parts[0] : StringUtils.join(ArrayUtils.subarray(parts, 0, maxIndex)) + "." + parts[maxIndex];
         return String.format(ATTACHMENT_DISPOSITION, filename);
-    }
-
-    protected UserManagementServiceI getUserManagementService() {
-        return _userManagementService;
-    }
-
-    protected RoleHolder getRoleHolder() {
-        return _roleHolder;
     }
 
     /**
@@ -76,10 +76,8 @@ public abstract class AbstractXapiRestController {
      */
     protected UserI getSessionUser() {
         final Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if ((principal instanceof UserI)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Found principal for user: " + ((UserI) principal).getLogin());
-            }
+        if (principal instanceof UserI) {
+            log.debug("Found principal for user: {}", ((UserI) principal).getUsername());
             return (UserI) principal;
         }
         return null;
@@ -111,18 +109,18 @@ public abstract class AbstractXapiRestController {
             return null;
         }
         // Both cases indicate retrieving roles for self, so this is always OK.
-        if (StringUtils.isBlank(username) || user.getUsername().equals(username)) {
-            return _roleHolder.getRoles(user);
+        if (StringUtils.isBlank(username) || StringUtils.equalsIgnoreCase(username, user.getUsername())) {
+            return getRoleHolder().getRoles(user);
         }
         // Only a site admin can get the roles for another user.
-        if (!_roleHolder.isSiteAdmin(user)) {
+        if (!getRoleHolder().isSiteAdmin(user)) {
             return null;
         }
         try {
-            final UserI other = _userManagementService.getUser(username);
-            return _roleHolder.getRoles(other);
+            final UserI other = getUserManagementService().getUser(username);
+            return getRoleHolder().getRoles(other);
         } catch (UserInitException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to access the user " + username, e);
+            throw new NrgServiceRuntimeException(Unknown, "An error occurred trying to access the user " + username, e);
         } catch (UserNotFoundException e) {
             log.info("User {} requested by {}, but not found", username, user.getUsername());
             return null;
@@ -176,25 +174,26 @@ public abstract class AbstractXapiRestController {
     protected HttpStatus isPermitted(final String... idsAndRoles) {
         final UserI user = getSessionUser();
         if (user == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("No user principal found, returning unauthorized.");
-            }
-            return HttpStatus.UNAUTHORIZED;
+            log.debug("No user principal found, returning unauthorized.");
+            return UNAUTHORIZED;
         }
-        final List<String> idsAndRolesList = Arrays.asList(idsAndRoles);
-        if (_roleHolder.isSiteAdmin(user)) {
+
+        if (getRoleHolder().isSiteAdmin(user)) {
             log.debug("User {} is a site administrator, permitted.", user.getUsername());
             return null;
         }
+
+        final List<String> idsAndRolesList = Arrays.asList(idsAndRoles);
         if (idsAndRolesList.contains(user.getUsername())) {
             log.debug("User {} appeared in the list of permitted users, permitted.", user.getUsername());
             return null;
         }
-        if (!Collections.disjoint(idsAndRolesList, _roleHolder.getRoles(user))) {
+        if (!Collections.disjoint(idsAndRolesList, getRoleHolder().getRoles(user))) {
             log.debug("User {} has a role included in the list of permitted roles.", user.getUsername());
             return null;
         }
-        return HttpStatus.FORBIDDEN;
+
+        return FORBIDDEN;
     }
 
     /**
@@ -213,12 +212,12 @@ public abstract class AbstractXapiRestController {
     protected HttpStatus hasPermittedRole(final String... roles) {
         final UserI user = getSessionUser();
         if (user == null) {
-            return HttpStatus.UNAUTHORIZED;
+            return UNAUTHORIZED;
         }
-        if (ListUtils.intersection(Arrays.asList(roles), new ArrayList<>(_roleHolder.getRoles(user))).size() > 0 || _roleHolder.isSiteAdmin(user)) {
+        if (ListUtils.intersection(Arrays.asList(roles), new ArrayList<>(getRoleHolder().getRoles(user))).size() > 0 || getRoleHolder().isSiteAdmin(user)) {
             return null;
         }
-        return HttpStatus.FORBIDDEN;
+        return FORBIDDEN;
     }
 
     /**

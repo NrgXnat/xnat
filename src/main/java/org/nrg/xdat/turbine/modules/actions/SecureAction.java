@@ -19,6 +19,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -26,6 +27,7 @@ import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
@@ -37,6 +39,7 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collection;
 import java.util.Enumeration;
 
 /**
@@ -146,7 +149,7 @@ public abstract class SecureAction extends VelocitySecureAction {
     }
 
     //just a wrapper for isCsrfTokenOk(request, token)
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "UnusedReturnValue"})
     public static boolean isCsrfTokenOk(HttpServletRequest request, boolean strict) throws Exception {
         return isCsrfTokenOk(request, request.getParameter("XNAT_CSRF"), strict);
     }
@@ -290,6 +293,26 @@ public abstract class SecureAction extends VelocitySecureAction {
     public void notifyAdmin(UserI authenticatedUser, RunData data, int code, String subject, String message) throws IOException {
         AdminUtils.sendAdminEmail(authenticatedUser, subject, message);
         data.getResponse().sendError(code);
+    }
+
+    protected boolean displayPopulatorErrors(final PopulateItem populator, final RunData data, final XFTItem item) {
+        if (!populator.hasError()) {
+            return false;
+        }
+
+        final InvalidValueException error =  populator.getError();
+        data.addMessage(error.getMessage());
+        TurbineUtils.SetEditItem(item, data);
+        data.setScreenTemplate("XDATScreen_edit_projectData.vm");
+        return true;
+    }
+
+    protected void displayProjectConflicts(final Collection<String> conflicts, final RunData data, final XFTItem item) {
+        final StringBuilder message = new StringBuilder();
+        for (final String conflict : conflicts) {
+            message.append(conflict).append("<br/>");
+        }
+        displayProjectEditError(message.toString(), data, item);
     }
 
     @SuppressWarnings("unused")

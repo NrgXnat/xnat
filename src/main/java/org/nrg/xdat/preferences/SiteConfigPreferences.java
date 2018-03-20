@@ -658,6 +658,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "${StudyInstanceUID}-${SeriesNumber}-${InstanceNumber}-${HashSOPClassUIDWithSOPInstanceUID}")
+    public String getDicomFileNameTemplate() {
+        return getValue("dicomFileNameTemplate");
+    }
+
+    public void setDicomFileNameTemplate(final String dicomFileNameTemplate) {
+        try {
+            set("dicomFileNameTemplate", dicomFileNameTemplate);
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'dicomFileNameTemplate': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "org.nrg.dcm.DicomSCPSiteConfigurationListener", aliases = "enableDicomReceiver.property.changed.listener")
     public String getEnableDicomReceiverPropertyChangedListener() {
         return getValue("enableDicomReceiverPropertyChangedListener");

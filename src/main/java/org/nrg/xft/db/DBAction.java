@@ -2132,7 +2132,9 @@ public class DBAction {
                 } else {
                     return object.toString();
                 }
-            } else {
+            }else if (type.equalsIgnoreCase("LONGVARCHAR")) {
+                return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
+            }else {
                 if (type.equalsIgnoreCase("string")) {
                     if (field.getWrapped().getRule().getBaseType().equals("xs:anyURI")) {
                         return ValueParser(object, "anyURI", allowInvalidValues);

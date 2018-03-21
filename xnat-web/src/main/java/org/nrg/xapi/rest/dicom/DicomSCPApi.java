@@ -182,6 +182,12 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                                    }))
                                                                    @RequestBody final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicateTitleAndPortException, UnknownDicomHelperInstanceException, DicomNetworkException {
         if (_manager.hasDicomSCPInstance(id)) {
+            DicomSCPInstance existingScp = _manager.getDicomSCPInstance(id);
+            if(existingScp.getPort()!=instance.getPort()){
+                //User is changing the port of the SCP receiver. Receiver must be removed from old port
+                _manager.disableDicomSCPInstances(id);
+            }
+
             // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we
             // need to make sure it's set to the proper value. If they submit it under the wrong ID well...
             instance.setId(id);

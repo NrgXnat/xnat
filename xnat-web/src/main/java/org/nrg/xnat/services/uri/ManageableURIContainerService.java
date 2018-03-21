@@ -10,9 +10,9 @@ import org.springframework.stereotype.Service;
 public class ManageableURIContainerService{
 	
 		@Autowired
-		private List<ManageableXnatURIContainer> manageableURIs;
+		private List<ManageableXnatURIContainer> _manageableURIs;
 		
 		public List<ManageableXnatURIContainer> getManageableURIs() {
-			return this.manageableURIs;
+			return this._manageableURIs;
 		}
 }

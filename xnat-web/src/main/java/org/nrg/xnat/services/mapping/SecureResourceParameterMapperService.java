@@ -1,5 +1,6 @@
 package org.nrg.xnat.services.mapping;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.nrg.xnat.restlet.util.SecureResourceParameterMapper;
@@ -9,8 +10,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class SecureResourceParameterMapperService{
 	
-	@Autowired
-	private List<SecureResourceParameterMapper> _mappers;
+	@Autowired(required=false)
+	private List<SecureResourceParameterMapper> _mappers = new ArrayList<>();
 	
 	public List<SecureResourceParameterMapper> getParameterMappers() {
 		return this._mappers;

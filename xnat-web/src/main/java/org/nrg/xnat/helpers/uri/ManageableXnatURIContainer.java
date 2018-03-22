@@ -1,11 +1,11 @@
 package org.nrg.xnat.helpers.uri;
 
-public abstract class ManageableXnatURIContainer{
+public interface ManageableXnatURIContainer{
 	
-	public abstract String getTemplate();
-	public abstract String getBaseTemplate();
-	public abstract int getMode();
-	public abstract URIManager.TEMPLATE_TYPE getTemplateType();
-	public abstract Class<? extends URIManager.DataURIA> getUri();
+	public String getTemplate();
+	public String getBaseTemplate();
+	public int getMode();
+	public URIManager.TEMPLATE_TYPE getTemplateType();
+	public Class<? extends URIManager.DataURIA> getUri();
 	
-	}
+}

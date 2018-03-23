@@ -15,7 +15,7 @@ function setScanQualityOptions(sel,choices,offset,value){
     if(choices==undefined || choices.length==0){
 	    choices=['usable','questionable','unusable'];
     }
-    for(i=0;i<choices.length;i++){
+    for(var i=0;i<choices.length;i++){
 	var choice=choices[i];
 	var selected=(value==undefined)?(i==0):(choice==value);
 	sel.options[i+offset]=new Option(choice,choice,selected,selected);
@@ -112,7 +112,7 @@ function scanInit(_options){
 		td1=document.createElement("th");
 		td2=document.createElement("td");
 
-		td1.innerHTML="Modality:";
+		td1.innerHTML = "Modality:";
 		td1.align="left";
 		var sel = document.createElement("select");
 		sel.id="new_modality";
@@ -227,6 +227,7 @@ function ScanEditor(_sessionID,_scanID,_options){
             else
                 this.panel.setHeader(this.scanID + " Details");
 
+            var tmp = {};
             var modality = this.scan.xsiType;
             var bd = document.createElement("form");
 
@@ -242,11 +243,23 @@ function ScanEditor(_sessionID,_scanID,_options){
 
             td1.innerHTML = "ID:";
             td1.align = "left";
+
+            tmp.input = document.createElement('input');
+            tmp.input.name = modality + '/ID';
+
             if (this.scan.extension.XnatImagescandataId) {
-                td2.innerHTML = "<input type='hidden' name='" + modality + "/ID' value='" + this.scan.getProperty("ID") + "'/>" + this.scan.getProperty("ID");
+                tmp.input.type = 'hidden';
+                tmp.input.value = this.scan.getProperty("ID");
+                td2.innerHTML = tmp.input.outerHTML;
+                td2.innerHTML += ' ' + escapeHtml(this.scan.getProperty("ID"));
             } else {
-                td2.innerHTML = "<input type='text' name='" + modality + "/ID' value=''/>";
+                tmp.input.type = 'text';
+                tmp.input.value = '';
+                td2.innerHTML = tmp.input.outerHTML;
             }
+
+            delete tmp.input;
+
             tr.appendChild(td1);
             tr.appendChild(td2);
             tb.appendChild(tr);
@@ -254,7 +267,7 @@ function ScanEditor(_sessionID,_scanID,_options){
             if (this.scan.extension.XnatImagescandataId) {
                 this.panel.method = 'PUT';
                 this.panel.action = serverRoot + '/REST/experiments/' + this.sessionID + '/scans/' + this.scanID + '?req_format=form&XNAT_CSRF=' + csrfToken;
-                td1.innerHTML += "<input type='hidden' name='" + modality + "/xnat_imageScanData_id' value='" + this.scan.extension.XnatImagescandataId + "'/>";
+                td1.innerHTML += '<input type="hidden" name="' + modality + '/xnat_imageScanData_id" value="' + this.scan.extension.XnatImagescandataId + '"/>';
             } else {
                 this.panel.method = 'POST';
                 this.panel.action = serverRoot + '/REST/experiments/' + this.sessionID + '/scans?req_format=form&XNAT_CSRF=' + csrfToken;
@@ -301,7 +314,7 @@ function ScanEditor(_sessionID,_scanID,_options){
             this.type_input = document.createElement('input');
             this.type_input.type = 'text';
             this.type_input.id = 'type';
-            this.type_input.size = '20';
+            this.type_input.size = 20;
             this.type_input.style.width = "180px";
             this.type_input.name = modality + "/type";
             if (nominalType) {
@@ -360,10 +373,21 @@ function ScanEditor(_sessionID,_scanID,_options){
 
             td1.innerHTML = "Notes:";
             td1.align = "left";
-            if (this.scan.extension.Note != undefined && this.scan.extension.Note != null)
-                td2.innerHTML = "<textarea class='nullable' cols='30' rows='4' name='" + modality + "/note'>" + this.scan.extension.Note + "</textarea>";
-            else
-                td2.innerHTML = "<textarea class='nullable' cols='30' rows='4' name='" + modality + "/note'></textarea>";
+
+            tmp.textarea = document.createElement('textarea');
+            tmp.textarea.name = modality + '/note';
+            tmp.textarea.className = 'nullable';
+            tmp.textarea.cols = 30;
+            tmp.textarea.rows = 4;
+            tmp.textarea.value = '';
+
+            if (this.scan.extension.Note != undefined && this.scan.extension.Note != null) {
+                tmp.textarea.value = this.scan.extension.Note;
+            }
+
+            td2.innerHTML = tmp.textarea.outerHTML;
+
+            delete tmp.textarea;
 
             tr.appendChild(td1);
             tr.appendChild(td2);
@@ -503,7 +527,7 @@ function scanDeleteDialog(_options){
 		td1=document.createElement("th");
 		td2=document.createElement("td");
 
-		td1.innerHTML="Delete associated files from the repository?:";
+		td1.innerHTML = "Delete associated files from the repository?:";
 		td1.align="left";
 		var sel = document.createElement("input");
 		sel.type="checkbox";
@@ -523,11 +547,11 @@ function scanDeleteDialog(_options){
             td1=document.createElement("th");
             td2=document.createElement("td");
 
-            td1.innerHTML="Justification:";
+            td1.innerHTML = "Justification:";
             td1.align="left";
             var sel = document.createElement("textarea");
-            sel.cols="24";
-            sel.rows="4";
+            sel.cols=24;
+            sel.rows=4;
             sel.id="event_reason";
             sel.name="event_reason";
             td2.appendChild(sel);
@@ -684,20 +708,20 @@ function renderScans(scans,tbody_id,session_id,project){
                 if(scan.quality) {
                     td.className="quality-"+scan.quality
                 }
-                td.innerHTML=scan.id
+                td.innerHTML = escapeHtml(scan.id);
 		tr.appendChild(td);
 
 		//type
 		td= document.createElement("td");
 		if(scan.type){
-			td.innerHTML=scan.type;
+			td.innerHTML = escapeHtml(scan.type);
 		}
 		tr.appendChild(td);
 
 		if(window.fileCounter!=undefined){
 			//file_count
 			td= document.createElement("td");
-			td.innerHTML="Loading...";
+			td.innerHTML = "Loading...";
 			tr.appendChild(td);
 			window.fileCounter.collection.push({"uri":serverRoot + "/REST/experiments/" + session_id + "/scans/" + scan.id + "/files","div":td});
 		}
@@ -705,7 +729,7 @@ function renderScans(scans,tbody_id,session_id,project){
 		//note
 		td= document.createElement("td");
 		if(scan.note){
-			td.innerHTML=scan.note;
+			td.innerHTML = escapeHtml(scan.note);
 		}
 		tr.appendChild(td);
 
@@ -963,7 +987,7 @@ function scanListingEditor(_tbody,_scanSet,_options){
 			  scan.id_input=document.createElement("input");
 
 			  scan.id_input.manager=this;
-			  scan.id_input.size='5';
+			  scan.id_input.size=5;
 			    if(scan.extension.Id!=undefined)scan.id_input.value=scan.extension.Id;
 				if(scan.extension.XnatImagescandataId!=undefined){
 					scan.id_input.type="hidden";
@@ -1105,7 +1129,7 @@ function scanListingEditor(_tbody,_scanSet,_options){
             scan.type_input.name=elementName +scanXPath(modality, scanTypeTable) + "/type";
 
             if(!XNAT.app.sTMod && nominalType){
-                td.innerHTML=nominalType;
+                td.innerHTML = escapeHtml(nominalType);
 				var d=td.appendChild(document.createElement("div"));
 				d.appendChild(scan.type_input);
 				d.style.display='none';
@@ -1134,10 +1158,10 @@ function scanListingEditor(_tbody,_scanSet,_options){
 			if(scan.note_input==undefined){
 				scan.note_input=document.createElement("input");
 				scan.note_input.type="text";
-			        if(scan.extension.Note!=undefined && scan.extension.Note != "NULL"){
-					scan.note_input.value=scan.extension.Note;
-				}
-				scan.note_input.size="40";
+                if(!/^(undefined|NULL)$/i.test(scan.extension.Note)){
+                    scan.note_input.value=scan.extension.Note;
+                }
+				scan.note_input.size=40;
 			}
             scan.note_input.id=elementName + scanXPath(modality,scanTypeTable) + "/note";
             scan.note_input.name=elementName + scanXPath(modality,scanTypeTable) + "/note";
@@ -1150,7 +1174,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 				td= document.createElement("td");
 				if(scan.stats_div==undefined){
 					scan.stats_div=document.createElement("div");
-					scan.stats_div.innerHTML=scan.stats;
+                    scan.stats_div.className = 'stats';
+					scan.stats_div.innerHTML = scan.stats;
 				}
 				td.appendChild(scan.stats_div);
 				tr.appendChild(td);
@@ -1165,7 +1190,7 @@ function scanListingEditor(_tbody,_scanSet,_options){
 				td= document.createElement("td");
 				td.colSpan="5";
 				td.vAlign="top";
-				td.innerHTML="&nbsp;"
+				td.innerHTML = "&nbsp;";
 
 
 				var subtable=document.createElement("table");
@@ -1177,8 +1202,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="Description";
-					subtd2.innerHTML=escapeHtml(scan.extension.SeriesDescription);
+					subtd1.innerHTML = "Description";
+					subtd2.innerHTML = escapeHtml(scan.extension.SeriesDescription);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1191,8 +1216,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="Frames";
-					subtd2.innerHTML=scan.extension.Frames;
+					subtd1.innerHTML = "Frames";
+					subtd2.innerHTML = escapeHtml(scan.extension.Frames);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1205,8 +1230,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="Time";
-					subtd2.innerHTML=scan.extension.Starttime;
+					subtd1.innerHTML = "Time";
+					subtd2.innerHTML = escapeHtml(scan.extension.Starttime);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1219,8 +1244,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="Image Type";
-					subtd2.innerHTML=scan.Parameters_imagetype;
+					subtd1.innerHTML = "Image Type";
+					subtd2.innerHTML = escapeHtml(scan.Parameters_imagetype);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1233,8 +1258,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="SEQ Seq";
-					subtd2.innerHTML=scan.Parameters_scansequence;
+					subtd1.innerHTML = "SEQ Seq";
+					subtd2.innerHTML = escapeHtml(scan.Parameters_scansequence);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1247,8 +1272,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="SEQ Variant";
-					subtd2.innerHTML=scan.Parameters_seqvariant;
+					subtd1.innerHTML = "SEQ Variant";
+					subtd2.innerHTML = escapeHtml(scan.Parameters_seqvariant);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1261,8 +1286,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="Options";
-					subtd2.innerHTML=scan.Parameters_scanoptions;
+					subtd1.innerHTML = "Options";
+					subtd2.innerHTML = escapeHtml(scan.Parameters_scanoptions);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1275,8 +1300,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="Acq Type";
-					subtd2.innerHTML=scan.Parameters_acqtype;
+					subtd1.innerHTML = "Acq Type";
+					subtd2.innerHTML = escapeHtml(scan.Parameters_acqtype);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1289,8 +1314,8 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					subtd1.align="left";
 					var subtd2=document.createElement("td");
 
-					subtd1.innerHTML="Flip";
-					subtd2.innerHTML=scan.Parameters_flip;
+					subtd1.innerHTML = "Flip";
+					subtd2.innerHTML = escapeHtml(scan.Parameters_flip);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);
@@ -1325,11 +1350,11 @@ function scanTypeCreator(_options){
 		bd.appendChild(table);
 
 		//modality
-		tr=document.createElement("tr");
-		td1=document.createElement("th");
-		td2=document.createElement("td");
+		var tr = document.createElement("tr");
+		var td1 = document.createElement("th");
+		var td2 = document.createElement("td");
 
-		td1.innerHTML="Scan Type:";
+		td1.innerHTML = "Scan Type:";
 		td1.align="left";
 		var input = document.createElement("input");
 		input.id="new_scan_type";

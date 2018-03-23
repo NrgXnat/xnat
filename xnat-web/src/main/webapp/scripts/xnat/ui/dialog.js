@@ -188,6 +188,8 @@ window.xmodal = getObject(window.xmodal);
 
         this.delay = this.delay || 0;
 
+        this.speed = firstDefined(this.speed, 0);
+
         this.zIndex = {};
         // this.zIndex.container = dialog.zIndexTop();
         this.zIndex.mask      = dialog.zIndexTop();
@@ -1115,7 +1117,7 @@ window.xmodal = getObject(window.xmodal);
         // only one loadingBar?
         if (dialog.loadingBar instanceof Dialog) {
             // console.log('loadingBar');
-            return dialog.loadingBar.toTop();
+            dialog.loadingBar.toTop();
         }
         var LDG = dialog.shell({
             id: 'loadingbar' + (loadingBarCounter += 1),

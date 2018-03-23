@@ -255,9 +255,9 @@ function DaysArray(n) {
 // dBox - the date box we are validating.
 // XNAT-2344
 function validateDateBox(dBox){
-	
-	if(dBox === undefined || dBox == null){ 
-		return false; 
+
+	if(dBox === undefined || dBox == null){
+		return false;
 	}
 
 	if(isDate(dBox.value)){
@@ -273,7 +273,7 @@ function isDate(dtStr){
 	if (dtStr==""){
 		return true;
 	}
-	
+
 	var daysInMonth = DaysArray(12);
 	var pos1=dtStr.indexOf(dtCh);
 	var pos2=dtStr.indexOf(dtCh,pos1+1);
@@ -281,48 +281,48 @@ function isDate(dtStr){
 	var strDay=dtStr.substring(pos1+1,pos2);
 	var strYear=dtStr.substring(pos2+1);
 	strYr=strYear;
-	
+
 	if (strDay.charAt(0)=="0" && strDay.length>1){
 		strDay=strDay.substring(1);
 	}
-	
+
 	if (strMonth.charAt(0)=="0" && strMonth.length>1){
 		strMonth=strMonth.substring(1);
 	}
-	
+
 	for (var i = 1; i <= 3; i++) {
 		if (strYr.charAt(0)=="0" && strYr.length>1) strYr=strYr.substring(1)
 	}
-	
+
 	month=parseInt(strMonth);
 	day=parseInt(strDay);
 	year=parseInt(strYr);
-	
+
 	if (pos1==-1 || pos2==-1){
 		xmodal.message('Date Validation', 'The date format should be : mm/dd/yyyy');
 		return false
 	}
-	
+
 	if (strMonth.length<1 || month<1 || month>12){
 		xmodal.message('Date Validation', 'Please enter a valid month');
 		return false
 	}
-	
+
 	if (strDay.length<1 || day<1 || day>31 || (month==2 && day>daysInFebruary(year)) || day > daysInMonth[month]){
 		xmodal.message('Date Validation', 'Please enter a valid day');
 		return false
 	}
-	
+
 	if (strYear.length != 4 || year==0 || year<minYear || year>maxYear){
 		xmodal.message('Date Validation', 'Please enter a valid 4 digit year between '+minYear+' and '+maxYear);
 		return false
 	}
-	
+
 	if (dtStr.indexOf(dtCh,pos2+1)!=-1 || isInteger(stripCharsInBag(dtStr, dtCh))==false){
 		xmodal.message('Date Validation', 'Please enter a valid date');
 		return false
 	}
-	
+
 	return true
 }
 
@@ -414,14 +414,6 @@ temp[c].substring(1,temp[c].length);
 
         return newVal;
 }
-
-String.prototype.startsWith = function(str) {
-	return this.indexOf(str) === 0;
-};
-
-String.prototype.endsWith = function(str) {
-	return this.lastIndexOf(str) === (this.length-str.length);
-};
 
 String.prototype.getExcerpt = function(desiredLength, excerptIndicator) {
 	if(this.length <= desiredLength) {
@@ -604,7 +596,7 @@ function validateDate(sel){
 		if(day !=null && day!=undefined && day.length==1){
 			day="0"+day;
 		}
-		
+
 		this.text_input.value = month + "/" + day + "/" + year;
 		this.text_input.calendar.hide();
 		try{this.text_input.onblur();}catch(e){};
@@ -755,9 +747,9 @@ function appendImage(obj,img_name,msg){
 	    	obj.parentNode.appendChild(obj.appendedImage);
 	    }
 	  }
-	  
+
 	  if(msg!=undefined)obj.appendedImage.title=msg;
-	  
+
 	  obj.appendedImage.src=serverRoot + img_name;
 	}
 }
@@ -790,7 +782,7 @@ function appendIcon(obj,icon_class,msg,styleObj){
 		if(obj.appendedIcon==undefined){
 			obj.appendedIcon = document.createElement("i");
 			obj.appendedIcon.className = "fa "+icon_class;
-			if (Object.keys(styleObj).length) { 
+			if (Object.keys(styleObj).length) {
 				for (var k in styleObj) {
 					obj.appendedIcon.style[k] = styleObj[k];
 				}
@@ -986,7 +978,7 @@ XNAT.utils.find=function(array,tofind, comparator){
 			return array[findI];
 		}
 	}
-	
+
 	return null;
 };
 

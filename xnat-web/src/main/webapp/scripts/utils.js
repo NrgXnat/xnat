@@ -144,6 +144,10 @@ function cleanBadChars( val, what ){
     return newVal;
 }
 
+function fixSpaces(val){
+    // remove spaces and replace 'special' characters with underscores
+    return (val + '').replace(/\s/g, '').replace(/[&?<>()]/g, '_');
+}
 
 // replace items in 'str' with 'replacements' object map
 function replaceEach(str, replacements, regex_params){

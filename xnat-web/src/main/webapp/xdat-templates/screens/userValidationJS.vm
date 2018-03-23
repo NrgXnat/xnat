@@ -17,7 +17,7 @@
     $(document).ready(function(){
         $('#register_form').off('submit').on('submit',function(e){
             // e.preventDefault();
-            
+
             var errorCount = 0, errorMessages = [];
             var _form = $(this);
             var validatePassword = $validatePassword;
@@ -61,12 +61,12 @@
             // firstname
             var validateFirstname = XNAT.validate(firstname).reset().chain();
             validateFirstname.minLength(1).failure('Please enter your first name');
-            validateFirstname.is('nameSafe').failure('Name fields can only contain unaccented letters and spaces');
+            validateFirstname.is('nameSafe').failure('Name fields cannot contain accented or special characters');
 
             // lastname
             var validateLastname = XNAT.validate(lastname).reset().chain();
             validateLastname.minLength(1).failure('Please enter your last name');
-            validateLastname.is('nameSafe').failure('Name fields can only contain unaccented letters and spaces');
+            validateLastname.is('nameSafe').failure('Name fields cannot contain accented or special characters');
 
             // email
             var validateEmail = XNAT.validate(email).reset().chain();

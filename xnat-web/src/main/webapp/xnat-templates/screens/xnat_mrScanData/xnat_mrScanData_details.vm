@@ -178,7 +178,7 @@
             #set($scanById = $!scanAssessor.getScanById($scanID))
             #set($scanId = $!scanAssessor.getId())
             #set($scanType = $!scanAssessor.getXSIType())
-            #set($scanField = "$!scanAssessor.getXSIType().ID")
+            #set($scanField = "$!{scanAssessor.getXSIType()}.ID")
 
             #set($url=$link.setAction('DisplayItemAction').addPathInfo('search_element',$scanType).addPathInfo('search_field',$scanField).addPathInfo('search_value',$scanId).addPathInfo('popup',$popup).addPathInfo('project',$project))
 

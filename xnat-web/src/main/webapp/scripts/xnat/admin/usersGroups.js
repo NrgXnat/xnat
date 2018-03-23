@@ -446,21 +446,18 @@ var XNAT = getObject(XNAT);
     function renderUsersTable(container, url){
         // console.log('renderUsersTable');
         var $container = container ? $$(container) : $(userTableContainer);
-        var _usersTable;
         if ($container.length) {
             setTimeout(function(){
                 $container.html('loading...');
-                XNAT.dialog.loadingBar.open();
+                setTimeout(function(){
+                    XNAT.dialog.loadingBar.show();
+                    XNAT.spawner.spawn({
+                        usersTable: usersGroups.spawnUsersTable(url)
+                    }).render($container.empty(), 20, function(){
+                        XNAT.dialog.loadingBar.hide();
+                    });
+                }, 10);
             }, 1);
-            setTimeout(function(){
-                _usersTable = XNAT.spawner.spawn({
-                    usersTable: usersGroups.spawnUsersTable(url)
-                });
-                _usersTable.done(function(){
-                    this.render($container.empty(), 20);
-                    XNAT.dialog.loadingBar.hide();
-                });
-            }, 10);
             // return _usersTable;
         }
     }
@@ -646,10 +643,7 @@ var XNAT = getObject(XNAT);
 
         data = data || {};
 
-        data.username = escapeHtml(data.username || '');
-        data.firstName = escapeHtml(data.firstName || '');
-        data.lastName = escapeHtml(data.lastName || '');
-        data.email = escapeHtml(data.email || '');
+        var usernameEsc = data.username = escapeHtml(data.username || '');
 
         var _load = data ? serverRoot + '/xapi/users/profile/' + data.username : false;
 
@@ -665,7 +659,7 @@ var XNAT = getObject(XNAT);
                 obj.contents = {
                     usernameText: {
                         kind: 'html',
-                        content: data.username || ''
+                        content: usernameEsc
                     },
                     usernameInput: {
                         kind: 'input.hidden',
@@ -1010,11 +1004,9 @@ var XNAT = getObject(XNAT);
                             // spawnUsersTable().render($container.empty());
                             // usersGroups.spawnTabs();
                             setTimeout(function(){
-                                XNAT.dialog.loadingBar.open();
-                            }, 10);
-                            setTimeout(function(){
+                                XNAT.dialog.loadingBar.show();
                                 updateUsersTable(true);
-                            }, 10);
+                            }, 1);
                         }
                     }
                 }
@@ -1031,7 +1023,10 @@ var XNAT = getObject(XNAT);
                     },
                     on: {
                         click: function(e){
-                            renderUsersTable($(userTableContainer), '/xapi/users/profiles');
+                            setTimeout(function(){
+                                XNAT.dialog.loadingBar.show();
+                                renderUsersTable($(userTableContainer), '/xapi/users/profiles');
+                            }, 1);
                         }
                     }
                 }
@@ -1367,15 +1362,13 @@ var XNAT = getObject(XNAT);
                         filter: true, // add filter: true to individual items to add a filter
                         // th: { style: { width: styles.username }},
                         // td: { style: { width: styles.username }},
-                        apply: function(username, tr){
-                            //console.log(tr);
+                        apply: function(){
                             // var _username = truncateText(username);
-                            var usernameEsc = escapeHtml(username);
                             return spawn('a.username.link.truncate.edit-user', {
                                 href: '#!',
-                                title: usernameEsc + ': details',
+                                title: this.username + ': details',
                                 // html: _username,
-                                html: usernameEsc//,
+                                html: escapeHtml(this.username)//,
                                 // style: { width: styles.username },
                                 // data: { username: username }
                             });
@@ -1387,11 +1380,10 @@ var XNAT = getObject(XNAT);
                         // td: { style: { width: styles.name }},
                         apply: function(){
                             // var _fullName = truncateText(this.lastName + ', ' + this.firstName);
-                            var fullNameEsc = escapeHtml(this.lastName + ', ' + this.firstName);
                             return spawn('a.full-name.link.truncate.edit-user', {
                                 href: '#!',
-                                title: escapeHtml(this.username) + ': project and security settings',
-                                html: fullNameEsc//,
+                                title: this.username + ': project and security settings',
+                                html: escapeHtml(this.lastName + ', ' + this.firstName)//,
                                 // style: { width: styles.name },
                                 // data: { username: this.username }
                             });
@@ -1402,15 +1394,14 @@ var XNAT = getObject(XNAT);
                         label: 'Email',
                         // th: { style: { width: styles.email }},
                         // td: { style: { width: styles.email }},
-                        apply: function(email){
-                            var emailEsc = escapeHtml(email);
+                        apply: function(){
                             return spawn('a.send-email.link.truncate.edit-user', {
                                 href: '#!',
-                                title: emailEsc + ': send email',
+                                title: this.email + ': send email',
                                 // style: { width: styles.email },
                                 // title: 'Send email to: ' + email,
                                 // html: _email
-                                html: emailEsc
+                                html: escapeHtml(this.email)
                             })
                         }
                     },
@@ -1619,10 +1610,13 @@ var XNAT = getObject(XNAT);
         var tabsConfig = setupTabs();
         var $container = $$(container || XNAT.tabs.container);
         $container.html('loading...');
-        setTimeout(function(){
-            usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
-            usersGroups.tabs.render($container.empty(), 20);
-        }, 200);
+            setTimeout(function(){
+                XNAT.dialog.loadingBar.show();
+                usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
+                usersGroups.tabs.render($container.empty(), 20, function(){
+                    XNAT.dialog.loadingBar.hide()
+                });
+            }, 1);
         // usersGroups.tabs.done(usersGroups.showUsersTable);
     };
 

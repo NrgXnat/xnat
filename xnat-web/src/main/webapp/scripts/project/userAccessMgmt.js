@@ -151,10 +151,11 @@ var XNAT = getObject(XNAT || {});
     // table cell formatting
     function truncCell(val, truncClass) {
         var elClass = truncClass ? 'truncate ' + truncClass : 'truncate';
+        var valEsc = escapeHtml(val);
         return spawn('span', {
             className: elClass,
             title: val,
-            html: val
+            html: valEsc
         });
     }
 
@@ -182,7 +183,7 @@ var XNAT = getObject(XNAT || {});
             options: options.concat(XNAT.projectAccess.groups.map(function(group){
                 return {
                     value: group.id,
-                    html: group.displayname
+                    html: escapeHtml(group.displayname)
                 }
             }))
         }).get();
@@ -358,9 +359,11 @@ var XNAT = getObject(XNAT || {});
                         }
                     },
                     apply: function(GROUP_ID, data){
+                        var groupEsc = escapeHtml(GROUP_ID);
+                        var loginEsc = escapeHtml(data.login);
                         return [
-                            '<span class="hidden">' + GROUP_ID + '</span>',
-                            groupsMenu(data.login, GROUP_ID)
+                            '<span class="hidden">' + groupEsc + '</span>',
+                            groupsMenu(escapeHtml(loginEsc), groupEsc)
                         ];
                         // return groupSelect.call(this, this.login, GROUP_ID);
                     }

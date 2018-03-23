@@ -89,7 +89,7 @@
 <table>
     <tr>
         <th align="left" valign="top">Notes: </th>
-        <td valign="top">#escapeAll($!item.getStringProperty("note"))</td>
+        <td valign="top">#escapeHTML("$!item.getStringProperty('note')")</td>
     </tr>
 </table>
 #end

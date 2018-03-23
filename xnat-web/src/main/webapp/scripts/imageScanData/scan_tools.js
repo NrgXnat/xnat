@@ -23,7 +23,7 @@ function setScanQualityOptions(sel,choices,offset,value){
 	    sel.selectedIndex=i+offset;
 	}
     }
-    
+
     if(confirmValues!=undefined)confirmValues();
 }
 
@@ -217,7 +217,7 @@ function ScanEditor(_sessionID,_scanID,_options){
 	this.displayError=function(errorMsg){
         xmodal.message('Scan Data Error', errorMsg);
 	};
-	
+
 	this.render=function(){
         if (this.scan) {
             this.panel = new YAHOO.widget.Dialog("scanDialog", {close: true,
@@ -515,7 +515,7 @@ function scanDeleteDialog(_options){
 		tr.appendChild(td1);
 		tr.appendChild(td2);
 		tb.appendChild(tr);
-		
+
 
 		//modality
         if (showReason) {
@@ -567,20 +567,20 @@ function scanDeletor(_options){
 	this.options=_options;
 
 	this.onCompletion=new YAHOO.util.CustomEvent("complete",this);
-	
+
 	this.execute=function(){
 		this.deleteDialog=new scanDeleteDialog();
 		this.deleteDialog.onResponse.subscribe(function(){
 			var delete_files=this.deleteDialog.delete_files;
 			var event_reason=this.deleteDialog.event_reason;
-			
+
 			this.initCallback={
 				success:function(obj1){
 					closeModalPanel("delete_scan");
 					this.onCompletion.fire();
                     window.location.reload();
 					setTimeout(function(){window.location.reload()},2000);
-					
+
 				},
 				failure:function(o){
                     if (!window.leaving) {
@@ -590,26 +590,26 @@ function scanDeletor(_options){
 				},
                 cache:false, // Turn off caching for IE
 				scope:this
-				
-				
+
+
 			}
-		
+
 			var params="";
 			if(delete_files){
 				params+="&removeFiles=true";
 			}
-			
+
 			params+="&event_reason="+event_reason;
 			params+="&event_type=WEB_FORM";
 			params+="&event_action=Removed scan";
 
 			openModalPanel("delete_scan","Delete scan.");
 			YAHOO.util.Connect.asyncRequest('DELETE',serverRoot +'/REST/experiments/' + this.options.session_id +'/scans/' + this.options.scan.getProperty("ID") +'?format=json&XNAT_CSRF=' + csrfToken+params,this.initCallback,null,this);
-			
+
 		},this,this);
 
 		this.deleteDialog.render();
-		
+
 	}
 }
 
@@ -815,8 +815,8 @@ function ScanSet(_options,_scans){
 		for(var csC=0;csC<this.new_scans.length;csC++){
 			var scan=this.new_scans[csC];
 			if(scan.id_input.value==""){
-		  		if(scan.type_input.value!="" || 
-		  				((XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true) && (scan.qual_input.selectedIndex>0)) || 
+		  		if(scan.type_input.value!="" ||
+		  				((XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true) && (scan.qual_input.selectedIndex>0)) ||
 		  				!((scan.note_input.value=="")||(scan.note_input.value=="NULL"))){
 		  			removeAppendedIcon(scan.type_input);
 		  			if(XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true)removeAppendedIcon(scan.qual_input);
@@ -996,17 +996,17 @@ function scanListingEditor(_tbody,_scanSet,_options){
                     for(var current = 0; current < this.scanSet.options.types[modality].values.length; current++) {
                         if(this.scanSet.options.types[modality].values[current].value == nominalType) {
 							_stM=true;
-						}						
+						}
 					}
-					
+
 					if(!_stM){
                         var _tO = {};
                         _tO.value = nominalType;
                         _tO.display = nominalType;
 						this.scanSet.options.types[modality].values.push(_tO);
-					}					
+					}
 				}
-				
+
 				for(var tC=0;tC<this.scanSet.options.types[modality].values.length;tC++){
 					var type=this.scanSet.options.types[modality].values[tC];
                     scan.type_input.options[scan.type_input.options.length]=new Option(type.value,type.display, type.value == nominalType, type.value == nominalType);
@@ -1112,7 +1112,7 @@ function scanListingEditor(_tbody,_scanSet,_options){
 			}else{
 				td.appendChild(scan.type_input);
 			}
-			
+
 			tr.appendChild(td);
 
 			if(XNAT.app.concealScanUsability==undefined || XNAT.app.concealScanUsability!=true){
@@ -1178,7 +1178,7 @@ function scanListingEditor(_tbody,_scanSet,_options){
 					var subtd2=document.createElement("td");
 
 					subtd1.innerHTML="Description";
-					subtd2.innerHTML=scan.extension.SeriesDescription;
+					subtd2.innerHTML=escapeHtml(scan.extension.SeriesDescription);
 
 					subtr.appendChild(subtd1);
 					subtr.appendChild(subtd2);

@@ -44,12 +44,12 @@
                     $scanID
                 </a>
             </td>
-            <td border=0 align=left NOWRAP>$!scan.getProperty("type")</td>
+            <td border=0 align=left NOWRAP>#escapeHTML("$!scan.getProperty('type')")</td>
             #if($siteConfig.uiDisplaySeriesDescription)
-                <td border=0 align=left NOWRAP>$!scan.getProperty("series_description")</td>
+                <td border=0 align=left NOWRAP>#escapeHTML("$!scan.getProperty('series_description')")</td>
             #end
-            <td border=0 class="quality-$!scan.getProperty("quality")" style="font-weight:bold; text-align:left;"  NOWRAP>
-                $!scan.getProperty("quality")
+            <td border=0 class="quality-$!scan.getProperty('quality')" style="font-weight:bold; text-align:left;"  NOWRAP>
+                #escapeHTML("$!scan.getProperty('quality')")
             </td>
 
             <td border=0 align=left NOWRAP>
@@ -72,7 +72,7 @@
                     <a class='uploadLink' style='display:none' href='' onclick='return false;' data-type='xnat:imageScanData' data-props='$!scan.getType()' data-uri='$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")'>Upload</a>
                 #end
             </td>
-            <td border=0 align=left NOWRAP>$!scan.getProperty("note")</td>
+            <td border=0 align=left nowrap class="scan-note">#escapeHTML("$!scan.getProperty('note')")</td>
         </tr>
 
         <tr>

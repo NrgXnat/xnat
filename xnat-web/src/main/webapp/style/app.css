@@ -2825,6 +2825,23 @@ td.quality-unusable {
     /* */
 }
 
+#scan_list .scan-details > tbody > tr:hover,
+#scan_list .scan-details > tr:hover {
+    background: #e5f2ff;
+}
+
+#scan_list .scan-details th {
+    background: none;
+    text-align: left;
+    font-weight: bold;
+}
+
+#scan_list .scan-details th,
+#scan_list .scan-details td {
+    padding: 4px 2px;
+    border-bottom: 1px solid #d0d0d0;
+}
+
 /* not sure what these spacers do but pretty sure they should go away - let's see what breaks */
 span.spacer {
     display: none !important;

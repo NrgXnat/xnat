@@ -7,7 +7,7 @@
 
 #macro(escapeProperty $prop)#escapeHTML("$!scan.getProperty($prop)")#end
 
-<table class="xnat-table clean compact scan-details" style="border: none;">
+<table class="xnat-table compact rows-only scan-details" style="border: none;">
     <tr>
         <th>Image</th>
         <td>

@@ -132,13 +132,41 @@ window.jsdebug = window.jsdebug ||
 
 })();
 
-// sanitize a few specific HTML tags
+/**
+ * Sanitize specified HTML tags
+ * @param {String} html - html to process
+ * @param {String} [tags] - optional pipe-separated list of tags
+ * @returns {String}
+ */
 function sanitizeTags(html, tags){
-    var TAGS = tags || 'audio|canvas|embed|frame|frameset|iframe|img|input|link|object|script|style|video';
+    var TAGS = tags ||
+        'applet|audio|canvas|embed|frame|frameset|iframe|' +
+        'img|input|link|object|script|style|video';
     var reTAGS = new RegExp('<(' + TAGS + ')[^>]+>', 'gi');
     // reTAGS = /<(iframe|img|input|script)[^>]+>/gi;
     return html.replace(reTAGS, function(tag){
-        return tag.replace(/</, '&lt;').replace(/>/, '&gt;')
+        return tag.replace(/</, '&lt;').replace(/>/, '&gt;');
+    });
+}
+
+/**
+ * Remove potentially harmful inline event handlers
+ * (avoid using inline event handlers in the first place)
+ * @param {String} html - html to process
+ * @param {String} [events] - optional pipe-separated list of handlers
+ * @returns {String}
+ */
+function sanitizeHandlers(html, events){
+    var EVENTS = events ||
+        'onerror|onhashchange|onload|onchange|onfocus|' +
+        'onforminput|oninput|onselect|onsubmit|' +
+        'onkeydown|onkeypress|onkeyup|' +
+        'onmousemove|onmouseout|onmouseover|onmouseup|onmousewheel|' +
+        'onreadystatechange';
+    var reEVENTS = new RegExp(EVENTS, 'gi');
+    return html.replace(reEVENTS, function(evt){
+        // change on* attributes to 'data-event-on-*' attributes
+        return evt.replace(/^on/, 'data-event-on-');
     });
 }
 

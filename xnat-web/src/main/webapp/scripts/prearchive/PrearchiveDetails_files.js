@@ -15,22 +15,22 @@ XNAT.app.fileCounter={
             cache:false, // Turn off caching for IE
             scope:this
         };
-		
+
 		var tempURL=serverRoot+"/REST" + this.url +"/resources?format=json&sortBy=category,cat_id,label&timestamp=" + (new Date()).getTime();
 
         YAHOO.util.Connect.asyncRequest('GET',tempURL,catCallback,null,this);
-		
+
 		for(var sc=0;sc<this.scans.length;sc++){
 			document.getElementById("scan"+this.scans[sc]+"Files").innerHTML="Loading...";
 		}
 	},
-	processCatalogs:function(o){   		
-    	var catalogs= eval("(" + o.responseText +")").ResultSet.Result;
+	processCatalogs:function(o){
+    	var catalogs = JSON.parse(o.responseText).ResultSet.Result;
     	var prearchiveSessionFileCount = 0;
         var prearchiveSessionFileSize = 0.0;
 
     	for(var catC=0;catC<catalogs.length;catC++){
-			
+
     		var scan=document.getElementById("scan"+catalogs[catC].cat_id+"Files");
     		if(scan!=null){
 				if(catalogs[catC].file_count!=undefined && catalogs[catC].file_count!=null){
@@ -47,7 +47,7 @@ XNAT.app.fileCounter={
     		}
     	}
         document.getElementById("prearchiveSessionTotals").innerHTML="<b>Total:</b> "+ prearchiveSessionFileCount +" Files, " + size_format(prearchiveSessionFileSize);
-        
+
 		for(var sc=0;sc<this.scans.length;sc++){
 			if(document.getElementById("scan"+this.scans[sc]+"Files").innerHTML.startsWith("Load")){
 				document.getElementById("scan"+this.scans[sc]+"Files").innerHTML="0 files";

@@ -21,16 +21,17 @@ import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xft.utils.ResourceFile;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
+import org.nrg.xnat.helpers.uri.archive.impl.ExptScanURI;
 import org.nrg.xnat.services.archive.PathResourceMap;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
@@ -174,6 +175,24 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                     @Nullable
                     @Override
                     public Mapping<String, Resource> apply(@Nullable final File file) {
+                        if (file == null) {
+                            return null;
+                        }
+
+                        _log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
+                        return new CatalogPathResourceMapping(resourceName, file);
+                    }
+                });
+                _resources.addAll(entries);
+            }else if (raw instanceof ExptScanURI) {
+                final String resourceName = currentEntry.getName();
+                final String resourceUri = currentEntry.getUri();
+            	final ExptScanURI uri = (ExptScanURI)raw;
+            	final List<Mapping<String, Resource>> entries = Lists.transform(uri.getScan().getFileResources(currentEntry.getUri()), new Function<ResourceFile, Mapping<String, Resource>>() {
+                    @Nullable
+                    @Override
+                    public Mapping<String, Resource> apply(@Nullable final ResourceFile resourceFile) {
+                        File file = resourceFile.getF();
                         if (file == null) {
                             return null;
                         }

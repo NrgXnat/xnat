@@ -104,6 +104,10 @@ public class DefaultCatalogService implements CatalogService {
         ArrayList<String> unescapedScanTypes = new ArrayList<>();
         ArrayList<String> unescapedScanFormats = new ArrayList<>();
 
+        // By default don't query for null types and formats
+        boolean allowNullFormat = false;
+        boolean allowNullType = false;
+        
         if(scanTypes==null) {
             unescapedScanTypes.add("");
         }
@@ -111,6 +115,9 @@ public class DefaultCatalogService implements CatalogService {
             for(String type: scanTypes){
                 if(type!=null){
                     unescapedScanTypes.add(StringEscapeUtils.unescapeHtml4(type));
+                }else {
+                	// If there is a null value in the list, we need to query for a null scan type.
+                	allowNullType=true;
                 }
             }
         }
@@ -121,11 +128,27 @@ public class DefaultCatalogService implements CatalogService {
             for(String format: scanFormats){
                 if(format!=null){
                     unescapedScanFormats.add(StringEscapeUtils.unescapeHtml4(format));
+                }else {
+                	// If there is a null value in the list, we need to query for a null scan format.
+                	allowNullFormat = true;
                 }
             }
         }
+        
+        
+        // This is a corner case if someone is trying to download a session that contains only resources 
+        // of null format or null type (ECAT)
+        //
+        // In this situation, we need to add an empty string so the queries below don't fail with an exception
+        // e.g. res.label IN (); causes an exception but res.label IN (''); works fine.
+        if(unescapedScanFormats.isEmpty()) {
+        	unescapedScanFormats.add("");
+        }
+        if(unescapedScanTypes.isEmpty()) {
+        	unescapedScanTypes.add("");
+        }
 
-        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(tempUser, sessions, unescapedScanTypes, unescapedScanFormats);
+        final Map<String, Map<String, Map<String, String>>> projects = parseAndVerifySessions(tempUser, sessions, unescapedScanTypes, unescapedScanFormats,allowNullFormat,allowNullType);
 
         for (final String project : projects.keySet()) {
             final Map<String, Map<String, String>> subjects = projects.get(project);
@@ -139,7 +162,7 @@ public class DefaultCatalogService implements CatalogService {
                     sessionCatalog.setId(sessionId);
                     sessionCatalog.setDescription(subject + " " + label);
 
-                    final CatCatalogI sessionsByScanTypesAndFormats = getSessionScans(project, subject, label, sessionId, unescapedScanTypes, unescapedScanFormats, options);
+                    final CatCatalogI sessionsByScanTypesAndFormats = getSessionScans(project, subject, label, sessionId, unescapedScanTypes, unescapedScanFormats, options, allowNullFormat, allowNullType);
                     if (sessionsByScanTypesAndFormats != null) {
                         addSafeEntrySet(sessionCatalog, sessionsByScanTypesAndFormats);
                     }
@@ -805,10 +828,11 @@ public class DefaultCatalogService implements CatalogService {
 
     }
 
-    private Map<String, Map<String, Map<String, String>>> parseAndVerifySessions(final UserI user, final List<String> sessions, final List<String> scanTypes, final List<String> scanFormats) throws InsufficientPrivilegesException {
+    private Map<String, Map<String, Map<String, String>>> parseAndVerifySessions(final UserI user, final List<String> sessions, final List<String> scanTypes, final List<String> scanFormats, boolean allowNullFormat, boolean allowNullType) throws InsufficientPrivilegesException {
         final Multimap<String, String> matchingSessions = ArrayListMultimap.create();
         final Map<String, String[]> subjectLabelMap = Maps.newHashMap();
         final Map<String, Map<String, Map<String, String>>> sessionMap = Maps.newHashMap();
+        
         for (final String sessionInfo : sessions) {
             final String[] atoms = sessionInfo.split(":");
             final String projectId = atoms[0];
@@ -855,18 +879,16 @@ public class DefaultCatalogService implements CatalogService {
             }
 
             final Set<String> sessionIds = new HashSet<>(matchingSessions.get(projectId));
-
+            
             // Now verify that the experiment is either in or shared into the specified project.
             final MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("sessionIds", sessionIds);
             parameters.addValue("projectId", projectId);
 
-
-
             parameters.addValue("scanTypes", scanTypes);
             parameters.addValue("scanFormats", scanFormats);
 
-            final Set<String> matching = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT, parameters, String.class));
+            final Set<String> matching = new HashSet<>(_parameterized.queryForList(getQuery(QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT,allowNullFormat,allowNullType), parameters, String.class));
             final Set<String> difference = Sets.difference(sessionIds, matching);
             if (difference.size() > 0) {
                 //Check whether the mismatch was merely due to the lack of scans for those sessions.
@@ -874,7 +896,7 @@ public class DefaultCatalogService implements CatalogService {
                 scanParameters.addValue("sessionIds", difference);
                 scanParameters.addValue("scanTypes", scanTypes);
                 scanParameters.addValue("scanFormats", scanFormats);
-                final Set<String> matchingScans = new HashSet<>(_parameterized.queryForList(QUERY_FIND_SCANS_BY_SESSION, scanParameters, String.class));
+                final Set<String> matchingScans = new HashSet<>(_parameterized.queryForList(getQuery(QUERY_FIND_SCANS_BY_SESSION,allowNullFormat,allowNullType), scanParameters, String.class));
                 if(matchingScans.size()>0) {
                     //The mismatch was not entirely due to sessions not having scans of those types/formats.
                     throw new InsufficientPrivilegesException(user.getUsername(), difference);
@@ -908,7 +930,7 @@ public class DefaultCatalogService implements CatalogService {
         return sessionMap;
     }
 
-    private CatCatalogI getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options) {
+    private CatCatalogI getSessionScans(final String project, final String subject, final String label, final String session, final List<String> scanTypes, final List<String> scanFormats, final DownloadArchiveOptions options, boolean allowNullFormat, boolean allowNullType) {
         if (StringUtils.isBlank(session)) {
             throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "Got a blank session to retrieve, that shouldn't happen.");
         }
@@ -923,7 +945,7 @@ public class DefaultCatalogService implements CatalogService {
             parameters.addValue("sessionId", session);
             parameters.addValue("scanTypes", scanTypes);
             parameters.addValue("scanFormats", scanFormats);
-            final String query = QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT;
+            final String query = getQuery(QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT, allowNullFormat, allowNullType);
 
             final List<Map<String, Object>> scans = _parameterized.queryForList(query, parameters);
             if (scans.isEmpty()) {
@@ -933,16 +955,24 @@ public class DefaultCatalogService implements CatalogService {
             for (final Map<String, Object> scan : scans) {
                 final CatEntryBean entry = new CatEntryBean();
                 final String scanId = (String) scan.get("scan_id");
-                final String resource = URLEncoder.encode((String) scan.get("resource"), "UTF-8");
-                entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
-                entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
-                _log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
-                catalog.addEntries_entry(entry);
+                if(scan.get("resource") != null) {
+                    final String resource = URLEncoder.encode((String) scan.get("resource"), "UTF-8");
+                    entry.setName(getPath(options, project, subject, label, "scans", scanId, "resources", resource));
+                    entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/resources/" + resource + "/files");
+                    _log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, resource, entry.getName(), entry.getUri());
+                    catalog.addEntries_entry(entry);
+                }else{
+                    entry.setName(getPath(options, project, subject, label, "scans", scanId));
+                    entry.setUri("/archive/experiments/" + session + "/scans/" + scanId + "/files");
+                    _log.debug("Created session scan entry for project {} session {} scan {} ({}) with name {}: {}", project, session, scanId, entry.getName(), entry.getUri());
+                    catalog.addEntries_entry(entry);
+               }
             }
         } catch (UnsupportedEncodingException ignored) {
-            //
+           // Ignored
+        } catch(Exception e) {
+        	_log.error(e.getMessage());
         }
-
         return catalog.getEntries_entry().size() > 0 ? catalog : null;
     }
 
@@ -1066,13 +1096,74 @@ public class DefaultCatalogService implements CatalogService {
         // If All isn't specified, just return a list of the actual values.
         return operations;
     }
+    
+    // This function takes the query passed to it and determines if we also need to search on null scan format or a null scan type
+    // If queryForNullType = true, this will return a modified query that also queries for scan.type IS NULL
+    // If queryForNullFormat = true, this will return a modified query that also queries for scan.format IS NULL
+    private String getQuery(String query, boolean queryForNullFormat, boolean queryForNullType) {
+    	switch(query) {
+    		case QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT:
+    			if(queryForNullFormat && queryForNullType) {
+    				// Search for Null Type and Null Format
+    				return QUERY_FIND_SESSIONS_BY_TYPE_WITH_NULL_AND_FORMAT_WITH_NULL;
+    			}else if(!queryForNullFormat && queryForNullType) {
+    				// Search for Null Type
+    				return QUERY_FIND_SESSIONS_BY_TYPE_WITH_NULL_AND_FORMAT;
+    			}else if(queryForNullFormat && !queryForNullType) {
+    				// Search for Null Format
+    				return QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT_WITH_NULL;
+    			}else {
+    				return query;
+    			}
+    			
+    		case QUERY_FIND_SCANS_BY_SESSION:
+    			if(queryForNullFormat && queryForNullType) {
+    				// Search for Null Type and Null Format
+    				return QUERY_FIND_SCANS_BY_SESSION_WITH_NULL_TYPE_AND_NULL_FORMAT;
+    			}else if(!queryForNullFormat && queryForNullType) {
+    				// Search for Null Type
+    				return QUERY_FIND_SCANS_BY_SESSION_WITH_NULL_TYPE;
+    			}else if(queryForNullFormat && !queryForNullType) {
+    				// Search for Null Format
+    				return QUERY_FIND_SCANS_BY_SESSION_WITH_NULL_FORMAT;
+    			}else {
+    				return query;
+    			}
+    			
+    		case QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT:
+    			if(queryForNullFormat && queryForNullType) {
+    				// Search for Null Type and Null Format
+    				return QUERY_FIND_SCANS_BY_TYPE_WITH_NULL_AND_FORMAT_WITH_NULL;
+    			}else if(!queryForNullFormat && queryForNullType) {
+    				// Search for Null Type
+    				return QUERY_FIND_SCANS_BY_TYPE_WITH_NULL_AND_FORMAT;
+    			}else if(queryForNullFormat && !queryForNullType) {
+    				// Search for Null Format
+    				return QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT_WITH_NULL;
+    			}else {
+    				return query;
+    			}
+    		default: return query;
+    	}
+    }
 
     private static final String CATALOG_FORMAT                         = "%s-%s";
     private static final String CATALOG_SERVICE_CACHE                  = DefaultCatalogService.class.getSimpleName() + "Cache";
     private static final String CATALOG_CACHE_KEY_FORMAT               = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
-    private static final String QUERY_FIND_SCANS_BY_SESSION           = "SELECT DISTINCT image_session_id FROM xnat_imagescandata scan " +
-                                                                            "LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
-                                                                            "WHERE image_session_id IN (:sessionIds) AND scan.type IN (:scanTypes) AND res.label IN (:scanFormats);";
+    
+    private static final String QUERY_FIND_SCANS_BY_SESSION  = "SELECT DISTINCT image_session_id FROM xnat_imagescandata scan " +
+                                                                             "LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                             "WHERE image_session_id IN (:sessionIds) AND scan.type IN (:scanTypes) AND res.label IN (:scanFormats);";
+    private static final String QUERY_FIND_SCANS_BY_SESSION_WITH_NULL_TYPE = "SELECT DISTINCT image_session_id FROM xnat_imagescandata scan " +
+                                                                             "LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                             "WHERE image_session_id IN (:sessionIds) AND (scan.type IN (:scanTypes) OR scan.type IS NULL) AND res.label IN (:scanFormats);";
+    private static final String QUERY_FIND_SCANS_BY_SESSION_WITH_NULL_FORMAT = "SELECT DISTINCT image_session_id FROM xnat_imagescandata scan " +
+                                                                             "LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                             "WHERE image_session_id IN (:sessionIds) AND scan.type IN (:scanTypes) AND (res.label IN (:scanFormats) OR res.label IS NULL);";
+    private static final String QUERY_FIND_SCANS_BY_SESSION_WITH_NULL_TYPE_AND_NULL_FORMAT  = "SELECT DISTINCT image_session_id FROM xnat_imagescandata scan " +
+                                                                             "LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id " +
+                                                                             "WHERE image_session_id IN (:sessionIds) AND (scan.type IN (:scanTypes) OR scan.type IS NULL) AND (res.label IN (:scanFormats) OR res.label IS NULL);";
+    
     private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT = "SELECT DISTINCT scan.image_session_id AS session_id "
                                                                          + "FROM xnat_imagescandata scan "
                                                                          + "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
@@ -1083,13 +1174,37 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "      (share.project = :projectId OR expt.project = :projectId) AND "
                                                                          + "      scan.type IN (:scanTypes) "
                                                                          + "      AND res.label IN (:scanFormats);";
-    private static final String QUERY_FIND_SCANS_BY_TYPE               = "SELECT "
-                                                                         + "  scan.id   AS scan_id, "
-                                                                         + "  res.label AS resource "
+    private static final String QUERY_FIND_SESSIONS_BY_TYPE_WITH_NULL_AND_FORMAT = "SELECT DISTINCT scan.image_session_id AS session_id "
                                                                          + "FROM xnat_imagescandata scan "
-                                                                         + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
-                                                                         + "WHERE scan.image_session_id = :sessionId AND scan.type IN (:scanTypes) "
-                                                                         + "ORDER BY scan";
+                                                                         + "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
+                                                                         + "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id "
+                                                                         + "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id "
+                                                                         + "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id "
+                                                                         + "WHERE expt.id IN (:sessionIds) AND "
+                                                                         + "      (share.project = :projectId OR expt.project = :projectId) AND "
+                                                                         + "      (scan.type IN (:scanTypes) OR scan.type IS NULL) "
+                                                                         + "      AND res.label IN (:scanFormats);";
+    private static final String QUERY_FIND_SESSIONS_BY_TYPE_AND_FORMAT_WITH_NULL = "SELECT DISTINCT scan.image_session_id AS session_id "
+                                                                         + "FROM xnat_imagescandata scan "
+                                                                         + "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
+                                                                         + "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id "
+                                                                         + "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id "
+                                                                         + "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id "
+                                                                         + "WHERE expt.id IN (:sessionIds) AND "
+                                                                         + "      (share.project = :projectId OR expt.project = :projectId) AND "
+                                                                         + "      scan.type IN (:scanTypes) "
+                                                                          + "     AND (res.label IN (:scanFormats) OR res.label IS NULL);";
+    private static final String QUERY_FIND_SESSIONS_BY_TYPE_WITH_NULL_AND_FORMAT_WITH_NULL = "SELECT DISTINCT scan.image_session_id AS session_id "
+                                                                         + "FROM xnat_imagescandata scan "
+                                                                         + "  LEFT JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
+                                                                         + "  LEFT JOIN xnat_imagesessiondata session ON scan.image_session_id = session.id "
+                                                                         + "  LEFT JOIN xnat_experimentdata expt ON session.id = expt.id "
+                                                                         + "  LEFT JOIN xnat_experimentdata_share share ON share.sharing_share_xnat_experimentda_id = expt.id "
+                                                                         + "WHERE expt.id IN (:sessionIds) AND "
+                                                                         + "      (share.project = :projectId OR expt.project = :projectId) AND "
+                                                                         + "      (scan.type IN (:scanTypes) OR scan.type IS NULL) "
+                                                                         + "      AND (res.label IN (:scanFormats) OR res.label IS NULL);";
+    
     private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT    = "SELECT "
                                                                          + "  scan.id   AS scan_id, "
                                                                          + "  res.label AS resource "
@@ -1097,6 +1212,28 @@ public class DefaultCatalogService implements CatalogService {
                                                                          + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
                                                                          + "WHERE scan.image_session_id = :sessionId AND scan.type IN (:scanTypes) AND res.label IN (:scanFormats) "
                                                                          + "ORDER BY scan";
+    private static final String QUERY_FIND_SCANS_BY_TYPE_AND_FORMAT_WITH_NULL    = "SELECT "
+                                                                         + "  scan.id   AS scan_id, "
+                                                                         + "  res.label AS resource "
+                                                                         + "FROM xnat_imagescandata scan "
+                                                                         + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
+                                                                         + "WHERE scan.image_session_id = :sessionId AND scan.type IN (:scanTypes) AND (res.label IN (:scanFormats) OR res.label IS NULL) "
+                                                                         + "ORDER BY scan";
+    private static final String QUERY_FIND_SCANS_BY_TYPE_WITH_NULL_AND_FORMAT    = "SELECT "
+                                                                         + "  scan.id   AS scan_id, "
+                                                                         + "  res.label AS resource "
+                                                                         + "FROM xnat_imagescandata scan "
+                                                                         + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
+                                                                         + "WHERE scan.image_session_id = :sessionId AND (scan.type IN (:scanTypes) OR scan.type IS NULL) AND res.label IN (:scanFormats) "
+                                                                         + "ORDER BY scan";
+    private static final String QUERY_FIND_SCANS_BY_TYPE_WITH_NULL_AND_FORMAT_WITH_NULL    = "SELECT "
+                                                                         + "  scan.id   AS scan_id, "
+                                                                         + "  res.label AS resource "
+                                                                         + "FROM xnat_imagescandata scan "
+                                                                         + "  JOIN xnat_abstractResource res ON scan.xnat_imagescandata_id = res.xnat_imagescandata_xnat_imagescandata_id "
+                                                                         + "WHERE scan.image_session_id = :sessionId AND (scan.type IN (:scanTypes) OR scan.type IS NULL) AND (res.label IN (:scanFormats) OR res.label IS NULL) "
+                                                                         + "ORDER BY scan";
+    
     private static final String QUERY_SESSION_RESOURCES                = "SELECT res.label resource "
                                                                          + "FROM xnat_abstractresource res  "
                                                                          + "  LEFT JOIN xnat_experimentdata_resource exptRes "

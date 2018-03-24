@@ -20,7 +20,10 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.model.XnatResourceI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xdat.om.XnatImageresource;
 import org.nrg.xft.utils.ResourceFile;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -169,40 +172,33 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                 final String resourceName = currentEntry.getName();
                 final String resourceUri = currentEntry.getUri();
                 final ResourceURII uri = (ResourceURII) raw;
-                final File catalogFile = CatalogUtils.getCatalogFile(_archiveRoot, (XnatResourcecatalogI) uri.getXnatResource());
-                final CatCatalogBean catalog = CatalogUtils.getCatalog(catalogFile);
-                final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogFile.getParent()), new Function<File, Mapping<String, Resource>>() {
-                    @Nullable
-                    @Override
-                    public Mapping<String, Resource> apply(@Nullable final File file) {
-                        if (file == null) {
-                            return null;
-                        }
-
-                        _log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
-                        return new CatalogPathResourceMapping(resourceName, file);
+                final List<File> catalogFiles = new ArrayList<File>();
+                
+                if(uri.getXnatResource() instanceof XnatImageresource) {
+                	XnatImageresource xnatResource = (XnatImageresource) uri.getXnatResource();
+                    for(ResourceFile resourceFile :  xnatResource.getFileResources(xnatResource.getBaseURI())){
+                        catalogFiles.add(resourceFile.getF());
                     }
-                });
-                _resources.addAll(entries);
-            }else if (raw instanceof ExptScanURI) {
-                final String resourceName = currentEntry.getName();
-                final String resourceUri = currentEntry.getUri();
-            	final ExptScanURI uri = (ExptScanURI)raw;
-            	final List<Mapping<String, Resource>> entries = Lists.transform(uri.getScan().getFileResources(currentEntry.getUri()), new Function<ResourceFile, Mapping<String, Resource>>() {
-                    @Nullable
-                    @Override
-                    public Mapping<String, Resource> apply(@Nullable final ResourceFile resourceFile) {
-                        File file = resourceFile.getF();
-                        if (file == null) {
-                            return null;
-                        }
+                }else {
+                    final File catalogFile = CatalogUtils.getCatalogFile(_archiveRoot, (XnatResourcecatalogI) uri.getXnatResource());
+                    final CatCatalogBean catalog = CatalogUtils.getCatalog(catalogFile);
+                    catalogFiles.addAll(CatalogUtils.getFiles(catalog, catalogFile.getParent()));
+                }
+                    final List<Mapping<String, Resource>> entries = Lists.transform(catalogFiles, new Function<File, Mapping<String, Resource>>() {
+                        @Nullable
+                        @Override
+                        public Mapping<String, Resource> apply(@Nullable final File file) {
+                            if (file == null) {
+                                return null;
+                            }
 
-                        _log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
-                        return new CatalogPathResourceMapping(resourceName, file);
-                    }
-                });
-                _resources.addAll(entries);
-            } else {
+                            _log.debug("{}: Resource entry {} with name {}: {}", _catalogId, ++_resourceCount, getResourceName(resourceName, file), resourceUri);
+                            return new CatalogPathResourceMapping(resourceName, file);
+                        }
+                    });
+                    _resources.addAll(entries);
+                
+            }else {
                 _log.warn("{}: Got a DataURIA of type {}, I'm not really sure what to do with it.", _catalogId);
             }
         } catch (MalformedURLException e) {

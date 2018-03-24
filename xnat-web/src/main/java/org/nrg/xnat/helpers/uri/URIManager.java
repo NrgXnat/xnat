@@ -85,7 +85,7 @@ public class URIManager {
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesExptAssessorURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/subjects/{SUBJECT_ID}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesSubjURI.class);
         
-        add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/files",Template.MODE_STARTS_WITH, ExptScanURI.class);
+        add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/files",Template.MODE_STARTS_WITH, ResourcesExptScanURI.class);
 
         //resources alone
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/experiments/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjSubjExptURI.class);

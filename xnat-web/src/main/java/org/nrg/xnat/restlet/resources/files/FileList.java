@@ -38,7 +38,6 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xnat.services.messaging.file.MoveStoredFileRequest;
 import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.helpers.resource.direct.ResourceModifierA.UpdateMeta;
 import org.nrg.xnat.restlet.files.utils.RestFileUtils;
@@ -47,12 +46,16 @@ import org.nrg.xnat.restlet.representations.JSONObjectRepresentation;
 import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.services.messaging.file.MoveStoredFileRequest;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.CatalogUtils.CatEntryFilterI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
-import org.restlet.data.*;
+import org.restlet.data.MediaType;
+import org.restlet.data.Request;
+import org.restlet.data.Response;
+import org.restlet.data.Status;
 import org.restlet.resource.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -235,19 +238,21 @@ public class FileList extends XNATCatalogTemplate {
                 //multiple catalogs
                 return handleMultipleCatalogs(mt);
             } else {
-                //all catalogs
-                catalogs.resetRowCursor();
-                for (Hashtable<String, Object> rowHash : catalogs.rowHashs()) {
-                    Object o = rowHash.get("xnat_abstractresource_id");
-                    XnatAbstractresource res = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(o, getUser(), false);
-                    if (rowHash.containsKey("resource_path")) res.setBaseURI((String) rowHash.get("resource_path"));
-                    try{
-                        if(proj==null || Permissions.canReadProject(getUser(),proj.getId())){
-                            resources.add(res);
+                try {
+                    // Check project access before iterating through all of the resources.
+                    if (proj == null || Permissions.canReadProject(getUser(), proj.getId())) {
+                        //all catalogs
+                        catalogs.resetRowCursor();
+                        for (Hashtable<String, Object> rowHash : catalogs.rowHashs()) {
+                            final XnatAbstractresource resource = XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(rowHash.get("xnat_abstractresource_id"), getUser(), false);
+                            if (rowHash.containsKey("resource_path")) {
+                                resource.setBaseURI((String) rowHash.get("resource_path"));
+                            }
+                            resources.add(resource);
                         }
-                    }catch(Exception e){
-                        logger.error("Exception checking whether user has project access.",e);
                     }
+                } catch (Exception e) {
+                    logger.error("Exception checking whether user has project access.", e);
                 }
 
                 return handleMultipleCatalogs(mt);

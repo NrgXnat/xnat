@@ -2070,8 +2070,8 @@ div.containerTitle.withColor {
 .formLabel,
 .formLabelRequired,
 .formSublabel {
+    min-width: 140px;
     text-align: left;
-    /* vertical-align: text-top; */
     white-space: nowrap;
 }
 
@@ -3006,6 +3006,10 @@ span.spacer {
 .xnat-table .odd {
     background: #fff;
     border: none;
+}
+
+.xnat-table > tbody > tr:last-child > th {
+    border-bottom-width: 0;
 }
 
 /* alternate styling options for "xnat-table" tables */

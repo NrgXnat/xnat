@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.screens;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -23,40 +24,43 @@ import org.nrg.xft.ItemI;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.PetTracerListUtils;
 
-public final class XDATScreen_uploaded_xnat_imageSessionData extends
-	EditScreenA {
-    private final static String PREARC_PAGE = "XDATScreen_prearchives.vm";
-    
-    final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(XDATScreen_uploaded_xnat_imageSessionData.class);
+@Slf4j
+@SuppressWarnings("unused")
+public final class XDATScreen_uploaded_xnat_imageSessionData extends EditScreenA {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getElementName() {
+        return XnatImagesessiondata.SCHEMA_ELEMENT_NAME;
+    }
 
-
-    
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void finalProcessing(final RunData data, final Context context) {
-	if (null == item) {
-	    logger.error("finalProcessing invoked with null item");
+        if (!hasEditItem()) {
+            log.error("finalProcessing invoked with null item");
             data.setMessage("Unable to load session item");
             data.setScreenTemplate(PREARC_PAGE);
-	    return;
-	}
-		
-	final String dataType = item.getXSIType();
-	if (null == dataType) {
-	    logger.error("item has null data type");
-	    data.setMessage("session item has null data type");
-	    data.setScreenTemplate(PREARC_PAGE);
-	    return;
-	}
-	
-	context.put("datatype", dataType);
+            return;
+        }
+
+        final String dataType = getEditItem().getXSIType();
+        if (null == dataType) {
+            log.error("item has null data type");
+            data.setMessage("session item has null data type");
+            data.setScreenTemplate(PREARC_PAGE);
+            return;
+        }
+
+        context.put("datatype", dataType);
         context.put("protocols", XNATUtils.getProjectsForCreate(dataType, data));
         //context.put("pages", pages.get(dataType));
         //context.put("scanFields", scanFields.get(dataType));
 
-        XnatImagesessiondata session = (XnatImagesessiondata) BaseElement.GetGeneratedItem(item);
+        XnatImagesessiondata session = (XnatImagesessiondata) BaseElement.GetGeneratedItem(getEditItem());
         context.put("notes", session.getNote());
         final ItemI part = TurbineUtils.GetParticipantItem(data);
         if (part != null) {
@@ -106,11 +110,5 @@ public final class XDATScreen_uploaded_xnat_imageSessionData extends
         context.put("petTracerList", PetTracerListUtils.getPetTracerList(session.getProject()));
     }
 
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#getElementName()
-     */
-    @Override
-    public String getElementName() {
-        return "xnat:imageSessionData";
-    }
+    private final static String PREARC_PAGE = "XDATScreen_prearchives.vm";
 }

@@ -1,3 +1,17 @@
+#* @vtlvariable name="elementManager" type="java.util.List" *#
+#* @vtlvariable name="allElements" type="java.util.List" *#
+#* @vtlvariable name="usedNames" type="java.util.Collection" *#
+#* @vtlvariable name="ug" type="org.nrg.xdat.security.UserGroup" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="vr" type="org.nrg.xft.utils.ValidationUtils.ValidationResults" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XdatUsergroup" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="XNAT_CSRF" type="java.lang.String" *#
 ##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
 $page.setTitle("XDAT")
 $page.setLinkColor($ui.alink)
@@ -37,7 +51,7 @@ $page.setVlinkColor($ui.vlink)
                 #xdatHiddenBox("xdat:userGroup/ID" $item "")
                 <b>Display Name: </b> &nbsp;
                 #if($ug.getId() && $item.getStringProperty("xdat:userGroup/displayName"))
-                ##display name is used in the generation of the ID, so it can't be changed once created
+                    ##display name is used in the generation of the ID, so it can't be changed once created
                     $!item.getStringProperty("xdat:userGroup/displayName") <input id="xdat:userGroup/displayName" type="hidden" name="xdat:userGroup/displayName" value="$!item.getStringProperty("xdat:userGroup/displayName")"/>
                     <script>
                         XNAT.app.usedNames=[];

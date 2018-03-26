@@ -15,36 +15,26 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.turbine.modules.screens.EditScreenA;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
-import org.nrg.xft.XFTItem;
 
 /**
  * @author Tim
  *
  */
+@SuppressWarnings("unused")
 public class XDATScreen_edit_xnat_subjectData extends EditScreenA {
-
     /* (non-Javadoc)
      * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#getElementName()
      */
     public String getElementName() {
-        return "xnat:subjectData";
+        return XnatSubjectdata.SCHEMA_ELEMENT_NAME;
     }
     
-    public ItemI getEmptyItem(RunData data) throws Exception
-	{
-	    String s = getElementName();
-		ItemI temp =  XFTItem.NewItem(s,TurbineUtils.getUser(data));
-		return temp;
-	}
-
     /* (non-Javadoc)
      * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void finalProcessing(RunData data, Context context) {
         try {
-
-            XnatSubjectdata subject = new XnatSubjectdata(item);
+            XnatSubjectdata subject = new XnatSubjectdata(getEditItem());
             context.put("subject",subject);
             if (TurbineUtils.HasPassedParameter("destination", data)){
                 context.put("destination", TurbineUtils.GetPassedParameter("destination", data));
@@ -59,10 +49,10 @@ public class XDATScreen_edit_xnat_subjectData extends EditScreenA {
 			+ DisplayManager.GetInstance().getSingularDisplayNameForSubject().toLowerCase());
             }
             
-            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))!=null){
-                context.put("project", ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)));
+            if (TurbineUtils.GetPassedParameter("project",data) != null){
+                context.put("project", TurbineUtils.GetPassedParameter("project", data));
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 

@@ -10,59 +10,85 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.UserGroupI;
+import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 
+@SuppressWarnings("unused")
+@Slf4j
 public class XDATScreen_edit_xdat_userGroup extends EditScreenA {
-    static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(XDATScreen_edit_xdat_userGroup.class);
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#getElementName()
+    /**
+     * {@inheritDoc}
      */
+    @Override
     public String getElementName() {
-        return "xdat:userGroup";
+        return XdatUsergroup.SCHEMA_ELEMENT_NAME;
     }
-    
-    public ItemI getEmptyItem(RunData data) throws Exception
-    {
-        String s = getElementName();
-        ItemI temp =  XFTItem.NewItem(s,TurbineUtils.getUser(data));
-        return temp;
-    }
-    
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
+
+    /**
+     * {@inheritDoc}
      */
-    public void finalProcessing(RunData data, Context context) {
+    @Override
+    public void finalProcessing(final RunData data, final Context context) {
+        final UserI user = XDAT.getUserDetails();
+        if (user == null) {
+            log.error("No user object found, not even guest. Unauthenticated users can not edit groups.");
+            return;
+        }
+        if (user.isGuest()) {
+            log.error("Guest user found. The guest user can not edit groups.");
+            return;
+        }
+
+        final String username = user.getUsername();
 
         try {
-        	XdatUsergroup g = new XdatUsergroup(item);
-        	if(TurbineUtils.HasPassedParameter("tag", data) && g.getTag()==null){
-        		g.setTag((String)TurbineUtils.GetPassedParameter("tag", data));
-        	}
-        	            
-            UserGroupI storedGroup=null;
-            if(g.getId()!=null){
-            	storedGroup =Groups.getGroup(g.getId());
+            final String     groupId = (String) getEditItem().getProperty("ID");
+            final UserGroupI group   = StringUtils.isNotBlank(groupId) ? Groups.getGroup(groupId) : getGroupFromData(data);
+
+            final ItemI objectModel = (ItemI) context.get("om");
+            if (objectModel != null && StringUtils.equalsIgnoreCase(getElementName(), objectModel.getXSIType()) && TurbineUtils.HasPassedParameter("tag", data) && StringUtils.isBlank(objectModel.getStringProperty("tag"))) {
+                objectModel.setProperty(getElementName() + "/tag", TurbineUtils.GetPassedParameter("tag", data));
             }
-            
-            if(storedGroup==null){
-            	UserGroupI passedGroup=Groups.createGroup(TurbineUtils.GetDataParameterHash(data));
-                if(TurbineUtils.HasPassedParameter("tag", data) && passedGroup.getTag()==null){
-                	passedGroup.setTag((String)TurbineUtils.GetPassedParameter("tag", data));
-                }
-            	storedGroup=passedGroup;
-            }
-            
-            context.put("allElements",storedGroup.getPermissionItems(TurbineUtils.getUser(data).getUsername())); 
-            context.put("ug",storedGroup);
+
+            context.put("allElements", group.getPermissionItems(username));
+            context.put("ug", group);
+        } catch (XFTInitException e) {
+            log.error("An error occurred trying to access XFT when trying to get the ID property from this ItemI object:\n{}", getEditItem(), e);
+        } catch (ElementNotFoundException e) {
+            log.error("Couldn't find the element of type {}: {}", e.ELEMENT, e);
+        } catch (FieldNotFoundException e) {
+            log.error("Couldn't find the field named {} for type {}: {}", e.FIELD, getEditItem().getXSIType(), e.MESSAGE);
+        } catch (UserFieldMappingException e) {
+            log.error("An error occurred trying to map a user field when creating a {} object for user {}", getElementName(), username, e);
+        } catch (GroupFieldMappingException e) {
+            log.error("An error occurred trying to map a group field when creating a {} object for user {}", getElementName(), username, e);
+        } catch (UserInitException e) {
+            log.error("An error occurred initializing the user {}", username, e);
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("An unexpected error occurred trying to create or edit a group for the user {}", username, e);
         }
+    }
+
+    private UserGroupI getGroupFromData(final RunData data) throws UserInitException, GroupFieldMappingException, UserFieldMappingException {
+        final UserGroupI group = Groups.createGroup(TurbineUtils.GetDataParameterHash(data));
+        if (TurbineUtils.HasPassedParameter("tag", data) && StringUtils.isBlank(group.getTag())) {
+            group.setTag((String) TurbineUtils.GetPassedParameter("tag", data));
+        }
+        return group;
     }
 }

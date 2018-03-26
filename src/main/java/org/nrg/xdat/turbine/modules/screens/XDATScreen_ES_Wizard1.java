@@ -10,48 +10,48 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 
 /**
  * @author Tim
- *
  */
+@Slf4j
+@SuppressWarnings("unused")
 public class XDATScreen_ES_Wizard1 extends AdminEditScreenA {
-
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#getElementName()
+    /**
+     * {@inheritDoc}
      */
+    @Override
     public String getElementName() {
-        return "xdat:element_security";
+        return ElementSecurity.SCHEMA_ELEMENT_NAME;
     }
 
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
+    /**
+     * {@inheritDoc}
      */
+    @Override
     public void finalProcessing(RunData data, Context context) {
-        try {
-            SchemaElement se = SchemaElement.GetElement(item.getStringProperty("element_name"));
-            if (se.getDefaultPrimarySecurityField()==null)
-            {
-                context.put("hasDefaultField",new Boolean(false));
-            }else{
-                context.put("hasDefaultField",new Boolean(true));
-            }
-        } catch (XFTInitException e) {
-            logger.error("",e);
-            context.put("hasDefaultField",new Boolean(false));
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-            context.put("hasDefaultField",new Boolean(false));
-        } catch (FieldNotFoundException e) {
-            logger.error("",e);
-            context.put("hasDefaultField",new Boolean(false));
-        }
+        context.put("hasDefaultField", hasDefaultPrimarySecurityField());
     }
 
+    private boolean hasDefaultPrimarySecurityField() {
+        try {
+            final SchemaElement element = SchemaElement.GetElement(getEditItem().getStringProperty("element_name"));
+            return element.getDefaultPrimarySecurityField() != null;
+        } catch (XFTInitException e) {
+            log.error("An error occurred trying to access XFT when trying to get the element_name property from this ItemI object:\n{}", getEditItem(), e);
+        } catch (ElementNotFoundException e) {
+            log.error("Couldn't find the element of type {}: {}", e.ELEMENT, e);
+        } catch (FieldNotFoundException e) {
+            log.error("Couldn't find the field named {} for type {}: {}", e.FIELD, getEditItem().getXSIType(), e.MESSAGE);
+        }
+        return false;
+    }
 }

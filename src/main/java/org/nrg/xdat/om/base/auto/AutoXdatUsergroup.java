@@ -340,7 +340,7 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
     }
 
     @Nonnull
-    public static List<XdatUsergroup> getXdatUsergroupsByTag(Object value, org.nrg.xft.security.UserI user, boolean preLoad) {
+    public static List<XdatUsergroup> getXdatUsergroupsByTag(final Object value, final UserI user, final boolean preLoad) {
         try {
             final ItemCollection items = ItemSearch.GetItems("xdat:userGroup/tag", value, user, preLoad);
             return BaseElement.WrapItems(items.getItems());
@@ -351,11 +351,11 @@ public abstract class AutoXdatUsergroup extends BaseElement implements XdatUserg
         return Collections.emptyList();
     }
 
-    public static ArrayList wrapItems(ArrayList items) {
+    public static ArrayList wrapItems(final ArrayList items) {
         return BaseElement.WrapItems(items);
     }
 
-    public static ArrayList wrapItems(org.nrg.xft.collections.ItemCollection items) {
+    public static ArrayList wrapItems(final ItemCollection items) {
         return wrapItems(items.getItems());
     }
 

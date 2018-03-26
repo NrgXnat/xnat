@@ -97,6 +97,11 @@ public class UserGroup implements UserGroupI{
     }
 
     public synchronized void init(ItemI item) throws Exception {
+		if (item == null) {
+			log.info("Tried to init() a user group that doesn't have an item set yet. This might mean it's being created.");
+			return;
+		}
+
     	tag = item.getStringProperty("tag");
 
 		final List<XFTItem> childItems = item.getChildItems("xdat:userGroup.element_access");
@@ -120,7 +125,7 @@ public class UserGroup implements UserGroupI{
 	}
 
 	public String toString(){
-    	StringBuilder sb = new StringBuilder();
+    	final StringBuilder sb = new StringBuilder();
     	sb.append(getId()).append("\n");
     	sb.append(getTag()).append("\n");
     	
@@ -306,20 +311,20 @@ public class UserGroup implements UserGroupI{
 			xdatGroup.setElementAccess(xea);
 		}
 		
-		final XdatFieldMappingSet xfms;
+		final XdatFieldMappingSet fieldMappingSet;
 		final List<XdatFieldMappingSet> set=xea.getPermissions_allowSet();
 		if(set.size()==0){
-			xfms = new XdatFieldMappingSet(authenticatedUser);
-			xfms.setMethod("OR");
-			xea.setPermissions_allowSet(xfms);
+			fieldMappingSet = new XdatFieldMappingSet(authenticatedUser);
+			fieldMappingSet.setMethod("OR");
+			xea.setPermissions_allowSet(fieldMappingSet);
 		}else{
-			xfms=set.get(0);
+			fieldMappingSet=set.get(0);
 		}
 		
 		
 		XdatFieldMapping xfm=null;
 		
-		for(XdatFieldMapping t:xfms.getAllow()){
+		for(XdatFieldMapping t:fieldMappingSet.getAllow()){
 			if(t.getField().equals(pc.getField()) && t.getFieldValue().equals(pc.getFieldValue())){
 				xfm=t;
 				break;
@@ -330,7 +335,7 @@ public class UserGroup implements UserGroupI{
 			xfm=new XdatFieldMapping(authenticatedUser);
 			xfm.setField(pc.getField());
 			xfm.setFieldValue((String)pc.getFieldValue());
-			xfms.setAllow(xfm);
+			fieldMappingSet.setAllow(xfm);
 		}
 		
 		xfm.setCreateElement(pc.getCreate());

@@ -10,25 +10,24 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.XftStringUtils;
 
-
 /**
  * @author Tim
  */
+@Slf4j
 public abstract class EditScreenA extends SecureScreen {
-    protected ItemI item = null;
-
     /**
      * ArrayList of Object[3] {xmlPath,option,(Possible Values)ArrayList of ArrayList(2){value,display},defaultVALUE}
      *
@@ -38,12 +37,11 @@ public abstract class EditScreenA extends SecureScreen {
 
     public abstract void finalProcessing(RunData data, Context context);
 
-    public ItemI getEmptyItem(RunData data) throws Exception {
-        String s = getElementName();
-        return XFTItem.NewItem(s, TurbineUtils.getUser(data));
+    public ItemI getEmptyItem(final RunData data) throws Exception {
+        return XFTItem.NewItem(getElementName(), XDAT.getUserDetails());
     }
 
-    public String getStringIdentifierForPassedItem(RunData data) {
+    public String getStringIdentifierForPassedItem(final RunData data) {
         if (TurbineUtils.HasPassedParameter("tag", data)) {
             return (String) TurbineUtils.GetPassedParameter("tag", data);
         } else {
@@ -87,7 +85,7 @@ public abstract class EditScreenA extends SecureScreen {
             }
 
             if (item == null) {
-                if (XFT.VERBOSE) System.out.println("No edit item passed... looking for item passed by variables");
+                log.debug("No edit item passed... looking for item passed by variables");
                 try {
                     ItemI temp = TurbineUtils.GetItemBySearch(data);
                     if (temp != null) {
@@ -104,9 +102,7 @@ public abstract class EditScreenA extends SecureScreen {
                     String s = getElementName();
                     item = getEmptyItem(data);
 
-
-                    if (XFT.VERBOSE)
-                        System.out.println("No passed item found.\nCreated New Item (" + item.getXSIType() + ")");
+                    log.info("No passed item found. Created new item of type {}", item.getXSIType());
                     SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
 
                     context.put("item", item);
@@ -116,10 +112,10 @@ public abstract class EditScreenA extends SecureScreen {
                     context.put("om", BaseElement.GetGeneratedItem(item));
                     finalProcessing(data, context);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    data.setMessage("Invalid Search Parameters: Error creating item.");
+                    log.warn(ERROR_CREATING_ITEM, e);
+                    data.setMessage(ERROR_CREATING_ITEM);
                     data.setScreen("Index");
-                    TurbineUtils.OutputPassedParameters(data, context, this.getClass().getName());
+                    TurbineUtils.OutputPassedParameters(data, context, getClass().getName());
                 }
             } else {
                 try {
@@ -136,21 +132,33 @@ public abstract class EditScreenA extends SecureScreen {
                     context.put("om", BaseElement.GetGeneratedItem(item));
                     finalProcessing(data, context);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    data.setMessage("Invalid Search Parameters: No Data Item Found.");
+                    log.warn(NO_DATA_ITEM_FOUND, e);
+                    data.setMessage(NO_DATA_ITEM_FOUND);
                     data.setScreen("Index");
                     TurbineUtils.OutputPassedParameters(data, context, this.getClass().getName());
                 }
 
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            data.setMessage("Invalid Search Parameters: No Data Item Found.");
+            log.warn(NO_DATA_ITEM_FOUND, e);
+            data.setMessage(NO_DATA_ITEM_FOUND);
             data.setScreen("Index");
-            TurbineUtils.OutputPassedParameters(data, context, this.getClass().getName());
+            TurbineUtils.OutputPassedParameters(data, context, getClass().getName());
         }
 
-        this.preserveVariables(data, context);
+        preserveVariables(data, context);
     }
-}
 
+    protected ItemI getEditItem() {
+        return item;
+    }
+
+    protected boolean hasEditItem() {
+        return item != null;
+    }
+
+    private static final String NO_DATA_ITEM_FOUND = "Invalid Search Parameters: No data item found.";
+    private static final String ERROR_CREATING_ITEM = "Invalid Search Parameters: Error creating item.";
+
+    private ItemI item = null;
+}

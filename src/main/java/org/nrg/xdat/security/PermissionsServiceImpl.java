@@ -12,11 +12,9 @@ package org.nrg.xdat.security;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.sun.accessibility.internal.resources.accessibility;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.util.Reflection;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
@@ -37,7 +35,6 @@ import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
-import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -331,7 +328,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             return true;
         } else if (ElementSecurity.IsInSecureElement(xsiType)) {
             // The xdat:user type is "insecure", so you have to check explicitly if this is a user request. Only admins or self can read xdat:user.
-            if (item instanceof XFTItem && ((XFTItem) item).instanceOf("xdat:user")) {
+            if (item instanceof XFTItem && StringUtils.equalsIgnoreCase(item.getXSIType(), "xdat:user")) {
                 return Roles.isSiteAdmin(user) || StringUtils.equalsIgnoreCase(user.getUsername(), (String) item.getProperty("login"));
             }
             return true;
@@ -644,7 +641,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType) {
-        return ImmutableList.copyOf(((UserGroup) group).getPermissionsByDataType(dataType));
+        return ImmutableList.copyOf(group.getPermissionsByDataType(dataType));
     }
 
     @Override

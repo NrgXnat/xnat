@@ -12,44 +12,26 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xdat.security.ElementSecurity;
 
 /**
  * @author Tim
- *
  */
+@SuppressWarnings("unused")
 public class XDATScreen_ES_Wizard4 extends AdminEditScreenA {
-
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#getElementName()
+    /**
+     * {@inheritDoc}
      */
+    @Override
     public String getElementName() {
-        return "xdat:element_security";
+        return ElementSecurity.SCHEMA_ELEMENT_NAME;
     }
 
-    /* (non-Javadoc)
-     * @see org.nrg.xdat.turbine.modules.screens.EditScreenA#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
+    /**
+     * {@inheritDoc}
      */
+    @Override
     public void finalProcessing(RunData data, Context context) {
-        try {
-            String elementName = item.getStringProperty("xdat:element_security.element_name");
-            
-            if (elementName != null && !elementName.equals(""))
-            {
-                SchemaElement gwe = SchemaElement.GetElement(elementName);
-                
-                context.put("fields",gwe.getAllDefinedFields());
-            }
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
-            logger.error("",e);
-        }
+        context.put("fields", getAllDefinedFieldsForSecurityElement());
     }
-
 }

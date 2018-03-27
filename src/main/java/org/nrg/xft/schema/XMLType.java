@@ -10,6 +10,7 @@
 
 package org.nrg.xft.schema;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.utils.XftStringUtils;
 
@@ -53,7 +54,7 @@ public class XMLType {
 			localPrefix = XftStringUtils.intern(s.getTargetNamespacePrefix());
             setLocalType(xml.intern());
 		}
-		if (local.indexOf(":")!=-1)
+		if (local.contains(":"))
 		{
             setLocalType(XftStringUtils.intern(local.substring(index + 1)));
 		}
@@ -72,16 +73,8 @@ public class XMLType {
 	 * @param xml
 	 * @return Returns the type as a String without its prefix and the ':' character
 	 */
-	public static String CleanType(String xml)
-	{
-		int index = xml.indexOf(":");
-		if (index != -1)
-		{
-			return xml.substring(index + 1);
-		}else
-		{
-			return xml;
-		}
+	public static String CleanType(String xml) {
+		return StringUtils.contains(xml, ":") ? StringUtils.substringAfter(xml, ":") : xml;
 	}
 	
 	public static boolean IsDate(String t)

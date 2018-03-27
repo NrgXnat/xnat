@@ -542,26 +542,19 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * IF the corresponding element has a field of type ':ID' then that field's name is returned,
 	 * ELSE an empty string is returned.
 	 * @return Returns the name of the element's ID field
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
+	 * @throws XFTInitException When an error occurs accessing XFT.
+	 * @throws ElementNotFoundException When a data-type element can't be found in the database.
 	 */
-	private String getIdFieldName() throws XFTInitException,ElementNotFoundException
-	{
-		if (this.idFieldName == null)
-		{
-			Iterator all = getPossibleFieldNames().iterator();
-			while (all.hasNext())
-			{
-				Object[] fieldInfo = (Object [])all.next();
-				if (org.nrg.xft.schema.XMLType.CleanType((String)fieldInfo[1]).equalsIgnoreCase("ID"))
-				{
-					idFieldName = (String)fieldInfo[0];
+	private String getIdFieldName() throws XFTInitException, ElementNotFoundException {
+		if (idFieldName == null) {
+			for (final Object[] fieldInfo : getPossibleFieldNames()) {
+				final String candidate = (String) fieldInfo[0];
+				if (StringUtils.equalsIgnoreCase(XMLType.CleanType(candidate), "ID")) {
+					idFieldName = candidate;
 					break;
 				}
 			}
-
-			if (idFieldName== null)
-			{
+			if (idFieldName == null) {
 				idFieldName="";
 			}
 		}
@@ -574,15 +567,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public boolean hasIDField() throws XFTInitException,ElementNotFoundException
-	{
-		if (getIdFieldName().equalsIgnoreCase(""))
-		{
-			return false;
-		}else
-		{
-			return true;
-		}
+	public boolean hasIDField() throws XFTInitException,ElementNotFoundException {
+		return !StringUtils.equals(getIdFieldName(), "");
 	}
 
 	/**
@@ -592,13 +578,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public String getIDValue()  throws XFTInitException,ElementNotFoundException
-	{
-		if (! getIdFieldName().equalsIgnoreCase(""))
-		{
-			return (String)getField(getIdFieldName());
-		}
-		return null;
+	public String getIDValue()  throws XFTInitException,ElementNotFoundException {
+		return StringUtils.isNotBlank(getIdFieldName()) ? (String)getField(getIdFieldName()) : null;
 	}
 
 	/**

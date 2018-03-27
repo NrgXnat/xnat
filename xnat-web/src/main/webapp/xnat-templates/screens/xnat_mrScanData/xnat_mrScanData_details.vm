@@ -167,8 +167,8 @@
 
     #foreach($addP in $scan.getParameters_addparam())
         <tr>
-            <th>#escapeHtml("$!addP.getName()")</th>
-            <td align="left">#escapeHtml("$!addP.getAddfield()")</td>
+            <th>#escapeHTML("$!addP.getName()")</th>
+            <td align="left">#escapeHTML("$!addP.getAddfield()")</td>
         </tr>
     #end
 

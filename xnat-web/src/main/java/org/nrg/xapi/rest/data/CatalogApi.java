@@ -39,6 +39,7 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.web.http.AbstractZipStreamingResponseBody;
 import org.nrg.xnat.web.http.CatalogZipStreamingResponseBody;
@@ -354,7 +355,7 @@ public class CatalogApi extends AbstractXapiRestController {
                 parameters.put(EventUtils.EVENT_COMMENT, comment);
             }
             final XFTItem item = _service.insertXmlObject(user, inputStream, allowDeletion, parameters);
-            return new ResponseEntity<>((String) item.getProperty("ID"), HttpStatus.OK);
+            return new ResponseEntity<>(UriParserUtils.getArchiveUri(item), HttpStatus.OK);
         } catch (UserNotFoundException | UserInitException e) {
             throw new ServerException("Couldn't find a valid session user. See nested exception for more information.", e);
         } catch (SAXParseException e) {

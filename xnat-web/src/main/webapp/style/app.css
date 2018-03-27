@@ -2070,9 +2070,11 @@ div.containerTitle.withColor {
 .formLabel,
 .formLabelRequired,
 .formSublabel {
-    min-width: 140px;
     text-align: left;
     white-space: nowrap;
+}
+form .formLabel {
+    min-width: 100px;
 }
 
 .formLabelRequired b {

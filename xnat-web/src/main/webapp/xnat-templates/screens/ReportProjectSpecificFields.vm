@@ -19,16 +19,23 @@
                 #if($group.getDescription())$group.getDescription()#else $group.getId() Fields#end
             </th>
             </thead>
-            <tbody></tbody>
+            <tbody>
+            #foreach($f in $group.getFields_field())
+                #if($!om.getProperty($f.getXmlpath()))
+                <tr>
+                    <th>#escapeHTML($!f.getName())</th>
+                    <td>#escapeHTML($!om.getProperty($f.getXmlpath()))</td>
+                </tr>
+
+                ##					<script>
+                ##						window.addRow('customvar-$group.getId()','$!f.getName()','$!om.getProperty($f.getXmlpath())')
+                ##					</script>
+                #end
+            #end
+            </tbody>
         </table>
 		<br>
-			#foreach($f in $group.getFields_field())
-				#if($!om.getProperty($f.getXmlpath()))
-					<script>
-						window.addRow('customvar-$group.getId()','$!f.getName()','$!om.getProperty($f.getXmlpath())')
-					</script>
-				#end
-			#end
+
 		#end
 	#end
 #end

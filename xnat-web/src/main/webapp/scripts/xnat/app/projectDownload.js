@@ -266,6 +266,12 @@ var XNAT = getObject(XNAT);
             var type = $form.find('.download-type:checked').val();
             var getZip = (type === 'direct');
             var msg = [];
+            var preparingDownload = XNAT.dialog.open({
+                width: 400,
+                header: false,
+                content: spawn('div.message', 'Preparing download. Please wait...'),
+                footer: false
+            });
             $form.find('[name="XNAT_CSRF"]').remove();
             $form.submitJSON({
                 // dataType: 'text/plain',
@@ -301,6 +307,9 @@ var XNAT = getObject(XNAT);
                     // }
                 },
                 complete: function(data){
+
+                    preparingDownload.fadeOut(100);
+
                     var ID = data.responseText;
                     var URL = XNAT.url.rootUrl($form.attr('action') + '/' + ID + '/' + (getZip ? 'zip' : 'xml'));
                     if (getZip) {

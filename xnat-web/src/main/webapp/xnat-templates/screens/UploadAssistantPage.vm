@@ -11,12 +11,12 @@
 $sectionTitle
 
 <p style="width:500px">
-    You can upload DICOM and ECAT files using the <a href="https://download.xnat.org">XNAT Upload Assistant</a>.
+    You can upload DICOM and ECAT files using the <a href="https://download.xnat.org/upload-assistant/">XNAT Upload Assistant</a>.
     This tool is installed on your local machine and provides the ability to access
     multiple XNAT servers from a single tool, as well as apply DICOM edit and anonymization scripts to the data before it
     leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during the transfer process.
 </p>
-<p><a href="https://download.xnat.org" class="btn1" target="_blank">Download the Latest Version</a></p>
+<p><a href="https://download.xnat.org/upload-assistant/" class="btn1" target="_blank">Download the Latest Version</a></p>
 <div class="alert" style="width:500px">
     Installing the <b>XNAT Upload Assistant</b> requires administrator privileges (or at least the
     ability to grant administrator privileges to the installer) for the workstation on which you wish to

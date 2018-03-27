@@ -133,6 +133,26 @@ window.jsdebug = window.jsdebug ||
 })();
 
 /**
+ * Convert a string to HTML entities
+ * @param {String} str - string to convert
+ */
+function toHtmlEntities(str) {
+    return (str + '').replace(/./gm, function(s) {
+        return '&#' + s.charCodeAt(0) + ';';
+    });
+}
+
+/**
+ * Create string from HTML entities
+ * @param {String} str - string to un-convert
+ */
+function fromHtmlEntities(str) {
+    return (str + '').replace(/&#\d+;/gm, function(s) {
+        return String.fromCharCode(s.match(/\d+/gm)[0]);
+    })
+}
+
+/**
  * Sanitize specified HTML tags
  * @param {String} html - html to process
  * @param {String} [tags] - optional pipe-separated list of tags

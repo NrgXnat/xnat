@@ -74,13 +74,15 @@ function LeftBarTreeView(_config){
 	 	apNode.setDynamicLoad(function(node, fnLoadComplete){
 	 		var callback={
 		      success:function(oResponse){
-		        var oResults = eval("(" + oResponse.responseText + ")");
+		        var oResults = JSON.parse(oResponse.responseText);
 		        if((oResults.ResultSet.Result) && (oResults.ResultSet.Result.length)) {
 		           for (var ssC=0; ssC<oResults.ResultSet.Result.length;  ssC++) {
-		               var cpNode=new YAHOO.widget.TextNode({label:oResults.ResultSet.Result[ssC].secondary_id,
-	                     		ID:"ss."+oResults.ResultSet.Result[ssC].id,
-	                     		href:serverRoot + '/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/' + oResults.ResultSet.Result[ssC].id,
-	                     		TITLE:oResults.ResultSet.Result[ssC].name},oResponse.argument.node,false);
+		               var cpNode=new YAHOO.widget.TextNode({
+							label: escapeHtml(oResults.ResultSet.Result[ssC].secondary_id),
+							ID: "ss."+oResults.ResultSet.Result[ssC].id,
+							href: serverRoot + '/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/' + oResults.ResultSet.Result[ssC].id,
+							TITLE: oResults.ResultSet.Result[ssC].name
+						}, oResponse.argument.node, false);
 
 	 				   cpNode.isLeaf=true;
 		           }
@@ -105,13 +107,14 @@ function LeftBarTreeView(_config){
 		 	fpNode.setDynamicLoad(function(node, fnLoadComplete){
 		 		var callback={
 			      success:function(oResponse){
-			        var oResults = eval("(" + oResponse.responseText + ")");
+			        var oResults = JSON.parse(oResponse.responseText);
 			        if((oResults.ResultSet.Result) && (oResults.ResultSet.Result.length)) {
 			           for (var ssC=0; ssC<oResults.ResultSet.Result.length;  ssC++) {
-			               var cpNode=new YAHOO.widget.TextNode({label:oResults.ResultSet.Result[ssC].secondary_id,
-		                     		ID:"ss."+oResults.ResultSet.Result[ssC].id,
-		                     		href:serverRoot + '/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/' + oResults.ResultSet.Result[ssC].id,
-		                     		TITLE:oResults.ResultSet.Result[ssC].name},oResponse.argument.node,false);
+			               var cpNode=new YAHOO.widget.TextNode({
+							   label: escapeHtml(oResults.ResultSet.Result[ssC].secondary_id),
+							   ID: "ss."+oResults.ResultSet.Result[ssC].id,
+							   href: serverRoot + '/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/' + oResults.ResultSet.Result[ssC].id,
+							   TITLE: oResults.ResultSet.Result[ssC].name}, oResponse.argument.node, false);
 
 		 				   cpNode.isLeaf=true;
 			           }
@@ -271,11 +274,13 @@ function LeftBarTreeView(_config){
      		}
     		oResults.ResultSet.Result.sort(sortByDesc);
            for (var ssC=0; ssC<oResults.ResultSet.Result.length;  ssC++) {
-               var cpNode=new YAHOO.widget.TextNode({label:oResults.ResultSet.Result[ssC].brief_description,
-                     		ID:"ss."+oResults.ResultSet.Result[ssC].id,
-                     		SS_ID:oResults.ResultSet.Result[ssC].id,
-                     		URL:serverRoot +'/REST/search/saved/' + oResults.ResultSet.Result[ssC].id + '',
-                     		TITLE:oResults.ResultSet.Result[ssC].description},oResponse.argument.node,false);
+               var cpNode=new YAHOO.widget.TextNode({
+				   label: escapeHtml(oResults.ResultSet.Result[ssC].brief_description),
+				   ID: "ss."+oResults.ResultSet.Result[ssC].id,
+				   SS_ID: oResults.ResultSet.Result[ssC].id,
+				   URL: serverRoot +'/REST/search/saved/' + oResults.ResultSet.Result[ssC].id + '',
+				   TITLE: oResults.ResultSet.Result[ssC].description
+			   }, oResponse.argument.node, false);
 
  				   cpNode.isLeaf=true;
  				   oResponse.argument.lTV.tree.searches.push(cpNode.data.ID);

@@ -1519,6 +1519,10 @@ span.sep {
     font-weight: bold;
 }
 
+#searchValue::placeholder {
+    font-weight: normal;
+}
+
 #searchValue.clean {
     color: #a0a0a0;
     font-weight: normal;

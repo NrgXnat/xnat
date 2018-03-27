@@ -50,7 +50,7 @@
         <a href="$link.setPage("XDATScreen_search_wizard1.vm")">Advanced</a>
     </span>
     #end
-    <input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="$!field" placeholder="Search" />
+    <input id="searchValue" name="searchValue" type="text" maxlength="40" size="20" value="$!field" placeholder="Search" />
     <button type="button" id="search_btn" class="btn2"><i class="fa fa-search" title="Submit Search"></i></button>
 
 </form>

@@ -1,16 +1,7 @@
 <!--BEGIN ReportProjectSpecificFields.vm -->
 #set($groups=$om.getFieldDefinitionGroups($item.getXSIType(), $project))
 #if($groups.size()>0)
-	<script>
-		window.addRow = function(id,label,val){
-		    var table = jq('#'+id);
-		    var row = '<tr><th>'+escapeHtml(label)+'</th>';
-		    row += '<td>'+escapeHtml(val)+'</td></tr>';
-		    jq(table).find('tbody').append(row);
-		}
-	</script>
-
-	<h3 style="marign: 1em 0 0.5em;">Custom Variable Sets</h3>
+	<h3 style="margin: 1em 0 0.5em;">Custom Variable Sets</h3>
 	#foreach($group in $groups)
 		#if($group.getFields_field().size()>0)
 		<table id="customvar-$group.getId()" class="xnat-table compact alt1">
@@ -26,10 +17,6 @@
                     <th>#escapeHTML($!f.getName())</th>
                     <td>#escapeHTML($!om.getProperty($f.getXmlpath()))</td>
                 </tr>
-
-                ##					<script>
-                ##						window.addRow('customvar-$group.getId()','$!f.getName()','$!om.getProperty($f.getXmlpath())')
-                ##					</script>
                 #end
             #end
             </tbody>

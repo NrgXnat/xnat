@@ -49,6 +49,7 @@ import org.springframework.security.config.http.ChannelAttributeFactory;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.access.channel.ChannelDecisionManagerImpl;
 import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.access.channel.InsecureChannelProcessor;
@@ -61,6 +62,7 @@ import org.springframework.security.web.authentication.session.CompositeSessionA
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.RequestContextFilter;
@@ -134,8 +136,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public InteractiveAgentDetector interactiveAgentDetector(final SiteConfigPreferences preferences) {
-        return new DefaultInteractiveAgentDetector(preferences);
+    public InteractiveAgentDetector interactiveAgentDetector() {
+        return new DefaultInteractiveAgentDetector(_preferences);
     }
 
     @Bean
@@ -253,12 +255,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // This is basically what super.configure() does, minus httpBasic().
         http.authorizeRequests().anyRequest().authenticated().and().formLogin();
 
-        final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, interactiveAgentDetector(_preferences));
+        final InteractiveAgentDetector     detector                 = interactiveAgentDetector();
+        final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, detector);
+
         http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint));
 
-        http.sessionManagement().sessionAuthenticationStrategy(sessionAuthenticationStrategy())
+        http.sessionManagement()
+            .sessionAuthenticationStrategy(sessionAuthenticationStrategy())
             .maximumSessions(_preferences.getConcurrentMaxSessions())
-            .maxSessionsPreventsLogin(true).expiredUrl("/app/template/Login.vm");
+            .sessionRegistry(sessionRegistry())
+            .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)))
+            .maxSessionsPreventsLogin(true);
 
         http.headers().frameOptions().sameOrigin()
             .cacheControl().disable()
@@ -269,8 +276,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .csrf().disable()
             .anonymous().key(UserI.ANONYMOUS_AUTH_PROVIDER_KEY);
 
-        http.logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser")
-            .addLogoutHandler(new XnatLogoutHandler(sessionRegistry()));
+        http.logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser");
 
         // If we can get the default channel processing filter as a bean, we could remove this.
         http.addFilter(channelProcessingFilter())
@@ -285,6 +291,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 extension.configure(http);
             }
         }
+    }
+
+    @Bean
+    public RedirectStrategy redirectStrategy(final SiteConfigPreferences preferences, final InteractiveAgentDetector detector) {
+        return new XnatRedirectStrategy(preferences, detector);
     }
 
     private boolean containsDbAuthProvider(final List<AuthenticationProvider> providers) {

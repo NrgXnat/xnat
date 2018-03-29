@@ -159,10 +159,13 @@ public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMeth
     }
 
     /**
-     * Finds all of the variables that are notated as a hash.
+     * Finds all of the variables that are embedded with hash variables. For example, a hash variable like <b>HashSOPClassUIDWithSOPInstanceUID</b>
+     * would add <b>SOPClassUID</b> and <b>SOPInstanceUID</b> to the list of variables.
      */
     private void initializeHashes() {
         _hashes.clear();
+
+        final Set<String> added = new HashSet<>();
         for (final String variable : _variables) {
             if (variable.startsWith(HASH_PREFIX)) {
                 if (!variable.contains(HASH_DELIMITER)) {
@@ -170,8 +173,11 @@ public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMeth
                 }
                 final List<String> variables = Arrays.asList(variable.substring(4).split(HASH_DELIMITER));
                 _hashes.putAll(variable, variables);
-                _variables.addAll(variables);
+                added.addAll(variables);
             }
+        }
+        if (!added.isEmpty()) {
+            _variables.addAll(added);
         }
     }
 

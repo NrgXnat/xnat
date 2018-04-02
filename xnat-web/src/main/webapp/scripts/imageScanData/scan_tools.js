@@ -47,7 +47,7 @@ function populateScanQualitySelector(server,project,sel,offset,assigned) {
     YAHOO.util.Connect.asyncRequest('GET',url,
                                     {
                                         success: function (resp) {
-                                            var rs = eval('(' + resp.responseText + ')');
+                                            var rs = JSON.parse(resp.responseText);
                                             var key = Object.keys(rs)[0];
                                             var choices = rs[key];
                                             window.scanQualityLabels[key] = choices;
@@ -434,7 +434,7 @@ function ScanEditor(_sessionID,_scanID,_options){
     }
 
 	this.loadedTypes=function(o){
-		this.list= eval("(" + o.responseText +")").ResultSet.Result;
+		this.list = JSON.parse(o.responseText).ResultSet.Result;
 		var oDS=new YAHOO.util.LocalDataSource(this.list);
 	    oDS.responseSchema = {fields : ["type"]};
 
@@ -477,7 +477,7 @@ function ScanEditor(_sessionID,_scanID,_options){
 	};
 }
 
-function loadScans(session_id,project,tbody_id){
+function loadScans(session_id, project, tbody_id){
 	this.initCallback={
 		success:this.completeScanLoad,
 		failure:function(o){
@@ -491,12 +491,12 @@ function loadScans(session_id,project,tbody_id){
 	}
 	openModalPanel("scan_summary","Loading scan summary.");
 
-	YAHOO.util.Connect.asyncRequest('GET',serverRoot +'/REST/experiments/' + sesion_id +'/scans?XNAT_CSRF=' + window.csrfToken + '&format=json',this.initCallback,null,this);
+	YAHOO.util.Connect.asyncRequest('GET',serverRoot +'/REST/experiments/' + session_id +'/scans?XNAT_CSRF=' + window.csrfToken + '&format=json',this.initCallback,null,this);
 }
 
 function completeScanLoad(obj1){
 	closeModalPanel("scan_summary");
-	var scans= eval("(" + obj1.responseText +")").ResultSet.Result;
+	var scans= JSON.parse(obj1.responseText).ResultSet.Result;
 	renderScans(scans,this.arguments.tbody_id,this.arguments.session_id,this.arguments.project);
 }
 
@@ -731,6 +731,7 @@ function renderScans(scans,tbody_id,session_id,project){
 		if(scan.note){
 			td.innerHTML = escapeHtml(scan.note);
 		}
+        // td.textContent = scan.note || '';
 		tr.appendChild(td);
 
 		tbody.appendChild(tr);
@@ -777,7 +778,7 @@ function ScanSet(_options,_scans){
 	this.completeScanLoad=function (obj1){
 		closeModalPanel("scan_summary");
 		this.scans=new Array();
-		var tempScans= eval("(" + obj1.responseText +")").ResultSet.Result;
+		var tempScans= JSON.parse(obj1.responseText).ResultSet.Result;
 
   		if(window.classMapping==undefined)window.classMapping=new ClassMapping();
 
@@ -796,9 +797,9 @@ function ScanSet(_options,_scans){
 		    if(tempScans[slC].parameters_flip!=undefined)tempScan.setProperty("parameters/flip",tempScans[slC].parameters_flip);
 		    if(tempScans[slC].frames!=undefined)tempScan.setProperty("frames",tempScans[slC].frames);
 		    if(tempScans[slC].series_description!=undefined)tempScan.setProperty("series_description",tempScans[slC].series_description);
-		    if(tempScans[slC].stats!=undefined){
+            if (tempScans[slC].stats != undefined) {
 		       tempScan.stats=tempScans[slC].stats;
-		    }
+            }
 		    tempScan.setProperty("xnat_imageScanData_id",tempScans[slC].xnat_imagescandata_id);
 		    this.scans.push(tempScan);
 		}
@@ -1058,7 +1059,7 @@ function scanListingEditor(_tbody,_scanSet,_options){
 								success:function(obj){
                                     if(window.scan_types==undefined)window.scan_types={};
                                     if(window.scan_types[this.modality]==undefined)window.scan_types[this.modality]={};
-									window.scan_types[this.modality].values= eval("(" + obj.responseText +")").ResultSet.Result;
+									window.scan_types[this.modality].values = JSON.parse(obj.responseText).ResultSet.Result;
 									closeModalPanel("scan_type_loading");
 									this.populateAll();
 								},

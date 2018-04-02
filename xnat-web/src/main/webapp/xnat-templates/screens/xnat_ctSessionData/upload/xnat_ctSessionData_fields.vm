@@ -23,7 +23,7 @@
 		<td>
 			<script type="text/javascript">
 				window.ss=new Object();
-				
+
 				#if($project)
 					window.ss.uri=serverRoot +"/REST/scanners?format=json&modality=xnat_ctSessionData";
 				#end
@@ -31,29 +31,28 @@
 				window.ss.local_values=new Array();
 				window.ss.custom = new Array();
 				window.ss.valueField="scanner";
-				
+
 				## Push the current scanner name into the array.
-				## Use the custom array to insure that the value is displayed weather we 
+				## Use the custom array to insure that the value is displayed weather we
 				## are using local_values or all_values (see customizableSelectBox.js lines 54-93)
 				#set($currScannerName=$!item.getStringProperty("${datatype}/scanner"))
-                window.ss.custom.push("$!turbineUtils.escapeHTML($currScannerName)");
+                window.ss.custom.push("#escapeAll($currScannerName)");
 
 				## Push other scanner names into the array.
 				#foreach ($pValue in $scanners)
 					#if($pValue.get(0))
 						## Don't add the current scanner name since we added it above.
 						#if($pValue.get(0) != $item.getStringProperty("${datatype}/scanner"))
-							#set($tempScannerName=$!turbineUtils.escapeHTML($pValue.get(0)))
-							window.ss.local_values.push({"scanner":"$tempScannerName"});
+							window.ss.local_values.push({"scanner":'#escapeAll("$pValue.get(0)")'});
 						#end
 					#end
 				#end
 			</script>
-				
+
 			#xdatComboBox("${datatype}.scanner" $item "window.ss" $vr)
 			<a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
 			#if($item.getStringProperty("${datatype}/scanner/manufacturer") || $item.getStringProperty("${datatype}/scanner/model") || $!item.getStringProperty("${datatype}/scanner"))
-                &nbsp; ($!item.getStringProperty("${datatype}/scanner/manufacturer") $!item.getStringProperty("${datatype}/scanner/model") $!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner")))
+                &nbsp; (#escapeHTML($!item.getStringProperty("${datatype}/scanner/manufacturer")) #escapeHTML($!item.getStringProperty("${datatype}/scanner/model")) #escapeHTML($!item.getStringProperty("${datatype}/scanner")))
 				##<script>document.write(escapeHtml(unescapeAllHtml('$!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner"))')))</script>
 			#end
 		</td>
@@ -78,10 +77,10 @@
 		  }
 		  document.getElementById("operator.tr").style.display=window.tr_visibility;
 		}
-		</script>	
+		</script>
 <tr>
 			 <td colspan="2"><div style="line-height:8px">&nbsp;</div></td>
-		</tr>	
+		</tr>
 		<tr id="operator.tr" name="additional_fields" style="display:none">
 			 <td>Operator</td>
 			 <td>

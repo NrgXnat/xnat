@@ -33,13 +33,13 @@
 <div style="float:left">
     <table clsss="">
     #if($session.getProject())
-    	<tr><th align="left">$displayManager.getSingularDisplayNameForProject():</th><td>$!session.getProject()</td></tr>
+    	<tr><th align="left">$displayManager.getSingularDisplayNameForProject():</th><td>#escapeHTML($!session.getProject())</td></tr>
     #end
     #if($session.getLabel())
     	<tr><th align="left">Session:</th><td>#escapeHTML("$!session.getLabel()")</td></tr>
     #end
     #if($session.getSubjectId())
-    	<tr><th align="left">$displayManager.getSingularDisplayNameForSubject():</th><td>$!session.getSubjectId()</td></tr>
+    	<tr><th align="left">$displayManager.getSingularDisplayNameForSubject():</th><td>#escapeHTML($!session.getSubjectId())</td></tr>
     #end
 
     #if($session.getDate())
@@ -53,7 +53,7 @@
         <tr><th align="left">Patient Name:</th><td>#escapeHTML("$!session.getDcmpatientname()")</td></tr>
     #end
     #if($session.getUid())
-        <tr><th align="left">UID:</th><td>$!session.getUid()</td></tr>
+        <tr><th align="left">UID:</th><td>#escapeHTML($!session.getUid())</td></tr>
     #end
     #if($uploadDate)
         <tr><th align="left">Upload Date:</th><td>$!turbineUtils.formatDateTime($uploadDate)</td></tr>
@@ -68,21 +68,21 @@
     </form>
 #startElementActionBox()
 	#if($allowArchive)
-	<li class="yuimenuitem">
+        <li class="yuimenuitem">
 			<a id="archiveLink" href="#" class="nolink" onclick="XNAT.app.archiveValidator.validate()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Archive</a>
-	 </li>
-	<li class="yuimenuitem">
+        </li>
+        <li class="yuimenuitem">
 			<a href="$content.getURI("/data${url}?format=html&screen=XDATScreen_uploaded_xnat_imageSessionData.vm")"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Modify and Archive</a>
-	 </li>
-	 #end
-	<li class="yuimenuitem">
+        </li>
+	#end
+    <li class="yuimenuitem">
 			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestMoveDialog()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Change Project</a>
-	 </li>
-	<li class="yuimenuitem">
+    </li>
+    <li class="yuimenuitem">
 			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestDelete()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Delete</a>
-	 </li>
+    </li>
 
-#endElementActionsBox()
+	#endElementActionsBox()
 </div>
 <div class="spacer" style="clear:both;">&nbsp;</div>
 <div id="scans_div" style="clear:both;">
@@ -90,17 +90,21 @@
 	<table>
 		<tr><th>ID</th><th>Description</th><th>Files</th><th>Actions</th></tr>
 	#foreach($scan in $session.getScans_scan())
-		<tr id="scanTR$!scan.getId()">
-			<td>$!scan.getId()</td>
+		#define ($scanIdEsc)
+			#escapeAll("$!scan.getId()")
+		#end
+		#set ($scanIdTrim = "$!{scanIdEsc.trim()}")
+		<tr id="scanTR${scanIdTrim}">
+			<td>${scanIdTrim}</td>
 			<td>#escapeHTML("$!scan.getSeriesDescription()")</td>
-			<td nowrap><div id="scan${scan.getId()}Files"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
+			<td nowrap><div id="scan${scanIdTrim}Files"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
 			<td nowrap>
-				&nbsp;&nbsp;<button id="scanB1$$scan.getId()" onclick="XNAT.app.prearchiveActions.downloadFiles('$url', '$scan.getId()')">Download Files</button>
+				&nbsp;&nbsp;<button id="scanB1$${scanIdTrim}" onclick="XNAT.app.prearchiveActions.downloadFiles('$url', '${scanIdTrim}')">Download Files</button>
 				#foreach($res in $scan.getFile())
-					&nbsp;&nbsp;<button id="scanB3$$scan.getId()" onclick="XNAT.app.prearchiveActions.reviewFileDetails('$url', '$scan.getId()', '$res.getLabel()')">Review File Details</button>
-					&nbsp;&nbsp;<button #if($res.getLabel()!="DICOM") class="hide_me" #end id="scanB4$$scan.getId()" onclick="XNAT.app.prearchiveActions.reviewDicomTags('$url', '$scan.getId()')">Review DICOM Tags</button>
+					&nbsp;&nbsp;<button id="scanB3$${scanIdTrim}" onclick="XNAT.app.prearchiveActions.reviewFileDetails('$url', '${scanIdTrim}', '$res.getLabel()')">Review File Details</button>
+					&nbsp;&nbsp;<button #if($res.getLabel()!="DICOM") class="hide_me" #end id="scanB4$${scanIdTrim}" onclick="XNAT.app.prearchiveActions.reviewDicomTags('$url', '${scanIdTrim}')">Review DICOM Tags</button>
 				#end
-				&nbsp;&nbsp;<button id="scanB2$$scan.getId()" onclick="XNAT.app.scanDeleter.requestDelete('$!scan.getId()');">Delete Series</button>
+				&nbsp;&nbsp;<button id="scanB2$${scanIdTrim}" onclick="XNAT.app.scanDeleter.requestDelete('${scanIdTrim}');">Delete Series</button>
 			</td>
 		</tr>
 	#end
@@ -124,7 +128,7 @@
 //add variables for PrearchiveDetails_files.js
  XNAT.app.fileCounter.url="$url";
  #foreach($scan in $session.getScans_scan())
- 	XNAT.app.fileCounter.scans.push("$scan.getId()");
+ 	XNAT.app.fileCounter.scans.push("$!scan.getId()");
  #end
 
  XNAT.app.scanDeleter.url="$url";
@@ -136,7 +140,7 @@
     <div class="hd" id="filesDialog_header">Prearchived files</div>
     <div class="bd" style="overflow:auto">
 		<div id="filesDialog_content">
-
+            <!-- content -->
 		</div>
 	</div>
 </div>
@@ -147,7 +151,7 @@
     <div class="hd" id="headerDialog_header">DICOM Headers</div>
     <div class="bd" style="overflow:auto">
 		<div id="headerDialog_content">
-
+            <!-- content -->
 		</div>
 	</div>
 </div>
@@ -155,40 +159,45 @@
 
 <!-- begin validation warnings dialog -->
 <style type="text/css">
-#val_warning_div{
-	margin-top:12px;
-    overflow:auto;
-}
-#val_warning_div .valWARN,#val_warning_div .valCONFLICT,#val_warning_div .valFAIL, #val_warning_div .header {
-  border-bottom:1px solid #888;
-  font:11px Arial, Helvetica, sans-serif;
-  margin-top:0;
-  margin-bottom:0;
-  padding: 4px;
-  overflow:auto;
-}
-#val_warning_div .header {
-	background-color: #ccc;
-	font-weight: bold;
-}
-dl.valWARN, item.valWARN {
-	display:block;
-}
-dl.valFAIL, item.valFAIL {
-	display:block;
-}
-dl.valCONFLICT, item.valCONFLICT {
-	display:block;
-}
-#val_warning_div dl dl 	{ margin:1px 0;	}
-#val_warning_div dl dt, #val_warning_div dl dd {
-	display:block;
-	float:left;
-	padding:4px 0;
-}
-#val_warning_div dd 	{ 	margin-left:20px; }
-dd.valCode 	{	width:80px; font-weight:bold; position:relative;	}
-dd.valMessage 	{	width:630px;	}
+
+    #val_warning_div {
+        margin-top: 12px;
+        overflow: auto;
+    }
+
+    #val_warning_div .valWARN, #val_warning_div .valCONFLICT, #val_warning_div .valFAIL, #val_warning_div .header {
+        border-bottom: 1px solid #888;
+        font: 11px Arial, Helvetica, sans-serif;
+        margin-top: 0;
+        margin-bottom: 0;
+        padding: 4px;
+        overflow: auto;
+    }
+
+    #val_warning_div .header {
+        background-color: #ccc;
+        font-weight: bold;
+    }
+
+    dl.valWARN, item.valWARN {
+        display: block;
+    }
+
+    dl.valFAIL, item.valFAIL {
+        display: block;
+    }
+    dl.valCONFLICT, item.valCONFLICT {
+        display: block;
+    }
+    #val_warning_div dl dl { margin: 1px 0; }
+    #val_warning_div dl dt, #val_warning_div dl dd {
+        display: block;
+        float: left;
+        padding: 4px 0;
+    }
+    #val_warning_div dd { margin-left: 20px; }
+    dd.valCode { width: 80px; font-weight: bold; position: relative; }
+    dd.valMessage { width: 630px; }
 </style>
 <div id="uploads_warnings">
 	<div id='val_warning_dialog' style='visibility:hidden'>
@@ -196,6 +205,7 @@ dd.valMessage 	{	width:630px;	}
 		<div class='bd' style=''>
 			<div id='val_warning_desc'>Merging the uploaded data into the pre-existing session will override the following warnings:</div>
 			<div id='val_warning_div'>
+				<!-- content -->
 			</div>
 			<div style="text-align:right; width:100%; margin-top:3px;" id='val_warning_quest'>Are you sure you want to proceed?</div>
 		</div>

@@ -121,15 +121,14 @@ public class AdminUtils {
 			context.put("name", fullName);
 			context.put("verifyEmailLink", verificationUrl);
 
-			String subject = TurbineUtils.GetSystemName() + " Email Verification";
-			String emailText = XDAT.getSiteConfigPreferences().getEmailVerificationMessage();
-			if (emailText == null) {
-				emailText = populateVmTemplate(context, "/screens/email/NewUserVerification.vm");
-			}
-			emailText = emailText.replaceAll("FULL_NAME", fullName);
-			emailText = emailText.replaceAll("VERIFICATION_URL", verificationUrl);
-
-			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), email, subject, emailText);
+			final String subject = TurbineUtils.GetSystemName() + " Email Verification";
+			final String emailText = StringUtils.defaultIfBlank(XDAT.getSiteConfigPreferences().getEmailVerificationMessage(), populateVmTemplate(context, "/screens/email/NewUserVerification.vm"));
+			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(),
+												  email,
+												  subject,
+												  emailText.replaceAll("FULL_NAME", fullName)
+														   .replaceAll("VERIFICATION_URL", verificationUrl)
+														   .replaceAll("SITE_NAME", TurbineUtils.GetSystemName()));
 		}
 	}
 

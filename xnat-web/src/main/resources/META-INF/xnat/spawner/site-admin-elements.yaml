@@ -1046,12 +1046,12 @@ registrationOptions:
                 If false, no verification emails will be sent and users will not be required to verify their email
                 before using their account. Either way the administrator receives an email notification when a user registers.
                 If true, users who wish to change their email will also be required to verify their new email address.
-        emailVerificationMessage:
-            kind: panel.textarea
-            name: emailVerificationMessage
-            label: "Email Verification Message"
-            code: html
-            description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
+#        emailVerificationMessage:
+#            kind: panel.textarea
+#            name: emailVerificationMessage
+#            label: "Email Verification Message"
+#            code: html
+#            description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
         autoEnableUserRegistration:
             kind: panel.input.switchbox
             name: userRegistration

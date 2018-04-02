@@ -118,11 +118,15 @@ public class AdminUtils {
 			Context context = new VelocityContext();
 			String fullName = firstName + " " + lastName;
 			String verificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
+			String resendVerificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/ForgotLogin.vm";
 			context.put("name", fullName);
 			context.put("verifyEmailLink", verificationUrl);
+			context.put("resendEmailLink", resendVerificationUrl);
+			context.put("autoEnable", XDAT.getSiteConfigPreferences().getUserRegistration());
+			context.put("siteName", TurbineUtils.GetSystemName());
 
 			final String subject = TurbineUtils.GetSystemName() + " Email Verification";
-			final String emailText = StringUtils.defaultIfBlank(XDAT.getSiteConfigPreferences().getEmailVerificationMessage(), populateVmTemplate(context, "/screens/email/NewUserVerification.vm"));
+			final String emailText = populateVmTemplate(context, "/screens/email/NewUserVerification.vm");
 			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(),
 												  email,
 												  subject,

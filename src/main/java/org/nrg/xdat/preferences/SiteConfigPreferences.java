@@ -332,8 +332,10 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "Dear FULL_NAME,\n" +
-                                  "<br><br>Please click this link to verify your email address: <a href=\"VERIFICATION_URL\">Verify Email</a>\n" +
-                                  "<br><br>This link will expire in 24 hours.")
+                                    "<br><br>We received a request to register an account for you on SITE_NAME. If you would like to register, please confirm your email address by clicking this link: <a href=\"VERIFICATION_URL\">Verify Email</a>\n" +
+                                    " (This link will expire in 24 hours.)" +
+                                    "AUTO_ENABLE_TEXT" +
+                                    "<br><br>If you did not initiate this request, you can safely ignore this email.")
     public String getEmailVerificationMessage() {
         return getValue("emailVerificationMessage");
     }

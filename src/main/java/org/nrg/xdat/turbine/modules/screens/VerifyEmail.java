@@ -66,6 +66,10 @@ public class VerifyEmail extends VelocitySecureScreen {
                             current.setEnabled(true);
                         }
 
+                        if (current.isEnabled()) {
+                            context.put("userEnabled","true");
+                        }
+
                         try {
                             // Save the user, and add the user to the list of verified users.
                             // need to specify override security because users generally cannot enable their own account.

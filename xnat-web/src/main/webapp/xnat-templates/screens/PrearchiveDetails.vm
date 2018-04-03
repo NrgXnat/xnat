@@ -1,4 +1,5 @@
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #if($popup=="true")
 	#set ($template = $data.getTemplateInfo())
 	$!template.setLayoutTemplate("Popup.vm")
@@ -90,21 +91,18 @@
 	<table>
 		<tr><th>ID</th><th>Description</th><th>Files</th><th>Actions</th></tr>
 	#foreach($scan in $session.getScans_scan())
-		#define ($scanIdEsc)
-			#escapeAll("$!scan.getId()")
-		#end
-		#set ($scanIdTrim = "$!{scanIdEsc.trim()}")
-		<tr id="scanTR${scanIdTrim}">
-			<td>${scanIdTrim}</td>
+        #set($scanId = $!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$!scan.getId()")))
+		<tr id="scanTR$!{scanId}">
+			<td>$!{scanId}</td>
 			<td>#escapeHTML("$!scan.getSeriesDescription()")</td>
-			<td nowrap><div id="scan${scanIdTrim}Files"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
+			<td nowrap><div id="scan$!{scanId}Files"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
 			<td nowrap>
-				&nbsp;&nbsp;<button id="scanB1$${scanIdTrim}" onclick="XNAT.app.prearchiveActions.downloadFiles('$url', '${scanIdTrim}')">Download Files</button>
+				&nbsp;&nbsp;<button id="scanB1$$!{scanId}" onclick="XNAT.app.prearchiveActions.downloadFiles('$url', '$!{scanId}')">Download Files</button>
 				#foreach($res in $scan.getFile())
-					&nbsp;&nbsp;<button id="scanB3$${scanIdTrim}" onclick="XNAT.app.prearchiveActions.reviewFileDetails('$url', '${scanIdTrim}', '$res.getLabel()')">Review File Details</button>
-					&nbsp;&nbsp;<button #if($res.getLabel()!="DICOM") class="hide_me" #end id="scanB4$${scanIdTrim}" onclick="XNAT.app.prearchiveActions.reviewDicomTags('$url', '${scanIdTrim}')">Review DICOM Tags</button>
+					&nbsp;&nbsp;<button id="scanB3$$!{scanId}" onclick="XNAT.app.prearchiveActions.reviewFileDetails('$url', '$!{scanId}', '$res.getLabel()')">Review File Details</button>
+					&nbsp;&nbsp;<button #if($res.getLabel()!="DICOM") class="hide_me" #end id="scanB4$$!{scanId}" onclick="XNAT.app.prearchiveActions.reviewDicomTags('$url', '$!{scanId}')">Review DICOM Tags</button>
 				#end
-				&nbsp;&nbsp;<button id="scanB2$${scanIdTrim}" onclick="XNAT.app.scanDeleter.requestDelete('${scanIdTrim}');">Delete Series</button>
+				&nbsp;&nbsp;<button id="scanB2$$!{scanId}" onclick="XNAT.app.scanDeleter.requestDelete('$!{scanId}');">Delete Series</button>
 			</td>
 		</tr>
 	#end

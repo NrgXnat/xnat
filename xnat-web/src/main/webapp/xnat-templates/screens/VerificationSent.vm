@@ -10,7 +10,7 @@ $page.setTitle("Verification Sent")
     #end
     <h1>Email Verification Sent</h1>
     <p>Thank you for your interest in our site. You have been sent a link to verify your email address. Please check your email. If you do not receive the email soon, you can request a new confirmation email.</p>
-    <p style="margin-top: 1em;"><a href="$link.setPage("Login.vm")"><button class="btn btn2">Go to the Login Screen</button></a> <button class="btn btn2" onclick="resend()">Resend Confirmation Email</button> </p>
+    <p><a href="$link.setPage("Login.vm")"><button class="btn btn2">Go to the Login Screen</button></a> <button class="btn btn2" onclick="resend()">Resend Confirmation Email</button> </p>
 
     <form id="resend" action="$content.getURI('/app/template/ResendVerification.vm')" method="POST">
         <input type="hidden" name="emailTo" id="emailTo" value="${emailTo}" />
@@ -18,8 +18,8 @@ $page.setTitle("Verification Sent")
     </form></div>
 
 <script type="text/javascript">
-function resend() {
-	 var form = document.getElementById("resend");
-	 form.submit();
-}
+    function resend() {
+        var form = document.getElementById("resend");
+        form.submit();
+    }
 </script>

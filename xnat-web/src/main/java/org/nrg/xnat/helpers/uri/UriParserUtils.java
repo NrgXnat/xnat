@@ -227,7 +227,7 @@ public final class UriParserUtils {
         }
     };
 
-    private static final List<String>              TYPE_RANKS          = Arrays.asList(XnatProjectdata.SCHEMA_ELEMENT_NAME, XnatSubjectdata.SCHEMA_ELEMENT_NAME, XnatDeriveddata.SCHEMA_ELEMENT_NAME, XnatExperimentdata.SCHEMA_ELEMENT_NAME, XnatImagescandata.SCHEMA_ELEMENT_NAME, XnatReconstructedimagedata.SCHEMA_ELEMENT_NAME, "type", "xname");
+    private static final List<String>              TYPE_RANKS          = Arrays.asList(XnatProjectdata.SCHEMA_ELEMENT_NAME, XnatSubjectdata.SCHEMA_ELEMENT_NAME, XnatExperimentdata.SCHEMA_ELEMENT_NAME, XnatDeriveddata.SCHEMA_ELEMENT_NAME, XnatImagescandata.SCHEMA_ELEMENT_NAME, XnatReconstructedimagedata.SCHEMA_ELEMENT_NAME, "type", "xname");
     private static final Map<List<String>, String> XSI_ARCHIVE_FORMATS = ImmutableMap.copyOf(new HashMap<List<String>, String>() {{
         put(ImmutableList.of("xnat:derivedData"), "/archive/experiments/${xnat:derivedData}");
         put(ImmutableList.of("xnat:experimentData"), "/archive/experiments/${xnat:experimentData}");

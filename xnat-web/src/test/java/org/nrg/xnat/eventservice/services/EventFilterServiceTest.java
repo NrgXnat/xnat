@@ -189,6 +189,23 @@ public class EventFilterServiceTest {
 
 
     @Test
-    public void generateJsonPathFilter() {
+    public void generateJsonPathFilter() throws Exception {
+
+        String scanJson = objectMapper.writeValueAsString(Scan.populateSample());
+
+        Map<String, JsonPathFilterNode> nodeMap = eventFilterService.generateEventFilterNodes(XnatImagescandataI.class);
+        // ** set values to sample values ** //
+        for (String nodeKey : nodeMap.keySet()){
+            String sampleValue = nodeMap.get(nodeKey).sampleValue();
+            JsonPathFilterNode node = nodeMap.get(nodeKey).toBuilder().value(sampleValue).build();
+            nodeMap.put(nodeKey, node);
+            //if(nodeKey.equalsIgnoreCase("frames"))
+            //break;
+        }
+
+
+        String jsonPathFilter = eventFilterService.generateJsonPathFilter(nodeMap);
+
+        assertThat(jsonPathFilter, notNullValue());
     }
 }

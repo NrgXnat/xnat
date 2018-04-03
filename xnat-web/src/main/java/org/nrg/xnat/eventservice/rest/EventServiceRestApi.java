@@ -27,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
@@ -83,6 +84,20 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         }
         return new ResponseEntity<>(created.name() + ":" + Long.toString(created.id()), HttpStatus.CREATED);
     }
+
+    @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter/{event-id}"}, method = GET, produces = JSON)
+    @ApiOperation(value = "Get a subscription filter for a given Event ID")
+    @ResponseBody
+    public Map<String, JsonPathFilterNode> retrieveFilterBuilder(final @PathVariable(name="event-id") String eventId) {
+        return eventService.getEventFilterNodes(eventId);
+    }
+
+    @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter"}, method = GET, produces = JSON)
+    @ApiOperation(value = "Generate a subscription RegEx filter string from nodeFilter set")
+    public String generateFilterRegEx(final @RequestBody  Map<String, JsonPathFilterNode> nodeFilters) {
+        return eventService.generateFilterRegEx(nodeFilters);
+    }
+
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription/{id}", method = PUT)
     @ApiOperation(value = "Update an existing Subscription")

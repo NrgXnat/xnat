@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.*;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
@@ -132,6 +133,62 @@ public class EventFilterServiceImpl implements EventFilterService {
 
     @Override
     public String generateJsonPathFilter(Map<String, JsonPathFilterNode> filterNodeMap) {
+        String jsonPathFilter = "";
+        for (Iterator<String> it = filterNodeMap.keySet().iterator(); it.hasNext();){
+            String key = it.next();
+            String jsonPath = generateJsonPath(key, filterNodeMap.get(key));
+            if(!Strings.isNullOrEmpty(jsonPath)) {
+                if(!jsonPathFilter.isEmpty()){
+                    jsonPathFilter += " && ";
+                }
+                jsonPathFilter += jsonPath;
+            }
+        }
+        return "$[?(" + jsonPathFilter + ")]";
+    }
+
+    // ** generate JSONPath filter string based on filterNode value and settings
+    private String generateJsonPath(String nodeKey, JsonPathFilterNode filterNode){
+        Boolean matchNullValue = filterNode.matchNullValue() != null ? filterNode.matchNullValue() : false;
+        String regExMatcher = generateRegExMatcher(filterNode);
+        if(!Strings.isNullOrEmpty(regExMatcher)) {
+            return " @." + nodeKey + " =~ " + regExMatcher + " ";
+        }
         return null;
     }
+
+    private String generateRegExMatcher(JsonPathFilterNode filterNode) {
+        String jsonPathRegEx = null;
+        if(!Strings.isNullOrEmpty(filterNode.value())){
+            final String IGNORE_CASE = "i";
+            final String MATCH_CASE = "";
+            final String MATCH_ANY = ".*";
+            final String MATCH_LINE_START = "^";
+            final String MATCH_LINE_END = "$";
+
+            final String value = escapeForRegEx(filterNode.value());
+
+            final Boolean matchCase = filterNode.matchCase() != null ? filterNode.matchCase() : false;
+            final Boolean matchWord = filterNode.matchWord() != null ? filterNode.matchWord() : false;
+
+            final String caseFlag = matchCase ? MATCH_CASE : IGNORE_CASE;
+            final String wordStartFlag = matchWord ? MATCH_LINE_START : (MATCH_LINE_START + MATCH_ANY);
+            final String wordEndFlag = matchWord ? MATCH_LINE_END : (MATCH_ANY + MATCH_LINE_END);
+
+            jsonPathRegEx = "/" + wordStartFlag + value + wordEndFlag + "/" + caseFlag;
+        }
+        return jsonPathRegEx;
+    }
+
+    private String escapeForRegEx(String value){
+        char[] regExChars = "<([{\\^-=$!|]})?*+.>/".toCharArray();
+        if(StringUtils.containsAny(value, regExChars)) {
+            for(char rec : regExChars){
+                value = value.replace(String.valueOf(rec), "\\"+String.valueOf(rec));
+            }
+        }
+        return value;
+    }
+
+
 }

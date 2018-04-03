@@ -28,10 +28,7 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.*;
 
@@ -170,10 +167,24 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public Map<String, JsonPathFilterNode> getEventFilterNodes(String eventId) {
+        EventServiceEvent event = componentManager.getEvent(eventId);
+        if(event != null && !StringUtils.isNullOrEmpty(event.getPayloadXnatType())) {
+            return eventFilterService.generateEventFilterNodes(event);
+        }
+        return null;
+    }
+
+    @Override
     public List<SimpleEvent> getEvents() throws Exception {
         List<SimpleEvent> events = new ArrayList();
         for(EventServiceEvent e : componentManager.getInstalledEvents()){
-            events.add(toPojo(e));
+            SimpleEvent simpleEvent = toPojo(e);
+            Map<String, JsonPathFilterNode> eventFilterNodes = getEventFilterNodes(simpleEvent.id());
+            if(eventFilterNodes != null && eventFilterNodes.size()>0){
+                simpleEvent = simpleEvent.toBuilder().nodeFilters(eventFilterNodes).build();
+            }
+            events.add(simpleEvent);
         }
         return events;
     }
@@ -369,6 +380,11 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId) {
         return subscriptionDeliveryEntityService.get(projectId, subscriptionId);
+    }
+
+    @Override
+    public String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters) {
+        return eventFilterService.generateJsonPathFilter(nodeFilters);
     }
 
     private SimpleEvent toPojo(@Nonnull EventServiceEvent event) {

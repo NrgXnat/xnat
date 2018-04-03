@@ -11,6 +11,7 @@ import org.nrg.xnat.eventservice.model.*;
 import reactor.bus.Event;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface EventService {
@@ -31,6 +32,8 @@ public interface EventService {
     List<Action> getActionsByEvent(String eventId, String projectId, UserI user);
     List<Action> getActionsByProvider(String actionProvider, UserI user);
     Action getActionByKey(String actionKey, UserI user);
+
+    Map<String, JsonPathFilterNode> getEventFilterNodes(String eventId);
 
     List<Subscription> getSubscriptions();
     Subscription getSubscription(Long id) throws NotFoundException;
@@ -53,4 +56,6 @@ public interface EventService {
     Subscription deactivateSubscription(long id) throws NotFoundException;
 
     List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId);
+
+    String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters);
 }

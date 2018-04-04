@@ -779,7 +779,7 @@ div.info:before,
 div.note:before,
 div.success:before,
 div.warning:before {
-    font-family: "Font Awesome";
+    font-family: FontAwesome;
     padding: 0 4px;
     vertical-align: top;
 }
@@ -2680,7 +2680,7 @@ span.close:hover {
     height: 14px;
 }
 .tip_icon:before {
-    font-family: Font Awesome;
+    font-family: FontAwesome;
     content: "\f059";
 }
 

@@ -5,6 +5,7 @@
 
 #set($versionString = "v=1.7.5a")
 #set($SITE_ROOT = $content.getURI(""))
+#set($randomVersion = $math.getRandom())
 
 ## only load once
 #if ($!appJS != true)
@@ -27,7 +28,7 @@
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
 
     <!-- Icon sets -->
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.css?${versionString}">
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.css?v=${XNAT_CSRF}" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.css?${versionString}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.css?${versionString}">
 

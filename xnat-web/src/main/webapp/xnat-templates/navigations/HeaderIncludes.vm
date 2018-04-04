@@ -27,8 +27,6 @@
 <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
 #end
 
-#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$s").trim()).trim()#end
-
 ## pull in the base JavaScript files
 $navigation.setTemplate("/BaseJS.vm")
 

@@ -8,8 +8,6 @@
 </DIV>
 #end
 
-#macro(escapeAllUnescapeParam $s)#escapeAll($!turbineUtils.unescapeParam("$!s"))#end
-
 <table>
     <thead>
     <tr>

@@ -1,5 +1,6 @@
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+<!-- BEGIN /xnat-templates/screens/PrearchiveDetails.vm -->
 #if($popup=="true")
 	#set ($template = $data.getTemplateInfo())
 	$!template.setLayoutTemplate("Popup.vm")
@@ -34,13 +35,13 @@
 <div style="float:left">
     <table clsss="">
     #if($session.getProject())
-    	<tr><th align="left">$displayManager.getSingularDisplayNameForProject():</th><td>#escapeHTML($!session.getProject())</td></tr>
+    	<tr><th align="left">$displayManager.getSingularDisplayNameForProject():</th><td>#escapeHTML("$!session.getProject()")</td></tr>
     #end
     #if($session.getLabel())
     	<tr><th align="left">Session:</th><td>#escapeHTML("$!session.getLabel()")</td></tr>
     #end
     #if($session.getSubjectId())
-    	<tr><th align="left">$displayManager.getSingularDisplayNameForSubject():</th><td>#escapeHTML($!session.getSubjectId())</td></tr>
+    	<tr><th align="left">$displayManager.getSingularDisplayNameForSubject():</th><td>#escapeHTML("$!session.getSubjectId()")</td></tr>
     #end
 
     #if($session.getDate())
@@ -54,7 +55,7 @@
         <tr><th align="left">Patient Name:</th><td>#escapeHTML("$!session.getDcmpatientname()")</td></tr>
     #end
     #if($session.getUid())
-        <tr><th align="left">UID:</th><td>#escapeHTML($!session.getUid())</td></tr>
+        <tr><th align="left">UID:</th><td>#escapeHTML("$!session.getUid()")</td></tr>
     #end
     #if($uploadDate)
         <tr><th align="left">Upload Date:</th><td>$!turbineUtils.formatDateTime($uploadDate)</td></tr>
@@ -91,8 +92,8 @@
 	<table>
 		<tr><th>ID</th><th>Description</th><th>Files</th><th>Actions</th></tr>
 	#foreach($scan in $session.getScans_scan())
-        #set($scanId = $!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$!scan.getId()")))
-		<tr id="scanTR$!{scanId}">
+        #define($scanId)#escapeAll("$!scan.getId()")#end
+        <tr id="scanTR$!{scanId}">
 			<td>$!{scanId}</td>
 			<td>#escapeHTML("$!scan.getSeriesDescription()")</td>
 			<td nowrap><div id="scan$!{scanId}Files"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
@@ -106,11 +107,11 @@
 			</td>
 		</tr>
 	#end
-		<tr>
-			<td id="prearchiveSessionTotals" style="padding-top:10px;"></td>
-		</tr>
 	</table>
-	<br>
+
+    ## move this out of the table
+    <p id="prearchiveSessionTotals"></p>
+
     <button id="dAscans" style="float:right;margin-top:20px;" onclick="XNAT.app.prearchiveActions.downloadAllFiles('$url')">Download All Files</button>
 </div>
 
@@ -271,3 +272,4 @@
 #end
 </script>
 <script type="text/javascript" src="$content.getURI('/scripts/popupCentered.js')"></script>
+<!-- END /xnat-templates/screens/PrearchiveDetails.vm -->

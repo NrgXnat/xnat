@@ -46,7 +46,9 @@ XNAT.app.fileCounter={
 				}
     		}
     	}
-        document.getElementById("prearchiveSessionTotals").innerHTML="<b>Total:</b> "+ prearchiveSessionFileCount +" Files, " + size_format(prearchiveSessionFileSize);
+
+    	// use jQuery to select 'prearchiveSessionTotals' so it fails silently if the element is not present
+        $("#prearchiveSessionTotals").html("<b>Total:</b> "+ prearchiveSessionFileCount +" Files, " + size_format(prearchiveSessionFileSize));
 
 		for(var sc=0;sc<this.scans.length;sc++){
 			if(document.getElementById("scan"+this.scans[sc]+"Files").innerHTML.startsWith("Load")){

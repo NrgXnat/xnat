@@ -92,7 +92,7 @@ XNAT.app.scans={};
 
           var tempScan = window.classMapping.newInstance("$!scan.getXSIType()");
 
-          tempScan.setProperty("ID", '#escapeAll($!turbineUtils.unescapeParam("$scanId"))');
+          tempScan.setProperty("ID", '#escapeAll("$!turbineUtils.unescapeParam($scanId)")');
 
           #if($scan.getType())
           tempScan.setProperty("type", '#escapeAll($!turbineUtils.unescapeParam("$!scan.getType()"))');

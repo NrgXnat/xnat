@@ -352,11 +352,18 @@ public class TurbineUtils {
      * @return The full server path.
      */
     public static String GetFullServerPath() {
-        final String siteUrl = XDAT.getSiteConfigPreferences().getSiteUrl();
+        String siteUrl = XDAT.getSiteConfigPreferences().getSiteUrl();
+        if(siteUrl.endsWith("/")){
+            siteUrl = siteUrl.substring(0,siteUrl.length()-1);
+        }
         if (StringUtils.isNotBlank(siteUrl)) {
             return siteUrl;
         }
-        return Turbine.getServerScheme() + "://" + Turbine.getServerName() + (!Turbine.getServerPort().equals("80") ? ":" + Turbine.getServerPort() : "") + Turbine.getContextPath();
+        String contextPath = Turbine.getContextPath();
+        if(contextPath.endsWith("/")){
+            contextPath = contextPath.substring(0,contextPath.length()-1);
+        }
+        return Turbine.getServerScheme() + "://" + Turbine.getServerName() + (!Turbine.getServerPort().equals("80") ? ":" + Turbine.getServerPort() : "") + contextPath;
     }
 
     /**

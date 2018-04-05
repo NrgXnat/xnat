@@ -9,11 +9,10 @@
 
 package org.nrg.xft.utils;
 
-import java.sql.SQLException;
-import java.util.Map;
-
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
@@ -26,17 +25,21 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
+import org.springframework.stereotype.Service;
 
-import com.google.common.collect.Maps;
+import java.sql.SQLException;
+import java.util.Map;
 
+@Service
 public class SaveItemHelper {
 	private static final String ID_PLACEHOLDER = "NULL";
 	static Logger logger = Logger.getLogger(SaveItemHelper.class);
 	public static SaveItemHelper getInstance(){
-		return new SaveItemHelper();
+		return ContextService.getInstance().getBeanSafely(SaveItemHelper.class);
 	}
 
-	protected void save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
+	@EventServiceSaveTrigger
+	public void save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(StringUtils.isNotBlank(i.getItem().getGenericSchemaElement().getAddin())){
 			i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
 		}else{
@@ -60,7 +63,8 @@ public class SaveItemHelper {
 		}
 	}
 
-	protected boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
+	@EventServiceSaveTrigger
+	public boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(StringUtils.isNotBlank(i.getItem().getGenericSchemaElement().getAddin())){
 			return i.save(user, overrideSecurity, allowItemRemoval,c);
 		}else{

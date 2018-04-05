@@ -1,5 +1,10 @@
-<!-- start /screens/xnat_subjectData/xnat_subjectData_assessors.vm -->
+<!-- BEGIN xnat-templates/screens/xnat_subjectData/xnat_subjectData_assessors.vm -->
 #set($assessorTemplateName = $turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
+
+#if(!$project)
+    #set($project=$om.getProject())
+#end
+
 <BR>
 
 <div id="expts_container">
@@ -13,7 +18,7 @@
     </div>
 
     #set ($hasOtherProjects = false)
-    #if($pScope)
+    #if($project)
         <div id="proj_expts" style="display:none">
 
             <table width="100%" class="highlight sortable">
@@ -93,7 +98,7 @@
 
 <script type="text/javascript">
 
-        #if($pScope && $hasOtherProjects)
+        #if($project && $hasOtherProjects)
             XNAT.app.subject.toggleExptView = function(){
                 if (document.getElementById("all_expts").style.display == "block") {
                     document.getElementById("toggle_expts_link").innerHTML = "View All Available Data For This Subject";
@@ -117,4 +122,4 @@
 
 </script>
 
-<!-- end /screens/xnat_subjectData/xnat_subjectData_assessors.vm -->
+<!-- END xnat-templates/screens/xnat_subjectData/xnat_subjectData_assessors.vm -->

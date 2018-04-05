@@ -46,7 +46,9 @@ var XNAT = getObject(XNAT);
     function spawnDataList(type){
 
         if (ITEMS[type].list && !ITEMS[type].list.length) {
-            return {};
+            return {
+                get: function(){ return '<p class="none"><i>(none)</i></p>' }
+            };
         }
 
         var typeDashed = toDashed(type);
@@ -296,6 +298,9 @@ var XNAT = getObject(XNAT);
                             errorMsg +
                             '</div>'
                         });
+                        preparingDownload.fadeOut(100, function(){
+                            this.destroy();
+                        });
                         return false;
                     }
                     return true;
@@ -308,7 +313,9 @@ var XNAT = getObject(XNAT);
                 },
                 complete: function(data){
 
-                    preparingDownload.fadeOut(100);
+                    preparingDownload.fadeOut(100, function(){
+                        this.destroy();
+                    });
 
                     var ID = data.responseText;
                     var URL = XNAT.url.rootUrl($form.attr('action') + '/' + ID + '/' + (getZip ? 'zip' : 'xml'));

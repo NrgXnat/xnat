@@ -33,9 +33,11 @@
 				## Use the custom array to insure that the value is displayed weather we
 				## are using local_values or all_values (see customizableSelectBox.js lines 54-93)
 				#set($currScannerName=$!item.getStringProperty("${datatype}/scanner"))
-                window.ss.custom.push("$!turbineUtils.escapeHTML($currScannerName)");
+				if ('#escapeAll("$!currScannerName")') {
+                    window.ss.custom.push('#escapeAll("$!currScannerName")');
+				}
 
-				#foreach ($pValue in $scanners)
+					#foreach ($pValue in $scanners)
 					#if($pValue.get(0))
 						## Don't add the current scanner name since we added it above.
 						#if($pValue.get(0) != $item.getStringProperty("${datatype}/scanner"))

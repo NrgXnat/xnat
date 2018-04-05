@@ -14,33 +14,16 @@
 ##
 <!-- BEGIN xnat-templates/screens/InviteProjectAccessEmail.vm -->
 #set ($acceptUrl = "${server}/app/action/AcceptProjectAccess/par/${par.guid}?hash=${par.hashedEmail}")
-<div id="logo" align="center">#parse("/screens/Logo_Email.vm")</div>
-<hr>
-<TABLE>
-    <TR>
-        <TD><h3>$projectOM.getName() access invitation.</h3></TD>
-    </TR>
-    <TR>
-        <TD>
-            $user.getFirstname() $user.getLastname() has invited you to join the $projectOM.getName() project.
-            #if($projectOM.getDescription())
-                Project Description: $projectOM.getDescription()
-            #end
-        </TD>
-    </TR>
-    <TR>
-        <TD><a href="$acceptUrl">Proceed to the site to get started reviewing/using the data.</A></TD>
-    </TR>
-    <TR>
-        <TD>
-            <br><br>
-            The $system Team<BR>
+<p>Hello,<br>
+    You have been invited to join the $projectOM.getName() $displayManager.getSingularDisplayNameForProject().toLowerCase() on $system by $user.getFirstname() $user.getLastname(). If you were not expecting to receive this invitation, you can safely ignore this email.</p>
+<p>
+    To accept this invitation and begin working in this $displayManager.getSingularDisplayNameForProject().toLowerCase(), please click the following link: <a href="$acceptUrl">$acceptUrl.</a>
+</p>
+<p>---</p>
+<p>
+    The $system Team<br>
+    <a href="$acceptUrl">$server</a><br>
+    <a href="mailto:$admin_email">$admin_email</a>
+</p>
 
-            <a href="$acceptUrl">$server</a><BR>
-
-            <a href="mailto:$admin_email">$admin_email</a>
-
-        </TD>
-    </TR>
-</TABLE>
 <!-- END xnat-templates/screens/InviteProjectAccessEmail.vm -->

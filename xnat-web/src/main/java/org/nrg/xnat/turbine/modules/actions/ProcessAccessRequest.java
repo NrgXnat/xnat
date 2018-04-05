@@ -17,6 +17,7 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.action.InvalidParamsException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
@@ -90,9 +91,16 @@ public class ProcessAccessRequest extends SecureAction {
 		    context.put("system",TurbineUtils.GetSystemName());
 		    context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
 		    context.put("projectOM",project);
+			context.put("displayManager", DisplayManager.GetInstance());
 		    StringWriter sw = new StringWriter();
-		    Template template =Velocity.getTemplate("/screens/RequestProjectAccessDenialEmail.vm");
-		    template.merge(context,sw);
+			Template template;
+			try {
+				template = Velocity.getTemplate("/screens/email/RequestProjectAccessDenialEmail.vm");
+				template.merge(context,sw);
+			} catch (Exception exception) {
+				logger.error("Unable to send mail", exception);
+				throw exception;
+			}
 		    String message= sw.toString();
 
 		    String from = XDAT.getSiteConfigPreferences().getAdminEmail();
@@ -166,6 +174,7 @@ public class ProcessAccessRequest extends SecureAction {
 			}
                         
             context.put("user",user);
+            context.put("other",other);
             context.put("server",TurbineUtils.GetFullServerPath());
 			context.put("siteLogoPath", XDAT.getSiteLogoPath());
             context.put("process","Transfer to the archive.");
@@ -173,6 +182,7 @@ public class ProcessAccessRequest extends SecureAction {
             context.put("access_level",access_level);
             context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
             context.put("projectOM",project);
+			context.put("displayManager", DisplayManager.GetInstance());
             final ArrayList<String> ownerEmails = project.getOwnerEmails();
             String[] projectOwnerEmails = ownerEmails.toArray(new String[ownerEmails.size()]);
             SendAccessApprovalEmail(context,XDAT.getSiteConfigPreferences().getAdminEmail(),new String[]{other.getEmail()},projectOwnerEmails,new String[]{XDAT.getSiteConfigPreferences().getAdminEmail()},TurbineUtils.GetSystemName() + " Access Request for " + project.getName() + " Approved");
@@ -182,7 +192,7 @@ public class ProcessAccessRequest extends SecureAction {
         //data.getParameters().setString("topTab", "Access");
         this.redirectToReportScreen("XDATScreen_report_xnat_projectData.vm", project, data);
     }
-    
+
     public static void SendAccessApprovalEmail(Context context, String otherEmail, UserI user, String subject) throws Exception {
 	String admin = XDAT.getSiteConfigPreferences().getAdminEmail();
         SendAccessApprovalEmail(context, admin, new String[]{otherEmail}, new String[]{user.getEmail()}, new String[]{admin}, subject);
@@ -190,8 +200,14 @@ public class ProcessAccessRequest extends SecureAction {
 
     public static void SendAccessApprovalEmail(Context context, String from, String[] to, String[] cc, String[] bcc, String subject) throws Exception{
         StringWriter sw = new StringWriter();
-        Template template =Velocity.getTemplate("/screens/RequestProjectAccessApprovalEmail.vm");
-        template.merge(context,sw);
+        Template template;
+        try {
+            template = Velocity.getTemplate("/screens/email/RequestProjectAccessApprovalEmail.vm");
+            template.merge(context,sw);
+        } catch (Exception exception) {
+            logger.error("Unable to send mail", exception);
+            throw exception;
+        }
         String message= sw.toString();
 
 		try {

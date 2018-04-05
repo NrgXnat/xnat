@@ -16,6 +16,7 @@ import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
@@ -477,9 +478,10 @@ public class ProjectAccessRequest {
 	    }
 
 	    context.put("par", request);
+        context.put("displayManager", DisplayManager.GetInstance());
 
         StringWriter writer = new StringWriter();
-        Template template = Velocity.getTemplate("/screens/InviteProjectAccessEmail.vm");
+        Template template = Velocity.getTemplate("/screens/email/InviteProjectAccessEmail.vm");
         template.merge(context, writer);
 
         String bcc = null;

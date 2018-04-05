@@ -30,6 +30,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
                 "org.nrg.xnat.services.system.impl.hibernate",
                 "org.nrg.xnat.services.validation",
                 "org.nrg.xnat.eventservice.services",
+                "org.nrg.xnat.eventservice.aspects",
                 "org.nrg.xnat.eventservice.listeners",
                 "org.nrg.xnat.eventservice.events",
                 "org.nrg.xnat.eventservice.actions",

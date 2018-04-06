@@ -6,14 +6,14 @@ import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.springframework.stereotype.Service;
 
 @Service
-@XnatEventServiceEvent(name="ProjectCreatedEvent")
-public class ProjectCreatedEvent extends CombinedEventServiceEvent<ProjectCreatedEvent, XnatProjectdataI>  {
-    final String displayName = "Project Created";
-    final String description ="New project created.";
+@XnatEventServiceEvent(name="ProjectDeletedEvent")
+public class ProjectDeletedEvent extends CombinedEventServiceEvent<ProjectDeletedEvent, XnatProjectdataI>  {
+    final String displayName = "Project Deleted";
+    final String description ="Project deleted.";
 
-    public ProjectCreatedEvent(){};
+    public ProjectDeletedEvent(){};
 
-    public ProjectCreatedEvent(final XnatProjectdataI payload, final String eventUser) {
+    public ProjectDeletedEvent(final XnatProjectdataI payload, final String eventUser) {
         super(payload, eventUser);
     }
 
@@ -36,7 +36,7 @@ public class ProjectCreatedEvent extends CombinedEventServiceEvent<ProjectCreate
 
     @Override
     public EventServiceListener getInstance() {
-        return new ProjectCreatedEvent();
+        return new ProjectDeletedEvent();
     }
 
 }

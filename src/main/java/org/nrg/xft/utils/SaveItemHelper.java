@@ -38,7 +38,7 @@ public class SaveItemHelper {
 		return ContextService.getInstance().getBeanSafely(SaveItemHelper.class);
 	}
 
-	@EventServiceSaveTrigger
+	@EventServiceTrigger
 	public void save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(StringUtils.isNotBlank(i.getItem().getGenericSchemaElement().getAddin())){
 			i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
@@ -63,7 +63,7 @@ public class SaveItemHelper {
 		}
 	}
 
-	@EventServiceSaveTrigger
+	@EventServiceTrigger
 	public boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(StringUtils.isNotBlank(i.getItem().getGenericSchemaElement().getAddin())){
 			return i.save(user, overrideSecurity, allowItemRemoval,c);
@@ -89,7 +89,8 @@ public class SaveItemHelper {
 	        return _success;
 		}
 	}
-	
+
+	@EventServiceTrigger
 	protected void delete(ItemI i, UserI user,EventMetaI c) throws Exception{
 		doDynamicActions(i,user,c,"preDelete",true);
 		DBAction.DeleteItem(i.getItem(), user, c, false);

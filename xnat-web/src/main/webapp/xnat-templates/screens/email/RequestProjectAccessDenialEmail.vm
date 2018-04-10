@@ -1,0 +1,9 @@
+<p>
+    We regret to inform you that your request to access the $projectOM.getName() project has been denied.  Please consult the project manager for additional details at <a href="mailto:$user.getEmail()">$user.getEmail()</a>.
+</p>
+<p>---</p>
+<p>
+    The $system Team<br>
+    <a href="$acceptUrl">$server</a><br>
+    <a href="mailto:$admin_email">$admin_email</a>
+</p>

@@ -41,7 +41,18 @@ $page.setTitle("$siteId - Please Login")
 
 #if($turbineUtils.GetPassedParameter("par",$data))
 ## create custom layout when parameters are passed to the login page from an external link.
+
     <div id="login_welcome">
+        #if($data.getMessage())
+            <div class="warning" style="margin-bottom: 2em;">
+                <strong>Note: </strong> $data.getMessage()
+            </div>
+        #end
+
+        <div id="PAR_welcome" style="margin-bottom: 2em; padding-bottom: 2em; border-bottom: 1px solid #eee">
+            <h1>Welcome To $siteId</h1>
+            <p>You have received an invitation to join a project on this site. To continue, please register a new account or log in with an existing one.</p>
+        </div>
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
             <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
@@ -54,14 +65,8 @@ $page.setTitle("$siteId - Please Login")
         #end
     </div>
 
-    #if($data.getMessage())
-    <div class="warning">
-        <strong>Note: </strong> $data.getMessage()
-    </div>
-    #end
-
     <div id="register_box_container">
-        <h3><span>New User Registration</span> <button class="btn btn-sm" onclick="showLogin()">Already Have an Account?</button></h3>
+        <h3><span>Register A New Account</span> <button class="btn btn-sm" onclick="showLogin()">Already Have an Account?</button></h3>
         <div class="clear"></div>
         <div id="register_box">
             #parse("/screens/register_box.vm")
@@ -69,7 +74,7 @@ $page.setTitle("$siteId - Please Login")
     </div>
 
     <div id="login_box_container" class="hidden">
-        <h3><span>Existing User Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
+        <h3><span>Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
         <div class="clear"></div>
         <div class="message">
             <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.

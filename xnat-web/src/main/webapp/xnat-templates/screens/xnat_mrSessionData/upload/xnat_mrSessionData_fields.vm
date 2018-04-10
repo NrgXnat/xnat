@@ -35,7 +35,9 @@
 				## Use the custom array to insure that the value is displayed weather we
 				## are using local_values or all_values (see customizableSelectBox.js lines 54-93)
 				#set($currScannerName=$!item.getStringProperty("${datatype}/scanner"))
-                window.ss.custom.push("#escapeHTML($currScannerName)");
+                if ('#escapeAll("$!currScannerName")') {
+                    window.ss.custom.push('#escapeAll("$!currScannerName")');
+                }
 
 				## Push other scanner names into the array.
 				#foreach ($pValue in $scanners)

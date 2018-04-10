@@ -9,7 +9,7 @@
 		#if($project)
 			#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM ${om.getItem().getGenericSchemaElement().getSQLName()} mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id LEFT JOIN xnat_experimentData expt ON isd.id=expt.id WHERE expt.project='$project'"))
 			#if($scanners.size()==0)
-				#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM ${om.getItem().getGenericSchemaElement().getSQLName()} mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))						
+				#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM ${om.getItem().getGenericSchemaElement().getSQLName()} mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))
 			#end
 		#else
 			#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM ${om.getItem().getGenericSchemaElement().getSQLName()} mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))
@@ -22,7 +22,7 @@
 		<td>
 			<script type="text/javascript">
 				window.ss=new Object();
-				
+
 				#if($project)
 					window.ss.uri=serverRoot +"/REST/scanners?format=json&modality=${om.getItem().getGenericSchemaElement().getSQLName()}";
 				#end
@@ -30,14 +30,16 @@
 				window.ss.local_values=new Array();
 				window.ss.custom = new Array();
 				window.ss.valueField="scanner";
-				
+
 				## Push the current scanner name into the array.
-				## Use the custom array to insure that the value is displayed weather we 
+				## Use the custom array to insure that the value is displayed weather we
 				## are using local_values or all_values (see customizableSelectBox.js lines 54-93)
 				#set($currScannerName=$!item.getStringProperty("${datatype}/scanner"))
-                window.ss.custom.push("$!turbineUtils.escapeHTML($currScannerName)");
+                if ('#escapeAll("$!currScannerName")') {
+                    window.ss.custom.push('#escapeAll("$!currScannerName")');
+                }
 
-				#foreach ($pValue in $scanners)
+					#foreach ($pValue in $scanners)
 					#if($pValue.get(0))
 						## Don't add the current scanner name since we added it above.
 						#if($pValue.get(0) != $item.getStringProperty("${datatype}/scanner"))
@@ -47,7 +49,7 @@
 					#end
 				#end
 			</script>
-			
+
 			#xdatComboBox("${datatype}.scanner" $item "window.ss" $vr)
 			<a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
 			#if($item.getStringProperty("${datatype}/scanner/manufacturer") || $item.getStringProperty("${datatype}/scanner/model") || $!item.getStringProperty("${datatype}/scanner"))
@@ -67,7 +69,7 @@
 </tr>
 <tr>
 			 <td colspan="2"><div style="line-height:8px">&nbsp;</div></td>
-		</tr>	
+		</tr>
 		<tr name="additional_fields" style="display:none">
 			 <td>Operator</td>
 			 <td>

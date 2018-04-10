@@ -1,4 +1,4 @@
-			<!--BEGIN xnat_imageAssessorData_details.vm -->
+			<!--BEGIN xnat-templates/screens/xnat_imageAssessorData/xnat_imageAssessorData_details.vm -->
 			<table border="0" width="95%" >
 				 <tr>
   					<td valign="top">
@@ -18,7 +18,7 @@ width:1px;
             <li><a href="#$tab.getProperty("divName")"><em>$tab.getProperty("title")<span class="spacer"></span></em></a></li>
         #end
   </ul>
- <div class="yui-content">   
+ <div class="yui-content">
   <div id="tab1">
  <table>
  <tr>
@@ -29,13 +29,13 @@ width:1px;
   </td>
   <td valign="top">
 <table>
-#parse($turbineUtils.getTemplateName("session_brief",$om.getXSIType(),$project))					
+#parse($turbineUtils.getTemplateName("session_brief",$om.getXSIType(),$project))
 </table>
   </td>
   </tr>
  </table>
 </div>
- 
+
   <div id="tab2">
 #parse($turbineUtils.getTemplateName("sharing",$om.getXSIType(),$!project))
 </div>
@@ -47,33 +47,33 @@ width:1px;
                 </div>
             #end
 
-  </div> 
+  </div>
  </DIV>
 </div>
-<script type="text/javascript">   
+<script type="text/javascript">
 function summaryIndexChanged(){
    var activeIndex=this.get("activeIndex");
    YAHOO.util.Cookie.set("${project.getId()}.summary.index",activeIndex);
 }
-   
-function summaryTabManagerInit(){
-    window.summaryTabView = new YAHOO.widget.TabView('exptSummary');   
-    window.expt_summary_module = new YAHOO.widget.Module("expt_summary_module",{visible:false,zIndex:5});
-	
-#addCustomScreenJS($om.getXSIType() "report/tabs_js") 
 
-    window.expt_summary_module.show(); 		    
-    
+function summaryTabManagerInit(){
+    window.summaryTabView = new YAHOO.widget.TabView('exptSummary');
+    window.expt_summary_module = new YAHOO.widget.Module("expt_summary_module",{visible:false,zIndex:5});
+
+#addCustomScreenJS($om.getXSIType() "report/tabs_js")
+
+    window.expt_summary_module.show();
+
     var tabIndex=YAHOO.util.Cookie.get("${om.getId()}.summary.index");
     window.summaryTabView.set('activeIndex',tabIndex||0);
-    
+
     window.summaryTabView.subscribe("activeTabChange",summaryIndexChanged);
 					}
 					summaryTabManagerInit();
 </script>
 <!--END SUBJECT SUMMARY TABS -->
 
-  </td>					
+  </td>
 					  <td valign="top" align="right" rowspan="2">
 #parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
 	  </td>

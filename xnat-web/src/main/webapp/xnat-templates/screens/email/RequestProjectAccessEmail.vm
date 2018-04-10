@@ -1,0 +1,32 @@
+<p>
+    Hello,<br>
+    We received a request to access the $projectOM.getName() $displayManager.getSingularDisplayNameForProject().toLowerCase() from a user on $system as a $access_level. Granting this kind of access in this $displayManager.getSingularDisplayNameForProject().toLowerCase() will
+ #if($access_level=="owner")
+    mean the user can read, edit and manage anything affiliated with this $displayManager.getSingularDisplayNameForProject().toLowerCase().
+ #elseif($access_level=="member")
+    mean the user can read and edit the $displayManager.getSingularDisplayNameForProject().toLowerCase()'s $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data.
+ #elseif($access_level=="collaborator")
+    mean the user can read the $displayManager.getSingularDisplayNameForProject().toLowerCase()'s $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data.  The user will NOT be able to edit the data.
+ #else
+    give the user permissions as defined in the $access_level custom group.
+ #end
+</p>
+<p>
+    Login: $user.getLogin()<br>
+    Email: $user.getEmail()<br>
+    Firstname: $user.getFirstname()<br>
+    Lastname: $user.getLastname()<br>
+ #if($!comments)
+     <br>Comments: $!comments
+ #end
+</p>
+
+<p>
+    To approve or deny this $displayManager.getSingularDisplayNameForProject().toLowerCase() access request, please click the following link: <a href="$server/app/template/RequestProjectAccessForm.vm/project/$projectOM.getId()/id/$user.getXdatUserId()/access_level/$access_level">$server/app/template/RequestProjectAccessForm.vm/project/$projectOM.getId()/id/$user.getXdatUserId()/access_level/$access_level</a>
+</p>
+<p>---</p>
+<p>
+    The $system Team<br>
+    <a href="$acceptUrl">$server</a><br>
+    <a href="mailto:$admin_email">$admin_email</a>
+</p>

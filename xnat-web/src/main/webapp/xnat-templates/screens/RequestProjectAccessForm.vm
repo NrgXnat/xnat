@@ -1,43 +1,35 @@
 <form name="form1" method="post" action="$link.setAction("ProcessAccessRequest")"> 
 <input type="hidden" name="project" value="$projectOM.getId()"/>
-<input type="hidden" name="id" value="$user.getXdatUserId()"/>
+<input type="hidden" name="id" value="$requester.getXdatUserId()"/>
 <input type="hidden" name="access_level" value="$access_level"/>
 
-<TABLE>
- <TR>
- 	 <TD>
- 	  <TABLE>
- <TR>
-  <TD><h3>$projectOM.getName() access request.</h3></TD>
- </TR>
- <TR><TD>
+<h2>$projectOM.getName() Access Request</h2>
 
-The following user has requested $access_level access to the $projectOM.getName() $displayManager.getSingularDisplayNameForProject().  
-Allowing the user to access the $displayManager.getSingularDisplayNameForProject().toLowerCase() will 
-#if($access_level=="owner")
-mean the user can read, download, edit and manage anything affiliated with this $displayManager.getSingularDisplayNameForProject().toLowerCase().
-#elseif($access_level=="member")
-mean the user can read, download and edit the $displayManager.getSingularDisplayNameForProject().toLowerCase()'s $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data. 
-#else
-mean the user can read and download the $displayManager.getSingularDisplayNameForProject().toLowerCase()'s $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data.  The user will NOT be able to edit the data.
-#end
-</TD></TR>
-<TR><TD><BR>
+    <p>
+        The following user has requested $access_level access to the $projectOM.getName() $displayManager.getSingularDisplayNameForProject(). Granting this kind of access in this $displayManager.getSingularDisplayNameForProject().toLowerCase() will
+        #if($access_level=="owner")
+            mean the user can read, edit and manage anything affiliated with this $displayManager.getSingularDisplayNameForProject().toLowerCase().
+        #elseif($access_level=="member")
+            mean the user can read and edit the $displayManager.getSingularDisplayNameForProject().toLowerCase()'s $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data.
+        #elseif($access_level=="collaborator")
+            mean the user can read the $displayManager.getSingularDisplayNameForProject().toLowerCase()'s $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data.  The user will NOT be able to edit the data.
+        #else
+            give the user permissions as defined in the $access_level custom group.
+        #end
+    </p>
 
-Login: $user.getLogin()<BR>
+<div>
+    Username: $requester.getLogin()<br>
+    Firstname: $requester.getFirstname()<br>
+    Lastname: $requester.getLastname()<br>
+    Email: $requester.getEmail()<br>
+    Requested Access Level: <strong>$access_level</strong><br>
+    #if($!comments)
+        <br>Comments: $!comments
+    #end
+</div>
 
-Email: $user.getEmail()<BR>
-
-Firstname: $user.getFirstname()<BR>
-
-Lastname: $user.getLastname()<BR>
-
-</TD></TR></TABLE>
-
- 	 </TD>
- </TR>
- <TR>
-  <TD ALIGN="center"><input type="submit" name="eventSubmit_doDenial" value="DENY" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="eventSubmit_doApprove" value="APPROVE" /></TD>
- </TR>
-</TABLE>
+<p>
+    <input type="submit" name="eventSubmit_doDenial" value="DENY" style="margin-right: 10px;" /><input type="submit" name="eventSubmit_doApprove" value="APPROVE" />
+</p>
 </form>

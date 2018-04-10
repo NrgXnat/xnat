@@ -206,7 +206,7 @@
 
                 <h4>Sessions</h4>
                 <section class="sessions list">
-                    <i class="hidden none">(none)</i>
+                    <p class="hidden none"><i>(none)</i></p>
                     <!-- list project sessions -->
                 </section>
 
@@ -277,7 +277,7 @@
                 <!-- Scan Formats -->
                 <h4>Scan Formats</h4>
                 <section class="scan-formats list">
-                    <i class="hidden none">(none)</i>
+                    <p class="hidden none"><i>(none)</i></p>
                     <!-- list scan formats -->
                 </section>
                 #set($counter=0)
@@ -309,7 +309,7 @@
                 <!-- Scan Types -->
                 <h4>Scan Types</h4>
                 <section class="scan-types list">
-                    <i class="hidden none">(none)</i>
+                    <p class="hidden none"><i>(none)</i></p>
                     <!-- list scan types -->
                 </section>
 
@@ -346,7 +346,7 @@
                 #if($showResources)
                     <h4>Additional Resources</h4>
                     <section class="resources list">
-                        <i class="hidden none">(none)</i>
+                        <p class="hidden none"><i>(none)</i></p>
                         <!-- list project resources -->
                     </section>
                     ## gather resources
@@ -380,7 +380,7 @@
                 #if($showRecons)
                     <h4>Reconstructions</h4>
                     <section class="reconstructions list">
-                        <i class="hidden none">(none)</i>
+                        <p class="hidden none"><i>(none)</i></p>
                         <!-- list reconstructions -->
                     </section>
                     ## gather reconstructions
@@ -418,7 +418,7 @@
                 #if($showAssessors)
                     <h4>Assessments</h4>
                     <section class="assessors list">
-                        <i class="hidden none">(none)</i>
+                        <p class="hidden none"><i>(none)</i></p>
                         <!-- list assessors -->
                     </section>
                     ## gather assessors
@@ -522,11 +522,11 @@
         </div>
     </div>
 
-    <script src="${SITE_ROOT}/scripts/xnat/app/projectDownload.js"></script>
-
     <div class="clear"></div>
 
 </form>
+
+<script src="${SITE_ROOT}/scripts/xnat/app/projectDownload.js"></script>
 
 <script>
     (function(){

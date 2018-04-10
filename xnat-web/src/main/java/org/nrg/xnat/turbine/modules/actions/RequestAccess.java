@@ -54,7 +54,7 @@ public class RequestAccess extends SecureAction {
         StringWriter sw = new StringWriter();
         Template template;
 		try {
-			template = Velocity.getTemplate("/screens/RequestProjectAccessEmail.vm");
+			template = Velocity.getTemplate("/screens/email/RequestProjectAccessEmail.vm");
         template.merge(context,sw);
 		} catch (Exception exception) {
             logger.error("Unable to send mail", exception);

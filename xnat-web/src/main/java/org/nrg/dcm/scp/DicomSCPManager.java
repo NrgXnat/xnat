@@ -183,6 +183,10 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         return getMapValue(PREF_ID);
     }
 
+    public List<DicomSCPInstance> getDicomSCPInstancesList() {
+        return _template.query("SELECT * FROM dicom_scp_instance",DICOM_SCP_INSTANCE_ROW_MAPPER);
+    }
+
     /**
      * Sets the full map of {@link DicomSCPInstance DICOM SCP instance} definitions.
      *
@@ -339,7 +343,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
      */
     public Map<DicomSCPInstance, Boolean> areDicomSCPInstancesStarted() {
         final Map<DicomSCPInstance, Boolean> statuses = new HashMap<>();
-        for (final DicomSCPInstance instance : getDicomSCPInstances().values()) {
+        for (final DicomSCPInstance instance : getDicomSCPInstancesList()) {
             statuses.put(instance, false);
         }
         for (final int port : _dicomSCPs.keySet()) {
@@ -524,6 +528,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final String DSCPM_DB_URL = "jdbc:h2:mem:" + PREF_ID;
 
     // Read queries: no changes to DicomSCPs required.
+    private static final String GET_ALL                               = "SELECT * FROM dicom_scp_instance";
     private static final String GET_INSTANCE_BY_ID                    = "SELECT * FROM dicom_scp_instance WHERE id = :id";
     private static final String GET_ENABLED_INSTANCES_BY_PORT         = "SELECT * FROM dicom_scp_instance WHERE enabled = :enabled AND port = :port";
     private static final String DOES_INSTANCE_ID_EXIST                = "SELECT EXISTS(" + GET_INSTANCE_BY_ID + ")";

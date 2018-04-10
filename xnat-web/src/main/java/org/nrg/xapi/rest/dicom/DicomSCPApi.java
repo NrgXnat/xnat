@@ -113,7 +113,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<DicomSCPInstance>> getDicomSCPInstances() {
-        final List<DicomSCPInstance> instances = new ArrayList<>(_manager.getDicomSCPInstances().values());
+        final List<DicomSCPInstance> instances = _manager.getDicomSCPInstancesList();
         return new ResponseEntity<>(instances, HttpStatus.OK);
     }
 

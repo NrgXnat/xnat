@@ -3,14 +3,14 @@ package org.nrg.xnat.eventservice.aspects;
 
 import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
-import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
+import org.nrg.xdat.om.XdatUser;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
@@ -34,71 +34,136 @@ public class EventServiceTriggerAspect {
         this.eventService = eventService;
     }
 
+
+//    @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
+//            "&& args(item, user, ..)" +
+//            "&& execution(* save(..))")
+//    public void triggerOnItemSave(final JoinPoint joinPoint, ItemI item,UserI user) throws Throwable{
+//        try {
+//            String userLogin = user != null ? user.getLogin() : null;
+//
+//            log.debug("triggerOnItemSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+//                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+//                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
+//                    "  UserI = " + userLogin);
+//
+//        } catch (Throwable e){
+//            log.error("Exception processing triggerOnItemSave" + e.getMessage());
+//            throw e;
+//        }
+//    }
+
+
     @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
             "&& args(item, user, ..)" +
             "&& execution(* save(..))")
-    public void triggerOnItemSave(final JoinPoint joinPoint, ItemI item,UserI user) throws Throwable{
+    public void triggerOnProjectSave(final JoinPoint joinPoint, XnatProjectdata item,UserI user) throws Throwable{
         try {
             String userLogin = user != null ? user.getLogin() : null;
 
-            log.debug("triggerOnItemSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
-                    "  ItemI = " + (item != null ? item.getXSIType() : "null") +
+            log.debug("triggerOnProjectSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
                     "  UserI = " + userLogin);
+            eventService.triggerEvent(new ProjectCreatedEvent(item, userLogin), item.getId());
+        } catch (Throwable e){
+            log.error("Exception processing triggerOnProjectSave" + e.getMessage());
+            throw e;
+        }
+    }
 
-            if(StringUtils.equals(item.getXSIType(),"arc:project")){
-                XnatProjectdataI project = new XnatProjectdata(item);
-                eventService.triggerEvent(new ProjectCreatedEvent(project, userLogin), project.getId());
+    @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
+            "&& args(item, user, ..)" +
+            "&& execution(* save(..))")
+    public void triggerOnSubjectSave(final JoinPoint joinPoint, XnatSubjectdata item,UserI user) throws Throwable{
+        try {
+            String userLogin = user != null ? user.getLogin() : null;
 
-            }else if(item instanceof XnatImagesessiondataI){
-                XnatImagesessiondataI session = (XnatImagesessiondataI)item;
-                eventService.triggerEvent(new SessionArchiveEvent(session, userLogin), session.getProject());
+            log.debug("triggerOnSubjectSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
+                    "  UserI = " + userLogin);
+            eventService.triggerEvent(new SubjectCreatedEvent(item, userLogin), item.getProject());
+        } catch (Throwable e){
+            log.error("Exception processing triggerOnSubjectSave" + e.getMessage());
+            throw e;
+        }
+    }
 
-                // Fire scan archive events
-                for (final XnatImagescandataI scan : session.getScans_scan()) {
-                    eventService.triggerEvent(new ScanArchiveEvent(scan, userLogin), session.getProject());
-                }
+    @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
+            "&& args(item, user, ..)" +
+            "&& execution(* save(..))")
+    public void triggerOnSessionSave(final JoinPoint joinPoint, XnatImagesessiondata item, UserI user) throws Throwable{
+        try {
+            String userLogin = user != null ? user.getLogin() : null;
 
-            }else if(StringUtils.equals(item.getXSIType(), "xnat:subjectData")){
-                XnatSubjectdataI subject = new XnatSubjectdata(item);
-                eventService.triggerEvent(new SubjectCreatedEvent((XnatSubjectdataI)item, userLogin), subject.getProject());
-
+            log.debug("triggerOnSessionSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
+                    "  UserI = " + userLogin);
+            eventService.triggerEvent(new SessionArchiveEvent(item, userLogin), item.getProject());
+            // Fire scan archive events
+            for (final XnatImagescandataI scan : item.getScans_scan()) {
+                eventService.triggerEvent(new ScanArchiveEvent(scan, userLogin), item.getProject());
             }
         } catch (Throwable e){
-            log.error("Exception processing triggerOnItemSave" + e.getMessage());
+            log.error("Exception processing triggerOnSessionSave" + e.getMessage());
+            throw e;
+        }
+    }
+
+    @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
+            "&& args(item, user, ..)" +
+            "&& execution(* save(..))")
+    public void triggerOnUserSave(final JoinPoint joinPoint, XdatUser item, UserI user) throws Throwable{
+        try {
+            String userLogin = user != null ? user.getLogin() : null;
+
+            log.debug("triggerOnUserSave AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
+                    "  UserI = " + userLogin);
+            //eventService.triggerEvent(new SessionArchiveEvent(item, userLogin), item.getId());
+
+        } catch (Throwable e){
+            log.error("Exception processing triggerOnUserSave" + e.getMessage());
             throw e;
         }
     }
 
 
-    @Around( value = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
+
+    @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +
             "&& args(item, user, ..)" +
             "&& execution(* delete(..))")
-    public void triggerOnItemDelete(final ProceedingJoinPoint joinPoint, ItemI item, UserI user) throws Throwable{
+    public void triggerOnItemDelete(final JoinPoint joinPoint, ItemI item, UserI user) throws Throwable{
         try {
 
 
             String userLogin = user != null ? user.getLogin() : null;
 
-            log.debug("triggerOnItemDelete Around aspect called after " + joinPoint.getSignature().getName() + "." +
-                    "  ItemI = " + (item != null ? item.getXSIType() : "null") +
+            log.debug("triggerOnItemDelete AfterReturning aspect called after " + joinPoint.getSignature().getName() + "." +
+                    "  ItemI type = " + (item != null ? item.getClass().getSimpleName() : "null") +
+                    "  ItemI xsiType = " + (item != null ? item.getXSIType() : "null") +
                     "  UserI = " + userLogin);
 
-            if(StringUtils.equals(item.getXSIType(),"arc:project")){
+            if(StringUtils.equals(item.getXSIType(),"xnat:projectData")){
                 XnatProjectdataI project = new XnatProjectdata(item);
                 eventService.triggerEvent(new ProjectDeletedEvent(project, userLogin), project.getId());
 
-            }else if(item instanceof XnatImagesessiondataI){
-                XnatImagesessiondataI session = (XnatImagesessiondataI)item;
+            }else if(StringUtils.containsIgnoreCase(item.getXSIType(),"xnat:") &&
+                    StringUtils.containsIgnoreCase(item.getXSIType(),"SessionData")){
+                XnatImagesessiondataI session = new XnatImagesessiondata(item);
                 eventService.triggerEvent(new SessionDeletedEvent(session, userLogin), session.getProject());
 
             }else if(StringUtils.equals(item.getXSIType(), "xnat:subjectData")){
                 XnatSubjectdataI subject = new XnatSubjectdata(item);
-                eventService.triggerEvent(new SubjectDeletedEvent((XnatSubjectdataI)item, userLogin), subject.getProject());
+                eventService.triggerEvent(new SubjectDeletedEvent(subject, userLogin), subject.getProject());
 
             }
-            joinPoint.proceed();
+
         } catch (Throwable e){
-            log.error("Exception processing triggerOnItemSave" + e.getMessage());
+            log.error("Exception processing triggerOnItemDelete" + e.getMessage());
             throw e;
         }
     }

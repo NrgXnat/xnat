@@ -58,7 +58,7 @@ public class XFTValidator {
 		final ValidationResults     results = new ValidationResults();
 		final GenericWrapperElement element = GenericWrapperElement.GetElement(xsiType);
 
-		if (((XFTItem) item).instanceOf("xnat:projectData")) {
+		if (((XFTItem) item).instanceOf("xnat:projectData") && !StringUtils.equals(item.getXSIType(), "xnat:projectData_alias")) {
 			checkReservedPropertyValue(results, element, item, "xnat:projectData/ID", "Unassigned");
 			checkReservedPropertyValue(results, element, item, "xnat:projectData/secondary_ID", "Unassigned");
 			checkReservedPropertyValue(results, element, item, "xnat:projectData/name", "Unassigned");

@@ -37,10 +37,10 @@ public class XnatEventServiceEventAnnotationProcessor extends NrgAbstractAnnotat
         final Map<String, String> properties = new LinkedHashMap<>();
         properties.put(XnatEventServiceEvent.EVENT_CLASS, element.getQualifiedName().toString());
         properties.put(XnatEventServiceEvent.EVENT_NAME, annotation.name());
-        properties.put(XnatEventServiceEvent.EVENT_DISPLAY_NAME, annotation.displayName());
-        properties.put(XnatEventServiceEvent.EVENT_DESC, annotation.description());
-        properties.put(XnatEventServiceEvent.EVENT_OBJECT, annotation.object());
-        properties.put(XnatEventServiceEvent.EVENT_OPERATION, annotation.operation());
+        //properties.put(XnatEventServiceEvent.EVENT_DISPLAY_NAME, annotation.displayName());
+        //properties.put(XnatEventServiceEvent.EVENT_DESC, annotation.description());
+        //properties.put(XnatEventServiceEvent.EVENT_OBJECT, annotation.object());
+        //properties.put(XnatEventServiceEvent.EVENT_OPERATION, annotation.operation());
         return properties;
     }
 

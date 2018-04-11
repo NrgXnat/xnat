@@ -508,7 +508,7 @@ var XNAT = getObject(XNAT);
         config.size = config.size || 25;
         config.value = ''; // set initial value to empty string
         config.placeholder = '********';
-        config.autocomplete = 'new-password';
+        config.autocomplete = firstDefined(config.autocomplete, 'new-password') + '';
         addClassName(config, 'password');
         // should be safe to delete 'element' property
         delete config.element;

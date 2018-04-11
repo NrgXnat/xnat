@@ -693,6 +693,9 @@ var XNAT = getObject(XNAT);
             refresh: false,
             reload: true,
             action: '~/xapi/users' + (doEdit ? ('/' + data.username) : ''),
+            element: {
+                autocomplete: 'off'
+            },
             contents: {
                 // details: {
                 //     kind: 'panel.subhead',
@@ -712,6 +715,7 @@ var XNAT = getObject(XNAT);
                     label: 'Password',
                     element: {
                         placeholder: '********',
+                        autocomplete: 'off',
                         data: { message: passwordComplexityMessage }
                     },
                     validate: 'allow-empty pattern:' + passwordComplexity + ' max-length:255'//,

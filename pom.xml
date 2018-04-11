@@ -18,7 +18,7 @@
 
     <groupId>org.nrg.xdat</groupId>
     <artifactId>core</artifactId>
-
+    <version>X.X.X-eventservice-SNAPSHOT</version>
     <name>XDAT Core</name>
     <url>http://bitbucket.org/nrg/xdat</url>
 

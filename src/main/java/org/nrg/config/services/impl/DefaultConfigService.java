@@ -466,7 +466,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         configuration.setEntityId(entityId);
         configuration.setXnatUser(xnatUser);
         configuration.setReason(reason);
-        configuration.setStatus(StringUtils.isBlank(status) ? Configuration.ENABLED_STRING : status);
+        configuration.setStatus(StringUtils.isBlank(status) ? ((oldConfig!=null && !StringUtils.isBlank(oldConfig.getStatus()) )?oldConfig.getStatus():Configuration.ENABLED_STRING) : status);
         configuration.setVersion(1 + ((oldConfig != null && doVersion) ? oldConfig.getVersion() : 0));
         configuration.setUnversioned(!doVersion);
 

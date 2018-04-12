@@ -7,6 +7,18 @@
 ## Default macro file for XNAT
 ##
 
+#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$s").toString().trim()#end
+#macro(escapeJS $s)$!turbineUtils.escapeJS("$s").toString().trim()#end
+#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$s")).toString().trim()#end
+#macro(escapeParam $s)$!turbineUtils.escapeParam("$s").toString().trim()#end
+#macro(escapeAllUnescapeParam $s)#escapeAll($!turbineUtils.unescapeParam("$!s"))#end
+
+## convert " to &quot; - prevents breaking out of HTML attributes
+#macro(replaceQuotes $str)$str.toString().replaceAll('"', '&quot;')#end
+
+## convert ' to &apos; - prevents breaking out of single-quoted attributes
+#macro(replaceSingleQuotes $str)$str.toString().replaceAll("'", "&apos;")#end
+
 #macro(insertPipelineNotification)
    <br/>
     <p>&nbsp;</p>
@@ -62,16 +74,16 @@
 #end
 
 #macro (xdatTextBox $name $item $defaultValue $vr)
-  <!-- macro: xdatTextBox -->
-#if ($vr)
-  #if($vr.getField($name))
+<!-- macro: xdatTextBox -->
+  #if ($vr)
+    #if($vr.getField($name))
     <span style="color:red;">&#8658;</span>
+    #end
   #end
-#end
   #if ($item.getProperty($name))
     #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
     #else
     <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
     #end
@@ -81,15 +93,15 @@
 #end
 
 #macro (xdatTextBoxWID $name $item $defaultValue $vr $id)
-#if ($vr)
-  #if($vr.getField($name))
+  #if ($vr)
+    #if($vr.getField($name))
     <span style="color:red;">&#8658;</span>
+    #end
   #end
-#end
   #if ($item.getProperty($name))
     #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$id" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
     #else
     <input id="$id" type="text" name="$name" value="$item.getProperty($name)"/>
     #end
@@ -108,36 +120,37 @@
 #end
 
 #macro (xdatStringBoxOnChange $name $item $defaultValue $onChange $vr $classes)
-	#if ($vr)
-		#if($vr.getField($name))
-			<span style="color:red;">&#8658;</span>
-		#end
-	#end
-    #if ("$!classes" == "")
-        #set ($classes = "")
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
     #end
-	#if ($item.getProperty($name))
-		#if($item.isPKField($name) && (!$vr.getField($name)))
-			<input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
-			$item.getProperty($name)
-		#else
-			<input id="$name" class="$!classes" type="text" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
-		#end
-	#else
-		<input id="$name" class="$!classes" type="text" name="$name" value="$defaultValue" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
-	#end
+  #end
+  #if ("$!classes" == "")
+    #set ($classes = "")
+  #end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+      <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+    #else
+      <input id="$name" class="$!classes" type="text" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+    #end
+  #else
+    <input id="$name" class="$!classes" type="text" name="$name" value="$defaultValue" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+  #end
 #end
 
 #macro (xdatStringBoxWSize $name $item $defaultValue $vr $size)
-#if ($vr)
-  #if($vr.getField($name))
+<!-- macro: xdatStringBoxWSize -->
+  #if ($vr)
+    #if($vr.getField($name))
     <span style="color:red;">&#8658;</span>
+    #end
   #end
-#end
   #if ($item.getProperty($name))
     #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
-    $item.getProperty($name)
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
     #else
     <input id="$name" type="text" name="$name" size="$size" value="$item.getStringProperty($name)"/>
     #end
@@ -150,19 +163,19 @@
 <!-- macro: xdatTextArea -->
   #if ($vr)
     #if($vr.getField($name))
-        <span style="color:red;">&#8658;</span>
+    <span style="color:red;">&#8658;</span>
     #end
-#end
-    #if ($item.getProperty($name))
-        <textarea rows="$rows" cols="$cols" id="$name" name="$name">$item.getStringProperty($name)</textarea>
-    #else
-        <textarea rows="$rows" cols="$cols" id="$name" name="$name">$defaultValue</textarea>
-    #end
+  #end
+  #if ($item.getProperty($name))
+  <textarea rows="$rows" cols="$cols" id="$name" name="$name">$item.getStringProperty($name)</textarea>
+  #else
+  <textarea rows="$rows" cols="$cols" id="$name" name="$name">$defaultValue</textarea>
+  #end
 #end
 
 #macro (xdatPKDisplay $name $item)
   <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
-  $item.getProperty($name)
+  #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
 #end
 
 #macro (xdatBooleanDisplay $name $item $defaultValue)
@@ -277,7 +290,7 @@
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -298,7 +311,7 @@
  #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
       <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-      $item.getProperty($name)
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
       <select id="$name" name="$name"></select>
       <script type="text/javascript" src="$content.getURI("scripts/customizableSelectBox.js")"></script>
@@ -320,7 +333,7 @@
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
   #if($possibleValues)
     #if ($possibleValues.size()==0)
@@ -377,7 +390,7 @@
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$!item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
   #if($possibleValues)
     #if ($possibleValues.size()==0)
@@ -437,7 +450,7 @@
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$id" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$id" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -445,7 +458,7 @@
       <select id="$id" name="$name">
         <option value="">(SELECT)</option>
         #foreach ($pValue in $possibleValues)
-        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>$pValue</option>
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
         #end
       </select>
     #end
@@ -460,14 +473,14 @@
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
     #else
       <select id="$name" name="$name">
         #foreach ($pValue in $possibleValues)
-        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>$pValue</option>
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
         #end
       </select>
     #end
@@ -482,7 +495,7 @@
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -490,7 +503,7 @@
       <select id="$name" name="$name">
         <option value="">$!lbl</option>
         #foreach ($pValue in $possibleValues)
-        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>$pValue</option>
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
         #end
       </select>
     #end
@@ -506,7 +519,7 @@
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -514,7 +527,7 @@
       <select id="$name" name="$name">
         <option value="">$!lbl</option>
         #foreach ($pValue in $possibleValues)
-        <option value="$pValue.get(0)" #if($pValue.get(0).equals($item.getProperty($name))) SELECTED #end>$pValue.get(1)</option>
+        <option value="$pValue.get(0)" #if($pValue.get(0).equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue.get(1)")</option>
         #end
       </select>
     #end
@@ -533,7 +546,7 @@
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
     <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
-    $item.getProperty($name)
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
   #else
     #if ($possibleValues.size()==0)
       <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
@@ -542,7 +555,7 @@
         <option value="">(SELECT)</option>
         #foreach ($pValue in $possibleValues)
         #set($intValue = ($velocityCount - 1) + $offset)
-        <option value="$intValue" #if("$intValue" == "$!item.getProperty($name)") SELECTED #end>$pValue</option>
+        <option value="$intValue" #if("$intValue" == "$!item.getProperty($name)") SELECTED #end>#escapeHTML("$pValue")</option>
         #end
       </select>
     #end
@@ -1587,12 +1600,6 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
  <!-- no object found -->
  #end
 #end
-
-#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$s").toString().trim()#end
-#macro(escapeJS $s)$!turbineUtils.escapeJS("$s").toString().trim()#end
-#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$s")).toString().trim()#end
-#macro(escapeParam $s)$!turbineUtils.escapeParam("$s").toString().trim()#end
-#macro(escapeAllUnescapeParam $s)#escapeAll($!turbineUtils.unescapeParam("$!s"))#end
 
 #macro(selectEmployment $value $item $vr)
     #if ($vr)

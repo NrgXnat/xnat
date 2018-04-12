@@ -241,7 +241,7 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Updates the user object with the specified username.", notes = "Returns the updated serialized user object with the specified username.", response = User.class)
+    @ApiOperation(value = "Creates a new user from the request body.", notes = "Returns the newly created user object.", response = User.class)
     @ApiResponses({@ApiResponse(code = 201, message = "User successfully created."),
                    @ApiResponse(code = 400, message = "The submitted data was invalid."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),

@@ -43,6 +43,7 @@ import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -282,21 +283,33 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     public DicomSCPInstance getDicomSCPInstance(final int id) {
+        try {
         return _template.queryForObject(GET_INSTANCE_BY_ID,
                                         new MapSqlParameterSource("id", id),
                                         DICOM_SCP_INSTANCE_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle, final int port) {
+        try {
         return _template.queryForObject(GET_INSTANCE_BY_AE_TITLE_AND_PORT,
                                         new MapSqlParameterSource("aeTitle", aeTitle).addValue("port", port),
                                         DICOM_SCP_INSTANCE_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     public List<DicomSCPInstance> getEnabledDicomSCPInstancesByPort(final int port) {
+        try {
         return _template.query(GET_ENABLED_INSTANCES_BY_PORT,
                                new MapSqlParameterSource("enabled", true).addValue("port", port),
                                DICOM_SCP_INSTANCE_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     public void enableDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException {

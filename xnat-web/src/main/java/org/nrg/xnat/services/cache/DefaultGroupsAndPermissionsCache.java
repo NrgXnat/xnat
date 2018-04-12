@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
-import net.sf.ehcache.event.CacheEventListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -24,10 +23,13 @@ import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.LapStopWatch;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.ElementDisplay;
+import org.nrg.xdat.om.XdatElementSecurity;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.UserGroup;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -38,8 +40,10 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.XftItemEvent;
+import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.ItemNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.QueryOrganizer;
@@ -59,9 +63,6 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
-import reactor.bus.Event;
-import reactor.bus.EventBus;
-import reactor.fn.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,22 +76,23 @@ import java.util.concurrent.Future;
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.BROWSEABLE;
 import static org.nrg.xapi.rest.users.DataAccessApi.READABLE;
-import static org.nrg.xdat.security.helpers.Groups.*;
-import static reactor.bus.selector.Selectors.predicate;
 
 @SuppressWarnings("Duplicates")
 @Service
 @Slf4j
-public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter implements Consumer<Event<XftItemEvent>>, GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
-
+public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
     @Autowired
-    public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final EventBus eventBus) {
+    public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate) {
+        super(XftItemEventCriteria.getXsiTypeCriteria(XdatUsergroup.SCHEMA_ELEMENT_NAME),
+              XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+              XftItemEventCriteria.getXsiTypeCriteria(XdatElementSecurity.SCHEMA_ELEMENT_NAME));
+
         _cache = cacheManager.getCache(CACHE_NAME);
         _template = template;
         _jmsTemplate = jmsTemplate;
         _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
+
         registerCacheEventListener();
-        eventBus.on(predicate(IS_GROUP_XFTITEM_EVENT), this);
     }
 
     /**
@@ -126,45 +128,6 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
     }
 
     /**
-     * Handles events with {@link XftItemEvent} type. This specific implementation looks for changes in
-     * permissions and group definitions so that the project/user caching can be updated as appropriate.
-     *
-     * @param event The event that occurred.
-     */
-    @Override
-    public void accept(final Event<XftItemEvent> event) {
-        if (!isXdatUsergroupEvent(event)) {
-            return;
-        }
-
-        final XftItemEvent  data    = event.getData();
-        final String        action  = data.getAction();
-        final XdatUsergroup group   = (XdatUsergroup) data.getItem();
-        final String        groupId = group.getId();
-
-        switch (action) {
-            case XftItemEvent.CREATE:
-                log.debug("New group created with ID {}, caching new instance", groupId);
-                cacheGroup(createUserGroupFromXdatUsergroup(group));
-                break;
-
-            case XftItemEvent.UPDATE:
-                log.debug("The group {} was updated, caching updated instance", groupId);
-                cacheGroup(createUserGroupFromXdatUsergroup(group));
-                break;
-
-            case XftItemEvent.DELETE:
-                log.debug("The group {} was deleted, removing instance from cache", groupId);
-                _cache.evict(groupId);
-                break;
-
-            default:
-                log.debug("The {} action happened on the group with ID {}, no cache update required", action, groupId);
-                break;
-        }
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -180,7 +143,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
 
         final String username = user.getUsername();
         final String cacheId  = getCacheIdForUserElements(username, BROWSEABLE);
-        log.debug("Retrieving browseable element displays for user {} thru cache ID {}", username, cacheId);
+        log.debug("Retrieving browseable element displays for user {} through cache ID {}", username, cacheId);
 
         // Check whether the element types are cached and, if so, return that.
         if (has(cacheId)) {
@@ -229,7 +192,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
 
         final String username = user.getUsername();
         final String cacheId  = getCacheIdForUserElements(username, READABLE);
-        log.debug("Retrieving readable counts for user {} thru cache ID {}", username, cacheId);
+        log.debug("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
 
         // Check whether the element types are cached and, if so, return that.
         if (has(cacheId)) {
@@ -583,20 +546,13 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
      */
     @Override
     public UserGroupI cacheGroup(final String groupId) {
-        // Nothing cached for group ID, so let's try to retrieve it.
         log.debug("Initializing group {}", groupId);
-        final XdatUsergroup found = XdatUsergroup.getXdatUsergroupsById(groupId, Users.getAdminUser(), false);
-
-        // If we didn't find a group for that ID...
-        if (found == null) {
-            // Return null.
+        try {
+            return cacheGroup(new UserGroup(groupId, _template));
+        } catch (ItemNotFoundException e) {
             log.info("Someone tried to get the user group {}, but a group with that ID doesn't exist.", groupId);
             return null;
         }
-
-        final UserGroupI group = createUserGroupFromXdatUsergroup(found);
-
-        return cacheGroup(group);
     }
 
     @Override
@@ -609,6 +565,41 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         return _listener;
     }
 
+    @Override
+    protected boolean handleEventImpl(final XftItemEvent event) {
+        final String type   = event.getXsiType();
+        final String id     = event.getId();
+        final String action = event.getAction();
+
+        try {
+            switch (action) {
+                case XftItemEvent.CREATE:
+                    log.debug("New {} created with ID {}, caching new instance", type, id);
+                    return !cacheGroups(getGroups(type, id)).isEmpty();
+
+                case XftItemEvent.UPDATE:
+                    log.debug("The {} object {} was updated, caching updated instance", type, id);
+                    return !cacheGroups(getGroups(type, id)).isEmpty();
+
+                case XftItemEvent.DELETE:
+                    log.debug("The {} {} was deleted, removing instance from cache", type, id);
+                    _cache.evict(id);
+                    return true;
+
+                case XftItemEvent.READ:
+                    log.debug("The read action happened on {} {}, no cache update required", type, id);
+                    return true;
+
+                default:
+                    log.warn("I was informed that the '{}' action happened to the {} object with ID '{}'. I don't know what to do with this action.", action, type, id);
+            }
+        } catch (ItemNotFoundException e) {
+            log.warn("While handling action {}, I couldn't find a group for type {} ID {}.", action, type, id);
+        }
+
+        return false;
+    }
+
     private synchronized UserGroupI initializeGroup(final String groupId) {
         // We may have just checked before coming into this method, but since it's synchronized we may have waited while someone else was caching it so...
         if (has(groupId)) {
@@ -617,6 +608,36 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         }
 
         return cacheGroup(groupId);
+    }
+
+    private List<UserGroupI> getGroups(final String type, final String id) throws ItemNotFoundException {
+        switch (type) {
+            case XdatUsergroup.SCHEMA_ELEMENT_NAME:
+                return Collections.<UserGroupI>singletonList(new UserGroup(id, _template));
+
+            case XnatProjectdata.SCHEMA_ELEMENT_NAME:
+                return getGroupsForTag(id);
+
+            case XdatElementSecurity.SCHEMA_ELEMENT_NAME:
+                return getGroupsForDataType(id);
+        }
+        return Collections.emptyList();
+    }
+
+    private List<UserGroupI> getGroupsForDataType(final String dataType) {
+        return getUserGroupList(_template.queryForList(QUERY_GET_GROUPS_FOR_DATATYPE, new MapSqlParameterSource("dataType", dataType), String.class));
+    }
+
+    private List<String> getGroupIds(final String projectId) {
+        return _template.queryForList(QUERY_GET_GROUPS_FOR_TAG, new MapSqlParameterSource("tag", projectId), String.class);
+    }
+
+    private List<UserGroupI> cacheGroups(final List<UserGroupI> groups) {
+        log.debug("Caching {} groups", groups.size());
+        for (final UserGroupI group : groups) {
+            cacheGroup(group);
+        }
+        return groups;
     }
 
     private UserGroupI cacheGroup(final UserGroupI group) {
@@ -660,7 +681,7 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
         }
 
         // Then retrieve and cache the groups if found or cache DOES_NOT_EXIST if the tag isn't found.
-        final List<String> groups = _template.queryForList(QUERY_GET_GROUPS_FOR_TAG, new MapSqlParameterSource("tag", tag), String.class);
+        final List<String> groups = getGroupIds(tag);
 
         // If this is empty, then the tag doesn't exist and we'll just put DOES_NOT_EXIST there.
         if (groups.isEmpty()) {
@@ -784,6 +805,16 @@ public class DefaultGroupsAndPermissionsCache extends CacheEventListenerAdapter 
                                                                    "  LEFT JOIN xdat_user xu ON xugid.groups_groupid_xdat_user_xdat_user_id = xu.xdat_user_id " +
                                                                    "WHERE xu.login = :username AND tag = :tag " +
                                                                    "ORDER BY groupid";
+    private static final String QUERY_GET_GROUPS_FOR_DATATYPE    = "SELECT DISTINCT " +
+                                                                   "  usergroup.id       AS group_name " +
+                                                                   "FROM xdat_usergroup usergroup " +
+                                                                   "  LEFT JOIN xdat_element_access xea on usergroup.xdat_usergroup_id = xea.xdat_usergroup_xdat_usergroup_id " +
+                                                                   "  LEFT JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id = xfms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                   "  LEFT JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id " +
+                                                                   "WHERE " +
+                                                                   "  xfm.field_value != '*' AND " +
+                                                                   "  xea.element_name = :dataType " +
+                                                                   "ORDER BY usergroup.id";
     private static final String QUERY_ALL_GROUPS                 = "SELECT id FROM xdat_usergroup";
     private static final String QUERY_ALL_TAGS                   = "SELECT DISTINCT tag FROM xdat_usergroup WHERE tag IS NOT NULL AND tag <> ''";
     private static final String QUERY_GET_GROUPS_FOR_TAG         = "SELECT id FROM xdat_usergroup WHERE tag = :tag";

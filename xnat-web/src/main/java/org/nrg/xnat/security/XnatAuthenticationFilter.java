@@ -163,19 +163,22 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
         }
     }
 
-    public static Integer retrieveUserId(String username) {
+    public static Integer retrieveUserId(final String username) {
+        if (StringUtils.isBlank(username)) {
+            return null;
+        }
+
+        if (checked.containsKey(username)) {
+            return checked.get(username);
+        }
+
         synchronized (checked) {
-            if (username == null) {
+            final Integer userId = Users.getUserId(username);
+            if (userId == null) {
                 return null;
             }
 
-            if (checked.containsKey(username)) {
-                return checked.get(username);
-            }
-
-            final int userId = Users.getUserId(username);
             checked.put(username, userId);
-
             return userId;
         }
     }

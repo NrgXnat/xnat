@@ -118,9 +118,6 @@ public class ModifyProject extends SecureAction {
 
             WorkflowUtils.complete(workflow, event);
             Users.clearCache(user);
-
-            final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-            eventService.triggerEvent(new XftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, postSave.getId(), XftItemEvent.UPDATE));
         } catch (SecurityException e) {
             log.error("Security exception triggered by user '{}': {}", user.getUsername(), e.getMessage(), e);
             handleException(data, project.getItem(), e, TurbineUtils.EDIT_ITEM);

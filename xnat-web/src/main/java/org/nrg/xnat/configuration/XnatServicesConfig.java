@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.security.PermissionsServiceImpl;
 import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.UserGroupServiceI;
@@ -30,8 +31,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
                 "org.nrg.xnat.services.validation"})
 public class XnatServicesConfig {
     @Bean
-    public PermissionsServiceI permissionsService(final NamedParameterJdbcTemplate template) {
-        return new PermissionsServiceImpl(template);
+    public PermissionsServiceI permissionsService(final NamedParameterJdbcTemplate template, final NrgEventService eventService) {
+        return new PermissionsServiceImpl(template, eventService);
     }
 
     @Bean

@@ -10,11 +10,23 @@
 package org.nrg.xnat.helpers.prearchive;
 
 public class SessionException extends Exception {
-	private static final long serialVersionUID = 1L;
-	public SessionException (String err) {
-		super (err);
+	public SessionException (final Error error, final String message) {
+		super (message);
+		_error = error;
 	}
-	public SessionException () {
-		super ();
+
+	public Error getError() {
+		return _error;
 	}
+
+	public enum Error {
+		AlreadyExists,
+		DoesntExist,
+        NoProjectSpecified,
+        InvalidStatus,
+        InvalidSession,
+        DatabaseError
+	}
+
+	private final Error _error;
 }

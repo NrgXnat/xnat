@@ -82,7 +82,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                 throw new ClientException(Status.CLIENT_ERROR_CONFLICT, HAS_FILES, new Exception());
             }
 
-            if (!overwriteFiles) {
+            if (!overwriteFiles && dest != null) {
                 if ((new SessionOverwriteCheck(src, dest, src.getPrearchivepath(), dest.getPrearchivepath(), user, c)).call()) {
                     failed(CAT_ENTRY_MATCH);
                     t = new ClientException(Status.CLIENT_ERROR_CONFLICT, CAT_ENTRY_MATCH, new IOException());

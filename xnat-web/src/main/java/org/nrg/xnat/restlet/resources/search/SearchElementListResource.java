@@ -9,9 +9,6 @@
 
 package org.nrg.xnat.restlet.resources.search;
 
-import java.util.Hashtable;
-import java.util.Map;
-
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xft.XFTTable;
@@ -24,6 +21,8 @@ import org.restlet.data.Response;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
+import java.util.*;
+
 public class SearchElementListResource extends SecureResource {
 	public SearchElementListResource(Context context, Request request, Response response) {
 		super(context, request, response);
@@ -35,51 +34,60 @@ public class SearchElementListResource extends SecureResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+	public Representation represent(Variant variant) {
+		Hashtable<String,Object> params= new Hashtable<>();
 		params.put("title", "Data-Types");    
-		
-		
 
 		XFTTable fields = new XFTTable();
 		fields.initTable(new String[]{"ELEMENT_NAME","SINGULAR","PLURAL","SECURED","COUNT"});
 		
 		try {
-			Hashtable<String,ElementSecurity> allES = (Hashtable<String,ElementSecurity>) ElementSecurity.GetElementSecurities().clone();
-			
+			final Map<String, ElementSecurity> allES    = new HashMap<>(ElementSecurity.GetElementSecurities());
+			final Set<String>                  removals = new HashSet<>();
+
 			//remove security elements
-			for(ElementSecurity es: ((Hashtable<String,ElementSecurity>)allES.clone()).values()){
-				if(es.getElementName().startsWith("xdat:")){
-					allES.remove(es.getElementName());
+			for(ElementSecurity es: allES.values()){
+				final String elementName = es.getElementName();
+				if(elementName.startsWith("xdat:")){
+					removals.add(es.getElementName());
 				}
 			}
-			
+
+			for (final String elementName : removals) {
+				allES.remove(elementName);
+			}
+			removals.clear();
+
 			//remove unwanted elements
 			if(this.getQueryVariable("secured")!=null){
-				for(ElementSecurity es: ((Hashtable<String,ElementSecurity>)allES.clone()).values()){
+				for(ElementSecurity es: allES.values()){
 					if(!es.isSecure()){
-						allES.remove(es.getElementName());
+						removals.add(es.getElementName());
 					}
 				}
 			}
-			
-			Map counts = null;
+
+			for (final String elementName : removals) {
+				allES.remove(elementName);
+			}
+			removals.clear();
 
 			final UserI user = getUser();
-			if(this.getQueryVariable("readable") != null){
-				counts=UserHelper.getUserHelperService(user).getReadableCounts();
-			}else{		
-				counts=UserHelper.getUserHelperService(user).getTotalCounts();
-			}
+			final Map counts = getQueryVariable("readable") != null ? UserHelper.getUserHelperService(user).getReadableCounts() : UserHelper.getUserHelperService(user).getTotalCounts();
 
 			if(this.getQueryVariable("used")!=null){
-				for(ElementSecurity es: ((Hashtable<String,ElementSecurity>)allES.clone()).values()){
+				for(ElementSecurity es: allES.values()){
 					if(!counts.containsKey(es.getElementName())){
-						allES.remove(es.getElementName());
+						removals.add(es.getElementName());
 					}
 				}
 			}
-			
+
+			for (final String elementName : removals) {
+				allES.remove(elementName);
+			}
+			removals.clear();
+
 			for(ElementSecurity es: allES.values()){
 				Object[] sub = new Object[5];
 				sub[0]=es.getElementName();
@@ -107,7 +115,7 @@ public class SearchElementListResource extends SecureResource {
 				if(counts.containsKey(es.getElementName())){
 					sub[4]=counts.get(es.getElementName());
 				}else{
-					sub[4]=new Long(0);
+					sub[4]= 0L;
 				}
 				
 				fields.rows().add(sub);

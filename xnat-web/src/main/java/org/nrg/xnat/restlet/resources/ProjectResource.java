@@ -129,7 +129,7 @@ public class ProjectResource extends ItemResource {
     @Override
     public void handlePut() {
         final UserI user = getUser();
-        if (user == null || user.isGuest()) {
+        if (user.isGuest()) {
             getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
         } else {
             try {

@@ -147,9 +147,6 @@ public class AddProject extends SecureAction {
 
                 WorkflowUtils.complete(workflow, event);
                 UserHelper.setUserHelper(data.getRequest(), user);
-
-                final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-                eventService.triggerEvent(new XftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, postSave.getId(), XftItemEvent.UPDATE));
             } catch (Exception e) {
                 WorkflowUtils.fail(workflow, event);
                 throw e;

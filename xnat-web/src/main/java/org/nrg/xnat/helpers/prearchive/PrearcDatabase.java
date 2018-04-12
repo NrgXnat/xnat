@@ -62,6 +62,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import static org.nrg.xnat.helpers.prearchive.SessionException.Error.*;
+
 @Slf4j
 public final class PrearcDatabase {
     public static Connection conn;
@@ -369,7 +371,7 @@ public final class PrearcDatabase {
             public java.lang.Void op() throws Exception {
                 int rowCount = PrearcDatabase.countOf(s.getFolderName(), s.getTimestamp(), s.getProject());
                 if (rowCount >= 1) {
-                    throw new SessionException("Trying to add an existing session");
+                    throw new SessionException(AlreadyExists, "Trying to add an existing session");
                 } else {
                     PreparedStatement statement = this.pdb.getPreparedStatement(null, PrearcDatabase.insertSql());
                     for (int i = 0; i < DatabaseSession.values().length; i++) {
@@ -513,7 +515,7 @@ public final class PrearcDatabase {
      */
     private static boolean _moveToProject(final String session, final String timestamp, final String origin, final String destination) throws Exception {
         if (null == destination || destination.isEmpty()) {
-            throw new SessionException("New project argument is null or empty");
+            throw new SessionException(NoProjectSpecified, "Destination project argument is null or empty");
         }
 
         final SessionData sessionData = PrearcDatabase.getSession(session, timestamp, origin);
@@ -1236,14 +1238,10 @@ public final class PrearcDatabase {
      */
     public static boolean setStatus(final String sess, final String timestamp, final String proj, final String status) throws Exception {
         PrearcUtils.PrearcStatus p = PrearcUtils.PrearcStatus.valueOf(status);
-        if (p != null) {
-            if (PrearcUtils.inProcessStatusMap.containsValue(p)) {
-                throw new SessionException("Cannot set session status to " + status);
-            } else {
-                return PrearcDatabase.setStatus(sess, timestamp, proj, p);
-            }
+        if (PrearcUtils.inProcessStatusMap.containsValue(p)) {
+            throw new SessionException(InvalidStatus, "Cannot set session status to " + status);
         } else {
-            throw new SessionException("Status " + status + " is not a legitimate status");
+            return PrearcDatabase.setStatus(sess, timestamp, proj, p);
         }
     }
 
@@ -1261,7 +1259,7 @@ public final class PrearcDatabase {
      */
     public static void unsafeSetStatus(final String sessionFolder, final String timestamp, final String project, final PrearcUtils.PrearcStatus status) throws Exception {
         if (null == status) {
-            throw new SessionException("Status argument is null or empty");
+            throw new SessionException(InvalidStatus, "Status argument is null or empty");
         }
         log.debug("Attempting to set the status of prearchive session {}/{}/{} to status {}", project, timestamp, sessionFolder, status);
         PrearcDatabase.modifySession(sessionFolder, timestamp, project, new SessionOp<Void>() {
@@ -2014,7 +2012,7 @@ public final class PrearcDatabase {
                             suffixString = "_" + suffix;
                             dups = PrearcDatabase.countOf(sessionData.getFolderName() + suffixString, sessionData.getTimestamp(), sessionData.getProject());
                             if (dups > 1) {
-                                throw new SessionException("Database is in a bad state, " + dups + "sessions (name : " + sessionData.getFolderName() + " timestamp: " + sessionData.getTimestamp() + " project : " + sessionData.getProject());
+                                throw new SessionException(DatabaseError, "Database is in a bad state, " + dups + "sessions (name : " + sessionData.getFolderName() + " timestamp: " + sessionData.getTimestamp() + " project : " + sessionData.getProject());
                             }
                             suffix++;
                         }
@@ -2427,10 +2425,10 @@ public final class PrearcDatabase {
 
     private static void checkArgs(String sess, String timestamp, String proj) throws SQLException, SessionException {
         if (null == sess || sess.isEmpty()) {
-            throw new SessionException("Session argument is null or empty");
+            throw new SessionException(InvalidSession, "Session argument is null or empty");
         }
         if (null == timestamp || timestamp.isEmpty()) {
-            throw new SessionException("Timestamp argument is null or empty");
+            throw new SessionException(InvalidSession, "Timestamp argument is null or empty");
         }
     }
 
@@ -2441,10 +2439,10 @@ public final class PrearcDatabase {
     private static void checkUniqueRow(String sess, String timestamp, String proj) throws Exception, SQLException, SessionException {
         int rowCount = PrearcDatabase.countOf(sess, timestamp, proj);
         if (rowCount == 0) {
-            throw new SessionException("A record with session " + sess + ", timestamp " + timestamp + " and project " + proj + " could not be found.");
+            throw new SessionException(DoesntExist, "A record with session " + sess + ", timestamp " + timestamp + " and project " + proj + " could not be found.");
         }
         if (rowCount > 1) {
-            throw new SessionException("Multiple records with session " + sess + ", timestamp " + timestamp + " and project " + proj + " were found.");
+            throw new SessionException(DatabaseError, "Multiple records with session " + sess + ", timestamp " + timestamp + " and project " + proj + " were found.");
         }
     }
 

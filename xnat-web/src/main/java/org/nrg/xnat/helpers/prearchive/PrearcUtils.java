@@ -23,7 +23,9 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserHelperServiceI;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
@@ -577,7 +579,9 @@ public class PrearcUtils {
             throw new IllegalArgumentException(String.format("Invalid prearchive session: timestamp %s; session %s",
                     timestamp, session));
         }
-        return new File(new File(new File(getPrearcDir(null, project, true), timestamp), session), "logs");
+        final XnatUserProvider provider = XDAT.getContextService().getBeanSafely("receivedFileUserProvider", XnatUserProvider.class);
+        final UserI receivedFileUser = provider != null ? provider.get() : Users.getUser(XDAT.getSiteConfigurationProperty("receivedFileUser"));
+        return new File(new File(new File(getPrearcDir(receivedFileUser, project, true), timestamp), session), "logs");
     }
 
     /**

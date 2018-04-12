@@ -62,9 +62,10 @@
 #end
 
 #macro (xdatTextBox $name $item $defaultValue $vr)
+  <!-- macro: xdatTextBox -->
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if ($item.getProperty($name))
@@ -82,7 +83,7 @@
 #macro (xdatTextBoxWID $name $item $defaultValue $vr $id)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if ($item.getProperty($name))
@@ -109,7 +110,7 @@
 #macro (xdatStringBoxOnChange $name $item $defaultValue $onChange $vr $classes)
 	#if ($vr)
 		#if($vr.getField($name))
-			<span style="color:red;">&#8658</span>
+			<span style="color:red;">&#8658;</span>
 		#end
 	#end
     #if ("$!classes" == "")
@@ -130,7 +131,7 @@
 #macro (xdatStringBoxWSize $name $item $defaultValue $vr $size)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if ($item.getProperty($name))
@@ -146,9 +147,10 @@
 #end
 
 #macro (xdatTextArea $name $item $defaultValue $vr $rows $cols)
-#if ($vr)
+<!-- macro: xdatTextArea -->
+  #if ($vr)
     #if($vr.getField($name))
-        <span style="color:red;">&#8658</span>
+        <span style="color:red;">&#8658;</span>
     #end
 #end
     #if ($item.getProperty($name))
@@ -172,6 +174,7 @@
 #end
 
 #macro (xdatHiddenBox $name $item $defaultValue)
+  <!-- macro: xdatHiddenBox -->
   #if ($item.getProperty($name))
   <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
   #else
@@ -182,7 +185,7 @@
 #macro (xdatBooleanCheckbox $name $item $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #set($value = $!item.getBooleanProperty($name))
@@ -194,9 +197,10 @@
 #end
 
 #macro (xdatBooleanRadio $name $item $defaultValue $vr)
-#if ($vr)
+<!-- macro: xdatBooleanRadio -->
+  #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if ($item.getBooleanProperty($name,$defaultValue))
@@ -209,9 +213,10 @@
 #end
 
 #macro (xdatBooleanRadioYesNo $name $item $defaultValue $vr)
+<!-- macro: xdatBooleanRadioYesNo -->
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if ($item.getBooleanProperty($name,$defaultValue))
@@ -226,7 +231,7 @@
 #macro (xdatBooleanRadioYesNoWithoutDefault $name $item $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #set($value = "$!item.getBooleanProperty($name)")
@@ -247,7 +252,7 @@
 #macro (xdatBooleanRadioYesNoWithoutDefaultWONClick $name $item $vr $onchange)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #set($value = "$!item.getBooleanProperty($name)")
@@ -267,7 +272,7 @@
 #macro (xdatRadioButtonGroup $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -285,9 +290,10 @@
 #end
 
 #macro (xdatComboBox $name $item $settings_alias $vr)
+  <!-- macro: xdatComboBox -->
  #if ($vr)
     #if($vr.getField($name))
-       <span style="color:red;">&#8658</span>
+       <span style="color:red;">&#8658;</span>
     #end
  #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -299,16 +305,17 @@
       <script type="text/javascript">
           (function(){
               var comboBox = new CustomSelectBox("$name", $settings_alias);
-              comboBox.render("$!turbineUtils.escapeHTML($!item.getProperty($name))");
+              comboBox.render('#escapeAll("$!item.getProperty($name)")');
           })();
       </script>
   #end
 #end
 
 #macro (xdatSelectBox $name $item $possibleValues $vr)
-#if ($vr)
+<!-- macro: xdatSelectBox -->
+  #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -365,7 +372,7 @@
 #macro (xdatSelectBoxWSingleValueLbl $lbl $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -425,7 +432,7 @@
 #macro (xdatSelectBoxWSingleValueWID $name $item $possibleValues $vr $id)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -448,7 +455,7 @@
 #macro (xdatSelectBoxWDefault $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -470,7 +477,7 @@
 #macro (xdatSimpleSelectBoxLbl $lbl $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -494,7 +501,7 @@
 #macro (xdatSimpleSelectBoxLblWKeyValue $lbl $name $item $possibleValues $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -515,13 +522,13 @@
 #end
 
 #macro (xdatSimpleSelectBox $name $item $possibleValues $vr)
-	xdatSimpleSelectBoxLbl("(SELECT)" $name $item $possibleValues $vr)
+	#xdatSimpleSelectBoxLbl("(SELECT)" $name $item $possibleValues $vr)
 #end
 
 #macro (xdatIntegerValueSelectBox $name $item $possibleValues $offset $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -543,9 +550,10 @@
 #end
 
 #macro (xdatDateBox $name $item $vr $years)
+  <!-- macro: xdatDateBox -->
  #if ($vr)
     #if($vr.getField($name))
-       <span style="color:red;">&#8658</span>
+       <span style="color:red;">&#8658;</span>
     #end
  #end
    #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
@@ -651,7 +659,7 @@
 #macro (xdatDateBoxNotReported $name $item $vr $years)
 	#if ($vr)
 		#if($vr.getField($name))
-			<span style="color:red;">&#8658</span>
+			<span style="color:red;">&#8658;</span>
 		#end
 	#end
 
@@ -768,7 +776,7 @@
 #macro (xdatDateTimeBox $name $item $vr $years)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
   #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
@@ -865,7 +873,7 @@
 #macro (xdatTimeBox $name $item $vr)
 #if ($vr)
   #if($vr.getField($name))
-    <span style="color:red;">&#8658</span>
+    <span style="color:red;">&#8658;</span>
   #end
 #end
 #set ($hours=[["08","8AM",8],["09","9AM",9],["10","10AM",10],["11","11AM",11],["12","12PM",12],["13","1PM",13],["14","2PM",14],["15","3PM",15],["16","4PM",16],["17","5PM",17],["18","6PM",18],["19","7PM",19],["20","8PM",20],["21","9PM",21],["22","10PM",22],["23","11PM",23],["00","12AM",0],["01","1AM",1],["02","2AM",2],["03","3AM",3],["04","4AM",4],["05","5AM",5],["06","6AM",6],["07","7AM",7]]	)
@@ -941,6 +949,7 @@
 
 ## EDIT PROPS
 #macro (xdatEditProps $item $edit_screen)
+  <!-- macro: xdatEditProps -->
   #set ($dataPopup = $turbineUtils.GetPassedParameter("popup",$data))
   #if($dataPopup)
   #else
@@ -952,7 +961,7 @@
 #end
 
 #macro (xdatSearchField $schemaElement $displayField)
-
+  <!-- macro: xdatSearchField -->
     #if ($displayField.getDataType().equalsIgnoreCase("string"))
         #if ($displayField.hasEnumeration())
         <select name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals">
@@ -996,6 +1005,7 @@
 #end
 
 #macro (xdatSearchElement $schemaElement $cols)
+  <!-- macro: xdatSearchElement -->
   #set($elementDisplay = $schemaElement.Display)
   #if($elementDisplay)
     #if ($elementDisplay.getCustomSearchVM())
@@ -1587,7 +1597,7 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 #macro(selectEmployment $value $item $vr)
     #if ($vr)
         #if($vr.getField($name))
-            <span style="color: red; ">&#8658</span>
+            <span style="color: red; ">&#8658;</span>
         #end
     #end
     #set($employment=$!item.getProperty($value))
@@ -1624,6 +1634,7 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 #end
 
 #macro(auditBoxes $span $align $reason $action)
+  <!-- macro: auditBoxes -->
 	#if($showReason)
 	<tr>
 		<td colspan="$span" align="$align">
@@ -1745,7 +1756,7 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 #macro (xdatCalendar $property $item $vr)
     #if ($vr)
         #if($vr.getField($property))
-            <span style="color: red;">&#8658</span>
+            <span style="color: red;">&#8658;</span>
         #end
     #end
     #set ($rawDate = $!item.getDateProperty($property))
@@ -2024,7 +2035,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
 #macro (cndaSelectBoxSimple $name $item $possibleValues $vr)
     #if ($vr)
         #if($vr.getField($name))
-            <font color="red">&#8658</font>
+            <font color="red">&#8658;</font>
         #end
     #end
     #if($item.isPKField($name) && (!$vr.getField($name)))
@@ -2057,7 +2068,7 @@ then adds any subsequent strings to a block of text to use as a pop-over.
 
  #if ($vr)
       #if($vr.getField($name))
-           <font color="red">&#8658</font>
+           <font color="red">&#8658;</font>
       #end
  #end
      #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])

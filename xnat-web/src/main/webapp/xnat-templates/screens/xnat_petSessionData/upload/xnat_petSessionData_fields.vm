@@ -1,3 +1,5 @@
+<!-- BEGIN /xnat-templates/screens/xnat_petSessionData/upload/xnat_petSessionData_fields.vm -->
+
 <tr>
 	<th align="left">Scanner</th>
 	#set($currentScanner=$item.getProperty("scanner"))
@@ -18,6 +20,12 @@
 		<td> #xdatTextBox("xnat:petSessionData.scanner" $item "" $vr)</td>
 	#else
 		<td>
+			#if (!$datatype)
+				#set ($datatype = 'xnat:petSessionData')
+			#end
+			#parse('/screens/xnat_imageSessionData/upload/scanners.vm')
+
+			#*
 			<script type="text/javascript">
 				window.ss=new Object();
 
@@ -48,12 +56,20 @@
 				#end
 			</script>
 
+            <!-- datatype: '$!datatype' -->
+
 			#xdatComboBox("xnat:petSessionData.scanner" $item "window.ss" $vr)
+
 			<a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
-			#if($item.getStringProperty("xnat:petSessionData/scanner/manufacturer") || $item.getStringProperty("${datatype}/scanner/model") || $!item.getStringProperty("${datatype}/scanner"))
-                &nbsp; (#escapeHTML($!item.getStringProperty("xnat:petSessionData/scanner/manufacturer")) #escapeHTML($!item.getStringProperty("${datatype}/scanner/model")) #escapeHTML($!item.getStringProperty("${datatype}/scanner")))
-                ##<script>document.write(escapeHtml(unescapeAllHtml('$!turbineUtils.escapeHTML($!item.getStringProperty("${datatype}/scanner"))')))</script>
+
+			#define ($scannerInfoText)
+				#scannerInfo('xnat:petSessionData' $item)
 			#end
+
+			$!scannerInfoText.trim()
+
+			*#
+
 		</td>
 	#end
 </tr>
@@ -147,3 +163,5 @@
 					<th align="left">Emission Scan Start-time</th>
 					  <td>#xdatTimeBox("xnat:petSessionData/start_time_scan" $item $vr)</td>
 					</tr>
+
+<!-- END /xnat-templates/screens/xnat_petSessionData/upload/xnat_petSessionData_fields.vm -->

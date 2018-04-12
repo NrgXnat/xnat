@@ -76,7 +76,6 @@ function ProjectList(_menu, _options){
 			var p=this.projectResultSet.ResultSet.Result[pC];
 			items.push({text:p.secondary_id,url:serverRoot + "/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/" + p.id});
 		}
-		items.push({text:"View All",url:serverRoot + "/app/template/BrowseProjects.vm"});
 		//this.menu=new YAHOO.widget.Menu(this.div_id,{itemdata:items,visible:true, scrollincrement:5,position:"static"});
 		this.menu.addItems(items);
 		this.menu.render();

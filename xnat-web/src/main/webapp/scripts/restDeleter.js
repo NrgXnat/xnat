@@ -17,7 +17,11 @@ RestDeleter = function(_array,_config) {
 		var t=_div.appendChild(document.createElement("table"));
 		t.width="100%";
 		var tb=t.appendChild(document.createElement("tbody"));
-  	    for(var aC=0;aC<this.a.length;aC++){
+		var tr=tb.appendChild(document.createElement("tr"));
+		var td1=tr.appendChild(document.createElement("td"));
+		td1.innerHTML="<p><strong>Are you sure you want to permanently remove this data from the archive?</strong><br />(Data shared into this " + XNAT.app.displayNames.singular.project.toLowerCase() + " will be un-shared, rather than deleted.)</p>";
+
+		for(var aC=0;aC<this.a.length;aC++){
   	    	if(this.a[aC].canRead && (this.a[aC].allowDelete==undefined||this.a[aC].allowDelete==true)) {
 				if (!(this.a[aC].label == "Select All" && this.a[aC].xsiType == null)) {
 					var tr = tb.appendChild(document.createElement("tr"));
@@ -44,10 +48,6 @@ RestDeleter = function(_array,_config) {
 			var td1=tr.appendChild(document.createElement("td"));
 			td1.innerHTML="&nbsp;"
 		}
-		var tr=tb.appendChild(document.createElement("tr"));
-		var td1=tr.appendChild(document.createElement("td"));
-		td1.innerHTML="Are you sure you want to permanently remove this data from the archive?<br />(Data shared into this " + XNAT.app.displayNames.singular.project.toLowerCase() + " will be un-shared, rather than deleted.)";
-		td1.style.color="red";
 
 		if(showReason){
 			var tr=tb.appendChild(document.createElement("tr"));
@@ -62,7 +62,7 @@ RestDeleter = function(_array,_config) {
 			td1.appendChild(sel);
 		}
 		
-	    var myButtons = [ { text:"Cancel", handler:this.handleCancel, isDefault:true }, { text:"Delete", handler:{fn:this.handleDelete, scope:this} } ];
+	    var myButtons = [ { text:"Cancel", handler:this.handleCancel }, { text:"Delete", handler:{fn:this.handleDelete, scope:this}, isDefault: true } ];
 		this.popup.cfg.queueProperty("buttons", myButtons);
     }
 	
